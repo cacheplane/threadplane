@@ -1,0 +1,161 @@
+{
+  "name": "HttpReplayOptions",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/HttpReplayOptions",
+  "canonicalReference": "@threadplane/ag-ui!HttpReplayOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Options for [httpReplay](/docs/api/ag-ui/httpReplay).",
+  "declarations": [
+    {
+      "name": "HttpReplayOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!HttpReplayOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface HttpReplayOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Options for [httpReplay](/docs/api/ag-ui/httpReplay).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "fetch",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!HttpReplayOptions#fetch:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "fetch?: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "fetch",
+              "canonicalReference": "!fetch:function"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fetch implementation. Defaults to the global `fetch`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/replay.ts",
+            "line": 24
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "headers",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!HttpReplayOptions#headers:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "headers?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Extra request headers, e.g. auth tokens.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/replay.ts",
+            "line": 26
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "url",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!HttpReplayOptions#url:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "url: "
+            },
+            {
+              "kind": "Content",
+              "text": "(threadId: string) => string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Builds the GET URL for a thread, e.g. `(id) => \\`/api/threads/${id}/events\\``.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/replay.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/replay.ts",
+        "line": 20
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/replay.ts",
+    "line": 20
+  }
+}

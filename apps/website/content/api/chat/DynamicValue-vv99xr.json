@@ -1,0 +1,54 @@
+{
+  "name": "DynamicValue",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/DynamicValue",
+  "canonicalReference": "@threadplane/chat!DynamicValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Any dynamic value position where the concrete type is component-defined.",
+  "declarations": [
+    {
+      "name": "DynamicValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!DynamicValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DynamicValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Any dynamic value position where the concrete type is component-defined.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 36
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 36
+  }
+}

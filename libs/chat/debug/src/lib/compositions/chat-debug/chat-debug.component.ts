@@ -18,6 +18,7 @@ import { TimelineInspectorComponent } from './inspectors/timeline-inspector.comp
 import { StateInspectorComponent } from './inspectors/state-inspector.component';
 import { createPersistence } from './persistence';
 
+/** The screen edge used to dock the chat debug panel. */
 export type DockPosition = 'right' | 'bottom' | 'left';
 
 interface TabEntry {
@@ -32,6 +33,7 @@ function hasHistory(
   return typeof (agent as DebugAgentWithHistory).history === 'function';
 }
 
+/** Provides a dockable agent state and checkpoint inspector with persisted panel preferences. */
 @Component({
   selector: 'chat-debug',
   standalone: true,

@@ -1,0 +1,83 @@
+{
+  "name": "provideFakeAgent",
+  "entrypointId": "ag-ui",
+  "kind": "Function",
+  "href": "/docs/api/ag-ui/provideFakeAgent",
+  "canonicalReference": "@threadplane/ag-ui!provideFakeAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
+  "declarations": [
+    {
+      "name": "provideFakeAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!provideFakeAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideFakeAgent(config?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgUiFakeAgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!AgUiFakeAgentConfig:interface",
+          "href": "/docs/api/ag-ui/AgUiFakeAgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nTestBed.configureTestingModule({\n  providers: [provideFakeAgent({ tokens: ['Hello from the fake agent'] })],\n});\n```",
+          "Scripted tool call\n```ts\nTestBed.configureTestingModule({\n  providers: [provideFakeAgent({\n    delayMs: 0,\n    script: [{\n      when: 'initial',\n      events: [\n        { type: EventType.TOOL_CALL_START, toolCallId: 't1', toolCallName: 'get_weather' },\n        { type: EventType.TOOL_CALL_ARGS, toolCallId: 't1', delta: '{\"city\":\"SF\"}' },\n        { type: EventType.TOOL_CALL_END, toolCallId: 't1' },\n      ] as BaseEvent[],\n    }],\n  })],\n});\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+        "line": 53
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "config",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+    "line": 53
+  }
+}

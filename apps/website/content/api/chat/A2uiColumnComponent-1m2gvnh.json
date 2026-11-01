@@ -1,0 +1,501 @@
+{
+  "name": "A2uiColumnComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/A2uiColumnComponent",
+  "canonicalReference": "@threadplane/chat!A2uiColumnComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Arranges A2UI child elements vertically with configurable alignment, distribution, and spacing.",
+  "declarations": [
+    {
+      "name": "A2uiColumnComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!A2uiColumnComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class A2uiColumnComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Arranges A2UI child elements vertically with configurable alignment, distribution, and spacing.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "align",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#align:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly align: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ColumnAlign",
+              "canonicalReference": "@threadplane/chat!~ColumnAlign:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: cross-axis alignment (default 'stretch').",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 53
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 61
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childKeys",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#childKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childKeys: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 50
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "emit",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#emit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly emit: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<(event: string) => void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 62
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "gap",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#gap:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly gap: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | \"small\" | \"medium\" | \"large\" | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Not part of the v0.9 catalog — kept for json-render generative-ui\nspecs, which may set a numeric spacing unit (multiples of 4px) or a\nnamed size. Unset falls back to the CSS default gap.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 59
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "justify",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#justify:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly justify: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ColumnJustify",
+              "canonicalReference": "@threadplane/chat!~ColumnJustify:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: main-axis distribution (default 'start').",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 55
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 63
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "spec",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiColumnComponent#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+            "line": 51
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+        "line": 21
+      },
+      "angular": {
+        "selector": "a2ui-column",
+        "inputs": [
+          {
+            "name": "align",
+            "alias": "align",
+            "required": false,
+            "type": "ColumnAlign"
+          },
+          {
+            "name": "bindings",
+            "alias": "bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "childKeys",
+            "alias": "childKeys",
+            "required": false,
+            "type": "string[]"
+          },
+          {
+            "name": "emit",
+            "alias": "emit",
+            "required": false,
+            "type": "(event: string) => void"
+          },
+          {
+            "name": "gap",
+            "alias": "gap",
+            "required": false,
+            "type": "number | \"small\" | \"medium\" | \"large\" | undefined"
+          },
+          {
+            "name": "justify",
+            "alias": "justify",
+            "required": false,
+            "type": "ColumnJustify"
+          },
+          {
+            "name": "loading",
+            "alias": "loading",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "spec",
+            "alias": "spec",
+            "required": true,
+            "type": "Spec"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+    "line": 21
+  }
+}

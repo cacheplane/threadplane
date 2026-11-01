@@ -1,0 +1,119 @@
+{
+  "name": "AgentRuntimeTelemetryPayload",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentRuntimeTelemetryPayload",
+  "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryPayload:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A runtime telemetry event paired with its properties.",
+  "declarations": [
+    {
+      "name": "AgentRuntimeTelemetryPayload",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryPayload:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentRuntimeTelemetryPayload "
+        }
+      ],
+      "docs": {
+        "summary": "A runtime telemetry event paired with its properties.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "event",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryPayload#event:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRuntimeTelemetryEvent",
+              "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryEvent:type",
+              "href": "/docs/api/chat/AgentRuntimeTelemetryEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "properties",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryPayload#properties:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "properties: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRuntimeTelemetryProperties",
+              "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties:interface",
+              "href": "/docs/api/chat/AgentRuntimeTelemetryProperties"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+        "line": 21
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+    "line": 21
+  }
+}

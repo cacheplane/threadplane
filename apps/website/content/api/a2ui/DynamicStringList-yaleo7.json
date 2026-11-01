@@ -1,0 +1,70 @@
+{
+  "name": "DynamicStringList",
+  "entrypointId": "a2ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/a2ui/DynamicStringList",
+  "canonicalReference": "@threadplane/a2ui!DynamicStringList:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "String-list literal, data-model path reference, or client-side function call.",
+  "declarations": [
+    {
+      "name": "DynamicStringList",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/a2ui!DynamicStringList:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DynamicStringList = "
+        },
+        {
+          "kind": "Content",
+          "text": "string[] | "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiPathRef",
+          "canonicalReference": "@threadplane/a2ui!A2uiPathRef:interface",
+          "href": "/docs/api/a2ui/A2uiPathRef"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiFunctionCall",
+          "canonicalReference": "@threadplane/a2ui!A2uiFunctionCall:interface",
+          "href": "/docs/api/a2ui/A2uiFunctionCall"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "String-list literal, data-model path reference, or client-side function call.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 34
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 34
+  }
+}

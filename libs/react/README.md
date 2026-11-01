@@ -353,7 +353,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
-uses the existing action slot; remaining project actions, drag reordering, live timestamp refresh remain future work. This is a bounded private T29 slice.
+uses the existing action slot; shared project catalogs, broader drag interaction parity and live timestamp refresh remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
 
@@ -391,7 +391,7 @@ commands belong to the native application, with strict boolean write confirmatio
 per-target pending state, retry after failure and feedback retained across row
 migration. Archiving the selected row preserves its transcript, draft, session and
 active response. This adds no ThreadList field, lifecycle API or export;
-remaining project actions, drag reordering and full T29/T30 parity remain open.
+shared project catalogs, broader drag interaction parity and full T29/T30 parity remain open.
 
 The native application orders active loaded pins first by finite numeric
 `metadata.pinnedOrder`, retaining stable ties, placing unranked pins last and
@@ -843,7 +843,12 @@ validates it and starts any separately owned read. Rendering, mounting, opening,
 tabs, docking, closing and unmounting issue no reads, runs or disposal. The app
 owns network access, stale-result validation, selection and resource lifetime.
 History order is as supplied, with no automatic paging or live branch-tree claim.
-Fork, replay, diff and full T29 parity remain outside this first private slice.
+Fork, replay, comparison between historical checkpoints and full T29 parity
+remain outside this private slice. When the selected inspection and current
+observation are both ready and match the panel's ownership tokens, the State tab
+offers **Compare selected checkpoint with current state**. The inspected
+checkpoint is the before state; the current observation is the after state.
+Opening the comparison performs no additional read.
 
 Displayed plain JSON is bounded to depth 6, 200 entries, 2,000 Unicode code points
 per string/key and 32 KiB of UTF-8 output. Truncation is disclosed separately from
@@ -861,6 +866,26 @@ preferences during hydration. State, history, IDs, target and selection are neve
 persisted. Use separate keys for independent panels. Scoped Escape handling and
 outside-pointer close retain outside focus; user-close restores the launcher only
 while focus remains owned by that panel.
+
+### Passive state comparison (private React Debug)
+
+`StateDiff` and readonly `StateDiffProps` are also available from
+`@threadplane/react/debug`, using the same explicit stylesheet. Supply `before`
+and `after` as `DebugValue`; optional `label` and `className` control presentation.
+The view has no reader, execution, subscription or clipboard capability.
+
+Both inputs must fit the existing 32 KiB, depth-six, 200-entry and 2,000-code-point
+display limits completely. Invalid inputs, inputs exceeding those limits, and
+change lists exceeding the same limits receive distinct unavailable notices.
+The view never compares truncated prefixes or displays partially projected
+changes as if they were complete. Only complete equal states report no changes.
+
+Changes identify added, removed and changed own properties with escaped JSON
+Pointer paths; the empty path identifies the root. Object property order is
+irrelevant, including inside arrays. Changed arrays are shown as whole values.
+Missing properties remain distinct from null, false and empty strings. The JSON
+output is literal and bounded; this is app-owned plain-data comparison, not SDK
+decoding or hostile Proxy isolation.
 
 ### Loaded project navigation (private React T29 slice)
 
@@ -916,6 +941,23 @@ Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
 Confirmed project deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below.
+
+### Native project action menus (private React T29/T30 slice)
+
+Native full project rows compose the existing controlled `OverflowMenu` through
+`ProjectList.renderActions`. Each contextual **More actions** trigger offers
+**Rename** and, when a deletion owner is available, destructive **Delete**.
+Deletion capability controls the Delete item; unavailable project storage or a
+pending project deletion disables the trigger. Opening or dismissing a menu does
+not select a project, write data or replace an existing editor draft.
+
+Rename keeps the existing browser-local editor and storage Retry behavior. Delete
+keeps the exact-target confirmation and backend membership recovery described
+below, preserving conversations. Editors and confirmations retain the persistent
+row trigger for focus restoration. Scope changes expire old menu requests; the
+existing menu supplies keyboard navigation, dismissal, inherited theme and
+viewport containment. This adds no public API or backend contract; shared catalogs
+and full T29/T30 parity remain open.
 
 Conversation menus also retain their opening through a queued scroll notification
 from an anchor ancestor whose vertical/horizontal offsets already settled before
@@ -980,7 +1022,7 @@ or revert its confirmed project; fresh post-creation reads remain authoritative.
 Navigation, disposal and newer creation intents fence late completions.
 
 The association survives backend reloads; the selected project filter stays
-ephemeral. Confirmed project deletion is described below. Shared catalogs, drag reordering and full T29 parity
+ephemeral. Confirmed project deletion is described below. Shared catalogs, broader drag interaction parity and full T29 parity
 remain open. This is private native dogfood with no new library export.
 
 ### Confirmed project deletion (private native React T29 slice)
@@ -1012,7 +1054,7 @@ also reject incoming local associations for the application owner's lifetime.
 The backend has no atomic project-deletion operation: another client can create
 or move conversations concurrently, and fresh backend reads remain authoritative.
 Catalog updates preserve the latest observed entries without an atomic multi-tab
-guarantee. Project names remain browser-local. Shared catalogs, drag reordering
+guarantee. Project names remain browser-local. Shared catalogs, broader drag interaction parity
 and full T29 parity remain open; this slice adds no public library export.
 
 ### Controlled checkpoint timeline (private React T29 slice)
@@ -1039,3 +1081,24 @@ and duplicate backend IDs remain distinct occurrences. New owner, conversation
 or page identities retire old selections and callbacks. This slice displays only
 metadata; historical values, replay/fork, live branch timelines and full T29
 parity remain open.
+
+### Native pinned conversation drag ordering (private)
+
+Native React full active directories now compose desktop drag handles beside
+pinned conversation actions. Drop above or below another visible pin to use the
+existing confirmed rank command. The destination uses the complete loaded pinned
+order, including neighbors hidden by title or project filters. The controlled
+ThreadList still renders supplied order; this adds no library prop or export.
+
+Only visible active pins are drag targets. Archived, unpinned and compact rows
+have no handles; fewer than two visible pins disables dragging. Keyboard and
+touch users retain Actions → Move up/Move down. This does not claim touchscreen
+dragging or general drag-and-drop parity.
+
+Hover and cancellation issue no commands or network reads. A valid move keeps
+the last confirmed display until every rank write is acknowledged. Pending or
+unconfirmed ordering and deletion block dragging; partial failure retains the
+existing explicit Refresh recovery. Scope changes, list replacement, Escape,
+drag end, blur and unmount retire local captures. Foreign payloads cannot supply
+conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
+URL and an active response. Shared catalogs and full T29 parity remain open.

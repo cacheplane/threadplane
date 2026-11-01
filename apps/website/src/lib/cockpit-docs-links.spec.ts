@@ -33,7 +33,7 @@ const navRoutes = new Set(
   docsConfig.flatMap((library) =>
     library.sections.flatMap((section) =>
       section.pages.map(
-        (page) => `/docs/${library.id}/${section.id}/${page.slug}`
+        (page) => page.href ?? `/docs/${library.id}/${section.id}/${page.slug}`
       )
     )
   )

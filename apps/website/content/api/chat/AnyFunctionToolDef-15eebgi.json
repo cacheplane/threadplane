@@ -1,0 +1,280 @@
+{
+  "name": "AnyFunctionToolDef",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AnyFunctionToolDef",
+  "canonicalReference": "@threadplane/chat!AnyFunctionToolDef:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Bivariant union member used only for registry storage/iteration. The handler\n param is `any` (NOT `never`): `any` is simultaneously a supertype any precise\n `FunctionToolDef<S,R>` is assignable to under `strictFunctionTypes`, AND\n callable by internal code that has narrowed by `kind` and parsed runtime args.\n A `never` param would satisfy the former but break the latter.",
+  "declarations": [
+    {
+      "name": "AnyFunctionToolDef",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AnyFunctionToolDef:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AnyFunctionToolDef "
+        }
+      ],
+      "docs": {
+        "summary": "Bivariant union member used only for registry storage/iteration. The handler\n param is `any` (NOT `never`): `any` is simultaneously a supertype any precise\n `FunctionToolDef<S,R>` is assignable to under `strictFunctionTypes`, AND\n callable by internal code that has narrowed by `kind` and parsed runtime args.\n A `never` param would satisfy the former but break the latter.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "description",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#description:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly description: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 83
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "followUp",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#followUp:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly followUp?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 85
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "handler",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#handler:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly handler: "
+            },
+            {
+              "kind": "Content",
+              "text": "(args: any, context: "
+            },
+            {
+              "kind": "Reference",
+              "text": "FunctionToolHandlerContext",
+              "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext:interface",
+              "href": "/docs/api/chat/FunctionToolHandlerContext"
+            },
+            {
+              "kind": "Content",
+              "text": ") => unknown | "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 88
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "idempotent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#idempotent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly idempotent?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 86
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly kind: "
+            },
+            {
+              "kind": "Content",
+              "text": "'function'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 82
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "schema",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef#schema:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly schema: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StandardSchemaV1",
+              "canonicalReference": "@threadplane/chat!StandardSchemaV1:interface",
+              "href": "/docs/api/chat/StandardSchemaV1"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 84
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 81
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 81
+  }
+}

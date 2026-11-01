@@ -1,0 +1,56 @@
+{
+  "name": "A2uiViewEntry",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/A2uiViewEntry",
+  "canonicalReference": "@threadplane/chat!A2uiViewEntry:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Catalog entry for the A2UI surface renderer.\n\n`component` is mounted once all of the component's bindings (data\nmodel paths referenced in its prop expressions) have resolved. While\nany binding is unpopulated, the `fallback` is mounted instead. If\n`fallback` is omitted, the lib's default fallback\n(`A2uiDefaultFallbackComponent`) is mounted.\n\nThis is a chat-side alias for the shared `RenderViewEntry` shape so\nconsumers of `@threadplane/chat` don't have to import from `@threadplane/render`.",
+  "declarations": [
+    {
+      "name": "A2uiViewEntry",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!A2uiViewEntry:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type A2uiViewEntry = "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderViewEntry",
+          "canonicalReference": "@threadplane/chat!~RenderViewEntry:interface",
+          "href": "/docs/api/render/RenderViewEntry"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Catalog entry for the A2UI surface renderer.\n\n`component` is mounted once all of the component's bindings (data\nmodel paths referenced in its prop expressions) have resolved. While\nany binding is unpopulated, the `fallback` is mounted instead. If\n`fallback` is omitted, the lib's default fallback\n(`A2uiDefaultFallbackComponent`) is mounted.\n\nThis is a chat-side alias for the shared `RenderViewEntry` shape so\nconsumers of `@threadplane/chat` don't have to import from `@threadplane/render`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/views.ts",
+        "line": 14
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/views.ts",
+    "line": 14
+  }
+}

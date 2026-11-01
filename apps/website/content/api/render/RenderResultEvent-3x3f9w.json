@@ -1,0 +1,151 @@
+{
+  "name": "RenderResultEvent",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/RenderResultEvent",
+  "canonicalReference": "@threadplane/render!RenderResultEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Value announced by a mounted view through its render host, optionally associated with an element key.",
+  "declarations": [
+    {
+      "name": "RenderResultEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!RenderResultEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderResultEvent "
+        }
+      ],
+      "docs": {
+        "summary": "Value announced by a mounted view through its render host, optionally associated with an element key.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "elementKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderResultEvent#elementKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly elementKey?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderResultEvent#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'result'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderResultEvent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/render-event.ts",
+        "line": 27
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/render-event.ts",
+    "line": 27
+  }
+}

@@ -352,7 +352,7 @@ onEvent(event: RenderEvent) {
 | `'lifecycle'` | `RenderLifecycleEvent` | The spec or one of its elements mounts or is destroyed | `event` (`'mounted'` \| `'destroyed'`), `scope` (`'spec'` \| `'element'`), `elementKey?`, `elementType?` |
 | `'result'` | `RenderResultEvent` | A mounted view component calls `injectRenderHost().result(value)` | `value`, `elementKey?` |
 
-A `stateChange` event names the path that changed. `StateStore.subscribe` hands its listener nothing, so the path comes from `lastChange()` on the store: a store built by [`signalStateStore()`](/docs/render/api/signal-state-store) records its last mutation and the event reports that pointer and the value written there. A store from another implementation has no `lastChange`, so its events fall back to `path: '/'` with the full snapshot as `value`. Either way `snapshot` is the whole state model.
+A `stateChange` event names the path that changed. `StateStore.subscribe` hands its listener nothing, so the path comes from `lastChange()` on the store: a store built by [`signalStateStore()`](/docs/api/render/signalStateStore) records its last mutation and the event reports that pointer and the value written there. A store from another implementation has no `lastChange`, so its events fall back to `path: '/'` with the full snapshot as `value`. Either way `snapshot` is the whole state model.
 
 Element-scope lifecycle events (`scope: 'element'`) fire for every element the renderer mounts, carrying that element's `elementKey` and `elementType`. A spec with three elements therefore emits one spec-scope `mounted` event and three element-scope ones, and an element that leaves the tree emits an element-scope `destroyed` event as it is torn down.
 
@@ -373,7 +373,7 @@ All four interfaces are exported from `@threadplane/render`. This output is the 
   <Card title="Specs Guide" href="/docs/render/guides/specs">
     The on property and event binding format
   </Card>
-  <Card title="RenderSpecComponent API" href="/docs/render/api/render-spec-component">
+  <Card title="RenderSpecComponent API" href="/docs/render/guides/element-rendering">
     Passing handlers to render-spec
   </Card>
 </CardGroup>

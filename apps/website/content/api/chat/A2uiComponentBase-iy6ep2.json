@@ -1,0 +1,228 @@
+{
+  "name": "A2uiComponentBase",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/A2uiComponentBase",
+  "canonicalReference": "@threadplane/chat!A2uiComponentBase:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Shared identity, catalog override, layout weight, and accessibility fields for an A2UI component.",
+  "declarations": [
+    {
+      "name": "A2uiComponentBase",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!A2uiComponentBase:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiComponentBase "
+        }
+      ],
+      "docs": {
+        "summary": "Shared identity, catalog override, layout weight, and accessibility fields for an A2UI component.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "accessibility",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiComponentBase#accessibility:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "accessibility?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Accessibility attributes (spec `AccessibilityAttributes`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 84
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "catalogId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiComponentBase#catalogId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "catalogId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Overrides the surface's default catalog for this component.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 80
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiComponentBase#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 78
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiComponentBase#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 77
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "weight",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiComponentBase#weight:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "weight?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Flex-grow-like weight; only valid as a direct child of Row/Column.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 82
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 76
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 76
+  }
+}

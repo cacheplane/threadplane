@@ -1,0 +1,115 @@
+{
+  "name": "LangGraphThreadsConfig",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/LangGraphThreadsConfig",
+  "canonicalReference": "@threadplane/langgraph!LangGraphThreadsConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Configuration consumed by [LangGraphThreadsAdapter](/docs/api/langgraph/LangGraphThreadsAdapter). Provide\nvia [LANGGRAPH_THREADS_CONFIG](/docs/api/langgraph/LANGGRAPH_THREADS_CONFIG) (typically in app.config.ts):\n```ts\nproviders: [\n  { provide: LANGGRAPH_THREADS_CONFIG, useValue: {\n      apiUrl: environment.langGraphApiUrl,\n  }},\n],\n```\n\nThe adapter expects backends to write the thread title to\n`metadata.title`. Spec 2026-05-19-llm-generated-labels-design.md\noriginally proposed `metadata.thread_title` for cockpit caps but\nwe converged on `title` to match the canonical demo and avoid a\nper-cap configuration knob.",
+  "declarations": [
+    {
+      "name": "LangGraphThreadsConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!LangGraphThreadsConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface LangGraphThreadsConfig "
+        }
+      ],
+      "docs": {
+        "summary": "Configuration consumed by [LangGraphThreadsAdapter](/docs/api/langgraph/LangGraphThreadsAdapter). Provide\nvia [LANGGRAPH_THREADS_CONFIG](/docs/api/langgraph/LANGGRAPH_THREADS_CONFIG) (typically in app.config.ts):\n```ts\nproviders: [\n  { provide: LANGGRAPH_THREADS_CONFIG, useValue: {\n      apiUrl: environment.langGraphApiUrl,\n  }},\n],\n```\n\nThe adapter expects backends to write the thread title to\n`metadata.title`. Spec 2026-05-19-llm-generated-labels-design.md\noriginally proposed `metadata.thread_title` for cockpit caps but\nwe converged on `title` to match the canonical demo and avoid a\nper-cap configuration knob.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "apiUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsConfig#apiUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "apiUrl: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Base URL for the LangGraph Platform API. Accepts both absolute\n URLs and relative `/api`-style paths.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 37
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "titleFallback",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsConfig#titleFallback:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "titleFallback?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fallback label for threads whose title hasn't been written yet\n (e.g. created but never sent). Defaults to `'Untitled'`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 40
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+        "line": 34
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+    "line": 34
+  }
+}

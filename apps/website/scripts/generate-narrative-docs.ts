@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 import path from 'path';
 import { assertPublicDocOutput } from './public-doc-projection';
+import { readApiIndex, readApiSymbol, apiSymbolMarkdown } from '../src/lib/api-reference';
 
 /** The six libraries whose generated API docs the website publishes. */
 const PUBLIC_API_LIBRARIES = [
@@ -16,7 +17,6 @@ const PUBLIC_API_LIBRARIES = [
 const client = new Anthropic();
 const MODEL = process.env['ANTHROPIC_MODEL'] ?? 'claude-sonnet-4-6';
 const DOCS_DIR = 'apps/website/content/docs';
-const API_DOCS_ROOT = 'apps/website/content/docs';
 
 const TOPICS = [
   {
@@ -48,7 +48,7 @@ async function generateDoc(slug: string, prompt: string, apiDocsJson: string): P
     messages: [{
       role: 'user',
       content: `You are writing documentation for the Threadplane library.
-Here is the TypeDoc API reference JSON:\n\n${apiDocsJson}\n\n${prompt}
+Here is the extracted API reference:\n\n${apiDocsJson}\n\n${prompt}
 
 Write clean, developer-friendly MDX documentation. Use precise, no-fluff prose. Include code examples. Start with a single # heading.`,
     }],
@@ -60,27 +60,16 @@ Write clean, developer-friendly MDX documentation. Use precise, no-fluff prose. 
 }
 
 function loadApiDocs(): string {
-  if (!fs.existsSync(API_DOCS_ROOT)) {
-    throw new Error('Run generate-api-docs first: npx tsx apps/website/scripts/generate-api-docs.ts');
-  }
-
-  // An allowlist, not a directory walk: a retired library that reappears on
-  // disk must not silently feed the narrative generator again.
-  const sections = PUBLIC_API_LIBRARIES
-    .map((library) => {
-      const apiDocsPath = path.join(API_DOCS_ROOT, library, 'api', 'api-docs.json');
-      if (!fs.existsSync(apiDocsPath)) return null;
-      const source = fs.readFileSync(apiDocsPath, 'utf8');
-      assertPublicDocOutput(library, source);
-      return `### ${library}\n\n${source}`;
-    })
-    .filter((section): section is string => section !== null);
-
-  if (sections.length === 0) {
-    throw new Error('Run generate-api-docs first: npx tsx apps/website/scripts/generate-api-docs.ts');
-  }
-
-  return sections.join('\n\n');
+  const index = readApiIndex();
+  // Keep the existing narrative allowlist; technical API generation covers all SDKs.
+  return index.entrypoints.filter(entrypoint => PUBLIC_API_LIBRARIES.some(library => library === entrypoint.docLibrary))
+    .map(entrypoint => index.symbols.filter(summary => summary.entrypointId === entrypoint.id).map(summary => {
+      const symbol = readApiSymbol(entrypoint.id, summary.name);
+      if (!symbol) throw new Error(`Missing API symbol: ${summary.href}`);
+      const source = apiSymbolMarkdown(symbol, entrypoint);
+      assertPublicDocOutput(entrypoint.id, source);
+      return source;
+    }).join('\n\n')).join('\n\n');
 }
 
 async function main() {

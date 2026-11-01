@@ -1,0 +1,1395 @@
+{
+  "name": "LangGraphAgent",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/LangGraphAgent",
+  "canonicalReference": "@threadplane/langgraph!LangGraphAgent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Unified LangGraph agent surface returned by `injectAgent()`.\n\nExtends the runtime-neutral `AgentWithHistory` contract (chat-consumable)\nwith the full LangGraph-specific API. One object drives both `<chat>` and\nany LangGraph-specific demo. Raw LangGraph signals are prefixed with\n`langGraph` to avoid collision with the runtime-neutral names.",
+  "declarations": [
+    {
+      "name": "LangGraphAgent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!LangGraphAgent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface LangGraphAgent<T = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ", ResolvedBag extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "BagTemplate",
+          "canonicalReference": "@langchain/langgraph-sdk!BagTemplate:type",
+          "href": "/docs/api/langgraph/BagTemplate"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "BagTemplate",
+          "canonicalReference": "@langchain/langgraph-sdk!BagTemplate:type",
+          "href": "/docs/api/langgraph/BagTemplate"
+        },
+        {
+          "kind": "Content",
+          "text": "> extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentWithHistory",
+          "canonicalReference": "@threadplane/langgraph!~AgentWithHistory:interface",
+          "href": "/docs/api/chat/AgentWithHistory"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Unified LangGraph agent surface returned by `injectAgent()`.\n\nExtends the runtime-neutral `AgentWithHistory` contract (chat-consumable)\nwith the full LangGraph-specific API. One object drives both `<chat>` and\nany LangGraph-specific demo. Raw LangGraph signals are prefixed with\n`langGraph` to avoid collision with the runtime-neutral names.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activeSubagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#activeSubagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "activeSubagents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStreamRef",
+              "canonicalReference": "@threadplane/langgraph!SubagentStreamRef:interface",
+              "href": "/docs/api/langgraph/SubagentStreamRef"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Filtered list of subagents with status 'running'.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 254
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "branch",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#branch:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "branch: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Current branch identifier for time-travel navigation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 270
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "clientTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#clientTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clientTools: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolsCapability",
+              "canonicalReference": "@threadplane/langgraph!~ClientToolsCapability:interface",
+              "href": "/docs/api/chat/ClientToolsCapability"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Client-declared, client-executed tools. Call setCatalog() to register\ntool specs; the catalog is automatically shipped with every run via\n`input.client_tools`. Pending tool calls appear in pending() after\nthe run ends; resolve() returns a result and continues the run.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 223
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "customEvents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#customEvents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "customEvents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CustomStreamEvent",
+              "canonicalReference": "@threadplane/langgraph!CustomStreamEvent:interface",
+              "href": "/docs/api/langgraph/CustomStreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Raw custom events stream (signal of array). The runtime-neutral\n `events$` Observable is derived from this.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 267
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "experimentalBranchTree",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#experimentalBranchTree:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "experimentalBranchTree: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentBranchTree",
+              "canonicalReference": "@threadplane/langgraph!AgentBranchTree:interface",
+              "href": "/docs/api/langgraph/AgentBranchTree"
+            },
+            {
+              "kind": "Content",
+              "text": "<T>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Experimental branch tree derived from LangGraph checkpoint history.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 209
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "getMessagesMetadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#getMessagesMetadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getMessagesMetadata: "
+            },
+            {
+              "kind": "Content",
+              "text": "(msg: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@langchain/core!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": ", idx?: number) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageMetadata",
+              "canonicalReference": "@langchain/langgraph-sdk!MessageMetadata:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>> | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get metadata for a specific message by index.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 285
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "getSubagent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#getSubagent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getSubagent: "
+            },
+            {
+              "kind": "Content",
+              "text": "(toolCallId: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStreamRef",
+              "canonicalReference": "@threadplane/langgraph!SubagentStreamRef:interface",
+              "href": "/docs/api/langgraph/SubagentStreamRef"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get a subagent stream by the tool call ID that spawned it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 257
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "getSubagentsByMessage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#getSubagentsByMessage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getSubagentsByMessage: "
+            },
+            {
+              "kind": "Content",
+              "text": "(msg: "
+            },
+            {
+              "kind": "Reference",
+              "text": "CoreAIMessage",
+              "canonicalReference": "@langchain/core!AIMessage:class"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStreamRef",
+              "canonicalReference": "@threadplane/langgraph!SubagentStreamRef:interface",
+              "href": "/docs/api/langgraph/SubagentStreamRef"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get subagent streams spawned by the tool calls on a specific AI message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 263
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "getSubagentsByType",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#getSubagentsByType:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getSubagentsByType: "
+            },
+            {
+              "kind": "Content",
+              "text": "(type: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStreamRef",
+              "canonicalReference": "@threadplane/langgraph!SubagentStreamRef:interface",
+              "href": "/docs/api/langgraph/SubagentStreamRef"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get subagent streams by their configured subagent type/name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 260
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "getToolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#getToolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getToolCalls: "
+            },
+            {
+              "kind": "Content",
+              "text": "(msg: "
+            },
+            {
+              "kind": "Reference",
+              "text": "CoreAIMessage",
+              "canonicalReference": "@langchain/core!AIMessage:class"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallWithResult",
+              "canonicalReference": "@langchain/langgraph-sdk!ToolCallWithResult:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get tool call results associated with an AI message (LangGraph types).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 288
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "hasValue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#hasValue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasValue: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True once at least one value or message has been received.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 231
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "interrupt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/langgraph!~AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Current human-in-the-loop pause, or `undefined` when the run is not paused.\n\nNarrowed from the neutral `Agent` contract, where `interrupt` is optional\nbecause a runtime without human-in-the-loop support omits it. The LangGraph\nadapter always provides it, so `injectAgent().interrupt()` type-checks\ndirectly under `strictNullChecks` — no `?.()` needed.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 194
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "isThreadLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#isThreadLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isThreadLoading: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True while a thread switch is loading state from the server.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 276
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "joinStream",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#joinStream:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "joinStream: "
+            },
+            {
+              "kind": "Content",
+              "text": "(runId: string, lastEventId?: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Join an already-running stream by run ID.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 282
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphHistory",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#langGraphHistory:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphHistory: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "<T>[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Raw LangGraph history (ThreadState[]). Use `history` for AgentCheckpoint[].",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 206
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphInterrupts",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#langGraphInterrupts:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphInterrupts: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Interrupt",
+              "canonicalReference": "@langchain/langgraph-sdk!Interrupt:interface",
+              "href": "/docs/api/langgraph/Interrupt"
+            },
+            {
+              "kind": "Content",
+              "text": "<ResolvedBag['InterruptType']>[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "All interrupts received during the current run (raw LangGraph shape).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 200
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphMessages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#langGraphMessages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphMessages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@langchain/core!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Raw LangChain BaseMessage list. Use `messages` for chat rendering.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 197
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphToolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#langGraphToolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphToolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallWithResult",
+              "canonicalReference": "@langchain/langgraph-sdk!ToolCallWithResult:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Raw LangGraph tool calls (with run-state). Use `toolCalls` for chat rendering.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 203
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "lifecycle",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#lifecycle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lifecycle: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentLifecycle",
+              "canonicalReference": "@threadplane/langgraph!AgentLifecycle:interface",
+              "href": "/docs/api/langgraph/AgentLifecycle"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Lifecycle signals for observability/telemetry. Eight read-only signals\ncapture key transitions (first stream chunk, first interrupt, tool\ncall start/complete, thread create/persist, errors). All reset on\n`switchThread()`. See [AgentLifecycle](/docs/api/langgraph/AgentLifecycle).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 296
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "queue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#queue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "queue: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueue",
+              "canonicalReference": "@threadplane/langgraph!AgentQueue:interface",
+              "href": "/docs/api/langgraph/AgentQueue"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Pending server-side runs created via `multitaskStrategy: 'enqueue'`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 251
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "regenerate",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#regenerate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "regenerate: "
+            },
+            {
+              "kind": "Content",
+              "text": "(assistantMessageIndex: number) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Discards the assistant message at the given index AND all messages after\nit, then re-runs the agent against the trimmed conversation tail. The\npreceding user message (at index - 1) is preserved and re-submitted as\nthe agent's input. No new user message is added to the history.\n\nThrows if the message at `index` is not 'assistant' role, or if the\nagent is currently loading another response.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 245
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "reload",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#reload:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reload: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Re-submit the last input to restart the stream.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 234
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "setBranch",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#setBranch:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "setBranch: "
+            },
+            {
+              "kind": "Content",
+              "text": "(branch: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Set the active branch for time-travel navigation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 273
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "submit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#submit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submit: "
+            },
+            {
+              "kind": "Content",
+              "text": "(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitInput",
+              "canonicalReference": "@threadplane/langgraph!~AgentSubmitInput:interface",
+              "href": "/docs/api/chat/AgentSubmitInput"
+            },
+            {
+              "kind": "Content",
+              "text": " | null | undefined, opts?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!~AgentSubmitOptions:interface",
+              "href": "/docs/api/chat/AgentSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": " & "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Submit input, resume commands, checkpoint forks, or other LangGraph run options.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 212
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "switchThread",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#switchThread:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "switchThread: "
+            },
+            {
+              "kind": "Content",
+              "text": "(threadId: string | null) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Switch to a different thread, resetting derived state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 279
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolProgress",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#toolProgress:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolProgress: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolProgress",
+              "canonicalReference": "@langchain/langgraph-sdk!ToolProgress:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Progress updates for currently executing tools.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 248
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<T>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Current agent state values (raw, typed per the type parameter T).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 228
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 182
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "typeParameterName": "ResolvedBag",
+          "constraintTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.types.ts",
+    "line": 182
+  }
+}

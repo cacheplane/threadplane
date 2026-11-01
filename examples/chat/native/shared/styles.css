@@ -143,6 +143,44 @@ textarea:disabled {
   background: var(--ds-accent-surface);
   border-color: var(--ds-accent-border);
 }
+.native-conversation-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.conversation-list .native-pinned-drag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  min-height: 36px;
+  padding: 4px;
+  text-align: center;
+  cursor: grab;
+}
+.conversation-list .native-pinned-drag:disabled {
+  cursor: not-allowed;
+}
+.conversation-list .native-pinned-drag[data-dragging='true'] {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+.native-pinned-drag[data-drop-position]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  height: 3px;
+  background: var(--ds-accent-border);
+}
+.native-pinned-drag[data-drop-position='before']::after {
+  top: 0;
+}
+.native-pinned-drag[data-drop-position='after']::after {
+  bottom: 0;
+}
 .conversation,
 .message {
   min-width: 0;
@@ -385,7 +423,8 @@ textarea:disabled {
   overflow: auto;
   overflow-wrap: anywhere;
 }
-.loaded-checkpoint-timeline {
+.loaded-checkpoint-timeline,
+.observed-state-comparison {
   min-width: 0;
   margin-block: 1rem;
   border: 1px solid var(--ds-border, #d9e1e8);
@@ -393,10 +432,12 @@ textarea:disabled {
   padding: 0.75rem;
   overflow-wrap: anywhere;
 }
-.loaded-checkpoint-timeline summary {
+.loaded-checkpoint-timeline summary,
+.observed-state-comparison summary {
   cursor: pointer;
 }
-.loaded-checkpoint-timeline summary:focus-visible {
+.loaded-checkpoint-timeline summary:focus-visible,
+.observed-state-comparison summary:focus-visible {
   outline: 2px solid var(--ds-accent);
   outline-offset: 3px;
 }

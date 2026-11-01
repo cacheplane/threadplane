@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+/** Selectable checkpoint metadata with an ID, display label, optional description, and disabled state. */
 export interface TimelineItem {
   readonly id: string;
   readonly label: string;
@@ -9,6 +10,7 @@ export interface TimelineItem {
   readonly disabled?: boolean;
 }
 
+/** Supplies ordered checkpoints, controlled selection, and an optional complete-row rendering override. */
 export interface TimelineProps {
   readonly items: readonly TimelineItem[];
   readonly onSelect: (id: string) => void;

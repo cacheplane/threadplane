@@ -2,8 +2,10 @@ import type { Signal } from '@angular/core';
 import type { Message } from './message';
 import type { ToolCall } from './tool-call';
 
+/** The execution state of a subagent spawned by a tool call. */
 export type SubagentStatus = 'pending' | 'running' | 'complete' | 'error';
 
+/** Reactive messages, state, and execution status for a subagent spawned by a tool call. */
 export interface Subagent {
   /** Tool call ID that spawned this subagent. */
   toolCallId: string;

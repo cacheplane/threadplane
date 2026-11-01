@@ -2,6 +2,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownSoftBreakNode } from '@cacheplane/partial-markdown';
 
+/** Renders a markdown soft-break node as an HTML line break. */
 @Component({
   selector: 'chat-md-soft-break',
   standalone: true,

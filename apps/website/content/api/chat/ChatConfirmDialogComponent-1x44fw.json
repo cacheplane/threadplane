@@ -1,0 +1,494 @@
+{
+  "name": "ChatConfirmDialogComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatConfirmDialogComponent",
+  "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a configurable confirmation dialog and emits confirm or cancel actions.",
+  "declarations": [
+    {
+      "name": "ChatConfirmDialogComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatConfirmDialogComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a configurable confirmation dialog and emits confirm or cancel actions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatConfirmDialogComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 78
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "body",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#body:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly body: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 64
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "cancelLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#cancelLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cancelLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 66
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "cancelled",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#cancelled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cancelled: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 70
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "confirmed",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#confirmed:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly confirmed: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 69
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "confirmLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#confirmLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly confirmLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 65
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 62
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "title",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 63
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "tone",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatConfirmDialogComponent#tone:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tone: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<\"normal\" | \"destructive\">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+            "line": 67
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+        "line": 17
+      },
+      "angular": {
+        "selector": "chat-confirm-dialog",
+        "inputs": [
+          {
+            "name": "body",
+            "alias": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "cancelLabel",
+            "alias": "cancelLabel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "confirmLabel",
+            "alias": "confirmLabel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "open",
+            "alias": "open",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "title",
+            "alias": "title",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "tone",
+            "alias": "tone",
+            "required": false,
+            "type": "\"normal\" | \"destructive\""
+          }
+        ],
+        "outputs": [
+          {
+            "name": "cancelled",
+            "alias": "cancelled",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "confirmed",
+            "alias": "confirmed",
+            "required": false,
+            "type": "void"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+    "line": 17
+  }
+}

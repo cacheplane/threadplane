@@ -1,0 +1,91 @@
+{
+  "name": "AgUiFakeAgentConfig",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/AgUiFakeAgentConfig",
+  "canonicalReference": "@threadplane/ag-ui!AgUiFakeAgentConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Config accepted by [provideFakeAgent](/docs/api/ag-ui/provideFakeAgent): the shared `FakeAgentConfig`\n(`tokens`, `reasoningTokens`, `delayMs`) plus the AG-UI-only `script`, which\nreplaces the canned token reply with raw AG-UI events.",
+  "declarations": [
+    {
+      "name": "AgUiFakeAgentConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!AgUiFakeAgentConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgUiFakeAgentConfig extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "FakeAgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!~FakeAgentConfig:interface",
+          "href": "/docs/api/chat/testing/FakeAgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Config accepted by [provideFakeAgent](/docs/api/ag-ui/provideFakeAgent): the shared `FakeAgentConfig`\n(`tokens`, `reasoningTokens`, `delayMs`) plus the AG-UI-only `script`, which\nreplaces the canned token reply with raw AG-UI events.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "script",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiFakeAgentConfig#script:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "script?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "FakeAgentScript",
+              "canonicalReference": "@threadplane/ag-ui!FakeAgentScript:type",
+              "href": "/docs/api/ag-ui/FakeAgentScript"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Deterministic event branches — see [FakeAgentScript](/docs/api/ag-ui/FakeAgentScript).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+        "line": 13
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
+    "line": 13
+  }
+}

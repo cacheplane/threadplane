@@ -34,6 +34,7 @@ interface FavEntry {
 
 let nextCitationsId = 0;
 
+/** Renders an expandable sources panel combining message citations with markdown citation definitions. */
 @Component({
   selector: 'chat-citations',
   standalone: true,

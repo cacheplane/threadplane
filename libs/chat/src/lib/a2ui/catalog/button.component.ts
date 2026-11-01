@@ -10,6 +10,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   borderless: 'a2ui-btn a2ui-btn--borderless',
 };
 
+/** Renders A2UI child content as a styled button and forwards clicks to the render event handler. */
 @Component({
   selector: 'a2ui-button',
   standalone: true,

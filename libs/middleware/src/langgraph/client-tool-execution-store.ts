@@ -4,12 +4,14 @@ export interface ClientToolExecutionKey {
   readonly toolCallId: string;
 }
 
+/** Ownership acquisition outcome: a new execution token, a reusable completed result, an unavailable execution, or an invocation conflict. */
 export type ClientToolExecutionAcquisition =
   | { readonly status: 'acquired'; readonly token: string }
   | { readonly status: 'complete'; readonly result: string }
   | { readonly status: 'unavailable' }
   | { readonly status: 'conflict' };
 
+/** Invocation identity and owner token used to settle an execution with an encoded result, or null when no reusable result is available. */
 export interface ClientToolExecutionSettlement {
   readonly invocation: string;
   readonly token: string;

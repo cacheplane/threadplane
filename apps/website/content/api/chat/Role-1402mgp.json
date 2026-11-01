@@ -1,0 +1,54 @@
+{
+  "name": "Role",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/Role",
+  "canonicalReference": "@threadplane/chat!Role:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The author category of a provider-independent agent message.",
+  "declarations": [
+    {
+      "name": "Role",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!Role:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type Role = "
+        },
+        {
+          "kind": "Content",
+          "text": "'user' | 'assistant' | 'system' | 'tool'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The author category of a provider-independent agent message.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/message.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/message.ts",
+    "line": 6
+  }
+}

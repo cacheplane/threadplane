@@ -1,0 +1,77 @@
+{
+  "name": "createPartialArgsBridge",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/createPartialArgsBridge",
+  "canonicalReference": "@threadplane/chat!createPartialArgsBridge:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds\nthe surface store envelope-by-envelope as the parent LLM streams its\ntool_call.arguments JSON. Uses @cacheplane/partial-json to extract\nstructurally-complete envelope objects from the growing args string.\n\nSynthesis safety net: v0.9 requires a `createSurface` envelope before\nany `updateComponents`. If a complete `updateComponents` arrives for a\nsurface with no `createSurface` seen yet this turn, the bridge\nsynthesises one (basic catalog) so the surface can mount as soon as its\n`root` component is defined — the store gates rendering on\ncreateSurface + root, and fills the tree in progressively after that.\n\nThe store treats a later \"real\" createSurface for the same surface as an\nidempotent refresh, so LLMs that emit one out of order are harmless.",
+  "declarations": [
+    {
+      "name": "createPartialArgsBridge",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!createPartialArgsBridge:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createPartialArgsBridge(store: "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiSurfaceStore",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore:interface",
+          "href": "/docs/api/chat/A2uiSurfaceStore"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "PartialArgsBridge",
+          "canonicalReference": "@threadplane/chat!PartialArgsBridge:interface",
+          "href": "/docs/api/chat/PartialArgsBridge"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds\nthe surface store envelope-by-envelope as the parent LLM streams its\ntool_call.arguments JSON. Uses @cacheplane/partial-json to extract\nstructurally-complete envelope objects from the growing args string.\n\nSynthesis safety net: v0.9 requires a `createSurface` envelope before\nany `updateComponents`. If a complete `updateComponents` arrives for a\nsurface with no `createSurface` seen yet this turn, the bridge\nsynthesises one (basic catalog) so the surface can mount as soon as its\n`root` component is defined — the store gates rendering on\ncreateSurface + root, and fills the tree in progressively after that.\n\nThe store treats a later \"real\" createSurface for the same surface as an\nidempotent refresh, so LLMs that emit one out of order are harmless.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
+        "line": 176
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "store",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
+    "line": 176
+  }
+}

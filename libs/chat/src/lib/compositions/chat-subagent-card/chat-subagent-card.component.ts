@@ -35,6 +35,7 @@ function statusToTraceState(s: SubagentStatus): TraceState {
   }
 }
 
+/** Displays a subagent’s status, reasoning, markdown messages, and message-scoped tool calls in a collapsible trace. */
 @Component({
   selector: 'chat-subagent-card',
   standalone: true,

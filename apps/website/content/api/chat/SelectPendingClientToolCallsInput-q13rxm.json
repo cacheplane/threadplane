@@ -1,0 +1,248 @@
+{
+  "name": "SelectPendingClientToolCallsInput",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/SelectPendingClientToolCallsInput",
+  "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Inputs for [selectPendingClientToolCalls](/docs/api/chat/selectPendingClientToolCalls).",
+  "declarations": [
+    {
+      "name": "SelectPendingClientToolCallsInput",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SelectPendingClientToolCallsInput "
+        }
+      ],
+      "docs": {
+        "summary": "Inputs for [selectPendingClientToolCalls](/docs/api/chat/selectPendingClientToolCalls).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "authoritativeIds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput#authoritativeIds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "authoritativeIds?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReadonlySet",
+              "canonicalReference": "!ReadonlySet:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool-call ids the runtime itself declared unanswered at the end of the\nrun (AG-UI 1.0 `outcome.pendingToolCallIds`). When present it is the\nauthority: a call outside it is not pending even if it has no result.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+            "line": 18
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "catalogNames",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput#catalogNames:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "catalogNames: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReadonlySet",
+              "canonicalReference": "!ReadonlySet:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Client-declared tool names that should be handled in the browser.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "isLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput#isLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isLoading: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether the agent is currently streaming a run. Pending client tools are hidden while loading.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+            "line": 6
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "resolvedIds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput#resolvedIds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "resolvedIds: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReadonlySet",
+              "canonicalReference": "!ReadonlySet:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool-call ids already resolved by the local client instance.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool calls observed from the current agent state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+    "line": 4
+  }
+}

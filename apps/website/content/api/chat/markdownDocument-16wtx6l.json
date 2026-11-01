@@ -1,0 +1,109 @@
+{
+  "name": "markdownDocument",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/markdownDocument",
+  "canonicalReference": "@threadplane/chat!markdownDocument:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Creates the atomic document consumed by the streaming Markdown renderer.",
+  "declarations": [
+    {
+      "name": "markdownDocument",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!markdownDocument:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function markdownDocument(content: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", delivery: "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageDelivery",
+          "canonicalReference": "@threadplane/chat!MessageDelivery:type",
+          "href": "/docs/api/chat/MessageDelivery"
+        },
+        {
+          "kind": "Content",
+          "text": ", suffix?: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "StreamingMarkdownDocument",
+          "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument:interface",
+          "href": "/docs/api/chat/StreamingMarkdownDocument"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Creates the atomic document consumed by the streaming Markdown renderer.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+        "line": 35
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "content",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "delivery",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "suffix",
+          "parameterTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 7,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+    "line": 35
+  }
+}

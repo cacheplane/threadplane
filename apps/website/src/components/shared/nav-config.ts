@@ -140,7 +140,7 @@ const DOCS: NavPanel = {
         {
           label: 'API reference',
           description: 'injectAgent, provideAgent, transports',
-          href: '/docs/langgraph/api/inject-agent',
+          href: '/docs/api',
           icon: Braces,
           ctaId: 'docs_api_reference',
         },

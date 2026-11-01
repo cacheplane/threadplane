@@ -1,0 +1,310 @@
+{
+  "name": "ChatMessageActionsComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatMessageActionsComponent",
+  "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Default action buttons that appear under each assistant message:\nregenerate, copy-to-clipboard, thumbs up, thumbs down.\n\nHidden by default, fades in on `:hover`/`:focus-within` of the parent\n`chat-message`, and stays visible on the current/last assistant message\nand on mobile.",
+  "declarations": [
+    {
+      "name": "ChatMessageActionsComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatMessageActionsComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Default action buttons that appear under each assistant message:\nregenerate, copy-to-clipboard, thumbs up, thumbs down.\n\nHidden by default, fades in on `:hover`/`:focus-within` of the parent\n`chat-message`, and stays visible on the current/last assistant message\nand on mobile.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "content",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Plain text content to copy. Required for the copy button to function.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+            "line": 89
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "contentCopied",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent#contentCopied:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly contentCopied: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted with the copied content after a successful clipboard write.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+            "line": 98
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "disabled",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "When true, the regenerate button is disabled (e.g. while the agent is streaming).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+            "line": 91
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "rate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent#rate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<\"up\" | \"down\">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted with 'up' or 'down' when the user rates the response.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+            "line": 96
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "regenerate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageActionsComponent#regenerate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly regenerate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user clicks regenerate. Wire this to `agent.regenerate(index)`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+            "line": 94
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+        "line": 14
+      },
+      "angular": {
+        "selector": "chat-message-actions",
+        "inputs": [
+          {
+            "name": "content",
+            "alias": "content",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "disabled",
+            "alias": "disabled",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "contentCopied",
+            "alias": "contentCopied",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "rate",
+            "alias": "rate",
+            "required": false,
+            "type": "\"up\" | \"down\""
+          },
+          {
+            "name": "regenerate",
+            "alias": "regenerate",
+            "required": false,
+            "type": "void"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
+    "line": 14
+  }
+}

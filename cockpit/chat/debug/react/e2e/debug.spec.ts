@@ -231,7 +231,13 @@ for (const width of [1280, 390])
     await selected
       .getByText('Displayed checkpoint values', { exact: true })
       .click();
-    await expect(selected.locator('pre')).toHaveText('{}');
+    await expect(selected.locator('.tp-debug__value pre')).toHaveText('{}');
+    await selected
+      .getByText('Compare selected checkpoint with current state', { exact: true })
+      .click();
+    await expect.poll(async () => JSON.parse(await selected.getByLabel('Selected checkpoint to current state JSON', { exact: true }).textContent() ?? 'null')).toEqual([
+      { kind: 'added', path: '/analysis', after: captures[0].state.values.analysis },
+    ]);
     const laterIndex = history.findIndex(
       (row) =>
         row.values.analysis !== undefined &&
@@ -253,7 +259,7 @@ for (const width of [1280, 390])
     await selected
       .getByText('Displayed checkpoint values', { exact: true })
       .click();
-    await expect(selected.locator('pre')).toContainText('analysis');
+    await expect(selected.locator('.tp-debug__value pre')).toContainText('analysis');
     await writeFile(
       info.outputPath('observed-checkpoints.json'),
       JSON.stringify({ history, observedEarly, observedLater }, null, 2)
@@ -562,7 +568,7 @@ test('authored Unicode inspection projection copies exactly the bounded displaye
   await selected
     .getByText('Displayed checkpoint values', { exact: true })
     .click();
-  const text = await selected.locator('pre').textContent();
+  const text = await selected.locator('.tp-debug__value pre').textContent();
   expect(() => JSON.parse(text ?? '')).not.toThrow();
   expect(Buffer.byteLength(text ?? '', 'utf8')).toBeLessThanOrEqual(32768);
   expect(text).toContain('✈ café 😀');

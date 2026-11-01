@@ -153,6 +153,34 @@ The signal named `input` holds only the unsent draft. The adapter owns the obser
 
 <TurnSequence />
 
+## Typed state via AgentRef
+
+By default, `injectAgent()` returns an agent typed as `Record<string, unknown>`. Create a typed ref at module scope and pass the same ref to the provider and inject helper to carry your graph's state shape through Angular DI:
+
+```typescript
+import { createAgentRef } from '@threadplane/chat';
+import { provideAgent, injectAgent } from '@threadplane/langgraph';
+
+interface TripState {
+  day: number;
+  places: string[];
+}
+
+export const TRIP = createAgentRef<TripState>('trip');
+
+// app.config.ts providers
+provideAgent(TRIP, {
+  apiUrl: 'http://localhost:2024',
+  assistantId: 'chat',
+});
+
+// In a component field initializer or another Angular injection context:
+const agent = injectAgent(TRIP); // LangGraphAgent<TripState>
+agent.state().places; // string[]
+```
+
+The optional ref name appears in Angular DI error messages. The ref comes from `@threadplane/chat`, so the same typed handle can be used with either adapter. See the generated [`provideAgent()` reference](/docs/api/langgraph/provideAgent) for its overloads.
+
 ## Next steps
 
 <CardGroup cols={3}>
@@ -174,7 +202,7 @@ The signal named `input` holds only the unsent draft. The adapter owns the obser
   <Card title="LangGraph Basics" href="/docs/langgraph/concepts/langgraph-basics">
     Graphs, nodes, edges, and state for Angular developers
   </Card>
-  <Card title="API Reference" href="/docs/langgraph/api/inject-agent">
+  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
     Complete `injectAgent()` function reference
   </Card>
 </CardGroup>

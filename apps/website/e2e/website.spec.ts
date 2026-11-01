@@ -23,15 +23,57 @@ async function expectNoHorizontalOverflow(
   expect(overflow, label).toBeLessThanOrEqual(1);
 }
 
-test('landing page renders hero headline', async ({ page }) => {
+test('landing page renders its composition', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#hero-heading')).toBeVisible();
-  // This also carries the guard that the hero names the framework. That guard
-  // used to live on .hero-eyebrow, because the H1 was framework-neutral; the H1
-  // names Angular itself now, so the eyebrow no longer repeats it. Asserting
-  // "Angular" separately here would be green by construction — the literal
-  // above already contains it — so the full-text pin is the whole check.
-  await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for Angular agents.');
+  await test.step('landing page renders hero headline', async () => {
+    await expect(page.locator('#hero-heading')).toBeVisible();
+    // This also carries the guard that the hero names the framework. That guard
+    // used to live on .hero-eyebrow, because the H1 was framework-neutral; the H1
+    // names Angular itself now, so the eyebrow no longer repeats it. Asserting
+    // "Angular" separately here would be green by construction — the literal
+    // above already contains it — so the full-text pin is the whole check.
+    await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for Angular agents.');
+  });
+
+  await test.step('landing page renders the dark proof band', async () => {
+    await expect(page.locator('#proof-heading')).toBeVisible();
+    await expect(page.locator('#proof[data-surface="dark"]')).toBeVisible();
+  });
+
+  await test.step('landing page renders the spine in order (live-stage spec §3)', async () => {
+    const ids = [
+      'hero-heading',
+      'proof-heading',
+      'compatibility-heading',
+      'architecture-heading',
+      'no-runtime-heading',
+      'open-source-heading',
+      'stage-heading',
+      'field-report-heading',
+      'faq-heading',
+    ];
+    const tops: number[] = [];
+    for (const id of ids) {
+      const el = page.locator(`#${id}`);
+      await expect(el).toBeAttached();
+      tops.push((await el.boundingBox())?.y ?? -1);
+    }
+    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+    await expect(page.locator('#test-heading')).toHaveCount(0);
+    await expect(page.locator('#parity-heading')).toHaveCount(0);
+    await expect(page.locator('#how-it-works-heading')).toHaveCount(0);
+    await expect(page.locator('#coding-agent-heading')).toHaveCount(0);
+    await expect(page.locator('#whitepaper-block')).toHaveCount(0);
+    await expect(page.locator('main form')).toHaveCount(1);
+  });
+
+  await test.step('landing page no longer carries the retired promises section', async () => {
+    const main = page.locator('main');
+
+    await expect(main).not.toContainText("What we won't do");
+    await expect(main).not.toContainText('No hidden telemetry');
+    await expect(main).not.toContainText('Installation is inert');
+  });
 });
 
 test('the default social card renders as a PNG', async ({ request }) => {
@@ -44,49 +86,6 @@ test('the default social card renders as a PNG', async ({ request }) => {
   expect(res.status()).toBe(200);
   expect(res.headers()['content-type']).toContain('image/png');
   expect((await res.body()).byteLength).toBeGreaterThan(10_000);
-});
-
-test('landing page renders the dark proof band', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#proof-heading')).toBeVisible();
-  await expect(page.locator('#proof[data-surface="dark"]')).toBeVisible();
-});
-
-test('landing page renders the spine in order (live-stage spec §3)', async ({ page }) => {
-  await page.goto('/');
-  const ids = [
-    'hero-heading',
-    'proof-heading',
-    'compatibility-heading',
-    'architecture-heading',
-    'no-runtime-heading',
-    'open-source-heading',
-    'stage-heading',
-    'field-report-heading',
-    'faq-heading',
-  ];
-  const tops: number[] = [];
-  for (const id of ids) {
-    const el = page.locator(`#${id}`);
-    await expect(el).toBeAttached();
-    tops.push((await el.boundingBox())?.y ?? -1);
-  }
-  expect([...tops].sort((a, b) => a - b)).toEqual(tops);
-  await expect(page.locator('#test-heading')).toHaveCount(0);
-  await expect(page.locator('#parity-heading')).toHaveCount(0);
-  await expect(page.locator('#how-it-works-heading')).toHaveCount(0);
-  await expect(page.locator('#coding-agent-heading')).toHaveCount(0);
-  await expect(page.locator('#whitepaper-block')).toHaveCount(0);
-  await expect(page.locator('main form')).toHaveCount(1);
-});
-
-test('landing page no longer carries the retired promises section', async ({ page }) => {
-  await page.goto('/');
-  const main = page.locator('main');
-
-  await expect(main).not.toContainText("What we won't do");
-  await expect(main).not.toContainText('No hidden telemetry');
-  await expect(main).not.toContainText('Installation is inert');
 });
 
 test('every page links the canonical privacy policy from the footer', async ({ page }) => {
@@ -269,7 +268,7 @@ test('docs landing page carries the control plane', async ({ page }) => {
 });
 
 test('api reference renders in docs', async ({ page }) => {
-  await page.goto('/docs/langgraph/api/inject-agent');
+  await page.goto('/docs/api/langgraph/injectAgent');
   await expect(page.locator('article').first()).toBeVisible();
 });
 
@@ -444,13 +443,25 @@ test('/llms-full.txt includes generated API reference content', async ({ request
   expect(response.headers()['content-type']).toContain('text/plain');
 
   const body = await response.text();
-  expect(body).toContain('## API Reference (TypeDoc)');
-  expect(body).toContain('### a2ui');
-  expect(body).toContain('### langgraph');
-  expect(body).toContain('### chat');
-  // The dedicated telemetry docs library is retired, so its generated API
-  // section no longer ships in the public bundle.
-  expect(body).not.toContain('### telemetry');
+  expect(body).toContain('## API Reference (API Extractor)');
+  for (const entrypoint of [
+    'a2ui',
+    'ag-ui',
+    'angular',
+    'chat',
+    'content',
+    'core',
+    'langgraph',
+    'middleware/langgraph',
+    'react',
+    'render',
+    'telemetry',
+  ]) {
+    expect(body).toContain(`### @threadplane/${entrypoint}\n`);
+  }
+  expect(body).toContain('Reference: /docs/api/angular/');
+  expect(body).toContain('Reference: /docs/api/react/');
+  expect(body).toContain('Reference: /docs/api/telemetry/');
   expect(body).not.toContain('API reference not yet generated');
 });
 
@@ -509,7 +520,7 @@ test.describe('representative docs pages do not create page-level horizontal ove
   const routes = [
     '/docs',
     '/docs/langgraph/getting-started/introduction',
-    '/docs/langgraph/api/inject-agent',
+    '/docs/api/langgraph/injectAgent',
     '/docs/chat/components/chat-tool-calls',
     '/docs/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',

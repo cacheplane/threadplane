@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 
+/** Renders a horizontal or vertical A2UI divider. */
 @Component({
   selector: 'a2ui-divider',
   standalone: true,

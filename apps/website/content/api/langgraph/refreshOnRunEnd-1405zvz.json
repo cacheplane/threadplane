@@ -1,0 +1,102 @@
+{
+  "name": "refreshOnRunEnd",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/refreshOnRunEnd",
+  "canonicalReference": "@threadplane/langgraph!refreshOnRunEnd:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Call `fn` whenever the agent's status transitions out of `'running'`\n(i.e. when a run completes — success, error, or interrupt). Useful\nfor refreshing thread lists, telemetry, or any other state that\nlags the agent.\n\nMust be called within an injection context (constructor or\n`runInInjectionContext`) — uses Angular's `effect` under the hood.",
+  "declarations": [
+    {
+      "name": "refreshOnRunEnd",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!refreshOnRunEnd:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function refreshOnRunEnd(agent: "
+        },
+        {
+          "kind": "Reference",
+          "text": "LangGraphAgent",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent:interface",
+          "href": "/docs/api/langgraph/LangGraphAgent"
+        },
+        {
+          "kind": "Content",
+          "text": ", fn: "
+        },
+        {
+          "kind": "Content",
+          "text": "() => void | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Call `fn` whenever the agent's status transitions out of `'running'`\n(i.e. when a run completes — success, error, or interrupt). Useful\nfor refreshing thread lists, telemetry, or any other state that\nlags the agent.\n\nMust be called within an injection context (constructor or\n`runInInjectionContext`) — uses Angular's `effect` under the hood.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconstructor() {\n  refreshOnRunEnd(this.agent, () => this.threads.refresh());\n}\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/refresh-on.ts",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "agent",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "fn",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 6
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 7,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/refresh-on.ts",
+    "line": 20
+  }
+}

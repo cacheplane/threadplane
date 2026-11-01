@@ -47,6 +47,7 @@ import { InterruptPersistence, type AgUiInterruptPersistence, type AgUiThreadRec
 import { collectReplay, type AgUiReplaySource } from './replay';
 import { messageContentFromParts } from './internal/content-parts';
 
+/** Options for adapting an AG-UI agent, including replay, interrupt persistence and transport, telemetry, and A2UI capabilities. */
 export interface ToAgentOptions {
   /** Application-owned durable storage. Requires a stable source threadId and scoped namespace. */
   persistence?: AgUiInterruptPersistence;

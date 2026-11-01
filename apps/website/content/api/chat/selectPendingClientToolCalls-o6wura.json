@@ -1,0 +1,85 @@
+{
+  "name": "selectPendingClientToolCalls",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/selectPendingClientToolCalls",
+  "canonicalReference": "@threadplane/chat!selectPendingClientToolCalls:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Select client tool calls that are ready for browser-side resolution.",
+  "declarations": [
+    {
+      "name": "selectPendingClientToolCalls",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!selectPendingClientToolCalls:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function selectPendingClientToolCalls(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "SelectPendingClientToolCallsInput",
+          "canonicalReference": "@threadplane/chat!SelectPendingClientToolCallsInput:interface",
+          "href": "/docs/api/chat/SelectPendingClientToolCallsInput"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolCall",
+          "canonicalReference": "@threadplane/chat!ToolCall:interface",
+          "href": "/docs/api/chat/ToolCall"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Select client tool calls that are ready for browser-side resolution.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+        "line": 22
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
+    "line": 22
+  }
+}

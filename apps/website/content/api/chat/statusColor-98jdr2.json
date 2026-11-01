@@ -1,0 +1,75 @@
+{
+  "name": "statusColor",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/statusColor",
+  "canonicalReference": "@threadplane/chat!statusColor:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Returns a CSS style string for a subagent's status badge.\nKept exported for backward compatibility with existing consumers; the\npreferred way to style status visually is via the `data-status` attribute\n+ CSS selectors (see component styles below).",
+  "declarations": [
+    {
+      "name": "statusColor",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!statusColor:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function statusColor(status: "
+        },
+        {
+          "kind": "Reference",
+          "text": "SubagentStatus",
+          "canonicalReference": "@threadplane/chat!SubagentStatus:type",
+          "href": "/docs/api/chat/SubagentStatus"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Returns a CSS style string for a subagent's status badge.\nKept exported for backward compatibility with existing consumers; the\npreferred way to style status visually is via the `data-status` attribute\n+ CSS selectors (see component styles below).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "status",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+    "line": 20
+  }
+}

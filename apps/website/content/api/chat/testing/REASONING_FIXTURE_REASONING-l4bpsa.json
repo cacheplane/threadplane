@@ -1,0 +1,51 @@
+{
+  "name": "REASONING_FIXTURE_REASONING",
+  "entrypointId": "chat/testing",
+  "kind": "Variable",
+  "href": "/docs/api/chat/testing/REASONING_FIXTURE_REASONING",
+  "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_REASONING:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Expected accumulated reasoning text for the shared adapter conformance fixture.",
+  "declarations": [
+    {
+      "name": "REASONING_FIXTURE_REASONING",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_REASONING:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "REASONING_FIXTURE_REASONING = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"I read the prompt and decided to greet the user.\""
+        }
+      ],
+      "docs": {
+        "summary": "Expected accumulated reasoning text for the shared adapter conformance fixture.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/reasoning-fixture.ts",
+        "line": 20
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/reasoning-fixture.ts",
+    "line": 20
+  }
+}

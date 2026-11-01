@@ -1,0 +1,79 @@
+{
+  "name": "ClientToolContinuationOptions",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolContinuationOptions",
+  "canonicalReference": "@threadplane/chat!ClientToolContinuationOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Execution policy options for browser-executed function tools.",
+  "declarations": [
+    {
+      "name": "ClientToolContinuationOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolContinuationOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolContinuationOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Execution policy options for browser-executed function tools.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "followUp",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationOptions#followUp:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly followUp?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "False when the tool result should be recorded without forcing a continuation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 14
+  }
+}

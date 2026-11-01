@@ -14,6 +14,7 @@ const TYPE_MAP: Record<TextFieldVariant, string> = {
   obscured: 'password',
 };
 
+/** Renders an A2UI text, number, password, or multiline field and writes edits to its bound state. */
 @Component({
   selector: 'a2ui-text-field',
   standalone: true,

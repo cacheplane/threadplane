@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 
+/** Renders an A2UI video URL with native playback controls. */
 @Component({
   selector: 'a2ui-video',
   standalone: true,

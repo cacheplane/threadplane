@@ -1,0 +1,80 @@
+{
+  "name": "FunctionToolHandlerContext",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/FunctionToolHandlerContext",
+  "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Runtime context passed to browser-executed function tool handlers.",
+  "declarations": [
+    {
+      "name": "FunctionToolHandlerContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface FunctionToolHandlerContext "
+        }
+      ],
+      "docs": {
+        "summary": "Runtime context passed to browser-executed function tool handlers.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "signal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext#signal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Aborts when the client tool execution should stop without resolving.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 8
+  }
+}

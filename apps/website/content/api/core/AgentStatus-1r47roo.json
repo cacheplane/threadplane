@@ -1,0 +1,54 @@
+{
+  "name": "AgentStatus",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/AgentStatus",
+  "canonicalReference": "@threadplane/core!AgentStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Session execution state exposed alongside messages, tool calls, and an optional failure.",
+  "declarations": [
+    {
+      "name": "AgentStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!AgentStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'idle' | 'running' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Session execution state exposed alongside messages, tool calls, and an optional failure.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/agent-snapshot.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/agent-snapshot.ts",
+    "line": 6
+  }
+}

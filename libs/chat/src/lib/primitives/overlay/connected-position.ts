@@ -8,6 +8,7 @@
 export type HorizontalConnectionPos = 'start' | 'center' | 'end';
 export type VerticalConnectionPos = 'top' | 'center' | 'bottom';
 
+/** Connects an origin point to an overlay point with optional pixel offsets. */
 export interface ConnectedPosition {
   originX: HorizontalConnectionPos;
   originY: VerticalConnectionPos;
@@ -34,6 +35,7 @@ export interface Rect {
   height: number;
 }
 
+/** The computed overlay coordinates and the connection position selected by the positioner. */
 export interface OverlayPositionResult {
   top: number;
   left: number;

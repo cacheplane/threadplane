@@ -101,7 +101,7 @@ const lifecycle = inject(AGENT_LIFECYCLE); // === injectAgent().lifecycle
 ```
 
 <Callout type="warning" title="One token, one agent">
-`AGENT_LIFECYCLE` follows the same last-one-wins rule as the ref-less `injectAgent()`: when several `provideAgent(ref, …)` calls share an injector level, the token resolves the lifecycle of the **last** ref provided. Read `injectAgent(ref).lifecycle` when an injector provides more than one agent. See [provideAgent()](/docs/langgraph/api/provide-agent).
+`AGENT_LIFECYCLE` follows the same last-one-wins rule as the ref-less `injectAgent()`: when several `provideAgent(ref, …)` calls share an injector level, the token resolves the lifecycle of the **last** ref provided. Read `injectAgent(ref).lifecycle` when an injector provides more than one agent. See [provideAgent()](/docs/api/langgraph/provideAgent).
 </Callout>
 
 ## Reset semantics

@@ -1,0 +1,188 @@
+{
+  "name": "ChatInterruptTemplateDirective",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatInterruptTemplateDirective",
+  "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n </ng-template>\n </chat>",
+  "declarations": [
+    {
+      "name": "ChatInterruptTemplateDirective",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatInterruptTemplateDirective "
+        }
+      ],
+      "docs": {
+        "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n </ng-template>\n </chat>",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "ngTemplateContextGuard",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective.ngTemplateContextGuard:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "static ngTemplateContextGuard(_directive: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInterruptTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
+              "href": "/docs/api/chat/ChatInterruptTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": ", context: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "context",
+              "canonicalReference": "@threadplane/chat!~context"
+            },
+            {
+              "kind": "Content",
+              "text": " is "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInterruptTemplateContext",
+              "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext:interface",
+              "href": "/docs/api/chat/ChatInterruptTemplateContext"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+            "line": 42
+          },
+          "overloadIndex": 1,
+          "isStatic": true,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "_directive",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "context",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 8
+          }
+        },
+        {
+          "name": "templateRef",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective#templateRef:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly templateRef: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateRef",
+              "canonicalReference": "@angular/core!TemplateRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInterruptTemplateContext",
+              "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext:interface",
+              "href": "/docs/api/chat/ChatInterruptTemplateContext"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+            "line": 40
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+        "line": 35
+      },
+      "angular": {
+        "selector": "ng-template[chatInterruptTemplate]",
+        "inputs": [],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+    "line": 35
+  }
+}

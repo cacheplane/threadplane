@@ -1,0 +1,1492 @@
+{
+  "name": "MockAgentTransport",
+  "entrypointId": "langgraph",
+  "kind": "Class",
+  "href": "/docs/api/langgraph/MockAgentTransport",
+  "canonicalReference": "@threadplane/langgraph!MockAgentTransport:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Test transport for deterministic agent testing without a real LangGraph server.\n\nScript event batches upfront, then emit them manually or step through them\nin your test specs. Supports error injection and close control.\n\n`emit()`, `emitError()`, `close()` and `flush()` are awaitable: the returned\npromise settles once the adapter has consumed everything queued so far (and\none macrotask later, so throttled signal writes have landed), which removes\nthe hand-rolled `await new Promise(resolve => setTimeout(resolve, 0))` flush\nfrom specs.",
+  "declarations": [
+    {
+      "name": "MockAgentTransport",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/langgraph!MockAgentTransport:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MockAgentTransport implements "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentTransport",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport:interface",
+          "href": "/docs/api/langgraph/AgentTransport"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Test transport for deterministic agent testing without a real LangGraph server.\n\nScript event batches upfront, then emit them manually or step through them\nin your test specs. Supports error injection and close control.\n\n`emit()`, `emitError()`, `close()` and `flush()` are awaitable: the returned\npromise settles once the adapter has consumed everything queued so far (and\none macrotask later, so throttled signal writes have landed), which removes\nthe hand-rolled `await new Promise(resolve => setTimeout(resolve, 0))` flush\nfrom specs.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```typescript\nconst transport = new MockAgentTransport([\n  [{ type: 'values', messages: [aiMsg('Hello')] }],\n  [{ type: 'values', messages: [aiMsg('Done')] }],\n]);\nawait transport.emit(transport.nextBatch());\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor(script?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[][]"
+            },
+            {
+              "kind": "Content",
+              "text": ");"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `MockAgentTransport` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [
+              {
+                "name": "script",
+                "description": "Array of event batches. Each batch is emitted as a group."
+              }
+            ],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 52
+          },
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "script",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isOptional": true
+            }
+          ]
+        },
+        {
+          "name": "cancelledRuns",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#cancelledRuns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cancelledRuns: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        threadId: string;\n        runId: string;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 33
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "cancelRun",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#cancelRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cancelRun(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 169
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "childStateCalls",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#childStateCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childStateCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        threadId: string;\n        checkpointNs: string;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 29
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childStates",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#childStates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "childStates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "<import(\"@langchain/langgraph-sdk\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "DefaultValues",
+              "canonicalReference": "@langchain/langgraph-sdk!DefaultValues:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Child-namespace checkpoints served by `getChildState`, keyed by checkpoint namespace.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 28
+          },
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "close",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#close:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "close(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Close the stream. Remaining queued events are drained before completion.\nResolves once the run has finished.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 86
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "createdQueuedRuns",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#createdQueuedRuns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly createdQueuedRuns: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueueEntry",
+              "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+              "href": "/docs/api/langgraph/AgentQueueEntry"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 32
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "createQueuedRun",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#createQueuedRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "createQueuedRun(_assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueueEntry",
+              "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+              "href": "/docs/api/langgraph/AgentQueueEntry"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 150
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "_assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "emit",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#emit:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "emit(events: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Manually emit events into the stream.\n\nAwait the returned promise: it resolves once the adapter has pulled this\nbatch out of the stream (or the run has ended), so signals are settled and\nassertions read live state rather than the value from before the emit.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 69
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "events",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "emitError",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#emitError:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "emitError(err: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Error",
+              "canonicalReference": "!Error:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Inject an error into the stream. Resolves once the stream has thrown.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 76
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "err",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "flush",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#flush:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "flush(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Resolve once everything emitted so far has been consumed, without emitting\nanything new. Useful after driving the agent by some other route (a\n`submit()`, a `switchThread()`) that has to reach the transport first.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 97
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "getChildState",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#getChildState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getChildState(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", checkpointNs: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 180
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "checkpointNs",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "getHistory",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#getHistory:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getHistory(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 174
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "history",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#history:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "history: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 26
+          },
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "historyCalls",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#historyCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly historyCalls: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 30
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "isStreaming",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#isStreaming:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isStreaming(): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Returns true if a stream is currently active.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 102
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "joinedRuns",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#joinedRuns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly joinedRuns: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        threadId: string;\n        runId: string;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 34
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "joinStream",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#joinStream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "joinStream(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", lastEventId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 186
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "lastEventId",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 9,
+            "endIndex": 13
+          }
+        },
+        {
+          "name": "nextBatch",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#nextBatch:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "nextBatch(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Advance to the next scripted batch. Pass the returned events to `emit()`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 57
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "stream",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#stream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stream(_assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", _threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ", _payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 106
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "_assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "_threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "_payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "streams",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!MockAgentTransport#streams:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly streams: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        threadId: string | null;\n        payload: unknown;\n        options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+            "line": 31
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+        "line": 25
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+    "line": 25
+  }
+}

@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 
+/** Adds page content and optional content-pushing layout to the controlled chat popup shell. */
 export interface ChatSidebarProps extends ChatPopupProps {
   readonly pageContent?: ReactNode;
   readonly pushContent?: boolean;

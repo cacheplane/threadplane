@@ -27,6 +27,7 @@ export interface A2uiSurfaceState {
   readonly componentViews: ReadonlyMap<string, A2uiComponentView>;
 }
 
+/** Applies A2UI envelopes and exposes reactive wire surfaces and component readiness projections. */
 export interface A2uiSurfaceStore {
   apply(message: A2uiMessage): void;
   /**

@@ -4,6 +4,8 @@ import { searchTokens } from './docs-search-tokens';
 export type { DocsSearchHit };
 
 export interface IndexedDoc {
+  /** Generated API pages have import-path-qualified destinations. */
+  href?: string;
   library: string;
   libraryTitle: string;
   /** The docs-config category this page lives under, e.g. "guides". Singular, unrelated to `sections` below. */
@@ -141,7 +143,7 @@ export function searchIndexedDocs(docs: IndexedDoc[], query: string): DocsSearch
         score,
         length: section.text.length,
         hit: {
-          href: `/docs/${doc.library}/${doc.section}/${doc.slug}${section.anchor ? `#${section.anchor}` : ''}`,
+          href: `${doc.href ?? `/docs/${doc.library}/${doc.section}/${doc.slug}`}${section.anchor ? `#${section.anchor}` : ''}`,
           title: doc.title,
           heading: section.heading,
           libraryTitle: doc.libraryTitle,

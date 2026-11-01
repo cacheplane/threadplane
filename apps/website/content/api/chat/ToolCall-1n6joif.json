@@ -1,0 +1,297 @@
+{
+  "name": "ToolCall",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ToolCall",
+  "canonicalReference": "@threadplane/chat!ToolCall:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An agent tool invocation with arguments, execution status, and optional result or error.",
+  "declarations": [
+    {
+      "name": "ToolCall",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ToolCall:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolCall "
+        }
+      ],
+      "docs": {
+        "summary": "An agent tool invocation with arguments, execution status, and optional result or error.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "args",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#args:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "args: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Arguments. May be partial while streaming (`status !== 'complete'`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional error payload when status === 'error'.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 6
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 7
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "parts",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#parts:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "parts?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly unknown[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Structured result parts when the runtime returned them (AG-UI 1.0\n`ContentPart[]`). `result` then holds the text, parsed as JSON only when a\nsingle text part holds valid JSON (several text parts are joined\nunparsed); it may be empty for an all-media result. Runtime-specific shape.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "result?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Present when status === 'complete' or 'error'.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCall#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallStatus",
+              "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+              "href": "/docs/api/chat/ToolCallStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/tool-call.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/tool-call.ts",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/tool-call.ts",
+    "line": 5
+  }
+}

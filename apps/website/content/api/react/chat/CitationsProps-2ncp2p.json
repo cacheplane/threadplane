@@ -1,0 +1,161 @@
+{
+  "name": "CitationsProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/CitationsProps",
+  "canonicalReference": "@threadplane/react!CitationsProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+  "declarations": [
+    {
+      "name": "CitationsProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!CitationsProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CitationsProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "citations",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#citations:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citations: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/react!~Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/citations.tsx",
+        "line": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/citations.tsx",
+    "line": 6
+  }
+}

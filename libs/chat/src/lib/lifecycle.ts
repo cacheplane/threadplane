@@ -1,5 +1,6 @@
 import { InjectionToken, Signal } from '@angular/core';
 
+/** Reactive readiness and user submission counters for a chat component instance. */
 export interface ChatLifecycle {
   /** True after `<chat>` initializes with a non-null agent binding. */
   readonly componentReady: Signal<boolean>;
@@ -11,4 +12,5 @@ export interface ChatLifecycle {
   readonly inputSubmittedAt: Signal<number | null>;
 }
 
+/** Injection token for the lifecycle signals provided by a chat component. */
 export const CHAT_LIFECYCLE = new InjectionToken<ChatLifecycle>('CHAT_LIFECYCLE');

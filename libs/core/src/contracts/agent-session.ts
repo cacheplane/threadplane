@@ -5,6 +5,7 @@ import type { ToolContract } from './tool.js';
 /** The initial neutral session supports text submission only. */
 export type AgentSubmitInput = string;
 
+/** Per-submission cancellation signal supplied by the caller. */
 export interface AgentSubmitOptions {
   readonly signal?: AbortSignal;
 }

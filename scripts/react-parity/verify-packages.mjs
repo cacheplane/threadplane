@@ -222,7 +222,16 @@ export function assertHeadlessInputs(inputs) {
 }
 
 export function plainExportTypes(specifiers) {
-  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n');
+  const debug = specifiers.includes('@threadplane/react/debug') ? `
+import type { StateDiffProps, DebugValue } from '@threadplane/react/debug';
+type DebugEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type DebugAssert<T extends true> = T;
+export type StateDiffContract = DebugAssert<DebugEqual<StateDiffProps, { readonly before: DebugValue; readonly after: DebugValue; readonly label?: string; readonly className?: string }>>;
+export type StateDiffParameterContract = DebugAssert<DebugEqual<Parameters<typeof import('@threadplane/react/debug').StateDiff>[0], StateDiffProps>>;
+export type DebugValueNotAnyContract = DebugAssert<DebugEqual<0 extends (1 & DebugValue) ? true : false, false>>;
+export type DebugValueContract = DebugAssert<DebugEqual<DebugValue, null | boolean | number | string | readonly DebugValue[] | { readonly [key: string]: DebugValue }>>;
+` : '';
+  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
 import type { TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
@@ -388,7 +397,7 @@ export function assertSupportedExports(project, entry) {
         'ThreadRenameForm',
         'ToolObservation',
       ],
-      'react/debug': ['ChatDebug'],
+      'react/debug': ['ChatDebug', 'StateDiff'],
       'react/markdown': ['Markdown'],
       'react/render': ['RenderSpec'],
       'content/json': ['createJson'],
@@ -440,6 +449,8 @@ export async function verifyPackedConsumers(root = process.cwd(), { retain = fal
     const count = verifyPlainExports(root, plain, Object.keys(tarballs).map((name) => name.slice('@threadplane/'.length)));
     cpSync(join(root, 'fixtures/react-parity/runtime/sidenav-ssr.mjs'), join(plain, 'sidenav-ssr.mjs'));
     console.log(runConsumer(process.execPath, ['sidenav-ssr.mjs'], plain));
+    cpSync(join(root, 'fixtures/react-parity/runtime/state-diff-ssr.mjs'), join(plain, 'state-diff-ssr.mjs'));
+    console.log(runConsumer(process.execPath, ['state-diff-ssr.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/json-runtime.mjs'), join(plain, 'json-runtime.mjs'));
     console.log(runConsumer(process.execPath, ['json-runtime.mjs'], plain));
     cpSync(join(root, 'fixtures/react-parity/runtime/render-runtime.mjs'), join(plain, 'render-runtime.mjs'));

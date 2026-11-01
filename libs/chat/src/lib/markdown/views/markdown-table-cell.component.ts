@@ -4,6 +4,7 @@ import type { MarkdownTableCellNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 import { IS_HEADER_ROW } from '../markdown-table-row.token';
 
+/** Renders a markdown table cell with its alignment and the containing row’s header status. */
 @Component({
   selector: 'chat-md-table-cell',
   standalone: true,

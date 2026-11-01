@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentSubmitInput } from '@threadplane/chat';
 
+/** The two approval interrupts adapters must preserve throughout the shared interrupt conformance scenarios. */
 export const INTERRUPT_CONFORMANCE_BATCH = [
   { id: 'approval-a', value: { question: 'Approve A?' } },
   { id: 'approval-b', value: { question: 'Approve B?' } },

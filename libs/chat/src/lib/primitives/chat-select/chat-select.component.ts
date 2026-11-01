@@ -15,6 +15,7 @@ import type { ConnectedPosition } from '../overlay/connected-position';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_SELECT_STYLES } from '../../styles/chat-select.styles';
 
+/** A selectable dropdown value and label with an optional description and disabled state. */
 export interface ChatSelectOption {
   value: string;
   label: string;

@@ -1,0 +1,66 @@
+{
+  "name": "REPEAT_SCOPE",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/REPEAT_SCOPE",
+  "canonicalReference": "@threadplane/render!REPEAT_SCOPE:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token providing the current row scope to a repeated element's descendants.",
+  "declarations": [
+    {
+      "name": "REPEAT_SCOPE",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!REPEAT_SCOPE:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "REPEAT_SCOPE: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "RepeatScope",
+          "canonicalReference": "@threadplane/render!RepeatScope:interface",
+          "href": "/docs/api/render/RepeatScope"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token providing the current row scope to a repeated element's descendants.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+        "line": 11
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+    "line": 11
+  }
+}

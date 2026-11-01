@@ -1,0 +1,86 @@
+{
+  "name": "useAgent",
+  "entrypointId": "react",
+  "kind": "Function",
+  "href": "/docs/api/react/useAgent",
+  "canonicalReference": "@threadplane/react!useAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Observe an app-owned session. Unmount releases only this subscription.",
+  "declarations": [
+    {
+      "name": "useAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!useAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function useAgent<TSnapshot>(session: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    getSnapshot(): TSnapshot;\n    subscribe(notify: () => void): () => void;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "TSnapshot"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Observe an app-owned session. Unmount releases only this subscription.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/use-agent.ts",
+        "line": 6
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "session",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "TSnapshot",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/use-agent.ts",
+    "line": 6
+  }
+}

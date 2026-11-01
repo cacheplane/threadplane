@@ -1,0 +1,211 @@
+{
+  "name": "action",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/action",
+  "canonicalReference": "@threadplane/chat!action:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Declare an async function tool the model can call; its resolved return value\nbecomes the tool result shipped back to the model.",
+  "declarations": [
+    {
+      "name": "action",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!action:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function action<S extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "StandardSchemaV1",
+          "canonicalReference": "@threadplane/chat!StandardSchemaV1:interface",
+          "href": "/docs/api/chat/StandardSchemaV1"
+        },
+        {
+          "kind": "Content",
+          "text": ", R>(description: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", schema: "
+        },
+        {
+          "kind": "Content",
+          "text": "S"
+        },
+        {
+          "kind": "Content",
+          "text": ", handler: "
+        },
+        {
+          "kind": "Content",
+          "text": "(args: "
+        },
+        {
+          "kind": "Reference",
+          "text": "StandardSchemaInferOutput",
+          "canonicalReference": "@threadplane/chat!StandardSchemaInferOutput:type",
+          "href": "/docs/api/chat/StandardSchemaInferOutput"
+        },
+        {
+          "kind": "Content",
+          "text": "<S>, context: "
+        },
+        {
+          "kind": "Reference",
+          "text": "FunctionToolHandlerContext",
+          "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext:interface",
+          "href": "/docs/api/chat/FunctionToolHandlerContext"
+        },
+        {
+          "kind": "Content",
+          "text": ") => R | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<R>"
+        },
+        {
+          "kind": "Content",
+          "text": ", options?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolExecutionOptions",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionOptions:interface",
+          "href": "/docs/api/chat/ClientToolExecutionOptions"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "FunctionToolDef",
+          "canonicalReference": "@threadplane/chat!FunctionToolDef:interface",
+          "href": "/docs/api/chat/FunctionToolDef"
+        },
+        {
+          "kind": "Content",
+          "text": "<S, R>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Declare an async function tool the model can call; its resolved return value\nbecomes the tool result shipped back to the model.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "A [FunctionToolDef](/docs/api/chat/FunctionToolDef) for inclusion in [tools](/docs/api/chat/tools).",
+        "examples": [
+          "```ts\nconst move = action('Move a stop', z.object({ fromDay: z.number() }), (a) => a.fromDay);\nconst registry = tools({ move_stop: move });\n```"
+        ],
+        "see": [],
+        "params": [
+          {
+            "name": "description",
+            "description": "Natural-language description the model sees."
+          },
+          {
+            "name": "schema",
+            "description": "Standard Schema (e.g. a Zod object) for the arguments; the\n handler's argument type is inferred from it."
+          },
+          {
+            "name": "handler",
+            "description": "Runs in the browser when the model calls the tool. The second\n argument carries an `AbortSignal`; its return type `R` is carried on the\n resulting [FunctionToolDef](/docs/api/chat/FunctionToolDef)."
+          },
+          {
+            "name": "options",
+            "description": "Execution policy options, including `idempotent: true` to skip\n durable pre-execution claims when a guard is configured."
+          }
+        ],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tools.ts",
+        "line": 34
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "description",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "schema",
+          "parameterTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "handler",
+          "parameterTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 14
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "options",
+          "parameterTypeTokenRange": {
+            "startIndex": 15,
+            "endIndex": 16
+          },
+          "isOptional": true
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "S",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        },
+        {
+          "typeParameterName": "R",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 17,
+        "endIndex": 19
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tools.ts",
+    "line": 34
+  }
+}

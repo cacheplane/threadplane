@@ -82,46 +82,53 @@ test.describe('Docs slug page', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
-  test('renders breadcrumb + h1 + sidebar', async ({ page }) => {
+  test('renders the hydrated docs page composition', async ({ page }) => {
     await page.goto(route);
-    await expect(page.locator('aside').first()).toBeVisible();
-    await expect(page.locator('nav[aria-label="Breadcrumb"]').first()).toBeVisible();
-    await expect(page.locator('article').first()).toBeVisible();
-  });
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
 
-  test('renders the branded chrome (sidebar mark, breadcrumb trail, prev/next direction)', async ({ page }) => {
-    await page.goto(route);
-    // Sidebar shows the active library's logo mark
-    await expect(page.locator('aside img[src="/logos/langgraph.svg"]').first()).toBeVisible();
-    // The lib · section label moved into the shell's breadcrumb trail.
-    const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
-    await expect(breadcrumb).toContainText('LangGraph');
-    await expect(breadcrumb).toContainText('Getting Started');
-    // Prev/Next: introduction is the first page, so a "Next →" card is present
-    await expect(page.getByText('Next →').first()).toBeVisible();
-    // Per-page LLM actions trigger
-    await expect(page.locator('main button[aria-label="Page actions"]').first()).toBeVisible();
-  });
+    await test.step('renders breadcrumb + h1 + sidebar', async () => {
+      await expect(page.locator('aside').first()).toBeVisible();
+      await expect(page.locator('nav[aria-label="Breadcrumb"]').first()).toBeVisible();
+      await expect(page.locator('article').first()).toBeVisible();
+    });
 
-  test('breadcrumb shows the library + page title', async ({ page }) => {
-    await page.goto(route);
-    const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
-    await expect(breadcrumb).toContainText('Docs');
-  });
+    await test.step('renders the branded chrome (sidebar mark, breadcrumb trail, prev/next direction)', async () => {
+      // Sidebar shows the active library's logo mark
+      await expect(page.locator('aside img[src="/logos/langgraph.svg"]').first()).toBeVisible();
+      // The lib · section label moved into the shell's breadcrumb trail.
+      const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
+      await expect(breadcrumb).toContainText('LangGraph');
+      await expect(breadcrumb).toContainText('Getting Started');
+      // Prev/Next: introduction is the first page, so a "Next →" card is present
+      await expect(page.getByText('Next →').first()).toBeVisible();
+      // Per-page LLM actions trigger
+      await expect(page.locator('main button[aria-label="Page actions"]').first()).toBeVisible();
+    });
 
-  test('renders DocsPrevNext at the bottom (next-only for the first page)', async ({ page }) => {
-    await page.goto(route);
-    const prevNext = page.locator('nav[aria-label="Previous and next page"]').first();
-    await expect(prevNext).toBeVisible();
-  });
+    await test.step('breadcrumb shows the library + page title', async () => {
+      const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
+      await expect(breadcrumb).toContainText('Docs');
+    });
 
-  test('headings have ID anchors for hash links', async ({ page }) => {
-    await page.goto(route);
-    const h2 = page.locator('article h2').first();
-    await expect(h2).toBeVisible();
-    const id = await h2.getAttribute('id');
-    expect(id).toBeTruthy();
-    expect(id?.length).toBeGreaterThan(0);
+    await test.step('renders DocsPrevNext at the bottom (next-only for the first page)', async () => {
+      const prevNext = page.locator('nav[aria-label="Previous and next page"]').first();
+      await expect(prevNext).toBeVisible();
+    });
+
+    await test.step('headings have ID anchors for hash links', async () => {
+      const h2 = page.locator('article h2').first();
+      await expect(h2).toBeVisible();
+      const id = await h2.getAttribute('id');
+      expect(id).toBeTruthy();
+      expect(id?.length).toBeGreaterThan(0);
+    });
+
+    await test.step('breadcrumb renders exactly once', async () => {
+      await expect(page.locator('nav[aria-label="Breadcrumb"]')).toHaveCount(1);
+    });
   });
 
   test('heading permalinks carry no glyph in the text, only a CSS ::before', async ({ page }) => {
@@ -153,11 +160,6 @@ test.describe('Docs slug page', () => {
         anchor.evaluate((el) => getComputedStyle(el, '::before').content)
       )
       .toBe('"#"');
-  });
-
-  test('breadcrumb renders exactly once', async ({ page }) => {
-    await page.goto('/docs/langgraph/getting-started/introduction');
-    await expect(page.locator('nav[aria-label="Breadcrumb"]')).toHaveCount(1);
   });
 
   test('finds a term that appears only in body prose and lands on its section', async ({ page }) => {

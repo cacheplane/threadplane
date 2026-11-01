@@ -114,7 +114,7 @@ A property named `a/b` is addressed as `/a~1b`, and one named `c~d` as `/c~0d`.
 
 ## What the store exposes
 
-`signalStateStore(initialState)` returns a `StateStore` with these five methods, and nothing else.
+`signalStateStore(initialState)` returns a `SignalStateStore` implementing these five `StateStore` methods.
 
 | Method | Behavior |
 |--------|----------|
@@ -126,7 +126,7 @@ A property named `a/b` is addressed as `/a~1b`, and one named `c~d` as `/c~0d`.
 
 `RenderSpecComponent` is the one caller of `subscribe()` in the library; it uses it to emit `stateChange` events.
 
-Writing an array element by index preserves the array, so `set('/items/1', 'B')` on `['a', 'b', 'c']` leaves `['a', 'B', 'c']`. The [`signalStateStore()` reference](/docs/render/api/signal-state-store) has the signature of each method.
+Writing an array element by index preserves the array, so `set('/items/1', 'B')` on `['a', 'b', 'c']` leaves `['a', 'B', 'c']`. The [`signalStateStore()` reference](/docs/api/render/signalStateStore) has the signature of each method.
 
 ## Two-way bindings
 
@@ -246,10 +246,76 @@ it('re-renders when the store changes', () => {
 
 The same shape covers visibility, by toggling a bound flag and asserting the element appeared or disappeared, and repeat loops, by setting an array and counting the rendered rows.
 
+
+## Observing a batch update
+
+Use `update()` when multiple paths should change with a single subscriber notification. The optional `lastChange()` extension reports the last path that changed; a no-op write does not replace it.
+
+```typescript
+const store = signalStateStore({ user: { name: 'Alice', age: 24 } });
+const unsubscribe = store.subscribe(() => {
+  console.log('changed at', store.lastChange?.()?.path);
+});
+
+store.update({ '/user/name': 'Charlie', '/user/age': 25 });
+store.getSnapshot(); // { user: { name: 'Charlie', age: 25 } }
+// One notification; lastChange reports /user/age.
+unsubscribe();
+```
+
+Batch writes commit only after every entry has been processed. If an entry has an invalid pointer, `update()` throws before publishing the new state, updating `lastChange`, or notifying subscribers. For example, `store.update({ '/user/name': 'Bob', 'user/age': 30 })` leaves both fields unchanged because `user/age` lacks the leading slash.
+
+See the generated [SignalStateStore reference](/docs/api/render/SignalStateStore) for its declared contract.
+
+## Reactive Behavior
+
+The store wraps state in an Angular `signal()`. This means:
+
+- Reading state via `get()` accesses the signal, creating a reactive dependency in any `computed()` or template that calls it
+- Writing state via `set()` or `update()` triggers the signal, which propagates through Angular's change detection
+- `RenderSpecComponent` and `RenderElementComponent` use `computed()` signals that depend on the store, ensuring the UI updates automatically
+
+```typescript
+// The library internally does this:
+const resolvedInputs = computed(() => {
+  const ctx = { stateModel: store.getSnapshot() };
+  return resolveElementProps(el.props, ctx);
+});
+// When store.set() fires, the signal updates, resolvedInputs recomputes,
+// and NgComponentOutlet receives new inputs.
+```
+
+## Array Handling
+
+The store preserves array types when updating elements by index:
+
+```typescript
+const store = signalStateStore({ items: ['a', 'b', 'c'] });
+
+store.set('/items/1', 'B');
+store.get('/items');          // ['a', 'B', 'c']
+Array.isArray(store.get('/items')); // true
+```
+
+## Immutable Updates
+
+Every `set()` and `update()` call produces a new state object. Unchanged branches of the state tree are shared (structural sharing):
+
+```typescript
+const store = signalStateStore({ a: { x: 1 }, b: { y: 2 } });
+const before = store.getSnapshot();
+
+store.set('/a/x', 10);
+const after = store.getSnapshot();
+
+before !== after;       // true -- new root
+before.b === after.b;   // true -- b branch unchanged, same reference
+```
+
 ## What's Next
 
 <CardGroup cols={2}>
-  <Card title="signalStateStore() API" href="/docs/render/api/signal-state-store">
+  <Card title="signalStateStore() API" href="/docs/api/render/signalStateStore">
     The signature and behavior of each store method.
   </Card>
   <Card title="Specs" href="/docs/render/guides/specs">

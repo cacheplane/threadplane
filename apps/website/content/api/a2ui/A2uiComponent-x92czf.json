@@ -1,0 +1,79 @@
+{
+  "name": "A2uiComponent",
+  "entrypointId": "a2ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/a2ui/A2uiComponent",
+  "canonicalReference": "@threadplane/a2ui!A2uiComponent:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Any component, including non-basic-catalog types. Renderers treat unknown\n`component` strings as unrenderable and fall back gracefully.",
+  "declarations": [
+    {
+      "name": "A2uiComponent",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/a2ui!A2uiComponent:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type A2uiComponent = "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiCatalogComponent",
+          "canonicalReference": "@threadplane/a2ui!A2uiCatalogComponent:type",
+          "href": "/docs/api/a2ui/A2uiCatalogComponent"
+        },
+        {
+          "kind": "Content",
+          "text": " | ("
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": " & "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>)"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Any component, including non-basic-catalog types. Renderers treat unknown\n`component` strings as unrenderable and fall back gracefully.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 248
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 248
+  }
+}

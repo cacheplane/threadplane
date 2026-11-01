@@ -70,10 +70,24 @@ export function readFrontmatterDescription(content: string): string | null {
 }
 
 function normalizeDescription(description: string): string {
-  return description
+  const value = description
     .replace(/`([^`]+)`/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  let text = '';
+  let spanStart = 0;
+  let tagStart = -1;
+  // Drop complete markup spans without a partial multi-character sanitizer.
+  for (let index = 0; index < value.length; index++) {
+    if (value[index] === '<' && tagStart === -1) tagStart = index;
+    else if (value[index] === '>' && tagStart !== -1) {
+      text += value.slice(spanStart, tagStart);
+      spanStart = index + 1;
+      tagStart = -1;
+    }
+  }
+  // Malformed or unmatched delimiters must not survive in plain metadata.
+  return (text + value.slice(spanStart))
+    .replace(/[<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -111,7 +125,7 @@ function getDocDescription(content: string, fallback: string): string {
 export function getDocBySlug(library: string, section: string, slug: string): ResolvedDoc | null {
   const pages = getLibraryPages(library);
   const page = pages.find((p) => p.section === section && p.slug === slug);
-  if (!page) return null;
+  if (!page || page.href) return null;
 
   const dir = resolveContentDir(library);
   const filePath = path.join(dir, section, `${slug}.mdx`);
@@ -161,7 +175,7 @@ export function getDocMetadata(
 export function getAllDocSlugs(): { library: string; section: string; slug: string }[] {
   return docsConfig.flatMap((lib) =>
     lib.sections.flatMap((s) =>
-      s.pages.map((p) => ({ library: lib.id, section: p.section, slug: p.slug }))
+      s.pages.filter((p) => !p.href).map((p) => ({ library: lib.id, section: p.section, slug: p.slug }))
     )
   );
 }

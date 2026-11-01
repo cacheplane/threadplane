@@ -1,0 +1,98 @@
+{
+  "name": "SignalStateStore",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/SignalStateStore",
+  "canonicalReference": "@threadplane/render!SignalStateStore:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The StateStore that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
+  "declarations": [
+    {
+      "name": "SignalStateStore",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!SignalStateStore:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SignalStateStore extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "StateStore",
+          "canonicalReference": "@json-render/core!StateStore:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "The StateStore that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "lastChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!SignalStateStore#lastChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lastChange?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "StateChangeRecord",
+              "canonicalReference": "@threadplane/render!StateChangeRecord:interface",
+              "href": "/docs/api/render/StateChangeRecord"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The path and value of the most recent mutation, or `undefined` before the\nfirst one. Written before subscribers are notified, so a subscriber can\nread it to learn what changed.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/signal-state-store.ts",
+            "line": 75
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/signal-state-store.ts",
+        "line": 69
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/signal-state-store.ts",
+    "line": 69
+  }
+}

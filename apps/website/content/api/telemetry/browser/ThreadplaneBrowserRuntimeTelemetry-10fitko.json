@@ -1,0 +1,187 @@
+{
+  "name": "ThreadplaneBrowserRuntimeTelemetry",
+  "entrypointId": "telemetry/browser",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/browser/ThreadplaneBrowserRuntimeTelemetry",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Runtime lifecycle properties captured from browser-side agent adapters.",
+  "declarations": [
+    {
+      "name": "ThreadplaneBrowserRuntimeTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadplaneBrowserRuntimeTelemetry "
+        }
+      ],
+      "docs": {
+        "summary": "Runtime lifecycle properties captured from browser-side agent adapters.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional model name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional model provider name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "surface",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry#surface:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "surface?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional product or app surface tag.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "transport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry#transport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "transport: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Runtime transport, such as `langgraph` or `ag-ui`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/service.ts",
+        "line": 15
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/service.ts",
+    "line": 15
+  }
+}

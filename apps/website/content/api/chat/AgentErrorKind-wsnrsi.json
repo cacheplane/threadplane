@@ -1,0 +1,54 @@
+{
+  "name": "AgentErrorKind",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/AgentErrorKind",
+  "canonicalReference": "@threadplane/chat!AgentErrorKind:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The failure class of an [AgentError](/docs/api/chat/AgentError), used to drive UI and retry logic:\n\n- `connection` — offline / DNS / connection refused / `fetch` failed. Retryable.\n- `auth` — `401` / `403`; credentials or API key are wrong. Not retryable.\n- `server` — a `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable).\n- `interrupted` — the stream closed mid-response after a run had started. Retryable only\n when `recovery` is `retry`; see [AgentRecovery](/docs/api/chat/AgentRecovery).\n- `aborted` — the user pressed stop; treated as a graceful idle, not surfaced as an error.",
+  "declarations": [
+    {
+      "name": "AgentErrorKind",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!AgentErrorKind:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentErrorKind = "
+        },
+        {
+          "kind": "Content",
+          "text": "'connection' | 'auth' | 'server' | 'interrupted' | 'aborted'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The failure class of an [AgentError](/docs/api/chat/AgentError), used to drive UI and retry logic:\n\n- `connection` — offline / DNS / connection refused / `fetch` failed. Retryable.\n- `auth` — `401` / `403`; credentials or API key are wrong. Not retryable.\n- `server` — a `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable).\n- `interrupted` — the stream closed mid-response after a run had started. Retryable only\n when `recovery` is `retry`; see [AgentRecovery](/docs/api/chat/AgentRecovery).\n- `aborted` — the user pressed stop; treated as a graceful idle, not surfaced as an error.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 11
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 11
+  }
+}

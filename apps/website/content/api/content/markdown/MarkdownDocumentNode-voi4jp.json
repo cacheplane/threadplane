@@ -1,0 +1,68 @@
+{
+  "name": "MarkdownDocumentNode",
+  "entrypointId": "content/markdown",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/markdown/MarkdownDocumentNode",
+  "canonicalReference": "@threadplane/content!MarkdownDocumentNode:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Readonly document root containing parsed children and reference definitions, with no parent links.",
+  "declarations": [
+    {
+      "name": "MarkdownDocumentNode",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!MarkdownDocumentNode:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type MarkdownDocumentNode = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Owned",
+          "canonicalReference": "@threadplane/content!~Owned:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ParserDocumentNode",
+          "canonicalReference": "@cacheplane/partial-markdown!MarkdownDocumentNode:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Readonly document root containing parsed children and reference definitions, with no parent links.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/markdown/types.ts",
+        "line": 18
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/markdown/types.ts",
+    "line": 18
+  }
+}
