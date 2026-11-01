@@ -1,0 +1,76 @@
+{
+  "name": "CitationSourceVisual",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/CitationSourceVisual",
+  "canonicalReference": "@threadplane/chat!CitationSourceVisual:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The image, source-category icon, or monogram selected to identify a citation source.",
+  "declarations": [
+    {
+      "name": "CitationSourceVisual",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!CitationSourceVisual:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CitationSourceVisual = "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationImageVisual",
+          "canonicalReference": "@threadplane/chat!CitationImageVisual:interface",
+          "href": "/docs/api/chat/CitationImageVisual"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationTypeIconVisual",
+          "canonicalReference": "@threadplane/chat!CitationTypeIconVisual:interface",
+          "href": "/docs/api/chat/CitationTypeIconVisual"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationMonogramVisual",
+          "canonicalReference": "@threadplane/chat!CitationMonogramVisual:interface",
+          "href": "/docs/api/chat/CitationMonogramVisual"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The image, source-category icon, or monogram selected to identify a citation source.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/citation-display.ts",
+        "line": 39
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/citation-display.ts",
+    "line": 39
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "A2uiValue",
+  "entrypointId": "content/a2ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/a2ui/A2uiValue",
+  "canonicalReference": "@threadplane/content!A2uiValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Finite plain data. Arrays preserve holes and explicit undefined entries.",
+  "declarations": [
+    {
+      "name": "A2uiValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!A2uiValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type A2uiValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "string | number | boolean | null | undefined | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiValue",
+          "canonicalReference": "@threadplane/content!A2uiValue:type",
+          "href": "/docs/api/content/a2ui/A2uiValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiValue",
+          "canonicalReference": "@threadplane/content!A2uiValue:type",
+          "href": "/docs/api/content/a2ui/A2uiValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Finite plain data. Arrays preserve holes and explicit undefined entries.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/a2ui/types.ts",
+        "line": 4
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/a2ui/types.ts",
+    "line": 4
+  }
+}

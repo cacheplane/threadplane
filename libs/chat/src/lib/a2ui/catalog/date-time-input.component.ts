@@ -3,6 +3,7 @@ import type { Spec } from '@json-render/core';
 import { injectRenderHost } from '@threadplane/render';
 import { emitBinding } from './emit-binding';
 
+/** Renders an A2UI date, time, or local date-time input and writes changes to its bound state. */
 @Component({
   selector: 'a2ui-date-time-input',
   standalone: true,

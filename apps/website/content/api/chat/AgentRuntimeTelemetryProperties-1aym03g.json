@@ -1,0 +1,295 @@
+{
+  "name": "AgentRuntimeTelemetryProperties",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentRuntimeTelemetryProperties",
+  "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Transport and optional request, model, timing, and error details attached to runtime telemetry.",
+  "declarations": [
+    {
+      "name": "AgentRuntimeTelemetryProperties",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentRuntimeTelemetryProperties "
+        }
+      ],
+      "docs": {
+        "summary": "Transport and optional request, model, timing, and error details attached to runtime telemetry.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "durationMs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#durationMs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "durationMs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "errorClass",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#errorClass:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "errorClass?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "requestType",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#requestType:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "requestType?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "surface",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#surface:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "surface?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "transport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentRuntimeTelemetryProperties#transport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "transport: "
+            },
+            {
+              "kind": "Content",
+              "text": "'langgraph' | 'ag-ui' | 'custom' | string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+        "line": 10
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
+    "line": 10
+  }
+}

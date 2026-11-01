@@ -1,0 +1,94 @@
+{
+  "name": "createLangGraphClient",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/createLangGraphClient",
+  "canonicalReference": "@threadplane/langgraph!createLangGraphClient:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Construct a LangGraph SDK Client that accepts both absolute URLs\n(`http://localhost:2024`) and relative `/api`-style paths that get\nproxied by middleware in production. The SDK itself rejects\nrelative URLs, so this helper rewrites them against\n`window.location.origin` when running in the browser.\n\nSingle source of truth for the absolute-URL rewrite — the streaming\ntransport (`fetch-stream.transport.ts`) and the threads adapter\n(`LangGraphThreadsAdapter`) both go through here.\n\n`clientOptions.maxRetries` maps to the SDK's `callerOptions.maxRetries`,\nwhich governs how many times a failed request (including the initial\nstream connect) is retried with exponential backoff before the error\nsurfaces. Omitted → the SDK default (currently 4). Apps under test set\n`0` so a forced connection failure surfaces immediately instead of after\nthe full backoff window.",
+  "declarations": [
+    {
+      "name": "createLangGraphClient",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!createLangGraphClient:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createLangGraphClient(apiUrl: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", clientOptions?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "LangGraphClientOptions",
+          "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions:interface",
+          "href": "/docs/api/langgraph/LangGraphClientOptions"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Client",
+          "canonicalReference": "@langchain/langgraph-sdk!Client:class"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Construct a LangGraph SDK Client that accepts both absolute URLs\n(`http://localhost:2024`) and relative `/api`-style paths that get\nproxied by middleware in production. The SDK itself rejects\nrelative URLs, so this helper rewrites them against\n`window.location.origin` when running in the browser.\n\nSingle source of truth for the absolute-URL rewrite — the streaming\ntransport (`fetch-stream.transport.ts`) and the threads adapter\n(`LangGraphThreadsAdapter`) both go through here.\n\n`clientOptions.maxRetries` maps to the SDK's `callerOptions.maxRetries`,\nwhich governs how many times a failed request (including the initial\nstream connect) is retried with exponential backoff before the error\nsurfaces. Omitted → the SDK default (currently 4). Apps under test set\n`0` so a forced connection failure surfaces immediately instead of after\nthe full backoff window.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst client = createLangGraphClient(environment.langGraphApiUrl);\nconst threads = await client.threads.search({ limit: 50 });\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+        "line": 28
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "apiUrl",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "clientOptions",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 5,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+    "line": 28
+  }
+}

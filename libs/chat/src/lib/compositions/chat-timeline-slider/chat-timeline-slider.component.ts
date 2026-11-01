@@ -6,6 +6,7 @@ import {
 import type { AgentWithHistory, AgentCheckpoint } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
+/** Lists agent checkpoints and emits replay or fork requests for their identifiers. */
 @Component({
   selector: 'chat-timeline-slider',
   standalone: true,

@@ -114,3 +114,43 @@ describe('website next.config founder booking redirect', () => {
     expect(rule.permanent).toBe(false);
   });
 });
+
+
+describe('legacy API reference migration', () => {
+  const destinations = {
+    'render/render-spec-component': '/docs/render/guides/element-rendering',
+    'render/provide-render': '/docs/render/guides/computed-functions',
+    'render/define-angular-registry': '/docs/api/render/defineAngularRegistry',
+    'render/signal-state-store': '/docs/api/render/signalStateStore',
+    'render/views': '/docs/api/render/views',
+    'langgraph/inject-agent': '/docs/api/langgraph/injectAgent',
+    'langgraph/provide-agent': '/docs/api/langgraph/provideAgent',
+    'langgraph/fetch-stream-transport': '/docs/api/langgraph/FetchStreamTransport',
+    'langgraph/mock-stream-transport': '/docs/api/langgraph/MockAgentTransport',
+    'langgraph/langgraph-threads-adapter': '/docs/api/langgraph/LangGraphThreadsAdapter',
+    'ag-ui/inject-agent': '/docs/api/ag-ui/injectAgent',
+    'ag-ui/provide-agent': '/docs/api/ag-ui/provideAgent',
+    'ag-ui/to-agent': '/docs/api/ag-ui/toAgent',
+    'ag-ui/fake-agent': '/docs/api/ag-ui/FakeAgent',
+    'chat/content-classifier': '/docs/api/chat/createContentClassifier',
+    'chat/parse-tree-store': '/docs/api/chat/createParseTreeStore',
+    'chat/mock-agent': '/docs/api/chat/mockAgent',
+    'middleware/client-tool-helpers': '/docs/api/middleware/langgraph',
+  };
+
+  it('permanently redirects the complete legacy inventory and its Markdown mirrors', async () => {
+    const redirects = await config.redirects!();
+    expect(Object.keys(destinations)).toHaveLength(18);
+    for (const [identity, destination] of Object.entries(destinations)) {
+      const [library, slug] = identity.split('/');
+      for (const prefix of ['/docs/', '/api/markdown/']) {
+        const source = `${prefix}${library}/api/${slug}`;
+        expect(redirects.find(rule => rule.source === source), source).toMatchObject({
+          source,
+          destination: destination.replace('/docs/', prefix),
+          permanent: true,
+        });
+      }
+    }
+  });
+});

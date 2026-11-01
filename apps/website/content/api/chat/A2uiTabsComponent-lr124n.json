@@ -1,0 +1,466 @@
+{
+  "name": "A2uiTabsComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/A2uiTabsComponent",
+  "canonicalReference": "@threadplane/chat!A2uiTabsComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders A2UI tab titles and the child content for the locally selected tab.",
+  "declarations": [
+    {
+      "name": "A2uiTabsComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!A2uiTabsComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class A2uiTabsComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders A2UI tab titles and the child content for the locally selected tab.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `A2uiTabsComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 70
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 64
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childKeys",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#childKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childKeys: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9: each child key corresponds to a tab's child (childKeys[i] ↔ tabTitles[i]).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 61
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "emit",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#emit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly emit: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<(event: string) => void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 65
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 66
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "selectTab",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#selectTab:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "selectTab(index: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 84
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "index",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "spec",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 62
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "tabTitles",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiTabsComponent#tabTitles:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tabTitles: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Resolved tab titles from tabs[*].title — produced by surface-to-spec.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+            "line": 59
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "a2ui-tabs",
+        "inputs": [
+          {
+            "name": "bindings",
+            "alias": "bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "childKeys",
+            "alias": "childKeys",
+            "required": false,
+            "type": "string[]"
+          },
+          {
+            "name": "emit",
+            "alias": "emit",
+            "required": false,
+            "type": "(event: string) => void"
+          },
+          {
+            "name": "loading",
+            "alias": "loading",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "spec",
+            "alias": "spec",
+            "required": true,
+            "type": "Spec"
+          },
+          {
+            "name": "tabTitles",
+            "alias": "tabTitles",
+            "required": false,
+            "type": "string[]"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+    "line": 6
+  }
+}

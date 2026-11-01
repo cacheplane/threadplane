@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownTableRowComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownTableRowComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownTableRowComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders markdown table-row children through the view registry and provides their header status.",
+  "declarations": [
+    {
+      "name": "MarkdownTableRowComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownTableRowComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownTableRowComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders markdown table-row children through the view registry and provides their header status.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownTableRowComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownTableRowNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownTableRowNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
+            "line": 36
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
+        "line": 10
+      },
+      "angular": {
+        "selector": "chat-md-table-row",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownTableRowNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
+    "line": 10
+  }
+}

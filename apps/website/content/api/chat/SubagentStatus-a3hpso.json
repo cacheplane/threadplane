@@ -1,0 +1,54 @@
+{
+  "name": "SubagentStatus",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/SubagentStatus",
+  "canonicalReference": "@threadplane/chat!SubagentStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The execution state of a subagent spawned by a tool call.",
+  "declarations": [
+    {
+      "name": "SubagentStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!SubagentStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type SubagentStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'complete' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The execution state of a subagent spawned by a tool call.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/subagent.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/subagent.ts",
+    "line": 6
+  }
+}

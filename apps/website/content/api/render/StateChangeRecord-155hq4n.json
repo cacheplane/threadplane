@@ -1,0 +1,115 @@
+{
+  "name": "StateChangeRecord",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/StateChangeRecord",
+  "canonicalReference": "@threadplane/render!StateChangeRecord:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The path and value of the mutation that most recently notified subscribers.",
+  "declarations": [
+    {
+      "name": "StateChangeRecord",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!StateChangeRecord:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StateChangeRecord "
+        }
+      ],
+      "docs": {
+        "summary": "The path and value of the mutation that most recently notified subscribers.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "path",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!StateChangeRecord#path:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly path: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The JSON Pointer that was written.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/signal-state-store.ts",
+            "line": 56
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!StateChangeRecord#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The value written at that pointer.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/signal-state-store.ts",
+            "line": 58
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/signal-state-store.ts",
+        "line": 54
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/signal-state-store.ts",
+    "line": 54
+  }
+}

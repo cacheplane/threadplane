@@ -1,0 +1,89 @@
+{
+  "name": "AgUiSubmitOptions",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/AgUiSubmitOptions",
+  "canonicalReference": "@threadplane/ag-ui!AgUiSubmitOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Adapter-specific submit guards in addition to cancellation.",
+  "declarations": [
+    {
+      "name": "AgUiSubmitOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!AgUiSubmitOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgUiSubmitOptions extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentSubmitOptions",
+          "canonicalReference": "@threadplane/ag-ui!~AgentSubmitOptions:interface",
+          "href": "/docs/api/chat/AgentSubmitOptions"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Adapter-specific submit guards in addition to cancellation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "interruptGeneration",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiSubmitOptions#interruptGeneration:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptGeneration?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Generation captured when rendering the interrupt decision; rejects stale controls.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 116
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/to-agent.ts",
+        "line": 114
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/to-agent.ts",
+    "line": 114
+  }
+}

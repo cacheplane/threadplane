@@ -1,0 +1,169 @@
+{
+  "name": "ClientToolsState",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/middleware/langgraph/ClientToolsState",
+  "canonicalReference": "@threadplane/middleware!ClientToolsState:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The slice of graph state this middleware reads.",
+  "declarations": [
+    {
+      "name": "ClientToolsState",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/middleware!ClientToolsState:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolsState "
+        }
+      ],
+      "docs": {
+        "summary": "The slice of graph state this middleware reads.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "client_tools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState#client_tools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "client_tools?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolSpec",
+              "canonicalReference": "@threadplane/middleware!ClientToolSpec:interface",
+              "href": "/docs/api/middleware/langgraph/ClientToolSpec"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fallback channel — the raw run input key.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/types.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@langchain/core!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/types.ts",
+            "line": 18
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "tools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState#tools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "tools?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolSpec",
+              "canonicalReference": "@threadplane/middleware!ClientToolSpec:interface",
+              "href": "/docs/api/middleware/langgraph/ClientToolSpec"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Primary channel — AG-UI/LangGraph merges RunAgentInput.tools here.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/types.ts",
+            "line": 20
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/middleware/src/langgraph/types.ts",
+        "line": 17
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/types.ts",
+    "line": 17
+  }
+}

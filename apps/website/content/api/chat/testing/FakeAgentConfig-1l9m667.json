@@ -1,0 +1,151 @@
+{
+  "name": "FakeAgentConfig",
+  "entrypointId": "chat/testing",
+  "kind": "Interface",
+  "href": "/docs/api/chat/testing/FakeAgentConfig",
+  "canonicalReference": "@threadplane/chat!FakeAgentConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process\nfake backend that streams a canned assistant reply.",
+  "declarations": [
+    {
+      "name": "FakeAgentConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!FakeAgentConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface FakeAgentConfig "
+        }
+      ],
+      "docs": {
+        "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process\nfake backend that streams a canned assistant reply.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "delayMs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!FakeAgentConfig#delayMs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "delayMs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Milliseconds between successive token emissions.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/fake-agent-config.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "reasoningTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!FakeAgentConfig#reasoningTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reasoningTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional reasoning chunks emitted before the text reply.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/fake-agent-config.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!FakeAgentConfig#tokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "tokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Assistant reply, streamed token-by-token.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/fake-agent-config.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/testing/fake-agent-config.ts",
+        "line": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/fake-agent-config.ts",
+    "line": 6
+  }
+}

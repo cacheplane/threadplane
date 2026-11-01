@@ -1,0 +1,56 @@
+{
+  "name": "ThreadplaneBrowserEvent",
+  "entrypointId": "telemetry/browser",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/browser/ThreadplaneBrowserEvent",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserEvent:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Alias for every event name accepted by the explicit browser service, including runtime and stream events.",
+  "declarations": [
+    {
+      "name": "ThreadplaneBrowserEvent",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserEvent:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ThreadplaneBrowserEvent = "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadplaneTelemetryEvent",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryEvent:type",
+          "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryEvent"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Alias for every event name accepted by the explicit browser service, including runtime and stream events.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/service.ts",
+        "line": 12
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/service.ts",
+    "line": 12
+  }
+}

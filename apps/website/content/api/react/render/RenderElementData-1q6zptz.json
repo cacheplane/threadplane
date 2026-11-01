@@ -1,0 +1,78 @@
+{
+  "name": "RenderElementData",
+  "entrypointId": "react/render",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/render/RenderElementData",
+  "canonicalReference": "@threadplane/react!RenderElementData:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Readonly element definition with component type, unresolved props, children, visibility, and repeat configuration.",
+  "declarations": [
+    {
+      "name": "RenderElementData",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!RenderElementData:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type RenderElementData = "
+        },
+        {
+          "kind": "Reference",
+          "text": "DeepReadonly",
+          "canonicalReference": "@threadplane/react!~DeepReadonly:type",
+          "href": "/docs/api/core/DeepReadonly"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Pick",
+          "canonicalReference": "!Pick:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "UIElement",
+          "canonicalReference": "@json-render/core!UIElement:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ", 'type' | 'props' | 'children' | 'visible' | 'repeat'>>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Readonly element definition with component type, unresolved props, children, visibility, and repeat configuration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/render/types.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/render/types.ts",
+    "line": 6
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "RenderValue",
+  "entrypointId": "react/render",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/render/RenderValue",
+  "canonicalReference": "@threadplane/react!RenderValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Recursive readonly plain data accepted as resolved view props and computed-function arguments or results.",
+  "declarations": [
+    {
+      "name": "RenderValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!RenderValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type RenderValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "undefined | null | boolean | number | string | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderValue",
+          "canonicalReference": "@threadplane/react!RenderValue:type",
+          "href": "/docs/api/react/render/RenderValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderValue",
+          "canonicalReference": "@threadplane/react!RenderValue:type",
+          "href": "/docs/api/react/render/RenderValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Recursive readonly plain data accepted as resolved view props and computed-function arguments or results.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/render/types.ts",
+        "line": 15
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/render/types.ts",
+    "line": 15
+  }
+}

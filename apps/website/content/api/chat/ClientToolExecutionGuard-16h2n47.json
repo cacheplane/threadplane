@@ -1,0 +1,117 @@
+{
+  "name": "ClientToolExecutionGuard",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolExecutionGuard",
+  "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Opt-in guard configuration for claim-before-execute client tools.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionGuard",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutionGuard "
+        }
+      ],
+      "docs": {
+        "summary": "Opt-in guard configuration for claim-before-execute client tools.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "store",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard#store:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly store: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionStore",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionStore:interface",
+              "href": "/docs/api/chat/ClientToolExecutionStore"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+            "line": 32
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+        "line": 30
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+    "line": 30
+  }
+}

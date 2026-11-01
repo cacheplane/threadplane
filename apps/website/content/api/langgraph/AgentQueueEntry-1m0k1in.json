@@ -1,0 +1,247 @@
+{
+  "name": "AgentQueueEntry",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/AgentQueueEntry",
+  "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A queued server-side LangGraph run.",
+  "declarations": [
+    {
+      "name": "AgentQueueEntry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentQueueEntry<T = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "A queued server-side LangGraph run.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "createdAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentQueueEntry#createdAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "createdAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Date",
+              "canonicalReference": "!Date:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Timestamp when the queued run was registered locally.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 101
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentQueueEntry#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Server-side run ID.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 93
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "options",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentQueueEntry#options:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Submit options used when the queued run was created.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 99
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentQueueEntry#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Thread that owns the queued run.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 95
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "values",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentQueueEntry#values:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "values: "
+            },
+            {
+              "kind": "Content",
+              "text": "T | null | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Values submitted for the queued run.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 97
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 91
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 91
+  }
+}

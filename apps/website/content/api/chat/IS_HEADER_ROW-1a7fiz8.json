@@ -1,0 +1,65 @@
+{
+  "name": "IS_HEADER_ROW",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/IS_HEADER_ROW",
+  "canonicalReference": "@threadplane/chat!IS_HEADER_ROW:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Provided by MarkdownTableRowComponent for header rows so that\nMarkdownTableCellComponent can render <th> instead of <td>.\nThe value is a Signal<boolean> so that it tracks the row's isHeader reactively.",
+  "declarations": [
+    {
+      "name": "IS_HEADER_ROW",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!IS_HEADER_ROW:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "IS_HEADER_ROW: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Signal",
+          "canonicalReference": "@angular/core!Signal:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<boolean>>"
+        }
+      ],
+      "docs": {
+        "summary": "Provided by MarkdownTableRowComponent for header rows so that\nMarkdownTableCellComponent can render <th> instead of <td>.\nThe value is a Signal<boolean> so that it tracks the row's isHeader reactively.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/markdown-table-row.token.ts",
+        "line": 9
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/markdown-table-row.token.ts",
+    "line": 9
+  }
+}

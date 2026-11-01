@@ -281,8 +281,8 @@ in the page.
 ## Documentation
 
 - [Quickstart](https://threadplane.ai/docs/langgraph/getting-started/quickstart)
-- [`injectAgent()` API reference](https://threadplane.ai/docs/langgraph/api/inject-agent)
-- [`provideAgent()` API reference](https://threadplane.ai/docs/langgraph/api/provide-agent)
+- [`injectAgent()` API reference](https://threadplane.ai/docs/api/langgraph/injectAgent)
+- [`provideAgent()` API reference](https://threadplane.ai/docs/api/langgraph/provideAgent)
 - [Human-in-the-loop / interrupts](https://threadplane.ai/docs/langgraph/guides/interrupts)
 - [Thread persistence](https://threadplane.ai/docs/langgraph/guides/persistence)
 - [Testing with `MockAgentTransport`](https://threadplane.ai/docs/langgraph/guides/testing)

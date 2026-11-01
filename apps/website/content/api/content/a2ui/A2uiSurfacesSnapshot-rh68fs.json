@@ -1,0 +1,89 @@
+{
+  "name": "A2uiSurfacesSnapshot",
+  "entrypointId": "content/a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/content/a2ui/A2uiSurfacesSnapshot",
+  "canonicalReference": "@threadplane/content!A2uiSurfacesSnapshot:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Ordered immutable collection of live surfaces that have both creation metadata and a root component.",
+  "declarations": [
+    {
+      "name": "A2uiSurfacesSnapshot",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!A2uiSurfacesSnapshot:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiSurfacesSnapshot "
+        }
+      ],
+      "docs": {
+        "summary": "Ordered immutable collection of live surfaces that have both creation metadata and a root component.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "surfaces",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfacesSnapshot#surfaces:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surfaces: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfaceSnapshot",
+              "canonicalReference": "@threadplane/content!A2uiSurfaceSnapshot:interface",
+              "href": "/docs/api/content/a2ui/A2uiSurfaceSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/a2ui/types.ts",
+        "line": 27
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/a2ui/types.ts",
+    "line": 27
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "name": "AgentError",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/AgentError",
+  "canonicalReference": "@threadplane/chat!AgentError:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Structured, classified failure surfaced on `Agent.error`. Extends `Error`, so\nexisting `.message` / `instanceof Error` reads keep working — but adds a\nmachine-readable [AgentErrorKind](/docs/api/chat/AgentErrorKind), a `retryable` flag, an optional HTTP\n`status`, and the original `cause`.\n\nYou rarely construct one yourself; adapters normalize raw failures via\n[toAgentError](/docs/api/chat/toAgentError). Read it off the agent to render legible, cause-specific UI:",
+  "declarations": [
+    {
+      "name": "AgentError",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!AgentError:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class AgentError extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Error",
+          "canonicalReference": "!Error:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Structured, classified failure surfaced on `Agent.error`. Extends `Error`, so\nexisting `.message` / `instanceof Error` reads keep working — but adds a\nmachine-readable [AgentErrorKind](/docs/api/chat/AgentErrorKind), a `retryable` flag, an optional HTTP\n`status`, and the original `cause`.\n\nYou rarely construct one yourself; adapters normalize raw failures via\n[toAgentError](/docs/api/chat/toAgentError). Read it off the agent to render legible, cause-specific UI:",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst err = agent.error();            // AgentError | undefined\nif (err) {\n  console.warn(err.message);          // legible, per-kind copy\n  if (err.kind === 'auth') showApiKeyHelp();\n  if (err.retryable) showRetryButton(); // → agent.retry()\n}\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!AgentError:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor(init: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        kind: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentErrorKind",
+              "canonicalReference": "@threadplane/chat!AgentErrorKind:type",
+              "href": "/docs/api/chat/AgentErrorKind"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        message: string;\n        retryable: boolean;\n        status?: number;\n        cause?: unknown;\n        recovery?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRecovery",
+              "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+              "href": "/docs/api/chat/AgentRecovery"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        detail?: string;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ");"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `AgentError` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 91
+          },
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "init",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ]
+        },
+        {
+          "name": "cause",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#cause:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cause: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The original raw error this was classified from, preserved for debugging/telemetry.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 76
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "detail",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#detail:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly detail?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "A short sentence explaining the uncertainty. Adapters set this whenever\n`recovery` is `check` or `none`, and leave it undefined otherwise. It is\nthe only thing a caller can show when `recovery` is `check` but the agent\nexposes no `checkStatus`, so omitting it there leaves the reader with a\nbare error and no path forward.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 89
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "kind",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly kind: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentErrorKind",
+              "canonicalReference": "@threadplane/chat!AgentErrorKind:type",
+              "href": "/docs/api/chat/AgentErrorKind"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The classified failure type. See [AgentErrorKind](/docs/api/chat/AgentErrorKind).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 67
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "recovery",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#recovery:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly recovery?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRecovery",
+              "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+              "href": "/docs/api/chat/AgentRecovery"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The recovery action the adapter can justify. Only set on `interrupted`\nerrors; always `undefined` for every other [AgentErrorKind](/docs/api/chat/AgentErrorKind).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 81
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "retryable",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#retryable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retryable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether retrying the same request could plausibly succeed:\n `connection` | `server` (5xx) → true; `auth` | `aborted` | non-auth `4xx` → false.\n For `interrupted`, this tracks [AgentRecovery](/docs/api/chat/AgentRecovery): true only when `recovery`\n is `retry`, because a dispatched request may already have run on the server.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 72
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!AgentError#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly status?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The HTTP status code when the failure came from an HTTP response.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-error.ts",
+            "line": 74
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 65
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 65
+  }
+}

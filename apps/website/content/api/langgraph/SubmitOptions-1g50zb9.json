@@ -1,0 +1,789 @@
+{
+  "name": "SubmitOptions",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/SubmitOptions",
+  "canonicalReference": "@threadplane/langgraph!SubmitOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "LangGraph SDK run-submission options, including configuration, context, checkpoint, commands, streaming, and optimistic state.",
+  "declarations": [
+    {
+      "name": "SubmitOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!SubmitOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "interface SubmitOptions<StateType extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ", ContextType extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "LangGraph SDK run-submission options, including configuration, context, checkpoint, commands, streaming, and optimistic state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "checkpoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#checkpoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkpoint?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Omit",
+              "canonicalReference": "!Omit:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Checkpoint",
+              "canonicalReference": "@threadplane/langgraph!Checkpoint:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", \"thread_id\"> | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "command",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#command:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "command?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Command",
+              "canonicalReference": "@threadplane/langgraph!Command:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "config",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#config:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "config?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ConfigWithConfigurable",
+              "canonicalReference": "@threadplane/langgraph!ConfigWithConfigurable:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<ContextType>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "context",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#context:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "context?: "
+            },
+            {
+              "kind": "Content",
+              "text": "ContextType"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "durability",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#durability:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "durability?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Durability",
+              "canonicalReference": "@threadplane/langgraph!Durability:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether to checkpoint during the run (or only at the end/interruption).\n- `\"async\"`: Save checkpoint asynchronously while the next step executes (default).\n- `\"sync\"`: Save checkpoint synchronously before the next step starts.\n- `\"exit\"`: Save checkpoint only when the graph exits.\n@default \"async\"",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "feedbackKeys",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#feedbackKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "feedbackKeys?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interruptAfter",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#interruptAfter:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptAfter?: "
+            },
+            {
+              "kind": "Content",
+              "text": "\"*\" | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interruptBefore",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#interruptBefore:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptBefore?: "
+            },
+            {
+              "kind": "Content",
+              "text": "\"*\" | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "metadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#metadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "metadata?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Metadata",
+              "canonicalReference": "@threadplane/langgraph!Metadata:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "multitaskStrategy",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#multitaskStrategy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "multitaskStrategy?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MultitaskStrategy",
+              "canonicalReference": "@threadplane/langgraph!MultitaskStrategy:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onCompletion",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#onCompletion:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onCompletion?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OnCompletionBehavior",
+              "canonicalReference": "@threadplane/langgraph!OnCompletionBehavior:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onDisconnect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#onDisconnect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onDisconnect?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DisconnectMode",
+              "canonicalReference": "@threadplane/langgraph!DisconnectMode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "onError",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#onError:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onError?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(error: unknown, run: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RunCallbackMeta",
+              "canonicalReference": "@threadplane/langgraph!RunCallbackMeta:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Callback that is called when an error occurs during this specific submit call.\nUnlike the hook-level `onError`, this allows handling errors on a per-submit basis,\ne.g. to show a retry button or a specific error message to the user.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "optimisticValues",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#optimisticValues:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "optimisticValues?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Partial",
+              "canonicalReference": "!Partial:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<StateType> | ((prev: StateType) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Partial",
+              "canonicalReference": "!Partial:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<StateType>)"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "runId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#runId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "runId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamMode",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#streamMode:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamMode?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamMode",
+              "canonicalReference": "@threadplane/langgraph!StreamMode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamResumable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#streamResumable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamResumable?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Mark the stream as resumable. All events emitted during the run will be temporarily persisted\nin order to be re-emitted if the stream is re-joined.\n@default false",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "streamSubgraphs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#streamSubgraphs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "streamSubgraphs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether or not to stream the nodes of any subgraphs called\nby the assistant.\n@default false",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!SubmitOptions#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "threadId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The ID to use when creating a new thread. When provided, this ID will be used\nfor thread creation when threadId is `null` or `undefined`.\nThis enables optimistic UI updates where you know the thread ID\nbefore the thread is actually created.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "StateType",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          }
+        },
+        {
+          "typeParameterName": "ContextType",
+          "constraintTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 10,
+            "endIndex": 12
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/public-api.ts",
+        "line": 39
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/public-api.ts",
+    "line": 39
+  }
+}

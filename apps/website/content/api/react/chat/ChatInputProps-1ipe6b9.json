@@ -1,0 +1,512 @@
+{
+  "name": "ChatInputProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatInputProps",
+  "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Configures a controlled or local message draft, submission and stop callbacks, and composer labels.",
+  "declarations": [
+    {
+      "name": "ChatInputProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatInputProps "
+        }
+      ],
+      "docs": {
+        "summary": "Configures a controlled or local message draft, submission and stop callbacks, and composer labels.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "busy",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#busy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly busy?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "defaultValue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#defaultValue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly defaultValue?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "hint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#hint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly hint?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onStop",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#onStop:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onStop?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onSubmit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#onSubmit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSubmit: "
+            },
+            {
+              "kind": "Content",
+              "text": "(text: string) => boolean | void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Receives the draft as typed (trim only gates emptiness). Return false to keep it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onValueChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#onValueChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onValueChange?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "placeholder",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#placeholder:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly placeholder?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "submitOnEnter",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#submitOnEnter:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly submitOnEnter?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Enter sends and Shift+Enter adds a line. Ctrl/⌘+Enter always sends.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-input.tsx",
+        "line": 13
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-input.tsx",
+    "line": 13
+  }
+}

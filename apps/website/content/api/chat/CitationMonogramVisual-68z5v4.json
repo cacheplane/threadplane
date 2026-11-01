@@ -1,0 +1,151 @@
+{
+  "name": "CitationMonogramVisual",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/CitationMonogramVisual",
+  "canonicalReference": "@threadplane/chat!CitationMonogramVisual:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A citation source marker rendered as a colored initial.",
+  "declarations": [
+    {
+      "name": "CitationMonogramVisual",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!CitationMonogramVisual:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CitationMonogramVisual "
+        }
+      ],
+      "docs": {
+        "summary": "A citation source marker rendered as a colored initial.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "color",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!CitationMonogramVisual#color:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "color: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/citation-display.ts",
+            "line": 35
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!CitationMonogramVisual#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "kind: "
+            },
+            {
+              "kind": "Content",
+              "text": "'monogram'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/citation-display.ts",
+            "line": 33
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "monogram",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!CitationMonogramVisual#monogram:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "monogram: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/citation-display.ts",
+            "line": 34
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/citation-display.ts",
+        "line": 32
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/citation-display.ts",
+    "line": 32
+  }
+}

@@ -177,8 +177,8 @@ export function Footer({
               onClick={() => trackFooterCta('Documentation', '/docs')}>
               Documentation
             </Link>
-            <Link href="/docs/langgraph/api/inject-agent" className="transition-colors footer-link"
-              onClick={() => trackFooterCta('API Reference', '/docs/langgraph/api/inject-agent')}>
+            <Link href="/docs/api" className="transition-colors footer-link"
+              onClick={() => trackFooterCta('API Reference', '/docs/api')}>
               API Reference
             </Link>
             {DEMOS.map((demo) => (

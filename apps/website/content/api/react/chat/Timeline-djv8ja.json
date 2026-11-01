@@ -1,0 +1,88 @@
+{
+  "name": "Timeline",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/Timeline",
+  "canonicalReference": "@threadplane/react!Timeline:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "A controlled view of supplied checkpoints, in their original order.",
+  "declarations": [
+    {
+      "name": "Timeline",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!Timeline:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function Timeline(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "TimelineProps",
+          "canonicalReference": "@threadplane/react!TimelineProps:interface",
+          "href": "/docs/api/react/chat/TimelineProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A controlled view of supplied checkpoints, in their original order.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/timeline.tsx",
+        "line": 29
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ items, onSelect, selectedId, label, className, renderItem, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/timeline.tsx",
+    "line": 29
+  }
+}

@@ -1,0 +1,642 @@
+{
+  "name": "ChatSidenavProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatSidenavProps",
+  "canonicalReference": "@threadplane/react!ChatSidenavProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls navigation mode and drawer visibility, persistent content slots, labels, and optional keyboard shortcuts.",
+  "declarations": [
+    {
+      "name": "ChatSidenavProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatSidenavProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatSidenavProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls navigation mode and drawer visibility, persistent content slots, labels, and optional keyboard shortcuts.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "closeLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#closeLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly closeLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "collapsedContent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#collapsedContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly collapsedContent?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "collapseLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#collapseLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly collapseLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "expandLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#expandLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly expandLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "launcherLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#launcherLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly launcherLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "mode",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#mode:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly mode: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSidenavMode",
+              "canonicalReference": "@threadplane/react!ChatSidenavMode:type",
+              "href": "/docs/api/react/chat/ChatSidenavMode"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onModeChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#onModeChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onModeChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(mode: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Exclude",
+              "canonicalReference": "!Exclude:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSidenavMode",
+              "canonicalReference": "@threadplane/react!ChatSidenavMode:type",
+              "href": "/docs/api/react/chat/ChatSidenavMode"
+            },
+            {
+              "kind": "Content",
+              "text": ", 'drawer'>) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onOpenChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#onOpenChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onOpenChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(open: boolean) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onSearch",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#onSearch:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSearch?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "searchLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#searchLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly searchLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "searchShortcut",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#searchShortcut:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly searchShortcut?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "toggleShortcut",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps#toggleShortcut:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toggleShortcut?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidenav.tsx",
+        "line": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidenav.tsx",
+    "line": 9
+  }
+}

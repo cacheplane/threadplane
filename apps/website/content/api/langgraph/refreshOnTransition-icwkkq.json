@@ -1,0 +1,132 @@
+{
+  "name": "refreshOnTransition",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/refreshOnTransition",
+  "canonicalReference": "@threadplane/langgraph!refreshOnTransition:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Call `fn` whenever any of the watched signals transitions from a\ntruthy \"active\" value to a non-active value. Generic version of\n[refreshOnRunEnd](/docs/api/langgraph/refreshOnRunEnd) for callers tracking custom state machines.\n\nMust be called within an injection context.",
+  "declarations": [
+    {
+      "name": "refreshOnTransition",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!refreshOnTransition:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function refreshOnTransition<T>(watch: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Signal",
+          "canonicalReference": "@angular/core!Signal:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": ", isActive: "
+        },
+        {
+          "kind": "Content",
+          "text": "(v: T) => boolean"
+        },
+        {
+          "kind": "Content",
+          "text": ", fn: "
+        },
+        {
+          "kind": "Content",
+          "text": "() => void | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Call `fn` whenever any of the watched signals transitions from a\ntruthy \"active\" value to a non-active value. Generic version of\n[refreshOnRunEnd](/docs/api/langgraph/refreshOnRunEnd) for callers tracking custom state machines.\n\nMust be called within an injection context.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/refresh-on.ts",
+        "line": 38
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "watch",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "isActive",
+          "parameterTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 5
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "fn",
+          "parameterTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 9
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 10,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/refresh-on.ts",
+    "line": 38
+  }
+}

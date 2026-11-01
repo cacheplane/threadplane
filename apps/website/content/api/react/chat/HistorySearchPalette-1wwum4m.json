@@ -1,0 +1,88 @@
+{
+  "name": "HistorySearchPalette",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/HistorySearchPalette",
+  "canonicalReference": "@threadplane/react!HistorySearchPalette:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Controlled search presentation. Callers own query/results, unique IDs and navigation.",
+  "declarations": [
+    {
+      "name": "HistorySearchPalette",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!HistorySearchPalette:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function HistorySearchPalette(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "HistorySearchPaletteProps",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps:interface",
+          "href": "/docs/api/react/chat/HistorySearchPaletteProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Controlled search presentation. Callers own query/results, unique IDs and navigation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/history-search-palette.tsx",
+        "line": 41
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ open, query, results, onQueryChange, onSelect, onClose, loading, label, description, placeholder, closeLabel, className, returnFocusTo, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/history-search-palette.tsx",
+    "line": 41
+  }
+}

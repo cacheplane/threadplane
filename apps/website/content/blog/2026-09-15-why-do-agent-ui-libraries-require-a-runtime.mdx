@@ -90,8 +90,8 @@ What a tier buys you is a funded team, and every one of these projects ships fas
 ## 🧱 Who sits in the request path?
 
 **Threadplane** has nothing of ours in the path.
-[`provideAgent()`](/docs/langgraph/api/provide-agent) in `@threadplane/langgraph` uses the LangGraph SDK client to call your deployment.
-[`provideAgent()`](/docs/ag-ui/api/provide-agent) in `@threadplane/ag-ui` posts `RunAgentInput` to your endpoint.
+[`provideAgent()`](/docs/api/langgraph/provideAgent) in `@threadplane/langgraph` uses the LangGraph SDK client to call your deployment.
+[`provideAgent()`](/docs/api/ag-ui/provideAgent) in `@threadplane/ag-ui` posts `RunAgentInput` to your endpoint.
 
 The **Vercel AI SDK**, **TanStack AI**, and **assistant-ui** don't require a vendor box.
 What they ask for instead is a route that you deploy, running their code, which the next section covers.
@@ -273,7 +273,7 @@ TanStack AI has no subagent feature.
 
 ## 🧵 Threads and resume
 
-- **Threadplane**: LangGraph Platform already has threads, and the adapter has a [threads helper](/docs/langgraph/api/langgraph-threads-adapter) over the SDK. On AG-UI, a [persistence store](/docs/ag-ui/api/provide-agent) you own. An in-flight LangGraph run can be rejoined with [`joinStream`](/docs/langgraph/guides/deployment#stream-recovery).
+- **Threadplane**: LangGraph Platform already has threads, and the adapter has a [threads helper](/docs/api/langgraph/LangGraphThreadsAdapter) over the SDK. On AG-UI, a [persistence store](/docs/api/ag-ui/provideAgent) you own. An in-flight LangGraph run can be rejoined with [`joinStream`](/docs/langgraph/guides/deployment#stream-recovery).
 - **Vercel AI SDK**: [not built in](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-message-persistence). You write load and save. [Resuming a stream](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-resume-streams) after a reload works through a Redis-backed package.
 - **TanStack AI**: [`withPersistence`](https://tanstack.com/ai/latest/docs/persistence/chat-persistence), a middleware that writes to your store, plus browser-side localStorage and IndexedDB options. Resume uses `Last-Event-ID` replay and `joinRun`.
 - **assistant-ui**: [Assistant Cloud](https://www.assistant-ui.com/docs/cloud), or [adapters over your own database](https://www.assistant-ui.com/docs/integrations/persistence/custom-adapter). [Resumable streams](https://www.assistant-ui.com/docs/guides/resumable-streams) through `assistant-stream`.
@@ -305,7 +305,7 @@ Threadplane leans on LangSmith or whatever your agent server already does, plus 
 
 **Testing utilities.**
 This is one place where Threadplane is ahead, and I'm a little proud of it.
-We ship [three layers](/docs/choosing-an-adapter#testing): a `mockAgent()` for component tests, [`provideFakeAgent()`](/docs/ag-ui/api/fake-agent) for adapter tests with canned wire events, and recorded LLM fixtures [replayed through the whole stack](/blog/what-fixture-replay-cant-catch).
+We ship [three layers](/docs/choosing-an-adapter#testing): a `mockAgent()` for component tests, [`provideFakeAgent()`](/docs/api/ag-ui/FakeAgent) for adapter tests with canned wire events, and recorded LLM fixtures [replayed through the whole stack](/blog/what-fixture-replay-cant-catch).
 The Vercel AI SDK ships [mock language models](https://ai-sdk.dev/docs/ai-sdk-core/testing) and a stream simulator.
 I found no documented test helpers for TanStack AI, assistant-ui, or CopilotKit.
 

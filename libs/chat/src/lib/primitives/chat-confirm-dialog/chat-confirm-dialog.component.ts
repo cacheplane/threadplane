@@ -13,6 +13,7 @@ import { CHAT_CONFIRM_DIALOG_STYLES } from '../../styles/chat-confirm-dialog.sty
 
 let confirmDialogInstanceCounter = 0;
 
+/** Renders a configurable confirmation dialog and emits confirm or cancel actions. */
 @Component({
   selector: 'chat-confirm-dialog',
   standalone: true,

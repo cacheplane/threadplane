@@ -1,0 +1,142 @@
+{
+  "name": "injectAgent",
+  "entrypointId": "ag-ui",
+  "kind": "Function",
+  "href": "/docs/api/ag-ui/injectAgent",
+  "canonicalReference": "@threadplane/ag-ui!injectAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injects the AG-UI agent from Angular's dependency injection container.\nUse this in components or services provided via `provideAgent()` (or\n`provideFakeAgent()`).\n\nReturns an `AgUiAgent` — the runtime-neutral `Agent` contract plus the\nAG-UI-specific `customEvents` signal — so `customEvents` is reachable\ndirectly, without casting.\n\n**Typed state via AgentRef.** Pass the same ref that was supplied to\n`provideAgent(ref, …)` to carry the state type through DI without repeating\nthe generic at every call site. The no-arg form defaults to\n`AgUiAgent<Record<string, unknown>>`.",
+  "declarations": [
+    {
+      "name": "injectAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!injectAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function injectAgent(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgUiAgent",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent:interface",
+          "href": "/docs/api/ag-ui/AgUiAgent"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Injects the AG-UI agent from Angular's dependency injection container.\nUse this in components or services provided via `provideAgent()` (or\n`provideFakeAgent()`).\n\nReturns an `AgUiAgent` — the runtime-neutral `Agent` contract plus the\nAG-UI-specific `customEvents` signal — so `customEvents` is reachable\ndirectly, without casting.\n\n**Typed state via AgentRef.** Pass the same ref that was supplied to\n`provideAgent(ref, …)` to carry the state type through DI without repeating\nthe generic at every call site. The no-arg form defaults to\n`AgUiAgent<Record<string, unknown>>`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "Typed state via AgentRef\n```ts\nconst agent = injectAgent(TRIP); // AgUiAgent<TripState>\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/provide-agent.ts",
+        "line": 203
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    },
+    {
+      "name": "injectAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!injectAgent:function(2)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function injectAgent<T>(ref: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentRef",
+          "canonicalReference": "@threadplane/ag-ui!~AgentRef:interface",
+          "href": "/docs/api/chat/AgentRef"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgUiAgent",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent:interface",
+          "href": "/docs/api/ag-ui/AgUiAgent"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/provide-agent.ts",
+        "line": 204
+      },
+      "overloadIndex": 2,
+      "parameters": [
+        {
+          "parameterName": "ref",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 4,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/provide-agent.ts",
+    "line": 203
+  }
+}

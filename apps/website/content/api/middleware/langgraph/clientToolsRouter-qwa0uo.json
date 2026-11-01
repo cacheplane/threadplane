@@ -1,0 +1,104 @@
+{
+  "name": "clientToolsRouter",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Function",
+  "href": "/docs/api/middleware/langgraph/clientToolsRouter",
+  "canonicalReference": "@threadplane/middleware!clientToolsRouter:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "A prebuilt conditional-edge callback. serverToolNames is bound once at construction;\nthe returned function takes only state.\n\ngraph.addConditionalEdges('agent', clientToolsRouter(names), ['server_tools', END]);\n\n`opts.toolsNode` defaults to `'server_tools'`; a graph carrying the client-tool\nchannels cannot name a node `tools`, because [clientToolsChannel](/docs/api/middleware/langgraph/clientToolsChannel) already\nclaims that name as a state channel.",
+  "declarations": [
+    {
+      "name": "clientToolsRouter",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/middleware!clientToolsRouter:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function clientToolsRouter(serverToolNames: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Iterable",
+          "canonicalReference": "!Iterable:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<string>"
+        },
+        {
+          "kind": "Content",
+          "text": ", opts?: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    toolsNode?: string;\n    end?: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "(state: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolsState",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolsState"
+        },
+        {
+          "kind": "Content",
+          "text": ") => string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A prebuilt conditional-edge callback. serverToolNames is bound once at construction;\nthe returned function takes only state.\n\ngraph.addConditionalEdges('agent', clientToolsRouter(names), ['server_tools', END]);\n\n`opts.toolsNode` defaults to `'server_tools'`; a graph carrying the client-tool\nchannels cannot name a node `tools`, because [clientToolsChannel](/docs/api/middleware/langgraph/clientToolsChannel) already\nclaims that name as a state channel.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/router.ts",
+        "line": 14
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "serverToolNames",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "opts",
+          "parameterTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 5
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/router.ts",
+    "line": 14
+  }
+}

@@ -14,10 +14,14 @@
 
 import type { Message } from '@threadplane/chat';
 
+/** Shared assistant message identifier for adapter reasoning conformance fixtures. */
 export const REASONING_FIXTURE_MESSAGE_ID = 'fixture-msg-1';
+/** Expected accumulated reasoning text for the shared adapter conformance fixture. */
 export const REASONING_FIXTURE_REASONING = 'I read the prompt and decided to greet the user.';
+/** Expected assistant response text for the shared adapter conformance fixture. */
 export const REASONING_FIXTURE_RESPONSE = 'Hello!';
 
+/** A provider-neutral reasoning or response-text event used by adapter conformance fixtures. */
 export interface AbstractEvent {
   kind:
     | 'reasoning-start'

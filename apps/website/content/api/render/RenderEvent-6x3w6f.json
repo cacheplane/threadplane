@@ -1,0 +1,86 @@
+{
+  "name": "RenderEvent",
+  "entrypointId": "render",
+  "kind": "TypeAlias",
+  "href": "/docs/api/render/RenderEvent",
+  "canonicalReference": "@threadplane/render!RenderEvent:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Union of action, state-change, lifecycle, and component-result notifications emitted by the render engine.",
+  "declarations": [
+    {
+      "name": "RenderEvent",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/render!RenderEvent:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type RenderEvent = "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderHandlerEvent",
+          "canonicalReference": "@threadplane/render!RenderHandlerEvent:interface",
+          "href": "/docs/api/render/RenderHandlerEvent"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderStateChangeEvent",
+          "canonicalReference": "@threadplane/render!RenderStateChangeEvent:interface",
+          "href": "/docs/api/render/RenderStateChangeEvent"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderLifecycleEvent",
+          "canonicalReference": "@threadplane/render!RenderLifecycleEvent:interface",
+          "href": "/docs/api/render/RenderLifecycleEvent"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderResultEvent",
+          "canonicalReference": "@threadplane/render!RenderResultEvent:interface",
+          "href": "/docs/api/render/RenderResultEvent"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Union of action, state-change, lifecycle, and component-result notifications emitted by the render engine.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/render-event.ts",
+        "line": 34
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/render-event.ts",
+    "line": 34
+  }
+}

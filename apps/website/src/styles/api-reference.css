@@ -1,0 +1,300 @@
+.api-reference-page {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 24px clamp(16px, 4vw, 48px) 80px;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+.api-reference-page h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  margin: 12px 0 20px;
+  line-height: 1.15;
+}
+.api-reference-page h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 32px 0 16px;
+}
+.api-reference-page h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+}
+.api-reference-page h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+.api-reference-page p {
+  line-height: 1.7;
+  margin-block: 12px;
+}
+.api-reference-page a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.api-reference-page a:hover {
+  text-decoration-thickness: 2px;
+}
+.api-reference-page code {
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+.api-reference-breadcrumb,
+.api-reference-meta,
+.api-reference-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.api-reference-breadcrumb {
+  margin-bottom: 32px;
+  color: var(--color-text-muted);
+}
+.api-reference-breadcrumb a {
+  color: inherit;
+}
+.api-reference-eyebrow,
+.api-reference-result-count,
+.api-reference-muted,
+.api-reference-version {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.api-reference-badge {
+  display: inline-block;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  color: var(--color-text-muted);
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.api-reference-badge[data-status='development'] {
+  color: var(--color-accent);
+}
+.api-reference-badge[data-status='deprecated'] {
+  color: var(--color-text-primary);
+}
+.api-reference-notice {
+  padding: 14px 18px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  border-radius: 0 6px 6px 0;
+  margin-block: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.api-reference-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 24px 0 8px;
+}
+.api-reference-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--color-text-muted);
+  min-width: 0;
+}
+.api-reference-filters input,
+.api-reference-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  padding: 10px 12px;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+.api-reference-filters .api-reference-query {
+  grid-column: 1 / -1;
+}
+.api-reference-filters :focus-visible,
+.api-reference-navigation :focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.api-reference-package {
+  border-top: 1px solid var(--color-border);
+  padding: 12px 0 24px;
+}
+.api-reference-package header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.api-reference-package header h2 {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  margin-block: 16px;
+}
+.api-reference-symbols {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  column-gap: 24px;
+}
+.api-reference-symbols li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  min-width: 0;
+}
+.api-reference-symbols li > a {
+  font: 13px var(--font-mono);
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+.api-reference-navigation {
+  font-size: 12px;
+  min-width: 0;
+}
+.api-reference-navigation > a {
+  display: block;
+  padding: 9px 0;
+  color: var(--color-text-muted);
+}
+.api-reference-navigation details {
+  border-top: 1px solid var(--color-border);
+  padding-block: 5px;
+}
+.api-reference-navigation summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.api-reference-navigation details > a {
+  display: block;
+  padding: 7px 8px 7px 14px;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  border-radius: 4px;
+}
+.api-reference-navigation a[aria-current='page'] {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  background: var(--color-surface);
+}
+.api-reference-detail {
+  max-width: 850px;
+}
+.api-reference-detail dl {
+  margin: 16px 0;
+}
+.api-reference-detail dl > div {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.api-reference-detail dt {
+  font-weight: 550;
+  font-size: 13px;
+}
+.api-reference-detail dd {
+  margin: 8px 0 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+.api-reference-declaration {
+  scroll-margin-top: 24px;
+}
+.api-reference-members > .api-reference-declaration {
+  border-top: 1px solid var(--color-border);
+  padding: 8px 0 16px;
+}
+.api-reference-code {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--docs-code-border);
+  border-radius: 8px;
+  background: var(--docs-code-bg);
+  color: #a9b1d6;
+  font-size: 13px;
+  line-height: 1.75;
+  tab-size: 2;
+}
+.api-reference-code code {
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.api-reference-code a {
+  text-decoration-color: #7aa2f7;
+  text-decoration-style: dotted;
+}
+.api-reference-code a:hover {
+  text-decoration-style: solid;
+}
+.api-reference-highlight {
+  color: var(--api-token-color);
+}
+.api-reference-detail .mdx-pre-copy {
+  opacity: 1;
+}
+.api-reference-prose {
+  font-size: 14px;
+}
+.api-reference-prose pre {
+  white-space: pre;
+  overflow-x: auto;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  max-width: 100%;
+}
+.api-reference-prose ul,
+.api-reference-prose ol {
+  padding-left: 24px;
+  margin-block: 12px;
+}
+.api-reference-prose ul {
+  list-style: disc;
+}
+.api-reference-prose ol {
+  list-style: decimal;
+}
+.api-reference-prose li {
+  line-height: 1.75;
+  margin-block: 5px;
+}
+.api-reference-prose blockquote {
+  padding-left: 16px;
+  border-left: 2px solid var(--color-border);
+}
+@media (min-width: 900px) {
+  .api-reference-filters {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .api-reference-filters {
+    grid-template-columns: 1fr;
+  }
+  .api-reference-page h1 {
+    overflow-wrap: anywhere;
+  }
+  .api-reference-navigation a,
+  .api-reference-navigation summary {
+    min-height: 44px;
+  }
+}

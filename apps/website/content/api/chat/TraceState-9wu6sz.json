@@ -1,0 +1,54 @@
+{
+  "name": "TraceState",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/TraceState",
+  "canonicalReference": "@threadplane/chat!TraceState:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The visual execution state used by a collapsible chat trace.",
+  "declarations": [
+    {
+      "name": "TraceState",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!TraceState:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type TraceState = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'done' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The visual execution state used by a collapsible chat trace.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+        "line": 7
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+    "line": 7
+  }
+}

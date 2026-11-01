@@ -29,6 +29,7 @@ export function getInterrupt(agent: Agent): AgentInterrupt | undefined {
   return agent.interrupt?.();
 }
 
+/** Displays the agent’s current interrupt using a projected template or a default payload preview. */
 @Component({
   selector: 'chat-interrupt',
   standalone: true,

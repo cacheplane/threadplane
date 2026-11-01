@@ -1,0 +1,54 @@
+{
+  "name": "CaptureConfig",
+  "entrypointId": "telemetry/browser",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/browser/CaptureConfig",
+  "canonicalReference": "@threadplane/telemetry!CaptureConfig:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Token and browser host inputs for the analytics capture gate, with local capture disabled by default.",
+  "declarations": [
+    {
+      "name": "CaptureConfig",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!CaptureConfig:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CaptureConfig = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    token?: string;\n    captureLocal?: boolean;\n    host?: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Token and browser host inputs for the analytics capture gate, with local capture disabled by default.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/properties.ts",
+        "line": 13
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/properties.ts",
+    "line": 13
+  }
+}

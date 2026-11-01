@@ -1,0 +1,256 @@
+{
+  "name": "Interrupt",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/Interrupt",
+  "canonicalReference": "@threadplane/langgraph!Interrupt:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An interrupt thrown inside a thread.",
+  "declarations": [
+    {
+      "name": "Interrupt",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!Interrupt:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "interface Interrupt<TValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "An interrupt thrown inside a thread.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The ID of the interrupt.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "namespace",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#namespace:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "namespace?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Protocol namespace tuple for resume targeting (`[]` at root).\nPopulated for nested subgraph / subagent interrupts so\n`respond({ interruptId })` can resume without a separate\n`getThread()?.interrupts` lookup.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "ns",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#ns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "ns?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The namespace of the interrupt.",
+            "remarks": "",
+            "deprecated": "Replaced by `interrupt_id`",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "resumable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#resumable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "resumable?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether the interrupt can be resumed.",
+            "remarks": "",
+            "deprecated": "Will be removed in the future.",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "value?: "
+            },
+            {
+              "kind": "Content",
+              "text": "TValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The value of the interrupt.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "when",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!Interrupt#when:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "when?: "
+            },
+            {
+              "kind": "Content",
+              "text": "\"during\" | (string & {})"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Will be deprecated in the future.",
+            "remarks": "",
+            "deprecated": "Will be removed in the future.",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "TValue",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/public-api.ts",
+        "line": 35
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/public-api.ts",
+    "line": 35
+  }
+}

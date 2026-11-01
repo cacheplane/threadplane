@@ -1,0 +1,151 @@
+{
+  "name": "JsonDocument",
+  "entrypointId": "content/json",
+  "kind": "Interface",
+  "href": "/docs/api/content/json/JsonDocument",
+  "canonicalReference": "@threadplane/content!JsonDocument:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Cumulative JSON source for a generation; streaming updates append until completion, and a new generation replaces it.",
+  "declarations": [
+    {
+      "name": "JsonDocument",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!JsonDocument:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface JsonDocument "
+        }
+      ],
+      "docs": {
+        "summary": "Cumulative JSON source for a generation; streaming updates append until completion, and a new generation replaces it.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonDocument#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 47
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "generation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonDocument#generation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly generation: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 45
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonDocument#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly phase: "
+            },
+            {
+              "kind": "Content",
+              "text": "'streaming' | 'complete'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 46
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 44
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 44
+  }
+}

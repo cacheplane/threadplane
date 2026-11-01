@@ -1,0 +1,161 @@
+---
+description: How the element rendering example drives render-spec with a streaming spec, a registry and a store, plus the component inputs, outputs and resolution order.
+---
+
+# Element Rendering
+
+`RenderSpecComponent` is the entry point for rendering a `@json-render/core` spec as an Angular component tree. It takes the spec plus the pieces needed to interpret it — a registry of element types, a state store, computed functions and action handlers — and mounts the root element. The running example streams a spec in one character at a time and renders it live, so every input on this page has a visible effect you can watch.
+
+## What the demo does
+
+The Run tab is split in two. On the left is the live render output; on the right is the raw JSON as it arrives, plus a checkbox. Press play on the transport bar at the bottom and the spec streams in character by character, materializing into rendered elements as soon as each one is complete.
+
+Three specs sit behind the tabs at the top. "Parent + Children" is a heading with two text children. "Deep Nesting" is a card wrapping a card wrapping a text element. "Visibility" adds an element whose `visible` condition reads `/showDetail` from the store, which is what the checkbox toggles: uncheck it and that element disappears without the spec changing at all.
+
+## How it is built
+
+The agent is not in the render path. The spec arrives from a local streaming simulator rather than a model, which keeps the moving parts down to the spec, the registry and the store. There is a `graph.py` in the capability, but this Angular application never calls it — its `app.config.ts` registers nothing but the render feature.
+
+### The application configuration
+
+`provideRender()` registers the shared `RENDER_CONFIG` token and the internal lifecycle service. This example passes an empty options object, because it supplies the registry and store per instance instead.
+
+<ExampleCode file="app.config.ts" />
+
+### Registering element types and state
+
+`defineAngularRegistry()` maps the `type` string of an element to the Angular component that renders it. The three types in this demo are `Text`, `Heading` and `Card`. Alongside it, `signalStateStore()` creates the store that visibility conditions read from, seeded with `showDetail: true`.
+
+<ExampleCode file="element-rendering.component.ts" region="registry-and-store" title="element-rendering.component.ts — registry and store" />
+
+The constructor subscribes to the store and mirrors `/showDetail` into an Angular signal, which is the value the checkbox binds against.
+
+### Mounting the spec
+
+`<render-spec>` takes the partially materialized spec, the registry, the store, and a `loading` flag wired to whether the simulator is still playing. While the spec is `null` the template shows a placeholder instead.
+
+<ExampleCode file="element-rendering.component.ts" region="render-spec-host" title="element-rendering.component.ts — the render-spec host" />
+
+`loading` is passed down to every rendered component as an input of the same name, which is how the view components below know to draw skeletons instead of empty text.
+
+### Rendering children recursively
+
+This is the part the API surface does not make obvious: `<render-spec>` renders exactly one element, the one named by `spec.root`. Children are rendered because a view component asks for them. Every mounted component receives a `childKeys` input holding `element.children`, and a component that wants to render them loops over the keys and mounts a `<render-element>` for each.
+
+<ExampleCode file="element-rendering.component.ts" region="child-recursion" title="element-rendering.component.ts — a view component that renders its children" />
+
+`DemoTextComponent` in the same file declares `childKeys` but never loops over it, which is why text elements are leaves in this demo even when a spec gives them children.
+
+<Callout type="info" title="Framework inputs are filtered to what the component declares">
+`RenderElementComponent` passes five framework inputs — `bindings`, `emit`, `loading`, `childKeys` and `spec` — alongside the element's resolved props, then drops any key the target component does not declare, so a simple view component is not warned about inputs it ignores. The view components in this example declare all five.
+</Callout>
+
+### Driving visibility from the store
+
+The checkbox writes to the store, not to the spec. `RenderElementComponent` derives each element's visibility from a `computed` that reads the store, so a write to `/showDetail` re-evaluates the `{ $state: '/showDetail' }` condition on the conditional element and mounts or unmounts it.
+
+<ExampleCode file="element-rendering.component.ts" region="visibility-toggle" title="element-rendering.component.ts — toggling a bound state path" />
+
+## Import
+
+```typescript
+import { RenderSpecComponent } from '@threadplane/render';
+```
+
+The selector is `render-spec`, and the component is standalone, so add it to a component's `imports` array.
+
+## API reference
+
+See the generated [RenderSpecComponent reference](/docs/api/render/RenderSpecComponent) for inputs, outputs, and their declared types.
+
+## Resolution order
+
+`registry`, `store`, `functions` and `handlers` are each resolved independently, in this order:
+
+1. The component input, when it is set.
+2. `RENDER_CONFIG`, the configuration registered by `provideRender()`.
+3. For `registry` only, the `VIEW_REGISTRY` token registered by `provideViews()`, converted with `toRenderRegistry()`.
+4. A last-resort fallback. For `store`, an internal `signalStateStore()` built from `spec.state`. For `registry`, an empty registry, in which case no element type resolves and nothing renders.
+
+Because each is resolved on its own, a per-instance override of one leaves the rest on their global defaults:
+
+```typescript
+provideRender({
+  registry: defaultRegistry,
+  store: globalStore,
+  handlers: { log: (params) => console.log(params) },
+});
+```
+
+```html
+<!-- registry is overridden here; store and handlers still come from provideRender -->
+<render-spec [spec]="spec" [registry]="customRegistry" />
+```
+
+## The render context
+
+`RenderSpecComponent` provides a `RENDER_CONTEXT` token to its children through `viewProviders`. Every `RenderElementComponent` under it injects that context to find the registry, the store, and the rest:
+
+See [RenderContext](/docs/api/render/RenderContext) and [RENDER_CONTEXT](/docs/api/render/RENDER_CONTEXT) for the generated context declarations.
+
+The context is a `computed` signal, so it is rebuilt when any input changes. A component mounted inside the tree can inject it directly:
+
+```typescript
+import { inject } from '@angular/core';
+import { RENDER_CONTEXT } from '@threadplane/render';
+
+const context = inject(RENDER_CONTEXT);
+context.store.get('/showDetail');
+```
+
+## Template behavior
+
+The component template is a single `<render-element>` for the key named by `spec.root`:
+
+```html
+@if (spec()?.root; as rootKey) {
+  <render-element [elementKey]="rootKey" [spec]="spec()!" />
+}
+```
+
+Everything below the root is mounted by view components that render their `childKeys`, as the example section above shows.
+
+## The internal store
+
+When no store is supplied — neither as an input nor through `RENDER_CONFIG` — the component lazily creates one with `signalStateStore()` from `spec.state`. It is created once and reused across spec changes, so it is not rebuilt when a later spec arrives with different `state`:
+
+```typescript
+const spec: Spec = {
+  root: 'root',
+  elements: {
+    root: { type: 'Text', props: { content: { $state: '/message' } } },
+  },
+  state: { message: 'Hello' },
+};
+```
+
+```html
+<!-- No store input: one is created from spec.state -->
+<render-spec [spec]="spec" [registry]="registry" />
+```
+
+## Change detection
+
+The component uses `ChangeDetectionStrategy.OnPush`, and so does `RenderElementComponent`. Every reactive path runs through Angular signals: prop expressions, visibility conditions and the resolved context are all `computed` values.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Component Registry" href="/docs/render/guides/registry">
+    Map element type names to components, with fallbacks and schema gating.
+  </Card>
+  <Card title="State Store" href="/docs/render/guides/state-store">
+    Read and write the store that prop expressions and visibility conditions use.
+  </Card>
+  <Card title="Specs" href="/docs/render/guides/specs">
+    The spec format: root, elements, props, children and visibility.
+  </Card>
+  <Card title="provideRender()" href="/docs/render/guides/computed-functions">
+    Register a registry, store, functions and handlers as application defaults.
+  </Card>
+</CardGroup>

@@ -1,0 +1,179 @@
+{
+  "name": "AgentWithHistory",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentWithHistory",
+  "canonicalReference": "@threadplane/chat!AgentWithHistory:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Extension of Agent that exposes checkpoint history for time-travel UIs.\n\nConcrete adapters that record per-node checkpoints (e.g. LangGraph) should\nimplement this. Pure request/response runtimes that don't have checkpoints\nshould implement plain Agent.",
+  "declarations": [
+    {
+      "name": "AgentWithHistory",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentWithHistory:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentWithHistory<TState = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Agent",
+          "canonicalReference": "@threadplane/chat!Agent:interface",
+          "href": "/docs/api/chat/Agent"
+        },
+        {
+          "kind": "Content",
+          "text": "<TState>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Extension of Agent that exposes checkpoint history for time-travel UIs.\n\nConcrete adapters that record per-node checkpoints (e.g. LangGraph) should\nimplement this. Pure request/response runtimes that don't have checkpoints\nshould implement plain Agent.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "history",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentWithHistory#history:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "history: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentCheckpoint",
+              "canonicalReference": "@threadplane/chat!AgentCheckpoint:interface",
+              "href": "/docs/api/chat/AgentCheckpoint"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-with-history.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "messageCheckpoints",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentWithHistory#messageCheckpoints:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messageCheckpoints?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ReadonlyMap",
+              "canonicalReference": "!ReadonlyMap:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional reactive map of `messageId → checkpointId`, computed by\nwalking history once: for each checkpoint, find the most recent\nassistant message present in its `values.messages` and pair them.\nUIs use this to anchor inline checkpoint markers on each assistant\nturn. Missing on adapters that don't compute it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-with-history.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-with-history.ts",
+        "line": 12
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "TState",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-with-history.ts",
+    "line": 12
+  }
+}

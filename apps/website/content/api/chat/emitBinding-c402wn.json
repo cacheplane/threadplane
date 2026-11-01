@@ -1,0 +1,128 @@
+{
+  "name": "emitBinding",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/emitBinding",
+  "canonicalReference": "@threadplane/chat!emitBinding:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Writes a typed value to the render state store if the prop has a binding path.",
+  "declarations": [
+    {
+      "name": "emitBinding",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!emitBinding:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function emitBinding(host: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderHost",
+          "canonicalReference": "@threadplane/chat!~RenderHost:interface",
+          "href": "/docs/api/render/RenderHost"
+        },
+        {
+          "kind": "Content",
+          "text": ", bindings: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, string> | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": ", prop: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", value: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Writes a typed value to the render state store if the prop has a binding path.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/emit-binding.ts",
+        "line": 4
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "host",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "bindings",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "prop",
+          "parameterTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 7
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "value",
+          "parameterTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 9
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 10,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/emit-binding.ts",
+    "line": 4
+  }
+}

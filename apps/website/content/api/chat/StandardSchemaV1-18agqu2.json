@@ -1,0 +1,120 @@
+{
+  "name": "StandardSchemaV1",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/StandardSchemaV1",
+  "canonicalReference": "@threadplane/chat!StandardSchemaV1:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Standard Schema v1 validation contract for a render view's props.\nThe contract permits asynchronous validation, but only synchronous results gate render mount readiness.",
+  "declarations": [
+    {
+      "name": "StandardSchemaV1",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!StandardSchemaV1:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StandardSchemaV1<Input = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ", Output = "
+        },
+        {
+          "kind": "Content",
+          "text": "Input"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "Standard Schema v1 validation contract for a render view's props.\nThe contract permits asynchronous validation, but only synchronous results gate render mount readiness.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "\"~standard\"",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!StandardSchemaV1#\"~standard\":member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly '~standard': "
+            },
+            {
+              "kind": "Reference",
+              "text": "StandardSchemaProps",
+              "canonicalReference": "@threadplane/chat!~StandardSchemaProps:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<Input, Output>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/standard-schema.ts",
+        "line": 15
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "Input",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "typeParameterName": "Output",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/standard-schema.ts",
+    "line": 15
+  }
+}

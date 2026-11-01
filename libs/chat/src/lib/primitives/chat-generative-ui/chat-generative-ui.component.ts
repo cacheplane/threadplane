@@ -16,6 +16,7 @@ import { CHAT_GENERATIVE_UI_STYLES } from '../../styles/chat-generative-ui.style
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
 import { ɵprovideRenderDevtools } from '../../devtools/devtools-render-report';
 
+/** Renders a normalized json-render specification with optional registry, state store, and event handlers. */
 @Component({
   selector: 'chat-generative-ui',
   standalone: true,

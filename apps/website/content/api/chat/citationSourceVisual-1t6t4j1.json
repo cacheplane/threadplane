@@ -1,0 +1,77 @@
+{
+  "name": "citationSourceVisual",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/citationSourceVisual",
+  "canonicalReference": "@threadplane/chat!citationSourceVisual:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Choose the visual source marker for a citation: provider image, type icon, or monogram.",
+  "declarations": [
+    {
+      "name": "citationSourceVisual",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!citationSourceVisual:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function citationSourceVisual(c: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Citation",
+          "canonicalReference": "@threadplane/chat!Citation:interface",
+          "href": "/docs/api/chat/Citation"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationSourceVisual",
+          "canonicalReference": "@threadplane/chat!CitationSourceVisual:type",
+          "href": "/docs/api/chat/CitationSourceVisual"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Choose the visual source marker for a citation: provider image, type icon, or monogram.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/citation-display.ts",
+        "line": 136
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "c",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/citation-display.ts",
+    "line": 136
+  }
+}

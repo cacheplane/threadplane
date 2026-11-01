@@ -1,0 +1,66 @@
+{
+  "name": "LANGGRAPH_THREADS_CONFIG",
+  "entrypointId": "langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/langgraph/LANGGRAPH_THREADS_CONFIG",
+  "canonicalReference": "@threadplane/langgraph!LANGGRAPH_THREADS_CONFIG:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token supplying the thread adapter's API URL and fallback thread title.",
+  "declarations": [
+    {
+      "name": "LANGGRAPH_THREADS_CONFIG",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/langgraph!LANGGRAPH_THREADS_CONFIG:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "LANGGRAPH_THREADS_CONFIG: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "LangGraphThreadsConfig",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsConfig:interface",
+          "href": "/docs/api/langgraph/LangGraphThreadsConfig"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token supplying the thread adapter's API URL and fallback thread title.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+        "line": 44
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+    "line": 44
+  }
+}

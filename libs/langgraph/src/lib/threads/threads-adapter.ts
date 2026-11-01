@@ -40,6 +40,7 @@ export interface LangGraphThreadsConfig {
   titleFallback?: string;
 }
 
+/** Injection token supplying the thread adapter's API URL and fallback thread title. */
 export const LANGGRAPH_THREADS_CONFIG = new InjectionToken<LangGraphThreadsConfig>(
   'LANGGRAPH_THREADS_CONFIG',
 );

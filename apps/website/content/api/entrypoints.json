@@ -1,0 +1,302 @@
+[
+  {
+    "id": "a2ui",
+    "importPath": "@threadplane/a2ui",
+    "packageName": "@threadplane/a2ui",
+    "project": "a2ui",
+    "framework": "shared",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "a2ui"
+  },
+  {
+    "id": "ag-ui",
+    "importPath": "@threadplane/ag-ui",
+    "packageName": "@threadplane/ag-ui",
+    "project": "ag-ui",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "ag-ui"
+  },
+  {
+    "id": "angular",
+    "importPath": "@threadplane/angular",
+    "packageName": "@threadplane/angular",
+    "project": "angular",
+    "framework": "angular",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "angular"
+  },
+  {
+    "id": "angular/chat",
+    "importPath": "@threadplane/angular/chat",
+    "packageName": "@threadplane/angular",
+    "project": "angular",
+    "framework": "angular",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "angular/markdown",
+    "importPath": "@threadplane/angular/markdown",
+    "packageName": "@threadplane/angular",
+    "project": "angular",
+    "framework": "angular",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "chat",
+    "importPath": "@threadplane/chat",
+    "packageName": "@threadplane/chat",
+    "project": "chat",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "chat/debug",
+    "importPath": "@threadplane/chat/debug",
+    "packageName": "@threadplane/chat",
+    "project": "chat",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "chat/testing",
+    "importPath": "@threadplane/chat/testing",
+    "packageName": "@threadplane/chat",
+    "project": "chat",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "content",
+    "importPath": "@threadplane/content",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/markdown",
+    "importPath": "@threadplane/content/markdown",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/messages",
+    "importPath": "@threadplane/content/messages",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/json",
+    "importPath": "@threadplane/content/json",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/a2ui",
+    "importPath": "@threadplane/content/a2ui",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/render-state",
+    "importPath": "@threadplane/content/render-state",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "content/testing",
+    "importPath": "@threadplane/content/testing",
+    "packageName": "@threadplane/content",
+    "project": "content",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "content"
+  },
+  {
+    "id": "core",
+    "importPath": "@threadplane/core",
+    "packageName": "@threadplane/core",
+    "project": "core",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "core"
+  },
+  {
+    "id": "core/tools",
+    "importPath": "@threadplane/core/tools",
+    "packageName": "@threadplane/core",
+    "project": "core",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "core"
+  },
+  {
+    "id": "core/testing",
+    "importPath": "@threadplane/core/testing",
+    "packageName": "@threadplane/core",
+    "project": "core",
+    "framework": "shared",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "core"
+  },
+  {
+    "id": "langgraph",
+    "importPath": "@threadplane/langgraph",
+    "packageName": "@threadplane/langgraph",
+    "project": "langgraph",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "langgraph"
+  },
+  {
+    "id": "middleware/langgraph",
+    "importPath": "@threadplane/middleware/langgraph",
+    "packageName": "@threadplane/middleware",
+    "project": "middleware",
+    "framework": "backend",
+    "version": "0.0.2",
+    "status": "published",
+    "docLibrary": "middleware"
+  },
+  {
+    "id": "react",
+    "importPath": "@threadplane/react",
+    "packageName": "@threadplane/react",
+    "project": "react",
+    "framework": "react",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "react"
+  },
+  {
+    "id": "react/chat",
+    "importPath": "@threadplane/react/chat",
+    "packageName": "@threadplane/react",
+    "project": "react",
+    "framework": "react",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "react/markdown",
+    "importPath": "@threadplane/react/markdown",
+    "packageName": "@threadplane/react",
+    "project": "react",
+    "framework": "react",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "react/render",
+    "importPath": "@threadplane/react/render",
+    "packageName": "@threadplane/react",
+    "project": "react",
+    "framework": "react",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "render"
+  },
+  {
+    "id": "react/debug",
+    "importPath": "@threadplane/react/debug",
+    "packageName": "@threadplane/react",
+    "project": "react",
+    "framework": "react",
+    "version": "0.0.0",
+    "status": "development",
+    "docLibrary": "chat"
+  },
+  {
+    "id": "render",
+    "importPath": "@threadplane/render",
+    "packageName": "@threadplane/render",
+    "project": "render",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "render"
+  },
+  {
+    "id": "telemetry",
+    "importPath": "@threadplane/telemetry",
+    "packageName": "@threadplane/telemetry",
+    "project": "telemetry",
+    "framework": "shared",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "telemetry"
+  },
+  {
+    "id": "telemetry/browser",
+    "importPath": "@threadplane/telemetry/browser",
+    "packageName": "@threadplane/telemetry",
+    "project": "telemetry",
+    "framework": "angular",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "telemetry"
+  },
+  {
+    "id": "telemetry/node",
+    "importPath": "@threadplane/telemetry/node",
+    "packageName": "@threadplane/telemetry",
+    "project": "telemetry",
+    "framework": "backend",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "telemetry"
+  },
+  {
+    "id": "telemetry/shared",
+    "importPath": "@threadplane/telemetry/shared",
+    "packageName": "@threadplane/telemetry",
+    "project": "telemetry",
+    "framework": "shared",
+    "version": "0.3.4",
+    "status": "published",
+    "docLibrary": "telemetry"
+  }
+]

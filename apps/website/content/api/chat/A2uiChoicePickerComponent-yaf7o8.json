@@ -1,0 +1,904 @@
+{
+  "name": "A2uiChoicePickerComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/A2uiChoicePickerComponent",
+  "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders single or multiple A2UI choices as chips or selection rows, with optional filtering.",
+  "declarations": [
+    {
+      "name": "A2uiChoicePickerComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class A2uiChoicePickerComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders single or multiple A2UI choices as chips or selection rows, with optional filtering.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "_bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#_bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly _bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 154
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "bindings",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 156
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "childKeys",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#childKeys:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly childKeys: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 158
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "displayStyle",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#displayStyle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly displayStyle: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<\"checkbox\" | \"chips\">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: render as 'checkbox' rows (default) or 'chips'.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 148
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "errorText",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#errorText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly errorText: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Live validation message written by the surface's check gate\n(bound to /_a2uiChecks/<id>); empty when valid.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 153
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "filterable",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#filterable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly filterable: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: when true, show a client-side option filter input.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 150
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 138
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 157
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onCheckChange",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#onCheckChange:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onCheckChange(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Event",
+              "canonicalReference": "!Event:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 187
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "onChipToggle",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#onChipToggle:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onChipToggle(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 198
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "onFilterInput",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#onFilterInput:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "onFilterInput(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Event",
+              "canonicalReference": "!Event:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 183
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "options",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#options:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly options: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ResolvedOption",
+              "canonicalReference": "@threadplane/chat!~ResolvedOption:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Resolved options with plain string labels (surface-to-spec resolves DynamicString).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 144
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "spec",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 159
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | string[] | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: current selection (string[]). Normalized in `valueArray`\nbecause LLMs sometimes seed the data model with a scalar (e.g. `\"5\"`)\ninstead of an array (`[\"5\"]`); we coerce so .includes() works either way.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 142
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "variant",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!A2uiChoicePickerComponent#variant:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly variant: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<\"mutuallyExclusive\" | \"multipleSelection\">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "v0.9 prop: 'mutuallyExclusive' (single-select, default) or 'multipleSelection'.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+            "line": 146
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+        "line": 13
+      },
+      "angular": {
+        "selector": "a2ui-choice-picker",
+        "inputs": [
+          {
+            "name": "_bindings",
+            "alias": "_bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "bindings",
+            "alias": "bindings",
+            "required": false,
+            "type": "Record<string, string>"
+          },
+          {
+            "name": "childKeys",
+            "alias": "childKeys",
+            "required": false,
+            "type": "string[]"
+          },
+          {
+            "name": "displayStyle",
+            "alias": "displayStyle",
+            "required": false,
+            "type": "\"checkbox\" | \"chips\""
+          },
+          {
+            "name": "errorText",
+            "alias": "errorText",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filterable",
+            "alias": "filterable",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "label",
+            "alias": "label",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "loading",
+            "alias": "loading",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "options",
+            "alias": "options",
+            "required": false,
+            "type": "ResolvedOption[]"
+          },
+          {
+            "name": "spec",
+            "alias": "spec",
+            "required": false,
+            "type": "Spec | undefined"
+          },
+          {
+            "name": "value",
+            "alias": "value",
+            "required": false,
+            "type": "string | string[] | undefined"
+          },
+          {
+            "name": "variant",
+            "alias": "variant",
+            "required": false,
+            "type": "\"mutuallyExclusive\" | \"multipleSelection\""
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+    "line": 13
+  }
+}

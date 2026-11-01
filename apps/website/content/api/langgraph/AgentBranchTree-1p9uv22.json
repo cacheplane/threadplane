@@ -1,0 +1,161 @@
+{
+  "name": "AgentBranchTree",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/AgentBranchTree",
+  "canonicalReference": "@threadplane/langgraph!AgentBranchTree:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tree representation of LangGraph checkpoint history for time-travel UIs.",
+  "declarations": [
+    {
+      "name": "AgentBranchTree",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!AgentBranchTree:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentBranchTree<T = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "Tree representation of LangGraph checkpoint history for time-travel UIs.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "items",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentBranchTree#items:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "items: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentBranchTreeNode",
+              "canonicalReference": "@threadplane/langgraph!AgentBranchTreeNode:interface",
+              "href": "/docs/api/langgraph/AgentBranchTreeNode"
+            },
+            {
+              "kind": "Content",
+              "text": "<T> | "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentBranchTreeFork",
+              "canonicalReference": "@threadplane/langgraph!AgentBranchTreeFork:interface",
+              "href": "/docs/api/langgraph/AgentBranchTreeFork"
+            },
+            {
+              "kind": "Content",
+              "text": "<T>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 83
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentBranchTree#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'sequence'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 82
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 81
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.types.ts",
+    "line": 81
+  }
+}

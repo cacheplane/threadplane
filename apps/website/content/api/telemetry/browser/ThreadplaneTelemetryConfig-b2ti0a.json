@@ -1,0 +1,261 @@
+{
+  "name": "ThreadplaneTelemetryConfig",
+  "entrypointId": "telemetry/browser",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryConfig",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Opt-in configuration for explicit browser captures, selecting the first configured delivery: sink, endpoint, or legacy PostHog.\nOmitted or nonfinite sample rates default to one; finite rates are clamped to zero through one and sampled per capture.",
+  "declarations": [
+    {
+      "name": "ThreadplaneTelemetryConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadplaneTelemetryConfig "
+        }
+      ],
+      "docs": {
+        "summary": "Opt-in configuration for explicit browser captures, selecting the first configured delivery: sink, endpoint, or legacy PostHog.\nOmitted or nonfinite sample rates default to one; finite rates are clamped to zero through one and sampled per capture.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#enabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "enabled: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Enables capture methods; false makes the explicit browser service inert.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 28
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "endpoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#endpoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "endpoint?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Preferred app-owned ingest URL. The browser service POSTs neutral event\npayloads here; the endpoint decides where they ultimately go.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 38
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "posthogHost",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#posthogHost:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "posthogHost?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "Prefer sink or endpoint so public app code is vendor-neutral.",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 42
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "posthogKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#posthogKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "posthogKey?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "Prefer sink or endpoint so public app code is vendor-neutral.",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 40
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "sampleRate",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#sampleRate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "sampleRate?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 43
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "sink",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig#sink:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "sink?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadplaneTelemetrySink",
+              "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetrySink:type",
+              "href": "/docs/api/telemetry/browser/ThreadplaneTelemetrySink"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Preferred app-owned delivery hook. Use this when the consuming app wants\nto forward events through its own analytics boundary.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/tokens.ts",
+            "line": 33
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/tokens.ts",
+        "line": 26
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/tokens.ts",
+    "line": 26
+  }
+}

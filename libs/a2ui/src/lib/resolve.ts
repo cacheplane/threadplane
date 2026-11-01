@@ -5,6 +5,7 @@ import {
   type A2uiFunctionRegistry,
 } from './functions.js';
 
+/** Repeated-item context whose base path anchors relative data-model bindings. */
 export interface A2uiScope {
   basePath: string;
   item: unknown;

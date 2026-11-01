@@ -130,7 +130,7 @@ describe('mockLangGraphAgent', () => {
 });
 ```
 
-`mockLangGraphAgent()` extends the neutral [`mockAgent()`](/docs/chat/api/mock-agent) from `@threadplane/chat` — it supplies the neutral `Agent`-contract writable signals (`messages`, `status`, `isLoading`, `error`, `interrupt`, and the rest) plus `submit`/`stop` call tracking, then layers the LangGraph-specific signals (`langGraphMessages`, `branch`, `queue`, and so on) on top.
+`mockLangGraphAgent()` extends the neutral [`mockAgent()`](/docs/api/chat/mockAgent) from `@threadplane/chat` — it supplies the neutral `Agent`-contract writable signals (`messages`, `status`, `isLoading`, `error`, `interrupt`, and the rest) plus `submit`/`stop` call tracking, then layers the LangGraph-specific signals (`langGraphMessages`, `branch`, `queue`, and so on) on top.
 
 ## Python: testing the graph
 
@@ -423,6 +423,124 @@ ng test --watch=false
 Integration tests hit a real server and, potentially, a real LLM. Reserve them for CI pipelines or pre-release smoke tests. Use `provideFakeAgent()` or `MockAgentTransport` for the vast majority of your suite — both run in milliseconds with zero external dependencies.
 </Callout>
 
+
+## Testing a shared production transport
+
+In most apps you never instantiate `FetchStreamTransport` directly. When no custom transport is configured, the runtime creates one from the resolved `apiUrl`, `onThreadId`, and `clientOptions`.
+
+You reach for it explicitly when you want to share a transport instance, inspect behavior in tests, or implement a custom transport by matching the same `AgentTransport` interface.
+
+```ts
+// app.config.ts
+import { signal, type ApplicationConfig } from '@angular/core';
+import { provideAgent, FetchStreamTransport } from '@threadplane/langgraph';
+
+const apiUrl = 'http://localhost:2024';
+const threadId = signal<string | null>(localStorage.getItem('threadId'));
+
+const transport = new FetchStreamTransport(apiUrl, (id) => {
+  threadId.set(id);
+  localStorage.setItem('threadId', id);
+});
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({
+      apiUrl,
+      assistantId: 'support-agent',
+      threadId,
+      transport,
+    }),
+  ],
+};
+```
+
+<Callout type="warning" title="A custom transport has to report the ids it creates">
+The runtime only wraps `onThreadId` for the transport it constructs itself. A
+transport you pass in owns its own thread creation, so every id it creates must
+reach the runtime through the configured `onThreadId` callback or through the
+`threadId` signal — as above, where the constructor callback writes both. Report
+neither and the runtime keeps sending `null`, so every `submit()` starts a fresh
+thread.
+</Callout>
+
+
+## Scripting transport events
+
+The pattern below covers the full lifecycle: provide a transport instance, create the component, emit stream events, and assert signal state.
+
+```ts
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { AgentError } from '@threadplane/chat';
+import {
+  provideAgent,
+  MockAgentTransport,
+  injectAgent,
+} from '@threadplane/langgraph';
+
+@Component({ template: '' })
+class ChatComponent {
+  readonly chat = injectAgent();
+}
+
+describe('ChatComponent', () => {
+  let transport: MockAgentTransport;
+
+  beforeEach(() => {
+    transport = new MockAgentTransport();
+    TestBed.configureTestingModule({
+      imports: [ChatComponent],
+      providers: [
+        provideAgent({
+          apiUrl: '',
+          assistantId: 'test-agent',
+          threadId: 'thread-1',
+          transport,
+        }),
+      ],
+    });
+  });
+
+  it('reflects streamed messages', async () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    fixture.detectChanges();
+
+    const stream = fixture.componentInstance.chat.submit({ message: 'Hello' });
+    await transport.emit([
+      {
+        type: 'values',
+        messages: [{ type: 'ai', content: 'Hi there' }],
+      },
+    ]);
+    await transport.close();
+    await stream;
+    fixture.detectChanges();
+
+    // submit() appends the user message optimistically, so the streamed
+    // assistant reply is the last entry, not the only one.
+    expect(fixture.componentInstance.chat.messages()).toEqual([
+      expect.objectContaining({ role: 'user', content: 'Hello' }),
+      expect.objectContaining({ role: 'assistant', content: 'Hi there' }),
+    ]);
+    expect(fixture.componentInstance.chat.status()).toBe('idle');
+  });
+
+  it('surfaces errors through the error signal', async () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    fixture.detectChanges();
+
+    const stream = fixture.componentInstance.chat.submit({ message: 'Hello' });
+    await transport.emitError(new Error('not found'));
+    await stream;
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.chat.status()).toBe('error');
+    expect(fixture.componentInstance.chat.error()).toBeInstanceOf(AgentError);
+  });
+});
+```
+
 ## What's Next
 
 <CardGroup cols={2}>
@@ -435,7 +553,7 @@ Integration tests hit a real server and, potentially, a real LLM. Reserve them f
   <Card title="Persistence" href="/docs/langgraph/guides/persistence">
     Thread persistence patterns that pair with thread-switching tests.
   </Card>
-  <Card title="API Reference" href="/docs/langgraph/api/mock-stream-transport">
+  <Card title="API Reference" href="/docs/api/langgraph/MockAgentTransport">
     Full reference for MockAgentTransport options and methods.
   </Card>
 </CardGroup>

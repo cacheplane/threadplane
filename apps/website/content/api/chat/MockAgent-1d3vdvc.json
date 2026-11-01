@@ -1,0 +1,748 @@
+{
+  "name": "MockAgent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/MockAgent",
+  "canonicalReference": "@threadplane/chat!MockAgent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An in-memory agent with writable test signals, captured submissions, and a stop invocation counter.",
+  "declarations": [
+    {
+      "name": "MockAgent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!MockAgent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MockAgent extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Agent",
+          "canonicalReference": "@threadplane/chat!Agent:interface",
+          "href": "/docs/api/chat/Agent"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "An in-memory agent with writable test signals, captured submissions, and a stop invocation counter.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "_internal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#_internal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "_internal: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        streamStartedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Test-only escape hatch for driving lifecycle signals from a spec. Mirrors\nthe `_internal` pattern used by CHAT_LIFECYCLE so tests can flip the\nunderlying writable without going through a full submit/stream cycle.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 44
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentError",
+              "canonicalReference": "@threadplane/chat!AgentError:class",
+              "href": "/docs/api/chat/AgentError"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "events$",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#events$:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "events$: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Observable",
+              "canonicalReference": "rxjs!Observable:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentEvent",
+              "canonicalReference": "@threadplane/chat!AgentEvent:type",
+              "href": "/docs/api/chat/AgentEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 28
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "history",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#history:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "history?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentCheckpoint",
+              "canonicalReference": "@threadplane/chat!AgentCheckpoint:interface",
+              "href": "/docs/api/chat/AgentCheckpoint"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 27
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "interrupt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupt?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 25
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "isLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#isLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isLoading: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "lifecycle",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#lifecycle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lifecycle: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        streamStartedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Minimal lifecycle stub the chat lib's effects subscribe to. We only\nmodel the signals the chat composition currently reads; richer adapter\nlifecycles (langgraph, AG-UI) extend this contract on their own mocks.\nThe public `lifecycle` view is a readonly signal; tests drive the\nvalue via `_internal.streamStartedAt.set(...)` below.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 36
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "state",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "state: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 24
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentStatus",
+              "canonicalReference": "@threadplane/chat!AgentStatus:type",
+              "href": "/docs/api/chat/AgentStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 20
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "stopCount",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#stopCount:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stopCount: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Count of stop() invocations.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 50
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "subagents?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/chat!Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 26
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "submitCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#submitCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submitCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitInput",
+              "canonicalReference": "@threadplane/chat!AgentSubmitInput:interface",
+              "href": "/docs/api/chat/AgentSubmitInput"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        opts?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitOptions",
+              "canonicalReference": "@threadplane/chat!AgentSubmitOptions:interface",
+              "href": "/docs/api/chat/AgentSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Captured calls to submit() in order.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 48
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!MockAgent#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/testing/mock-agent.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/testing/mock-agent.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/testing/mock-agent.ts",
+    "line": 18
+  }
+}

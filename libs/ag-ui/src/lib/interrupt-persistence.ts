@@ -2,6 +2,7 @@ import { InterruptSchema, MessageSchema, ResumeEntrySchema } from '@ag-ui/core/s
 import type { InterruptSessionSnapshot } from './interrupt-session.types';
 import type { ThreadSnapshot } from './run-state-transaction';
 
+/** Versioned persisted thread snapshot and interrupt session, scoped by namespace and thread ID with a compare-and-swap revision. */
 export interface AgUiThreadRecord {
   version: 1;
   namespace: string;
@@ -11,6 +12,7 @@ export interface AgUiThreadRecord {
   session: InterruptSessionSnapshot;
   resumeInput?: ThreadSnapshot;
 }
+/** Application-owned interrupt storage using revision-based writes and optional authoritative recovery reconciliation. */
 export interface AgUiInterruptPersistence {
   namespace: string;
   store: {

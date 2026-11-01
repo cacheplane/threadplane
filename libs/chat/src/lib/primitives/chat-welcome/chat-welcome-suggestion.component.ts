@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_WELCOME_SUGGESTION_STYLES } from '../../styles/chat-welcome.styles';
 
+/** Renders a labeled welcome suggestion and emits its associated value when selected. */
 @Component({
   selector: 'chat-welcome-suggestion',
   standalone: true,

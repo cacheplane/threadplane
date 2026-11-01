@@ -1,0 +1,87 @@
+{
+  "name": "DeepReadonly",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/DeepReadonly",
+  "canonicalReference": "@threadplane/core!DeepReadonly:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never.",
+  "declarations": [
+    {
+      "name": "DeepReadonly",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!DeepReadonly:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DeepReadonly<T> = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown extends T ? "
+        },
+        {
+          "kind": "Reference",
+          "text": "PlainValue",
+          "canonicalReference": "@threadplane/core!PlainValue:type",
+          "href": "/docs/api/core/PlainValue"
+        },
+        {
+          "kind": "Content",
+          "text": " : T extends void ? undefined : T extends string | number | boolean | null | undefined ? T : T extends (...args: never[]) => unknown ? never : T extends object ? {\n    readonly [K in keyof T]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DeepReadonly",
+          "canonicalReference": "@threadplane/core!DeepReadonly:type",
+          "href": "/docs/api/core/DeepReadonly"
+        },
+        {
+          "kind": "Content",
+          "text": "<T[K]>;\n} : never"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/tool.ts",
+        "line": 12
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/tool.ts",
+    "line": 12
+  }
+}

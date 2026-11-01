@@ -1,0 +1,54 @@
+{
+  "name": "AgentRecovery",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/AgentRecovery",
+  "canonicalReference": "@threadplane/core!AgentRecovery:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Suggested recovery: retry a submission, reconcile its status, or offer no recovery action.",
+  "declarations": [
+    {
+      "name": "AgentRecovery",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!AgentRecovery:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentRecovery = "
+        },
+        {
+          "kind": "Content",
+          "text": "'retry' | 'check' | 'none'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Suggested recovery: retry a submission, reconcile its status, or offer no recovery action.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/error.ts",
+        "line": 9
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/error.ts",
+    "line": 9
+  }
+}

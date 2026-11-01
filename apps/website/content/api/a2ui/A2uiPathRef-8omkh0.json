@@ -1,0 +1,79 @@
+{
+  "name": "A2uiPathRef",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiPathRef",
+  "canonicalReference": "@threadplane/a2ui!A2uiPathRef:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "JSON-pointer data-model binding. Absolute (`/a/b`) or relative inside templates.",
+  "declarations": [
+    {
+      "name": "A2uiPathRef",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiPathRef:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiPathRef "
+        }
+      ],
+      "docs": {
+        "summary": "JSON-pointer data-model binding. Absolute (`/a/b`) or relative inside templates.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "path",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiPathRef#path:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "path: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 16
+  }
+}

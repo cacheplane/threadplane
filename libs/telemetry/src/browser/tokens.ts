@@ -1,5 +1,6 @@
 import { InjectionToken } from '@angular/core';
 
+/** Browser setup, runtime, and stream lifecycle event names supported by the explicit browser service. */
 export type ThreadplaneTelemetryEvent =
   | 'tplane:browser_provided'
   | 'tplane:browser_chat_init'
@@ -9,14 +10,21 @@ export type ThreadplaneTelemetryEvent =
   | 'tplane:stream_ended'
   | 'tplane:stream_errored';
 
+/** Event name and optional application-supplied properties delivered to an explicit browser event sink. */
 export interface ThreadplaneTelemetryEventPayload {
   event: ThreadplaneTelemetryEvent;
   properties?: Record<string, unknown>;
 }
 
+/** Application-owned synchronous or asynchronous event delivery callback whose failures the browser service suppresses. */
 export type ThreadplaneTelemetrySink = (payload: ThreadplaneTelemetryEventPayload) => void | Promise<void>;
 
+/**
+ * Opt-in configuration for explicit browser captures, selecting the first configured delivery: sink, endpoint, or legacy PostHog.
+ * Omitted or nonfinite sample rates default to one; finite rates are clamped to zero through one and sampled per capture.
+ */
 export interface ThreadplaneTelemetryConfig {
+  /** Enables capture methods; false makes the explicit browser service inert. */
   enabled: boolean;
   /**
    * Preferred app-owned delivery hook. Use this when the consuming app wants
@@ -35,6 +43,7 @@ export interface ThreadplaneTelemetryConfig {
   sampleRate?: number;
 }
 
+/** Angular injection token for the explicit browser service's optional capture configuration. */
 export const THREADPLANE_TELEMETRY_CONFIG = new InjectionToken<ThreadplaneTelemetryConfig | null>(
   'THREADPLANE_TELEMETRY_CONFIG',
 );

@@ -1,0 +1,60 @@
+{
+  "name": "createContentClassifier",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/createContentClassifier",
+  "canonicalReference": "@threadplane/chat!createContentClassifier:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Create a [ContentClassifier](/docs/api/chat/ContentClassifier) — the streaming accumulator that inspects\nan assistant message's content as it arrives and classifies it (markdown vs a\ngenerative-UI/A2UI spec), exposing the parsed result and per-element state as\nsignals so the renderer can switch modes mid-stream.",
+  "declarations": [
+    {
+      "name": "createContentClassifier",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!createContentClassifier:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createContentClassifier(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "ContentClassifier",
+          "canonicalReference": "@threadplane/chat!ContentClassifier:interface",
+          "href": "/docs/api/chat/ContentClassifier"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Create a [ContentClassifier](/docs/api/chat/ContentClassifier) — the streaming accumulator that inspects\nan assistant message's content as it arrives and classifies it (markdown vs a\ngenerative-UI/A2UI spec), exposing the parsed result and per-element state as\nsignals so the renderer can switch modes mid-stream.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "A fresh [ContentClassifier](/docs/api/chat/ContentClassifier); call `dispose()` when done.",
+        "examples": [
+          "```ts\nconst cc = createContentClassifier();\neffect(() => console.log(cc.type())); // 'pending' | 'markdown' | 'spec'\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+        "line": 42
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+    "line": 42
+  }
+}

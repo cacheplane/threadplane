@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownLinkNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders a markdown link with its child nodes as the label and an optional title. */
 @Component({
   selector: 'chat-md-link',
   standalone: true,

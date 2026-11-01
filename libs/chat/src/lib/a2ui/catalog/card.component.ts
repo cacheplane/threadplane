@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 import { RenderElementComponent } from '@threadplane/render';
 
+/** Renders A2UI child elements inside a padded card. */
 @Component({
   selector: 'a2ui-card',
   standalone: true,

@@ -29,7 +29,15 @@ export type {
 } from './lib/agent.types';
 
 // Re-export from SDK (consumers import from angular, not langgraph-sdk)
-export type { BagTemplate, InferBag, Interrupt, ThreadState, SubmitOptions }
+export type {
+  BagTemplate,
+  InferBag,
+  Interrupt,
+  /** LangGraph SDK checkpoint snapshot containing state values, next nodes, metadata, parent checkpoint, and pending tasks. */
+  ThreadState,
+  /** LangGraph SDK run-submission options, including configuration, context, checkpoint, commands, streaming, and optimistic state. */
+  SubmitOptions
+}
   from './lib/agent.types';
 
 // Re-export ResourceStatus shim for convenience

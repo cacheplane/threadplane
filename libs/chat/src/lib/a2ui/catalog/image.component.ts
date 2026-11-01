@@ -15,6 +15,7 @@ const FIT_MAP: Record<ImageFit, string> = {
   scaleDown: 'scale-down',
 };
 
+/** Renders an A2UI image with a description, sizing preset, and object-fit behavior. */
 @Component({
   selector: 'a2ui-image',
   standalone: true,

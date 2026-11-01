@@ -1,0 +1,172 @@
+{
+  "name": "TextTranscriptComponent",
+  "entrypointId": "angular/chat",
+  "kind": "Class",
+  "href": "/docs/api/angular/chat/TextTranscriptComponent",
+  "canonicalReference": "@threadplane/angular!TextTranscriptComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Readonly text rows with IDs unique within this list. Lifetime belongs to the caller.",
+  "declarations": [
+    {
+      "name": "TextTranscriptComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/angular!TextTranscriptComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class TextTranscriptComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Readonly text rows with IDs unique within this list. Lifetime belongs to the caller.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "label",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!TextTranscriptComponent#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/text-transcript.component.ts",
+            "line": 33
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "messages",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!TextTranscriptComponent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messages: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "Pick",
+              "canonicalReference": "!Pick:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/angular!~Message:interface",
+              "href": "/docs/api/core/Message"
+            },
+            {
+              "kind": "Content",
+              "text": ", \"id\" | \"role\" | \"content\">[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/text-transcript.component.ts",
+            "line": 31
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/angular/chat/src/text-transcript.component.ts",
+        "line": 5
+      },
+      "angular": {
+        "selector": "threadplane-text-transcript",
+        "inputs": [
+          {
+            "name": "label",
+            "alias": "label",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "messages",
+            "alias": "messages",
+            "required": true,
+            "type": "readonly Pick<Message, \"id\" | \"role\" | \"content\">[]"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/angular/chat/src/text-transcript.component.ts",
+    "line": 5
+  }
+}

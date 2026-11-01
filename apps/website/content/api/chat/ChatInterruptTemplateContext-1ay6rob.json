@@ -1,0 +1,119 @@
+{
+  "name": "ChatInterruptTemplateContext",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ChatInterruptTemplateContext",
+  "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Template context for the interrupt template projected into `<chat>`.",
+  "declarations": [
+    {
+      "name": "ChatInterruptTemplateContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatInterruptTemplateContext "
+        }
+      ],
+      "docs": {
+        "summary": "Template context for the interrupt template projected into `<chat>`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "$implicit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext#$implicit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "$implicit: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The agent bound to `<chat>` (`let-agent`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "interrupt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatInterruptTemplateContext#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The pending interrupt, read from `agent.interrupt()`\n(`let-interrupt=\"interrupt\"`). Runtimes that expose a full interrupt\nbatch do so on their own agent type, reachable through `$implicit`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
+    "line": 8
+  }
+}

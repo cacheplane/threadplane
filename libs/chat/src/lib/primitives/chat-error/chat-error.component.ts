@@ -24,6 +24,7 @@ export function extractErrorMessage(error: unknown): string | null {
   return String(error);
 }
 
+/** Displays the agent error and offers retry or status recovery actions when supported. */
 @Component({
   selector: 'chat-error',
   standalone: true,

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import type { Spec } from '@json-render/core';
 import { RenderElementComponent } from '@threadplane/render';
 
+/** Renders an A2UI trigger that opens its associated child content in a modal overlay. */
 @Component({
   selector: 'a2ui-modal',
   standalone: true,

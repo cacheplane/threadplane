@@ -1,0 +1,80 @@
+{
+  "name": "ExecutionContext",
+  "entrypointId": "core/tools",
+  "kind": "Interface",
+  "href": "/docs/api/core/tools/ExecutionContext",
+  "canonicalReference": "@threadplane/core!ExecutionContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The owning session cancels this signal on stop, supersession, or disposal.",
+  "declarations": [
+    {
+      "name": "ExecutionContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!ExecutionContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ExecutionContext "
+        }
+      ],
+      "docs": {
+        "summary": "The owning session cancels this signal on stop, supersession, or disposal.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "signal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ExecutionContext#signal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/tools/execution-context.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/tools/execution-context.ts",
+    "line": 4
+  }
+}

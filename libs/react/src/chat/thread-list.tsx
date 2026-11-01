@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 
+/** Conversation row metadata for title display, relative update time, and a pinned indicator. */
 export interface ThreadListItem {
   readonly id: string;
   readonly title?: string;
@@ -15,6 +16,7 @@ export interface ThreadListItem {
   readonly pinned?: boolean;
 }
 
+/** Supplies ordered conversations and controlled selection, with creation, row rendering, action, and context-menu hooks. */
 export interface ThreadListProps {
   readonly threads: readonly ThreadListItem[];
   readonly onSelect: (threadId: string) => void;

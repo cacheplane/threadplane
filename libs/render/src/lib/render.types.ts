@@ -2,6 +2,7 @@ import { Type } from '@angular/core';
 import type { Spec, StateStore, ComputedFunction } from '@json-render/core';
 import type { StandardSchemaV1 } from './standard-schema';
 
+/** Inputs passed to a dynamically rendered Angular view, combining resolved props with child keys, spec, bindings, and event emission. */
 export interface AngularComponentInputs {
   /** Two-way binding paths: prop name → absolute state path */
   bindings?: Record<string, string>;
@@ -17,6 +18,7 @@ export interface AngularComponentInputs {
   [key: string]: unknown;
 }
 
+/** Angular component class that can be registered as the renderer for a spec element type. */
 export type AngularComponentRenderer = Type<unknown>;
 
 /**
@@ -50,6 +52,7 @@ export interface NormalizedEntry {
   description?: string;
 }
 
+/** Lookup and enumeration of normalized Angular render entries by their registered names. */
 export interface AngularRegistry {
   /** The full normalized entry for a registered name, or undefined. The single
    * accessor — component, fallback, schema, and description all hang off it. */
