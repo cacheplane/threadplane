@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import type * as BuildRevision from './build-revision.cjs';
+import type * as TraceContent from './trace-content.cjs';
 
 const websiteAppDir = dirname(fileURLToPath(import.meta.url));
 // Next's transpiled config module may lack module.filename. Anchor relative
@@ -15,6 +16,9 @@ const { resolveDocsBuildRevision }: typeof BuildRevision = createRequire(
 const apiLegacyRedirects: typeof ApiLegacyRedirects = createRequire(
   import.meta.url
 )('./api-legacy-redirects.json');
+const { finalizeWebsiteContentTraces }: typeof TraceContent = createRequire(
+  import.meta.url
+)('./trace-content.cjs');
 
 export const nextConfig: WithNxOptions = {
   env: {
@@ -23,7 +27,22 @@ export const nextConfig: WithNxOptions = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  compiler: {
+    runAfterProductionCompile: async (metadata) => {
+      const result = finalizeWebsiteContentTraces(metadata);
+      if (result.removed)
+        console.log(
+          `Finalized website traces: removed ${result.removed} duplicate content entries from ${result.traces} traces`
+        );
+    },
+  },
   outputFileTracingRoot: join(websiteAppDir, '../..'),
+  outputFileTracingExcludes: {
+    // Dynamic content reads can discover duplicate Nx cache/build copies.
+    // Serverless functions use the canonical source content included below;
+    // the runnable Nx artifact keeps its own content copy independently.
+    '/*': ['../../.nx/**/*', '../../dist/apps/website/content/**/*'],
+  },
   outputFileTracingIncludes: {
     '/*': [
       '../../cockpit/**/*.md',
