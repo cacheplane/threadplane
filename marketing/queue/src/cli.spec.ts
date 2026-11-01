@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { uploadMedia } from './blob.ts';
 import { openContext } from './cli/context.ts';
 import { add, addBlog, lintFile, relintBlog } from './cli/commands/draft.ts';
-import { approve, resolve, revisions } from './cli/commands/manage.ts';
+import { approve, confirm, resolve, revisions } from './cli/commands/manage.ts';
 import { report } from './cli/commands/report.ts';
 import { setDevtoKey } from './cli/commands/devto-key.ts';
 import { parseArgs, type CommandDeps } from './cli/commands/shared.ts';
@@ -164,6 +164,15 @@ describe('marketing:queue CLI', () => {
     await approve(parseArgs(['approve', `--week=${WEEK}`]), deps);
     expect(db.posts[0]['status']).toBe('draft');
     expect(lines.join('\n')).toContain('competitor_name');
+  });
+
+  it('confirm refuses a [BRIAN: ...] marker, so the row stays blocked', async () => {
+    const { db, deps } = harness({ 'd.json': JSON.stringify({ text: 'out now in [BRIAN: version]' }) });
+    await add(parseArgs(['add', `--week=${WEEK}`, '--channel=x', '--slot=x-wed', '--kind=release', '--file=d.json']), deps);
+    const id = db.posts[0]['id'] as string;
+    await expect(confirm(parseArgs(['confirm', id, '--codes=brian_marker']), deps)).rejects.toThrow(/cannot be confirmed/);
+    await approve(parseArgs(['approve', `--week=${WEEK}`]), deps);
+    expect(db.posts[0]['status']).toBe('draft');
   });
 
   it('add stores lint flags and refuses an invalid draft', async () => {

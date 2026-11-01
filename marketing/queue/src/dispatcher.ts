@@ -14,6 +14,7 @@ import {
   markFailed,
   markPosted,
   releaseToScheduled,
+  returnToDraft,
 } from './repository.ts';
 import type { SqlExecutor } from './sql.ts';
 import type { MarketingPost, PostResult } from './types.ts';
@@ -46,6 +47,8 @@ export interface MarketingDispatchResult {
 export const MARKETING_LEASE_MS = 15 * 60_000;
 const NOT_LIVE_ALERT_MS = 3 * 60 * 60_000;
 const LINKEDIN_EXPIRY_WARNING_MS = 7 * 24 * 60 * 60_000;
+/** An X or LinkedIn post this late reads as stale; it goes back to draft instead. */
+export const MISSED_SLOT_MS = 6 * 60 * 60_000;
 
 type AdapterChannel = 'x' | 'linkedin' | 'devto';
 
@@ -272,6 +275,24 @@ export async function dispatchMarketingPosts(
       }
       return 'waiting';
     };
+
+    // A paused flag or an outage must not dump a backlog of stale social posts.
+    // dev.to and blog rows are evergreen and still go out late.
+    const lateMs = now.getTime() - new Date(post.publishAt).getTime();
+    if ((post.channel === 'x' || post.channel === 'linkedin') && lateMs > MISSED_SLOT_MS) {
+      const reason = `missed its slot by ${Math.floor(lateMs / 3_600_000)} hours`;
+      await returnToDraft(ex, post.id, token, reason);
+      await raise(
+        `missed_slot:${post.id}`,
+        `Missed slot: ${post.channel} ${post.id}`,
+        describe(
+          post,
+          `This post ${reason} and was returned to draft without sending. ` +
+            'Reschedule and approve it to send it, or cancel it.'
+        )
+      );
+      return 'waiting';
+    }
 
     let prepared: { adapter: ChannelAdapter; draft: Draft };
     try {

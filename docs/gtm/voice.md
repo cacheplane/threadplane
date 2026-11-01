@@ -67,6 +67,8 @@ Blog posts and their dev.to cross-posts stay in the register above.
 - **Naming competitors.** Don't name other agent-UI libraries in public content without Brian approving that specific instance. Hot takes stay about ideas, not products.
 - **Content that reads like marketing copy.** No hype words, no growth-hacker CTAs, no "in this article we'll explore", no stagey structural fragments ("Now the honest part.").
 
+The queue's lint (`marketing/queue/src/lint.ts`) checks the mechanical parts: competitor names, politics and `[BRIAN: ...]` markers block, while hype and machine-sounding words, the "not X but Y" construction, em dashes, extra hashtags and extra emoji are warnings. It never rewrites, and it can't judge the rest of this section.
+
 **Corpus gap:** there is no real corpus of Brian's tweets or LinkedIn posts in this repo yet; this register is derived from his blog posts and his instructions.
 A Twitter/X or LinkedIn archive export would make it much better: use his real posts as examples once one exists.
 Until then, the before/after revisions recorded when Brian edits a draft during `/week` are the best signal of how he actually writes for social.
