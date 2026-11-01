@@ -78,6 +78,15 @@ function dependencies(
       createdJobs: 0,
     }),
     enqueueInstallDigestJob: vi.fn().mockResolvedValue(null),
+    enqueueLinkedInDigestJob: vi.fn().mockResolvedValue(null),
+    readLinkedInDigestContext: vi.fn().mockResolvedValue({
+      since: NOW,
+      unparsedCount: 0,
+      dropCount: 0,
+      ingestCount: 0,
+      forwardBacklog: 0,
+    }),
+    scrubLinkedInReceipts: vi.fn().mockResolvedValue(0),
     processObservations: vi.fn().mockResolvedValue({
       completed: 0,
       leaseLost: 0,
@@ -1211,4 +1220,105 @@ test('the hard tick deadline aborts a running job before another remote phase st
     timeout.mockRestore();
     vi.useRealTimers();
   }
+});
+
+describe('LinkedIn ingest tick step', () => {
+  // 2026-09-16T15:00Z is Wednesday 08:00 Pacific.
+  const WEDNESDAY = new Date('2026-09-16T15:00:00.000Z');
+  const run = (
+    deps: LifecycleDispatcherDependencies,
+    linkedInIngestEnabled?: boolean
+  ) =>
+    dispatchLifecycleJobs(
+      {
+        batchSize: 25,
+        campaignEnabled: false,
+        ...(linkedInIngestEnabled === undefined
+          ? {}
+          : { linkedInIngestEnabled }),
+        signal: new AbortController().signal,
+      },
+      deps
+    );
+
+  it('scrubs, reads the context and enqueues linkedin_digest:<date> on a weekday when enabled', async () => {
+    const deps = dependencies({ now: vi.fn(() => WEDNESDAY) });
+    const result = await run(deps, true);
+    expect(deps.scrubLinkedInReceipts).toHaveBeenCalledWith(expect.anything(), {
+      now: WEDNESDAY,
+    });
+    expect(deps.readLinkedInDigestContext).toHaveBeenCalledWith(
+      expect.anything(),
+      { now: WEDNESDAY }
+    );
+    expect(deps.enqueueLinkedInDigestJob).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        now: WEDNESDAY,
+        idempotencyKey: 'linkedin_digest:2026-09-16',
+        businessDate: '2026-09-16',
+      }
+    );
+    expect(result.operatorAlerts).toEqual([]);
+    expect(
+      vi.mocked(deps.enqueueLinkedInDigestJob).mock.invocationCallOrder[0]
+    ).toBeLessThan(vi.mocked(deps.leaseDueJobs).mock.invocationCallOrder[0]);
+  });
+
+  it('scrubs but does not enqueue on a weekend', async () => {
+    // 2026-09-19T15:00Z is Saturday 08:00 Pacific.
+    const saturday = new Date('2026-09-19T15:00:00.000Z');
+    const deps = dependencies({ now: vi.fn(() => saturday) });
+    await run(deps, true);
+    expect(deps.scrubLinkedInReceipts).toHaveBeenCalledOnce();
+    expect(deps.enqueueLinkedInDigestJob).not.toHaveBeenCalled();
+  });
+
+  it('raises linkedin_forward_failed when the forward backlog is not empty', async () => {
+    const deps = dependencies({
+      now: vi.fn(() => WEDNESDAY),
+      readLinkedInDigestContext: vi.fn().mockResolvedValue({
+        since: NOW,
+        unparsedCount: 0,
+        dropCount: 0,
+        ingestCount: 4,
+        forwardBacklog: 2,
+      }),
+    });
+    const result = await run(deps, true);
+    expect(result.operatorAlerts).toEqual(['linkedin_forward_failed']);
+    expect(deps.enqueueLinkedInDigestJob).toHaveBeenCalledOnce();
+  });
+
+  it('contains a failure as linkedin_ingest_failed and still leases jobs', async () => {
+    const job = leasedJob('00000000-0000-4000-8000-0000000000ae');
+    const deps = dependencies({
+      now: vi.fn(() => WEDNESDAY),
+      readLinkedInDigestContext: vi
+        .fn()
+        .mockRejectedValue(new Error('database unavailable')),
+      leaseDueJobs: vi.fn().mockResolvedValue([job]),
+    });
+    const result = await run(deps, true);
+    expect(deps.enqueueLinkedInDigestJob).not.toHaveBeenCalled();
+    expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+    expect(deps.dispatchLeasedJob).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      leased: 1,
+      dispatched: 1,
+      operatorAlerts: ['linkedin_ingest_failed'],
+    });
+  });
+
+  it.each([undefined, false])(
+    'calls none of the LinkedIn dependencies when the switch is %s',
+    async (enabled) => {
+      const deps = dependencies({ now: vi.fn(() => WEDNESDAY) });
+      await run(deps, enabled);
+      expect(deps.scrubLinkedInReceipts).not.toHaveBeenCalled();
+      expect(deps.readLinkedInDigestContext).not.toHaveBeenCalled();
+      expect(deps.enqueueLinkedInDigestJob).not.toHaveBeenCalled();
+      expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+    }
+  );
 });

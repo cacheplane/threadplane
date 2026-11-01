@@ -2,6 +2,7 @@ import {
   createDatabaseExecutor,
   dispatchGrowthLeasedJob,
   enqueueInstallDigestJob,
+  enqueueLinkedInDigestJob,
   deferLeasedJob,
   failLeasedJob,
   isMailboxRecoveryPaused,
@@ -11,8 +12,10 @@ import {
   processInstallRuntimeActivations,
   processObservations,
   projectFormObservations,
+  readLinkedInDigestContext,
   reconcilePendingResendMessageIds,
   renewJobLease,
+  scrubLinkedInReceipts,
   type GrowthAppJobHandlers,
   type GrowthDispatchDependencies,
   type GrowthDispatchResult,
@@ -62,6 +65,7 @@ export interface LifecycleDispatcherInput {
   campaignEnrollmentEnabled?: boolean;
   installRuntimeHelloEnabled?: boolean;
   installDigestEnabled?: boolean;
+  linkedInIngestEnabled?: boolean;
   observationProcessingEnabled?: boolean;
   marketingPostingEnabled?: boolean;
   campaignEnrollmentStartAt?: Date;
@@ -71,7 +75,9 @@ export interface LifecycleDispatcherInput {
 export type LifecycleOperatorAlert =
   | 'mailbox_recovery_required'
   | 'observation_projection_failed'
-  | 'marketing_dispatch_failed';
+  | 'marketing_dispatch_failed'
+  | 'linkedin_ingest_failed'
+  | 'linkedin_forward_failed';
 
 export interface LifecycleDispatcherResult {
   leased: number;
@@ -92,6 +98,9 @@ export interface LifecycleDispatcherDependencies {
   leaseDueJobs: typeof leaseDueJobs;
   materializeCampaignEnrollment: typeof materializeCampaignEnrollment;
   enqueueInstallDigestJob: typeof enqueueInstallDigestJob;
+  enqueueLinkedInDigestJob: typeof enqueueLinkedInDigestJob;
+  readLinkedInDigestContext: typeof readLinkedInDigestContext;
+  scrubLinkedInReceipts: typeof scrubLinkedInReceipts;
   processInstallRuntimeActivations: typeof processInstallRuntimeActivations;
   processObservations: typeof processObservations;
   projectFormObservations: typeof projectFormObservations;
@@ -117,6 +126,9 @@ const defaultDependencies: LifecycleDispatcherDependencies = {
   leaseDueJobs,
   materializeCampaignEnrollment,
   enqueueInstallDigestJob,
+  enqueueLinkedInDigestJob,
+  readLinkedInDigestContext,
+  scrubLinkedInReceipts,
   processInstallRuntimeActivations,
   processObservations,
   projectFormObservations,
@@ -307,6 +319,31 @@ export async function dispatchLifecycleJobs(
         });
         tickSignal.throwIfAborted();
       }
+    }
+    if (input.linkedInIngestEnabled === true) {
+      // Contained like marketing: a LinkedIn failure never blocks leasing.
+      try {
+        const now = dependencies.now();
+        await dependencies.scrubLinkedInReceipts(executor, { now });
+        const context = await dependencies.readLinkedInDigestContext(
+          executor,
+          { now }
+        );
+        if (context.forwardBacklog > 0) {
+          operatorAlerts.push('linkedin_forward_failed');
+        }
+        const calendar = pacificCalendarDate(now);
+        if (calendar.weekday) {
+          await dependencies.enqueueLinkedInDigestJob(executor, {
+            now,
+            idempotencyKey: `linkedin_digest:${calendar.date}`,
+            businessDate: calendar.date,
+          });
+        }
+      } catch {
+        operatorAlerts.push('linkedin_ingest_failed');
+      }
+      tickSignal.throwIfAborted();
     }
     const recoveryWasPaused = await dependencies.isRecoveryPaused(executor);
     tickSignal.throwIfAborted();

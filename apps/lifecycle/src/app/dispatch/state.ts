@@ -17,6 +17,8 @@ export default z
             'mailbox_recovery_required',
             'observation_projection_failed',
             'marketing_dispatch_failed',
+            'linkedin_ingest_failed',
+            'linkedin_forward_failed',
           ])
         ),
       })

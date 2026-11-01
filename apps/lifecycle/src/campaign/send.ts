@@ -16,6 +16,7 @@ import {
   markProviderAcceptanceUnknown,
   markInstallDigestReported,
   markInternalNotificationUnknown,
+  markLinkedInDigestSent,
   markProviderRejection,
   normalizeGrowthPublicActionOrigin,
   normalizeRecipientEmail,
@@ -23,6 +24,8 @@ import {
   readInstallDigestCandidates,
   readInstallDigestContext,
   readLifecycleJobContext,
+  readLinkedInDigestContext,
+  readLinkedInDigestLeads,
   recordProviderAcceptance,
   RECIPIENT_EMAIL_SENDER,
   sendRecipientEmail,
@@ -34,6 +37,8 @@ import {
   type GrowthTokenKey,
   type InstallDigestCandidate,
   type InstallDigestContext,
+  type LinkedInDigestContext,
+  type LinkedInDigestLead,
   type RecipientDeliveryPolicy,
   type RecipientAttachment,
   type RecipientEmailInput,
@@ -56,6 +61,7 @@ import {
 } from '../enrichment/schema.js';
 import { renderFulfillmentTemplate } from '../fulfillment/templates.js';
 import { renderInstallDigest } from '../notifications/install-digest.js';
+import { renderLinkedInDigest } from '../notifications/linkedin-digest.js';
 import { renderInternalNotificationSummary } from '../notifications/templates.js';
 import { loadEmailHmacKeyring } from '../email-keyring.js';
 import { DeterministicLifecycleJobError } from '../job-errors.js';
@@ -191,6 +197,23 @@ export interface LifecycleJobDependencies {
       candidates: readonly InstallDigestCandidate[];
     }
   ) => Promise<void>;
+  readLinkedInDigestLeads: (
+    executor: SqlTransaction
+  ) => Promise<LinkedInDigestLead[]>;
+  readLinkedInDigestContext: (
+    executor: SqlTransaction,
+    input: { now: Date }
+  ) => Promise<LinkedInDigestContext>;
+  markLinkedInDigestSent: (
+    executor: SqlTransaction,
+    input: {
+      businessDate: string;
+      jobId: string;
+      sentAt: Date;
+      leadCount: number;
+      context: LinkedInDigestContext;
+    }
+  ) => Promise<void>;
   readonly publicActionOrigin: string;
   readonly emailKeyring: EmailHmacKeyring;
   founderNotificationEmail: string;
@@ -202,6 +225,7 @@ export interface LifecycleRuntimeConfiguration {
   campaignEnrollmentEnabled: boolean;
   installRuntimeHelloEnabled: boolean;
   installDigestEnabled: boolean;
+  linkedInIngestEnabled: boolean;
   observationProcessingEnabled: boolean;
   marketingPostingEnabled: boolean;
   campaignEnrollmentStartAt?: Date;
@@ -508,6 +532,15 @@ export async function dispatchLifecycleAppOwnedJob(
   const signal = dispatchContext.signal ?? new AbortController().signal;
   signal.throwIfAborted();
   if (job.kind === 'digest') {
+    if (job.payload['digest_kind'] === 'linkedin_leads') {
+      return dispatchLinkedInDigestJob(
+        executor,
+        job,
+        leaseToken,
+        signal,
+        dependencies
+      );
+    }
     return dispatchInstallDigestJob(
       executor,
       job,
@@ -707,15 +740,7 @@ async function dispatchInstallDigestJob(
     });
     return 'deferred';
   }
-  const businessDate =
-    typeof job.payload['business_date'] === 'string'
-      ? job.payload['business_date']
-      : null;
-  if (!businessDate || !/^\d{4}-\d{2}-\d{2}$/u.test(businessDate)) {
-    throw new DeterministicLifecycleJobError(
-      'Digest job is missing its business date'
-    );
-  }
+  const businessDate = digestBusinessDate(job);
   const candidates = await dependencies.readInstallDigestCandidates(executor, {
     limit: INSTALL_DIGEST_CANDIDATE_LIMIT,
     keyring: dependencies.emailKeyring,
@@ -815,6 +840,157 @@ async function dispatchInstallDigestJob(
   return 'completed';
 }
 
+function digestBusinessDate(job: GrowthJob): string {
+  const businessDate =
+    typeof job.payload['business_date'] === 'string'
+      ? job.payload['business_date']
+      : null;
+  if (!businessDate || !/^\d{4}-\d{2}-\d{2}$/u.test(businessDate)) {
+    throw new DeterministicLifecycleJobError(
+      'Digest job is missing its business date'
+    );
+  }
+  return businessDate;
+}
+
+/**
+ * Founder-only LinkedIn leads heads-up. Each lead gets a signed reject and a
+ * signed deny-forever link; there is never an approve link and nothing is
+ * ever sent to a lead. Mirrors `dispatchInstallDigestJob`: the digest is
+ * recorded only after the provider accepted the message, in the same
+ * transaction that completes the job. A crash after acceptance fails the
+ * retry with `linkedin_digest_outcome_unknown` for manual review.
+ */
+async function dispatchLinkedInDigestJob(
+  executor: SqlExecutor,
+  job: GrowthJob,
+  leaseToken: string,
+  signal: AbortSignal,
+  dependencies: LifecycleJobDependencies
+): Promise<GrowthDispatchResult> {
+  if (!dependencies.recipientPolicy.deliveryEnabled) {
+    const retryAt = dependencies.now();
+    await dependencies.deferJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: retryAt,
+      availableAt: new Date(retryAt.getTime() + RETRY_DELAY_MS),
+      errorCode: 'delivery_disabled',
+    });
+    return 'deferred';
+  }
+  const businessDate = digestBusinessDate(job);
+  const leads = await dependencies.readLinkedInDigestLeads(executor);
+  signal.throwIfAborted();
+  const context = await dependencies.readLinkedInDigestContext(executor, {
+    now: dependencies.now(),
+  });
+  signal.throwIfAborted();
+  if (
+    leads.length === 0 &&
+    context.unparsedCount === 0 &&
+    context.dropCount === 0
+  ) {
+    await dependencies.completeJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+    });
+    return 'completed';
+  }
+  const issuedAt = dependencies.now();
+  const decideUrl = (leadId: string, reason: 'reject' | 'deny'): string =>
+    `${
+      dependencies.publicActionOrigin
+    }/api/growth/linkedin-decide?token=${createGrowthActionToken(
+      {
+        contactId: leadId,
+        purpose: 'founder_linkedin_decide',
+        reason,
+        issuedAt,
+        eventNonce: job.id,
+      },
+      dependencies.tokenKey
+    )}`;
+  const text = renderLinkedInDigest({
+    businessDate,
+    publicActionOrigin: dependencies.publicActionOrigin,
+    leads: leads.map((lead) => ({
+      displayName: lead.displayName,
+      headline: lead.headline,
+      profileUrl: lead.profileUrl,
+      companyName: lead.companyName,
+      score: lead.score,
+      previouslyRejected: lead.previouslyRejected,
+      engagements: lead.engagements,
+      rejectUrl: decideUrl(lead.id, 'reject'),
+      denyUrl: decideUrl(lead.id, 'deny'),
+    })),
+    context,
+  });
+  signal.throwIfAborted();
+  const claimed = await dependencies.claimInternalNotification(executor, {
+    jobId: job.id,
+    leaseToken,
+    now: issuedAt,
+    kind: 'digest',
+  });
+  if (!claimed) {
+    await dependencies.markInternalNotificationUnknown(executor, {
+      jobId: job.id,
+      leaseToken,
+      occurredAt: dependencies.now(),
+      errorCode: 'linkedin_digest_outcome_unknown',
+      kind: 'digest',
+    });
+    return 'failed';
+  }
+  signal.throwIfAborted();
+  const sent = await dependencies.sendInternalNotification({
+    to: dependencies.founderNotificationEmail,
+    executor,
+    signal,
+    subject: `Threadplane LinkedIn leads for ${businessDate}: ${leads.length} new`,
+    text,
+    idempotencyKey: job.idempotencyKey,
+    kind: 'digest',
+  });
+  if (sent.outcome === 'unknown') {
+    await dependencies.markInternalNotificationUnknown(executor, {
+      jobId: job.id,
+      leaseToken,
+      occurredAt: dependencies.now(),
+      errorCode: 'linkedin_digest_outcome_unknown',
+      kind: 'digest',
+    });
+    return 'failed';
+  }
+  if (sent.outcome === 'rejected') {
+    await dependencies.failJob(executor, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+      errorCode: 'linkedin_digest_rejected',
+    });
+    return 'failed';
+  }
+  await executor.transaction(async (transaction) => {
+    await dependencies.markLinkedInDigestSent(transaction, {
+      businessDate,
+      jobId: job.id,
+      sentAt: dependencies.now(),
+      leadCount: leads.length,
+      context,
+    });
+    await dependencies.completeJob(transaction, {
+      jobId: job.id,
+      leaseToken,
+      now: dependencies.now(),
+    });
+  });
+  return 'completed';
+}
+
 function exactBoolean(
   environment: Record<string, string | undefined>,
   name: string
@@ -840,6 +1016,10 @@ export function loadLifecycleRuntimeConfiguration(
   const installDigestEnabled = exactBoolean(
     environment,
     'GROWTH_INSTALL_DIGEST_ENABLED'
+  );
+  const linkedInIngestEnabled = exactBoolean(
+    environment,
+    'GROWTH_LINKEDIN_INGEST_ENABLED'
   );
   const observationProcessingEnabled = exactBoolean(
     environment,
@@ -867,6 +1047,7 @@ export function loadLifecycleRuntimeConfiguration(
     campaignEnrollmentEnabled,
     installRuntimeHelloEnabled,
     installDigestEnabled,
+    linkedInIngestEnabled,
     observationProcessingEnabled,
     // Only the exact string `true` turns posting on; anything else is off.
     marketingPostingEnabled:
@@ -1076,6 +1257,9 @@ export function createDefaultLifecycleJobDependencies(
     readInstallDigestCandidates,
     readInstallDigestContext,
     markInstallDigestReported,
+    readLinkedInDigestLeads,
+    readLinkedInDigestContext,
+    markLinkedInDigestSent,
     get publicActionOrigin() {
       return mailRuntime().publicActionOrigin;
     },
