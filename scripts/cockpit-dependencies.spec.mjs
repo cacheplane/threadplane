@@ -72,6 +72,73 @@ test('restores root and nested installations, executable bins and workspace link
   assert.match(await readFile(join(f.root, 'node_modules/dependency/cli.cjs'), 'utf8'), /restored executable/);
 });
 
+test('transports the complete validated tar as Zstandard and restores independent private copies', async t => {
+  const f = await fixture(t);
+  const manifest = await createDependencyBundle({ ...f, context, transport: 'zstd' });
+  assert.equal(manifest.schema, 2);
+  assert.equal(manifest.transport.format, 'zstd');
+  const compressed = await readFile(join(f.artifactDirectory, 'dependencies.tar.zst'));
+  assert.equal(manifest.transport.bytes, compressed.length);
+  assert.equal(manifest.transport.sha256, createHash('sha256').update(compressed).digest('hex'));
+  await assert.rejects(stat(join(f.artifactDirectory, 'dependencies.tar')), { code: 'ENOENT' });
+  const roots = [await f.checkout('first-compressed'), await f.checkout('second-compressed')];
+  for (const root of roots) {
+    await restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context: { ...context, attempt: '3' }, producerAttempt: '2' });
+    assert.match(execFileSync(join(root, 'node_modules/.bin/dependency'), { encoding: 'utf8' }), /restored executable/);
+    assert.equal(await readFile(join(root, 'node_modules/@fixture/workspace/node_modules/nested/value.txt'), 'utf8'), 'nested dependency');
+    assert.ok(!(await readdir(root)).some(name => name.startsWith('.cockpit-dependencies-')));
+    await assert.rejects(readFile(join(root, '.env')), { code: 'ENOENT' });
+  }
+  await writeFile(join(roots[0], 'node_modules/dependency/cli.cjs'), 'one target changed its copy');
+  assert.match(await readFile(join(roots[1], 'node_modules/dependency/cli.cjs'), 'utf8'), /restored executable/);
+  assert.match(await readFile(join(f.root, 'node_modules/dependency/cli.cjs'), 'utf8'), /restored executable/);
+});
+
+for (const failure of ['compressed-digest', 'truncated-frame', 'trailing-data', 'expanded-size', 'raw-digest', 'unknown-format', 'oversized-limit', 'invalid-number']) {
+  test(`rejects Zstandard ${failure} without leaving an installation or private staging`, async t => {
+    const f = await fixture(t);
+    await createDependencyBundle({ ...f, context, transport: 'zstd' });
+    const path = join(f.artifactDirectory, 'dependencies.tar.zst');
+    const manifestPath = join(f.artifactDirectory, 'manifest.json');
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+    if (failure === 'compressed-digest') await writeFile(path, 'corrupt');
+    else if (['truncated-frame', 'trailing-data'].includes(failure)) {
+      const original = await readFile(path);
+      const bytes = failure === 'truncated-frame' ? original.subarray(0, original.length - 5) : Buffer.concat([original, Buffer.from('not another zstd frame')]);
+      await writeFile(path, bytes);
+      manifest.transport.bytes = bytes.length;
+      manifest.transport.sha256 = createHash('sha256').update(bytes).digest('hex');
+    } else if (failure === 'expanded-size') manifest.archive.bytes = 1;
+    else if (failure === 'raw-digest') manifest.archive.sha256 = 'f'.repeat(64);
+    else if (failure === 'unknown-format') manifest.transport.format = 'unexpected';
+    else if (failure === 'oversized-limit') manifest.archive.bytes = 16 * 1024 ** 3 + 1;
+    else if (failure === 'invalid-number') manifest.archive.bytes = '1024';
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const root = await f.checkout('invalid-compressed');
+    await assert.rejects(restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context }), /transport|decompress|size|digest|format|limit|bytes|archive/i);
+    await assert.rejects(stat(join(root, 'node_modules')), { code: 'ENOENT' });
+    assert.deepEqual((await readdir(root)).sort(), ['package-lock.json', 'package.json', 'packages']);
+  });
+}
+
+for (const failure of ['missing', 'nonzero-exit']) test(`cleans private staging when the Zstandard decoder is ${failure}`, async t => {
+  const f = await fixture(t);
+  await createDependencyBundle({ ...f, context, transport: 'zstd' });
+  const root = await f.checkout('decoder-failure');
+  const bin = join(f.directory, 'decoder-bin');
+  await mkdir(bin);
+  if (failure === 'nonzero-exit') {
+    await writeFile(join(bin, 'zstd'), '#!/bin/sh\necho "decoder fixture failed" >&2\nexit 7\n');
+    await chmod(join(bin, 'zstd'), 0o755);
+  }
+  const module = new URL('./cockpit-dependencies.mjs', import.meta.url).href;
+  const code = `import { restoreDependencyBundle } from ${JSON.stringify(module)}; await restoreDependencyBundle(${JSON.stringify({ root, artifactDirectory: f.artifactDirectory, context })});`;
+  assert.throws(() => execFileSync(process.execPath, ['--input-type=module', '-e', code], {
+    env: { ...process.env, PATH: bin }, stdio: 'pipe', timeout: 10000,
+  }), failure === 'missing' ? /ENOENT/ : /decompression failed \(7\)/);
+  assert.deepEqual((await readdir(root)).sort(), ['package-lock.json', 'package.json', 'packages']);
+});
+
 test('allows a failed-job rerun to use its successful earlier producer, but rejects future attempts', async t => {
   const f = await fixture(t);
   await createDependencyBundle({ ...f, context });
@@ -86,7 +153,7 @@ test('requires the exact producer attempt named by the dispatcher', async t => {
     context: { ...context, attempt: '3' }, producerAttempt: '1' }), /attempt/i);
 });
 
-test('actual CLI binds both checkouts to Git and preserves a failed-job rerun', async t => {
+for (const transport of ['tar', 'zstd']) test(`actual ${transport} CLI binds both checkouts to Git and preserves a failed-job rerun`, async t => {
   const f = await fixture(t);
   const consumer = await f.checkout('consumer');
   const env = { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
@@ -100,7 +167,7 @@ test('actual CLI binds both checkouts to Git and preserves a failed-job rerun', 
   }
   const sha = git(f.root, ['rev-parse', 'HEAD']);
   assert.equal(git(consumer, ['rev-parse', 'HEAD']), sha);
-  Object.assign(env, { GITHUB_SHA: sha, GITHUB_REPOSITORY: context.repository, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2' });
+  Object.assign(env, { GITHUB_SHA: sha, GITHUB_REPOSITORY: context.repository, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', COCKPIT_DEPENDENCY_TRANSPORT: transport });
   const script = fileURLToPath(new URL('./cockpit-dependencies.mjs', import.meta.url));
   assert.throws(() => execFileSync(process.execPath, [script, 'pack', f.artifactDirectory], {
     cwd: f.root, env: { ...env, GITHUB_SHA: 'f'.repeat(40) }, stdio: 'pipe',
@@ -116,6 +183,7 @@ test('actual CLI binds both checkouts to Git and preserves a failed-job rerun', 
   assert.match(execFileSync(join(consumer, 'node_modules/.bin/dependency'), { encoding: 'utf8' }), /restored executable/);
   assert.equal(await readFile(join(f.artifactDirectory, 'canary'), 'utf8'), 'keep unrelated files');
   await assert.rejects(stat(join(f.artifactDirectory, 'dependencies.tar')), { code: 'ENOENT' });
+  await assert.rejects(stat(join(f.artifactDirectory, 'dependencies.tar.zst')), { code: 'ENOENT' });
   await assert.rejects(stat(join(f.artifactDirectory, 'manifest.json')), { code: 'ENOENT' });
 });
 
@@ -252,11 +320,12 @@ test('restored files retain the data filter permission and ownership policy', as
   assert.equal((await stat(join(root, file))).uid, process.getuid());
 });
 
-for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link', 'resolved-link-first']) {
-  test(`rejects ${attack} tar members before publishing, even with a matching archive digest`, async t => {
+for (const transport of ['tar', 'zstd']) for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link', 'resolved-link-first']) {
+  test(`rejects ${attack} ${transport} members before publishing, even with a matching archive digest`, async t => {
     const f = await fixture(t);
-    await createDependencyBundle({ ...f, context });
-    const archive = join(f.artifactDirectory, 'dependencies.tar');
+    await createDependencyBundle({ ...f, context, transport });
+    const archive = transport === 'tar' ? join(f.artifactDirectory, 'dependencies.tar') : join(f.directory, 'attack.tar');
+    if (transport === 'zstd') execFileSync('zstd', ['-q', '-d', join(f.artifactDirectory, 'dependencies.tar.zst'), '-o', archive]);
     execFileSync('python3', ['-c', `
 import os,tarfile,sys
 path,attack,absolute=sys.argv[1:]
@@ -280,6 +349,12 @@ os.replace(path+'.attack',path)
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
     const bytes = await readFile(archive);
     manifest.archive = { ...manifest.archive, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+    if (transport === 'zstd') {
+      const compressed = join(f.artifactDirectory, 'dependencies.tar.zst');
+      execFileSync('zstd', ['-q', '-f', archive, '-o', compressed]);
+      const encoded = await readFile(compressed);
+      manifest.transport = { ...manifest.transport, bytes: encoded.length, sha256: createHash('sha256').update(encoded).digest('hex') };
+    }
     await writeFile(manifestPath, JSON.stringify(manifest));
     const lock = JSON.parse(await readFile(join(f.root, 'package-lock.json'), 'utf8'));
     const policy = { roots: manifest.roots, workspaceLinks: Object.fromEntries(Object.entries(lock.packages)
@@ -294,3 +369,17 @@ os.replace(path+'.attack',path)
     assert.deepEqual((await readdir(root)).sort(), ['package-lock.json', 'package.json', 'packages']);
   });
 }
+
+test('rolls back an earlier root when publishing a compressed nested installation fails', { skip: process.getuid?.() === 0 }, async t => {
+  const f = await fixture(t);
+  await createDependencyBundle({ ...f, context, transport: 'zstd' });
+  const root = await f.checkout('publication-failure');
+  const parent = join(root, 'packages/workspace');
+  await chmod(parent, 0o555);
+  try {
+    await assert.rejects(restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context }), /EACCES|EPERM|permission/i);
+    await assert.rejects(stat(join(root, 'node_modules')), { code: 'ENOENT' });
+    await assert.rejects(stat(join(parent, 'node_modules')), { code: 'ENOENT' });
+    assert.deepEqual((await readdir(root)).sort(), ['package-lock.json', 'package.json', 'packages']);
+  } finally { await chmod(parent, 0o755); }
+});

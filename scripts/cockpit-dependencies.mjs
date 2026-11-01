@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { createReadStream, existsSync, readFileSync, realpathSync } from 'node:fs';
+import { createReadStream, createWriteStream, existsSync, readFileSync, realpathSync } from 'node:fs';
 import { lstat, mkdir, mkdtemp, readFile, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, posix, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { pipeline } from 'node:stream/promises';
 
 const archiveHelper = fileURLToPath(new URL('./cockpit-dependencies-archive.py', import.meta.url));
 const lifecycleHooks = new Set(['preinstall', 'install', 'postinstall', 'prepublish', 'preprepare', 'prepare', 'postprepare', 'dependencies']);
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
+const maxArchiveBytes = 16 * 1024 ** 3;
+const maxTransportBytes = 8 * 1024 ** 3;
 const exists = async path => {
   try { await lstat(path); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; }
 };
@@ -74,6 +77,43 @@ async function archiveDigest(path) {
   return hash.digest('hex');
 }
 
+function validateDescriptor(descriptor, limit) {
+  assert.ok(descriptor && Number.isSafeInteger(descriptor.bytes) && descriptor.bytes > 0 && descriptor.bytes <= limit, 'Invalid dependency archive bytes or size limit');
+  assert.match(descriptor.sha256 ?? '', /^[a-f0-9]{64}$/, 'Invalid dependency archive digest');
+}
+
+async function expandTransport(source, destination, expected) {
+  const hash = createHash('sha256');
+  let bytes = 0;
+  let errors = '';
+  const decoder = spawn('zstd', ['-q', '-d', '-c', '-M128MB', source], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 600000, killSignal: 'SIGKILL' });
+  decoder.stderr.on('data', chunk => { errors += chunk.toString().slice(0, Math.max(0, 16384 - errors.length)); });
+  const completed = new Promise((resolve, reject) => {
+    decoder.once('error', reject);
+    decoder.once('close', code => code === 0 ? resolve() : reject(new Error(`Dependency decompression failed (${code}): ${errors}`)));
+  });
+  const output = createWriteStream(destination, { flags: 'wx', mode: 0o600 });
+  const written = pipeline(decoder.stdout, async function* (chunks) {
+    for await (const chunk of chunks) {
+      bytes += chunk.length;
+      assert.ok(bytes <= expected.bytes, 'Dependency decompression exceeds declared archive size');
+      hash.update(chunk);
+      yield chunk;
+    }
+  }, output);
+  try {
+    await Promise.all([completed, written]);
+  } catch (error) {
+    decoder.kill('SIGKILL');
+    decoder.stdout.destroy();
+    output.destroy();
+    await Promise.allSettled([completed, written]);
+    throw error;
+  }
+  assert.equal(bytes, expected.bytes, 'Dependency expanded archive size mismatch');
+  assert.equal(hash.digest('hex'), expected.sha256, 'Dependency expanded archive digest mismatch');
+}
+
 function archiveOperation(mode, archive, policy, destination) {
   execFileSync('python3', ['-I', archiveHelper, mode, archive, ...(destination ? [destination] : [])], {
     input: JSON.stringify(policy), encoding: 'utf8', timeout: 600000,
@@ -81,8 +121,9 @@ function archiveOperation(mode, archive, policy, destination) {
   });
 }
 
-export async function createDependencyBundle({ root, artifactDirectory, context }) {
+export async function createDependencyBundle({ root, artifactDirectory, context, transport = 'tar' }) {
   validateContext(context);
+  assert.ok(['tar', 'zstd'].includes(transport), 'Unsupported dependency transport format');
   root = realpathSync(root);
   const source = inputs(root);
   const roots = source.roots.filter(path => existsSync(join(root, path)));
@@ -105,6 +146,15 @@ export async function createDependencyBundle({ root, artifactDirectory, context 
       schema: 1, context, inputs: source.hash, roots,
       archive: { bytes: (await stat(archive)).size, sha256: await archiveDigest(archive) },
     };
+    validateDescriptor(manifest.archive, maxArchiveBytes);
+    if (transport === 'zstd') {
+      const compressed = join(artifactDirectory, 'dependencies.tar.zst');
+      execFileSync('zstd', ['-q', '-T2', '-3', '--no-progress', archive, '-o', compressed], { timeout: 600000, stdio: ['ignore', 'pipe', 'pipe'] });
+      manifest.schema = 2;
+      manifest.transport = { format: 'zstd', bytes: (await stat(compressed)).size, sha256: await archiveDigest(compressed) };
+      validateDescriptor(manifest.transport, maxTransportBytes);
+      await rm(archive);
+    }
     await writeFile(join(artifactDirectory, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
     return manifest;
   } catch (error) {
@@ -117,7 +167,7 @@ export async function restoreDependencyBundle({ root, artifactDirectory, context
   validateContext(context);
   root = realpathSync(root);
   const manifest = JSON.parse(await readFile(join(artifactDirectory, 'manifest.json'), 'utf8'));
-  assert.equal(manifest.schema, 1, 'Unsupported dependency manifest');
+  assert.ok([1, 2].includes(manifest.schema), 'Unsupported dependency manifest');
   validateContext(manifest.context);
   assert.equal(manifest.context.attempt, producerAttempt, 'Dependency producer attempt mismatch');
   for (const key of ['repository', 'runId', 'sha', 'tree', 'runtime']) {
@@ -133,12 +183,21 @@ export async function restoreDependencyBundle({ root, artifactDirectory, context
     assert.equal(realpathSync(dirname(join(root, path))), dirname(join(root, path)), 'Dependency parent must not be a symlink');
     assert.ok(!await exists(join(root, path)), `Dependency installation already exists: ${path}`);
   }
-  const archive = join(artifactDirectory, 'dependencies.tar');
-  assert.equal((await stat(archive)).size, manifest.archive.bytes, 'Dependency archive size mismatch');
-  assert.equal(await archiveDigest(archive), manifest.archive.sha256, 'Dependency archive digest mismatch');
+  validateDescriptor(manifest.archive, maxArchiveBytes);
+  const compressed = manifest.schema === 2;
+  if (compressed) {
+    assert.equal(manifest.transport?.format, 'zstd', 'Unsupported dependency transport format');
+    validateDescriptor(manifest.transport, maxTransportBytes);
+  } else assert.equal(manifest.transport, undefined, 'Unexpected dependency transport metadata');
+  const stored = join(artifactDirectory, compressed ? 'dependencies.tar.zst' : 'dependencies.tar');
+  const descriptor = compressed ? manifest.transport : manifest.archive;
+  assert.equal((await stat(stored)).size, descriptor.bytes, 'Dependency archive transport size mismatch');
+  assert.equal(await archiveDigest(stored), descriptor.sha256, 'Dependency archive transport digest mismatch');
   const staging = await mkdtemp(join(root, '.cockpit-dependencies-'));
   const installed = [];
   try {
+    const archive = compressed ? join(staging, 'dependencies.tar') : stored;
+    if (compressed) await expandTransport(stored, archive, manifest.archive);
     archiveOperation('extract', archive, { roots: manifest.roots, workspaceLinks: source.workspaceLinks }, staging);
     for (const path of manifest.roots) {
       assert.ok(!await exists(join(root, path)), 'Dependency installation appeared during restore');
@@ -174,6 +233,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     assert.ok(['pack', 'restore'].includes(mode) && artifactDirectory, 'Expected pack|restore ARTIFACT_DIRECTORY');
     const start = Date.now();
     const options = { root: process.cwd(), artifactDirectory, context: collectContext(process.cwd()) };
+    if (mode === 'pack') options.transport = process.env.COCKPIT_DEPENDENCY_TRANSPORT ?? 'tar';
     if (mode === 'restore') {
       assert.match(process.env.COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT ?? '', /^[1-9][0-9]*$/, 'Missing producer attempt');
       options.producerAttempt = process.env.COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT;
@@ -181,7 +241,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const manifest = await (mode === 'pack' ? createDependencyBundle(options) : restoreDependencyBundle(options));
     console.log(`Cockpit dependencies ${mode}: ${manifest.archive.bytes} bytes, ${manifest.roots.length} private installation roots, ${((Date.now() - start) / 1000).toFixed(2)} seconds`);
     if (mode === 'restore') {
-      for (const file of ['dependencies.tar', 'manifest.json']) await rm(join(artifactDirectory, file));
+      for (const file of [manifest.schema === 2 ? 'dependencies.tar.zst' : 'dependencies.tar', 'manifest.json']) await rm(join(artifactDirectory, file));
       try { await rmdir(artifactDirectory); } catch (error) { if (error.code !== 'ENOTEMPTY') throw error; }
     }
   } catch (error) {
