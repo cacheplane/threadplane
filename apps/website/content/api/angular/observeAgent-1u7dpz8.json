@@ -1,0 +1,91 @@
+{
+  "name": "observeAgent",
+  "entrypointId": "angular",
+  "kind": "Function",
+  "href": "/docs/api/angular/observeAgent",
+  "canonicalReference": "@threadplane/angular!observeAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Observe an app-owned session in an injection context. Destroying that\ncontext releases only this subscription; the app retains session lifetime.",
+  "declarations": [
+    {
+      "name": "observeAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/angular!observeAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function observeAgent<TSnapshot>(session: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    getSnapshot(): TSnapshot;\n    subscribe(notify: () => void): () => void;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Signal",
+          "canonicalReference": "@angular/core!Signal:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<TSnapshot>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Observe an app-owned session in an injection context. Destroying that\ncontext releases only this subscription; the app retains session lifetime.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/angular/src/observe-agent.ts",
+        "line": 5
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "session",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "TSnapshot",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/angular/src/observe-agent.ts",
+    "line": 5
+  }
+}

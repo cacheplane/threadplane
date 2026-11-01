@@ -1,0 +1,54 @@
+{
+  "name": "InterruptTransport",
+  "entrypointId": "ag-ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/ag-ui/InterruptTransport",
+  "canonicalReference": "@threadplane/ag-ui!InterruptTransport:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Resume encoding profile; auto prefers native protocol interrupts, then selects Mastra or legacy command encoding.",
+  "declarations": [
+    {
+      "name": "InterruptTransport",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/ag-ui!InterruptTransport:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type InterruptTransport = "
+        },
+        {
+          "kind": "Content",
+          "text": "'auto' | 'protocol' | 'legacy-command' | 'mastra-command'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Resume encoding profile; auto prefers native protocol interrupts, then selects Mastra or legacy command encoding.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+        "line": 5
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+    "line": 5
+  }
+}

@@ -1,0 +1,299 @@
+{
+  "name": "RenderSpecProps",
+  "entrypointId": "react/render",
+  "kind": "Interface",
+  "href": "/docs/api/react/render/RenderSpecProps",
+  "canonicalReference": "@threadplane/react!RenderSpecProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies a nullable render tree, component registry, state and computed functions, plus loading state and a fallback component.",
+  "declarations": [
+    {
+      "name": "RenderSpecProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!RenderSpecProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderSpecProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies a nullable render tree, component registry, state and computed functions, plus loading state and a fallback component.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "fallback",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#fallback:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly fallback?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ComponentType",
+              "canonicalReference": "@types/react!React.ComponentType:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderViewProps",
+              "canonicalReference": "@threadplane/react!RenderViewProps:interface",
+              "href": "/docs/api/react/render/RenderViewProps"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 57
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "functions",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#functions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly functions?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactRenderFunctions",
+              "canonicalReference": "@threadplane/react!ReactRenderFunctions:type",
+              "href": "/docs/api/react/render/ReactRenderFunctions"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 55
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "loading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 56
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "registry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#registry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly registry: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactRenderRegistry",
+              "canonicalReference": "@threadplane/react!ReactRenderRegistry:type",
+              "href": "/docs/api/react/render/ReactRenderRegistry"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 53
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "spec",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderSpecData",
+              "canonicalReference": "@threadplane/react!RenderSpecData:interface",
+              "href": "/docs/api/react/render/RenderSpecData"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 52
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "state",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderSpecProps#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly state?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DeepReadonly",
+              "canonicalReference": "@threadplane/react!~DeepReadonly:type",
+              "href": "/docs/api/core/DeepReadonly"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 54
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/render/types.ts",
+        "line": 51
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/render/types.ts",
+    "line": 51
+  }
+}

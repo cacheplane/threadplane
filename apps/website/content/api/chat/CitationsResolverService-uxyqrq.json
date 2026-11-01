@@ -1,0 +1,237 @@
+{
+  "name": "CitationsResolverService",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/CitationsResolverService",
+  "canonicalReference": "@threadplane/chat!CitationsResolverService:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Resolves citation references reactively, preferring message metadata over markdown definitions.",
+  "declarations": [
+    {
+      "name": "CitationsResolverService",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!CitationsResolverService:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class CitationsResolverService "
+        }
+      ],
+      "docs": {
+        "summary": "Resolves citation references reactively, preferring message metadata over markdown definitions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "lookup",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!CitationsResolverService#lookup:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lookup(refId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ResolvedCitation",
+              "canonicalReference": "@threadplane/chat!ResolvedCitation:interface",
+              "href": "/docs/api/chat/ResolvedCitation"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+            "line": 19
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "refId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "markdownDefs",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!CitationsResolverService#markdownDefs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly markdownDefs: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "CitationDefinition",
+              "canonicalReference": "@cacheplane/partial-markdown!CitationDefinition:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+            "line": 17
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "message",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!CitationsResolverService#message:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly message: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+            "line": 16
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+    "line": 14
+  }
+}

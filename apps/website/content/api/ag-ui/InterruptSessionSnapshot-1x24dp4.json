@@ -1,0 +1,270 @@
+{
+  "name": "InterruptSessionSnapshot",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/InterruptSessionSnapshot",
+  "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Interrupt batch state containing its phase, generation, native or legacy interrupts, and any retained resume attempt.",
+  "declarations": [
+    {
+      "name": "InterruptSessionSnapshot",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface InterruptSessionSnapshot "
+        }
+      ],
+      "docs": {
+        "summary": "Interrupt batch state containing its phase, generation, native or legacy interrupts, and any retained resume attempt.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "attempt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#attempt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "attempt?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ResumeAttempt",
+              "canonicalReference": "@threadplane/ag-ui!ResumeAttempt:interface",
+              "href": "/docs/api/ag-ui/ResumeAttempt"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 25
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "generation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#generation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "generation: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "interrupts",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#interrupts:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupts: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Interrupt",
+              "canonicalReference": "@ag-ui/core!Interrupt:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "legacy",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#legacy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "legacy?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/ag-ui!~AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "phase: "
+            },
+            {
+              "kind": "Reference",
+              "text": "InterruptSessionPhase",
+              "canonicalReference": "@threadplane/ag-ui!InterruptSessionPhase:type",
+              "href": "/docs/api/ag-ui/InterruptSessionPhase"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 20
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "runId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot#runId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "runId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+            "line": 24
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+        "line": 19
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
+    "line": 19
+  }
+}

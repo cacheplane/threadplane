@@ -1,0 +1,85 @@
+{
+  "name": "AgentUsage",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentUsage",
+  "canonicalReference": "@threadplane/chat!AgentUsage:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Usage for the most recent finished or errored run, one entry per provider and model.",
+  "declarations": [
+    {
+      "name": "AgentUsage",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentUsage:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentUsage "
+        }
+      ],
+      "docs": {
+        "summary": "Usage for the most recent finished or errored run, one entry per provider and model.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "entries",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsage#entries:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "entries: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentUsageEntry",
+              "canonicalReference": "@threadplane/chat!AgentUsageEntry:interface",
+              "href": "/docs/api/chat/AgentUsageEntry"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 20
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-usage.ts",
+        "line": 19
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-usage.ts",
+    "line": 19
+  }
+}

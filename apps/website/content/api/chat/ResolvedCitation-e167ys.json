@@ -1,0 +1,117 @@
+{
+  "name": "ResolvedCitation",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ResolvedCitation",
+  "canonicalReference": "@threadplane/chat!ResolvedCitation:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A citation resolved from message metadata or a markdown definition, with its source identified.",
+  "declarations": [
+    {
+      "name": "ResolvedCitation",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ResolvedCitation:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ResolvedCitation "
+        }
+      ],
+      "docs": {
+        "summary": "A citation resolved from message metadata or a markdown definition, with its source identified.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "citation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ResolvedCitation#citation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "citation: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/chat!Citation:interface",
+              "href": "/docs/api/chat/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "source",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ResolvedCitation#source:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "source: "
+            },
+            {
+              "kind": "Content",
+              "text": "'message' | 'markdown'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+    "line": 8
+  }
+}

@@ -111,7 +111,7 @@ function getDocDescription(content: string, fallback: string): string {
 export function getDocBySlug(library: string, section: string, slug: string): ResolvedDoc | null {
   const pages = getLibraryPages(library);
   const page = pages.find((p) => p.section === section && p.slug === slug);
-  if (!page) return null;
+  if (!page || page.href) return null;
 
   const dir = resolveContentDir(library);
   const filePath = path.join(dir, section, `${slug}.mdx`);
@@ -161,7 +161,7 @@ export function getDocMetadata(
 export function getAllDocSlugs(): { library: string; section: string; slug: string }[] {
   return docsConfig.flatMap((lib) =>
     lib.sections.flatMap((s) =>
-      s.pages.map((p) => ({ library: lib.id, section: p.section, slug: p.slug }))
+      s.pages.filter((p) => !p.href).map((p) => ({ library: lib.id, section: p.section, slug: p.slug }))
     )
   );
 }

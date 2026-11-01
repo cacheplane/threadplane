@@ -1,0 +1,115 @@
+{
+  "name": "CitationImageVisual",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/CitationImageVisual",
+  "canonicalReference": "@threadplane/chat!CitationImageVisual:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A citation source marker rendered from a provider image URL.",
+  "declarations": [
+    {
+      "name": "CitationImageVisual",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!CitationImageVisual:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CitationImageVisual "
+        }
+      ],
+      "docs": {
+        "summary": "A citation source marker rendered from a provider image URL.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "iconUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!CitationImageVisual#iconUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "iconUrl: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/citation-display.ts",
+            "line": 20
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!CitationImageVisual#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "kind: "
+            },
+            {
+              "kind": "Content",
+              "text": "'image'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/citation-display.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/citation-display.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/citation-display.ts",
+    "line": 18
+  }
+}

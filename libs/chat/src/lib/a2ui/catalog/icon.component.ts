@@ -15,6 +15,7 @@ export function toMaterialSymbolName(name: string): string {
   return name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
 }
 
+/** Renders an A2UI icon from a Material Symbols name or an inline SVG path. */
 @Component({
   selector: 'a2ui-icon',
   standalone: true,

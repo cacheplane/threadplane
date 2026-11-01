@@ -1,0 +1,187 @@
+{
+  "name": "ChatSidenavScrimProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatSidenavScrimProps",
+  "canonicalReference": "@threadplane/react!ChatSidenavScrimProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls backdrop visibility and the dismissal callback, with an accessible button label.",
+  "declarations": [
+    {
+      "name": "ChatSidenavScrimProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatSidenavScrimProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatSidenavScrimProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls backdrop visibility and the dismissal callback, with an accessible button label.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavScrimProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavScrimProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onDismiss",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavScrimProps#onDismiss:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onDismiss: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatSidenavScrimProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+    "line": 4
+  }
+}

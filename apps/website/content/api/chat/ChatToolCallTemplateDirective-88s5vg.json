@@ -1,0 +1,143 @@
+{
+  "name": "ChatToolCallTemplateDirective",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatToolCallTemplateDirective",
+  "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n\n<chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n </ng-template>\n <ng-template chatToolCallTemplate=\"*\" let-call>\n <chat-tool-call-card [toolCall]=\"call\"/>\n </ng-template>\n </chat-tool-calls>",
+  "declarations": [
+    {
+      "name": "ChatToolCallTemplateDirective",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatToolCallTemplateDirective "
+        }
+      ],
+      "docs": {
+        "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n\n<chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n </ng-template>\n <ng-template chatToolCallTemplate=\"*\" let-call>\n <chat-tool-call-card [toolCall]=\"call\"/>\n </ng-template>\n </chat-tool-calls>",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "name",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The tool name this template handles, or \"*\" for the wildcard catch-all.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
+            "line": 39
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "templateRef",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective#templateRef:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly templateRef: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateRef",
+              "canonicalReference": "@angular/core!TemplateRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
+            "line": 40
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
+        "line": 33
+      },
+      "angular": {
+        "selector": "[chatToolCallTemplate]",
+        "inputs": [
+          {
+            "name": "name",
+            "alias": "chatToolCallTemplate",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
+    "line": 33
+  }
+}

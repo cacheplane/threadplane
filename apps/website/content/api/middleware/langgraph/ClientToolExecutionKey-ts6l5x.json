@@ -1,0 +1,115 @@
+{
+  "name": "ClientToolExecutionKey",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/middleware/langgraph/ClientToolExecutionKey",
+  "canonicalReference": "@threadplane/middleware!ClientToolExecutionKey:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Durable identity for one client-tool execution on one thread.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionKey",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/middleware!ClientToolExecutionKey:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutionKey "
+        }
+      ],
+      "docs": {
+        "summary": "Durable identity for one client-tool execution on one thread.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionKey#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+            "line": 3
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionKey#toolCallId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+            "line": 4
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+        "line": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+    "line": 2
+  }
+}

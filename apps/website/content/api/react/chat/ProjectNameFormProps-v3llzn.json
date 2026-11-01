@@ -1,0 +1,403 @@
+{
+  "name": "ProjectNameFormProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ProjectNameFormProps",
+  "canonicalReference": "@threadplane/react!ProjectNameFormProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls a project name draft, save/cancel intents, pending and error feedback, and save-button availability.",
+  "declarations": [
+    {
+      "name": "ProjectNameFormProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ProjectNameFormProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ProjectNameFormProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls a project name draft, save/cancel intents, pending and error feedback, and save-button availability.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly error?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onCancel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#onCancel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onCancel: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onSubmit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#onSubmit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSubmit: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onValueChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#onValueChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onValueChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "pending",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#pending:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pending?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "submitDisabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#submitDisabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly submitDisabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "submitLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#submitLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly submitLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectNameFormProps#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-name-form.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/project-name-form.tsx",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/project-name-form.tsx",
+    "line": 5
+  }
+}

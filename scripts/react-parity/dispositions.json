@@ -2551,42 +2551,6 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/api/fake-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/provide-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
       "taskIds": [
         "T34",
@@ -2759,33 +2723,6 @@
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/surface-store.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/content-classifier.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/mock-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/parse-tree-store.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3199,51 +3136,6 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/inject-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/langgraph-threads-adapter.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/mock-stream-transport.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/provide-agent.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
       "taskIds": [
         "T34",
@@ -3415,15 +3307,6 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
@@ -3460,7 +3343,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/api/define-angular-registry.mdx",
+      "id": "doc:apps/website/content/docs/render/guides/computed-functions.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3469,34 +3352,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/api/provide-render.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/render-spec-component.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/signal-state-store.mdx",
-      "taskIds": [
-        "T34",
-        "T35"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/views.mdx",
+      "id": "doc:apps/website/content/docs/render/guides/element-rendering.mdx",
       "taskIds": [
         "T34",
         "T35"

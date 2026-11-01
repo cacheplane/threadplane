@@ -1,0 +1,526 @@
+{
+  "name": "HistorySearchPaletteProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/HistorySearchPaletteProps",
+  "canonicalReference": "@threadplane/react!HistorySearchPaletteProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls the search dialog's query, results, loading state, selection/close requests, and return-focus target.",
+  "declarations": [
+    {
+      "name": "HistorySearchPaletteProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!HistorySearchPaletteProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface HistorySearchPaletteProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls the search dialog's query, results, loading state, selection/close requests, and return-focus target.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 36
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "closeLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#closeLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly closeLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 35
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "description",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#description:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly description?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 32
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "loading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onClose",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#onClose:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onClose: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onQueryChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#onQueryChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onQueryChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(query: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "(id: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "placeholder",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#placeholder:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly placeholder?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 34
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "query",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#query:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly query: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "results",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#results:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly results: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "HistorySearchResult",
+              "canonicalReference": "@threadplane/react!HistorySearchResult:interface",
+              "href": "/docs/api/react/chat/HistorySearchResult"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "returnFocusTo",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchPaletteProps#returnFocusTo:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly returnFocusTo?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLElement",
+              "canonicalReference": "!HTMLElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 37
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/history-search-palette.tsx",
+        "line": 24
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/history-search-palette.tsx",
+    "line": 24
+  }
+}

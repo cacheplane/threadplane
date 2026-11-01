@@ -268,7 +268,7 @@ test('docs landing page carries the control plane', async ({ page }) => {
 });
 
 test('api reference renders in docs', async ({ page }) => {
-  await page.goto('/docs/langgraph/api/inject-agent');
+  await page.goto('/docs/api/langgraph/injectAgent');
   await expect(page.locator('article').first()).toBeVisible();
 });
 
@@ -508,7 +508,7 @@ test.describe('representative docs pages do not create page-level horizontal ove
   const routes = [
     '/docs',
     '/docs/langgraph/getting-started/introduction',
-    '/docs/langgraph/api/inject-agent',
+    '/docs/api/langgraph/injectAgent',
     '/docs/chat/components/chat-tool-calls',
     '/docs/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',

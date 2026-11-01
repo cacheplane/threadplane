@@ -1,0 +1,259 @@
+{
+  "name": "DebugCheckpointRow",
+  "entrypointId": "react/debug",
+  "kind": "Interface",
+  "href": "/docs/api/react/debug/DebugCheckpointRow",
+  "canonicalReference": "@threadplane/react!DebugCheckpointRow:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Display metadata only. The app privately maps opaque row keys to reads.\nThe app supplies a bounded page (first slice: at most ten rows, as received).\nMissing/duplicate identities remain visible with inspectable=false.",
+  "declarations": [
+    {
+      "name": "DebugCheckpointRow",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!DebugCheckpointRow:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface DebugCheckpointRow "
+        }
+      ],
+      "docs": {
+        "summary": "Display metadata only. The app privately maps opaque row keys to reads.\nThe app supplies a bounded page (first slice: at most ten rows, as received).\nMissing/duplicate identities remain visible with inspectable=false.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "createdAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#createdAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly createdAt?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inspectable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#inspectable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inspectable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "next",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#next:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly next?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 32
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "parentLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#parentLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly parentLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "rowKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugCheckpointRow#rowKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rowKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 27
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 27
+  }
+}

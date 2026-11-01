@@ -1,0 +1,77 @@
+{
+  "name": "injectThreadRouting",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/injectThreadRouting",
+  "canonicalReference": "@threadplane/chat!injectThreadRouting:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Bind an app-owned `activeThreadId` signal to the URL — restore on load, stamp on change,\nvalidate-or-redirect, with a bare URL meaning \"no thread\" (welcome). URL is the source of\ntruth; nothing is written to localStorage. Must be called in an injection context.",
+  "declarations": [
+    {
+      "name": "injectThreadRouting",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!injectThreadRouting:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function injectThreadRouting(config: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadRoutingConfig",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig:interface",
+          "href": "/docs/api/chat/ThreadRoutingConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Bind an app-owned `activeThreadId` signal to the URL — restore on load, stamp on change,\nvalidate-or-redirect, with a bare URL meaning \"no thread\" (welcome). URL is the source of\ntruth; nothing is written to localStorage. Must be called in an injection context.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nexport const ACTIVE_THREAD = signal<string | null>(null);\n// providers: provideAgent({ threadId: ACTIVE_THREAD, onThreadId: id => ACTIVE_THREAD.set(id) })\nconst threads = inject(LangGraphThreadsAdapter);\ninjectThreadRouting({ threadId: ACTIVE_THREAD, validate: id => threads.getThread(id).then(Boolean) });\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/routing/thread-routing.ts",
+        "line": 41
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "config",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/routing/thread-routing.ts",
+    "line": 41
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "name": "A2uiClientCapabilities",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/A2uiClientCapabilities",
+  "canonicalReference": "@threadplane/chat!A2uiClientCapabilities:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Catalog IDs and optional inline catalog definitions advertised by the client.",
+  "declarations": [
+    {
+      "name": "A2uiClientCapabilities",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!A2uiClientCapabilities:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiClientCapabilities "
+        }
+      ],
+      "docs": {
+        "summary": "Catalog IDs and optional inline catalog definitions advertised by the client.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "inlineCatalogs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiClientCapabilities#inlineCatalogs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "inlineCatalogs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 314
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "supportedCatalogIds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiClientCapabilities#supportedCatalogIds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "supportedCatalogIds: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 313
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 312
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 312
+  }
+}

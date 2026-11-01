@@ -1,0 +1,123 @@
+{
+  "name": "MarkdownSnapshot",
+  "entrypointId": "content/markdown",
+  "kind": "Interface",
+  "href": "/docs/api/content/markdown/MarkdownSnapshot",
+  "canonicalReference": "@threadplane/content!MarkdownSnapshot:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Accepted Markdown source document and its owned partial syntax tree.",
+  "declarations": [
+    {
+      "name": "MarkdownSnapshot",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!MarkdownSnapshot:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MarkdownSnapshot "
+        }
+      ],
+      "docs": {
+        "summary": "Accepted Markdown source document and its owned partial syntax tree.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "document",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!MarkdownSnapshot#document:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownDocument",
+              "canonicalReference": "@threadplane/content!MarkdownDocument:interface",
+              "href": "/docs/api/content/markdown/MarkdownDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 32
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "root",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!MarkdownSnapshot#root:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly root: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownDocumentNode",
+              "canonicalReference": "@threadplane/content!MarkdownDocumentNode:type",
+              "href": "/docs/api/content/markdown/MarkdownDocumentNode"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/markdown/types.ts",
+        "line": 31
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/markdown/types.ts",
+    "line": 31
+  }
+}

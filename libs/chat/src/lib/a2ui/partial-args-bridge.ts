@@ -4,6 +4,7 @@ import { A2UI_BASIC_CATALOG_ID, A2UI_WIRE_VERSION, type A2uiMessage } from '@thr
 import type { A2uiSurfaceStore } from './surface-store';
 import { normalizeEnvelopeArgs } from './envelope-normalizer';
 
+/** Feeds cumulative tool argument JSON into an A2UI surface store while tracking malformed streams. */
 export interface PartialArgsBridge {
   /**
    * Replace the cumulative argument-string buffer for `toolCallId` with

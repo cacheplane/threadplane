@@ -1,0 +1,284 @@
+{
+  "name": "TimelineProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/TimelineProps",
+  "canonicalReference": "@threadplane/react!TimelineProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies ordered checkpoints, controlled selection, and an optional complete-row rendering override.",
+  "declarations": [
+    {
+      "name": "TimelineProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!TimelineProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface TimelineProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies ordered checkpoints, controlled selection, and an optional complete-row rendering override.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "items",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#items:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly items: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "TimelineItem",
+              "canonicalReference": "@threadplane/react!TimelineItem:interface",
+              "href": "/docs/api/react/chat/TimelineItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "(id: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "renderItem",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#renderItem:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderItem?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(item: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TimelineItem",
+              "canonicalReference": "@threadplane/react!TimelineItem:interface",
+              "href": "/docs/api/react/chat/TimelineItem"
+            },
+            {
+              "kind": "Content",
+              "text": ", isSelected: boolean, index: number) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replaces the complete row; the owner supplies controls and accessibility.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "selectedId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TimelineProps#selectedId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selectedId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/timeline.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/timeline.tsx",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/timeline.tsx",
+    "line": 14
+  }
+}

@@ -14,8 +14,10 @@ import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
+/** Actions emitted by the approval dialog for the host to handle. */
 export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
 
+/** Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions. */
 @Component({
   selector: 'chat-approval-card',
   standalone: true,

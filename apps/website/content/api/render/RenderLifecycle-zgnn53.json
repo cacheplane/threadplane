@@ -1,0 +1,248 @@
+{
+  "name": "RenderLifecycle",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/RenderLifecycle",
+  "canonicalReference": "@threadplane/render!RenderLifecycle:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Reactive mount, state-change, and handler-invocation measurements for the render lifecycle service.",
+  "declarations": [
+    {
+      "name": "RenderLifecycle",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!RenderLifecycle:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderLifecycle "
+        }
+      ],
+      "docs": {
+        "summary": "Reactive mount, state-change, and handler-invocation measurements for the render lifecycle service.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "firstMountAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderLifecycle#firstMountAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly firstMountAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        kind: 'spec' | 'element';\n        elementType?: string;\n        at: number;\n    } | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "First mount event in this render context. Sticky — does not reset.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/lifecycle.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "lastHandlerInvokedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderLifecycle#lastHandlerInvokedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly lastHandlerInvokedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        action: string;\n        at: number;\n    } | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Most recent handler invocation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/lifecycle.ts",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "lastMountAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderLifecycle#lastMountAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly lastMountAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the most recent mount event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/lifecycle.ts",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "lastStateChangeAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderLifecycle#lastStateChangeAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly lastStateChangeAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the most recent state-change event.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/lifecycle.ts",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "mountCount",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderLifecycle#mountCount:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly mountCount: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Total mount count since render context started.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/lifecycle.ts",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/lifecycle.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/lifecycle.ts",
+    "line": 4
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "name": "messageContent",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/messageContent",
+  "canonicalReference": "@threadplane/chat!messageContent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Extracts a human-readable string from a message's content.\n\nMessage content is either a plain string or an array of typed blocks.\nReasoning-capable models (OpenAI gpt-5/o-series, Anthropic) emit complex\narrays: `{type:'text',text}`, `{type:'reasoning',...}`, tool-use blocks, etc.\nOnly the visible text portions are rendered and anything else is skipped.\nStringifying the whole array would dump raw JSON like `[{\"type\":\"text\",...}]`\ninto the chat bubble.\n\nThe parameter is structural on purpose. This function reads nothing but\n`.content`, and callers hold either the runtime-neutral `Message` from\n`agent.messages()` or a LangChain `BaseMessage` depending on where the\nmessage came from. Both satisfy `{ content: unknown }`, so neither has to\ncast.",
+  "declarations": [
+    {
+      "name": "messageContent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!messageContent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function messageContent(message: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    content: unknown;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Extracts a human-readable string from a message's content.\n\nMessage content is either a plain string or an array of typed blocks.\nReasoning-capable models (OpenAI gpt-5/o-series, Anthropic) emit complex\narrays: `{type:'text',text}`, `{type:'reasoning',...}`, tool-use blocks, etc.\nOnly the visible text portions are rendered and anything else is skipped.\nStringifying the whole array would dump raw JSON like `[{\"type\":\"text\",...}]`\ninto the chat bubble.\n\nThe parameter is structural on purpose. This function reads nothing but\n`.content`, and callers hold either the runtime-neutral `Message` from\n`agent.messages()` or a LangChain `BaseMessage` depending on where the\nmessage came from. Both satisfy `{ content: unknown }`, so neither has to\ncast.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "The concatenated visible text, or `''` when there is none.",
+        "examples": [],
+        "see": [],
+        "params": [
+          {
+            "name": "message",
+            "description": "Any object carrying a `content` field."
+          }
+        ],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/shared/message-utils.ts",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "message",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/shared/message-utils.ts",
+    "line": 20
+  }
+}

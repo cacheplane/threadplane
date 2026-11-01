@@ -16,10 +16,11 @@ import {
 import {
   allDocsPages,
   docsConfig,
-  findDocsPage,
   libraryIntroPath,
   specialDocsPages,
 } from './docs-config';
+import { readApiIndex, readApiSymbol } from './api-reference';
+import { apiSymbolHref } from './api-reference-model';
 import { getCanonicalUrl, getSitemapRoutes } from './site-metadata';
 
 const internalDocsLinkPattern =
@@ -116,7 +117,7 @@ function findPackageImports(content: string): string[] {
 describe('website docs bindings', () => {
   it('lists all doc slugs from config', () => {
     const slugs = getAllDocSlugs();
-    expect(slugs.length).toBe(allDocsPages.length);
+    expect(slugs.length).toBe(allDocsPages.filter(page => !page.href).length);
     expect(slugs).toContainEqual({
       library: 'langgraph',
       section: 'getting-started',
@@ -147,6 +148,17 @@ describe('website docs bindings', () => {
       section: 'getting-started',
       slug: 'introduction',
     });
+  });
+
+  it('uses generated import paths for API navigation without authored API pages', () => {
+    const index = readApiIndex();
+    for (const library of docsConfig) {
+      const expected = index.entrypoints.filter(entry => entry.docLibrary === library.id);
+      const links = library.sections.find(section => section.id === 'api')?.pages ?? [];
+      expect(links.map(page => page.href)).toEqual(expected.map(entry => apiSymbolHref(entry.id)));
+      for (const link of links) expect(getDocBySlug(library.id, link.section, link.slug)).toBeNull();
+    }
+    expect(getAllDocSlugs().some(page => page.section === 'api')).toBe(false);
   });
 
   it('loads every configured doc page', () => {
@@ -395,126 +407,48 @@ describe('website docs bindings', () => {
     expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/content', label)).toBe(false);
   });
 
-  it('has generated API docs for every documented package surface', () => {
-    const librariesWithApiDocs = [
-      'langgraph',
-      'chat',
-      'render',
-      'ag-ui',
-      'a2ui',
-      'middleware',
-    ];
-    const missingApiDocs = librariesWithApiDocs.filter((library) => {
-      const apiDocsPath = path.join(
-        contentRoot,
-        library,
-        'api',
-        'api-docs.json'
-      );
-      if (!fs.existsSync(apiDocsPath)) return true;
-
-      const entries = JSON.parse(
-        fs.readFileSync(apiDocsPath, 'utf8')
-      ) as unknown[];
-      return entries.length === 0;
-    });
-
-    expect(missingApiDocs).toEqual([]);
+  it('has generated reference for every documented package surface', () => {
+    const index = readApiIndex();
+    for (const library of ['langgraph', 'chat', 'render', 'ag-ui', 'a2ui', 'middleware']) {
+      expect(index.entrypoints.some(entry => entry.docLibrary === library), library).toBe(true);
+      expect(index.symbols.some(symbol => index.entrypoints.some(entry => entry.docLibrary === library && entry.id === symbol.entrypointId)), library).toBe(true);
+    }
+    for (const summary of index.symbols) {
+      expect(readApiSymbol(summary.entrypointId, summary.name)?.href).toBe(summary.href);
+    }
   });
 
   it('keeps internal and ɵ adapter plumbing out of consumer API docs', () => {
-    const prohibited: string[] = [];
     for (const library of ['langgraph', 'ag-ui']) {
-      const apiDocsPath = path.join(
-        contentRoot,
-        library,
-        'api',
-        'api-docs.json'
-      );
-      const entries = JSON.parse(
-        fs.readFileSync(apiDocsPath, 'utf8')
-      ) as Array<{
-        name: string;
-        params?: Array<{ name: string }>;
-        properties?: Array<{ name: string }>;
-        methods?: Array<{ name: string; params?: Array<{ name: string }> }>;
-      }>;
-      for (const entry of entries) {
-        const names = [
-          entry.name,
-          ...(entry.params ?? []).map((parameter) => parameter.name),
-          ...(entry.properties ?? []).map((property) => property.name),
-          ...(entry.methods ?? []).flatMap((method) => [
-            method.name,
-            ...(method.params ?? []).map((parameter) => parameter.name),
-          ]),
-        ];
-        for (const name of names) {
-          if (
-            name.startsWith('ɵ') ||
-            name === 'reportOperationFailure' ||
-            name === 'protectsOperationErrors'
-          ) {
-            prohibited.push(`${library}:${entry.name}:${name}`);
-          }
-        }
+      const symbols = readApiIndex().symbols.filter(symbol => symbol.entrypointId === library);
+      expect(symbols.length).toBeGreaterThan(0);
+      for (const summary of symbols) {
+        const symbol = readApiSymbol(library, summary.name)!;
+        const walk = (member: typeof symbol.declarations[number]): void => {
+          expect(member.name).not.toMatch(/^ɵ|^(reportOperationFailure|protectsOperationErrors)$/u);
+          for (const parameter of member.parameters ?? []) expect(parameter.parameterName).not.toMatch(/^ɵ/u);
+          member.members.forEach(walk);
+        };
+        symbol.declarations.forEach(walk);
       }
     }
-
-    expect(prohibited).toEqual([]);
-    const langGraphDocs = JSON.parse(
-      fs.readFileSync(
-        path.join(contentRoot, 'langgraph', 'api', 'api-docs.json'),
-        'utf8'
-      )
-    ) as Array<{ name: string; properties?: Array<{ name: string }> }>;
-    const clientOptionMembers = langGraphDocs
-      .find((entry) => entry.name === 'LangGraphClientOptions')
-      ?.properties?.map((property) => property.name);
-    // A deployment key passed from Angular ships in the bundle, so the
-    // adapter offers no field for one; a session token rides in headers.
-    expect(clientOptionMembers).toContain('defaultHeaders');
-    expect(clientOptionMembers).not.toContain('apiKey');
+    const options = readApiSymbol('langgraph', 'LangGraphClientOptions')!;
+    const names = options.declarations.flatMap(declaration => declaration.members.map(member => member.name));
+    expect(names).toContain('defaultHeaders');
+    expect(names).not.toContain('apiKey');
   });
 
-  it('auto-rendered API pages resolve generated entries', () => {
-    const unresolvedApiPages: string[] = [];
-
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      if (section !== 'api') continue;
-      const doc = getDocBySlug(library, section, slug);
-      if (!doc?.content.includes('Auto-rendered from api-docs.json')) continue;
-
-      const apiDocsPath = path.join(
-        contentRoot,
-        library,
-        'api',
-        'api-docs.json'
-      );
-      const entries = JSON.parse(
-        fs.readFileSync(apiDocsPath, 'utf8')
-      ) as Array<{ name: string }>;
-      const names = new Set(entries.map((entry) => entry.name));
-
-      // Group pages declare the exports they cover; every one must exist.
-      const configured = findDocsPage(library, section, slug)?.apiEntries;
-      if (configured) {
-        const missing = configured.filter((name) => !names.has(name));
-        if (missing.length > 0) {
-          unresolvedApiPages.push(
-            `${library}/api/${slug} → ${missing.join(', ')}`
-          );
-        }
-        continue;
-      }
-
-      const pageTitle = doc.title.replace(/\(\)$/, '');
-      if (!names.has(pageTitle) && !names.has(doc.title)) {
-        unresolvedApiPages.push(`${library}/api/${slug}`);
-      }
-    }
-
-    expect(unresolvedApiPages).toEqual([]);
+  it('keeps both moved walkthroughs and their source examples in the guide inventory', () => {
+    const elements = getDocBySlug('render', 'guides', 'element-rendering')!;
+    const computed = getDocBySlug('render', 'guides', 'computed-functions')!;
+    expect(elements.title).toBe('Element Rendering');
+    expect(computed.title).toBe('Computed Functions');
+    expect(elements.body.match(/<ExampleCode/g)).toHaveLength(5);
+    expect(computed.body.match(/<ExampleCode/g)).toHaveLength(5);
+    expect(elements.body).toContain('/docs/api/render/RenderSpecComponent');
+    expect(computed.body).toContain('/docs/api/render/RenderConfig');
+    expect(elements.body).not.toMatch(/## (Inputs|Outputs)/u);
+    expect(computed.body).not.toMatch(/## (Signature|RenderConfig)/u);
   });
 
   it('returns null for non-existent doc', () => {
@@ -536,7 +470,7 @@ describe('website docs bindings', () => {
       docsConfig.flatMap((library) =>
         library.sections.flatMap((section) =>
           section.pages.map(
-            (page) => `/docs/${library.id}/${section.id}/${page.slug}`
+            (page) => page.href ?? `/docs/${library.id}/${section.id}/${page.slug}`
           )
         )
       )

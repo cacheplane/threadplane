@@ -1,0 +1,54 @@
+{
+  "name": "ThreadplaneNodeEvent",
+  "entrypointId": "telemetry/shared",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/shared/ThreadplaneNodeEvent",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneNodeEvent:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Runtime and stream lifecycle event names accepted by the explicit Node capture client.",
+  "declarations": [
+    {
+      "name": "ThreadplaneNodeEvent",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneNodeEvent:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ThreadplaneNodeEvent = "
+        },
+        {
+          "kind": "Content",
+          "text": "'tplane:runtime_instance_created' | 'tplane:runtime_request_created' | 'tplane:stream_started' | 'tplane:stream_ended' | 'tplane:stream_errored'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Runtime and stream lifecycle event names accepted by the explicit Node capture client.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/shared/events.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/shared/events.ts",
+    "line": 2
+  }
+}

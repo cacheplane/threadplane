@@ -1,0 +1,104 @@
+{
+  "name": "DebugInspection",
+  "entrypointId": "react/debug",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/debug/DebugInspection",
+  "canonicalReference": "@threadplane/react!DebugInspection:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "App-owned checkpoint read state; every active result carries the selection that produced it.",
+  "declarations": [
+    {
+      "name": "DebugInspection",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!DebugInspection:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DebugInspection = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly status: 'idle';\n} | {\n    readonly status: 'loading';\n    readonly selection: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugSelection",
+          "canonicalReference": "@threadplane/react!DebugSelection:interface",
+          "href": "/docs/api/react/debug/DebugSelection"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | {\n    readonly status: 'ready';\n    readonly selection: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugSelection",
+          "canonicalReference": "@threadplane/react!DebugSelection:interface",
+          "href": "/docs/api/react/debug/DebugSelection"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n    readonly values: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugValue",
+          "canonicalReference": "@threadplane/react!DebugValue:type",
+          "href": "/docs/api/react/debug/DebugValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | {\n    readonly status: 'error';\n    readonly selection: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugSelection",
+          "canonicalReference": "@threadplane/react!DebugSelection:interface",
+          "href": "/docs/api/react/debug/DebugSelection"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n    readonly message: string;\n} | {\n    readonly status: 'unavailable';\n    readonly selection: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugSelection",
+          "canonicalReference": "@threadplane/react!DebugSelection:interface",
+          "href": "/docs/api/react/debug/DebugSelection"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n    readonly message?: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "App-owned checkpoint read state; every active result carries the selection that produced it.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 52
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 52
+  }
+}

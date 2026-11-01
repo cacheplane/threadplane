@@ -2,6 +2,7 @@
 import { useId, useRef, type ReactNode } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
+/** Controlled popup visibility, accessible labels, Escape dismissal policy, and persistent panel content. */
 export interface ChatPopupProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;

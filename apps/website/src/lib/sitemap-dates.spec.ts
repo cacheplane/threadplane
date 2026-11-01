@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import sitemap from '../app/sitemap';
 import { getAllPosts } from './blog';
-import { getPostLastModified, getSitemapEntries, hasGitHistory, parseGitLog } from './sitemap-dates';
+import {
+  getPostLastModified,
+  getSitemapEntries,
+  hasGitHistory,
+  parseGitLog,
+  sourcePathsForRoute,
+  getPostsByRoute,
+} from './sitemap-dates';
 import { getSitemapRoutes } from './site-metadata';
+import { execFileSync } from 'node:child_process';
+import { resolveWebsiteDir } from './website-dir';
 
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
@@ -26,11 +35,19 @@ describe('parseGitLog', () => {
 
     const times = parseGitLog(log, 'apps/website/', new Set());
 
-    expect(Object.fromEntries(times)).toEqual({ 'content/docs/a.mdx': 3000, 'content/docs/b.mdx': 1000 });
+    expect(Object.fromEntries(times)).toEqual({
+      'content/docs/a.mdx': 3000,
+      'content/docs/b.mdx': 1000,
+    });
   });
 
   it('drops every file a grafted shallow-boundary commit claims to have changed', () => {
-    const log = [header(9000, GRAFT), 'content/docs/a.mdx', 'content/docs/b.mdx', ''].join('\n');
+    const log = [
+      header(9000, GRAFT),
+      'content/docs/a.mdx',
+      'content/docs/b.mdx',
+      '',
+    ].join('\n');
 
     const times = parseGitLog(log, '', new Set([GRAFT]));
 
@@ -56,13 +73,26 @@ describe('parseGitLog', () => {
   });
 
   it('handles a merge commit that lists no files', () => {
-    const log = [header(5000, SHA_A), '', header(4000, SHA_B), 'content/docs/a.mdx', ''].join('\n');
+    const log = [
+      header(5000, SHA_A),
+      '',
+      header(4000, SHA_B),
+      'content/docs/a.mdx',
+      '',
+    ].join('\n');
 
-    expect(Object.fromEntries(parseGitLog(log, '', new Set()))).toEqual({ 'content/docs/a.mdx': 4000 });
+    expect(Object.fromEntries(parseGitLog(log, '', new Set()))).toEqual({
+      'content/docs/a.mdx': 4000,
+    });
   });
 
   it('takes paths verbatim, including non-ASCII and leading whitespace', () => {
-    const log = [header(7000, SHA_A), 'content/blog/café niño.mdx', ' leading-space.mdx', ''].join('\n');
+    const log = [
+      header(7000, SHA_A),
+      'content/blog/café niño.mdx',
+      ' leading-space.mdx',
+      '',
+    ].join('\n');
 
     expect(Object.fromEntries(parseGitLog(log, '', new Set()))).toEqual({
       'content/blog/café niño.mdx': 7000,
@@ -71,7 +101,12 @@ describe('parseGitLog', () => {
   });
 
   it('treats a path that begins with the marker text as a path, not a header', () => {
-    const log = [header(8000, SHA_A), 'commit-time notes.mdx', 'commit-time 123 nonsense', ''].join('\n');
+    const log = [
+      header(8000, SHA_A),
+      'commit-time notes.mdx',
+      'commit-time 123 nonsense',
+      '',
+    ].join('\n');
 
     expect(Object.fromEntries(parseGitLog(log, '', new Set()))).toEqual({
       'commit-time notes.mdx': 8000,
@@ -89,31 +124,54 @@ describe('getSitemapEntries', () => {
     const entries = getSitemapEntries();
     expect(entries.length).toBeGreaterThan(100);
 
-    const invalid = entries.filter((e) => e.lastModified !== undefined && Number.isNaN(e.lastModified.getTime()));
+    const invalid = entries.filter(
+      (e) =>
+        e.lastModified !== undefined && Number.isNaN(e.lastModified.getTime())
+    );
     expect(invalid.map((e) => e.route)).toEqual([]);
 
     const unresolved = entries.filter((e) => !e.lastModified);
     if (hasGitHistory()) {
-      // A full checkout can date everything; anything missing is a mapping bug.
-      expect(unresolved.map((e) => e.route)).toEqual([]);
+      // New, uncommitted pages legitimately have no commit date. Every omitted
+      // date must lack committed source evidence, rather than hiding a mapping bug.
+      const posts = getPostsByRoute();
+      for (const entry of unresolved) {
+        const sources = sourcePathsForRoute(entry.route, posts);
+        const committed = execFileSync(
+          'git',
+          ['log', '-1', '--format=%ct', '--', ...sources],
+          { cwd: resolveWebsiteDir(), encoding: 'utf8' }
+        ).trim();
+        expect(committed, entry.route).toBe('');
+      }
     } else {
       // Degraded environment (no git, or shallow): blog posts still date
       // themselves from frontmatter, and nothing is fabricated.
-      expect(entries.filter((e) => e.lastModified).every((e) => e.route.startsWith('/blog/'))).toBe(true);
+      expect(
+        entries
+          .filter((e) => e.lastModified)
+          .every((e) => e.route.startsWith('/blog/'))
+      ).toBe(true);
     }
   });
 
   it('dates a blog route no earlier than its publish date', () => {
-    const entry = getSitemapEntries().find((e) => e.route === '/blog/angular-chat-app-tutorial-with-ag-ui');
+    const entry = getSitemapEntries().find(
+      (e) => e.route === '/blog/angular-chat-app-tutorial-with-ag-ui'
+    );
     expect(entry?.lastModified).toBeInstanceOf(Date);
     // lastmod is last *modified*: the post's own file may have been edited after
     // it was published, never before.
-    expect(entry?.lastModified?.getTime()).toBeGreaterThanOrEqual(Date.parse('2026-08-13T00:00:00Z'));
+    expect(entry?.lastModified?.getTime()).toBeGreaterThanOrEqual(
+      Date.parse('2026-08-13T00:00:00Z')
+    );
   });
 
   it('never claims a route changed in the future', () => {
     const now = Date.now();
-    const future = getSitemapEntries().filter((e) => (e.lastModified?.getTime() ?? 0) > now);
+    const future = getSitemapEntries().filter(
+      (e) => (e.lastModified?.getTime() ?? 0) > now
+    );
     expect(future.map((e) => e.route)).toEqual([]);
   });
 
@@ -126,7 +184,9 @@ describe('getSitemapEntries', () => {
   });
 
   it('resolves the special docs pages whose route shape differs from library docs', () => {
-    const entry = getSitemapEntries().find((e) => e.route === '/docs/choosing-an-adapter');
+    const entry = getSitemapEntries().find(
+      (e) => e.route === '/docs/choosing-an-adapter'
+    );
     if (hasGitHistory()) expect(entry?.lastModified).toBeInstanceOf(Date);
   });
 });
@@ -143,7 +203,22 @@ describe('sitemap route', () => {
     }
 
     if (hasGitHistory()) {
-      expect(urls.every((url) => url.lastModified instanceof Date)).toBe(true);
+      const posts = getPostsByRoute();
+      for (const url of urls.filter((item) => !item.lastModified)) {
+        const route = new URL(url.url).pathname;
+        const committed = execFileSync(
+          'git',
+          [
+            'log',
+            '-1',
+            '--format=%ct',
+            '--',
+            ...sourcePathsForRoute(route, posts),
+          ],
+          { cwd: resolveWebsiteDir(), encoding: 'utf8' }
+        ).trim();
+        expect(committed, route).toBe('');
+      }
     }
   });
 });
@@ -157,13 +232,18 @@ describe('getPostLastModified', () => {
     const posts = getAllPosts();
     expect(posts.length).toBeGreaterThan(0);
 
-    const entries = new Map(getSitemapEntries().map((entry) => [entry.route, entry.lastModified]));
+    const entries = new Map(
+      getSitemapEntries().map((entry) => [entry.route, entry.lastModified])
+    );
     for (const post of posts) {
       const route = `/blog/${post.slug}`;
       // Without these, an absent route and an undateable post both read as
       // `undefined` and the comparison below passes on nothing.
       expect([route, entries.has(route)]).toEqual([route, true]);
-      expect([route, entries.get(route) instanceof Date]).toEqual([route, true]);
+      expect([route, entries.get(route) instanceof Date]).toEqual([
+        route,
+        true,
+      ]);
 
       expect([post.slug, getPostLastModified(post)?.toISOString()]).toEqual([
         post.slug,

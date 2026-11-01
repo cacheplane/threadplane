@@ -1,0 +1,124 @@
+{
+  "name": "executeFunctionTool",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/executeFunctionTool",
+  "canonicalReference": "@threadplane/chat!executeFunctionTool:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Validate args, run the handler, and normalize the outcome to a ClientToolResult.",
+  "declarations": [
+    {
+      "name": "executeFunctionTool",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!executeFunctionTool:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function executeFunctionTool(def: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AnyFunctionToolDef",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef:interface",
+          "href": "/docs/api/chat/AnyFunctionToolDef"
+        },
+        {
+          "kind": "Content",
+          "text": ", rawArgs: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ", context?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "FunctionToolHandlerContext",
+          "canonicalReference": "@threadplane/chat!FunctionToolHandlerContext:interface",
+          "href": "/docs/api/chat/FunctionToolHandlerContext"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolResult",
+          "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+          "href": "/docs/api/chat/ClientToolResult"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Validate args, run the handler, and normalize the outcome to a ClientToolResult.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/execute.ts",
+        "line": 23
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "def",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "rawArgs",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "context",
+          "parameterTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 7,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/execute.ts",
+    "line": 23
+  }
+}

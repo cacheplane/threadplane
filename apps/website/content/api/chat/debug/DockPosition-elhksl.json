@@ -1,0 +1,54 @@
+{
+  "name": "DockPosition",
+  "entrypointId": "chat/debug",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/debug/DockPosition",
+  "canonicalReference": "@threadplane/chat!DockPosition:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The screen edge used to dock the chat debug panel.",
+  "declarations": [
+    {
+      "name": "DockPosition",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!DockPosition:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DockPosition = "
+        },
+        {
+          "kind": "Content",
+          "text": "'right' | 'bottom' | 'left'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The screen edge used to dock the chat debug panel.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
+        "line": 22
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
+    "line": 22
+  }
+}

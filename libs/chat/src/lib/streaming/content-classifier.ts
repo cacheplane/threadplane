@@ -7,10 +7,12 @@ import type { A2uiSurface } from '@threadplane/a2ui';
 import { createA2uiSurfaceStore, type A2uiSurfaceStore, type A2uiSurfaceState } from '../a2ui/surface-store';
 import { isTraceEnabled, trace } from './trace';
 
+/** The detected format of accumulated assistant content, or pending while its prefix is incomplete. */
 export type ContentType = 'pending' | 'markdown' | 'json-render' | 'a2ui';
 
 const A2UI_PREFIX = '---a2ui_JSON---';
 
+/** Accumulates assistant content and exposes its markdown, json-render, or A2UI representation as signals. */
 export interface ContentClassifier {
   update(content: string): void;
   readonly type: Signal<ContentType>;

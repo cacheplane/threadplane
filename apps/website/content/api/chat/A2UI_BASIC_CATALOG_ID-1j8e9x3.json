@@ -1,0 +1,51 @@
+{
+  "name": "A2UI_BASIC_CATALOG_ID",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/A2UI_BASIC_CATALOG_ID",
+  "canonicalReference": "@threadplane/chat!A2UI_BASIC_CATALOG_ID:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Catalog id of the standard A2UI basic component catalog.",
+  "declarations": [
+    {
+      "name": "A2UI_BASIC_CATALOG_ID",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!A2UI_BASIC_CATALOG_ID:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "A2UI_BASIC_CATALOG_ID = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\""
+        }
+      ],
+      "docs": {
+        "summary": "Catalog id of the standard A2UI basic component catalog.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 8
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 8
+  }
+}

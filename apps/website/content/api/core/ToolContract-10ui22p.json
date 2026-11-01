@@ -1,0 +1,115 @@
+{
+  "name": "ToolContract",
+  "entrypointId": "core",
+  "kind": "Interface",
+  "href": "/docs/api/core/ToolContract",
+  "canonicalReference": "@threadplane/core!ToolContract:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Describes arguments and results only; execution is a separate capability.",
+  "declarations": [
+    {
+      "name": "ToolContract",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!ToolContract:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolContract "
+        }
+      ],
+      "docs": {
+        "summary": "Describes arguments and results only; execution is a separate capability.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "args",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolContract#args:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly args: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/tool.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolContract#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/tool.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/contracts/tool.ts",
+        "line": 25
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/tool.ts",
+    "line": 25
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "name": "ClientToolDef",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ClientToolDef",
+  "canonicalReference": "@threadplane/chat!ClientToolDef:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A client tool the model can call; executed in the browser.",
+  "declarations": [
+    {
+      "name": "ClientToolDef",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ClientToolDef:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ClientToolDef = "
+        },
+        {
+          "kind": "Reference",
+          "text": "AnyFunctionToolDef",
+          "canonicalReference": "@threadplane/chat!AnyFunctionToolDef:interface",
+          "href": "/docs/api/chat/AnyFunctionToolDef"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "ViewToolDef",
+          "canonicalReference": "@threadplane/chat!ViewToolDef:interface",
+          "href": "/docs/api/chat/ViewToolDef"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "AskToolDef",
+          "canonicalReference": "@threadplane/chat!AskToolDef:interface",
+          "href": "/docs/api/chat/AskToolDef"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A client tool the model can call; executed in the browser.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 110
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 110
+  }
+}

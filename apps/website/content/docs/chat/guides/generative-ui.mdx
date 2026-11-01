@@ -183,6 +183,81 @@ An element wires it as `"on": { "click": { "action": "submitForm", "params": {} 
 
 For agents that emit A2UI payloads, the same classifier detects content prefixed with `---a2ui_JSON---` and renders it as A2UI surfaces instead. Pass `a2uiBasicCatalog()` from `@threadplane/chat` as the registry when you want those surfaces drawn with the built-in components.
 
+
+## Classifying streamed content
+
+Use one classifier per message and feed full snapshots as they arrive. See [createContentClassifier](/docs/api/chat/createContentClassifier) for the generated signal contract.
+
+```typescript
+import { createContentClassifier } from '@threadplane/chat';
+
+const classifier = createContentClassifier();
+
+// Feed full content snapshots — delta is computed internally
+classifier.update('Hello world');
+classifier.type();      // 'markdown'
+classifier.markdown();  // 'Hello world'
+
+// For JSON content
+const jsonClassifier = createContentClassifier();
+jsonClassifier.update('{"root":"r1","elements":{}}');
+jsonClassifier.type();  // 'json-render'
+jsonClassifier.spec();  // { root: 'r1', elements: {} }
+
+// Always dispose when done
+classifier.dispose();
+```
+
+### A2UI content
+
+When the snapshot starts with the `---a2ui_JSON---` prefix, the classifier switches to A2UI mode and parses the remaining lines as JSONL. Read `type()` (=> `'a2ui'`) and `a2uiSurfaces()` for the parsed surfaces:
+
+```typescript
+const a2uiClassifier = createContentClassifier();
+
+a2uiClassifier.update(
+  '---a2ui_JSON---\n' +
+  '{"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"}}\n' +
+  '{"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Text","text":"Hi"}]}}\n',
+);
+
+a2uiClassifier.type();          // 'a2ui'
+a2uiClassifier.a2uiSurfaces();  // Map<string, A2uiSurface> keyed by surface ID
+
+a2uiClassifier.dispose();
+```
+
+<Callout type="tip" title="Delta processing">
+Pass the **full** message content each time, not just new characters. The classifier tracks `processedLength` internally and only processes the delta.
+</Callout>
+
+
+## Materializing a partial spec
+
+For a raw JSON stream, [createParseTreeStore](/docs/api/chat/createParseTreeStore) bridges the partial parser to a spec signal with per-element accumulation state.
+
+```typescript
+import { createPartialJsonParser } from '@cacheplane/partial-json';
+import { createParseTreeStore } from '@threadplane/chat';
+
+const parser = createPartialJsonParser();
+const store = createParseTreeStore(parser);
+
+store.push('{"root":"r1","elements":{"r1":{"type":"Text"');
+store.spec();  // partial Spec — r1 has type "Text" but no props yet
+
+store.push(',"props":{"label":"Hello"}}}}');
+store.spec();  // complete Spec
+
+// Element tracking
+store.elementStates().get('r1');
+// { hasType: true, hasProps: true, hasChildren: false, streaming: false }
+```
+
+<Callout type="info" title="Structural sharing">
+The `spec` signal uses structural sharing. When a new token updates one element, sibling elements keep the same object reference. Angular's `computed()` with `Object.is` equality skips re-evaluation for unchanged elements.
+</Callout>
+
 ## What's Next
 
 <CardGroup cols={2}>

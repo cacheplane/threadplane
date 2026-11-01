@@ -6,12 +6,14 @@ export type A2uiValue =
   | { readonly [key: string]: A2uiValue }
   | readonly A2uiValue[];
 
+/** Owned component descriptor with its stable surface-local ID, catalog component name, and plain property data. */
 export interface A2uiComponentSnapshot {
   readonly id: string;
   readonly component: string;
   readonly [key: string]: A2uiValue;
 }
 
+/** Published surface containing catalog metadata, component descriptors, and the current owned data model. */
 export interface A2uiSurfaceSnapshot {
   readonly surfaceId: string;
   readonly catalogId: string;
@@ -21,10 +23,12 @@ export interface A2uiSurfaceSnapshot {
   readonly dataModel: A2uiValue;
 }
 
+/** Ordered immutable collection of live surfaces that have both creation metadata and a root component. */
 export interface A2uiSurfacesSnapshot {
   readonly surfaces: readonly A2uiSurfaceSnapshot[];
 }
 
+/** Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots. */
 export interface A2uiSurfaces {
   readonly getSnapshot: () => A2uiSurfacesSnapshot;
   readonly subscribe: (notify: () => void) => () => void;

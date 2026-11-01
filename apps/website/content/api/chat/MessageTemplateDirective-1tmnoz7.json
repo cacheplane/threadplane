@@ -1,0 +1,153 @@
+{
+  "name": "MessageTemplateDirective",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MessageTemplateDirective",
+  "canonicalReference": "@threadplane/chat!MessageTemplateDirective:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Registers an ng-template for rendering a specific chat message category.",
+  "declarations": [
+    {
+      "name": "MessageTemplateDirective",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MessageTemplateDirective:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MessageTemplateDirective "
+        }
+      ],
+      "docs": {
+        "summary": "Registers an ng-template for rendering a specific chat message category.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "chatMessageTemplate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MessageTemplateDirective#chatMessageTemplate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly chatMessageTemplate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageTemplateType",
+              "canonicalReference": "@threadplane/chat!MessageTemplateType:type",
+              "href": "/docs/api/chat/MessageTemplateType"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
+            "line": 10
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "templateRef",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MessageTemplateDirective#templateRef:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly templateRef: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateRef",
+              "canonicalReference": "@angular/core!TemplateRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
+            "line": 11
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
+        "line": 5
+      },
+      "angular": {
+        "selector": "ng-template[chatMessageTemplate]",
+        "inputs": [
+          {
+            "name": "chatMessageTemplate",
+            "alias": "chatMessageTemplate",
+            "required": true,
+            "type": "MessageTemplateType"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
+    "line": 5
+  }
+}

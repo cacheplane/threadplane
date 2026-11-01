@@ -1,0 +1,103 @@
+{
+  "name": "ClientToolViewProps",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ClientToolViewProps",
+  "canonicalReference": "@threadplane/chat!ClientToolViewProps:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Schema output properties augmented with optional execution status and lifecycle details.",
+  "declarations": [
+    {
+      "name": "ClientToolViewProps",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ClientToolViewProps:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ClientToolViewProps<S extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "StandardSchemaV1",
+          "canonicalReference": "@threadplane/chat!StandardSchemaV1:interface",
+          "href": "/docs/api/chat/StandardSchemaV1"
+        },
+        {
+          "kind": "Content",
+          "text": "> = "
+        },
+        {
+          "kind": "Reference",
+          "text": "StandardSchemaInferOutput",
+          "canonicalReference": "@threadplane/chat!StandardSchemaInferOutput:type",
+          "href": "/docs/api/chat/StandardSchemaInferOutput"
+        },
+        {
+          "kind": "Content",
+          "text": "<S> & {\n    readonly status?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolCallStatus",
+          "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+          "href": "/docs/api/chat/ToolCallStatus"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n    readonly clientTool?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolLifecycle",
+          "canonicalReference": "@threadplane/chat!ClientToolLifecycle:interface",
+          "href": "/docs/api/chat/ClientToolLifecycle"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Schema output properties augmented with optional execution status and lifecycle details.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 56
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "S",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "typeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 56
+  }
+}

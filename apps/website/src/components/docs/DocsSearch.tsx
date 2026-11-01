@@ -41,7 +41,7 @@ const allSearchablePages: SearchablePage[] = [
     lib.sections.flatMap((s) =>
       s.pages.map((p) => ({
         ...p,
-        href: `/docs/${lib.id}/${p.section}/${p.slug}`,
+        href: p.href ?? `/docs/${lib.id}/${p.section}/${p.slug}`,
         library: lib.id,
         libraryTitle: lib.title,
       }))

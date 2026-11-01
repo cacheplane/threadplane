@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownBlockquoteNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders the child nodes of a markdown blockquote inside a blockquote element. */
 @Component({
   selector: 'chat-md-blockquote',
   standalone: true,

@@ -1,0 +1,56 @@
+{
+  "name": "disableTelemetry",
+  "entrypointId": "telemetry/node",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/node/disableTelemetry",
+  "canonicalReference": "@threadplane/telemetry!disableTelemetry:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Disable subsequent explicit Node client captures for this module instance; does not abort requests already in flight.",
+  "declarations": [
+    {
+      "name": "disableTelemetry",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!disableTelemetry:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function disableTelemetry(): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Disable subsequent explicit Node client captures for this module instance; does not abort requests already in flight.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/node/disable.ts",
+        "line": 4
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/disable.ts",
+    "line": 4
+  }
+}

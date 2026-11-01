@@ -23,7 +23,7 @@ export const renderElementRenderingAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Render Element Rendering (Angular)',
-  docsPath: '/docs/render/api/render-spec-component',
+  docsPath: '/docs/render/guides/element-rendering',
   promptAssetPaths: ['cockpit/render/element-rendering/angular/prompts/element-rendering.md'],
   codeAssetPaths: ['cockpit/render/element-rendering/angular/src/app/element-rendering.component.ts'],
 };

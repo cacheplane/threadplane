@@ -1,0 +1,203 @@
+{
+  "name": "Json",
+  "entrypointId": "content/json",
+  "kind": "Interface",
+  "href": "/docs/api/content/json/Json",
+  "canonicalReference": "@threadplane/content!Json:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned incremental JSON parser with snapshot observation, document updates, and explicit disposal.",
+  "declarations": [
+    {
+      "name": "Json",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!Json:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface Json "
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned incremental JSON parser with snapshot observation, document updates, and explicit disposal.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "dispose",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Json#dispose:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly dispose: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 74
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "getSnapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Json#getSnapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly getSnapshot: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "JsonSnapshot",
+              "canonicalReference": "@threadplane/content!JsonSnapshot:interface",
+              "href": "/docs/api/content/json/JsonSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 71
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subscribe",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Json#subscribe:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subscribe: "
+            },
+            {
+              "kind": "Content",
+              "text": "(notify: () => void) => () => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 72
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "update",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Json#update:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly update: "
+            },
+            {
+              "kind": "Content",
+              "text": "(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "JsonDocument",
+              "canonicalReference": "@threadplane/content!JsonDocument:interface",
+              "href": "/docs/api/content/json/JsonDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 73
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 70
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 70
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "name": "ToolExecutionSettlement",
+  "entrypointId": "core/tools",
+  "kind": "Interface",
+  "href": "/docs/api/core/tools/ToolExecutionSettlement",
+  "canonicalReference": "@threadplane/core!ToolExecutionSettlement:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Settlement for an acquired invocation, carrying its ownership token and a reusable encoded result or null.",
+  "declarations": [
+    {
+      "name": "ToolExecutionSettlement",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!ToolExecutionSettlement:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolExecutionSettlement "
+        }
+      ],
+      "docs": {
+        "summary": "Settlement for an acquired invocation, carrying its ownership token and a reusable encoded result or null.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "invocation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolExecutionSettlement#invocation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly invocation: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolExecutionSettlement#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Exact encoded completion, or null when the result cannot be reused.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "token",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolExecutionSettlement#token:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly token: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/tools/execution-context.ts",
+        "line": 27
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/tools/execution-context.ts",
+    "line": 27
+  }
+}

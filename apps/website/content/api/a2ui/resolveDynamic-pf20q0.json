@@ -1,0 +1,132 @@
+{
+  "name": "resolveDynamic",
+  "entrypointId": "a2ui",
+  "kind": "Function",
+  "href": "/docs/api/a2ui/resolveDynamic",
+  "canonicalReference": "@threadplane/a2ui!resolveDynamic:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Resolves an A2UI v0.9 dynamic value against a client data model.\n\nBare literals (strings, numbers, booleans) pass through unchanged, `{ path }`\nreferences read from the model by JSON-pointer path, arrays resolve\nelement-wise, and client-side function calls (`{ call }`) execute through the\nprovided function registry — argument values resolve recursively, so args may\nthemselves be bindings or nested calls. Without a registry (or for unknown\nfunction names) calls resolve to `undefined`. Unrecognized plain objects pass\nthrough unchanged.",
+  "declarations": [
+    {
+      "name": "resolveDynamic",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/a2ui!resolveDynamic:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function resolveDynamic(value: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ", model: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ", scope?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiScope",
+          "canonicalReference": "@threadplane/a2ui!A2uiScope:interface",
+          "href": "/docs/api/a2ui/A2uiScope"
+        },
+        {
+          "kind": "Content",
+          "text": ", registry?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiFunctionRegistry",
+          "canonicalReference": "@threadplane/a2ui!A2uiFunctionRegistry:type",
+          "href": "/docs/api/a2ui/A2uiFunctionRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Resolves an A2UI v0.9 dynamic value against a client data model.\n\nBare literals (strings, numbers, booleans) pass through unchanged, `{ path }`\nreferences read from the model by JSON-pointer path, arrays resolve\nelement-wise, and client-side function calls (`{ call }`) execute through the\nprovided function registry — argument values resolve recursively, so args may\nthemselves be bindings or nested calls. Without a registry (or for unknown\nfunction names) calls resolve to `undefined`. Unrecognized plain objects pass\nthrough unchanged.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst model = { customer: { name: 'Ada' } };\nresolveDynamic({ path: '/customer/name' }, model); // 'Ada'\nresolveDynamic('Checkout', model); // 'Checkout'\nresolveDynamic(\n  { call: 'formatString', args: { value: 'Hi ${/customer/name}' } },\n  model, undefined, createA2uiFunctionRegistry(),\n); // 'Hi Ada'\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/resolve.ts",
+        "line": 47
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "value",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "model",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "scope",
+          "parameterTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 7
+          },
+          "isOptional": true
+        },
+        {
+          "parameterName": "registry",
+          "parameterTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 9
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 10,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/resolve.ts",
+    "line": 47
+  }
+}

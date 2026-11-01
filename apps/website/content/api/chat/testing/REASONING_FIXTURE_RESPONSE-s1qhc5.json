@@ -1,0 +1,51 @@
+{
+  "name": "REASONING_FIXTURE_RESPONSE",
+  "entrypointId": "chat/testing",
+  "kind": "Variable",
+  "href": "/docs/api/chat/testing/REASONING_FIXTURE_RESPONSE",
+  "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_RESPONSE:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Expected assistant response text for the shared adapter conformance fixture.",
+  "declarations": [
+    {
+      "name": "REASONING_FIXTURE_RESPONSE",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_RESPONSE:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "REASONING_FIXTURE_RESPONSE = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"Hello!\""
+        }
+      ],
+      "docs": {
+        "summary": "Expected assistant response text for the shared adapter conformance fixture.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/reasoning-fixture.ts",
+        "line": 22
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/reasoning-fixture.ts",
+    "line": 22
+  }
+}

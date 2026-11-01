@@ -1,0 +1,83 @@
+{
+  "name": "defineAngularRegistry",
+  "entrypointId": "render",
+  "kind": "Function",
+  "href": "/docs/api/render/defineAngularRegistry",
+  "canonicalReference": "@threadplane/render!defineAngularRegistry:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Build an [AngularRegistry](/docs/api/render/AngularRegistry) from a plain object mapping tool-call names\nto Angular components (or fully specified [RenderViewEntry](/docs/api/render/RenderViewEntry) objects).\n\nThe returned registry is consumed by `provideRender` to drive dynamic\ncomponent rendering.\n\n**Entry forms**\n- Bare `Type<unknown>` — the component is paired with the built-in\n `DefaultFallbackComponent` while its props are still streaming.\n- `RenderViewEntry` object — lets you supply a custom `fallback` component,\n an optional Standard Schema (`schema`) used as a mount-readiness gate, and\n an optional `description` for model-facing tool registration.\n\n**Registry accessor**\nThe returned object exposes a single `getEntry(name: string)` accessor that\nreturns the fully-normalized NormalizedEntry (component + fallback +\noptional schema + optional description) or `undefined` when the name is not\nregistered. Use `names()` to enumerate all registered names.",
+  "declarations": [
+    {
+      "name": "defineAngularRegistry",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/render!defineAngularRegistry:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function defineAngularRegistry(componentMap: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RegistryInput",
+          "canonicalReference": "@threadplane/render!~RegistryInput:type"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "AngularRegistry",
+          "canonicalReference": "@threadplane/render!AngularRegistry:interface",
+          "href": "/docs/api/render/AngularRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Build an [AngularRegistry](/docs/api/render/AngularRegistry) from a plain object mapping tool-call names\nto Angular components (or fully specified [RenderViewEntry](/docs/api/render/RenderViewEntry) objects).\n\nThe returned registry is consumed by `provideRender` to drive dynamic\ncomponent rendering.\n\n**Entry forms**\n- Bare `Type<unknown>` — the component is paired with the built-in\n `DefaultFallbackComponent` while its props are still streaming.\n- `RenderViewEntry` object — lets you supply a custom `fallback` component,\n an optional Standard Schema (`schema`) used as a mount-readiness gate, and\n an optional `description` for model-facing tool registration.\n\n**Registry accessor**\nThe returned object exposes a single `getEntry(name: string)` accessor that\nreturns the fully-normalized NormalizedEntry (component + fallback +\noptional schema + optional description) or `undefined` when the name is not\nregistered. Use `names()` to enumerate all registered names.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "An [AngularRegistry](/docs/api/render/AngularRegistry) with `getEntry` and `names` accessors.",
+        "examples": [
+          "```ts\nimport { defineAngularRegistry } from '@threadplane/render';\nimport { DayCardComponent } from './day-card.component';\nimport { LoadingSpinnerComponent } from './loading-spinner.component';\nimport { z } from 'zod';\n\nexport const registry = defineAngularRegistry({\n  // Bare component — uses DefaultFallbackComponent while streaming.\n  summary_card: SummaryCardComponent,\n\n  // Full entry — custom fallback + schema-gated mounting.\n  day_card: {\n    component: DayCardComponent,\n    fallback: LoadingSpinnerComponent,\n    schema: z.object({ label: z.string(), day: z.number() }),\n    description: 'Renders a single itinerary day card.',\n  },\n});\n\n// Look up a registered entry at runtime:\nconst entry = registry.getEntry('day_card'); // NormalizedEntry | undefined\n```"
+        ],
+        "see": [],
+        "params": [
+          {
+            "name": "componentMap",
+            "description": "Object whose keys are tool-call names and whose values\n are either bare Angular component classes or [RenderViewEntry](/docs/api/render/RenderViewEntry) objects."
+          }
+        ],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/define-angular-registry.ts",
+        "line": 66
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "componentMap",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/define-angular-registry.ts",
+    "line": 66
+  }
+}

@@ -1,6 +1,7 @@
 import { compareDebugStates } from './state-diff.js';
 import type { DebugValue } from './types.js';
 
+/** Supplies plain before/after states for a bounded JSON Pointer diff and an optional comparison label. */
 export interface StateDiffProps {
   readonly before: DebugValue;
   readonly after: DebugValue;

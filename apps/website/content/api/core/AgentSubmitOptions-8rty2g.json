@@ -1,0 +1,80 @@
+{
+  "name": "AgentSubmitOptions",
+  "entrypointId": "core",
+  "kind": "Interface",
+  "href": "/docs/api/core/AgentSubmitOptions",
+  "canonicalReference": "@threadplane/core!AgentSubmitOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Per-submission cancellation signal supplied by the caller.",
+  "declarations": [
+    {
+      "name": "AgentSubmitOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!AgentSubmitOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentSubmitOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Per-submission cancellation signal supplied by the caller.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "signal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentSubmitOptions#signal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly signal?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/agent-session.ts",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/contracts/agent-session.ts",
+        "line": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/agent-session.ts",
+    "line": 9
+  }
+}

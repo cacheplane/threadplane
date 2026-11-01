@@ -9,6 +9,7 @@ interface ResolvedOption {
   value: string;
 }
 
+/** Renders single or multiple A2UI choices as chips or selection rows, with optional filtering. */
 @Component({
   selector: 'a2ui-choice-picker',
   standalone: true,

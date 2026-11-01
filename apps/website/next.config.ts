@@ -1,3 +1,4 @@
+import type ApiLegacyRedirects from './api-legacy-redirects.json';
 import { composePlugins, withNx } from '@nx/next';
 import type { WithNxOptions } from '@nx/next/plugins/with-nx';
 import { dirname, join } from 'node:path';
@@ -8,11 +9,17 @@ import type * as BuildRevision from './build-revision.cjs';
 const websiteAppDir = dirname(fileURLToPath(import.meta.url));
 // Next's transpiled config module may lack module.filename. Anchor relative
 // resolution here; the typed import also lets Nx copy the helper into dist.
-const { resolveDocsBuildRevision }: typeof BuildRevision =
-  createRequire(import.meta.url)('./build-revision.cjs');
+const { resolveDocsBuildRevision }: typeof BuildRevision = createRequire(
+  import.meta.url
+)('./build-revision.cjs');
+const apiLegacyRedirects: typeof ApiLegacyRedirects = createRequire(
+  import.meta.url
+)('./api-legacy-redirects.json');
 
 export const nextConfig: WithNxOptions = {
-  env: { THREADPLANE_DOCS_BUILD_REVISION: resolveDocsBuildRevision(process.env) },
+  env: {
+    THREADPLANE_DOCS_BUILD_REVISION: resolveDocsBuildRevision(process.env),
+  },
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
@@ -30,6 +37,7 @@ export const nextConfig: WithNxOptions = {
       // route deploys with no corpus and returns empty for every query —
       // silently, and only in production.
       'content/docs/**/*.mdx',
+      'content/api/**/*.json',
       // Growth validates blog observations against the catalog at request time.
       'content/blog/**/*.mdx',
       // The homepage stage proof lines are derived from the demo recording at
@@ -42,6 +50,7 @@ export const nextConfig: WithNxOptions = {
   // canonical policy. Delivered links and indexed search results outlive the
   // deletion, so every retired path lands on /privacy rather than a 404.
   redirects: async () => [
+    ...apiLegacyRedirects,
     { source: '/docs/telemetry', destination: '/privacy', permanent: true },
     {
       source: '/docs/telemetry/:path*',

@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import type { MarkdownTableNode, MarkdownTableRowNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders a markdown table with separate header and body rows and per-cell alignment. */
 @Component({
   selector: 'chat-md-table',
   standalone: true,

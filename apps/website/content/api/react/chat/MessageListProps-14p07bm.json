@@ -1,0 +1,243 @@
+{
+  "name": "MessageListProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/MessageListProps",
+  "canonicalReference": "@threadplane/react!MessageListProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows.",
+  "declarations": [
+    {
+      "name": "MessageListProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MessageListProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageListProps<TRow extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageRow",
+          "canonicalReference": "@threadplane/react!~MessageRow:interface",
+          "href": "/docs/api/content/messages/MessageRow"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageRow",
+          "canonicalReference": "@threadplane/react!~MessageRow:interface",
+          "href": "/docs/api/content/messages/MessageRow"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderMessage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#renderMessage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderMessage?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(row: "
+            },
+            {
+              "kind": "Reference",
+              "text": "NoInfer",
+              "canonicalReference": "!NoInfer:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderRow",
+              "canonicalReference": "@threadplane/react!~RenderRow:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TRow>>) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replace the default row rendering. Must be referentially stable (define it\noutside the component or wrap it in `useCallback`); a new function each\nrender defeats row memoization and re-renders every row.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "rows",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#rows:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rows: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly TRow[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/message-list.tsx",
+        "line": 15
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "TRow",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-list.tsx",
+    "line": 15
+  }
+}

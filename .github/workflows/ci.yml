@@ -528,8 +528,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx nx lint website
+      - run: npx nx run website:generate-api-docs
       - run: npx nx test website
-      - run: npm run generate-api-docs
       - name: Commit generated API docs to same-repo PR
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -539,7 +539,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- apps/website/content/docs/*/api/api-docs.json; then
+          if test -z "$(git status --porcelain -- apps/website/content/api)"; then
             echo "Generated API docs are already committed."
             exit 0
           fi
@@ -547,7 +547,7 @@ jobs:
           # Commit through the GitHub API, not `git push`: GitHub signs
           # API-created commits, and main requires signed commits, so an
           # unsigned bot commit would block the PR from merging.
-          git add apps/website/content/docs/*/api/api-docs.json
+          git add --all -- apps/website/content/api
           oid="$(node scripts/commit-staged-via-api.mjs \
             --repo "$GITHUB_REPOSITORY" \
             --branch "$HEAD_REF" \
@@ -555,7 +555,9 @@ jobs:
           git fetch --no-tags --depth=1 origin "$oid"
           git reset --soft "$oid"
       - name: Verify generated API docs are committed
-        run: git diff --exit-code -- apps/website/content/docs/*/api/api-docs.json
+        run: |
+          git diff --exit-code -- apps/website/content/api
+          test -z "$(git ls-files --others --exclude-standard -- apps/website/content/api)"
       - run: npx nx build website
 
   growth-lifecycle:

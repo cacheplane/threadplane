@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownStrikethroughComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownStrikethroughComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownStrikethroughComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders markdown strikethrough content inside a deletion element.",
+  "declarations": [
+    {
+      "name": "MarkdownStrikethroughComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownStrikethroughComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownStrikethroughComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders markdown strikethrough content inside a deletion element.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownStrikethroughComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownStrikethroughNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownStrikethroughNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
+            "line": 15
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-strikethrough",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownStrikethroughNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
+    "line": 7
+  }
+}

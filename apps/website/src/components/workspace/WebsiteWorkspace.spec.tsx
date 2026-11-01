@@ -213,6 +213,13 @@ describe('WebsiteWorkspace', () => {
     renderWorkspace();
     expect(screen.queryByLabelText('Example UI')).toBeNull();
   });
+  it('renders a generated reference at an explicit React import URL with frontend query state', async () => {
+    window.history.replaceState({}, '', '/docs/api/react/useAgent?frontend=react');
+    renderWorkspace({ routePath: '/docs/api/react/useAgent', docsSlot: <article>Generated useAgent reference</article>,
+      docsContext: { activeLibrary: null, activeSection: 'api', activeSlug: 'useAgent', apiContext: { entrypoints: [], symbols: [], activeHref: '/docs/api/react/useAgent' } } });
+    await waitFor(() => expect(screen.getByText('Generated useAgent reference')).toBeTruthy());
+    expect(screen.queryByText(/React preview is not available/)).toBeNull();
+  });
   it('selects the React identity and runtime together from a public URL', async () => {
     const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
     const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);

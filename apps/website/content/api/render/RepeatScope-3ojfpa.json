@@ -1,0 +1,151 @@
+{
+  "name": "RepeatScope",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/RepeatScope",
+  "canonicalReference": "@threadplane/render!RepeatScope:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Current repeated row's item, zero-based index, and absolute state path for item-relative prop and action resolution.",
+  "declarations": [
+    {
+      "name": "RepeatScope",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!RepeatScope:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RepeatScope "
+        }
+      ],
+      "docs": {
+        "summary": "Current repeated row's item, zero-based index, and absolute state path for item-relative prop and action resolution.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "basePath",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RepeatScope#basePath:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "basePath: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+            "line": 7
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "index",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RepeatScope#index:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "index: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+            "line": 6
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "item",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RepeatScope#item:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "item: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+            "line": 5
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/repeat-scope.ts",
+    "line": 4
+  }
+}

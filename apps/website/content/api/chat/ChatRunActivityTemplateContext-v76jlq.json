@@ -1,0 +1,195 @@
+{
+  "name": "ChatRunActivityTemplateContext",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ChatRunActivityTemplateContext",
+  "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Template context for the run-activity template projected into `<chat>`.\nOne context is built while a run is active and has no assistant message.",
+  "declarations": [
+    {
+      "name": "ChatRunActivityTemplateContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatRunActivityTemplateContext "
+        }
+      ],
+      "docs": {
+        "summary": "Template context for the run-activity template projected into `<chat>`.\nOne context is built while a run is active and has no assistant message.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "$implicit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext#$implicit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "$implicit: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The agent bound to `<chat>` (`let-agent`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "hasAssistantMessage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext#hasAssistantMessage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasAssistantMessage: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether the current run has an assistant message yet. Always `false`\nwhile the template renders: the first assistant message hands the run\nover to the per-message activity slot (`let-hasAssistantMessage=\"hasAssistantMessage\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The current run's messages: every message after the last user message,\nor every message when there is none (`let-messages=\"messages\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+            "line": 27
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "running",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateContext#running:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "running: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Whether a run is in flight (`agent.isLoading()`). Always `true` while the\ntemplate renders (`let-running=\"running\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+        "line": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
+    "line": 9
+  }
+}

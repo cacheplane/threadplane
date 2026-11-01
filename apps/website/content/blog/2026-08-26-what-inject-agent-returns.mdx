@@ -11,7 +11,7 @@ draft: false
 You call `injectAgent()` once and you get one object back.
 Let's look at what's actually in it.
 
-The [API page](/docs/langgraph/api/inject-agent) answers "what's the signature."
+The [API page](/docs/api/langgraph/injectAgent) answers "what's the signature."
 That's the right question when you're mid-keystroke.
 This post answers the other one: what is each piece of the return value _for_, and why is it shaped the way it is?
 
@@ -102,6 +102,6 @@ One call returns the whole agent surface: reactive signals for the template, imp
 I think that last part matters most.
 Bind to the neutral slice and the runtime becomes a swappable detail. 👍
 
-The [API reference](/docs/langgraph/api/inject-agent) has the full signatures, and [choosing an adapter](/docs/choosing-an-adapter) covers when the neutral contract earns its keep.
+The [API reference](/docs/api/langgraph/injectAgent) has the full signatures, and [choosing an adapter](/docs/choosing-an-adapter) covers when the neutral contract earns its keep.
 If you haven't built the streaming surface yet, start with [Build a Streaming Chat UI in Angular with LangGraph](/blog/build-a-streaming-chat-ui-in-angular-with-langgraph).
 And if any of this surprised you, let me know!

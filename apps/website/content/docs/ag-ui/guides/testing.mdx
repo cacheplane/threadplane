@@ -108,6 +108,36 @@ expect(m.messages()[0].content).toBe('Hello!');
 expect(m.status()).toBe('running');
 ```
 
+### Captured actions and optional surfaces
+
+The mock records submissions and counts stops so component tests can assert what the UI requested:
+
+```typescript
+const agent = mockAgent();
+await agent.submit({ message: 'Hello' });
+expect(agent.submitCalls[0].input).toEqual({ message: 'Hello' });
+await agent.stop();
+expect(agent.stopCount).toBe(1);
+```
+
+`regenerate(index)` truncates messages at the index and records a synthetic submission with `input.regenerate.assistantMessageIndex`. `retry()` is a no-op in this mock; use a scripted adapter when the test needs transport retry behavior.
+
+Drive the lifecycle stub through `agent._internal.streamStartedAt.set(Date.now())`; its public `lifecycle.streamStartedAt` view is read-only. Interrupt, subagent, and history signals must be enabled when creating the mock:
+
+```typescript
+const agent = mockAgent({
+  withInterrupt: true,
+  withSubagents: true,
+  history: [],
+});
+
+agent.interrupt?.set({ id: 'approval-1', value: { question: 'Continue?' }, resumable: true });
+agent.subagents?.set(new Map());
+agent.history?.set([]);
+```
+
+These neutral subagent signals do not model AG-UI protocol events or adapter-specific capabilities. See [`MockAgent`](/docs/api/chat/MockAgent) and [`MockAgentOptions`](/docs/api/chat/MockAgentOptions) for their types.
+
 ## Testing tool calls, state, and custom events
 
 By default `provideFakeAgent()` produces only `RUN_*`, `REASONING_MESSAGE_*`, and `TEXT_MESSAGE_*` events. To exercise the reducer's headline non-text features — tool-call rendering, shared state, citations, custom events, interrupts — pass a `script` of raw events. It is part of the config `provideFakeAgent()` accepts, so the whole surface stays reachable through DI:

@@ -1,0 +1,58 @@
+{
+  "name": "createInMemoryClientToolExecutionStore",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Function",
+  "href": "/docs/api/middleware/langgraph/createInMemoryClientToolExecutionStore",
+  "canonicalReference": "@threadplane/middleware!createInMemoryClientToolExecutionStore:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Non-persistent, single-process ownership. No takeover or expiration.",
+  "declarations": [
+    {
+      "name": "createInMemoryClientToolExecutionStore",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/middleware!createInMemoryClientToolExecutionStore:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createInMemoryClientToolExecutionStore(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolExecutionStore",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionStore:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolExecutionStore"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Non-persistent, single-process ownership. No takeover or expiration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+        "line": 41
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+    "line": 41
+  }
+}

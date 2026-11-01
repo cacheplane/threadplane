@@ -1,0 +1,88 @@
+{
+  "name": "ProjectList",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ProjectList",
+  "canonicalReference": "@threadplane/react!ProjectList:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Controlled project selection; the application owns catalog and lifecycle.",
+  "declarations": [
+    {
+      "name": "ProjectList",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ProjectList:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ProjectList(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ProjectListProps",
+          "canonicalReference": "@threadplane/react!ProjectListProps:interface",
+          "href": "/docs/api/react/chat/ProjectListProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Controlled project selection; the application owns catalog and lifecycle.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/project-list.tsx",
+        "line": 24
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ projects, onSelect, activeProjectId, label, className, onNewProject, newProjectDisabled, newProjectLabel, renderActions, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/project-list.tsx",
+    "line": 24
+  }
+}

@@ -2,6 +2,7 @@ import type { AgentError } from './error.js';
 import type { Message } from './message.js';
 import type { ToolCall, ToolContract } from './tool.js';
 
+/** Session execution state exposed alongside messages, tool calls, and an optional failure. */
 export type AgentStatus = 'idle' | 'running' | 'error';
 
 /** An immutable aggregate, owned by the session, stable between actual changes.

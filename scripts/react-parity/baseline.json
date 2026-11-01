@@ -1,27 +1,221 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e478613a3ba9bd458b45c2b1071ab4ec1602d320",
+  "baselineHead": "a35502b9db91b1e62ecedb2fb6ae472684615109",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/ag-ui/concepts/architecture.mdx",
+      "apps/website/content/docs/ag-ui/guides/custom-events.mdx",
+      "apps/website/content/docs/ag-ui/guides/deployment.mdx",
+      "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/ag-ui/guides/testing.mdx",
+      "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
+      "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
+      "apps/website/content/docs/chat/guides/client-tools.mdx",
+      "apps/website/content/docs/chat/guides/generative-ui.mdx",
+      "apps/website/content/docs/chat/guides/markdown.mdx",
+      "apps/website/content/docs/chat/guides/streaming.mdx",
       "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
       "apps/website/content/docs/langgraph/getting-started/installation.mdx",
+      "apps/website/content/docs/langgraph/getting-started/introduction.mdx",
+      "apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
+      "apps/website/content/docs/langgraph/guides/deployment.mdx",
+      "apps/website/content/docs/langgraph/guides/lifecycle.mdx",
+      "apps/website/content/docs/langgraph/guides/persistence.mdx",
+      "apps/website/content/docs/langgraph/guides/streaming.mdx",
+      "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
+      "apps/website/content/docs/langgraph/guides/testing.mdx",
+      "apps/website/content/docs/langgraph/guides/time-travel.mdx",
+      "apps/website/content/docs/middleware/getting-started/introduction.mdx",
+      "apps/website/content/docs/middleware/getting-started/quickstart.mdx",
       "apps/website/content/docs/render/getting-started/installation.mdx",
-      "libs/a2ui/package.json",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/package-version.ts",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/package-version.ts",
-      "libs/langgraph/package.json",
-      "libs/langgraph/src/lib/package-version.ts",
-      "libs/render/package.json",
-      "libs/render/src/lib/package-version.ts",
-      "libs/telemetry/package.json",
-      "package-lock.json"
+      "apps/website/content/docs/render/getting-started/introduction.mdx",
+      "apps/website/content/docs/render/guides/events.mdx",
+      "apps/website/content/docs/render/guides/lifecycle.mdx",
+      "apps/website/content/docs/render/guides/registry.mdx",
+      "apps/website/content/docs/render/guides/repeat-loops.mdx",
+      "apps/website/content/docs/render/guides/specs.mdx",
+      "apps/website/content/docs/render/guides/state-store.mdx",
+      "apps/website/scripts/generate-api-docs.ts",
+      "apps/website/scripts/generate-narrative-docs.ts",
+      "cockpit/render/computed-functions/angular/src/index.ts",
+      "cockpit/render/element-rendering/angular/src/index.ts",
+      "libs/a2ui/src/lib/functions.ts",
+      "libs/a2ui/src/lib/parser.ts",
+      "libs/a2ui/src/lib/resolve.ts",
+      "libs/a2ui/src/lib/types.ts",
+      "libs/ag-ui/src/lib/interrupt-persistence.ts",
+      "libs/ag-ui/src/lib/interrupt-session.types.ts",
+      "libs/ag-ui/src/lib/to-agent.ts",
+      "libs/angular/markdown/src/markdown.component.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/audio-player.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/button.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/card.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/check-box.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/column.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/divider.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/icon.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/image.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/list.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/row.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/text-field.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/text.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/video.component.ts",
+      "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
+      "libs/chat/src/lib/a2ui/surface-store.ts",
+      "libs/chat/src/lib/a2ui/surface.component.ts",
+      "libs/chat/src/lib/agent/agent-interrupt.ts",
+      "libs/chat/src/lib/agent/agent-status.ts",
+      "libs/chat/src/lib/agent/agent-submit.ts",
+      "libs/chat/src/lib/agent/citation-display.ts",
+      "libs/chat/src/lib/agent/content-block.ts",
+      "libs/chat/src/lib/agent/message.ts",
+      "libs/chat/src/lib/agent/runtime-telemetry.ts",
+      "libs/chat/src/lib/agent/subagent.ts",
+      "libs/chat/src/lib/agent/tool-call.ts",
+      "libs/chat/src/lib/chat.types.ts",
+      "libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
+      "libs/chat/src/lib/client-tools/tool-def.ts",
+      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+      "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
+      "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+      "libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
+      "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+      "libs/chat/src/lib/compositions/chat-timeline-slider/chat-timeline-slider.component.ts",
+      "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+      "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+      "libs/chat/src/lib/compositions/chat/chat.component.ts",
+      "libs/chat/src/lib/lifecycle.ts",
+      "libs/chat/src/lib/markdown/citations-resolver.service.ts",
+      "libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-blockquote.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-document.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-hard-break.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-heading.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-image.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-inline-code.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-link.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-list.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-soft-break.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-table-cell.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-table.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-text.component.ts",
+      "libs/chat/src/lib/markdown/views/markdown-thematic-break.component.ts",
+      "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
+      "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+      "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
+      "libs/chat/src/lib/primitives/chat-generative-ui/chat-generative-ui.component.ts",
+      "libs/chat/src/lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component.ts",
+      "libs/chat/src/lib/primitives/chat-history-search-palette/chat-history-search-palette.component.ts",
+      "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
+      "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+      "libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
+      "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
+      "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
+      "libs/chat/src/lib/primitives/chat-message/chat-message.component.ts",
+      "libs/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts",
+      "libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
+      "libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts",
+      "libs/chat/src/lib/primitives/chat-select/chat-select.component.ts",
+      "libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
+      "libs/chat/src/lib/primitives/chat-suggestions/chat-suggestions.component.ts",
+      "libs/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts",
+      "libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
+      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+      "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
+      "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
+      "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+      "libs/chat/src/lib/primitives/chat-window/chat-window.component.ts",
+      "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+      "libs/chat/src/lib/routing/thread-routing.ts",
+      "libs/chat/src/lib/streaming/content-classifier.ts",
+      "libs/chat/src/lib/streaming/parse-tree-store.ts",
+      "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+      "libs/chat/src/lib/testing/mock-agent.ts",
+      "libs/chat/testing/interrupt-conformance.ts",
+      "libs/chat/testing/reasoning-fixture.ts",
+      "libs/cockpit-registry/src/lib/content-descriptors.ts",
+      "libs/cockpit-registry/src/lib/docs-links.ts",
+      "libs/content/src/a2ui/types.ts",
+      "libs/content/src/json/types.ts",
+      "libs/content/src/markdown/types.ts",
+      "libs/content/src/messages/create-message-content.ts",
+      "libs/content/src/render-state/types.ts",
+      "libs/langgraph/README.md",
+      "libs/langgraph/src/lib/lifecycle.ts",
+      "libs/langgraph/src/lib/threads/threads-adapter.ts",
+      "libs/langgraph/src/public-api.ts",
+      "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+      "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+      "libs/react/src/chat/chat-input.tsx",
+      "libs/react/src/chat/chat-popup.tsx",
+      "libs/react/src/chat/chat-sidebar.tsx",
+      "libs/react/src/chat/chat-sidenav-scrim.tsx",
+      "libs/react/src/chat/chat-sidenav.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/citations.tsx",
+      "libs/react/src/chat/confirm-dialog.tsx",
+      "libs/react/src/chat/history-search-palette.tsx",
+      "libs/react/src/chat/message-actions.tsx",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/overflow-menu.tsx",
+      "libs/react/src/chat/project-list.tsx",
+      "libs/react/src/chat/project-name-form.tsx",
+      "libs/react/src/chat/text-transcript.tsx",
+      "libs/react/src/chat/thread-list.tsx",
+      "libs/react/src/chat/thread-rename-form.tsx",
+      "libs/react/src/chat/timeline.tsx",
+      "libs/react/src/debug/debug-state-diff.tsx",
+      "libs/react/src/debug/types.ts",
+      "libs/react/src/markdown/markdown.tsx",
+      "libs/react/src/render/types.ts",
+      "libs/render/src/lib/contexts/render-context.ts",
+      "libs/render/src/lib/contexts/render-host.ts",
+      "libs/render/src/lib/contexts/repeat-scope.ts",
+      "libs/render/src/lib/default-fallback.component.ts",
+      "libs/render/src/lib/lifecycle.ts",
+      "libs/render/src/lib/provide-render.ts",
+      "libs/render/src/lib/provide-views.ts",
+      "libs/render/src/lib/render-event.ts",
+      "libs/render/src/lib/render.types.ts",
+      "libs/render/src/lib/standard-schema.ts",
+      "libs/telemetry/src/browser/development/types.ts",
+      "libs/telemetry/src/browser/properties.ts",
+      "libs/telemetry/src/browser/provide.ts",
+      "libs/telemetry/src/browser/service.ts",
+      "libs/telemetry/src/browser/tokens.ts",
+      "libs/telemetry/src/node/adapter.ts",
+      "libs/telemetry/src/node/client.ts",
+      "libs/telemetry/src/node/disable.ts",
+      "libs/telemetry/src/shared/anon-id.ts",
+      "libs/telemetry/src/shared/env.ts",
+      "libs/telemetry/src/shared/events.ts",
+      "libs/telemetry/src/shared/hash.ts",
+      "libs/telemetry/src/shared/personal-email-domains.ts",
+      "libs/telemetry/src/shared/properties.ts",
+      "libs/telemetry/src/shared/sample.ts",
+      "package-lock.json",
+      "package.json"
     ],
-    "untracked": []
+    "untracked": [
+      "apps/website/content/docs/render/guides/computed-functions.mdx",
+      "apps/website/content/docs/render/guides/element-rendering.mdx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -747,7 +941,7 @@
       "id": "asset:libs/langgraph/README.md",
       "kind": "asset",
       "path": "libs/langgraph/README.md",
-      "sha256": "0e62717bd1562c3a9ab5c7649a11fb6f10c5e85ba5c826314deb10cfa4d4a0ef"
+      "sha256": "f5e52e0967ffb78fc59466866e8e8668373d7bd8c78a7e07f01ead9e47056437"
     },
     {
       "id": "asset:libs/langgraph/ng-package.json",
@@ -2193,7 +2387,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "adb04c4acf19f9180de24498121e684590dd8720eae6430a48e452cd8958caba"
+      "sha256": "b7fadf733ea82525c64ffb54d439d42706e6ed746984ed70636a57a45693aa40"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2229,13 +2423,13 @@
       "id": "config:apps/website/scripts/generate-api-docs.ts",
       "kind": "config",
       "path": "apps/website/scripts/generate-api-docs.ts",
-      "sha256": "a88a4106b8f8f61b6aa3fe62bd8cbb968048da0e9fd7c9df6ec417d9a0f22fb9"
+      "sha256": "4c2a0e489da074aa0a7f722fa0a44274a216617e0685421b3b414a4adb7cfb4e"
     },
     {
       "id": "config:apps/website/scripts/generate-narrative-docs.ts",
       "kind": "config",
       "path": "apps/website/scripts/generate-narrative-docs.ts",
-      "sha256": "9fb9b06c7e42f02f64354094f7e9fb9d340391953962f3c44c147cb2aea34589"
+      "sha256": "ee56f1d266c370cae97164e17a40e52fb30382c4bc5234cbafc89e46e8716bd8"
     },
     {
       "id": "config:nx.json",
@@ -2247,13 +2441,13 @@
       "id": "config:package-lock.json",
       "kind": "config",
       "path": "package-lock.json",
-      "sha256": "5d4ef9095a8d64703f944468df110ce31b65073a8bddc4ff1804f20f23fbe0f8"
+      "sha256": "df68d8887942e113eee64106f5afa7fff6c0efd7a50d4395c0950dabd045bf6c"
     },
     {
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "995d8e228c09b0bd0dbbb9dba416e6afe0f983f1cd04ef789e635549ca5d63ca"
+      "sha256": "fa66bca2cd8e460c4a7074baec8a52c6d5aa6ed27feb197568fc697045f69adf"
     },
     {
       "id": "config:scripts/assemble-examples.ts",
@@ -2328,34 +2522,10 @@
       "sha256": "8369b0fa456db1fd3bcb2741148837ee9440b22e0b830f9775cb280c64aa3211"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/api/fake-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/ag-ui/api/fake-agent.mdx",
-      "sha256": "f3bc8a6a08f66310106d8903ed29861c0222ab34a388481eb715a215a17afc14"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/ag-ui/api/inject-agent.mdx",
-      "sha256": "5e07ebd615a565d1c13263b78dda46a5a2cea6bc40ce5327c776391e1b0b489e"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/provide-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/ag-ui/api/provide-agent.mdx",
-      "sha256": "8c9a3ed6a58ffe8754d65bd6856c5189c7a6834ccb82f55a1edf76d2cc5672be"
-    },
-    {
-      "id": "doc:apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/ag-ui/api/to-agent.mdx",
-      "sha256": "13d234d4d5c9f2abf3ac509cc4a4a55e6121e983d4191a242f888e7a2b0ac2f3"
-    },
-    {
       "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/concepts/architecture.mdx",
-      "sha256": "f2b007a8dd8007bf4fe58a395a7fbb181adc8f7a7769c375adfa21459fde3a06"
+      "sha256": "8a8bdf9f4c50b1f2462a3ec6cbf80b2fb876a78c9206375b2323a6a4fd5785be"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
@@ -2391,13 +2561,13 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/custom-events.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/custom-events.mdx",
-      "sha256": "c9b7e6d483a6bae8b4cb1d13b304a5eec2b0fc010d42877b131a637d9158c3c0"
+      "sha256": "69595aa68f0b8619a4d6f29e53580b89177597032343303164610ba85c02763b"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/deployment.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/deployment.mdx",
-      "sha256": "c1d51af7fd17abab2d32a70885ea3ab7943829016bc3332eef96f08e211ea1ae"
+      "sha256": "cbbc96b81b7a57ecb139d27756223d3e191ec452ebcb4da4502f37ad5104334c"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/fake-agent.mdx",
@@ -2409,7 +2579,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/interrupts.mdx",
-      "sha256": "ca0dee9e94c1b51d24be43da3201da83db8d396403981a17a70c4af324a859fc"
+      "sha256": "f225acdb17cf18c2d8e29b4ce90dc8312850752345dda64cf4b7698b36f918c2"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
@@ -2427,7 +2597,7 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/testing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/testing.mdx",
-      "sha256": "7eead5098a5d1b9901de9a1133846d9749572a6d89f58be26075a8cf25df959d"
+      "sha256": "8daa94c80271a83f1961e143cfd8e2b33c58a09ea54e2959c9be85c0f88b49a1"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
@@ -2439,13 +2609,13 @@
       "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
-      "sha256": "d1b212031a9d519054913d22182f8a673e5c81ad601aca76f82a79ec84856217"
+      "sha256": "e701407ca8a5648cdd966659298bb99579486102257ebc4b6dba5bc7d0b2d31a"
     },
     {
       "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
-      "sha256": "b7a1889559589d29b13beb7c38a87dbc54f9904966bfe3c268bf3d383bafd293"
+      "sha256": "5dedfe39d27ef3f407e30efdadb868a052c2ad4fefd3c4cc9303829698f39a0a"
     },
     {
       "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
@@ -2470,24 +2640,6 @@
       "kind": "doc",
       "path": "apps/website/content/docs/chat/a2ui/surface-store.mdx",
       "sha256": "b1d3acd4161cf7775b319cd28bfb4e3e8f9fa92da93a13d1a45f593692a68bef"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/content-classifier.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/chat/api/content-classifier.mdx",
-      "sha256": "94a6949b6f06098fb3272db0606627a5795bb01ef2acb6341f0726c4e3bcd5c9"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/mock-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/chat/api/mock-agent.mdx",
-      "sha256": "fcaa1997039b7d09eccb4b996efe75ac1467c756dc5c9e9fe44ba26d9dd954a3"
-    },
-    {
-      "id": "doc:apps/website/content/docs/chat/api/parse-tree-store.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/chat/api/parse-tree-store.mdx",
-      "sha256": "5a490b18bae511f56fcca21580513709b2c1fef1b7b3e797c53fe258c7950493"
     },
     {
       "id": "doc:apps/website/content/docs/chat/components/chat-activity-template.mdx",
@@ -2649,7 +2801,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/client-tools.mdx",
-      "sha256": "894320fe604755c5084f4b588d322a506df88d8e7ce2d5fe707c9190eb5f2d19"
+      "sha256": "c82031cfdb9fd4d6489e2f3f22892dc078ba9c8c81b5c6b52a541af169847193"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/custom-catalogs.mdx",
@@ -2667,7 +2819,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/generative-ui.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/generative-ui.mdx",
-      "sha256": "42dad8d70c11668e9fcc5e958e736259239bc8c60bff557499db49e8a432d223"
+      "sha256": "c36ff35071c19e2cd9813efa4329a370e7cce4eaea6025ebbe7a0a3e6f6b4af4"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/layout-modes.mdx",
@@ -2685,13 +2837,13 @@
       "id": "doc:apps/website/content/docs/chat/guides/markdown.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/markdown.mdx",
-      "sha256": "e1099e176503a480e6d7309a607a7f051df0e05b2b8789ae400792455de5f31d"
+      "sha256": "cee68fc32a4a2eabcccdf659d2898631d1892618b031f6d4260364d6f3bf46be"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/streaming.mdx",
-      "sha256": "55f16c97d53c35c9d3efcf650f4e4cafe5072c3697cc8d9a8a984394595f62ee"
+      "sha256": "41c60b4c7db4f51f2674e261a3a79c984bec6c591312d31baa2f197b535e6e3e"
     },
     {
       "id": "doc:apps/website/content/docs/chat/guides/theming.mdx",
@@ -2709,7 +2861,7 @@
       "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "sha256": "d5cadc6e72b3e2fe710acf3c12a62fa67fc666951c5174fa096fe4720bee20a1"
+      "sha256": "509a5e11e2e18396ce44bbb197e4c1233a5a90a84a5a113cffd634ba50cf10b7"
     },
     {
       "id": "doc:apps/website/content/docs/chat/migrations/upgrading.mdx",
@@ -2760,36 +2912,6 @@
       "sha256": "2096bd5210569850b192236ee732e1e04a747a4f7d77478a7e80bea606437a84"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/langgraph/api/fetch-stream-transport.mdx",
-      "sha256": "932bd95c6c3644143a6946a93a2fd3376ddf785067154726aabe3c17d3ac3427"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/inject-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/langgraph/api/inject-agent.mdx",
-      "sha256": "ab57baacb08e3c479c114c22ad7f423afb1fce891d35b6475af2048c3634b2f8"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/langgraph-threads-adapter.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/langgraph/api/langgraph-threads-adapter.mdx",
-      "sha256": "dc1f7dd662b5ed015912b7fcfc8ad203ec6bef01e27ae4d3c41ed6a8dddd4101"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/mock-stream-transport.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/langgraph/api/mock-stream-transport.mdx",
-      "sha256": "fbee1508467248ae6ea55cb8252d155c2d8db516f1746780e92c31756c2131d2"
-    },
-    {
-      "id": "doc:apps/website/content/docs/langgraph/api/provide-agent.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/langgraph/api/provide-agent.mdx",
-      "sha256": "6b09d3088365b7bfff85d00f935566547182e2ce78e5cc49d00f5a8a409a2680"
-    },
-    {
       "id": "doc:apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
@@ -2805,7 +2927,7 @@
       "id": "doc:apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
-      "sha256": "bf0afa342bd3498c84c00d4edc6ee5794cd0309095b5564e4ed9ce344c781247"
+      "sha256": "b27ab86dbba6b24be74cee774dfb9304102a8887b80e37ba8a79f3db603462fb"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
@@ -2829,25 +2951,25 @@
       "id": "doc:apps/website/content/docs/langgraph/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "sha256": "98a2cd312ede14f7c840f6faac4ad833535d8f0efe5eaba66ccecba2c0c9c78c"
+      "sha256": "3905b0b29a0b4b73b1e4dcb55945adaf5b8ed87e8a0a2b7c168b4e442cd195ca"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/introduction.mdx",
-      "sha256": "b7ec3db9fafb8be6c3a37b5a1a13d4ad2fcfd4008456db73d039b53a9336d8fd"
+      "sha256": "68f999413da6d15ab1a8b1e2bb860581f6d8fa0b0fd3e593cc216626ff0e26ec"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
-      "sha256": "a57f6308cb80519195a2d2ac00b30e0432e39f4ca6f407b0bc23ea7a979ead75"
+      "sha256": "3af34b8b7b6d12e3b274b7bea4453f93fddee4cc0ec023dfe71b27f55bb127f1"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/deployment.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/deployment.mdx",
-      "sha256": "f421cfb14476fbcf05b3ae1b5043f3391d9b45f3d0fd70821f581e07b6fc48bd"
+      "sha256": "5a81411d8c2c1ae001e8d3597202803622c246d2fbf7e3115e4474b7015b8c88"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/durable-execution.mdx",
@@ -2865,7 +2987,7 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/lifecycle.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/lifecycle.mdx",
-      "sha256": "66db0a0cf63cd1afb13eefc966ab7c6704159cfe7d0caf807d4d270cc1dc64ed"
+      "sha256": "52f911dde8fc7cd9e35aa46e2bff4769320e1d942c8b977c4d3e96310d89bc29"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/memory.mdx",
@@ -2877,49 +2999,43 @@
       "id": "doc:apps/website/content/docs/langgraph/guides/persistence.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/persistence.mdx",
-      "sha256": "9a98ce2b3240df18c33bef14b0d1fbd48c023fc7eb0a7854f6f8e5a54d22bb09"
+      "sha256": "2784eb3bee5c69b10be6b0047cad920f667c78a461fc75d9c01fb6da4cb108d4"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/streaming.mdx",
-      "sha256": "71c5bcb51a688a8bd844c57af0d1a40c59c2d0fff918fac2ae24a6587e982be6"
+      "sha256": "c75f220f7f4ea431560baa3f228bc7db06506b365cee4a559c22975e51c1d923"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/subgraphs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/subgraphs.mdx",
-      "sha256": "8f9ab2faba5a069abd75e618e09333c9645f3899483e798fb7108e2a7995d00b"
+      "sha256": "a613a688770b8e69c0c167e9e6fea92fef549ab513576b6347c7c0e058abeff0"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/testing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/testing.mdx",
-      "sha256": "0cdb6a747c7ab56dec2c554b51759f1cc62b1facfee11e4f81a586f74cb4ba94"
+      "sha256": "bb3e1f451a4b0ddcd904216ab6db5b8de4556f67d4e59b534a6ea68fd8ba01bd"
     },
     {
       "id": "doc:apps/website/content/docs/langgraph/guides/time-travel.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/langgraph/guides/time-travel.mdx",
-      "sha256": "ddd916b992331e56abe4bf72b0f074dd7649bd521e1702c12a078bb1a6c228ba"
-    },
-    {
-      "id": "doc:apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/middleware/api/client-tool-helpers.mdx",
-      "sha256": "0f493d2b82463928906fc5fb768699ab437a1bef6b7ba630ad31d2d9be44f1d0"
+      "sha256": "de9a2b2e560825b80932549e7aeeabd20ca828f5a3a2c28e1b4c4f7ee2f3babc"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/getting-started/introduction.mdx",
-      "sha256": "8cfca8f42c02cec9c5e44fa32d2ac8013e1c807df223fd0a80eadb2dc0ab8492"
+      "sha256": "40b7ad3c2df268d00e472602b311d2026fcb28d7e82131b1fa7c66f869211a90"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/middleware/getting-started/quickstart.mdx",
-      "sha256": "6365eb17d4ba4f8ec5a227d0ccaa07aa947b09a13995226940c0e5e114fe5f68"
+      "sha256": "41a183fbd4217233c06d4aacf7247f1a20043f4707bb6360c7d9a60c324b0c6f"
     },
     {
       "id": "doc:apps/website/content/docs/middleware/guides/langgraph-client-tools.mdx",
@@ -2934,36 +3050,6 @@
       "sha256": "ea0562f4ad1608d99eebbf04015be5f6f888ad9b774c73dfa720fbc568cb5a2f"
     },
     {
-      "id": "doc:apps/website/content/docs/render/api/define-angular-registry.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/render/api/define-angular-registry.mdx",
-      "sha256": "10eabf2a42bdfc1f989cd156b4fc9f2933c3eb4948b46586d6adf2c7e4b9f591"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/provide-render.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/render/api/provide-render.mdx",
-      "sha256": "1496bdc324c34dcfcfef3c4a736039e1c28978ee98824727d5f65970e123dcdf"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/render-spec-component.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/render/api/render-spec-component.mdx",
-      "sha256": "87cfdede1578b1ac54dec0db333d3e84ab1df4fb94a3bd3c7cdda2931d1924cd"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/signal-state-store.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/render/api/signal-state-store.mdx",
-      "sha256": "d1b12595f980a47257ed5f83d3a5d1fefc311b6da54970eb00ae7dc13daf707d"
-    },
-    {
-      "id": "doc:apps/website/content/docs/render/api/views.mdx",
-      "kind": "doc",
-      "path": "apps/website/content/docs/render/api/views.mdx",
-      "sha256": "9f81104331ec9e5fd250eb6c1bd8dfde2af9214f1a8ab36770b70979f67e6454"
-    },
-    {
       "id": "doc:apps/website/content/docs/render/concepts/json-render-vs-a2ui.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/concepts/json-render-vs-a2ui.mdx",
@@ -2973,13 +3059,13 @@
       "id": "doc:apps/website/content/docs/render/getting-started/installation.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/getting-started/installation.mdx",
-      "sha256": "e85de6f6d11cfde359c1aeb9c98992f69be00545539f4687a360e68b32a7f361"
+      "sha256": "fe1c993f64e4663c51f22b2d6a6a18b9a73a7893166752117be4b822f74b8d5f"
     },
     {
       "id": "doc:apps/website/content/docs/render/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/getting-started/introduction.mdx",
-      "sha256": "cae0d2dc4f6e8acc86e2374699982078728babd7eec8eb4c78fc4120627ffc6d"
+      "sha256": "fea36a77a5a6fe0b67fdc46af139d6e0a685aa4e7a402d93b007c0cd252e40db"
     },
     {
       "id": "doc:apps/website/content/docs/render/getting-started/quickstart.mdx",
@@ -2988,40 +3074,52 @@
       "sha256": "0bd26979bed6a7b6fec55c68353b1dbc0f4399e2ea11091f39f092d197d0e108"
     },
     {
+      "id": "doc:apps/website/content/docs/render/guides/computed-functions.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/render/guides/computed-functions.mdx",
+      "sha256": "7eda3b63c9317fbebac60d68c78241b249c9c0d68a45a5a69746be87cd407b15"
+    },
+    {
+      "id": "doc:apps/website/content/docs/render/guides/element-rendering.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/render/guides/element-rendering.mdx",
+      "sha256": "e41a52f91aa1bf1899463b8b1437c4702f753adf0cf1f56d722c7770ef72006b"
+    },
+    {
       "id": "doc:apps/website/content/docs/render/guides/events.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/events.mdx",
-      "sha256": "2b71afd0d7c189839779a795cc790a258e48dbbe2b6dd103e6f49fb8c1459a4c"
+      "sha256": "e52a037bad5b071e332d7f1256ebf96447e7ec47b89b71b90b4cccbd6367a3c2"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/lifecycle.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/lifecycle.mdx",
-      "sha256": "e4b4bc1d8555265b92b2f61bd78b7769db2161a7ab1b6ef74ba775d0744b5caa"
+      "sha256": "603b75d8fb6af0dd838f5c09e1d8071b40822763835970747fc592a660003155"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/registry.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/registry.mdx",
-      "sha256": "e0c6a4dcadeca0c562ddec9289bdf6460ffa1555c70d7cc1d2ac0231fdbe0db4"
+      "sha256": "814035d60d28bd2e705417e12a4410452676959e8463aa3893a7d08b30b63f23"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/repeat-loops.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/repeat-loops.mdx",
-      "sha256": "ad8f99807a3af952a0d0560f263d38207f5a265b7c75d22fa5ede550b07bdaba"
+      "sha256": "284ded9073969cc778efcb4371d4d337f0a408563e7c821b8e76ba775a6b347f"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/specs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/specs.mdx",
-      "sha256": "716ec0054559a5e55f28acb28430f3be631892b866966972de9f6ea2c740567c"
+      "sha256": "d83ff298c8406a173718a511557deb857ed2608dec69056de5de6d26f863fbd7"
     },
     {
       "id": "doc:apps/website/content/docs/render/guides/state-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/render/guides/state-store.mdx",
-      "sha256": "40d936c1c103a4644e2ff2527af78703ddd894e684329a3513663593e0911527"
+      "sha256": "8479e617d59d4b21be2eb68c719607db54b1b72e064f79e306aa26bef2bcaf4b"
     },
     {
       "id": "doc:apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
@@ -12694,7 +12792,7 @@
       "id": "source:libs/a2ui/src/lib/functions.ts",
       "kind": "source",
       "path": "libs/a2ui/src/lib/functions.ts",
-      "sha256": "e3c22d6f7eb536fbb2b20029d0633ca0bddcf37d49f1bb065e246e26f7907ab5"
+      "sha256": "99952b94e5dcd7fb179fb9a1bfd05e700e97594bd4fb8ed5b6801e86760140cf"
     },
     {
       "id": "source:libs/a2ui/src/lib/guards.ts",
@@ -12706,7 +12804,7 @@
       "id": "source:libs/a2ui/src/lib/parser.ts",
       "kind": "source",
       "path": "libs/a2ui/src/lib/parser.ts",
-      "sha256": "a1337f1962bc41df5995394e36f791bb2f0643198a6f1afa31747bb0ab926df1"
+      "sha256": "99e540339463b61347b081fc49cc2fd4627f1dba5b73b723abf667ba56bef94a"
     },
     {
       "id": "source:libs/a2ui/src/lib/pointer.ts",
@@ -12718,13 +12816,13 @@
       "id": "source:libs/a2ui/src/lib/resolve.ts",
       "kind": "source",
       "path": "libs/a2ui/src/lib/resolve.ts",
-      "sha256": "97624a6d9e842d53eb1bcc2cb0f5fff2697401e3bca6942b487a373652cdaeb7"
+      "sha256": "a36b5db8d53b45ffa9a3ee8606292fb77cf5328f5e8dbd543c29cfbd60475f6a"
     },
     {
       "id": "source:libs/a2ui/src/lib/types.ts",
       "kind": "source",
       "path": "libs/a2ui/src/lib/types.ts",
-      "sha256": "273fff2b2d039d01be82777728985c5eb13e0ada8908d46544bf788ff5bc701c"
+      "sha256": "0cd89bf7a8470c671e10361e159dc695e7ed8444ebb8e9278c819bfde833a1ce"
     },
     {
       "id": "source:libs/a2ui/vite.config.mts",
@@ -12796,7 +12894,7 @@
       "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "sha256": "bdb51f04fec35986d3359043e549cfa5312850f5aff94005550919eab2822f49"
+      "sha256": "92d44b0e4db3a6adf11e0e6d06d136834a065a8bb30adaaffd3a0c8255b73497"
     },
     {
       "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
@@ -12808,7 +12906,7 @@
       "id": "source:libs/ag-ui/src/lib/interrupt-session.types.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/interrupt-session.types.ts",
-      "sha256": "3caca0e4cba89109efab869567b1a0f1a520d051ef0b53101cd924e266ea4ba4"
+      "sha256": "6e5ad90e332208bb0aec9a3ec92689aeb3ffee92ab3ff9d75435c447928f1fbc"
     },
     {
       "id": "source:libs/ag-ui/src/lib/package-version.ts",
@@ -12862,7 +12960,7 @@
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "47634e4ab531043873efc440813673a58d1f698c6c08f800ea8a15cffaaa3913"
+      "sha256": "31ced5dd10d063b7fea035f0e5537c362862870b9ac82c3e2cf8d46221c3c01c"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -13054,7 +13152,7 @@
       "id": "source:libs/angular/markdown/src/markdown.component.ts",
       "kind": "source",
       "path": "libs/angular/markdown/src/markdown.component.ts",
-      "sha256": "43b79290bab9df30923d97516f8251bb4d334ef84a90447580ee361cc8d7f298"
+      "sha256": "270799bdbc81b836b7b1b45d3535361029e7e5816496f65c7ad58263b8cdcc93"
     },
     {
       "id": "source:libs/angular/markdown/src/public-api.ts",
@@ -13120,7 +13218,7 @@
       "id": "source:libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
       "kind": "source",
       "path": "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
-      "sha256": "3e36ac4875871589e757c60faabe3931dafa9de582f7bba5ae030a007e2d4462"
+      "sha256": "83930c7237ee2e874ed0e6d88af07ec91e74624d7ccfb444ebb065454d043942"
     },
     {
       "id": "source:libs/chat/debug/src/lib/compositions/chat-debug/debug-agent.ts",
@@ -13228,49 +13326,49 @@
       "id": "source:libs/chat/src/lib/a2ui/catalog/audio-player.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/audio-player.component.ts",
-      "sha256": "18dcab405b2a742bc837f238c3a8907b5fd33c1abdc466e0bc00f5c152b224bc"
+      "sha256": "96508c85781854a4f1e9c108107f6e909910b6e64aaa6f13c1778186b57d5595"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/button.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/button.component.ts",
-      "sha256": "744b9f881dfeb8954ac084ec7f2b9779658971c798d49016fd1e6c174b23a58c"
+      "sha256": "350239d7a0eebb11df87b3338a7a02dd99dcbbb8f512fbfbadb3da911ef8dba7"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/card.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/card.component.ts",
-      "sha256": "31d86519175a1da778e605cf900c281a976bac68c1e556bac7f4dd1e7ab5fb12"
+      "sha256": "a87716886d77b5fd74211316fa66ed8c90df4eec0da2bfb63f18d62c278ae6bb"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/check-box.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/check-box.component.ts",
-      "sha256": "4551d1d3e8c8a9464a2386d43ecb58074bf35739f3c5f97e59ba71fdaddccae2"
+      "sha256": "5301d2dca2ddecf18216043e2cc086de6b3f7ce0274a2fa7e2e8ea74b55ec613"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
-      "sha256": "8ea38473bf854bb6ea57a8b12e907b282d9f4fdc44c8083deca42199c7ae2a79"
+      "sha256": "5e5a08357267cfab472f37bafda0158b4612a8dbda99ea3ac30590e06bf92367"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/column.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/column.component.ts",
-      "sha256": "3bd111d39c23a1c53d610903fbe806af2770b5c94a2687c4bb333af6dd77966c"
+      "sha256": "9fc7bbb7ca131f22bce8df458f07d1c5653b5f39ebdce2fbcd57a6258fc45bb9"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts",
-      "sha256": "f84a8e05874b1db37db3d8600ec7159ed4ae9e47acd01bdbd1ea7c2d658b9e4d"
+      "sha256": "b46467e2fd27cb9d4e02e9a042336c2684587c6eeb030aae08be2b23368bb4de"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/divider.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/divider.component.ts",
-      "sha256": "be7982a61efe71cb6aaa53f6d8c06f478c2d8409d581c99b0839c7f264c1811d"
+      "sha256": "203d0fa522d55ec186fab544e7378254157ac7ca74e74fa505b21edc13900b79"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/emit-binding.ts",
@@ -13282,13 +13380,13 @@
       "id": "source:libs/chat/src/lib/a2ui/catalog/icon.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/icon.component.ts",
-      "sha256": "5ea2616bb716c9f9d710105a90590de64822b5c7842bef8ae9b971834168ae0d"
+      "sha256": "45bfcf9223f050a79910bd04b24e87605705b8de5b3be2b132afc3956ced6ce0"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/image.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/image.component.ts",
-      "sha256": "2ee05379e1cf5f7efd882c5c6e41edb6177eb5336511dc2cf584b7fc8fded029"
+      "sha256": "1ee0a8c89369d791f7fc43454c7936184701dc69962c032fcdd5af9dfaa9e40f"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/index.ts",
@@ -13300,49 +13398,49 @@
       "id": "source:libs/chat/src/lib/a2ui/catalog/list.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/list.component.ts",
-      "sha256": "0fc40bb54d08821d2d954354b706ed136813932be4e54653e32fe1f13f2f4515"
+      "sha256": "07553b3e1ed53a4e0f29d11fd44ecb949919f97b5adb38224788cdf022dfecf0"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/modal.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
-      "sha256": "9bce1f87a182111468caa3a66281f7e5c5be7ee21ccf4d4ec9b9ebff5cb27854"
+      "sha256": "b24135259eeb589d2ad54adc06dce98583fb3e1a9ecf16ea34f9249477a479f9"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/row.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/row.component.ts",
-      "sha256": "3e5cc7af2987bcfa505ed8eefc72810b3c7d8e1b4a41a66b7203062050f6ebc2"
+      "sha256": "a6a45c97fad859a3ffc036e0f13653073ad68b5be861762f3162e51e7e32e647"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/slider.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
-      "sha256": "c2e44823ac013495400d5afd665d490561cc72bd632b35fd124055e335a1420c"
+      "sha256": "656decbfc751da8982141bd4e65e0862130faea67f6f81fad2b9e527d7d682e6"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/tabs.component.ts",
-      "sha256": "b590b2eb69ebf96cc72822fe2e3c6a584bc76b009711b6d985d48092ce05be0c"
+      "sha256": "2a5f48edc9d8f968ecbd522ca16ed5eb9939c01bb0b094a3c9cae0b425e0af6c"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/text-field.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/text-field.component.ts",
-      "sha256": "cde5f0e7065aa7ff68bc7cd4ae7c0b2c96b8499bd8b579c3feb67713f754f26e"
+      "sha256": "14110ae8fdb9f8ecfc517ea941d33c5e72a765e4470bc58d8072ba8365ec3dc3"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/text.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-      "sha256": "0320e1dd0675f4759fc5596b341f809111eab7f5aa9acafc8beeb9f66b304ac8"
+      "sha256": "7c14bc1dc7eab0d9371bc294cd6e123e5c01aab0f7e7fa85e9ee2892fb469506"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/catalog/video.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/catalog/video.component.ts",
-      "sha256": "87b682d18844471a193c59993c82f0c8ee986de6bf59615e878e306679b90fbe"
+      "sha256": "6ef09a67d3510a792b112a81c7a1296b9cb97b426cf0e1b8cc71d128c9b45554"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/component-view.ts",
@@ -13366,13 +13464,13 @@
       "id": "source:libs/chat/src/lib/a2ui/partial-args-bridge.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
-      "sha256": "b85580929640c3b84c58a1e362abf7e673ad7db6d987dcc0fe37406934676e55"
+      "sha256": "d4c2830ffa92d9cbf62efc1621acb3c3f01e76c393ed7d091a9454c31a416536"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/surface-store.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/surface-store.ts",
-      "sha256": "928c6b58f35da8e073b9bbfb58cd4f5b778efc40f47bb2b352d1735385464906"
+      "sha256": "3ffe664b8eab6b7d5f378125a27b952a2b0252bd7f3feaeae040ffc2b60c5423"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/surface-to-spec.ts",
@@ -13384,7 +13482,7 @@
       "id": "source:libs/chat/src/lib/a2ui/surface.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/surface.component.ts",
-      "sha256": "10553c8501d92ad8584191f11a93110f50e8d8c6d6d6da892e3629fe5e329d21"
+      "sha256": "18940baf3dda0eb7af66d0dfdfde3f82c6cfe5d82b20e9aed336c30d71590d96"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/views.ts",
@@ -13414,7 +13512,7 @@
       "id": "source:libs/chat/src/lib/agent/agent-interrupt.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
-      "sha256": "faea0bfa5b12dc8a130906bf2b38d46a587bd1208df9868b00dbf1db6758a36f"
+      "sha256": "d93bef2899669cf20f8bf20b5655ab432146cc9f7a661e18e270966bb9737578"
     },
     {
       "id": "source:libs/chat/src/lib/agent/agent-ref.ts",
@@ -13426,13 +13524,13 @@
       "id": "source:libs/chat/src/lib/agent/agent-status.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-status.ts",
-      "sha256": "91edecd24cd25304b2d979ba5074e9380de2fb5b95abda31b986b8533f8da860"
+      "sha256": "08a2fb0daf22bec3092f3e74706b2fff52a63e921802c58d1a397fba76280a26"
     },
     {
       "id": "source:libs/chat/src/lib/agent/agent-submit.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-submit.ts",
-      "sha256": "09dcc2b445c1d1951092dc43389ca23cdcc2b5526e6ac5f658b2aba072dfe14a"
+      "sha256": "28232b66e379f6050815b516199978665e2b017b8483816a85543f4906979693"
     },
     {
       "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
@@ -13456,7 +13554,7 @@
       "id": "source:libs/chat/src/lib/agent/citation-display.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/citation-display.ts",
-      "sha256": "135d4713e80b3874572256014b2e9a37479c290735c0a2cd7b7e667e8789a0e5"
+      "sha256": "2e4b7b1d208ca6036feb0aec459645caf9609d35d3cfaca721cb586e6a233091"
     },
     {
       "id": "source:libs/chat/src/lib/agent/citation.ts",
@@ -13468,7 +13566,7 @@
       "id": "source:libs/chat/src/lib/agent/content-block.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/content-block.ts",
-      "sha256": "f6a22cfaa3f53d21fce9df550c51cb77077dbf455d175d7f85d55423ce691cea"
+      "sha256": "29eb19035a5e6a29bd9fa5616e1a5f31f9f4942f539020dc6e60095e557b4b1a"
     },
     {
       "id": "source:libs/chat/src/lib/agent/index.ts",
@@ -13486,19 +13584,19 @@
       "id": "source:libs/chat/src/lib/agent/message.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/message.ts",
-      "sha256": "c8e69f7c36a1daec9ce6207de02857ca784e6b8594b28309e75525de42db8690"
+      "sha256": "e2cc58d29559c105cfc27834ade750c9140c408aa5bad38a35ad2e5e101435d4"
     },
     {
       "id": "source:libs/chat/src/lib/agent/runtime-telemetry.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/runtime-telemetry.ts",
-      "sha256": "bacf56a9f015f8dbac932c64f53b3a59b5ba89d0e59f7d1dea0b5e4b77387d5e"
+      "sha256": "f74083a6faa624d4acf07f049ec3aba9092cb4c03147e2041015cfa3557da991"
     },
     {
       "id": "source:libs/chat/src/lib/agent/subagent.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/subagent.ts",
-      "sha256": "6ea8666e8e4703499ba08ed21c496407609e052589f6ddf2bf38f36e85f0c59a"
+      "sha256": "6af4dd922069051d059f49ed9bb063e422e3e3b12007088954db99c5c0a27655"
     },
     {
       "id": "source:libs/chat/src/lib/agent/to-agent-error.ts",
@@ -13510,13 +13608,13 @@
       "id": "source:libs/chat/src/lib/agent/tool-call.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/tool-call.ts",
-      "sha256": "16ffafb9acb1acc467325ff3ddc1d5b5254e4e61f167bfcffc2aedaecd6dad3b"
+      "sha256": "b3519e536352b88ae7aab9acb39fb4b24c922333231c8efebf785b53b6682948"
     },
     {
       "id": "source:libs/chat/src/lib/chat.types.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/chat.types.ts",
-      "sha256": "8084d47d70b014bcaa65a4609aa07674adf749c8994dd7eef7aae17b779aab5b"
+      "sha256": "669f9fd1226f13948971cbc298281a06006942750472f07534f89e9f3ebdf971"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
@@ -13540,7 +13638,7 @@
       "id": "source:libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
-      "sha256": "4342c630e4c96bc4cf327ae5c1d0abe15e71ea2d7816487a71bc7ce88b44c64e"
+      "sha256": "a498162e9996e6a8f8f0564af368f050b6d077d97c08bf2198917ff294873dd8"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/component-inputs.ts",
@@ -13576,7 +13674,7 @@
       "id": "source:libs/chat/src/lib/client-tools/tool-def.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/tool-def.ts",
-      "sha256": "489b57de11993572b1cb05159ae4a80c83e949052199be463fb7fbcf9f3171b6"
+      "sha256": "c1d2a70cb5c5b6bc8a5516029129ae1f937934faea501d6d40087f182b6533f0"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/tools.ts",
@@ -13588,25 +13686,25 @@
       "id": "source:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "sha256": "f5516651f86c6737f7a0fe8b9463bd4abf8f33e0d20ca5aac957200765442c11"
+      "sha256": "dddbb09557ce1119a418f7d8a810db664dbd3021bc9471b755cab96b83ffce98"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
-      "sha256": "5bfa108b1b928f364e8b781764a12354a641d70be7d81011077da5527e85ebcc"
+      "sha256": "687d3029f2d8cd8a0b1069c75fb54c6188cbe2f0801fe67a37a841251e856811"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
-      "sha256": "16854941a76acc4c54f88f80904a5fc29321e66f223a5a3ad0d31ff3a54d6db2"
+      "sha256": "385b1f36e3b7931943b6b2f0d6fbb9469c66e292fd7ee07e9dcbd84e40127def"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
-      "sha256": "e8661e4cef240358c5c824f011d854cb242f095751074f694c03031fcb4da4a8"
+      "sha256": "649d83d5efd3d5d53d65da02b1d8df88141d2043ffb8be2f49dc36938f912aee"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-sidenav/chat-debug-gate.ts",
@@ -13618,25 +13716,25 @@
       "id": "source:libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
-      "sha256": "d1cddcf0d2573efc9184b4ab752527171b581d5b29a8d7a17d235363bd950d5d"
+      "sha256": "9480f855bf2c0d0b7d635c3b647b8fbfc58230c88bf7e9267edb37d43a5c2f1e"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-      "sha256": "fbc68540134fad760aa9430ad4e7c17f382f5b809f33376799a3215359fecc38"
+      "sha256": "dfef1e3ef242eec71c33aa132e1762a78c881baf085849067de5b24db378e070"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-timeline-slider/chat-timeline-slider.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-timeline-slider/chat-timeline-slider.component.ts",
-      "sha256": "11474124ad699c6167c984e0412feaec72640ee21ff8f04fcf0407cd32b343f3"
+      "sha256": "3ed5f7adf4c93f25fe6652c56959c06e8214bd53a6a37ee044baeb6774217cdd"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-      "sha256": "47e10bd9dc1247f04e1b97c63856054050cc4cd3a2359708bbee40c7da945ab0"
+      "sha256": "f5b52659f5305b971ebb333b5dc114e22c25b4af604ed29de8325180c96919de"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
@@ -13654,7 +13752,7 @@
       "id": "source:libs/chat/src/lib/compositions/chat/chat-render-event.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
-      "sha256": "37d6fb1802e1bc7cf9f92e050edaac10c59f22dfc4f77862d50ffba082335b4f"
+      "sha256": "b28cb59cc3a31f100a46af604c63c6c42e26597cc752fc993d5e491226164711"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
@@ -13666,7 +13764,7 @@
       "id": "source:libs/chat/src/lib/compositions/chat/chat.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "sha256": "9e1da49d84306436b59f6b5b0541a1cc470ed38348a86c95b02d238458dba1f3"
+      "sha256": "e7839cf508882de176335acc026188eceb5ee7564e86196bb1bafbc585c0ec88"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/shared/message-utils.ts",
@@ -13702,7 +13800,7 @@
       "id": "source:libs/chat/src/lib/lifecycle.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/lifecycle.ts",
-      "sha256": "99f50f184a0284cbccb49fc4a2b8e99b08e58cb89b8b612efe291f9852663772"
+      "sha256": "cbf8469db2c73e6e867f4ba34c94ebe80725589668609b103e6890a91e1238e1"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
@@ -13714,7 +13812,7 @@
       "id": "source:libs/chat/src/lib/markdown/citations-resolver.service.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-      "sha256": "0d75c09c34b75a52d47dd6829a6f09cc23c644e59ee276d6ca67b6801f3b1534"
+      "sha256": "b1d00cb2fb64a0149e0268bcfcc8ae29f842531fd4c2b5e69373c89f1bc19a10"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/katex-loader.ts",
@@ -13744,13 +13842,13 @@
       "id": "source:libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
-      "sha256": "829d22f9f86292d53a46df8d0e1d66bd9809da6d9bc2637369c949c02f9fd0ce"
+      "sha256": "db340b67eabb2a8f4f05282c9ed8254f68cccbe17c8e9105a06a40cdb2d1586c"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-blockquote.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-blockquote.component.ts",
-      "sha256": "1d00829894a5f9bff151183b93366bab204b289b738f0e98530617c8af947996"
+      "sha256": "58a3f6f44c866d25b609f8274a9afc1d36b97c636a88c93b80ce42fbc70031b5"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
@@ -13762,31 +13860,31 @@
       "id": "source:libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
-      "sha256": "3001c1b351f8deea0418cf57dc77fe51a9b90e637fd1174daebd21358196620f"
+      "sha256": "eac6502efc535ebda183a8a5b756b65cf6e77acbb50a068ee212dc4c7796849a"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-document.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-document.component.ts",
-      "sha256": "71c9d93d7100b0ff1416958b2a8e72d8fa5a9ef4d00e4a807858b5f1cabf8329"
+      "sha256": "ea2e76ebfaa69939c4e02032917091daebd25787642b7d46fa49fc1ae0538f70"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
-      "sha256": "edf34c053e2c237ee9307b3777489c024b0751b1880095d03e3247c01cf4db7a"
+      "sha256": "cb26e9688c8ff10d3e62fea8a6640e62dc4bac42ec6a6bd5346c7721ce95be12"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-hard-break.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-hard-break.component.ts",
-      "sha256": "5cb1bb507cd5fd6e5c0e508e61fe75306bf6d8c5d92263a8ab482331e36ffa27"
+      "sha256": "830a19079624e951b6b60060b76eecc76a2fcac957ef038b5cc0046c55c98dd1"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-heading.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-heading.component.ts",
-      "sha256": "9f01dd0e0de6862d9c9d87c22a397150977eebc38e2b4f3e9833334d115c7916"
+      "sha256": "8d268848ebd242330318f35a61f7a3eb96e1f63f7889e32a1ac9f6304abb416e"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-html.component.ts",
@@ -13798,31 +13896,31 @@
       "id": "source:libs/chat/src/lib/markdown/views/markdown-image.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-image.component.ts",
-      "sha256": "7524050f0fbd79918cc5bae27a1748535b5b9716735324963c6fd1f9d53086f8"
+      "sha256": "4635e7b37429d298848c65d1cec617f7d1890a5655d10b1c1c0b5c0529629adf"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-inline-code.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-inline-code.component.ts",
-      "sha256": "d567c665c34ad007ac86841d721766307f95c648ee243ba8c8926a0a7e2cf22b"
+      "sha256": "d3aba2cac249ed36fa20f1963d0619e1755982480cba347b62ab6646cea0961c"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-link.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-link.component.ts",
-      "sha256": "6bc589504006ccfbab4249afc45b634507ad87ac74a05b0ee82011261ffddb84"
+      "sha256": "ca2eb5298210847f101bb182e6f9454b8938a65eda61e76fe4c9b6d4378de2a6"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-      "sha256": "1210aadca55cd8195fa547180ee87f497964434698d0d60e27b959879b2e7eca"
+      "sha256": "74951820cbb344c66f419d7716fda18ee535ebf6bbf81883a4d0a00eb838f83a"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-list.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-list.component.ts",
-      "sha256": "82181a765e32b2d692dc6b3e304899c968e18c83e4eb3eebf9388a1f6ade8b3c"
+      "sha256": "2751389bc00eccbc747cc768e6aebbabe3889c1acc2361f9044a390197c264f0"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-math.component.ts",
@@ -13834,55 +13932,55 @@
       "id": "source:libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
-      "sha256": "75c55797fc3374c7c8abaa06d72480aea8c18a47c9087a8fbaaf19ed637280bf"
+      "sha256": "9b607203e3b2ecccbde835e9061aaff4d10efaa9e057f13c650c48f8b825ee95"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-soft-break.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-soft-break.component.ts",
-      "sha256": "34521a846738dca4941b0a4aa38b50cb163b451856933031a0406521b16ccfb8"
+      "sha256": "8b4fbd42b5f1d0336212628096b3b741038272159d7063b22676c4c725d27914"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-strikethrough.component.ts",
-      "sha256": "5ff7228bc3986f93fc2f878869510f5dd6d52a8863f351da35f9888f0c63d3aa"
+      "sha256": "fef9894a3493be5288388aad40b552d6ba85b66bdbdfe79194bbd7c5dcf7b47d"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
-      "sha256": "42a03233f7a79b0624696a9091a7819cf08db482ccc99b3bd2224bd5872906a6"
+      "sha256": "c36525e8db8f7503a854e56b779f401615ab9b25d45786077bc2042c98ed6863"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-table-cell.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-table-cell.component.ts",
-      "sha256": "2ed9a3f5ff92916188b680e3e167b9d4034e351c5103b7fcd29c11a7a83cf6e2"
+      "sha256": "5e6c4126cd17815388372e82e1c98025c765220520c0a4b672256a4c8edcddab"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-table-row.component.ts",
-      "sha256": "cc39868f2ad8d49b8cf512952781bb8976c0fa81e0cd0204bee7032d3ab83df2"
+      "sha256": "dba010431b2a3974a2624077be47a637014726872393a51cf0f7b7e1038b8679"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-table.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-table.component.ts",
-      "sha256": "b943ac74f410ab10c7dae71b5789813b2738a0b30e725138c20d39b0528b470f"
+      "sha256": "93f1c1e56cbce6f1fd6f72975a98f5962159f268f8fb7f70c9c9bc58159da909"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-text.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-text.component.ts",
-      "sha256": "c7d54a501e84c95239d5158260a54037a20a3d800b534d1fbf11e2a4707882ef"
+      "sha256": "43f5693631c0239ad573c0f7d4411fc380fc0568aaf164a8ad05834be2731cc6"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-thematic-break.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-thematic-break.component.ts",
-      "sha256": "06723de156a72a3ba50d3018a69fe2cbaba8f752e767705eb0b25af9d446963b"
+      "sha256": "501c8414585acd8e3c75851f9b10eaf85b5d6fe61548aa6262f4f8a68a2cf105"
     },
     {
       "id": "source:libs/chat/src/lib/package-version.ts",
@@ -13906,7 +14004,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-      "sha256": "faea19efefb57d2c74e64d12c307d539894dc689fd8ed55ce1bd812ebbe5c417"
+      "sha256": "0d4b7e84de8f42215f7d53669d71d2a4ffed758366c670e25bee552f8d5fd552"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/index.ts",
@@ -13918,19 +14016,19 @@
       "id": "source:libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
-      "sha256": "8a12d8b21c38b4d6b727193f95619b19222c26352eafaa6e8e5bfe93d03e6372"
+      "sha256": "aa22684e762fbfc12c3a5b6e54afb858ed3610938b4ef6da517c320359228e5d"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
-      "sha256": "4e1d58dd80539ab38acbb6ef35890d424818f8e5ef994e4e608f658c48d467e8"
+      "sha256": "a3b3a260a48d62c7710c7c350e889b2975209bf40f213e0441e4b28eef2e8ee4"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-generative-ui/chat-generative-ui.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-generative-ui/chat-generative-ui.component.ts",
-      "sha256": "629516749a9dd591598aa129bc763a7ec6bd16c986b8c3613f063ef49472403b"
+      "sha256": "d7e4ae26477845ab8d745c02351fd5ae184171d3f4503638e0b36a2c3209fdc4"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-generative-ui/normalize-json-render-spec.ts",
@@ -13942,31 +14040,31 @@
       "id": "source:libs/chat/src/lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component.ts",
-      "sha256": "6e986815ada1d4c821c3e2d01ff818b0cc8b72e131bc6f1e8a273a15a48b8e62"
+      "sha256": "9e3b5b875dbbc82ab159a0dd31f1efb86db012c83f21cb1757b8aa964cf83103"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-history-search-palette/chat-history-search-palette.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-history-search-palette/chat-history-search-palette.component.ts",
-      "sha256": "91ffe66fa15924ccc0d5f19592c63de87141103306787025158f8c1f959cbe4c"
+      "sha256": "654aa54820a1dbb798d2b2bb6ac39c10cf7a07653604b5ec0d9369c7d2a48e04"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-      "sha256": "fdd92bbf0f243d6abdc0a45686c6648657993e1de4f37ff5c9deb0352019d8b5"
+      "sha256": "1c57b73fb02cb79578b8e178016841e568d85172c9ec81dcd0a8de4e3f2178a2"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
-      "sha256": "069e7aa3f93bf31bf8d9487dd1ab0ab57733f86c8e53fe0a86c4fd41dfb157d7"
+      "sha256": "99761302146b774392f0370a1311a99c9c479df66473acbf134277d83fe21863"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
-      "sha256": "b9a109b8f0d09f3528e0bee2d9b37ac4ccf074647acb4f3a6714bd70ff9962ba"
+      "sha256": "6fb7d2b38b22adac8b74449f09a182e9de2c9f2be898850a81da2f3d99da446d"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts",
@@ -13978,31 +14076,31 @@
       "id": "source:libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-      "sha256": "a31b3d26e003f57c747c29884162e626d41af2917215f3a3303b2bc1b6387697"
+      "sha256": "dec6eb0bdc39577a6378e04dfdbc4a5cbdf8f615f5da249d0d31196e20f3b94f"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts",
-      "sha256": "7be764f4c9c4709215552402e31fb1deb317c3e5761cbadc07e6f4c54e15683e"
+      "sha256": "f5f0695437dc65d471b2ff36577f65b0407cb816f2d795eaff046a570a098949"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-message/chat-message.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-message/chat-message.component.ts",
-      "sha256": "0317e771558c5862a84851610c4d5ab7aeac5b0d354bb493c3562790e2ddad89"
+      "sha256": "ffe3423e638c2fbf6aa5be38b54ee469bbbc97566e700107560e633203738bac"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts",
-      "sha256": "b7472845d52b5e251bbb3f7641b04a3d1ff51a556f6d5030ffdf4a41073e6724"
+      "sha256": "bc9e141cea25467589f6587294934285a00830b11db3176582e74ee5cb0e1bc0"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
-      "sha256": "ce5b07cb2fc92ccc9acc1a0f1535ec500bec87b684b455837baba8b6a788e322"
+      "sha256": "d6d65caf8d1ff60f2dd000696af2ab08004e3973776622c18e792b96bda2807e"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
@@ -14014,13 +14112,13 @@
       "id": "source:libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts",
-      "sha256": "0d08b749a949893c7e522d1d67cfc3981100e10ac381dc332780d5fa1e238396"
+      "sha256": "332b5f9d894f54451c286a57d6ac70705f1fe2e4c492fd0dd0a1a22a1202bedd"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-select/chat-select.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-select/chat-select.component.ts",
-      "sha256": "6a1270c41ed362b7881f9247207f9bc64e978055ad23b1b13c979a92e07e9930"
+      "sha256": "7e7ccc5074ef6c8ce070e58b0afcb69ba1f4292ce6d84e1ae69b986cb9e8a00f"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
@@ -14032,25 +14130,25 @@
       "id": "source:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
-      "sha256": "a2dbc1b35630bcf9ea7a3877020ac5fdee98aaf3dceeb0efe6f543b053b58be7"
+      "sha256": "75083f952436aa187343f1fb8b1f704e370d24b31e12c876fc677ad11f12e243"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-suggestions/chat-suggestions.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-suggestions/chat-suggestions.component.ts",
-      "sha256": "76827c9e9ffb8369046451d18b653280e18a75414c6e7a2ee44964c389a7cc78"
+      "sha256": "ee7d8eb76f499ea16a94fb9b5e1427ac8e93c2d1f80e614216343801f422169c"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts",
-      "sha256": "0135cf141cf07f37ab283b13453e8cd0fc8df5adf9c40401db23447680560830"
+      "sha256": "dcef73b385c7e81eb7945fcfca59186f2cb1f13db27176f491eb525d3aaad9ba"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-timeline/chat-timeline.component.ts",
-      "sha256": "8fa4d27e86ebaac30ccc943150977602856e9328250ea39a8774af65fa07441f"
+      "sha256": "4436f25b1f46adbe6694ac942d14c9645ea48b6933c0f2560ee0006a5018364e"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
@@ -14062,7 +14160,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "sha256": "1527afdb803aff9becf9e7aeb8b34ed821a2f77c69df4120045e14205e9d7515"
+      "sha256": "dfddeeca4a4b55d34f1d812e173ae43e2200885ca9c6a385e99a70768be5d1e8"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/group-summary.ts",
@@ -14086,19 +14184,19 @@
       "id": "source:libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts",
-      "sha256": "86f04ccf59aff3bbd654ce3643a522dfe47173a162f5f3a86724424e9ca93c37"
+      "sha256": "8c920ec39e73a90fe3e8f034f0ce6c9d25dff5c40027baa7845018c5b51369fc"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
-      "sha256": "2206e827692494534e6568fa768a5d84ef517c002f0c4ef2abf81aec7c498405"
+      "sha256": "2d436714bd980043a3ecd738395388348765bea7b7ee9b6dc107a5ae1326187b"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
-      "sha256": "ea2358d0d37b8d05b90582d2ffddc776d65ef6d7b17b3907b6b1f722cb56f015"
+      "sha256": "e238c526930d05508a26a41a4ad17da3cd1ed1b4704c05fc294bb24e862d0c76"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome.component.ts",
@@ -14110,7 +14208,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-window/chat-window.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-window/chat-window.component.ts",
-      "sha256": "bd72b48201721768fea76d1983a552574b302d5e2ee8c9f4b433d83cc7edd205"
+      "sha256": "3d4fa0e8700533565d97a62ccced7becfa5128bdd9d9fb6d984c1e1c6db5070b"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/overlay/connected-overlay.directive.ts",
@@ -14122,7 +14220,7 @@
       "id": "source:libs/chat/src/lib/primitives/overlay/connected-position.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
-      "sha256": "04aac1471ba5f3dc48d294c703c6627462bfb68891a602537803a9a386305ade"
+      "sha256": "56909c277d70884b32a8c2de928d1917c84f989ea2984371db9740e010ad8120"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/overlay/overlay-container.ts",
@@ -14134,13 +14232,13 @@
       "id": "source:libs/chat/src/lib/routing/thread-routing.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/routing/thread-routing.ts",
-      "sha256": "281da6cb3818eb8a0669853f95667d0cbfce79eec5828d9ce19f463484cd3c02"
+      "sha256": "dedb119c8680807af416a5d6e7bbbfeebc1a185554a6f7abad26d0da4de7864d"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/content-classifier.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/streaming/content-classifier.ts",
-      "sha256": "acbfdc23d19d978a43c3e90f989592d540fb1f30b99837c870e3b806122d9a37"
+      "sha256": "fecd1680339f03cfe2b8402727b3ac8517ad569b24a4290c196a246cc5d1649e"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/markdown-render.ts",
@@ -14152,13 +14250,13 @@
       "id": "source:libs/chat/src/lib/streaming/parse-tree-store.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
-      "sha256": "50e0c088c862028f09c6b76759ec34bae88eb00889cc18e8d4c51dc30beb7587"
+      "sha256": "93b219b621936ed91398a92c5de0f3771fb8c1035d03b5010e74154519924901"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/streaming-markdown.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
-      "sha256": "d6bbe211cd43461a0557f8ec85947009d68d222916d88aac2b45afaab4cad228"
+      "sha256": "2416ca65d0985dfd8eee1fd20bc060a41d1030c30eb4ed3061c335f6a5e0a775"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/trace.ts",
@@ -14326,7 +14424,7 @@
       "id": "source:libs/chat/src/lib/testing/mock-agent.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/testing/mock-agent.ts",
-      "sha256": "5ad115d8ef01edf386458929051657686a2de0e88122100aeb9bd3d3b53099fa"
+      "sha256": "eb93fc0ed7605a9a240b673883e50044fb4ece4dc2f7db58351df530a5107321"
     },
     {
       "id": "source:libs/chat/src/lib/utils/format-duration.ts",
@@ -14374,7 +14472,7 @@
       "id": "source:libs/chat/testing/interrupt-conformance.ts",
       "kind": "source",
       "path": "libs/chat/testing/interrupt-conformance.ts",
-      "sha256": "1db70c2bc68a50047211d9c326d979d4119753799f3f508f7f9a96e4d9b54924"
+      "sha256": "6950d47b84f7f67df6d9648241f732de3fc28a63b3169f5af13bc113224f7396"
     },
     {
       "id": "source:libs/chat/testing/public-api.ts",
@@ -14386,7 +14484,7 @@
       "id": "source:libs/chat/testing/reasoning-fixture.ts",
       "kind": "source",
       "path": "libs/chat/testing/reasoning-fixture.ts",
-      "sha256": "b26a39a3f25b81ce3555e0529418fefc8c90b31ebf572b30b9cbfb40d2016732"
+      "sha256": "dddb2435af849961db2c6065127aa4926d4d97eece43677c8cebe0d1098d3116"
     },
     {
       "id": "source:libs/chat/vite.config.mts",
@@ -14470,13 +14568,13 @@
       "id": "source:libs/cockpit-registry/src/lib/content-descriptors.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/content-descriptors.ts",
-      "sha256": "76c60b06c71174194e6636dec475d40fa94a97b75284ade6a9e917c7901ed7ff"
+      "sha256": "679906418d834a2b5587c1388e2cbf8a823fb196de1840ecb549253ad2f0b567"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/docs-links.ts",
       "kind": "source",
       "path": "libs/cockpit-registry/src/lib/docs-links.ts",
-      "sha256": "c69c193131686e9d63cf861ead39544d821f574474dc87ff69e236d2545d80aa"
+      "sha256": "51ccf92ac815a9183673319c524b3bc5dd2d8f618b61a4e90c94719b31440e17"
     },
     {
       "id": "source:libs/cockpit-registry/src/lib/manifest.ts",
@@ -14710,7 +14808,7 @@
       "id": "source:libs/content/src/a2ui/types.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/types.ts",
-      "sha256": "91420e73c1393bf390d619eeabdf42cdc85c170c66e670d03db069383e9c5989"
+      "sha256": "928ebf8c90581f52de36c8bfd2cb5077d5614bd2bff8611e94fe091319986673"
     },
     {
       "id": "source:libs/content/src/index.ts",
@@ -14746,7 +14844,7 @@
       "id": "source:libs/content/src/json/types.ts",
       "kind": "source",
       "path": "libs/content/src/json/types.ts",
-      "sha256": "8db40f6ad8f80d36019f3a1591c7c382b8bbc2322e7dc7d139b139ba277cf0d0"
+      "sha256": "633565bd82638ba3db78cd3de8a9ee97d828edf8b000f042dfbf11b8802f283b"
     },
     {
       "id": "source:libs/content/src/markdown/create-markdown.ts",
@@ -14782,13 +14880,13 @@
       "id": "source:libs/content/src/markdown/types.ts",
       "kind": "source",
       "path": "libs/content/src/markdown/types.ts",
-      "sha256": "ee7f4ce8a6fd0010d2b941ed8f4ba6d77fd12cfbd902c4a5932d9f2c334bcc16"
+      "sha256": "c80045c4d36f9d3d18f210f5300af7088bcaa77b2ccaceeaea8822d7faf13c86"
     },
     {
       "id": "source:libs/content/src/messages/create-message-content.ts",
       "kind": "source",
       "path": "libs/content/src/messages/create-message-content.ts",
-      "sha256": "d8b8b049266f42292c1cfe0578b7626a9b8e117263d558438e1f0575f826ede1"
+      "sha256": "5e0e81e335f1e4a853c16815b25005b3e8cbc4e93b71a2d9f440ae9ee1a064c0"
     },
     {
       "id": "source:libs/content/src/messages/index.ts",
@@ -14824,7 +14922,7 @@
       "id": "source:libs/content/src/render-state/types.ts",
       "kind": "source",
       "path": "libs/content/src/render-state/types.ts",
-      "sha256": "26d68a023e58a28495ac7c0c2a42407dd53068c51bddbf407f7c040a945b8b5d"
+      "sha256": "25b32eff3a099d3f172c8985faa7f17b4b41f4bdefc35778f48e981e43dc8c18"
     },
     {
       "id": "source:libs/content/src/testing/index.ts",
@@ -15130,7 +15228,7 @@
       "id": "source:libs/langgraph/src/lib/lifecycle.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/lifecycle.ts",
-      "sha256": "cdd4401f3c2bbd49152a96a3093937df9394a65edaee905af88a9c975776bea4"
+      "sha256": "57fff43890404e1027828984c3d9af2633b37c60ce9dcd9fc22f56b5d5a0096c"
     },
     {
       "id": "source:libs/langgraph/src/lib/package-version.ts",
@@ -15172,7 +15270,7 @@
       "id": "source:libs/langgraph/src/lib/threads/threads-adapter.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
-      "sha256": "125a0d11f9078c6b9effa0a32e27ac786f8982514beec0ca5d22344fcce6ee7c"
+      "sha256": "ee41cb6e2708c770f2a392128d05b0fb3546140ebd6aeb85d133f31749a0bcab"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
@@ -15202,7 +15300,7 @@
       "id": "source:libs/langgraph/src/public-api.ts",
       "kind": "source",
       "path": "libs/langgraph/src/public-api.ts",
-      "sha256": "3effe8f90bcd9967bb99b9902b3bb6ffbe2769c8c5b46824d2742e2906f6536b"
+      "sha256": "f9bb0a7804f45257677276b040056913602decff01b2adc5245cc8f1eb363e8d"
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
@@ -15442,7 +15540,7 @@
       "id": "source:libs/middleware/src/langgraph/client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
-      "sha256": "a17d5102599fff69cdb88ffaf86804a8ac4ef5840356499776bb81a361718cef"
+      "sha256": "71df8bfe10d4b3c8844f090ca50c147c00c4a4f85d0d9f4f19e13df191d441e2"
     },
     {
       "id": "source:libs/middleware/src/langgraph/index.ts",
@@ -15460,7 +15558,7 @@
       "id": "source:libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
-      "sha256": "30949f079b4cb2c7102f44fb3fe45851db2cb46dd96be2ca70416b57f95d82ae"
+      "sha256": "cf947a44a06bc69a30d38dc71dc455bf50c4585b63df8599915699028e613429"
     },
     {
       "id": "source:libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
@@ -15496,55 +15594,55 @@
       "id": "source:libs/react/src/chat/chat-input.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-input.tsx",
-      "sha256": "095afe94063f1d259f4c53cb6bad2f5c2c8ac80241ba5920cd725882ce5edc35"
+      "sha256": "a3e5058f560719390264bd4ed3b54e4cdad95b861bed2372feb4753ffaf566ea"
     },
     {
       "id": "source:libs/react/src/chat/chat-popup.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-popup.tsx",
-      "sha256": "f6c7866061fbd50921d72ffe6546592db05efecaf4babddcd9c4991d9dcb9adb"
+      "sha256": "ad964d0519b1b2f55b9f747c775e91ed341cc922ae83e08fe0a79e0d102295af"
     },
     {
       "id": "source:libs/react/src/chat/chat-sidebar.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidebar.tsx",
-      "sha256": "bfcd318f1778e2e706a18db667240d76959ddbc8f11fd9242070276ec8d94c8b"
+      "sha256": "12b9aea6e479b364e6ab055a67b91f688b98b7c3f1b4e71a7434a4486acf76c7"
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
-      "sha256": "ed0421501d48be76e84710878fd187c4e8a316e035bde51a2d9b3664e733d970"
+      "sha256": "e726410aeeb7679f837da4a23fe8008723ef5294f54aa87d024f3903ec29887c"
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-sidenav.tsx",
-      "sha256": "9342ac693d7bf80574eca2158ce23ba1f06feeed19e5f98c29ff7c3c5ae119cc"
+      "sha256": "665105b6c2e7f19211069c6c7f76e72896151f4e5ebe493739d75673eae3ddd3"
     },
     {
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "1377b4e7bfd1139712d262ec3c70fb08c9a67cab91f4abe845310bddb9030280"
+      "sha256": "58cd9ac3f578752c60c78781a750ab272e3ec5006976afb2c6228c333462cb71"
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "926e77bc7ee058451ff8d7e0df0ff26f2e92419949c72fa4b97dabb569ccde7f"
+      "sha256": "7aeadad54550d5d300c5607529c66e4e3d98cec1bc2da114a0662806b2aad61d"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/confirm-dialog.tsx",
-      "sha256": "dc3b645e702fd175b276a689e799621cf28d33b20e18f742499a3b57710b74c2"
+      "sha256": "41dc69e2a4fbdbc4d27ff181fe3681594bafa6dcb247b7831f6760f39061d5e7"
     },
     {
       "id": "source:libs/react/src/chat/history-search-palette.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/history-search-palette.tsx",
-      "sha256": "387ebb3dbf37047361f8a13b367ae1bd27392d712d78334e7663c8b391eed449"
+      "sha256": "3b8cd53769976ed661e4d4eaead0573a21b5fd1e184d512891f3ee53180d60df"
     },
     {
       "id": "source:libs/react/src/chat/index.ts",
@@ -15580,31 +15678,31 @@
       "id": "source:libs/react/src/chat/message-actions.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-actions.tsx",
-      "sha256": "1245a597dfb6e64fcff730426160262036dfb5ffc93cfd85b59c9f4dae1c49a2"
+      "sha256": "76ff674493087f4211b01b48d5389ba3efbcdccfcc0ccb78c90004d350e9995d"
     },
     {
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "2804774aad423197db665558e50c22ad3574f844fd709630a47ae94389bb2e09"
+      "sha256": "45ef87472ad8829bd287011266dd983cd88c10389be02c355255de6a6b452edb"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/overflow-menu.tsx",
-      "sha256": "48b9db390714c820f4bf57244f2fc1d7ab28d909b462da57513e09cfe2cb6130"
+      "sha256": "ce3bb5b6b4bd374398c5a561dcfc44b75a0b7324f91776d01028be45177abda0"
     },
     {
       "id": "source:libs/react/src/chat/project-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/project-list.tsx",
-      "sha256": "16603cf8cc51b58a144e34a43a7c8e7573b81966e57852f0ec611f880be48917"
+      "sha256": "ceaba9f70515914b05caf9011e51bf0cec51abb3d91afa539bcc2abab27787a8"
     },
     {
       "id": "source:libs/react/src/chat/project-name-form.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/project-name-form.tsx",
-      "sha256": "dcfb495d03a3b5354ee222ab249b14a97dc4e674310e0f235ca0401e47c2619e"
+      "sha256": "40247b11fcf6b5aa2911a331bf51ae3f36ad169bc41887dd2723367d5af198a5"
     },
     {
       "id": "source:libs/react/src/chat/reasoning.tsx",
@@ -15616,25 +15714,25 @@
       "id": "source:libs/react/src/chat/text-transcript.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/text-transcript.tsx",
-      "sha256": "13c651497f0792ff3d8cd6108c7faa586d121c9527047851f93ede94c68d03f6"
+      "sha256": "6dc3f86c7a2102e9f9fb84657d2808f9e3b69466f4df9a2c4d0ab4166c92f6f1"
     },
     {
       "id": "source:libs/react/src/chat/thread-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-list.tsx",
-      "sha256": "9f7cbceaea1ff80bc006c935315ba6c67054ae9969d1d61429c4b1cd482e85c1"
+      "sha256": "c871e9e9cf62807dc53aa691249704921fbac613f7433f75645571d06188baad"
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/thread-rename-form.tsx",
-      "sha256": "444907577943b44057c5d359f1bff4ea89baf8c58bb50b54becd266c878d9d29"
+      "sha256": "838c5e35db9ff42d7c7aad9f9d9473d5a0bb93683f2e538edf2c9ab1a6ec9fdc"
     },
     {
       "id": "source:libs/react/src/chat/timeline.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/timeline.tsx",
-      "sha256": "a74f05da392f0feb7f92c92ebd0d08b7b9349b457080da90300881a6b263817f"
+      "sha256": "f08e50ccffcdc5c571c88a2981882a3929be819db9591256f911d34733ce1f0a"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",
@@ -15658,7 +15756,7 @@
       "id": "source:libs/react/src/debug/debug-state-diff.tsx",
       "kind": "source",
       "path": "libs/react/src/debug/debug-state-diff.tsx",
-      "sha256": "68873744f204d90ca3babae4d0886e1ff789bb8513bcc1370a363c99c89b6f02"
+      "sha256": "3b1e92749ab1c740158a0058f8ab1a214664117e8a4d11c199d5a5817958532c"
     },
     {
       "id": "source:libs/react/src/debug/index.ts",
@@ -15682,7 +15780,7 @@
       "id": "source:libs/react/src/debug/types.ts",
       "kind": "source",
       "path": "libs/react/src/debug/types.ts",
-      "sha256": "6204b82976f3220cac935890c7eec14fae340153353073113c9e46c6d5c7185b"
+      "sha256": "6cf1a45b221cfff5cbf4fe8bd7e84909fe6a975bb67fcf2b335b69d2c626425c"
     },
     {
       "id": "source:libs/react/src/index.ts",
@@ -15706,7 +15804,7 @@
       "id": "source:libs/react/src/markdown/markdown.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/markdown.tsx",
-      "sha256": "d088f04778a7b7742c786edcc9ef1e76285a90935999fe49df733a5dedc59461"
+      "sha256": "f79b4576b95c58bfdac74a9decb1231884927cc05f6bd691d8ace4b96e94fa7f"
     },
     {
       "id": "source:libs/react/src/render/functions.ts",
@@ -15736,7 +15834,7 @@
       "id": "source:libs/react/src/render/types.ts",
       "kind": "source",
       "path": "libs/react/src/render/types.ts",
-      "sha256": "6dd179c469a169b1c703bbcaea775c02b06bbef71a884b14844da2312dfe9b46"
+      "sha256": "897d18102119106507e96ec87e70a8ee66bb3976a5149d8cf89118175c6dd38b"
     },
     {
       "id": "source:libs/react/src/render/values.ts",
@@ -15784,25 +15882,25 @@
       "id": "source:libs/render/src/lib/contexts/render-context.ts",
       "kind": "source",
       "path": "libs/render/src/lib/contexts/render-context.ts",
-      "sha256": "d9ffa28f306252944966a3eafe50bf4cfbd572191df359a1edcdd002a8b21b74"
+      "sha256": "7f47876d82ea49b6d893060b084b51ba95513b086eafdb1d03fdff63fa913f70"
     },
     {
       "id": "source:libs/render/src/lib/contexts/render-host.ts",
       "kind": "source",
       "path": "libs/render/src/lib/contexts/render-host.ts",
-      "sha256": "6b35299c99ca0c8a9c37746028ca09ab18c7a145767c186f0b90b1ae4ac35d83"
+      "sha256": "e91b3957587981353cb856b03bbfe2aebc5926e6d755a63488df8fa363edf347"
     },
     {
       "id": "source:libs/render/src/lib/contexts/repeat-scope.ts",
       "kind": "source",
       "path": "libs/render/src/lib/contexts/repeat-scope.ts",
-      "sha256": "4575eb6ccefe6714a1ceb525ae40c26a3e549ab335d3d4b20d9f6ac7fd2e4929"
+      "sha256": "e55702b3aa9a11f737b98778b05558562d788e488a78d905ea0b80abb45c8168"
     },
     {
       "id": "source:libs/render/src/lib/default-fallback.component.ts",
       "kind": "source",
       "path": "libs/render/src/lib/default-fallback.component.ts",
-      "sha256": "2c9637c3e53024ece4cfd2ba201473fde416738a37609654d9f355a4cc0d3f17"
+      "sha256": "ebdea47b2d05ff672ef2b88e0f7817fc6698cc454e278647879b14917b9100f4"
     },
     {
       "id": "source:libs/render/src/lib/define-angular-registry.ts",
@@ -15838,7 +15936,7 @@
       "id": "source:libs/render/src/lib/lifecycle.ts",
       "kind": "source",
       "path": "libs/render/src/lib/lifecycle.ts",
-      "sha256": "cb0e5153a36de1a6ba6a10f76c04c8749c44927a1f26e3a6682c06924de0d2de"
+      "sha256": "a2a591257a2654c745941323b2d93115327f68de7c61b071fe1d3ffd2a8eec9a"
     },
     {
       "id": "source:libs/render/src/lib/package-version.ts",
@@ -15850,13 +15948,13 @@
       "id": "source:libs/render/src/lib/provide-render.ts",
       "kind": "source",
       "path": "libs/render/src/lib/provide-render.ts",
-      "sha256": "c1d256c894722081bfe77786485469781dc5ab44e8c3ea5bb36630d598796599"
+      "sha256": "a4471748fe7ede27e3780c2f1959cce6462cbb831029193b7a32e83ec6d2ae34"
     },
     {
       "id": "source:libs/render/src/lib/provide-views.ts",
       "kind": "source",
       "path": "libs/render/src/lib/provide-views.ts",
-      "sha256": "a279b0108cca4e25d7c95140e7639b508fa9cb97cfc68cd54c4c6fcb03edaa8c"
+      "sha256": "eabd7b66f3b70e7c4a48d643874440d76c2c8d123cb3d515127e3357da09372e"
     },
     {
       "id": "source:libs/render/src/lib/render-element.component.ts",
@@ -15868,7 +15966,7 @@
       "id": "source:libs/render/src/lib/render-event.ts",
       "kind": "source",
       "path": "libs/render/src/lib/render-event.ts",
-      "sha256": "83a16986d228440276dbdde9c697e1b63bcbf0588e2b431377724a87b101e6e3"
+      "sha256": "ad410c00e9c6d731c2ecf505225fb97d5dbc6b61fedda02a004aa794d3ff39db"
     },
     {
       "id": "source:libs/render/src/lib/render-lifecycle.service.ts",
@@ -15886,7 +15984,7 @@
       "id": "source:libs/render/src/lib/render.types.ts",
       "kind": "source",
       "path": "libs/render/src/lib/render.types.ts",
-      "sha256": "d9ce704c19fb0c88deeb8d58bce1c670c1a1bb5cc7183b0a4baabf9e3f00ad00"
+      "sha256": "64724478a763a4148cf0509a1eed95d65ba470e28e78b6531a862ab9b9ef1728"
     },
     {
       "id": "source:libs/render/src/lib/signal-state-store.ts",
@@ -15898,7 +15996,7 @@
       "id": "source:libs/render/src/lib/standard-schema.ts",
       "kind": "source",
       "path": "libs/render/src/lib/standard-schema.ts",
-      "sha256": "da43007f7b936d87923f7a2d0b1eb2c1320511a4aa17b1b188a44724399b2265"
+      "sha256": "ebf88ae0a100fc1c520860c98e3a2c3f7e987d83abe111c482471e582a8c452a"
     },
     {
       "id": "source:libs/render/src/lib/views.ts",
@@ -16030,19 +16128,19 @@
       "id": "source:libs/telemetry/src/browser/development/types.ts",
       "kind": "source",
       "path": "libs/telemetry/src/browser/development/types.ts",
-      "sha256": "9fbe0ef0bcb5f88d45d4090ebd205838be076cfdfaed399ff21be0f4e9f55313"
+      "sha256": "3b64218ffdc1635bd7d350fbf09ae7cac65e23a109bf6b31cc1eb3cf1b4de37d"
     },
     {
       "id": "source:libs/telemetry/src/browser/properties.ts",
       "kind": "source",
       "path": "libs/telemetry/src/browser/properties.ts",
-      "sha256": "fafee46b3b26107bb121488b19fe3cb164483fdbc0805b38c067d8ffa99e50af"
+      "sha256": "fcfa16d75ef651174daafefb8b7c85f929aa7c2352e1edabc9d6c2e44ac4de08"
     },
     {
       "id": "source:libs/telemetry/src/browser/provide.ts",
       "kind": "source",
       "path": "libs/telemetry/src/browser/provide.ts",
-      "sha256": "dd2327fa710a6f09c2953316e3e6385de967a5320a65a73684402a6c7f02e53a"
+      "sha256": "7e4b812ccf60f593cbbabd3e79b804e74b40ef1911c224a474dd55d44dacf329"
     },
     {
       "id": "source:libs/telemetry/src/browser/public-api.ts",
@@ -16054,13 +16152,13 @@
       "id": "source:libs/telemetry/src/browser/service.ts",
       "kind": "source",
       "path": "libs/telemetry/src/browser/service.ts",
-      "sha256": "96bcf66563b7545af355f0e38791eca42078d028f2b90ae03b956b5d5e9c4088"
+      "sha256": "5e10380a9bfed6e3ee2e0d26f23dfe6e1868c29db8b7ea95c2d0b5b12a9e3707"
     },
     {
       "id": "source:libs/telemetry/src/browser/tokens.ts",
       "kind": "source",
       "path": "libs/telemetry/src/browser/tokens.ts",
-      "sha256": "eb20d72c20bedc24605f3dc65c68e47e6fe1ce759099bd4c2e1cfba76d1d771e"
+      "sha256": "b0fa691b4ae9d9f0cb3dba7fcf45bca9a25bf8d3014c5298a30422ceecc136e6"
     },
     {
       "id": "source:libs/telemetry/src/index.ts",
@@ -16072,19 +16170,19 @@
       "id": "source:libs/telemetry/src/node/adapter.ts",
       "kind": "source",
       "path": "libs/telemetry/src/node/adapter.ts",
-      "sha256": "d6a518fb109cce9b8edb0016609a4a27eed20ee92fe698b42c550ddb11f67c01"
+      "sha256": "186308ad02c8891589adc217d2343951f1cca8927dc1b115b347efbe4dbf2b1a"
     },
     {
       "id": "source:libs/telemetry/src/node/client.ts",
       "kind": "source",
       "path": "libs/telemetry/src/node/client.ts",
-      "sha256": "8b4bb17d81b14e326b1f30c4bcd30dd71bf3d303b64589b36e7b5ef0132ca614"
+      "sha256": "028ad61f1b9d9bc76b8b85301bf3e642605eaef57a3343d9c271290958ca3530"
     },
     {
       "id": "source:libs/telemetry/src/node/disable.ts",
       "kind": "source",
       "path": "libs/telemetry/src/node/disable.ts",
-      "sha256": "7a367f85ca780637c050901bfa9f10822d09622afecc941d48e4ce2ed9e11307"
+      "sha256": "574c6a57632895880769d104bf2f58d280be98abbd86bd5587cfba983593e055"
     },
     {
       "id": "source:libs/telemetry/src/node/index.ts",
@@ -16096,25 +16194,25 @@
       "id": "source:libs/telemetry/src/shared/anon-id.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/anon-id.ts",
-      "sha256": "e79b5a152b8062aa2707faf6e3325560d8b46d0dbd65baa9a760b96b6fad421b"
+      "sha256": "4aa6340fc2692b2ed8051e2fd64deba3588a8c60c7b1f3496875b8fd229ecd76"
     },
     {
       "id": "source:libs/telemetry/src/shared/env.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/env.ts",
-      "sha256": "3aab492106332ba7f711295cc4938e1ee5023e12c4b89f99427c5f1b18cf58c1"
+      "sha256": "453ae5d64a25c36687e1e45a9d0e086a34a9741c7d20663b09077bc82675360a"
     },
     {
       "id": "source:libs/telemetry/src/shared/events.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/events.ts",
-      "sha256": "c70ca7f4ab195dee247afafbea05d777740545338a1c339e0f8cb212cd896bee"
+      "sha256": "93f8c0c054b5bb6144394dcfda3ce806e7deccd6749ce2601c97e2dae39c37e7"
     },
     {
       "id": "source:libs/telemetry/src/shared/hash.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/hash.ts",
-      "sha256": "ed1425d73ac9720c40ff1c175f015f884e0b0bda06113f229c517e3cf18eed3a"
+      "sha256": "6952fdbac86f997da2573f114d27a6f927d743b2b15473904edde86d3486feea"
     },
     {
       "id": "source:libs/telemetry/src/shared/ingest.ts",
@@ -16126,13 +16224,13 @@
       "id": "source:libs/telemetry/src/shared/personal-email-domains.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/personal-email-domains.ts",
-      "sha256": "f6223ae9586a351ba6b02abeb157f5c0398d8d5e53939dd907907ad77df3da58"
+      "sha256": "cc5b4e289612bb4a2f73e7f6fa322343be27f8e9756bdfa0032275a86bac45d2"
     },
     {
       "id": "source:libs/telemetry/src/shared/properties.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/properties.ts",
-      "sha256": "0e131b1ba5e734d110a22b16c56fc25b0ebc4fe80ae86dad6f2712a2f46ca1c9"
+      "sha256": "70578af609eb7a2b5bec6d818031697958c88c1283b3a8ddb18beeadc833e3a4"
     },
     {
       "id": "source:libs/telemetry/src/shared/public-api.ts",
@@ -16144,7 +16242,7 @@
       "id": "source:libs/telemetry/src/shared/sample.ts",
       "kind": "source",
       "path": "libs/telemetry/src/shared/sample.ts",
-      "sha256": "2165cb1e1b56edfda66d2385c43924357304ca970ff9ff7ae5744648ab9a3b0a"
+      "sha256": "65c09b6ad05484a37f256cf54e3b16b2b379f62f498f6f273372b9033dfeef18"
     },
     {
       "id": "source:libs/telemetry/src/test-setup.ts",
@@ -16684,7 +16782,7 @@
       "path": "cockpit/render/computed-functions/angular/src/index.ts",
       "topicId": "render-computed-functions-angular",
       "project": "cockpit/render/computed-functions/angular/project.json",
-      "sha256": "ca39ba412335accb91e0b54c3d5d30736dbd14fc17f90d94057a4e55605b56b4"
+      "sha256": "6cc3b0f20a39242829af0c1593dc2b286f3ac1fcd690760cccedc9c978f5abf3"
     },
     {
       "id": "topic:render-element-rendering-angular",
@@ -16692,7 +16790,7 @@
       "path": "cockpit/render/element-rendering/angular/src/index.ts",
       "topicId": "render-element-rendering-angular",
       "project": "cockpit/render/element-rendering/angular/project.json",
-      "sha256": "fa31e6a0162f3c6047a44603571b7fe4cb5d34bb51f6af1038622b273aca6335"
+      "sha256": "c3a09fefa914a7f154b2d390c0b7fc5214376cd64fc9997ebc529844524cd49a"
     },
     {
       "id": "topic:render-registry-angular",

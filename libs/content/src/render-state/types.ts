@@ -13,11 +13,13 @@ export type RenderStateSnapshot = {
   readonly [key: string]: RenderStateValue;
 };
 
+/** Last effective write's JSON Pointer path and owned value, including the final write in a batch. */
 export interface RenderStateChange {
   readonly path: string;
   readonly value: RenderStateValue;
 }
 
+/** Application-owned immutable state with JSON Pointer reads and writes, atomic batches, and change subscriptions. */
 export interface RenderState {
   readonly getSnapshot: () => RenderStateSnapshot;
   readonly get: (path: string) => RenderStateValue;

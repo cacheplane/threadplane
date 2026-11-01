@@ -1,0 +1,520 @@
+{
+  "name": "InterruptConformanceHarness",
+  "entrypointId": "chat/testing",
+  "kind": "Interface",
+  "href": "/docs/api/chat/testing/InterruptConformanceHarness",
+  "canonicalReference": "@threadplane/chat!InterruptConformanceHarness:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Opt-in harness: pause and failure must be driven through the real adapter.",
+  "declarations": [
+    {
+      "name": "InterruptConformanceHarness",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!InterruptConformanceHarness:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface InterruptConformanceHarness "
+        }
+      ],
+      "docs": {
+        "summary": "Opt-in harness: pause and failure must be driven through the real adapter.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "agent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "agent: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!~Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "backendCancellationCount",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#backendCancellationCount:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "backendCancellationCount(): "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 26
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "cleanup",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#cleanup:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cleanup(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void | "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 31
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "deliverLateEvents",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#deliverLateEvents:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "deliverLateEvents(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Release captured native callbacks/events, even after cleanup.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 30
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "failNextDispatch",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#failNextDispatch:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "failNextDispatch(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 24
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "pause",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#pause:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "pause(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 22
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "pendingBatch",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#pendingBatch:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "pendingBatch(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        id: string;\n        value: unknown;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 23
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "requests",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#requests:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "requests: "
+            },
+            {
+              "kind": "Reference",
+              "text": "InterruptConformanceRequest",
+              "canonicalReference": "@threadplane/chat!InterruptConformanceRequest:interface",
+              "href": "/docs/api/chat/testing/InterruptConformanceRequest"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 25
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "restore",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#restore:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "restore?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional backend history/store restoration; never synthesizes a local pause.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 33
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "resume",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#resume:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "resume: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Native decision addressing every interrupt in the fixture batch.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "startLateDelivery",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness#startLateDelivery:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "startLateDelivery(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Start a native run and hold its delivery until deliverLateEvents is called.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/interrupt-conformance.ts",
+            "line": 28
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/chat/testing/interrupt-conformance.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/interrupt-conformance.ts",
+    "line": 18
+  }
+}

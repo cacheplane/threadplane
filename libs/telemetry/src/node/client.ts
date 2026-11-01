@@ -11,6 +11,7 @@ const REQUEST_TIMEOUT_MS = 3_000;
 // server-side with the private PostHog token.
 const PUBLIC_INGEST_KEY = 'phc_public_cacheplane_telemetry';
 
+/** Outcome of an explicit Node capture: a successful HTTP response, or a disable, sampling, validation, or send failure reason. */
 export type CaptureResult =
   | { sent: true }
   | { sent: false; reason: 'disabled' | 'sampled' | 'failed' | 'invalid' };
@@ -37,6 +38,12 @@ async function postJson(url: string, body: unknown): Promise<void> {
   }
 }
 
+/**
+ * Validate and explicitly POST a Node lifecycle event with allowed metadata and a memory-only anonymous ID.
+ * Environment or programmatic opt-outs prevent sends. Sampling uses `TPLANE_TELEMETRY_SAMPLE_RATE` (default one)
+ * with a stable decision per ID and a reciprocal `sample_weight`. Requests use `TPLANE_TELEMETRY_INGEST_URL`
+ * or `https://threadplane.ai/api/ingest`, with a three-second abort timeout; rejected or failed captures return a reason.
+ */
 export async function captureEvent(
   event: ThreadplaneNodeEvent,
   properties: Record<string, unknown> = {}
