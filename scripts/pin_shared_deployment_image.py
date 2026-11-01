@@ -11,7 +11,7 @@ import subprocess
 import sys
 import urllib.request
 
-REPOSITORY = "us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev"
+REPOSITORY = "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev"
 DEPLOYMENT_ID = "6d350054-14ea-4031-8463-010ec27f9059"
 URL = "https://api.host.langchain.com/v2/deployments/" + DEPLOYMENT_ID
 LIMIT = 2 * 1024 * 1024

@@ -1,57 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "830abf2bbe565e8a96918e516ce97fb33b22954e",
+  "baselineHead": "605ab371aa611c5b77693593cc251bf81c664e4d",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/lib/bridge-citations-state.ts",
-      "libs/ag-ui/src/lib/provide-agent.ts",
-      "libs/ag-ui/src/lib/replay.ts",
-      "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/chat/src/lib/a2ui/envelope-normalizer.ts",
-      "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
-      "libs/chat/src/lib/agent/agent-ref.ts",
-      "libs/chat/src/lib/agent/citation.ts",
-      "libs/chat/src/lib/agent/message.ts",
-      "libs/chat/src/lib/agent/to-agent-error.ts",
-      "libs/chat/src/lib/client-tools/client-tools-capability.ts",
-      "libs/chat/src/lib/client-tools/tools.ts",
-      "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
-      "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-      "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/compositions/shared/message-utils.ts",
-      "libs/chat/src/lib/devtools/devtools-render-report.ts",
-      "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
-      "libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
-      "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-      "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
-      "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
-      "libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
-      "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-      "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
-      "libs/chat/src/lib/streaming/markdown-render.ts",
-      "libs/chat/src/lib/streaming/parse-tree-store.ts",
-      "libs/chat/src/lib/testing/mock-agent.ts",
-      "libs/chat/src/lib/utils/format-duration.ts",
-      "libs/chat/testing/fake-agent-config.ts",
-      "libs/langgraph/src/lib/agent.types.ts",
-      "libs/langgraph/src/lib/internals/extract-citations.ts",
-      "libs/langgraph/src/lib/lifecycle.ts",
-      "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
-      "libs/langgraph/src/lib/testing/provide-fake-agent.ts",
-      "libs/langgraph/src/lib/threads/threads-adapter.ts",
-      "libs/langgraph/src/runtime/transport.types.ts",
-      "libs/middleware/src/langgraph/channel.ts",
-      "libs/render/src/lib/define-angular-registry.ts",
-      "libs/render/src/lib/devtools/render-devtools.ts",
-      "libs/render/src/lib/provide-render.ts",
-      "libs/render/src/lib/provide-views.ts",
-      "libs/render/src/lib/render-element.component.ts",
-      "libs/render/src/lib/render-spec.component.ts",
-      "libs/render/src/lib/signal-state-store.ts",
-      "libs/render/src/lib/views.ts"
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/overflow-menu.tsx",
+      "libs/react/src/chat/styles.css",
+      "libs/react/src/chat/welcome-suggestion.tsx",
+      "libs/react/src/chat/welcome.tsx"
     ],
     "untracked": []
   },
@@ -899,7 +856,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "b858b6a27332a3faaca9ab4e029c6b12e48f6fd3cf747605314d3d95c715da00"
+      "sha256": "c9c10078276d808af91ac6107cd2f83f760657d1111b5a0c568e418365053d22"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -917,7 +874,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "1b7e7366a8136c46951d49317d113a02d1034c00940a0fb5c8de15495a606b12"
+      "sha256": "acc0a1afd9f15b6c3c3c0bfabc2f8655a82be9cb3b266fd355db3cf462359bc9"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10782,7 +10739,7 @@
           "path": "libs/react/src/chat/overflow-menu.tsx",
           "symbol": "OverflowMenu",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function OverflowMenu({ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }: OverflowMenuProps) {\n    const id = useId();\n    const trigger = useRef<HTMLButtonElement>(null);\n    const menu = useRef<HTMLDivElement>(null);\n    const callbacks = useRef({ onOpenChange, onSelect });\n    callbacks.current = { onOpenChange, onSelect };\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n    } | null>(null);\n    const [placement, setPlacement] = useState<CSSProperties>({\n        visibility: 'hidden',\n    });\n    const focusedPortal = useRef<typeof portal>(null);\n    const suppressed = useRef(false);\n    const restore = useRef(false);\n    const context = useRef({ anchorPoint, returnFocusTo });\n    context.current = { anchorPoint, returnFocusTo };\n    const restoreTarget = useRef<HTMLElement | null | undefined>(null);\n    const returningFocus = useRef(false);\n    const focusInvoker = (target = context.current.returnFocusTo) => {\n        const anchor = trigger.current;\n        if (!anchor)\n            return;\n        returningFocus.current = true;\n        try {\n            if (target &&\n                target.ownerDocument === anchor.ownerDocument &&\n                available(target)) {\n                try {\n                    target.focus();\n                }\n                catch {\n                }\n                if (anchor.ownerDocument.activeElement === target)\n                    return;\n            }\n            if (available(anchor))\n                anchor.focus();\n        }\n        finally {\n            returningFocus.current = false;\n        }\n    };\n    const initial = useRef<'first' | 'last'>('first');\n    const [openingRequest, setOpeningRequest] = useState(0);\n    const focused = useRef<string | null>(null);\n    const ownedFocus = useRef(false);\n    const enabled = () => Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);\n    const focusEdge = (edge: 'first' | 'last') => {\n        const buttons = enabled();\n        (buttons[edge === 'first' ? 0 : buttons.length - 1] ?? menu.current)?.focus();\n    };\n    const close = (returnFocus = false) => {\n        restore.current = returnFocus;\n        if (returnFocus)\n            restoreTarget.current = context.current.returnFocusTo;\n        callbacks.current.onOpenChange(false);\n    };\n    const measure = () => {\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const win = portal?.document.defaultView;\n        if (!anchor || !panel || !win)\n            return;\n        const rect = anchor.getBoundingClientRect();\n        const box = panel.getBoundingClientRect();\n        const width = Math.min(box.width, Math.max(0, win.innerWidth - 16));\n        const height = Math.min(box.height, Math.max(0, win.innerHeight - 16));\n        const point = context.current.anchorPoint;\n        const usePoint = point && Number.isFinite(point.x) && Number.isFinite(point.y);\n        const aligned = usePoint\n            ? point.x - (portal.style.direction === 'rtl' ? width : 0)\n            : portal.style.direction === 'rtl'\n                ? rect.left\n                : rect.right - width;\n        const below = (usePoint ? point.y : rect.bottom) + 4;\n        const preferred = below + height > win.innerHeight - 8\n            ? (usePoint ? point.y : rect.top) - height - 4\n            : below;\n        const left = Math.max(8, Math.min(aligned, win.innerWidth - width - 8));\n        const top = Math.max(8, Math.min(preferred, win.innerHeight - height - 8));\n        setPlacement((previous) => previous.visibility !== 'hidden' &&\n            previous.left === left &&\n            previous.top === top\n            ? previous\n            : { left, top });\n    };\n    useIsomorphicLayoutEffect(() => {\n        const anchor = trigger.current;\n        if (!open) {\n            if (restore.current && anchor) {\n                const active = anchor.ownerDocument.activeElement;\n                if (active === anchor.ownerDocument.body ||\n                    (active && menu.current?.contains(active)))\n                    focusInvoker(restoreTarget.current);\n            }\n            restoreTarget.current = null;\n            restore.current = false;\n            suppressed.current = false;\n            ownedFocus.current = false;\n            focused.current = null;\n            focusedPortal.current = null;\n            initial.current = 'first';\n            setPortal(null);\n            return;\n        }\n        if (!anchor || suppressed.current)\n            return;\n        if (!available(anchor)) {\n            suppressed.current = true;\n            setPortal(null);\n            callbacks.current.onOpenChange(false);\n            return;\n        }\n        setPlacement({ visibility: 'hidden' });\n        setPortal({ document: anchor.ownerDocument, style: snapshot(anchor) });\n    }, [open, disabled, openingRequest]);\n    useIsomorphicLayoutEffect(() => {\n        measure();\n    }, [portal, items, anchorPoint?.x, anchorPoint?.y]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !menu.current || !trigger.current)\n            return;\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        if (!win)\n            return;\n        const chain = ancestors(anchor);\n        const openingScroll = new Map<Element, {\n            top: number;\n            left: number;\n        }>(chain.map((node) => [\n            node,\n            { top: node.scrollTop, left: node.scrollLeft },\n        ]));\n        const inside = (target: EventTarget | null) => target instanceof win.Node &&\n            (panel.contains(target) || anchor.contains(target));\n        const outside = (event: Event) => {\n            if (!returningFocus.current &&\n                !event.defaultPrevented &&\n                !inside(event.target))\n                close();\n        };\n        const scroll = (event: Event) => {\n            if (event.defaultPrevented ||\n                (event.target instanceof win.Node && panel.contains(event.target)))\n                return;\n            if (event.target instanceof win.Element) {\n                const original = openingScroll.get(event.target);\n                if (original &&\n                    event.target.scrollTop === original.top &&\n                    event.target.scrollLeft === original.left)\n                    return;\n            }\n            close();\n        };\n        const suppress = () => {\n            if (!suppressed.current) {\n                suppressed.current = true;\n                restore.current = false;\n                setPortal(null);\n                callbacks.current.onOpenChange(false);\n            }\n        };\n        const check = () => {\n            if (!available(anchor))\n                suppress();\n            else\n                measure();\n        };\n        const observer = new win.MutationObserver((records) => {\n            if (!available(anchor))\n                suppress();\n            else {\n                const presentation = snapshot(anchor);\n                const presentationChanged = Object.entries(portal.style).some(([name, value]) => Reflect.get(presentation, name) !== value);\n                const themeAttributeChanged = records.some((record) => record.type === 'attributes' &&\n                    (record.attributeName === 'dir' ||\n                        record.attributeName === 'data-theme') &&\n                    record.oldValue !==\n                        (record.target as Element).getAttribute(record.attributeName));\n                if (presentationChanged || themeAttributeChanged)\n                    close();\n                else\n                    measure();\n            }\n        });\n        for (const node of chain)\n            observer.observe(node, {\n                attributes: true,\n                attributeOldValue: true,\n                childList: true,\n            });\n        const layout = typeof win.ResizeObserver === 'function'\n            ? new win.ResizeObserver(check)\n            : null;\n        for (const node of chain)\n            layout?.observe(node);\n        layout?.observe(panel);\n        doc.addEventListener('pointerdown', outside);\n        doc.addEventListener('focusin', outside);\n        doc.addEventListener('scroll', scroll, true);\n        const resize = () => {\n            check();\n            close();\n        };\n        win.addEventListener('resize', resize);\n        return () => {\n            observer.disconnect();\n            layout?.disconnect();\n            doc.removeEventListener('pointerdown', outside);\n            doc.removeEventListener('focusin', outside);\n            doc.removeEventListener('scroll', scroll, true);\n            win.removeEventListener('resize', resize);\n        };\n    }, [portal]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal ||\n            placement.visibility === 'hidden' ||\n            focusedPortal.current === portal)\n            return;\n        focusedPortal.current = portal;\n        focusEdge(initial.current);\n        initial.current = 'first';\n    }, [portal, placement]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !ownedFocus.current || !menu.current)\n            return;\n        const doc = portal.document;\n        const active = doc.activeElement;\n        if (active !== doc.body &&\n            active !== menu.current &&\n            !menu.current.contains(active))\n            return;\n        const survivor = enabled().find((button) => button.dataset['itemId'] === focused.current);\n        if (!survivor)\n            focusEdge('first');\n    }, [items, portal]);\n    const effective = open && portal !== null && !suppressed.current;\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-overflow-menu__trigger', className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} title={label} disabled={disabled === true} aria-haspopup=\"menu\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} id={`${id}-trigger`} onClick={(event) => {\n            event.stopPropagation();\n            if (!event.defaultPrevented) {\n                initial.current = 'first';\n                restore.current = true;\n                callbacks.current.onOpenChange(!open);\n            }\n        }} onKeyDown={(event) => {\n            if (event.defaultPrevented)\n                return;\n            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {\n                event.preventDefault();\n                event.stopPropagation();\n                initial.current = event.key === 'ArrowUp' ? 'last' : 'first';\n                if (effective)\n                    focusEdge(initial.current);\n                else {\n                    setOpeningRequest((request) => request + 1);\n                    callbacks.current.onOpenChange(true);\n                }\n            }\n        }}>\n        <span aria-hidden=\"true\">⋯</span>\n      </button>\n      {effective &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"menu\" aria-labelledby={`${id}-trigger`} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className=\"tp-overflow-menu\" style={{ ...portal.style, ...placement }} onFocus={(event) => {\n                    ownedFocus.current = true;\n                    focused.current =\n                        (event.target as HTMLElement).dataset['itemId'] ?? null;\n                    for (const button of enabled())\n                        button.tabIndex =\n                            button === (event.target as HTMLElement) ? 0 : -1;\n                }} onKeyDown={(event) => {\n                    if (event.defaultPrevented)\n                        return;\n                    if (event.key === 'Escape') {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        close(true);\n                    }\n                    else if (event.key === 'Tab') {\n                        focusInvoker();\n                        close();\n                    }\n                    else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        const buttons = enabled();\n                        const index = buttons.indexOf(portal.document.activeElement as HTMLButtonElement);\n                        const next = event.key === 'Home'\n                            ? 0\n                            : event.key === 'End'\n                                ? buttons.length - 1\n                                : (index +\n                                    (event.key === 'ArrowDown' ? 1 : -1) +\n                                    buttons.length) %\n                                    buttons.length;\n                        (buttons[next] ?? menu.current)?.focus();\n                    }\n                }}>\n            <ul role=\"presentation\">\n              {items.map((item) => (<li key={item.id} role=\"presentation\">\n                  <button type=\"button\" role=\"menuitem\" tabIndex={-1} data-item-id={item.id} disabled={item.disabled === true} className={item.tone === 'destructive'\n                        ? 'tp-overflow-menu__item tp-overflow-menu__item--destructive'\n                        : 'tp-overflow-menu__item'} onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || item.disabled === true)\n                            return;\n                        close(true);\n                        callbacks.current.onSelect(item.id, event);\n                    }}>\n                    {item.label}\n                  </button>\n                </li>))}\n            </ul>\n          </div>, portal.document.body)}\n    </>);\n}"
+          "signature": "export function OverflowMenu({ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }: OverflowMenuProps) {\n    const id = useId();\n    const trigger = useRef<HTMLButtonElement>(null);\n    const menu = useRef<HTMLDivElement>(null);\n    const callbacks = useRef({ onOpenChange, onSelect });\n    callbacks.current = { onOpenChange, onSelect };\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n    } | null>(null);\n    const [placement, setPlacement] = useState<CSSProperties>({\n        visibility: 'hidden',\n    });\n    const focusedPortal = useRef<typeof portal>(null);\n    const suppressed = useRef(false);\n    const restore = useRef(false);\n    const context = useRef({ anchorPoint, returnFocusTo });\n    context.current = { anchorPoint, returnFocusTo };\n    const restoreTarget = useRef<HTMLElement | null | undefined>(null);\n    const returningFocus = useRef(false);\n    const focusInvoker = (target = context.current.returnFocusTo) => {\n        const anchor = trigger.current;\n        if (!anchor)\n            return;\n        returningFocus.current = true;\n        try {\n            if (target &&\n                target.ownerDocument === anchor.ownerDocument &&\n                available(target)) {\n                try {\n                    target.focus();\n                }\n                catch {\n                }\n                if (anchor.ownerDocument.activeElement === target)\n                    return;\n            }\n            if (available(anchor))\n                anchor.focus();\n        }\n        finally {\n            returningFocus.current = false;\n        }\n    };\n    const initial = useRef<'first' | 'last'>('first');\n    const [openingRequest, setOpeningRequest] = useState(0);\n    const focused = useRef<string | null>(null);\n    const ownedFocus = useRef(false);\n    const enabled = () => Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);\n    const focusEdge = (edge: 'first' | 'last') => {\n        const buttons = enabled();\n        (buttons[edge === 'first' ? 0 : buttons.length - 1] ?? menu.current)?.focus();\n    };\n    const close = (returnFocus = false) => {\n        restore.current = returnFocus;\n        if (returnFocus)\n            restoreTarget.current = context.current.returnFocusTo;\n        callbacks.current.onOpenChange(false);\n    };\n    const measure = () => {\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const win = portal?.document.defaultView;\n        if (!anchor || !panel || !win)\n            return;\n        const rect = anchor.getBoundingClientRect();\n        const box = panel.getBoundingClientRect();\n        const width = Math.min(box.width, Math.max(0, win.innerWidth - 16));\n        const height = Math.min(box.height, Math.max(0, win.innerHeight - 16));\n        const point = context.current.anchorPoint;\n        const usePoint = point && Number.isFinite(point.x) && Number.isFinite(point.y);\n        const aligned = usePoint\n            ? point.x - (portal.style.direction === 'rtl' ? width : 0)\n            : portal.style.direction === 'rtl'\n                ? rect.left\n                : rect.right - width;\n        const below = (usePoint ? point.y : rect.bottom) + 4;\n        const preferred = below + height > win.innerHeight - 8\n            ? (usePoint ? point.y : rect.top) - height - 4\n            : below;\n        const left = Math.max(8, Math.min(aligned, win.innerWidth - width - 8));\n        const top = Math.max(8, Math.min(preferred, win.innerHeight - height - 8));\n        setPlacement((previous) => previous.visibility !== 'hidden' &&\n            previous.left === left &&\n            previous.top === top\n            ? previous\n            : { left, top });\n    };\n    useIsomorphicLayoutEffect(() => {\n        const anchor = trigger.current;\n        if (!open) {\n            if (restore.current && anchor) {\n                const active = anchor.ownerDocument.activeElement;\n                if (active === anchor.ownerDocument.body ||\n                    (active && menu.current?.contains(active)))\n                    focusInvoker(restoreTarget.current);\n            }\n            restoreTarget.current = null;\n            restore.current = false;\n            suppressed.current = false;\n            ownedFocus.current = false;\n            focused.current = null;\n            focusedPortal.current = null;\n            initial.current = 'first';\n            setPortal(null);\n            return;\n        }\n        if (!anchor || suppressed.current)\n            return;\n        if (!available(anchor)) {\n            suppressed.current = true;\n            setPortal(null);\n            callbacks.current.onOpenChange(false);\n            return;\n        }\n        setPlacement({ visibility: 'hidden' });\n        setPortal({ document: anchor.ownerDocument, style: snapshot(anchor) });\n    }, [open, disabled, openingRequest]);\n    useIsomorphicLayoutEffect(() => {\n        measure();\n    }, [portal, items, anchorPoint?.x, anchorPoint?.y]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !menu.current || !trigger.current)\n            return;\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        if (!win)\n            return;\n        const chain = ancestors(anchor);\n        const openingScroll = new Map<Element, {\n            top: number;\n            left: number;\n        }>(chain.map((node) => [\n            node,\n            { top: node.scrollTop, left: node.scrollLeft },\n        ]));\n        const inside = (target: EventTarget | null) => target instanceof win.Node &&\n            (panel.contains(target) || anchor.contains(target));\n        const outside = (event: Event) => {\n            if (!returningFocus.current &&\n                !event.defaultPrevented &&\n                !inside(event.target))\n                close();\n        };\n        const scroll = (event: Event) => {\n            if (event.defaultPrevented ||\n                (event.target instanceof win.Node && panel.contains(event.target)))\n                return;\n            const target = event.target === doc ? doc.scrollingElement : event.target;\n            if (target instanceof win.Element) {\n                const original = openingScroll.get(target);\n                if (original &&\n                    target.scrollTop === original.top &&\n                    target.scrollLeft === original.left)\n                    return;\n            }\n            close();\n        };\n        const suppress = () => {\n            if (!suppressed.current) {\n                suppressed.current = true;\n                restore.current = false;\n                setPortal(null);\n                callbacks.current.onOpenChange(false);\n            }\n        };\n        const check = () => {\n            if (!available(anchor))\n                suppress();\n            else\n                measure();\n        };\n        const observer = new win.MutationObserver((records) => {\n            if (!available(anchor))\n                suppress();\n            else {\n                const presentation = snapshot(anchor);\n                const presentationChanged = Object.entries(portal.style).some(([name, value]) => Reflect.get(presentation, name) !== value);\n                const themeAttributeChanged = records.some((record) => record.type === 'attributes' &&\n                    (record.attributeName === 'dir' ||\n                        record.attributeName === 'data-theme') &&\n                    record.oldValue !==\n                        (record.target as Element).getAttribute(record.attributeName));\n                if (presentationChanged || themeAttributeChanged)\n                    close();\n                else\n                    measure();\n            }\n        });\n        for (const node of chain)\n            observer.observe(node, {\n                attributes: true,\n                attributeOldValue: true,\n                childList: true,\n            });\n        const layout = typeof win.ResizeObserver === 'function'\n            ? new win.ResizeObserver(check)\n            : null;\n        for (const node of chain)\n            layout?.observe(node);\n        layout?.observe(panel);\n        doc.addEventListener('pointerdown', outside);\n        doc.addEventListener('focusin', outside);\n        doc.addEventListener('scroll', scroll, true);\n        const resize = () => {\n            check();\n            close();\n        };\n        win.addEventListener('resize', resize);\n        return () => {\n            observer.disconnect();\n            layout?.disconnect();\n            doc.removeEventListener('pointerdown', outside);\n            doc.removeEventListener('focusin', outside);\n            doc.removeEventListener('scroll', scroll, true);\n            win.removeEventListener('resize', resize);\n        };\n    }, [portal]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal ||\n            placement.visibility === 'hidden' ||\n            focusedPortal.current === portal)\n            return;\n        focusedPortal.current = portal;\n        focusEdge(initial.current);\n        initial.current = 'first';\n    }, [portal, placement]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !ownedFocus.current || !menu.current)\n            return;\n        const doc = portal.document;\n        const active = doc.activeElement;\n        if (active !== doc.body &&\n            active !== menu.current &&\n            !menu.current.contains(active))\n            return;\n        const survivor = enabled().find((button) => button.dataset['itemId'] === focused.current);\n        if (!survivor)\n            focusEdge('first');\n    }, [items, portal]);\n    const effective = open && portal !== null && !suppressed.current;\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-overflow-menu__trigger', className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} title={label} disabled={disabled === true} aria-haspopup=\"menu\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} id={`${id}-trigger`} onClick={(event) => {\n            event.stopPropagation();\n            if (!event.defaultPrevented) {\n                initial.current = 'first';\n                restore.current = true;\n                callbacks.current.onOpenChange(!open);\n            }\n        }} onKeyDown={(event) => {\n            if (event.defaultPrevented)\n                return;\n            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {\n                event.preventDefault();\n                event.stopPropagation();\n                initial.current = event.key === 'ArrowUp' ? 'last' : 'first';\n                if (effective)\n                    focusEdge(initial.current);\n                else {\n                    setOpeningRequest((request) => request + 1);\n                    callbacks.current.onOpenChange(true);\n                }\n            }\n        }}>\n        <span aria-hidden=\"true\">⋯</span>\n      </button>\n      {effective &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"menu\" aria-labelledby={`${id}-trigger`} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className=\"tp-overflow-menu\" style={{ ...portal.style, ...placement }} onFocus={(event) => {\n                    ownedFocus.current = true;\n                    focused.current =\n                        (event.target as HTMLElement).dataset['itemId'] ?? null;\n                    for (const button of enabled())\n                        button.tabIndex =\n                            button === (event.target as HTMLElement) ? 0 : -1;\n                }} onKeyDown={(event) => {\n                    if (event.defaultPrevented)\n                        return;\n                    if (event.key === 'Escape') {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        close(true);\n                    }\n                    else if (event.key === 'Tab') {\n                        focusInvoker();\n                        close();\n                    }\n                    else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        const buttons = enabled();\n                        const index = buttons.indexOf(portal.document.activeElement as HTMLButtonElement);\n                        const next = event.key === 'Home'\n                            ? 0\n                            : event.key === 'End'\n                                ? buttons.length - 1\n                                : (index +\n                                    (event.key === 'ArrowDown' ? 1 : -1) +\n                                    buttons.length) %\n                                    buttons.length;\n                        (buttons[next] ?? menu.current)?.focus();\n                    }\n                }}>\n            <ul role=\"presentation\">\n              {items.map((item) => (<li key={item.id} role=\"presentation\">\n                  <button type=\"button\" role=\"menuitem\" tabIndex={-1} data-item-id={item.id} disabled={item.disabled === true} className={item.tone === 'destructive'\n                        ? 'tp-overflow-menu__item tp-overflow-menu__item--destructive'\n                        : 'tp-overflow-menu__item'} onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || item.disabled === true)\n                            return;\n                        close(true);\n                        callbacks.current.onSelect(item.id, event);\n                    }}>\n                    {item.label}\n                  </button>\n                </li>))}\n            </ul>\n          </div>, portal.document.body)}\n    </>);\n}"
         }
       ]
     },
@@ -11077,6 +11034,62 @@
           "symbol": "ToolObservationProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface ToolObservationProps {\n    readonly name: string;\n    readonly argumentsText: string;\n    readonly resultText?: string;\n    readonly label?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Welcome",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Welcome",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/welcome.tsx",
+          "symbol": "Welcome",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Welcome({ title, children, suggestions, className, }: WelcomeProps) {\n    return (<div className={['tp-welcome', className].filter(Boolean).join(' ')}>\n      <div className=\"tp-welcome__inner\">\n        <div className=\"tp-welcome__title\">\n          {title === undefined ? <h2>How can I help?</h2> : title}\n        </div>\n        <div className=\"tp-welcome__content\">{children}</div>\n        <div className=\"tp-welcome__suggestions\">{suggestions}</div>\n      </div>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "WelcomeProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/welcome.tsx",
+          "symbol": "WelcomeProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface WelcomeProps {\n    readonly title?: ReactNode;\n    readonly children?: ReactNode;\n    readonly suggestions?: ReactNode;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeSuggestion",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "WelcomeSuggestion",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/welcome-suggestion.tsx",
+          "symbol": "WelcomeSuggestion",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function WelcomeSuggestion({ label, value, onSelect, description, icon, disabled, className, }: WelcomeSuggestionProps) {\n    return (<button type=\"button\" className={['tp-welcome-suggestion', className].filter(Boolean).join(' ')} title={description} aria-description={description} disabled={disabled === true} onClick={(event) => {\n            if (disabled === true || event.defaultPrevented)\n                return;\n            onSelect(value);\n        }}>\n      <span className=\"tp-welcome-suggestion__icon\" aria-hidden=\"true\">\n        {icon}\n      </span>\n      <span className=\"tp-welcome-suggestion__label\">{label}</span>\n      <span className=\"tp-welcome-suggestion__chevron\" aria-hidden=\"true\">\n        ›\n      </span>\n    </button>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#WelcomeSuggestionProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "WelcomeSuggestionProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/welcome-suggestion.tsx",
+          "symbol": "WelcomeSuggestionProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface WelcomeSuggestionProps {\n    readonly label: string;\n    readonly value: string;\n    readonly onSelect: (value: string) => void;\n    readonly description?: string;\n    readonly icon?: ReactNode;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -15486,7 +15499,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "177ca8063d2c54826039d42293485539a13cf58accfb70ccf103c1427bad94ad"
+      "sha256": "a438fb4674d429dadbb2ba6f4883e027380f0837272abc1a0f5e28cd7829e16d"
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
@@ -15528,7 +15541,7 @@
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/overflow-menu.tsx",
-      "sha256": "ce3bb5b6b4bd374398c5a561dcfc44b75a0b7324f91776d01028be45177abda0"
+      "sha256": "d6b3699e61ca95d4b1dd26f4a12727f86e6322efeb904b554fbdd86da8967416"
     },
     {
       "id": "source:libs/react/src/chat/project-list.tsx",
@@ -15577,6 +15590,18 @@
       "kind": "source",
       "path": "libs/react/src/chat/tool-observation.tsx",
       "sha256": "4770ffb6da23573b8bf0ecad9de36bec724b29ea96edb9776cb27078b4000e24"
+    },
+    {
+      "id": "source:libs/react/src/chat/welcome-suggestion.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/welcome-suggestion.tsx",
+      "sha256": "9f37d8d1da9583e0914feb25bde9089ea5a55bc7498ce8106eee2b12a25e553b"
+    },
+    {
+      "id": "source:libs/react/src/chat/welcome.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/welcome.tsx",
+      "sha256": "56f5015902d546a27a0543f798c89c365d2321cb846b40ad9480d4769c8b955b"
     },
     {
       "id": "source:libs/react/src/debug/bounded-value.ts",

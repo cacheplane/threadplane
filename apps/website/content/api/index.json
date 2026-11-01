@@ -6094,6 +6094,46 @@
       "summary": "Literal observed text. The caller owns tool/result association and formatting."
     },
     {
+      "name": "Welcome",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/Welcome",
+      "canonicalReference": "@threadplane/react!Welcome:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Presents a greeting, stable content slot and optional controlled suggestions."
+    },
+    {
+      "name": "WelcomeProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/WelcomeProps",
+      "canonicalReference": "@threadplane/react!WelcomeProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Configures presentation slots without owning conversation visibility or state."
+    },
+    {
+      "name": "WelcomeSuggestion",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/WelcomeSuggestion",
+      "canonicalReference": "@threadplane/react!WelcomeSuggestion:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Emits a suggestion value without submitting a form or changing caller state."
+    },
+    {
+      "name": "WelcomeSuggestionProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/WelcomeSuggestionProps",
+      "canonicalReference": "@threadplane/react!WelcomeSuggestionProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Configures a literal suggestion button whose selection remains caller controlled."
+    },
+    {
       "name": "Markdown",
       "entrypointId": "react/markdown",
       "kind": "Function",

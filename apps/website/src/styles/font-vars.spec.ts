@@ -6,7 +6,8 @@ import { describe, it, expect } from 'vitest';
  * Every `--font-*` custom property this app references must be one the app
  * actually supplies.
  *
- * `layout.tsx` defines exactly four, via `next/font` on `<html>`. A reference
+ * `layout.tsx` loads sans, mono and diagram via `next/font` on `<html>`;
+ * brand.css aliases display to sans. A reference
  * to anything else resolves to nothing, and an undefined custom property in a
  * `font-family` declaration is invalid at computed-value time — the whole
  * declaration is dropped and the element silently falls back to the inherited
@@ -20,8 +21,8 @@ import { describe, it, expect } from 'vitest';
  * system-font fallbacks that look almost right.
  */
 const SUPPLIED = new Set([
-  '--font-display', // Archivo Black
-  '--font-sans', // Archivo
+  '--font-display', // Hanken alias in brand.css
+  '--font-sans', // Hanken Grotesk
   '--font-diagram', // Inter — diagram geometry is pinned to its metrics
   '--font-mono', // JetBrains Mono
 ]);

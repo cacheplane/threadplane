@@ -177,7 +177,7 @@ describe('shared free deployment routing', () => {
 describe('shared deployment image evidence (offline command tests)', () => {
   const sha = '1234567890abcdef1234567890abcdef12345678';
   const repository =
-    'us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev';
+    'us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev';
   const image = `${repository}@sha256:${'a'.repeat(64)}`;
 
   function runEvidence(

@@ -1,23 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
-/**
- * The bar is one CSS surface: a translucent white over a backdrop blur, on
- * every route at every scroll position. There is no route list, no sentinel,
- * no observer and no `data-surface` attribute any more, so there is nothing
- * here to assert about state — only that the single surface is actually the
- * one that renders.
- *
- * Two things can silently take that away, which is why this suite reads the
- * computed style out of a real browser rather than trusting the source:
- *
- * 1. The blur is prefixed by Lightning CSS, not by hand. Writing
- *    `-webkit-backdrop-filter` in chrome.css makes Lightning collapse the pair
- *    down to the prefixed property alone, and Chromium does not implement
- *    `-webkit-backdrop-filter` at all — the bar keeps its 72% alpha and loses
- *    the blur, which is an unreadable smear rather than a visible failure.
- * 2. Anything that reintroduces a scroll- or route-dependent surface brings
- *    back the hydration flash this replaced.
- */
+/** The LLA family header stays opaque white across routes and scrolling.
+ * Keep the custom CTA distinction and scroll-invariance coverage. */
 
 const DOCS_ROUTE = '/docs/langgraph/getting-started/introduction';
 
@@ -60,21 +44,14 @@ test('keeps the nav surface and route-specific CTA through scroll and docs navig
     ['a docs page', DOCS_ROUTE],
   ] as const) {
     await page.goto(route);
-    await test.step(`the nav bar is translucent and blurred on ${label}`, async () => {
+    await test.step(`the nav bar is opaque and flat on ${label}`, async () => {
       await expect(page.locator('nav').first()).toBeVisible();
 
       const surface = await readBarSurface(page);
 
-      // Strictly between 0 and 1: fully opaque is the old solid bar, fully
-      // transparent is the old hero state. Neither exists any more.
-      const alpha = alphaOf(surface.background);
-      expect(alpha, `background was ${surface.background}`).toBeGreaterThan(0);
-      expect(alpha, `background was ${surface.background}`).toBeLessThan(1);
-
-      // `none` here is the Lightning-CSS prefix trap in the header comment: the
-      // translucency survives it, so only this read catches it.
-      expect(surface.backdropFilter).not.toBe('none');
-      expect(surface.backdropFilter).toContain('blur');
+      expect(alphaOf(surface.background)).toBe(1);
+      expect(surface.background).toBe('rgb(255, 255, 255)');
+      expect(surface.backdropFilter).toBe('none');
 
       // The redesign removed the shadow deliberately; the hairline is the edge.
       expect(surface.boxShadow).toBe('none');

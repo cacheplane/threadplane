@@ -7,11 +7,11 @@ import json
 from pathlib import Path
 import subprocess
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 SCRIPT = Path(__file__).with_name("pin_shared_deployment_image.py")
 SHA = "1" * 40
-REPOSITORY = "us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev"
+REPOSITORY = "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev"
 IMAGE = REPOSITORY + "@sha256:" + "a" * 64
 DEPLOYMENT = "6d350054-14ea-4031-8463-010ec27f9059"
 REVISION = "ed846882-b58d-4d97-b47a-c5e0517eaaed"
@@ -132,6 +132,52 @@ class ImageTests(unittest.TestCase):
     def test_redirect_handler_refuses_without_following(self):
         handler = self.module.NoRedirect()
         self.assertIsNone(handler.redirect_request(None, None, 302, "", {}, "https://other.invalid"))
+
+    def inspect_evidence(self, images):
+        expected_calls = [
+            call(["git", "rev-parse", "HEAD"], check=True, capture_output=True,
+                 text=True, timeout=25),
+            call(["docker", "image", "inspect",
+                  "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev:" + SHA,
+                  "--format", "{{json .RepoDigests}}"],
+                 check=True, capture_output=True, text=True, timeout=25),
+        ]
+        responses = [SHA + "\n", json.dumps(images)]
+
+        def run(*args, **kwargs):
+            index = len(inspect.call_args_list) - 1
+            self.assertEqual(call(*args, **kwargs), expected_calls[index])
+            return subprocess.CompletedProcess(args[0], 0, responses[index], "")
+
+        with patch.dict(self.module.os.environ, self.env, clear=True), \
+                patch.object(self.module.subprocess, "run", side_effect=run) as inspect, \
+                contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            result = self.module.main(["evidence"])
+        self.assertEqual(inspect.call_args_list, expected_calls,
+                         f"Expected {expected_calls!r}; got {inspect.call_args_list!r}")
+        self.assertNotIn(SECRET, out.getvalue() + err.getvalue())
+        return result, out.getvalue(), err.getvalue()
+
+    def test_evidence_inspects_exact_pushed_us_east4_tag(self):
+        image = "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev@sha256:" + "a" * 64
+        result, out, err = self.inspect_evidence([image])
+        self.assertEqual(result, 0)
+        self.assertEqual(out, f"source_sha={SHA}\nimage_uri={image}\n")
+        self.assertEqual(err, "")
+
+    def test_evidence_rejects_old_region_and_foreign_repositories(self):
+        repositories = [
+            "us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev",
+            "foreign.invalid/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev",
+            "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/other",
+        ]
+        for repository in repositories:
+            with self.subTest(repository=repository):
+                result, out, err = self.inspect_evidence([repository + "@sha256:" + "a" * 64])
+                self.assertEqual(result, 1)
+                self.assertEqual(out, "")
+                self.assertEqual(err, "Shared deployment image validation failed.\n")
 
     def test_inspect_rejects_malformed_or_ambiguous_structured_evidence(self):
         values = [b"not-json", b"null", b"{}", b'"image"',

@@ -18,6 +18,7 @@ export default defineConfig({
     'state-comparison.spec.ts',
     'project-names.spec.ts',
     'project-menus.spec.ts',
+    'welcome.spec.ts',
     'project-assignment.spec.ts',
     'project-creation.spec.ts',
     'project-deletion.spec.ts',
