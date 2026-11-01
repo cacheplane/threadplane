@@ -28,6 +28,10 @@ function setup(overrides: Record<string, unknown> = {}) {
     createDatabase: () => ({ close }),
     admit,
     process,
+    loadLinkedInConfig: () => ({ enabled: false }),
+    admitLinkedIn: vi.fn(async () => null),
+    processLinkedIn: vi.fn(async () => 'parsed'),
+    forwardLinkedIn: vi.fn(async () => null),
     ...overrides,
   } as never);
   return { route, admit, process, close, verify };
@@ -181,4 +185,105 @@ test('inbound forward failure requests retry after durable reply processing', as
   expect(response.status).toBe(503);
   expect(process).toHaveBeenCalledOnce();
   expect(close).toHaveBeenCalledOnce();
+});
+
+const linkedInConfig = {
+  enabled: true as const,
+  address: 'linkedin@threadplane.ai',
+  forwardNotifications: false,
+};
+const post = () =>
+  new Request('https://threadplane.ai', {
+    method: 'POST',
+    headers,
+    body: '{}',
+  });
+
+test('mail for the LinkedIn ingest address is admitted, processed and forwarded', async () => {
+  const admitLinkedIn = vi.fn(async () => 'li-1');
+  const processLinkedIn = vi.fn(async () => 'unparsed');
+  const forwardLinkedIn = vi.fn(async () => 'fwd-1');
+  const admit = vi.fn(async () => null);
+  const { route } = setup({
+    admit,
+    loadLinkedInConfig: () => linkedInConfig,
+    admitLinkedIn,
+    processLinkedIn,
+    forwardLinkedIn,
+  });
+
+  expect((await route.POST(post())).status).toBe(200);
+  expect(admit).toHaveBeenCalled();
+  expect(admitLinkedIn).toHaveBeenCalled();
+  expect(processLinkedIn).toHaveBeenCalledWith(
+    expect.anything(),
+    'li-1',
+    linkedInConfig
+  );
+  expect(forwardLinkedIn).toHaveBeenCalledWith(expect.anything(), 'li-1');
+});
+
+test('a LinkedIn forward failure asks the provider to retry', async () => {
+  const processLinkedIn = vi.fn(async () => 'parsed');
+  const { route, close } = setup({
+    admit: vi.fn(async () => null),
+    loadLinkedInConfig: () => linkedInConfig,
+    admitLinkedIn: vi.fn(async () => 'li-1'),
+    processLinkedIn,
+    forwardLinkedIn: vi.fn().mockRejectedValue(new Error('send failed')),
+  });
+
+  expect((await route.POST(post())).status).toBe(503);
+  expect(processLinkedIn).toHaveBeenCalledOnce();
+  expect(close).toHaveBeenCalledOnce();
+});
+
+test('a LinkedIn processing failure still forwards and asks for retry', async () => {
+  const forwardLinkedIn = vi.fn(async () => 'fwd-1');
+  const { route } = setup({
+    admit: vi.fn(async () => null),
+    loadLinkedInConfig: () => linkedInConfig,
+    admitLinkedIn: vi.fn(async () => 'li-1'),
+    processLinkedIn: vi.fn().mockRejectedValue(new Error('parse failed')),
+    forwardLinkedIn,
+  });
+
+  expect((await route.POST(post())).status).toBe(503);
+  expect(forwardLinkedIn).toHaveBeenCalledWith(expect.anything(), 'li-1');
+});
+
+test('the LinkedIn branch is skipped when ingest is disabled', async () => {
+  const admitLinkedIn = vi.fn(async () => 'li-1');
+  const { route } = setup({
+    admit: vi.fn(async () => null),
+    loadLinkedInConfig: () => ({ enabled: false }),
+    admitLinkedIn,
+  });
+
+  expect((await route.POST(post())).status).toBe(200);
+  expect(admitLinkedIn).not.toHaveBeenCalled();
+});
+
+test('reply-inbox mail never reaches the LinkedIn branch', async () => {
+  const admitLinkedIn = vi.fn(async () => 'li-1');
+  const { route } = setup({
+    loadLinkedInConfig: () => linkedInConfig,
+    admitLinkedIn,
+  });
+
+  expect((await route.POST(post())).status).toBe(200);
+  expect(admitLinkedIn).not.toHaveBeenCalled();
+});
+
+test('a LinkedIn config failure refuses the request before the database', async () => {
+  const createDatabase = vi.fn();
+  const { route } = setup({
+    loadLinkedInConfig: () => {
+      throw new Error('bad config');
+    },
+    createDatabase,
+  });
+
+  expect((await route.POST(post())).status).toBe(503);
+  expect(createDatabase).not.toHaveBeenCalled();
 });
