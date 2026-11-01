@@ -1,19 +1,21 @@
 .api-reference-page {
-  max-width: 1100px;
+  max-width: min(840px, calc(70ch + 2 * var(--site-gutter)));
   margin-inline: auto;
-  padding: 24px clamp(16px, 4vw, 48px) 80px;
+  padding: var(--site-page-top) var(--site-gutter) 48px;
+  font-family: var(--font-sans);
+  font-size: 16px;
   color: var(--color-text-primary);
   overflow-wrap: anywhere;
 }
 .api-reference-page h1 {
-  font-size: clamp(28px, 4vw, 40px);
-  font-weight: 650;
+  font-size: 34px;
+  font-weight: 600;
   letter-spacing: -0.035em;
   margin: 12px 0 20px;
   line-height: 1.15;
 }
 .api-reference-page h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   margin: 32px 0 16px;
 }
@@ -59,6 +61,9 @@
 .api-reference-breadcrumb a {
   color: inherit;
 }
+.api-reference-actions {
+  margin-block: 16px;
+}
 .api-reference-eyebrow,
 .api-reference-result-count,
 .api-reference-muted,
@@ -71,7 +76,7 @@
   border: 1px solid var(--color-border);
   border-radius: 5px;
   color: var(--color-text-muted);
-  padding: 2px 6px;
+  padding: 4px 8px;
   font-size: 11px;
   line-height: 1.5;
   white-space: nowrap;
@@ -83,10 +88,10 @@
   color: var(--color-text-primary);
 }
 .api-reference-notice {
-  padding: 14px 18px;
-  border-left: 3px solid var(--color-accent);
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 0 6px 6px 0;
+  border-radius: 8px;
   margin-block: 20px;
   font-size: 14px;
   line-height: 1.7;
@@ -100,9 +105,9 @@
 .api-reference-filters label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 600;
   color: var(--color-text-muted);
   min-width: 0;
 }
@@ -110,14 +115,16 @@
 .api-reference-filters select {
   width: 100%;
   min-width: 0;
-  min-height: 42px;
+  min-height: 44px;
+  height: 44px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg);
-  padding: 10px 12px;
+  padding: 0 12px;
   color: var(--color-text-primary);
   font: inherit;
   font-size: 14px;
+  line-height: 20px;
 }
 .api-reference-filters .api-reference-query {
   grid-column: 1 / -1;
@@ -134,7 +141,7 @@
 .api-reference-package header {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 .api-reference-package header h2 {
@@ -155,7 +162,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 10px 0;
+  padding: 12px 0;
   min-width: 0;
 }
 .api-reference-symbols li > a {
@@ -170,22 +177,22 @@
 }
 .api-reference-navigation > a {
   display: block;
-  padding: 9px 0;
+  padding: 8px 0;
   color: var(--color-text-muted);
 }
 .api-reference-navigation details {
   border-top: 1px solid var(--color-border);
-  padding-block: 5px;
+  padding-block: 4px;
 }
 .api-reference-navigation summary {
   cursor: pointer;
-  padding: 10px 0;
-  font-weight: 550;
+  padding: 12px 0;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .api-reference-navigation details > a {
   display: block;
-  padding: 7px 8px 7px 14px;
+  padding: 8px 12px;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
   color: var(--color-text-muted);
@@ -197,17 +204,17 @@
   background: var(--color-surface);
 }
 .api-reference-detail {
-  max-width: 850px;
+  max-width: 100%;
 }
 .api-reference-detail dl {
   margin: 16px 0;
 }
 .api-reference-detail dl > div {
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid var(--color-border);
 }
 .api-reference-detail dt {
-  font-weight: 550;
+  font-weight: 600;
   font-size: 13px;
 }
 .api-reference-detail dd {
@@ -222,10 +229,14 @@
   border-top: 1px solid var(--color-border);
   padding: 8px 0 16px;
 }
+.mdx-pre-wrap:has(> .api-reference-code) {
+  margin-block: 16px;
+}
 .api-reference-code {
   max-width: 100%;
   overflow-x: auto;
-  padding: 18px 20px;
+  margin: 0;
+  padding: 20px 24px;
   border: 1px solid var(--docs-code-border);
   border-radius: 8px;
   background: var(--docs-code-bg);
@@ -252,14 +263,16 @@
   opacity: 1;
 }
 .api-reference-prose {
-  font-size: 14px;
+  font-size: 16px;
 }
 .api-reference-prose pre {
   white-space: pre;
   overflow-x: auto;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  padding: 20px 24px;
+  border: 1px solid var(--docs-code-border);
+  border-radius: 8px;
+  background: var(--docs-code-bg);
+  color: #a9b1d6;
   max-width: 100%;
 }
 .api-reference-prose ul,
@@ -275,11 +288,13 @@
 }
 .api-reference-prose li {
   line-height: 1.75;
-  margin-block: 5px;
+  margin-block: 4px;
 }
 .api-reference-prose blockquote {
-  padding-left: 16px;
-  border-left: 2px solid var(--color-border);
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
 }
 @media (min-width: 900px) {
   .api-reference-filters {
@@ -296,5 +311,21 @@
   .api-reference-navigation a,
   .api-reference-navigation summary {
     min-height: 44px;
+  }
+}
+
+.api-reference-detail > h1 {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 32px;
+}
+.api-reference-page :is(.api-reference-badge, .api-reference-meta > a) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 768px) {
+  .api-reference-page > article:not(.api-reference-detail) > h1 {
+    font-size: 40px;
   }
 }

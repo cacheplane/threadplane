@@ -17,7 +17,7 @@
   font-family: var(--font-display);
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
-  font-weight: 400; /* Archivo Black ships a single weight */
+  font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
   margin-bottom: 24px;
@@ -175,6 +175,7 @@
 }
 .feature-block-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -198,14 +199,14 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Rows variant (homepage): the Yes wall's claim→API grammar, light. */
 .feature-block-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .feature-block-rail-line {
   flex: 1;
@@ -223,7 +224,7 @@
   gap: 16px;
   align-items: baseline;
   border-bottom: 1px solid var(--color-border);
-  padding: 9px 0;
+  padding: var(--space-2) 0;
 }
 .feature-block-row-claim {
   font-family: var(--font-sans);
@@ -267,7 +268,7 @@
 .wp-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .wp-rail-line {
   flex: 1;
@@ -279,6 +280,7 @@
 }
 .wp-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -287,7 +289,7 @@
   letter-spacing: -0.015em;
 }
 .wp-rows {
-  margin: 18px 0 4px;
+  margin: var(--space-5) 0 4px;
   border-top: 2px solid var(--color-text-primary);
   max-width: 42ch;
 }
@@ -297,7 +299,7 @@
   gap: 16px;
   align-items: baseline;
   border-bottom: 1px solid var(--color-border);
-  padding: 9px 0;
+  padding: var(--space-2) 0;
 }
 .wp-row-claim {
   font-family: var(--font-sans);
@@ -337,7 +339,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 26px 24px;
+  padding: var(--space-7) 24px;
   transform: rotate(-1.2deg);
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.05),
@@ -349,10 +351,11 @@
   text-transform: uppercase;
   letter-spacing: 0.15em;
   color: var(--color-accent);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 .wp-cover-title {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 28px;
   line-height: 1.15;
   color: var(--color-text-primary);
@@ -385,7 +388,7 @@
 .recent-articles-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
   margin-bottom: 32px;
 }
 .recent-articles-rail-line {
@@ -429,6 +432,7 @@
 }
 .final-cta-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -467,6 +471,7 @@
   right: -30px;
   bottom: -70px;
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 210px;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -509,13 +514,11 @@
      than inherit the body's. */
   line-height: 1.4;
   color: var(--color-signal);
-  margin: 0 0 22px;
+  margin: 0 0 var(--space-6);
 }
 .open-source-strip-headline {
-  /* --font-display is available here now: the italic <em> this line used to
-     carry is gone, and Archivo Black has no italic. */
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(56px, 8.5vw, 116px);
   line-height: 0.9;
   letter-spacing: -0.04em;
@@ -526,7 +529,7 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  margin-top: 38px;
+  margin-top: var(--space-10);
 }
 .open-source-strip-licence {
   font-family: var(--font-mono);
@@ -560,7 +563,7 @@
   }
   .open-source-strip-actions {
     flex-wrap: wrap;
-    gap: 14px;
+    gap: var(--space-4);
   }
 }
 
@@ -583,11 +586,11 @@
   text-transform: uppercase;
   line-height: 1.4;
   color: var(--color-signal);
-  margin: 0 0 22px;
+  margin: 0 0 var(--space-6);
 }
 .no-runtime-headline {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(56px, 8.5vw, 116px);
   line-height: 0.9;
   letter-spacing: -0.04em;
@@ -600,7 +603,7 @@
   line-height: 1.55;
   color: var(--color-text-secondary);
   max-width: 480px;
-  margin: 26px 0 0;
+  margin: var(--space-7) 0 0;
 }
 .no-runtime-link {
   display: inline-block;
@@ -641,7 +644,7 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-4);
 }
 .no-runtime-hop {
   display: flex;
@@ -652,7 +655,7 @@
   display: block;
   box-sizing: border-box;
   min-width: 150px;
-  padding: 13px 18px;
+  padding: var(--space-3) var(--space-5);
   border: 1.5px solid var(--color-text-primary);
   border-radius: 4px;
   font-family: var(--font-mono);
@@ -734,6 +737,7 @@
 }
 .home-faq-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -749,14 +753,14 @@
 .backends-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
-  gap: 10px;
+  gap: var(--space-3);
   padding: 16px;
   background: var(--color-surface-tinted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 .backends-grid-item {
-  padding: 14px 14px;
+  padding: var(--space-4) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -806,7 +810,7 @@
 }
 .demo-modal__dots {
   display: flex;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .demo-modal__dot {
   width: 8px;
@@ -816,13 +820,13 @@
 }
 .demo-modal__tabs {
   display: flex;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .demo-modal__tab {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: var(--space-2) 12px;
   border-radius: 7px;
   border: none;
   cursor: pointer;
@@ -854,7 +858,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 8px var(--space-4);
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
 }
@@ -949,10 +953,11 @@
   letter-spacing: 0.12em;
   font-weight: 700;
   color: var(--color-accent);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 .render-show-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(26px, 3.5vw, 42px);
   line-height: 1.1;
   color: var(--color-text-primary);
@@ -970,7 +975,7 @@
   border: 1px solid var(--color-border);
 }
 .render-show-card-head {
-  padding: 10px 20px;
+  padding: var(--space-3) 20px;
   background: rgba(26, 122, 64, 0.04);
   border-bottom: 1px solid var(--color-border);
 }
@@ -996,10 +1001,11 @@
   letter-spacing: 0.12em;
   font-weight: 700;
   color: var(--color-accent);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 .lg-show-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(26px, 3.5vw, 42px);
   line-height: 1.1;
   color: var(--color-text-primary);
@@ -1017,7 +1023,7 @@
   border: 1px solid var(--color-border);
 }
 .lg-show-card-head {
-  padding: 10px 20px;
+  padding: var(--space-3) 20px;
   background: rgba(255, 175, 0, 0.08);
   border-bottom: 1px solid var(--color-border);
 }
@@ -1043,10 +1049,11 @@
   letter-spacing: 0.12em;
   font-weight: 700;
   color: var(--color-chat-purple);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 .chat-show-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(26px, 3.5vw, 42px);
   line-height: 1.1;
   color: var(--color-text-primary);
@@ -1064,7 +1071,7 @@
   border: 1px solid var(--color-border);
 }
 .chat-show-card-head {
-  padding: 10px 20px;
+  padding: var(--space-3) 20px;
   background: rgba(90, 0, 200, 0.04);
   border-bottom: 1px solid var(--color-border);
 }
@@ -1092,6 +1099,7 @@
   right: -40px;
   top: -78px;
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(150px, 21vw, 300px);
   line-height: 0.76;
   letter-spacing: -0.04em;
@@ -1127,7 +1135,7 @@
 .proof-strip-grid {
   position: relative;
   display: grid;
-  gap: 46px;
+  gap: var(--space-12);
 }
 .proof-strip-grid > [data-ui="section-header"] {
   max-width: 620px;
@@ -1156,6 +1164,7 @@
 }
 .stage-intro h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(28px, 3vw, 42px);
   line-height: 1.08;
   letter-spacing: -0.035em;
@@ -1167,7 +1176,7 @@
   font-size: 15px;
   line-height: 1.6;
   max-width: 580px;
-  margin: 14px 0 0;
+  margin: var(--space-4) 0 0;
 }
 .stage-stills {
   display: grid;
@@ -1177,7 +1186,7 @@
 .stage-still {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 22px;
+  gap: var(--space-6);
   max-width: 1000px;
   width: 100%;
   margin-inline: auto;
@@ -1185,7 +1194,7 @@
 .stage-still-text {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: var(--space-4);
 }
 .stage-capability {
   flex: 1;
@@ -1293,7 +1302,7 @@
   justify-self: end;
 }
 .stage-frame-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.stage-explore { font: inherit; font-size: 13px; color: inherit; background: transparent; border: 1px solid #b8b8b8; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+.stage-explore { font: inherit; font-size: 13px; color: inherit; background: transparent; border: 1px solid #b8b8b8; border-radius: 6px; padding: var(--space-1) var(--space-3); cursor: pointer; }
 .stage-explore:disabled { opacity: .45; cursor: default; }
 .stage-explore[aria-pressed='true'] { background: #eef3ff; border-color: #7289b9; }
 .stage-explore:focus-visible { outline: 2px solid #3963a8; outline-offset: 3px; }
@@ -1310,7 +1319,7 @@
 .stage-rail-beat {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: var(--space-4);
 }
 .stage-seg {
   flex: 1;
@@ -1348,6 +1357,7 @@
 }
 .stage-claim {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 30px;
   line-height: 1.08;
   color: var(--color-text-primary);
@@ -1382,7 +1392,7 @@
 }
 @media (max-height: 800px) {
   .stage-frame { width: min(100%, calc((100svh - 300px) * 5 / 3)); }
-  .stage-pin-inner { row-gap: 14px; }
+  .stage-pin-inner { row-gap: var(--space-4); }
   .stage-pin-inner .stage-intro { margin-bottom: 0; }
   .stage-pin-inner .stage-intro h2 { font-size: 30px; }
   .stage-pin-inner .stage-intro p { margin-top: 8px; }
@@ -1451,7 +1461,7 @@
   overflow: visible;
   clip: auto;
   clip-path: none;
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   color: var(--color-text-primary);
   outline: 2px solid currentColor;
@@ -1463,7 +1473,7 @@
 .show-intro-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .show-intro-rail-line {
   flex: 1;
@@ -1474,7 +1484,7 @@
 .home-faq-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .home-faq-rail-line {
   flex: 1;
@@ -1637,23 +1647,21 @@
 }
 .arch-stack-items {
   list-style: none;
-  margin: 10px 0 0;
+  margin: var(--space-3) 0 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   font-family: var(--font-sans);
   font-size: 13px;
   color: var(--color-text-secondary);
 }
 .arch-stack-items li {
   background: #f2f5f8;
-  border-left: 3px solid #c2cad6;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
 }
 .arch-stack-card[data-highlight] .arch-stack-items li {
   background: rgba(255, 255, 255, 0.75);
-  border-left-color: #2f5fa8;
 }
 .arch-figure .arch-badge rect {
   fill: #fff;
@@ -1760,8 +1768,8 @@
 .arch-stack-caps {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
-  margin: 10px 0 0;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
   font-family: var(--font-sans);
@@ -1772,18 +1780,18 @@
   background: #e4ecfa;
   color: #2f5fa8;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 4px var(--space-3);
 }
 .arch-stack-marks {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: var(--space-3);
 }
 .arch-stack-mono {
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: #2a3a5c;
-  margin: 10px 0 0;
+  margin: var(--space-3) 0 0;
 }
 .arch-stack-arrow {
   text-align: center;
@@ -1813,13 +1821,13 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 20px 20px 18px;
+  padding: 20px 20px var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .home-concept-card .tp-diagram-figure {
-  margin: 0 auto 10px;
+  margin: 0 auto var(--space-3);
   width: 100%;
   max-width: 420px;
 }
@@ -1844,7 +1852,7 @@
   color: var(--color-accent);
   text-decoration: none;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: var(--space-2);
 }
 .home-concept-link:hover {
   text-decoration: underline;
@@ -1854,20 +1862,20 @@
 .install-dialog-title { margin: 0 32px 4px 0; font-size: 22px; line-height: 1.2; }
 .install-dialog-lede { margin: 0 0 16px; color: var(--color-text-muted); font-size: 14px; }
 .install-dialog-steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
-.install-dialog-step { position: relative; padding-left: 34px; margin-bottom: 18px; counter-increment: step; }
+.install-dialog-step { position: relative; padding-left: var(--space-9); margin-bottom: var(--space-5); counter-increment: step; }
 .install-dialog-step::before {
   content: counter(step); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%;
   background: var(--color-text-primary); color: var(--color-surface); font-size: 12px; font-weight: 700;
   display: grid; place-items: center;
 }
 .install-dialog-step-title { margin: 0 0 8px; font-size: 15px; line-height: 22px; }
-.install-dialog-step-note { margin: 6px 0 0; font-size: 12.5px; color: var(--color-text-muted); }
+.install-dialog-step-note { margin: var(--space-2) 0 0; font-size: 12.5px; color: var(--color-text-muted); }
 .install-dialog-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; }
-.install-dialog-seg-btn { padding: 7px 12px; border: 0; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.install-dialog-seg-btn { padding: var(--space-2) 12px; border: 0; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
 .install-dialog-seg-btn[aria-checked="true"] { background: var(--color-text-primary); color: var(--color-surface); }
 .install-dialog-seg-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .install-dialog-code {
-  margin: 0 0 8px; padding: 10px 12px; border-radius: 8px; overflow-x: auto;
+  margin: 0 0 8px; padding: var(--space-3) 12px; border-radius: 8px; overflow-x: auto;
   background: #1c1c1e; color: #e8e8e8; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5;
 }
 /* The install command is the primary CTA's whole payload and it is a single
@@ -1955,7 +1963,7 @@
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 10px 20px;
+  padding: var(--space-3) 20px;
   border-radius: 999px;
   border: 1px solid rgb(0 0 0 / 12%);
   /* Fully opaque, not 97%: the phone poster ends on the demo's own white
@@ -2046,7 +2054,7 @@
    * Both halves assume this Section is not `tight` — that variant swaps in
    * --spacing-section-y-tight and the cancellation would no longer balance. */
   margin: calc(-1 * var(--spacing-section-y)) 0 var(--spacing-section-y);
-  padding: 10px var(--spacing-container-x);
+  padding: var(--space-3) var(--spacing-container-x);
   background: var(--color-scope);
   color: #ffffff;
   font-family: var(--font-mono);
@@ -2072,7 +2080,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 24px;
-  padding-bottom: 18px;
+  padding-bottom: var(--space-5);
   margin-bottom: 40px;
   border-bottom: 1.5px solid var(--color-border-strong);
 }
@@ -2082,10 +2090,11 @@
   font-weight: 700;
   letter-spacing: 0.17em;
   color: var(--color-text-muted);
-  margin: 0 0 13px;
+  margin: 0 0 var(--space-3);
 }
 .airport-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(30px, 5vw, 46px);
   line-height: 1.02;
   letter-spacing: -0.018em;
@@ -2167,6 +2176,7 @@
 }
 .ap-main-title {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 20px;
   fill: var(--color-signal);
 }
@@ -2267,11 +2277,11 @@
 .airport-footer {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--space-5);
   flex-wrap: wrap;
   border-top: 1.5px solid var(--color-border-strong);
-  margin-top: 26px;
-  padding-top: 18px;
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
 }
 /* AdapterGuideLink REPLACES its className rather than appending, so without a
  * rule here the anchor renders as plain body text. On the signal surface
@@ -2341,7 +2351,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--color-text-secondary);
-  margin: 22px 0 10px;
+  margin: var(--space-6) 0 var(--space-3);
 }
 .airport-stack-gates,
 .airport-stack-providers {
@@ -2349,7 +2359,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .airport-stack-providers {
   grid-template-columns: repeat(2, 1fr);
@@ -2358,7 +2368,7 @@
 .airport-stack-providers li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -2371,7 +2381,7 @@
   background: var(--color-ink);
   color: var(--color-signal);
   border-radius: 2px;
-  padding: 3px 5px;
+  padding: var(--space-1) var(--space-1);
 }
 .airport-mark {
   width: 22px;
@@ -2386,7 +2396,7 @@
  * NOT reach for `display: contents` here — it weakens the link's semantics
  * and, in the two-column version this replaced, broke alignment. */
 .preflight {
-  margin-top: 26px;
+  margin-top: var(--space-7);
 }
 .preflight-col-head {
   font-family: var(--font-mono);
@@ -2406,8 +2416,8 @@
 .preflight-row {
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 33px;
+  gap: var(--space-3);
+  height: 32px;
   text-decoration: none;
 }
 .preflight-box {
@@ -2457,7 +2467,7 @@
   flex: 0 0 auto;
   font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
   color: var(--color-text-muted);
@@ -2500,26 +2510,26 @@ a.preflight-row:hover .preflight-challenge {
   align-items: start;
 }
 .teams-eyebrow {
-  margin-bottom: 18px;
+  margin-bottom: var(--space-5);
 }
 .teams-eyebrow-meta {
   color: var(--color-text-muted);
 }
 .teams-heading {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(36px, 4.2vw, 54px);
   line-height: 1.02;
   letter-spacing: -0.03em;
   color: var(--color-text-primary);
-  margin: 0 0 30px;
+  margin: 0 0 var(--space-8);
   max-width: 16ch;
 }
 .teams-contact {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
   margin-top: 40px;
   padding-top: 24px;
   border-top: 1px solid var(--color-border);
@@ -2559,18 +2569,18 @@ a.preflight-row:hover .preflight-challenge {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  margin: 0 0 14px;
-  padding-bottom: 14px;
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 .field-report-title {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 25px;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 .field-report-sub {
   font-size: 12.5px;
@@ -2584,7 +2594,7 @@ a.preflight-row:hover .preflight-challenge {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
 }
 .field-report-toc {
   list-style: none;
@@ -2594,8 +2604,8 @@ a.preflight-row:hover .preflight-challenge {
 .field-report-toc li {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  padding: 6px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   font-size: 12.5px;
   color: var(--color-text-primary);
 }

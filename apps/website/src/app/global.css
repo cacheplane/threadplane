@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@threadplane/design-tokens/theme.css";
 @import "../../../../libs/workspace-react/src/styles/workspace.css";
+@import "../styles/brand.css";
 
 /*
  * Scope files for the inline-style migration. These MUST sit with the other
@@ -13,6 +14,7 @@
 @import "../styles/chrome.css";
 @import "../styles/docs.css";
 @import "../styles/api-reference.css";
+@import "../styles/workspace-brand.css";
 @import "../styles/docs-diagrams.css";
 @import "../styles/landing.css";
 @import "../styles/marketing.css";
@@ -39,6 +41,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
   /* overflow-x: CLIP, never hidden. `hidden` makes <body> a scroll container
    * and every position:sticky descendant pins against it — which never
    * scrolls — so the docs rails were dead site-wide. `clip` clips identically
