@@ -1,17 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "830abf2bbe565e8a96918e516ce97fb33b22954e",
+  "baselineHead": "a133f5469648f8b95a5a5ecbd413bae5f44374c1",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
       "libs/react/src/chat/index.ts",
       "libs/react/src/chat/overflow-menu.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": [
+      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/welcome-suggestion.tsx",
       "libs/react/src/chat/welcome.tsx"
-    ]
+    ],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2243,7 +2242,7 @@
       "id": "config:package.json",
       "kind": "config",
       "path": "package.json",
-      "sha256": "fa66bca2cd8e460c4a7074baec8a52c6d5aa6ed27feb197568fc697045f69adf"
+      "sha256": "c85e39d9dd088f3d3eafc814b50c84c33a52dd56b7c7fd4ed031357ad78c7ace"
     },
     {
       "id": "config:scripts/assemble-examples.ts",

@@ -86,3 +86,5 @@ export {
 } from './lib/provider-attempts.ts';
 
 export * from './lib/health-alerts.ts';
+
+export * from './lib/linkedin/index.ts';

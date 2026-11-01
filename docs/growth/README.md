@@ -73,6 +73,7 @@ configuration, and deployed apps receive secrets through their hosting platforms
 | `npm run growth:research -- synthetic --output <absolute-directory>` | Write a local synthetic evaluation corpus; `acquire` and `run` can call providers |
 | `npm run growth:analytics:plan` | Read-only PostHog configuration comparison |
 | Founder install digest (lifecycle tick, `GROWTH_INSTALL_DIGEST_ENABLED`) | Daily plain-text list of install-only work-email identities with one-click approve links; read-only unless a link is clicked |
+| `npm run growth:linkedin -- leads --status new --target=production` | Read new LinkedIn engagement leads; `decide`, `deny-*`, `delete-lead` and `ingest` are separate explicit mutations |
 | `npm run growth:analytics:report` | Fetch dashboard results and write a local report for review |
 | `npm run growth:analytics:quality -- --days 7` | Read recent event samples and validate the analytics contract |
 | `npm run growth:search:pull` / `growth:search:report` | Pull Search Console data, then render local snapshots |
@@ -222,3 +223,21 @@ Relevant guides: [Growth records and reports](../../libs/growth/README.md),
 [publishing](../../marketing/README.md),
 [analytics](../../tools/posthog/README.md),
 [search](../../apps/website/scripts/gsc/README.md).
+
+## LinkedIn engagement leads
+
+Notification mail from LinkedIn is routed to a dedicated ingest address, turned into leads, and summarised in a daily heads-up email. Drafting and approval happen in the `/week` session; the system never sends anything to a lead. Switches and the digest are described in the [lifecycle README](../../apps/lifecycle/README.md). The operator CLI is `npm run growth:linkedin -- <verb> --target=preview|production`, with the database URLs in `GROWTH_DATABASE_URL_PREVIEW` and `GROWTH_DATABASE_URL_PRODUCTION`.
+
+The parser is a stub until redacted fixtures exist, so every trusted LinkedIn receipt is `unparsed` with reason `no_fixtures_yet`. Until the real parser lands, every receipt is stored headers-only (no raw subject or body, so a sign-in code never sits in Neon) and forwarded. Only a recognized engagement notification that is `parsed`, `unsupported_kind` or `no_actor` keeps its raw subject and body, and those are scrubbed after 30 days.
+
+Backfill for engagement email cannot reach is a manual procedure, not a build: while Brian watches, the operator reads the post page in the browser pane and feeds the extracted actors through `ingest --file <eml> --source manual`, using a hand-built `.eml` when no notification exists.
+
+Rollout order:
+
+1. Migrate.
+2. Deploy with `GROWTH_LINKEDIN_INGEST_ENABLED` off.
+3. Seed the deny list in production with `deny-import`.
+4. Enable ingest with `GROWTH_LINKEDIN_FORWARD_NOTIFICATIONS=true`. Turn `GROWTH_LINKEDIN_FORWARD_NOTIFICATIONS` off after the first 30 days; unparsed and untrusted mail is forwarded regardless.
+5. Send a controlled non-LinkedIn email to the ingest address and confirm it is forwarded with headers only retained.
+6. Change the LinkedIn primary email and confirm the verification email is forwarded and the change completes.
+7. Waiting on the real parser (plan Task 14); with the stub nothing parses. Trigger a controlled comment from a known account and verify the lead, the heads-up email, each link, one deny-forever drop, and a session draft and `decide` round-trip.

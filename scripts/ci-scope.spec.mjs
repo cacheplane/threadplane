@@ -921,6 +921,8 @@ describe('growth lifecycle project ownership', () => {
     ['scripts/apply-migrations.mts', 'growth'],
     ['scripts/growth-control.mts', 'growth'],
     ['scripts/growth-observability.mts', 'growth'],
+    ['scripts/growth-linkedin.mts', 'growth'],
+    ['scripts/growth-linkedin-eml.mts', 'growth'],
     ['scripts/import-resend-lifecycle.mts', 'growth'],
     ['migrations/0001_rate_limit_events.sql', 'growth'],
     ['migrations/0002_growth_control_plane.sql', 'growth'],
@@ -945,6 +947,8 @@ describe('growth lifecycle project ownership', () => {
       'scripts/apply-migrations.spec.ts',
       'scripts/cancel-resend-lifecycle.spec.ts',
       'scripts/growth-control.spec.ts',
+      'scripts/growth-linkedin-eml.spec.ts',
+      'scripts/growth-linkedin.spec.ts',
       'scripts/growth-observability.spec.ts',
       'scripts/import-resend-lifecycle.spec.ts',
     ]);
