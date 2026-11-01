@@ -353,7 +353,7 @@ serve as the menu's invoking element.
 
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
-uses the existing action slot; remaining project actions, broader drag interaction parity, live timestamp refresh remain future work. This is a bounded private T29 slice.
+uses the existing action slot; shared project catalogs, broader drag interaction parity and live timestamp refresh remain future work. This is a bounded private T29 slice.
 
 ## Controlled conversation rename editor
 
@@ -391,7 +391,7 @@ commands belong to the native application, with strict boolean write confirmatio
 per-target pending state, retry after failure and feedback retained across row
 migration. Archiving the selected row preserves its transcript, draft, session and
 active response. This adds no ThreadList field, lifecycle API or export;
-remaining project actions, broader drag interaction parity and full T29/T30 parity remain open.
+shared project catalogs, broader drag interaction parity and full T29/T30 parity remain open.
 
 The native application orders active loaded pins first by finite numeric
 `metadata.pinnedOrder`, retaining stable ties, placing unranked pins last and
@@ -941,6 +941,23 @@ Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
 Confirmed project deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below.
+
+### Native project action menus (private React T29/T30 slice)
+
+Native full project rows compose the existing controlled `OverflowMenu` through
+`ProjectList.renderActions`. Each contextual **More actions** trigger offers
+**Rename** and, when a deletion owner is available, destructive **Delete**.
+Deletion capability controls the Delete item; unavailable project storage or a
+pending project deletion disables the trigger. Opening or dismissing a menu does
+not select a project, write data or replace an existing editor draft.
+
+Rename keeps the existing browser-local editor and storage Retry behavior. Delete
+keeps the exact-target confirmation and backend membership recovery described
+below, preserving conversations. Editors and confirmations retain the persistent
+row trigger for focus restoration. Scope changes expire old menu requests; the
+existing menu supplies keyboard navigation, dismissal, inherited theme and
+viewport containment. This adds no public API or backend contract; shared catalogs
+and full T29/T30 parity remain open.
 
 Conversation menus also retain their opening through a queued scroll notification
 from an anchor ancestor whose vertical/horizontal offsets already settled before

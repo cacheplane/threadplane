@@ -1,25 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e478613a3ba9bd458b45c2b1071ab4ec1602d320",
+  "baselineHead": "a35502b9db91b1e62ecedb2fb6ae472684615109",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "apps/website/content/docs/render/getting-started/installation.mdx",
-      "libs/a2ui/package.json",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/package-version.ts",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/package-version.ts",
-      "libs/langgraph/package.json",
-      "libs/langgraph/src/lib/package-version.ts",
-      "libs/render/package.json",
-      "libs/render/src/lib/package-version.ts",
-      "libs/telemetry/package.json",
-      "package-lock.json"
+      "libs/react/README.md"
     ],
     "untracked": []
   },
@@ -867,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "032de0bdceba0f4ce83b9e951c873da2ae70415f1f6110dcb03ec81408a1ca9e"
+      "sha256": "b858b6a27332a3faaca9ab4e029c6b12e48f6fd3cf747605314d3d95c715da00"
     },
     {
       "id": "asset:libs/react/package.json",
