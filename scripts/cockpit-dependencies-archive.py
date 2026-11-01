@@ -28,7 +28,9 @@ def validate(archive, policy):
             raise ValueError(f"Unexpected archive root: {name}")
         if name in seen:
             raise ValueError(f"Duplicate archive member: {name}")
-        if not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
+        if member.type not in (
+            tarfile.REGTYPE, tarfile.AREGTYPE, tarfile.DIRTYPE, tarfile.SYMTYPE, tarfile.LNKTYPE
+        ) or member.sparse is not None:
             raise ValueError(f"Special archive member: {name}")
         if member.issym():
             if posixpath.isabs(member.linkname) or "\\" in member.linkname:
@@ -54,13 +56,32 @@ def validate(archive, policy):
     return members
 
 
+def prevalidated_data_filter(member, destination):
+    # Links retain the standard filter's resolved-target checks and normalization:
+    # lexical containment alone is insufficient when another link is traversed.
+    if member.issym() or member.islnk():
+        return tarfile.data_filter(member, destination)
+    # validate() has checked every physical path and all its ancestors before
+    # extraction into fresh private staging. Repeating realpath for each file
+    # adds filesystem work without changing that graph. Preserve data_filter's
+    # permission and ownership policy for these already validated entries.
+    mode = member.mode & 0o755
+    if member.isreg():
+        if not mode & 0o100:
+            mode &= ~0o111
+        mode |= 0o600
+    else:
+        mode = None
+    return member.replace(mode=mode, uid=None, gid=None, uname=None, gname=None, deep=False)
+
+
 def main():
     mode, path, *destination = sys.argv[1:]
     policy = json.load(sys.stdin)
     with tarfile.open(path, "r:") as archive:
         members = validate(archive, policy)
         if mode == "extract":
-            archive.extractall(destination[0], members=members, filter="data")
+            archive.extractall(destination[0], members=members, filter=prevalidated_data_filter)
         elif mode != "validate":
             raise ValueError("Unknown archive operation")
 

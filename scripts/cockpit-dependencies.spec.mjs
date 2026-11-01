@@ -194,8 +194,49 @@ for (const [name, terminator] of [['CR', '\r'], ['LS', '\u2028'], ['PS', '\u2029
   });
 }
 
-for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate']) {
-  test(`rejects ${attack} tar members before extraction, even with a matching archive digest`, async t => {
+test('physical entries avoid redundant path resolution while links retain the data filter', async t => {
+  const f = await fixture(t);
+  for (let i = 0; i < 30; i++) await writeFile(join(f.root, `node_modules/dependency/file-${i}`), 'dependency');
+  await createDependencyBundle({ ...f, context });
+  const destination = join(f.directory, 'staging');
+  await mkdir(destination);
+  const lock = JSON.parse(await readFile(join(f.root, 'package-lock.json'), 'utf8'));
+  const manifest = JSON.parse(await readFile(join(f.artifactDirectory, 'manifest.json'), 'utf8'));
+  const policy = { roots: manifest.roots, workspaceLinks: Object.fromEntries(Object.entries(lock.packages)
+    .filter(([, value]) => value.link).map(([path, value]) => [path, value.resolved])) };
+  execFileSync('python3', ['-c', `
+import json,os,runpy,sys,tarfile
+helper,archive,destination=sys.argv[1:]
+calls=[]
+original=os.path.realpath
+def counted(*args,**kwargs):
+ calls.append(args[0]);return original(*args,**kwargs)
+os.path.realpath=counted
+sys.argv=[helper,'extract',archive,destination]
+runpy.run_path(helper,run_name='__main__')
+assert 0 < len(calls) < 20, f'Resolved {len(calls)} paths for three links; physical entries must reuse prevalidation'
+`, fileURLToPath(new URL('./cockpit-dependencies-archive.py', import.meta.url)), join(f.artifactDirectory, 'dependencies.tar'), destination], {
+    input: JSON.stringify(policy), stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  assert.equal(await readFile(join(destination, 'node_modules/dependency/file-29'), 'utf8'), 'dependency');
+});
+
+test('restored files retain the data filter permission and ownership policy', async t => {
+  const f = await fixture(t);
+  const file = 'node_modules/dependency/cli.cjs';
+  await chmod(join(f.root, file), 0o7777);
+  await writeFile(join(f.root, 'node_modules/dependency/non-executable'), 'data');
+  await chmod(join(f.root, 'node_modules/dependency/non-executable'), 0o441);
+  await createDependencyBundle({ ...f, context });
+  const root = await f.checkout('consumer');
+  await restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context });
+  assert.equal((await stat(join(root, file))).mode & 0o7777, 0o755);
+  assert.equal((await stat(join(root, 'node_modules/dependency/non-executable'))).mode & 0o7777, 0o640);
+  assert.equal((await stat(join(root, file))).uid, process.getuid());
+});
+
+for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link']) {
+  test(`rejects ${attack} tar members before publishing, even with a matching archive digest`, async t => {
     const f = await fixture(t);
     await createDependencyBundle({ ...f, context });
     const archive = join(f.artifactDirectory, 'dependencies.tar');
@@ -210,6 +251,10 @@ with tarfile.open(path) as source, tarfile.open(path+'.attack','w') as t:
  elif attack=='hardlink':info.type=tarfile.LNKTYPE;info.linkname='../escaped'
  elif attack=='special':info.type=tarfile.FIFOTYPE
  elif attack=='duplicate':info.name='node_modules/dependency/cli.cjs'
+ elif attack=='contiguous':info.type=tarfile.CONTTYPE
+ elif attack=='sparse':info.type=tarfile.GNUTYPE_SPARSE
+ elif attack=='linked-ancestor':info.name='node_modules/@fixture/workspace/child'
+ elif attack=='resolved-link':info.type=tarfile.SYMTYPE;info.linkname='@fixture/workspace/../../../node_modules/X'
  t.addfile(info)
 os.replace(path+'.attack',path)
 `, archive, attack, join(f.directory, 'escaped')]);
