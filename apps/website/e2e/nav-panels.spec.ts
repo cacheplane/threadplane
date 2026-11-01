@@ -12,69 +12,131 @@ test.describe('desktop nav panels', () => {
     await page.goto('/');
   });
 
-  test('lays the four libraries out side by side, not stacked', async ({ page }) => {
-    await page.getByRole('button', { name: 'Libraries' }).click();
+  test('renders the desktop panel structures and anchors at 1440', async ({
+    page,
+  }) => {
+    await test.step('lays the four libraries out side by side, not stacked', async () => {
+      await page.getByRole('button', { name: 'Libraries' }).click();
 
-    const items = page.locator('.nav-panel .nav-panel-item');
-    await expect(items).toHaveCount(5); // four libraries plus the footer link
-    // The panel's entrance animation translates it into place over 140ms; the
-    // boxes below are read one at a time, so sampling mid-animation would
-    // catch each item at a different point along that transform. Let it settle
-    // first so the geometry assertions below reflect the resting layout.
-    await page.locator('.nav-panel').evaluate((el) =>
-      Promise.all(el.getAnimations().map((animation) => animation.finished)),
-    );
-
-    const boxes = [];
-    for (let index = 0; index < 4; index += 1) {
-      const box = await items.nth(index).boundingBox();
-      if (!box) throw new Error(`Library item ${index} has no box`);
-      boxes.push(box);
-    }
-
-    // Four distinct columns: every item starts to the right of the previous one
-    // and shares its vertical position.
-    for (let index = 1; index < boxes.length; index += 1) {
-      expect(boxes[index].x).toBeGreaterThan(boxes[index - 1].x);
-      expect(Math.abs(boxes[index].y - boxes[0].y)).toBeLessThanOrEqual(2);
-    }
-
-    // And together they occupy most of the panel rather than one track of it.
-    const panel = await page.locator('.nav-panel').boundingBox();
-    if (!panel) throw new Error('Panel has no box');
-    const spanned = boxes[3].x + boxes[3].width - boxes[0].x;
-    expect(spanned).toBeGreaterThan(panel.width * 0.8);
-  });
-
-  test('stacks the items within each column of a multi-column panel', async ({ page }) => {
-    await page.getByRole('button', { name: 'Solutions' }).click();
-
-    const firstColumn = page.locator('.nav-panel .nav-panel-col').first();
-    const items = firstColumn.locator('.nav-panel-item');
-    await expect(items).toHaveCount(3);
-
-    const first = await items.nth(0).boundingBox();
-    const second = await items.nth(1).boundingBox();
-    if (!first || !second) throw new Error('Column items have no box');
-    expect(second.y).toBeGreaterThan(first.y);
-    expect(Math.abs(second.x - first.x)).toBeLessThanOrEqual(2);
-  });
-
-  test('draws no borders or dividers inside a panel', async ({ page }) => {
-    await page.getByRole('button', { name: 'Docs' }).click();
-
-    const bordered = await page.locator('.nav-panel *').evaluateAll((nodes) =>
-      nodes.filter((node) => {
-        const style = getComputedStyle(node as Element);
-        return (
-          parseFloat(style.borderTopWidth) > 0 ||
-          parseFloat(style.borderRightWidth) > 0 ||
-          parseFloat(style.borderBottomWidth) > 0 ||
-          parseFloat(style.borderLeftWidth) > 0
+      const items = page.locator('.nav-panel .nav-panel-item');
+      await expect(items).toHaveCount(5); // four libraries plus the footer link
+      // The panel's entrance animation translates it into place over 140ms; the
+      // boxes below are read one at a time, so sampling mid-animation would
+      // catch each item at a different point along that transform. Let it settle
+      // first so the geometry assertions below reflect the resting layout.
+      await page
+        .locator('.nav-panel')
+        .evaluate((el) =>
+          Promise.all(el.getAnimations().map((animation) => animation.finished))
         );
-      }).length,
-    );
-    expect(bordered).toBe(0);
+
+      const boxes = [];
+      for (let index = 0; index < 4; index += 1) {
+        const box = await items.nth(index).boundingBox();
+        if (!box) throw new Error(`Library item ${index} has no box`);
+        boxes.push(box);
+      }
+
+      // Four distinct columns: every item starts to the right of the previous one
+      // and shares its vertical position.
+      for (let index = 1; index < boxes.length; index += 1) {
+        expect(boxes[index].x).toBeGreaterThan(boxes[index - 1].x);
+        expect(Math.abs(boxes[index].y - boxes[0].y)).toBeLessThanOrEqual(2);
+      }
+
+      // And together they occupy most of the panel rather than one track of it.
+      const panel = await page.locator('.nav-panel').boundingBox();
+      if (!panel) throw new Error('Panel has no box');
+      const spanned = boxes[3].x + boxes[3].width - boxes[0].x;
+      expect(spanned).toBeGreaterThan(panel.width * 0.8);
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.nav-panel')).toHaveCount(0);
+    await page.mouse.move(0, 900);
+    await test.step('stacks the items within each column of a multi-column panel', async () => {
+      await page.getByRole('button', { name: 'Solutions' }).click();
+
+      const firstColumn = page.locator('.nav-panel .nav-panel-col').first();
+      const items = firstColumn.locator('.nav-panel-item');
+      await expect(items).toHaveCount(3);
+      await page.locator('.nav-panel').evaluate((el) =>
+        Promise.all(el.getAnimations().map((animation) => animation.finished))
+      );
+
+      const first = await items.nth(0).boundingBox();
+      const second = await items.nth(1).boundingBox();
+      if (!first || !second) throw new Error('Column items have no box');
+      expect(second.y).toBeGreaterThan(first.y);
+      expect(Math.abs(second.x - first.x)).toBeLessThanOrEqual(2);
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.nav-panel')).toHaveCount(0);
+    await page.mouse.move(0, 900);
+    await test.step('draws no borders or dividers inside a panel', async () => {
+      await page.getByRole('button', { name: 'Docs' }).click();
+
+      const bordered = await page.locator('.nav-panel *').evaluateAll(
+        (nodes) =>
+          nodes.filter((node) => {
+            const style = getComputedStyle(node as Element);
+            return (
+              parseFloat(style.borderTopWidth) > 0 ||
+              parseFloat(style.borderRightWidth) > 0 ||
+              parseFloat(style.borderBottomWidth) > 0 ||
+              parseFloat(style.borderLeftWidth) > 0
+            );
+          }).length
+      );
+      expect(bordered).toBe(0);
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.nav-panel')).toHaveCount(0);
+    await page.mouse.move(0, 900);
+    await test.step('at 1440 every panel opens at its trigger, or flush to the row when it would not fit', async () => {
+      const content = await rowContentBox(page);
+
+      // The row's content box here is 1120px (the 1200px container minus two
+      // 40px gutters). Docs (~790px) and Solutions (~580px) have room and sit at
+      // their trigger; Libraries (~1080px) is wider than the room right of its
+      // trigger and ends flush with the content box instead. One invariant
+      // covers all three: the left edge is the trigger's, pulled back only as
+      // far as the content box needs.
+      // Reuse settled geometry while the viewport and layout stay unchanged.
+      const measurements = new Map<
+        string,
+        Awaited<ReturnType<typeof openAndMeasure>>
+      >();
+      for (const name of ['Libraries', 'Docs', 'Solutions']) {
+        const measured = await openAndMeasure(page, name);
+        measurements.set(name, measured);
+        const { triggerBox, panelBox } = measured;
+        const expectedLeft = Math.max(
+          content.left,
+          Math.min(triggerBox.x, content.right - panelBox.width)
+        );
+        expect(Math.abs(panelBox.x - expectedLeft)).toBeLessThanOrEqual(2);
+        expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(
+          content.right + 1
+        );
+        // Intrinsic width: nowhere near the 1440px sheet this used to be.
+        expect(panelBox.width).toBeLessThan(1150);
+      }
+
+      for (const name of ['Docs', 'Solutions']) {
+        const measured = measurements.get(name);
+        if (!measured) throw new Error(`Missing ${name} measurement`);
+        const { triggerBox, panelBox } = measured;
+        expect(Math.abs(panelBox.x - triggerBox.x)).toBeLessThanOrEqual(2);
+      }
+      const libraries = measurements.get('Libraries');
+      if (!libraries) throw new Error('Missing Libraries measurement');
+      expect(libraries.panelBox.x).toBeLessThan(libraries.triggerBox.x);
+      expect(
+        Math.abs(
+          libraries.panelBox.x + libraries.panelBox.width - content.right
+        )
+      ).toBeLessThanOrEqual(1);
+    });
   });
 
   test('moves focus into the panel it just opened', async ({ page }) => {
@@ -234,37 +296,6 @@ async function openAndMeasure(page: Page, name: string) {
 }
 
 test.describe('desktop nav panels sit under their triggers', () => {
-  test('at 1440 every panel opens at its trigger, or flush to the row when it would not fit', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/');
-    const content = await rowContentBox(page);
-
-    // The row's content box here is 1120px (the 1200px container minus two
-    // 40px gutters). Docs (~790px) and Solutions (~580px) have room and sit at
-    // their trigger; Libraries (~1080px) is wider than the room right of its
-    // trigger and ends flush with the content box instead. One invariant
-    // covers all three: the left edge is the trigger's, pulled back only as
-    // far as the content box needs.
-    for (const name of ['Libraries', 'Docs', 'Solutions']) {
-      const { triggerBox, panelBox } = await openAndMeasure(page, name);
-      const expectedLeft = Math.max(
-        content.left,
-        Math.min(triggerBox.x, content.right - panelBox.width),
-      );
-      expect(Math.abs(panelBox.x - expectedLeft)).toBeLessThanOrEqual(2);
-      expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(content.right + 1);
-      // Intrinsic width: nowhere near the 1440px sheet this used to be.
-      expect(panelBox.width).toBeLessThan(1150);
-    }
-
-    for (const name of ['Docs', 'Solutions']) {
-      const { triggerBox, panelBox } = await openAndMeasure(page, name);
-      expect(Math.abs(panelBox.x - triggerBox.x)).toBeLessThanOrEqual(2);
-    }
-    const libraries = await openAndMeasure(page, 'Libraries');
-    expect(libraries.panelBox.x).toBeLessThan(libraries.triggerBox.x);
-    expect(Math.abs(libraries.panelBox.x + libraries.panelBox.width - content.right)).toBeLessThanOrEqual(1);
-  });
 
   test('at 1024 the Docs panel still fits inside the viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 800 });

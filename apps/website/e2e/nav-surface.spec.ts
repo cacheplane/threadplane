@@ -49,100 +49,73 @@ function alphaOf(color: string): number {
   return parts.length >= 4 ? Number(parts[3]) : 1;
 }
 
-for (const [label, route] of [
-  ['the marketing hero', '/'],
-  ['a docs page', DOCS_ROUTE],
-] as const) {
-  test(`the nav bar is translucent and blurred on ${label}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+// Passive surface and CTA checks share each route load. The scroll check keeps
+// its full observation window so a delayed repaint still fails.
+test('keeps the nav surface and route-specific CTA through scroll and docs navigation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const [label, route] of [
+    ['the marketing hero', '/'],
+    ['a docs page', DOCS_ROUTE],
+  ] as const) {
     await page.goto(route);
-    await expect(page.locator('nav').first()).toBeVisible();
+    await test.step(`the nav bar is translucent and blurred on ${label}`, async () => {
+      await expect(page.locator('nav').first()).toBeVisible();
 
-    const surface = await readBarSurface(page);
+      const surface = await readBarSurface(page);
 
-    // Strictly between 0 and 1: fully opaque is the old solid bar, fully
-    // transparent is the old hero state. Neither exists any more.
-    const alpha = alphaOf(surface.background);
-    expect(alpha, `background was ${surface.background}`).toBeGreaterThan(0);
-    expect(alpha, `background was ${surface.background}`).toBeLessThan(1);
+      // Strictly between 0 and 1: fully opaque is the old solid bar, fully
+      // transparent is the old hero state. Neither exists any more.
+      const alpha = alphaOf(surface.background);
+      expect(alpha, `background was ${surface.background}`).toBeGreaterThan(0);
+      expect(alpha, `background was ${surface.background}`).toBeLessThan(1);
 
-    // `none` here is the Lightning-CSS prefix trap in the header comment: the
-    // translucency survives it, so only this read catches it.
-    expect(surface.backdropFilter).not.toBe('none');
-    expect(surface.backdropFilter).toContain('blur');
+      // `none` here is the Lightning-CSS prefix trap in the header comment: the
+      // translucency survives it, so only this read catches it.
+      expect(surface.backdropFilter).not.toBe('none');
+      expect(surface.backdropFilter).toContain('blur');
 
-    // The redesign removed the shadow deliberately; the hairline is the edge.
-    expect(surface.boxShadow).toBe('none');
-    expect(surface.borderBottomColor).not.toBe('rgba(0, 0, 0, 0)');
-  });
-}
+      // The redesign removed the shadow deliberately; the hairline is the edge.
+      expect(surface.boxShadow).toBe('none');
+      expect(surface.borderBottomColor).not.toBe('rgba(0, 0, 0, 0)');
+    });
+    if (route === '/') {
+      // Keep the CTA assertions polling: its colors transition on mount.
+      await test.step('the marketing CTA is filled', async () => {
+        const marketingCta = page
+          .locator('nav')
+          .first()
+          .getByRole('link', { name: 'Talk to Us' });
+        await expect(marketingCta).not.toHaveCSS(
+          'background-color',
+          'rgba(0, 0, 0, 0)'
+        );
+      });
+      await test.step('the nav bar surface does not change when the page is scrolled', async () => {
+        await expect(page.locator('nav').first()).toBeVisible();
 
-/**
- * The guard for the whole simplification. `useNavSurface`, its 8px sentinel and
- * its IntersectionObserver existed only to change this value on scroll; if any
- * of that comes back — or a scroll listener, or a route-conditional class —
- * these two reads stop matching.
- *
- * Proved non-vacuous by mutation: adding a rule that repaints `.nav-bar` once
- * the page is scrolled fails this case on the background line.
- */
-test('the nav bar surface does not change when the page is scrolled', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await expect(page.locator('nav').first()).toBeVisible();
+        const atTop = await readBarSurface(page);
 
-  const atTop = await readBarSurface(page);
+        await page.mouse.wheel(0, 900);
+        await page.waitForFunction(() => window.scrollY > 400);
+        // Long enough that a reintroduced 200ms surface transition would have
+        // finished, so a difference here is a real difference and not a fade caught
+        // mid-flight.
+        await page.waitForTimeout(600);
+        const scrolled = await readBarSurface(page);
 
-  await page.mouse.wheel(0, 900);
-  await page.waitForFunction(() => window.scrollY > 400);
-  // Long enough that a reintroduced 200ms surface transition would have
-  // finished, so a difference here is a real difference and not a fade caught
-  // mid-flight.
-  await page.waitForTimeout(600);
-  const scrolled = await readBarSurface(page);
-
-  expect(scrolled).toEqual(atTop);
-});
-
-/**
- * Pins the contrast the docs CTA demotion (chrome.css) rests on: marketing
- * keeps a filled button, docs flattens it to a text link. `nav-height.spec.ts`
- * only proves the docs bar stopped growing — the same measured height would
- * also result from a filled button that happened to be 25px tall, so nothing
- * else asserts the surface actually changed.
- *
- * Marketing is asserted as "has a fill", not "has a yellow fill", so the case
- * survives a retheme; the docs side can name its colour because the demotion is
- * specifically to `--color-accent` as a text link.
- *
- * Both reads use `toHaveCSS`, not a one-shot `getComputedStyle`: the button
- * itself transitions `background-color`/`color` over 120ms on mount, so an
- * immediate read after `goto` can land mid-transition.
- */
-test('the nav CTA is a filled button on marketing but a text link on docs', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-
-  await page.goto('/');
-  const marketingCta = page
-    .locator('nav')
-    .first()
-    .getByRole('link', { name: 'Talk to Us' });
-  await expect(marketingCta).not.toHaveCSS(
-    'background-color',
-    'rgba(0, 0, 0, 0)',
-  );
-
-  await page.goto(DOCS_ROUTE);
-  const docsCta = page
-    .locator('nav')
-    .first()
-    .getByRole('link', { name: 'Talk to Us' });
-  await expect(docsCta).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(docsCta).toHaveCSS('color', 'rgb(21, 37, 62)');
+        expect(scrolled).toEqual(atTop);
+      });
+    } else {
+      await test.step('the docs CTA is a text link', async () => {
+        const docsCta = page
+          .locator('nav')
+          .first()
+          .getByRole('link', { name: 'Talk to Us' });
+        await expect(docsCta).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+        await expect(docsCta).toHaveCSS('color', 'rgb(21, 37, 62)');
+      });
+    }
+  }
 });
