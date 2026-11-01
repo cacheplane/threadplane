@@ -21,20 +21,44 @@ test.describe('mobile nav drawer', () => {
     await page.setViewportSize({ width: 390, height: 844 });
   });
 
-  test('opens and shows the four root rows', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Open menu' }).click();
+  test('opens the root drawer with its composition flush under the nav', async ({
+    page,
+  }) => {
+    await test.step('opens and shows the four root rows', async () => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Open menu' }).click();
 
-    const drawer = dialog(page);
-    await expect(drawer).toBeVisible();
+      const drawer = dialog(page);
+      await expect(drawer).toBeVisible();
 
-    await expect(drawer.getByRole('button', { name: 'Libraries' })).toBeVisible();
-    await expect(drawer.getByRole('button', { name: 'Docs' })).toBeVisible();
-    await expect(drawer.getByRole('button', { name: 'Solutions' })).toBeVisible();
+      await expect(
+        drawer.getByRole('button', { name: 'Libraries' })
+      ).toBeVisible();
+      await expect(drawer.getByRole('button', { name: 'Docs' })).toBeVisible();
+      await expect(
+        drawer.getByRole('button', { name: 'Solutions' })
+      ).toBeVisible();
 
-    const pricing = drawer.getByRole('link', { name: 'Pricing' });
-    await expect(pricing).toBeVisible();
-    await expect(pricing).toHaveAttribute('href', '/pricing');
+      const pricing = drawer.getByRole('link', { name: 'Pricing' });
+      await expect(pricing).toBeVisible();
+      await expect(pricing).toHaveAttribute('href', '/pricing');
+    });
+    await test.step('sits flush under the nav', async () => {
+      const drawer = dialog(page);
+      await expect(drawer).toBeVisible();
+
+      const navBox = await page.locator('nav.nav-bar').boundingBox();
+      const drawerBox = await drawer.boundingBox();
+      if (!navBox || !drawerBox) throw new Error('nav or drawer has no box');
+
+      // `top: calc(var(--nav-h) - 1px)` exists precisely so the drawer overlaps
+      // the nav's own 1px border rather than leaving a gap or an overshoot —
+      // the class of offset bug that has shipped on this repo before.
+      // `boundingBox()` returns {x, y, width, height} — not `bottom` — so the
+      // nav's bottom edge is derived, not read directly.
+      const navBottom = navBox.y + navBox.height;
+      expect(Math.abs(drawerBox.y - navBottom)).toBeLessThanOrEqual(1);
+    });
   });
 
   test('a click on the Libraries row actually reaches it', async ({ page }) => {
@@ -92,26 +116,6 @@ test.describe('mobile nav drawer', () => {
     await expect(drawer.getByRole('button', { name: 'Docs' })).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Solutions' })).toBeVisible();
     await expect(drawer.getByRole('link', { name: /@threadplane\/langgraph/ })).toHaveCount(0);
-  });
-
-  test('sits flush under the nav', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Open menu' }).click();
-
-    const drawer = dialog(page);
-    await expect(drawer).toBeVisible();
-
-    const navBox = await page.locator('nav.nav-bar').boundingBox();
-    const drawerBox = await drawer.boundingBox();
-    if (!navBox || !drawerBox) throw new Error('nav or drawer has no box');
-
-    // `top: calc(var(--nav-h) - 1px)` exists precisely so the drawer overlaps
-    // the nav's own 1px border rather than leaving a gap or an overshoot —
-    // the class of offset bug that has shipped on this repo before.
-    // `boundingBox()` returns {x, y, width, height} — not `bottom` — so the
-    // nav's bottom edge is derived, not read directly.
-    const navBottom = navBox.y + navBox.height;
-    expect(Math.abs(drawerBox.y - navBottom)).toBeLessThanOrEqual(1);
   });
 
   test('locks body scroll while open and releases it on close', async ({ page }) => {

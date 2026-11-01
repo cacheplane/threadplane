@@ -129,45 +129,48 @@ test('the marketing nav does grow with the breakpoint', async ({ page }) => {
   expect(desktopHeight - phoneHeight).toBeGreaterThan(15);
 });
 
-test('the docs column starts directly under the nav at a tablet width', async ({ page }) => {
-  // The 15px overshoot showed up here as dead space above the breadcrumb.
-  await page.setViewportSize({ width: 900, height: 800 });
-  await page.goto('/docs/langgraph/getting-started/introduction');
-  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-    'data-hydrated',
-    'true',
-  );
+test('keeps the tablet docs column and context drawer flush under the nav', async ({
+  page,
+}) => {
+  await test.step('the docs column starts directly under the nav at a tablet width', async () => {
+    // The 15px overshoot showed up here as dead space above the breadcrumb.
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.goto('/docs/langgraph/getting-started/introduction');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
 
-  const navBottom = await page
-    .locator('nav')
-    .first()
-    .evaluate((el) => el.getBoundingClientRect().bottom);
-  const shellTop = await page
-    .locator('.website-workspace-host .workspace-shell')
-    .evaluate((el) => el.getBoundingClientRect().top);
+    const navBottom = await page
+      .locator('nav')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    const shellTop = await page
+      .locator('.website-workspace-host .workspace-shell')
+      .evaluate((el) => el.getBoundingClientRect().top);
 
-  expect(Math.abs(shellTop - navBottom)).toBeLessThanOrEqual(1);
-});
-
-test('the workspace context drawer hangs flush off the nav at tablet width', async ({ page }) => {
-  await page.setViewportSize({ width: 900, height: 800 });
-  await page.goto('/docs/langgraph/getting-started/introduction');
-  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-    'data-hydrated',
-    'true',
-  );
-
-  await page.getByRole('button', { name: 'Open context' }).click();
-  const overlay = page.getByRole('dialog', {
-    name: 'Documentation control plane context',
+    expect(Math.abs(shellTop - navBottom)).toBeLessThanOrEqual(1);
   });
-  await expect(overlay).toBeVisible();
+  await test.step('the workspace context drawer hangs flush off the nav at tablet width', async () => {
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-hydrated',
+      'true'
+    );
 
-  const navBottom = await page
-    .locator('nav')
-    .first()
-    .evaluate((el) => el.getBoundingClientRect().bottom);
-  const overlayTop = await overlay.evaluate((el) => el.getBoundingClientRect().top);
+    await page.getByRole('button', { name: 'Open context' }).click();
+    const overlay = page.getByRole('dialog', {
+      name: 'Documentation control plane context',
+    });
+    await expect(overlay).toBeVisible();
 
-  expect(Math.abs(overlayTop - navBottom)).toBeLessThanOrEqual(1);
+    const navBottom = await page
+      .locator('nav')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    const overlayTop = await overlay.evaluate(
+      (el) => el.getBoundingClientRect().top
+    );
+
+    expect(Math.abs(overlayTop - navBottom)).toBeLessThanOrEqual(1);
+  });
 });
