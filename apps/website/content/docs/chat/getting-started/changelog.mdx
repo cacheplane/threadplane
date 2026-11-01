@@ -5,8 +5,13 @@ description: Highlight releases of @threadplane/chat since 0.0.19, from client t
 # Changelog
 
 <Callout type="info" title="Highlight releases only">
-This changelog tracks selected highlight releases, not every release. The published package is at `0.3.3`. The entries below cover the notable changes since `0.0.19`.
+This changelog tracks selected highlight releases, not every release. The published package is at `0.3.4`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
+
+## 0.3.4
+
+- Scrolling upward during a streamed reply now keeps the historical transcript in view when native scroll delivery overlaps token rendering. Later tokens and stream completion preserve that position; the native return control resumes following the latest response.
+- Popup and sidebar compositions forward their message action controls and outputs.
 
 ## 0.3.3
 
