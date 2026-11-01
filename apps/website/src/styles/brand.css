@@ -1,0 +1,88 @@
+/* Website brand foundation. Shared package tokens stay consumer-owned.
+ * Geometry follows hashbrown's LLA system; colours are Threadplane's.
+ * next/font supplies --font-sans/--font-mono. Display aliases the same face;
+ * Inter remains dedicated to diagrams whose geometry depends on its metrics.
+ */
+:root {
+  --font-display: var(--font-sans);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-18: 72px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --site-gutter: var(--space-4);
+  --site-page-top: var(--space-8);
+  --site-section-gap: var(--space-16);
+  --site-card-padding: var(--space-6);
+  --site-control-sm: 32px;
+  --site-control-md: 36px;
+  --site-control-lg: 44px;
+  --site-highlight: #fff1d2;
+  --site-hover: #f6f7f9;
+
+  --color-bg: #fff;
+  --color-canvas: #fff;
+  --color-surface: #fff;
+  --color-surface-tinted: #f6f7f9;
+  --color-surface-dim: #f1f3f6;
+  --color-border: #e7e9ed;
+  --color-border-strong: #c8ced8;
+  --color-text-primary: #0a0a0a;
+  --color-text-secondary: #464646;
+  --color-text-muted: #5b626d;
+  --color-accent-surface: var(--site-highlight);
+  --color-accent-border: var(--color-border);
+  --color-accent-border-hover: var(--color-border-strong);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --spacing-container-x: var(--site-gutter);
+  --spacing-section-y: var(--site-section-gap);
+  --spacing-section-y-tight: var(--space-12);
+  --container-page: 1180px;
+  --text-h1: clamp(42px, 5vw, 64px);
+  --text-h1--line-height: 1.04;
+  --text-h2: clamp(30px, 3vw, 40px);
+  --text-h2--line-height: 1.15;
+  --text-body-lg: 19px;
+  --text-body-lg--line-height: 1.55;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-gutter: var(--space-6);
+    --site-page-top: var(--space-10);
+    --site-card-padding: var(--space-8);
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --site-gutter: var(--space-8);
+    --site-page-top: var(--space-12);
+    --site-section-gap: var(--space-24);
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  text-wrap: balance;
+}
+::selection { background: var(--site-highlight); color: #15253e; }
