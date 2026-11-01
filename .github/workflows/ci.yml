@@ -898,6 +898,7 @@ jobs:
       dependency_artifact: ${{ steps.dependencies.outputs.artifact }}
       dependency_attempt: ${{ steps.dependencies.outputs.attempt }}
       dependency_node: ${{ steps.dependencies.outputs.node }}
+      dependency_reuse: ${{ steps.recipe.outputs.dependency_reuse }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -907,21 +908,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Package verified Cockpit dependencies
-        id: dependencies
-        run: |
-          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/cockpit-dependencies"
-          echo "artifact=cockpit-dependencies-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
-          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
-          echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
-      - name: Upload same-run Cockpit dependencies
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: ${{ steps.dependencies.outputs.artifact }}
-          path: ${{ runner.temp }}/cockpit-dependencies
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
       - name: Compute affected base + head
         id: refs
         run: |
@@ -934,6 +920,30 @@ jobs:
             echo "head=HEAD" >> "$GITHUB_OUTPUT"
             echo "full=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Select Cockpit dependency recipe
+        id: recipe
+        run: |
+          node scripts/cockpit-matrix.mjs --dependency-recipe \
+            --base "${{ steps.refs.outputs.base }}" \
+            --head "${{ steps.refs.outputs.head }}" \
+            --full-fleet "${{ steps.refs.outputs.full }}"
+      - name: Package verified Cockpit dependencies
+        if: steps.recipe.outputs.dependency_reuse == 'true'
+        id: dependencies
+        run: |
+          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/cockpit-dependencies"
+          echo "artifact=cockpit-dependencies-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+      - name: Upload same-run Cockpit dependencies
+        if: steps.recipe.outputs.dependency_reuse == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.dependencies.outputs.artifact }}
+          path: ${{ runner.temp }}/cockpit-dependencies
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
       - name: Emit cap matrix
         id: matrix
         run: |
@@ -960,7 +970,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}
+          node-version: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node || '22' }}
           cache: npm
       - name: Install uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
@@ -969,14 +979,28 @@ jobs:
           # Node-only caps and isolated A2UI preparation do not populate this cache.
           enable-cache: ${{ matrix.cap.python != '' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react' }}
       - name: Download same-run Cockpit dependencies
+        if: needs.cockpit-e2e-dispatcher.outputs.dependency_reuse == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_artifact }}
           path: ${{ runner.temp }}/cockpit-dependencies
-      - name: Restore verified Cockpit dependencies
+      - name: Prepare isolated Cockpit dependencies
         env:
           COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_attempt }}
-        run: node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/cockpit-dependencies"
+          COCKPIT_DEPENDENCY_REUSE: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_reuse }}
+          COCKPIT_DEPENDENCY_NODE: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}
+        run: |
+          case "$COCKPIT_DEPENDENCY_REUSE" in
+            true)
+              if [ -z "$COCKPIT_DEPENDENCY_NODE" ]; then
+                echo "::error::Missing producer Node version"
+                exit 1
+              fi
+              node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/cockpit-dependencies"
+              ;;
+            false) npm ci ;;
+            *) echo "::error::Invalid Cockpit dependency recipe"; exit 1 ;;
+          esac
       # matrix.cap.python is '' for caps whose backend is not Python (e.g.
       # cockpit-runtimes-mastra-angular — its backend is the
       # deployments/ag-ui-mastra Node service, installed by the example's

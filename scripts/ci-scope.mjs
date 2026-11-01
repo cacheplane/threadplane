@@ -4,6 +4,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
+import { requiresFullCockpitFleet } from './cockpit-matrix.mjs';
 
 export const SCOPE_KEYS = [
   'library',
@@ -272,7 +273,7 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
 }
 
 export function hasGlobalCiFileChange(changedFiles) {
-  return changedFiles.some((f) => GLOBAL_CI_FILES.has(f));
+  return requiresFullCockpitFleet(changedFiles) || changedFiles.some((f) => GLOBAL_CI_FILES.has(f));
 }
 
 function changedFilesBetween(base, head, workspaceRoot) {

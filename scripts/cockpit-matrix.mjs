@@ -41,13 +41,20 @@ export function selectCockpitCaps(allCockpitCaps, affectedNames, { fullFleet }) 
 }
 
 const SHARED_SETUP_FILES = new Set([
-  '.github/workflows/ci.yml', 'package.json', 'package-lock.json', '.npmrc',
+  '.github/workflows/ci.yml', 'package.json', 'package-lock.json', '.npmrc', 'binding.gyp',
   'scripts/cockpit-dependencies.mjs', 'scripts/cockpit-dependencies-archive.py',
   'scripts/cockpit-dependencies.spec.mjs', 'scripts/cockpit-matrix.mjs', 'scripts/cockpit-matrix.spec.mjs',
 ]);
 
+// Match the root npm workspace globs, excluding packaged-consumer fixtures.
+// Tests enumerate every locked workspace so new patterns cannot be missed.
+const WORKSPACE_INSTALL_INPUT = /^(?:(?:packages|apps|libs)\/[^/]+|marketing\/(?:assets|channels|queue))\/(?:package\.json|binding\.gyp|install\/postinstall\.cjs)$/;
+
 export function requiresFullCockpitFleet(changedFiles) {
-  return changedFiles.some(file => SHARED_SETUP_FILES.has(file.replace(/^\.\//, '')));
+  return changedFiles.some(file => {
+    const normalized = file.replace(/^\.\//, '');
+    return SHARED_SETUP_FILES.has(normalized) || WORKSPACE_INSTALL_INPUT.test(normalized);
+  });
 }
 
 // ── CLI wrapper ────────────────────────────────────────────────────────────
@@ -58,12 +65,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 function parseArgs(argv) {
-  const out = { base: null, head: null, fullFleet: false };
+  const out = { base: null, head: null, fullFleet: false, dependencyRecipe: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--base') out.base = argv[++i];
     else if (a === '--head') out.head = argv[++i];
     else if (a === '--full-fleet') out.fullFleet = argv[++i] === 'true';
+    else if (a === '--dependency-recipe') out.dependencyRecipe = true;
   }
   return out;
 }
@@ -174,14 +182,26 @@ function loadAffectedNames(base, head) {
   );
 }
 
+function emitOutput(name, value) {
+  const record = `${name}=${value}\n`;
+  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, record);
+  else process.stdout.write(record);
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const allCaps = deriveCockpitCaps();
   const sharedSetupChanged = !args.fullFleet && requiresFullCockpitFleet(
     execFileSync('git', ['diff', '--no-renames', '--name-only', args.base, args.head], { encoding: 'utf8' })
       .split('\n').filter(Boolean),
   );
   const fullFleet = args.fullFleet || sharedSetupChanged;
+  // A one-time artifact pays off across full fleets, but adds latency to small
+  // affected PRs. Select the recipe without Nx mutating the installation.
+  if (args.dependencyRecipe) {
+    emitOutput('dependency_reuse', fullFleet);
+    return;
+  }
+  const allCaps = deriveCockpitCaps();
 
   let affected;
   if (fullFleet) {
@@ -205,13 +225,7 @@ function main() {
     selected.map(({ angular, python }) => ({ angular, python })),
   );
 
-  const ghOutput = process.env.GITHUB_OUTPUT;
-  if (ghOutput) {
-    appendFileSync(ghOutput, `caps=${json}\n`);
-  } else {
-    // Local-debug mode: print to stdout.
-    process.stdout.write(`caps=${json}\n`);
-  }
+  emitOutput('caps', json);
 }
 
 // Only invoke main when run directly, not when imported.

@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c62ad667f1e618b268f6c40cd6957af765228ffc",
+  "baselineHead": "17c391015b790e17eb45f7676649951218a72838",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      ".github/workflows/ci.yml",
+      "scripts/cockpit-matrix.mjs"
     ],
     "untracked": []
   },
@@ -2177,7 +2178,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "2fd142f3179ed8479cbee59de46d4349729e93657343ef39a630bbb9ecb74e9d"
+      "sha256": "adb04c4acf19f9180de24498121e684590dd8720eae6430a48e452cd8958caba"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2249,7 +2250,7 @@
       "id": "config:scripts/cockpit-matrix.mjs",
       "kind": "config",
       "path": "scripts/cockpit-matrix.mjs",
-      "sha256": "f6ec1fb096d231c9cc703c12956a910906ba3a42165315dbe31561b8bdcd0f2b"
+      "sha256": "4712b4c74e6581f4448d1001f7dc232cebc82e3b5b8dc43a90f4f97cceb27299"
     },
     {
       "id": "config:scripts/examples/serve-example.ts",
