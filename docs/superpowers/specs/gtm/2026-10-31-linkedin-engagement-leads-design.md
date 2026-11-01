@@ -165,6 +165,7 @@ Engagement that predates the ingest address, and likers that aggregated notifica
 - Lead score is advisory, orders the email and the session list, and gates nothing.
 - Manual browser-pane backfill is a documented procedure, not a build.
 - Scoring weights and the ICP keyword list are starting values; the builder may tune them without coming back.
+- Build note (2026-11-01): raw mail is retained only for parsed engagement notifications and for unparsed LinkedIn mail whose reason is `unsupported_kind` or `no_actor`. Mail classified `no_fixtures_yet` (the parser stub), `not_notification`, or `untrusted_sender` is stored headers-only, subject included, so the "sign-in code never sits in Neon" promise holds before the real parser exists. Sections 1, 2 and the privacy section read with this narrowing.
 
 ## Open items resolved during design
 
