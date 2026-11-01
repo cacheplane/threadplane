@@ -40,23 +40,28 @@ jobs:
           if-no-files-found: error
 
   profile:
-    name: Archive profile (${{ matrix.mode }}, ${{ matrix.sample }})
+    name: Archive profile (${{ matrix.variant }}, ${{ matrix.mode }}, ${{ matrix.sample }})
     needs: dependencies
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 5
       matrix:
         mode: [timing]
         sample: [1, 2, 3]
+        variant: [baseline, candidate]
         include:
           - mode: cpu
             sample: 1
+            variant: candidate
     env:
       COCKPIT_ARCHIVE_PROFILE_MODE: ${{ matrix.mode }}
+      COCKPIT_ARCHIVE_PROFILE_VARIANT: ${{ matrix.variant }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
           node-version: ${{ needs.dependencies.outputs.node }}
@@ -76,15 +81,18 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
           helper=pathlib.Path('scripts/cockpit-dependencies-archive.py')
+          reference='830abf2bbe565e8a96918e516ce97fb33b22954e' if os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT']=='baseline' else 'HEAD'
+          expected=subprocess.check_output(['git','show',reference+':scripts/cockpit-dependencies-archive.py'])
+          if os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT']=='baseline':helper.write_bytes(expected)
           original=helper.read_text()
-          assert helper.read_bytes()==subprocess.check_output(['git','show','HEAD:scripts/cockpit-dependencies-archive.py']), 'Helper differs from checked-in baseline'
+          assert helper.read_bytes()==expected, 'Helper differs from designated source'
           footer='if __name__ == "__main__":\n    main()\n'
           assert original.endswith(footer)
           folder=pathlib.Path(os.environ['RUNNER_TEMP'])/'archive-profile'
           folder.mkdir()
           with open(os.environ['GITHUB_ENV'],'a') as environment:environment.write('COCKPIT_ARCHIVE_PROFILE='+str(folder)+'\n')
           manifest=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'dependencies/manifest.json').read_text())
-          (folder/'source.json').write_text(json.dumps({'helperSha256':hashlib.sha256(helper.read_bytes()).hexdigest(),'manifest':manifest,'run':os.environ['GITHUB_RUN_ID'],'attempt':os.environ['GITHUB_RUN_ATTEMPT'],'sha':os.environ['GITHUB_SHA']},indent=2))
+          (folder/'source.json').write_text(json.dumps({'helperSha256':hashlib.sha256(helper.read_bytes()).hexdigest(),'helperReference':reference,'variant':os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT'],'manifest':manifest,'run':os.environ['GITHUB_RUN_ID'],'attempt':os.environ['GITHUB_RUN_ATTEMPT'],'sha':os.environ['GITHUB_SHA']},indent=2))
           instrumentation=r'''
           import cProfile, collections, hashlib, os, pathlib, platform, pstats, time
           _folder=pathlib.Path(os.environ['COCKPIT_ARCHIVE_PROFILE'])
@@ -151,7 +159,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: archive-profile-${{ matrix.mode }}-${{ matrix.sample }}-${{ github.run_attempt }}
+          name: archive-profile-${{ matrix.variant }}-${{ matrix.mode }}-${{ matrix.sample }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/archive-profile
           retention-days: 7
           if-no-files-found: error

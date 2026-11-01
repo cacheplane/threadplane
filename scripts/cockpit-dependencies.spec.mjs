@@ -252,7 +252,7 @@ test('restored files retain the data filter permission and ownership policy', as
   assert.equal((await stat(join(root, file))).uid, process.getuid());
 });
 
-for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link', 'resolved-link-first']) {
+for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'duplicate-canonical', 'root-prefix', 'late-file-ancestor', 'late-link-ancestor', 'cached-sibling', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link', 'resolved-link-first']) {
   test(`rejects ${attack} tar members before publishing, even with a matching archive digest`, async t => {
     const f = await fixture(t);
     await createDependencyBundle({ ...f, context });
@@ -261,12 +261,17 @@ for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special',
 import os,tarfile,sys
 path,attack,absolute=sys.argv[1:]
 with tarfile.open(path) as source, tarfile.open(path+'.attack','w') as t:
- names={'traversal':'node_modules/../../escaped','absolute':absolute,'unexpected':'other/file'}
+ names={'traversal':'node_modules/../../escaped','absolute':absolute,'unexpected':'other/file','root-prefix':'node_modules-other/attack'}
  info=tarfile.TarInfo(names.get(attack,'node_modules/attack'))
  if attack=='symlink':info.type=tarfile.SYMTYPE;info.linkname='../../escaped'
  elif attack=='hardlink':info.type=tarfile.LNKTYPE;info.linkname='../escaped'
  elif attack=='special':info.type=tarfile.FIFOTYPE
  elif attack=='duplicate':info.name='node_modules/dependency/cli.cjs'
+ elif attack=='duplicate-canonical':info.name='node_modules//dependency/./cli.cjs'
+ elif attack in ['late-file-ancestor','late-link-ancestor','cached-sibling']:
+  info.name='node_modules/late/shared'
+  for name in (['node_modules/late/safe/first','node_modules/late/shared/second'] if attack=='cached-sibling' else ['node_modules/late/shared/first','node_modules/late/shared/second']):t.addfile(tarfile.TarInfo(name))
+  if attack=='late-link-ancestor':info.type=tarfile.SYMTYPE;info.linkname='../dependency'
  elif attack=='contiguous':info.type=tarfile.CONTTYPE
  elif attack=='sparse':info.type=tarfile.GNUTYPE_SPARSE
  elif attack=='linked-ancestor':info.name='node_modules/@fixture/workspace/child'
@@ -294,3 +299,82 @@ os.replace(path+'.attack',path)
     assert.deepEqual((await readdir(root)).sort(), ['package-lock.json', 'package.json', 'packages']);
   });
 }
+
+test('restores canonical aliases and implicit shared directories across installation roots', async t => {
+  const f = await fixture(t);
+  await createDependencyBundle({ ...f, context });
+  const archive = join(f.artifactDirectory, 'dependencies.tar');
+  execFileSync('python3', ['-c', `
+import io,os,sys,tarfile
+path=sys.argv[1]
+with tarfile.open(path) as source,tarfile.open(path+'.shared','w') as target:
+ for item in source.getmembers():target.addfile(item,source.extractfile(item) if item.isfile() else None)
+ for name in ['node_modules//shared/./branch/first','node_modules/shared/branch/second','packages/workspace/node_modules//shared/./branch/third']:
+  item=tarfile.TarInfo(name);item.size=7;target.addfile(item,io.BytesIO(b'private'))
+os.replace(path+'.shared',path)
+`, archive]);
+  const manifestPath = join(f.artifactDirectory, 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const bytes = await readFile(archive);
+  manifest.archive = { ...manifest.archive, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+  await writeFile(manifestPath, JSON.stringify(manifest));
+  const root = await f.checkout('shared-directories');
+  await restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context });
+  for (const name of ['node_modules/shared/branch/first', 'node_modules/shared/branch/second', 'packages/workspace/node_modules/shared/branch/third']) {
+    assert.equal(await readFile(join(root, name), 'utf8'), 'private');
+  }
+});
+
+test('matches independent pathlib ancestry rules on seeded real-tar path and root variants', () => {
+  execFileSync('python3', ['-I', '-c', `
+import io,random,runpy,sys,tarfile
+from pathlib import PurePosixPath
+validate=runpy.run_path(sys.argv[1])['validate']
+rng=random.Random(1739)
+def reference(members,roots):
+ seen={}
+ for member in members:
+  path=PurePosixPath(member.name)
+  if path.is_absolute() or '..' in path.parts or chr(92) in member.name:return False
+  name=str(path)
+  if not any(name==root or name.startswith(root+'/') for root in roots) or name in seen:return False
+  seen[name]=member
+ for name in seen:
+  for parent in PurePosixPath(name).parents:
+   ancestor=seen.get(str(parent))
+   if ancestor and not ancestor.isdir():return False
+ return all(root in seen and seen[root].isdir() for root in roots)
+accepted=rejected=0
+for index in range(320):
+ roots=['node_modules','packages/workspace/node_modules']
+ if index%3==0:roots.append('node_modules/nested/node_modules')
+ if index%11==0:roots.append('.')
+ entries=[(root,tarfile.DIRTYPE) for root in roots]
+ for item in range(8):
+  root=rng.choice(roots[:2]);alias='//shared/./branch/' if rng.randrange(2) else '/shared/branch/'
+  entries.append((root+alias+'leaf-'+str(item),tarfile.REGTYPE))
+ if index%2:
+  attack=index%5
+  if attack==0:entries.append(('node_modules-other/file',tarfile.REGTYPE))
+  elif attack==1:entries.append(('node_modules//shared/./branch/leaf-0',tarfile.REGTYPE));entries.append(('node_modules/shared/branch/leaf-0',tarfile.REGTYPE))
+  elif attack==2:entries.append(('node_modules/../escaped',tarfile.REGTYPE))
+  elif attack==3:entries.append(('node_modules/shared/branch',tarfile.REGTYPE))
+  else:entries.append(('/absolute/file',tarfile.REGTYPE))
+ rng.shuffle(entries)
+ data=io.BytesIO()
+ with tarfile.open(fileobj=data,mode='w') as archive:
+  for name,kind in entries:
+   member=tarfile.TarInfo(name);member.type=kind;archive.addfile(member)
+ payload=data.getvalue()
+ with tarfile.open(fileobj=io.BytesIO(payload),mode='r:') as archive:
+  members=archive.getmembers();expected=reference(members,roots);names=[m.name for m in members]
+ with tarfile.open(fileobj=io.BytesIO(payload),mode='r:') as archive:
+  try:actual=validate(archive,{'roots':roots,'workspaceLinks':{}})
+  except ValueError:
+   assert not expected, (index,'unexpected rejection');rejected+=1
+  else:
+   assert expected and [m.name for m in actual]==names, (index,'unexpected acceptance or changed members');accepted+=1
+assert accepted>0 and rejected>0,(accepted,rejected)
+print(accepted,rejected)
+`, fileURLToPath(new URL('./cockpit-dependencies-archive.py', import.meta.url))], { stdio: ['ignore', 'pipe', 'pipe'] });
+});
