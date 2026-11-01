@@ -23,6 +23,7 @@ export default defineConfig({
       'commit-staged-via-api.spec.mjs',
       'configure-ci-apt.spec.mjs',
       'cockpit-matrix.spec.mjs',
+      'cockpit-dependencies.spec.mjs',
       'cockpit-frontend-matrix.spec.mjs',
       'cockpit-ports.spec.mjs',
       'cockpit-runtime-bridge-coverage.spec.mjs',

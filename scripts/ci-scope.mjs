@@ -4,6 +4,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
+import { requiresFullCockpitFleet } from './cockpit-matrix.mjs';
 
 export const SCOPE_KEYS = [
   'library',
@@ -26,8 +27,14 @@ const GLOBAL_CI_FILES = new Set([
   '.github/workflows/ci.yml',
   'scripts/ci-scope.mjs',
   'scripts/ci-scope.spec.mjs',
+  'scripts/cockpit-dependencies.mjs',
+  'scripts/cockpit-dependencies-archive.py',
+  'scripts/cockpit-dependencies.spec.mjs',
+  'scripts/cockpit-matrix.mjs',
+  'scripts/cockpit-matrix.spec.mjs',
   'package.json',
   'package-lock.json',
+  '.npmrc',
   'nx.json',
   'tsconfig.json',
   'tsconfig.base.json',
@@ -266,7 +273,7 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
 }
 
 export function hasGlobalCiFileChange(changedFiles) {
-  return changedFiles.some((f) => GLOBAL_CI_FILES.has(f));
+  return requiresFullCockpitFleet(changedFiles) || changedFiles.some((f) => GLOBAL_CI_FILES.has(f));
 }
 
 function changedFilesBetween(base, head, workspaceRoot) {

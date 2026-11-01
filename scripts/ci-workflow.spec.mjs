@@ -1,6 +1,6 @@
-import { chmod, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
@@ -8,6 +8,89 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { deriveCockpitCaps } from './cockpit-matrix.mjs';
 import { classifyFromAffected } from './ci-scope.mjs';
+import { parse as parseYaml } from 'yaml';
+
+it('reuses only same-run dependencies while preserving every isolated Cockpit proof step', async () => {
+  const workflow = parseYaml(await readFile('.github/workflows/ci.yml', 'utf8'));
+  const producer = workflow.jobs['cockpit-e2e-dispatcher'];
+  const consumer = workflow.jobs['cockpit-e2e'];
+  const pack = producer.steps.find(step => step.name === 'Package verified Cockpit dependencies');
+  const upload = producer.steps.find(step => step.name === 'Upload same-run Cockpit dependencies');
+  const download = consumer.steps.find(step => step.name === 'Download same-run Cockpit dependencies');
+  const restore = consumer.steps.find(step => step.name === 'Prepare isolated Cockpit dependencies');
+  const recipe = producer.steps.find(step => step.id === 'recipe');
+  assert.ok(pack && upload && download && restore, 'all dependency ownership steps are required');
+  assert.ok(producer.steps.indexOf(pack) > producer.steps.findIndex(step => step.run === 'npm ci'));
+  assert.ok(producer.steps.indexOf(pack) < producer.steps.findIndex(step => step.name === 'Emit cap matrix'));
+  assert.equal(upload.with.name, '${{ steps.dependencies.outputs.artifact }}');
+  assert.equal(upload.with['if-no-files-found'], 'error');
+  assert.equal(upload.with['retention-days'], 1);
+  assert.equal(upload.with['compression-level'], 1);
+  assert.equal(producer.outputs.dependency_artifact, '${{ steps.dependencies.outputs.artifact }}');
+  assert.equal(producer.outputs.dependency_attempt, '${{ steps.dependencies.outputs.attempt }}');
+  assert.equal(producer.outputs.dependency_node, '${{ steps.dependencies.outputs.node }}');
+  assert.equal(producer.outputs.dependency_reuse, '${{ steps.recipe.outputs.dependency_reuse }}');
+  assert.match(recipe.run, /--dependency-recipe/);
+  assert.ok(producer.steps.indexOf(recipe) < producer.steps.indexOf(pack));
+  assert.equal(pack.if, "steps.recipe.outputs.dependency_reuse == 'true'");
+  assert.equal(upload.if, pack.if);
+  assert.equal(download.if, "needs.cockpit-e2e-dispatcher.outputs.dependency_reuse == 'true'");
+  assert.ok(pack.run.includes(`echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"`));
+  const nodeSetup = consumer.steps.find(step => step.uses?.startsWith('actions/setup-node@'));
+  assert.equal(nodeSetup.with['node-version'], "${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node || '22' }}",
+    'mixed runner images must install exactly the producer Node patch');
+  assert.equal(download.with.name, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_artifact }}');
+  assert.equal(restore.env.COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_attempt }}');
+  assert.equal(restore.env.COCKPIT_DEPENDENCY_REUSE, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_reuse }}');
+  assert.equal(restore.env.COCKPIT_DEPENDENCY_NODE, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}');
+  assert.equal(restore.if, undefined, 'a failed restore must prevent proofs from running');
+  assert.equal(restore['continue-on-error'], undefined);
+  assert.equal(consumer.strategy['max-parallel'], 5);
+  assert.equal(consumer.strategy['fail-fast'], false);
+  assert.equal(consumer.steps.some(step => step.run === 'npm ci'), false);
+  const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
+    .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
+  assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
+    '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
+    'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
+});
+
+it('preserves ordinary PR installs and never falls back after a requested reuse failure', async t => {
+  const workflow = parseYaml(await readFile('.github/workflows/ci.yml', 'utf8'));
+  const prepare = workflow.jobs['cockpit-e2e'].steps.find(step => step.name === 'Prepare isolated Cockpit dependencies');
+  assert.ok(prepare);
+  const root = await mkdtemp(join(tmpdir(), 'cockpit-dependency-recipe-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const bin = join(root, 'bin');
+  await mkdir(bin);
+  for (const [command, marker, failure] of [['node', 'RESTORE_MARKER', 'RESTORE_EXIT'], ['npm', 'INSTALL_MARKER', 'INSTALL_EXIT']]) {
+    await writeFile(join(bin, command), `#!/bin/sh\nprintf '%s\\n' "$@" > "$${marker}"\nexit "\${${failure}:-0}"\n`);
+    await chmod(join(bin, command), 0o755);
+  }
+  for (const [index, recipe] of [
+    { reuse: 'true', node: '22.23.4', status: 0, restored: true },
+    { reuse: 'false', status: 0, installed: true },
+    { reuse: '', status: 1 },
+    { reuse: 'unknown', status: 1 },
+    { reuse: 'true', status: 1 },
+    { reuse: 'true', node: '22.23.4', restoreExit: '71', status: 71, restored: true },
+    { reuse: 'false', installExit: '73', status: 73, installed: true },
+  ].entries()) {
+    const restoreMarker = join(root, `restore-${index}`);
+    const installMarker = join(root, `install-${index}`);
+    const run = spawnSync('bash', ['-e', '-c', prepare.run], { encoding: 'utf8', env: {
+      ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}`, RUNNER_TEMP: root,
+      COCKPIT_DEPENDENCY_REUSE: recipe.reuse, COCKPIT_DEPENDENCY_NODE: recipe.node ?? '',
+      RESTORE_MARKER: restoreMarker, INSTALL_MARKER: installMarker,
+      RESTORE_EXIT: recipe.restoreExit ?? '0', INSTALL_EXIT: recipe.installExit ?? '0',
+    } });
+    assert.equal(run.status, recipe.status, JSON.stringify(recipe) + run.stdout + run.stderr);
+    if (recipe.restored) assert.equal(await readFile(restoreMarker, 'utf8'), `scripts/cockpit-dependencies.mjs\nrestore\n${root}/cockpit-dependencies\n`);
+    else await assert.rejects(readFile(restoreMarker), { code: 'ENOENT' });
+    if (recipe.installed) assert.equal(await readFile(installMarker, 'utf8'), 'ci\n');
+    else await assert.rejects(readFile(installMarker), { code: 'ENOENT' });
+  }
+});
 
 it('requires the Scripts owner for reviewed test-only changes while allowing unrelated skips', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');

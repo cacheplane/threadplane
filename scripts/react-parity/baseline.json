@@ -1,8 +1,26 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0ec531aef891bda40de4d45096d9a27b3e535b9c",
+  "baselineHead": "e478613a3ba9bd458b45c2b1071ab4ec1602d320",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/getting-started/changelog.mdx",
+      "apps/website/content/docs/chat/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
+      "apps/website/content/docs/render/getting-started/installation.mdx",
+      "libs/a2ui/package.json",
+      "libs/ag-ui/package.json",
+      "libs/ag-ui/src/lib/package-version.ts",
+      "libs/chat/package.json",
+      "libs/chat/src/lib/package-version.ts",
+      "libs/langgraph/package.json",
+      "libs/langgraph/src/lib/package-version.ts",
+      "libs/render/package.json",
+      "libs/render/src/lib/package-version.ts",
+      "libs/telemetry/package.json",
+      "package-lock.json"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2175,7 +2193,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "a3c232f4da9ddf3cbadb3e5d42c26ab02c96bd229b5144dff587866e6bcb36c3"
+      "sha256": "adb04c4acf19f9180de24498121e684590dd8720eae6430a48e452cd8958caba"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2247,7 +2265,7 @@
       "id": "config:scripts/cockpit-matrix.mjs",
       "kind": "config",
       "path": "scripts/cockpit-matrix.mjs",
-      "sha256": "4c2dfb36cb8c3bac78cc879d11e88d2a1adf030dda8354174f8a036925c5f857"
+      "sha256": "4712b4c74e6581f4448d1001f7dc232cebc82e3b5b8dc43a90f4f97cceb27299"
     },
     {
       "id": "config:scripts/examples/serve-example.ts",
