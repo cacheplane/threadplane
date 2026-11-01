@@ -1,0 +1,88 @@
+{
+  "name": "Welcome",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/Welcome",
+  "canonicalReference": "@threadplane/react!Welcome:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Presents a greeting, stable content slot and optional controlled suggestions.",
+  "declarations": [
+    {
+      "name": "Welcome",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!Welcome:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function Welcome(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "WelcomeProps",
+          "canonicalReference": "@threadplane/react!WelcomeProps:interface",
+          "href": "/docs/api/react/chat/WelcomeProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Presents a greeting, stable content slot and optional controlled suggestions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/welcome.tsx",
+        "line": 17
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ title, children, suggestions, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/welcome.tsx",
+    "line": 17
+  }
+}
