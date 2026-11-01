@@ -92,7 +92,7 @@ async function expandTransport(source, destination, expected) {
     decoder.once('error', reject);
     decoder.once('close', code => code === 0 ? resolve() : reject(new Error(`Dependency decompression failed (${code}): ${errors}`)));
   });
-  const output = createWriteStream(destination, { flags: 'wx', mode: 0o600 });
+  const output = createWriteStream(destination, { flags: 'wx', mode: 0o600, highWaterMark: 1024 * 1024 });
   const written = pipeline(decoder.stdout, async function* (chunks) {
     for await (const chunk of chunks) {
       bytes += chunk.length;

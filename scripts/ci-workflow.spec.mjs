@@ -25,7 +25,8 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   assert.equal(upload.with.name, '${{ steps.dependencies.outputs.artifact }}');
   assert.equal(upload.with['if-no-files-found'], 'error');
   assert.equal(upload.with['retention-days'], 1);
-  assert.equal(upload.with['compression-level'], 1);
+  assert.equal(upload.with['compression-level'], 0, 'precompressed transport must not be compressed again');
+  assert.equal(pack.env.COCKPIT_DEPENDENCY_TRANSPORT, 'zstd');
   assert.equal(producer.outputs.dependency_artifact, '${{ steps.dependencies.outputs.artifact }}');
   assert.equal(producer.outputs.dependency_attempt, '${{ steps.dependencies.outputs.attempt }}');
   assert.equal(producer.outputs.dependency_node, '${{ steps.dependencies.outputs.node }}');

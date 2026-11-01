@@ -930,6 +930,8 @@ jobs:
       - name: Package verified Cockpit dependencies
         if: steps.recipe.outputs.dependency_reuse == 'true'
         id: dependencies
+        env:
+          COCKPIT_DEPENDENCY_TRANSPORT: zstd
         run: |
           node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/cockpit-dependencies"
           echo "artifact=cockpit-dependencies-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
@@ -941,7 +943,7 @@ jobs:
         with:
           name: ${{ steps.dependencies.outputs.artifact }}
           path: ${{ runner.temp }}/cockpit-dependencies
-          compression-level: 1
+          compression-level: 0
           retention-days: 1
           if-no-files-found: error
       - name: Emit cap matrix
