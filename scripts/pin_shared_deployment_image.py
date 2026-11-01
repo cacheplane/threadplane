@@ -208,12 +208,21 @@ def atomic_json(directory, name, value):
 def executable(path, role="docker"):
     codes = EXECUTABLE_DIAGNOSTICS[role]
     safe_path(path, codes["path"])
+    if role == "python":
+        require(bool(sys.executable), "prepare_python_missing")
+        with prepare_stage("prepare_python_resolve_failed"):
+            current_python = os.path.realpath(sys.executable)
+        safe_path(current_python, codes["path"])
+        require(path == current_python, codes["path"])
     with prepare_stage(codes["stat"]):
         info = os.lstat(path)
     require(stat.S_ISREG(info.st_mode), codes["type"])
     require(info.st_uid in (0, os.geteuid()), codes["owner"])
-    require(not (info.st_mode & 0o020), codes["group"])
-    require(not (info.st_mode & 0o002), codes["world"])
+    # Hosted toolchains deliberately allow write bits. Reuse only the exact
+    # already-running interpreter; Docker and private state keep strict modes.
+    if role != "python":
+        require(not (info.st_mode & 0o020), codes["group"])
+        require(not (info.st_mode & 0o002), codes["world"])
     with prepare_stage(codes["access"]):
         accessible = os.access(path, os.X_OK)
     require(accessible, codes["access"])

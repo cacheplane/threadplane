@@ -397,7 +397,9 @@ class ReceiptTests(BaseTests):
 
     def test_prepare_diagnostics_separate_docker_and_running_python_checks(self):
         for role, target in [("docker", str(self.docker)), ("python", os.path.realpath(self.module.sys.executable))]:
-            for problem in ["stat_failed", "type_invalid", "owner_invalid", "group_writable", "world_writable", "not_executable"]:
+            problems = ["stat_failed", "type_invalid", "owner_invalid", "not_executable"]
+            if role == "docker": problems += ["group_writable", "world_writable"]
+            for problem in problems:
                 with self.subTest(role=role, problem=problem):
                     original_stat = self.module.os.lstat
                     original_access = self.module.os.access
@@ -416,6 +418,69 @@ class ReceiptTests(BaseTests):
                         return original_access(path, mode)
                     with patch.object(self.module.os, "lstat", side_effect=altered_stat), patch.object(self.module.os, "access", side_effect=altered_access):
                         self.assert_prepare_code("prepare_" + role + "_" + problem)
+
+    def test_current_python_write_bits_allow_prepare_with_exact_manifest_and_launcher(self):
+        target = os.path.realpath(self.module.sys.executable)
+        for bits in [0o020, 0o002, 0o022]:
+            with self.subTest(bits=bits):
+                original = self.module.os.lstat
+                def toolchain_mode(path, *args, **kwargs):
+                    value = original(path, *args, **kwargs)
+                    if str(path) != target: return value
+                    fields = list(value); fields[0] |= bits
+                    return os.stat_result(fields)
+                with patch.object(self.module.os, "lstat", side_effect=toolchain_mode):
+                    self.prepare()
+                manifest = json.loads((self.state / "manifest.json").read_text())
+                self.assertEqual(manifest["python"], target)
+                launcher = (self.state / "docker").read_text()
+                self.assertTrue(launcher.startswith("#!" + target + "\n"))
+                self.assertIn("os.execv(" + repr(target), launcher)
+                os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_python_role_rejects_foreign_and_hardlink_identities(self):
+        alternate = self.root / "alternate-python"
+        os.link(self.docker, alternate)
+        # Synthetic interpreter and hardlink avoid touching the real toolchain.
+        with patch.object(self.module.sys, "executable", str(self.docker)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(str(alternate), "python")
+            self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+        with self.assertRaises(self.module.EvidenceError) as failure:
+            self.module.executable(str(self.docker), "python")
+        self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+
+    def test_python_role_direct_identity_errors_are_closed(self):
+        target = os.path.realpath(self.module.sys.executable)
+        for value in [SECRET, str(self.root) + "/../python", target + "\n" + SECRET]:
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(value, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+        with patch.object(self.module.sys, "executable", ""):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_missing")
+        with patch.object(self.module.os.path, "realpath", side_effect=OSError(SECRET)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_resolve_failed")
+
+    def test_running_python_still_rejects_access_exception_and_docker_write_bits(self):
+        target = os.path.realpath(self.module.sys.executable)
+        with patch.object(self.module.os, "access", side_effect=OSError(SECRET)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_not_executable")
+        for bits, code in [(0o020, "prepare_docker_group_writable"), (0o002, "prepare_docker_world_writable")]:
+            original = self.module.os.lstat
+            def toolchain_mode(path, *args, **kwargs):
+                value = original(path, *args, **kwargs)
+                fields = list(value); fields[0] |= bits
+                return os.stat_result(fields)
+            with patch.object(self.module.os, "lstat", side_effect=toolchain_mode):
+                with self.assertRaises(self.module.EvidenceError) as failure:
+                    self.module.executable(target, "docker")
+                self.assertEqual(failure.exception.code, code)
 
     def test_prepare_diagnostics_separate_missing_state_temp_and_commands(self):
         for key, value, code in [("SHARED_PUSH_STATE", SECRET, "prepare_state_present"), ("GITHUB_RUN_ID", "bad", "prepare_run_identity_invalid"), ("RUNNER_TEMP", "", "prepare_temp_missing"), ("RUNNER_TEMP", SECRET, "prepare_temp_path_invalid"), ("RUNNER_TEMP", str(self.root / "absent"), "prepare_temp_not_directory"), ("GITHUB_PATH", "", "prepare_github_path_invalid"), ("GITHUB_ENV", SECRET, "prepare_github_env_invalid")]:
