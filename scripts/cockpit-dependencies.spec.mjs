@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chmod, link, mkdir, mkdtemp, readFile, readdir, rename, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createDependencyBundle, restoreDependencyBundle } from './cockpit-dependencies.mjs';
@@ -176,6 +177,22 @@ test('does not publish dependencies through a workspace parent outside the check
   await assert.rejects(createDependencyBundle({ ...f, context }), /parent|symlink/i);
   await assert.rejects(stat(f.artifactDirectory), { code: 'ENOENT' });
 });
+
+for (const [name, terminator] of [['CR', '\r'], ['LS', '\u2028'], ['PS', '\u2029']]) {
+  test(`does not hide executable lifecycle code after a ${name} line terminator`, async t => {
+    const f = await fixture(t);
+    const path = join(f.root, 'packages/workspace/package.json');
+    const pkg = JSON.parse(await readFile(path, 'utf8'));
+    await writeFile(path, JSON.stringify({ ...pkg, scripts: { postinstall: 'node install/postinstall.cjs' } }));
+    await mkdir(join(f.root, 'packages/workspace/install'));
+    const code = `// contributor stub${terminator}globalThis.lifecycleExecuted = true;`;
+    const sandbox = {};
+    runInNewContext(code, sandbox);
+    assert.equal(sandbox.lifecycleExecuted, true, 'this is executable JavaScript, not an inert comment');
+    await writeFile(join(f.root, 'packages/workspace/install/postinstall.cjs'), code);
+    await assert.rejects(createDependencyBundle({ ...f, context }), /lifecycle|side.effect/i);
+  });
+}
 
 for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate']) {
   test(`rejects ${attack} tar members before extraction, even with a matching archive digest`, async t => {

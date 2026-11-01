@@ -46,7 +46,8 @@ function inputs(root) {
       if (!lifecycleHooks.has(hook)) continue;
       assert.ok(workspace && hook === 'postinstall' && command === 'node install/postinstall.cjs', `Unsupported workspace lifecycle hook: ${file} ${hook}`);
       const stub = posix.join(workspace, 'install/postinstall.cjs');
-      assert.match(readFileSync(join(root, stub), 'utf8'), /^(?:\s*\/\/[^\n]*(?:\n|$))*\s*$/, 'Workspace lifecycle hook has side effects');
+      const lines = readFileSync(join(root, stub), 'utf8').split(/\r\n|[\r\n\u2028\u2029]/u);
+      assert.ok(lines.every(line => !line.trim() || line.trimStart().startsWith('//')), 'Workspace lifecycle hook has side effects');
       files.push(stub);
     }
     for (const [name, bin] of Object.entries(typeof pkg.bin === 'string' ? { [pkg.name?.split('/').at(-1)]: pkg.bin } : pkg.bin ?? {})) {
