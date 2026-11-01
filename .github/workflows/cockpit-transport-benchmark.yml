@@ -1,0 +1,137 @@
+name: Cockpit dependency transport benchmark
+
+on:
+  push:
+    branches: [blove/ci-cockpit-artifact-transport]
+    paths: [.github/workflows/cockpit-transport-benchmark.yml]
+
+permissions:
+  contents: read
+
+env:
+  DO_NOT_TRACK: '1'
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      node: ${{ steps.bundle.outputs.node }}
+      attempt: ${{ steps.bundle.outputs.attempt }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Package baseline dependency recipe
+        id: bundle
+        run: |
+          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/raw"
+          echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          zstd --version
+      - name: Compress identical tar with Zstandard level 3
+        run: |
+          mkdir "$RUNNER_TEMP/zstd3"
+          cp "$RUNNER_TEMP/raw/manifest.json" "$RUNNER_TEMP/zstd3/manifest.json"
+          zstd -T2 -3 --no-progress "$RUNNER_TEMP/raw/dependencies.tar" -o "$RUNNER_TEMP/zstd3/dependencies.tar.zst"
+      - name: Compress identical tar with Zstandard level 9
+        run: |
+          mkdir "$RUNNER_TEMP/zstd9"
+          cp "$RUNNER_TEMP/raw/manifest.json" "$RUNNER_TEMP/zstd9/manifest.json"
+          zstd -T2 -9 --no-progress "$RUNNER_TEMP/raw/dependencies.tar" -o "$RUNNER_TEMP/zstd9/dependencies.tar.zst"
+      - name: Upload baseline ZIP level 1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: transport-raw
+          path: ${{ runner.temp }}/raw
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload Zstandard level 3 stored
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: transport-zstd3
+          path: ${{ runner.temp }}/zstd3
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload Zstandard level 9 stored
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: transport-zstd9
+          path: ${{ runner.temp }}/zstd9
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  probe:
+    name: Transport (${{ matrix.recipe }}, ${{ matrix.sample }})
+    needs: dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        sample: [1, 2, 3]
+        recipe: [raw, zstd3, zstd9]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: ${{ needs.dependencies.outputs.node }}
+          cache: npm
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - name: Download dependency transport
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: transport-${{ matrix.recipe }}
+          path: ${{ runner.temp }}/transport
+      - name: Expand bounded Zstandard transport
+        if: matrix.recipe != 'raw'
+        timeout-minutes: 5
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'transport'
+          size=json.loads((root/'manifest.json').read_text())['archive']['bytes']
+          assert type(size) is int and 0 < size <= 16*1024**3
+          decoder=subprocess.Popen(['timeout','180s','zstd','-d','-c','-M128MB',str(root/'dependencies.tar.zst')],stdout=subprocess.PIPE)
+          try:
+              count=0
+              with (root/'dependencies.tar').open('xb') as target:
+                  while chunk:=decoder.stdout.read(1024**2):
+                      count+=len(chunk)
+                      assert count<=size, 'Expansion exceeds declared tar size'
+                      target.write(chunk)
+              assert decoder.wait()==0, 'Decoder failed'
+              assert count==size, 'Expansion differs from declared tar size'
+          finally:
+              if decoder.poll() is None: decoder.kill(); decoder.wait()
+          (root/'dependencies.tar.zst').unlink()
+          PY
+      - name: Restore with unchanged archive and provenance checks
+        env:
+          COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT: ${{ needs.dependencies.outputs.attempt }}
+        run: node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/transport"
+      - name: Verify private installation and native tools
+        timeout-minutes: 2
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {existsSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          import {transformSync} from 'esbuild';
+          assert.equal(existsSync('node_modules/.transport-isolation-canary'),false);
+          writeFileSync('node_modules/.transport-isolation-canary',process.env.GITHUB_JOB);
+          assert.match(transformSync('const n: number = 1',{loader:'ts'}).code,/const n = 1/);
+          execFileSync(process.execPath,['node_modules/nx/bin/nx.js','show','projects','--json'],{stdio:'inherit',env:{...process.env,NX_DAEMON:'false'},timeout:60000});
+          console.log('Restored private installation and native tools passed');
+          NODE
