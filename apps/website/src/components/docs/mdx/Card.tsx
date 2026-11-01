@@ -28,16 +28,14 @@ export function Card({
     ? { target: '_blank', rel: 'noopener noreferrer' }
     : {};
   return (
-    <Link href={href} className="mdx-card-link" data-mdx-chrome="" {...externalProps}>
-      <div data-mdx="card">
-        <div className="mdx-card-row">
-          <div>
-            <div className="mdx-card-title">{title}</div>
-          </div>
-          <span className="mdx-card-arrow">→</span>
+    <div data-mdx="card">
+      <Link href={href} className="mdx-card-link mdx-card-row" data-mdx-chrome="" {...externalProps}>
+        <div>
+          <div className="mdx-card-title">{title}</div>
         </div>
-        <div className="mdx-card-body">{children}</div>
-      </div>
-    </Link>
+        <span className="mdx-card-arrow" aria-hidden="true">→</span>
+      </Link>
+      <div className="mdx-card-body">{children}</div>
+    </div>
   );
 }
