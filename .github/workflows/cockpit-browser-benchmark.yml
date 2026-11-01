@@ -1,0 +1,129 @@
+name: Cockpit browser environment benchmark
+
+on:
+  push:
+    branches: [blove/ci-cockpit-browser-environment]
+    paths: [.github/workflows/cockpit-browser-benchmark.yml]
+
+permissions:
+  contents: read
+
+env:
+  DO_NOT_TRACK: '1'
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      node: ${{ steps.bundle.outputs.node }}
+      attempt: ${{ steps.bundle.outputs.attempt }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Package actual fleet dependency recipe
+        id: bundle
+        run: |
+          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/cockpit-dependencies"
+          echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: browser-benchmark-dependencies
+          path: ${{ runner.temp }}/cockpit-dependencies
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+
+  probe:
+    name: Browser setup (${{ matrix.environment }}, ${{ matrix.sample }})
+    needs: dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container: ${{ matrix.environment == 'image' && 'mcr.microsoft.com/playwright:v1.58.2-noble@sha256:65cefd09a5e943921ecd3a6e5414c603db2eb161e9eb48f2e2ccc63486dc7dc0' || '' }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        sample: [1, 2, 3]
+        environment: [host, image]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: ${{ needs.dependencies.outputs.node }}
+          cache: npm
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - name: Download actual fleet dependency recipe
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: browser-benchmark-dependencies
+          path: ${{ runner.temp }}/cockpit-dependencies
+      - name: Restore with unchanged runtime provenance validation
+        env:
+          COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT: ${{ needs.dependencies.outputs.attempt }}
+        run: node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/cockpit-dependencies"
+      - name: Cache Playwright browsers
+        if: matrix.environment == 'host'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Configure bounded Ubuntu package downloads
+        if: matrix.environment == 'host'
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Chromium
+        if: matrix.environment == 'host'
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser, contexts and native dependencies
+        timeout-minutes: 2
+        env:
+          BENCHMARK_ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { createServer } from 'node:http';
+          import { once } from 'node:events';
+          import { readFileSync } from 'node:fs';
+          import { chromium } from '@playwright/test';
+          import { execFileSync } from 'node:child_process';
+          const version = JSON.parse(readFileSync('node_modules/@playwright/test/package.json')).version;
+          assert.equal(version, '1.58.2');
+          const executable = chromium.executablePath();
+          if (process.env.BENCHMARK_ENVIRONMENT === 'image') assert.ok(executable.startsWith('/ms-playwright/'), executable);
+          const server = createServer((request, response) => {
+            response.setHeader('Content-Type', 'text/html');
+            response.end('<html><body><h1>Isolated browser</h1><button onclick="this.textContent=\'clicked\'">click</button></body></html>');
+          });
+          server.listen(0, '127.0.0.1');
+          await once(server, 'listening');
+          let browser;
+          try {
+            browser = await chromium.launch();
+            const url = 'http://127.0.0.1:' + server.address().port;
+            const a = await browser.newContext(), b = await browser.newContext();
+            const page = await a.newPage(), other = await b.newPage();
+            await page.goto(url); await other.goto(url);
+            await page.evaluate(() => localStorage.setItem('isolation', 'owned'));
+            assert.equal(await other.evaluate(() => localStorage.getItem('isolation')), null);
+            await page.getByRole('button').click();
+            assert.equal(await page.getByRole('button').textContent(), 'clicked');
+            assert.equal(await other.getByRole('button').textContent(), 'click');
+            assert.ok((await page.screenshot()).length > 100);
+            console.log(JSON.stringify({ browser: browser.version(), executable, playwright: version, node: process.version, npm: execFileSync('npm', ['--version'], {encoding:'utf8'}).trim(), os: readFileSync('/etc/os-release','utf8'), arch: process.arch }));
+          } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
+          execFileSync(process.execPath, ['node_modules/nx/bin/nx.js', 'show', 'projects', '--json'], { stdio: 'inherit', env: { ...process.env, NX_DAEMON: 'false' }, timeout: 60000 });
+          NODE
