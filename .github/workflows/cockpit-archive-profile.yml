@@ -1,0 +1,165 @@
+name: Cockpit archive validation and extraction profile
+
+on:
+  push:
+    branches: [blove/ci-cockpit-bounded-archive-profile]
+    paths: [.github/workflows/cockpit-archive-profile.yml]
+
+permissions:
+  contents: read
+
+env:
+  DO_NOT_TRACK: '1'
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      node: ${{ steps.bundle.outputs.node }}
+      attempt: ${{ steps.bundle.outputs.attempt }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Package production raw archive
+        id: bundle
+        run: |
+          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/dependencies"
+          echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: archive-profile-dependencies
+          path: ${{ runner.temp }}/dependencies
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+
+  profile:
+    name: Archive profile (${{ matrix.variant }}, ${{ matrix.mode }}, ${{ matrix.sample }})
+    needs: dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode: [timing]
+        sample: [1, 2, 3]
+        variant: [baseline, candidate]
+        include:
+          - mode: cpu
+            sample: 1
+            variant: candidate
+    env:
+      COCKPIT_ARCHIVE_PROFILE_MODE: ${{ matrix.mode }}
+      COCKPIT_ARCHIVE_PROFILE_VARIANT: ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: ${{ needs.dependencies.outputs.node }}
+          cache: npm
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - name: Download production raw archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: archive-profile-dependencies
+          path: ${{ runner.temp }}/dependencies
+      - name: Add phase timers without changing helper bodies
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          helper=pathlib.Path('scripts/cockpit-dependencies-archive.py')
+          reference='830abf2bbe565e8a96918e516ce97fb33b22954e' if os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT']=='baseline' else 'HEAD'
+          expected=subprocess.check_output(['git','show',reference+':scripts/cockpit-dependencies-archive.py'])
+          if os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT']=='baseline':helper.write_bytes(expected)
+          original=helper.read_text()
+          assert helper.read_bytes()==expected, 'Helper differs from designated source'
+          footer='if __name__ == "__main__":\n    main()\n'
+          assert original.endswith(footer)
+          folder=pathlib.Path(os.environ['RUNNER_TEMP'])/'archive-profile'
+          folder.mkdir()
+          with open(os.environ['GITHUB_ENV'],'a') as environment:environment.write('COCKPIT_ARCHIVE_PROFILE='+str(folder)+'\n')
+          manifest=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'dependencies/manifest.json').read_text())
+          (folder/'source.json').write_text(json.dumps({'helperSha256':hashlib.sha256(helper.read_bytes()).hexdigest(),'helperReference':reference,'variant':os.environ['COCKPIT_ARCHIVE_PROFILE_VARIANT'],'manifest':manifest,'run':os.environ['GITHUB_RUN_ID'],'attempt':os.environ['GITHUB_RUN_ATTEMPT'],'sha':os.environ['GITHUB_SHA']},indent=2))
+          instrumentation=r'''
+          import cProfile, collections, hashlib, os, pathlib, platform, pstats, time
+          _folder=pathlib.Path(os.environ['COCKPIT_ARCHIVE_PROFILE'])
+          _metrics={'pythonExecutable':sys.executable,'pythonVersion':sys.version,'platform':platform.platform(),'tarfilePath':tarfile.__file__,'tarfileSha256':hashlib.sha256(pathlib.Path(tarfile.__file__).read_bytes()).hexdigest(),'profileMode':os.environ['COCKPIT_ARCHIVE_PROFILE_MODE']}
+          _phase='other'
+          _validate=validate
+          _getmembers=tarfile.TarFile.getmembers
+          _extractall=tarfile.TarFile.extractall
+          def _timed_members(self,*args,**kwargs):
+              start=time.perf_counter()
+              try:return _getmembers(self,*args,**kwargs)
+              finally:
+                  key='getmembers_'+_phase+'_seconds'
+                  _metrics[key]=_metrics.get(key,0)+time.perf_counter()-start
+          def _timed_validate(*args,**kwargs):
+              global _phase
+              _phase='validation'
+              start=time.perf_counter()
+              try:result=_validate(*args,**kwargs)
+              finally:_metrics['validateInclusiveSeconds']=time.perf_counter()-start;_phase='other'
+              _metrics['memberCount']=len(result)
+              _metrics['memberTypes']=dict(collections.Counter(item.type.decode('ascii',errors='backslashreplace') for item in result))
+              return result
+          def _timed_extract(self,*args,**kwargs):
+              global _phase
+              _phase='extraction'
+              start=time.perf_counter()
+              try:return _extractall(self,*args,**kwargs)
+              finally:_metrics['extractSeconds']=time.perf_counter()-start;_phase='other'
+          tarfile.TarFile.getmembers=_timed_members
+          tarfile.TarFile.extractall=_timed_extract
+          validate=_timed_validate
+          _start=time.perf_counter()
+          _profiler=cProfile.Profile() if _metrics['profileMode']=='cpu' else None
+          try:
+              if _profiler:_profiler.runcall(main)
+              else:main()
+          finally:
+              _metrics['pythonTotalSeconds']=time.perf_counter()-_start
+              (_folder/'timing.json').write_text(json.dumps(_metrics,indent=2))
+              if _profiler:
+                  _profiler.dump_stats(str(_folder/'cpu.prof'))
+                  with (_folder/'cpu.txt').open('w') as report:
+                      pstats.Stats(_profiler,stream=report).strip_dirs().sort_stats('cumulative').print_stats(35)
+                      pstats.Stats(_profiler,stream=report).strip_dirs().sort_stats('tottime').print_stats(35)
+          '''
+          helper.write_text(original[:-len(footer)]+instrumentation)
+          PY
+      - name: Profile first complete restore
+        shell: bash
+        env:
+          COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT: ${{ needs.dependencies.outputs.attempt }}
+        run: node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/dependencies" | tee "$COCKPIT_ARCHIVE_PROFILE/node-restore.log"
+      - name: Verify restored native installation
+        run: |
+          node -e "require('esbuild').transformSync('const x: number = 1',{loader:'ts'}); console.log('native esbuild passed')"
+          NX_DAEMON=false npx nx show projects --json
+      - name: Print measured phases
+        if: always()
+        run: |
+          cat "$COCKPIT_ARCHIVE_PROFILE/timing.json"
+          if [ -f "$COCKPIT_ARCHIVE_PROFILE/cpu.txt" ]; then cat "$COCKPIT_ARCHIVE_PROFILE/cpu.txt"; fi
+      - name: Retain profile evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: archive-profile-${{ matrix.variant }}-${{ matrix.mode }}-${{ matrix.sample }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/archive-profile
+          retention-days: 7
+          if-no-files-found: error
