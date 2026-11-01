@@ -6,10 +6,15 @@ import {
   render,
   within,
 } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { NativeProjects } from './native-projects';
 import { PROJECT_CATALOG_KEY as key } from './project-catalog';
 const id = '00000000-0000-4000-8000-000000000001';
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
+});
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -24,10 +29,11 @@ it('imports an exact loaded ID on rename and keeps the captured target through s
   const select = vi.fn();
   const view = render(<NativeProjects {...props} onSelect={select} />);
   const trigger = view.getByRole('button', {
-    name: /^Rename project/,
+    name: /^More actions for project/,
   });
   trigger.focus();
   fireEvent.click(trigger);
+  fireEvent.click(view.getByRole('menuitem', { name: 'Rename' }));
   const input = view.getByRole('textbox', { name: 'Project name' });
   fireEvent.change(input, { target: { value: ' <Local label> ' } });
   view.rerender(
@@ -55,7 +61,10 @@ it('imports an exact loaded ID on rename and keeps the captured target through s
 });
 it('retains failed-save draft and target, blocks writes until explicit Retry, and preserves latest catalog', () => {
   const view = render(<NativeProjects {...props} />);
-  fireEvent.click(view.getByRole('button', { name: /^Rename project/ }));
+  fireEvent.click(
+    view.getByRole('button', { name: /^More actions for project/ })
+  );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Rename' }));
   const input = view.getByRole('textbox');
   fireEvent.change(input, { target: { value: 'Kept name' } });
   const original = Storage.prototype.setItem;

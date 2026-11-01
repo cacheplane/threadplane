@@ -17,6 +17,7 @@ export default defineConfig({
     'timeline.spec.ts',
     'state-comparison.spec.ts',
     'project-names.spec.ts',
+    'project-menus.spec.ts',
     'project-assignment.spec.ts',
     'project-creation.spec.ts',
     'project-deletion.spec.ts',

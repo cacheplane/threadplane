@@ -6,11 +6,16 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createReactApplication } from './application';
 import { applicationFixture } from './application-fixture';
 import { App } from './app';
 import type { ThreadRow } from '../../shared/contracts';
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
+});
 
 afterEach(() => {
   cleanup();
@@ -201,10 +206,11 @@ it('creates and renames browser-local projects without changing the selected con
     ]);
     fireEvent.click(
       view.getByRole('button', {
-        name: 'Rename project <Local project> (00000000-0000-4000-8000-000000000001)',
+        name: 'More actions for project <Local project> (00000000-0000-4000-8000-000000000001)',
         exact: true,
       })
     );
+    fireEvent.click(view.getByRole('menuitem', { name: 'Rename' }));
     fireEvent.change(view.getByRole('textbox', { name: 'Project name' }), {
       target: { value: '<Renamed>' },
     });

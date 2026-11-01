@@ -10,8 +10,7 @@ test('installed React sidenav retains navigation, draft and a running response a
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const rows = [
     {
       ...threadEnvelope('a', 'Alpha notes'),
@@ -197,7 +196,8 @@ test('installed React sidenav retains navigation, draft and a running response a
     });
     const expectPaletteAndDismiss = async () => {
       const palette = page.getByRole('dialog', {
-        name: 'Search loaded conversations', exact: true,
+        name: 'Search loaded conversations',
+        exact: true,
       });
       await expect(palette.getByRole('combobox')).toBeFocused();
       await page.keyboard.press('Escape');
@@ -1085,17 +1085,26 @@ test('installed React sidenav retains navigation, draft and a running response a
       await page.keyboard.press('Tab');
       await expect(
         nav.getByRole('button', {
-          name: 'Rename project <Alpha project> (<Alpha project>)',
+          name: 'More actions for project <Alpha project> (<Alpha project>)',
           exact: true,
         })
       ).toBeFocused();
-      await page.keyboard.press('Tab');
+      await page.keyboard.press('ArrowDown');
+      await expect(
+        page.getByRole('menuitem', { name: 'Rename', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('ArrowDown');
+      await expect(
+        page.getByRole('menuitem', { name: 'Delete', exact: true })
+      ).toBeFocused();
+      await page.keyboard.press('Escape');
       await expect(
         nav.getByRole('button', {
-          name: 'Delete project <Alpha project> (<Alpha project>)',
+          name: 'More actions for project <Alpha project> (<Alpha project>)',
           exact: true,
         })
       ).toBeFocused();
+
       await page.keyboard.press('Tab');
       await expect(
         nav
@@ -1105,17 +1114,11 @@ test('installed React sidenav retains navigation, draft and a running response a
       await page.keyboard.press('Tab');
       await expect(
         nav.getByRole('button', {
-          name: 'Rename project beta/project (beta/project)',
+          name: 'More actions for project beta/project (beta/project)',
           exact: true,
         })
       ).toBeFocused();
-      await page.keyboard.press('Tab');
-      await expect(
-        nav.getByRole('button', {
-          name: 'Delete project beta/project (beta/project)',
-          exact: true,
-        })
-      ).toBeFocused();
+
       await page.keyboard.press('Tab');
       await expect(
         nav.getByRole('button', { name: 'Refresh', exact: true })
