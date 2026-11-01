@@ -5,7 +5,12 @@ import {
   type SqlExecutor,
   type SqlTransaction,
 } from '../database.ts';
-import { addDenyEntry, matchDeny } from './deny.ts';
+import {
+  addDenyEntry,
+  excludeDeniedCompanies,
+  LEAD_PROFILE_NOT_DENIED_SQL,
+  matchDeny,
+} from './deny.ts';
 import {
   companyNameFromHeadline,
   headlineSignal,
@@ -237,7 +242,13 @@ export interface LeadListRow extends Record<string, unknown> {
 const DEFAULT_LIST_LIMIT = 50;
 const MAX_LIST_LIMIT = 200;
 
-/** Lists leads by score then recency, with their engagements; default limit 50, max 200. */
+/**
+ * Lists leads by score then recency, with their engagements; default limit 50,
+ * max 200. Leads matching an active profile_url or company_name deny row are
+ * excluded (this list feeds drafting), except when `status` is `denied`, which
+ * lists denied leads for inspection. The company filter runs after the limit,
+ * so a page can hold fewer rows than the limit.
+ */
 export async function listLeads(
   ex: SqlExecutor,
   input: { status?: LinkedInLeadStatus; limit?: number }
@@ -260,12 +271,17 @@ from growth_linkedin_leads l
 left join growth_linkedin_engagements e on e.lead_id = l.id
 left join growth_linkedin_posts p on p.id = e.post_id
 where ($1::text is null or l.status = $1::text)
+  and ($1::text = 'denied' or ${LEAD_PROFILE_NOT_DENIED_SQL})
 group by l.id
 order by l.score desc, l.last_seen_at desc
 limit $2`,
     [input.status ?? null, limit]
   );
-  return result.rows.map(mapLeadRow);
+  const rows =
+    input.status === 'denied'
+      ? result.rows
+      : await excludeDeniedCompanies(ex, result.rows);
+  return rows.map(mapLeadRow);
 }
 
 /** Maps a lead list row to its summary. */
@@ -321,13 +337,17 @@ const TEXT_LIMITS = { connection: 300, message: 600 } as const;
  * Applies a founder decision in one transaction. Approve is allowed from
  * `new` only and re-checks the deny list; reject and deny are allowed from
  * `new` or `rejected`. Deny also adds the profile and company to the deny list.
- * Throws when approve text exceeds the variant limit.
+ * Throws when approve text is empty or whitespace-only, or exceeds the
+ * variant limit.
  */
 export async function decideLead(
   ex: SqlExecutor,
   input: DecideLeadInput
 ): Promise<DecideLeadResult> {
   if (input.decision === 'approve') {
+    if (!input.text.trim()) {
+      throw new Error(`${input.variant} text is empty`);
+    }
     const limit = TEXT_LIMITS[input.variant];
     if ([...input.text].length > limit) {
       throw new Error(`${input.variant} text exceeds ${limit} characters`);

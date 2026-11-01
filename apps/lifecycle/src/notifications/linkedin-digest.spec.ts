@@ -78,8 +78,12 @@ describe('renderLinkedInDigest', () => {
     expect(text).toContain(
       'commented: "Great write-up on agent streaming" on https://www.linkedin.com/feed/update/urn:li:activity:1/ 2026-10-30T15:00:00.000Z'
     );
-    expect(text).toContain('reacted on urn:li:activity:2 2026-10-30T16:00:00.000Z');
-    expect(text).toContain('reposted on an unknown post 2026-10-30T17:00:00.000Z');
+    expect(text).toContain(
+      'reacted on urn:li:activity:2 2026-10-30T16:00:00.000Z'
+    );
+    expect(text).toContain(
+      'reposted on an unknown post 2026-10-30T17:00:00.000Z'
+    );
     expect(text).toContain(
       'mentioned you on https://www.linkedin.com/feed/update/urn:li:activity:3/ 2026-10-30T18:00:00.000Z'
     );
@@ -87,7 +91,9 @@ describe('renderLinkedInDigest', () => {
       'replied: "Agreed, thanks" on urn:li:activity:1 2026-10-30T19:00:00.000Z'
     );
     expect(text).toContain(`Reject (valid 7 days):\n${REJECT_URL}`);
-    expect(text).toContain(`Deny forever (valid 7 days):\n${DENY_URL}`);
+    expect(text).toContain(
+      `Deny forever (also denies company Example Corp) (valid 7 days):\n${DENY_URL}`
+    );
     expect(text).not.toContain('previously rejected');
     expect(text).toContain(
       'Since last digest: 9 received, 2 unparsed, 3 dropped by the deny list.'
@@ -111,6 +117,12 @@ describe('renderLinkedInDigest', () => {
     expect(text).toMatch(/^Dana Builder$/mu);
     expect(text).toContain('Second Person — Staff Engineer at Example Corp');
     expect(text.match(/Company: /gu)).toHaveLength(1);
+    expect(text.match(/^Deny forever \(valid 7 days\):$/gmu)).toHaveLength(1);
+    expect(
+      text.match(
+        /^Deny forever \(also denies company Example Corp\) \(valid 7 days\):$/gmu
+      )
+    ).toHaveLength(1);
     expect(text.match(/Reject \(valid 7 days\):/gu)).toHaveLength(2);
   });
 
@@ -152,7 +164,8 @@ describe('renderLinkedInDigest', () => {
         input({
           leads: [
             lead({
-              rejectUrl: 'http://threadplane.ai/api/growth/linkedin-decide?token=g1.a.b',
+              rejectUrl:
+                'http://threadplane.ai/api/growth/linkedin-decide?token=g1.a.b',
             }),
           ],
         })
@@ -166,7 +179,8 @@ describe('renderLinkedInDigest', () => {
         input({
           leads: [
             lead({
-              denyUrl: 'https://evil.example/api/growth/linkedin-decide?token=g1.a.b',
+              denyUrl:
+                'https://evil.example/api/growth/linkedin-decide?token=g1.a.b',
             }),
           ],
         })
@@ -192,7 +206,9 @@ describe('renderLinkedInDigest', () => {
       )
     ).toThrow();
     expect(() =>
-      renderLinkedInDigest(input({ leads: [lead({ displayName: 'Dana\u0007' })] }))
+      renderLinkedInDigest(
+        input({ leads: [lead({ displayName: 'Dana\u0007' })] })
+      )
     ).toThrow();
     expect(() =>
       renderLinkedInDigest(

@@ -74,6 +74,23 @@ test('admit ignores events not addressed to the ingest address and defers to the
   ]);
 });
 
+test('admit marks the receipt for forwarding until processing lowers it', async () => {
+  const { executor, calls } = executorWith({
+    'linkedin-receipt-admit': () => ({ rows: [] }),
+  });
+  await admitLinkedInReceipt(
+    executor,
+    {
+      type: 'email.received',
+      data: { email_id: 'e1', to: ['linkedin@threadplane.ai'], created_at },
+    },
+    cfg
+  );
+  expect(calls[0].sql).toMatch(
+    /insert into growth_linkedin_receipts \(id, recipient, received_at, forward_required\)\s+values \(\$1, \$2, \$3, true\)/
+  );
+});
+
 test('an untrusted sender is stored headers-only and marked for forwarding', async () => {
   const { executor, calls } = executorWith({
     ...pending,
@@ -102,21 +119,21 @@ test('an untrusted sender is stored headers-only and marked for forwarding', asy
   ]);
 });
 
-test('a trusted unparsed notification keeps its raw body', async () => {
+test('a trusted unsupported_kind result keeps its raw body', async () => {
   const { executor, calls } = executorWith({
     ...pending,
     'linkedin-receipt-unparsed': () => ({ rows: [] }),
   });
   const out = await processLinkedInReceipt(executor, 'e1', cfg, {
     getReceived: async () => email(),
-    parse: () => ({ outcome: 'unparsed', reason: 'no_fixtures_yet' }),
+    parse: () => ({ outcome: 'unparsed', reason: 'unsupported_kind' }),
     now: () => now,
   });
   expect(out).toBe('unparsed');
   const params = calls.find(
     (c) => c.marker === 'linkedin-receipt-unparsed'
   )!.params;
-  expect(params[1]).toBe('no_fixtures_yet');
+  expect(params[1]).toBe('unsupported_kind');
   expect(params.slice(4)).toEqual([
     'Jane commented',
     'body text',
@@ -124,6 +141,32 @@ test('a trusted unparsed notification keeps its raw body', async () => {
     true,
   ]);
 });
+
+test.each(['no_fixtures_yet', 'not_notification'] as const)(
+  'a trusted %s result is stored headers-only',
+  async (reason) => {
+    const { executor, calls } = executorWith({
+      ...pending,
+      'linkedin-receipt-unparsed': () => ({ rows: [] }),
+    });
+    const out = await processLinkedInReceipt(executor, 'e1', cfg, {
+      getReceived: async () => email({ subject: 'Your sign-in code 123456' }),
+      parse: () => ({ outcome: 'unparsed', reason }),
+      now: () => now,
+    });
+    expect(out).toBe('unparsed');
+    const params = calls.find(
+      (c) => c.marker === 'linkedin-receipt-unparsed'
+    )!.params;
+    expect(params[1]).toBe(reason);
+    expect(params[3]).toBe(
+      JSON.stringify({
+        'authentication-results': 'mx; spf=pass; dkim=pass',
+      })
+    );
+    expect(params.slice(4)).toEqual([null, null, null, true]);
+  }
+);
 
 test('a parsed notification writes drops for denied actors and engagements for the rest', async () => {
   let n = 0;
@@ -186,9 +229,15 @@ test('parsed with zero actors is unparsed as no_actor', async () => {
     }),
     now: () => now,
   });
-  expect(
-    calls.find((c) => c.marker === 'linkedin-receipt-unparsed')!.params[1]
-  ).toBe('no_actor');
+  const params = calls.find(
+    (c) => c.marker === 'linkedin-receipt-unparsed'
+  )!.params;
+  expect(params[1]).toBe('no_actor');
+  expect(params.slice(4, 7)).toEqual([
+    'Jane commented',
+    'body text',
+    '<p>body</p>',
+  ]);
 });
 
 test('a second delivery of the same receipt is already_processed', async () => {

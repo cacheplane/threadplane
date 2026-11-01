@@ -57,17 +57,36 @@ export function normalizeCompanyName(value: string): string {
 const FORMER_BEFORE_AT =
   /(?:^|[^\p{L}\p{N}])(?:ex[- ]|former|formerly|previously|prev\.)\s*$/iu;
 
+/** " at ", " @ " or "@Company" (an @ after whitespace, so emails never match). */
+const COMPANY_MARKER = /(?:^|\s)(?:at\s+|@\s*)(?=\S)/iu;
+
 /**
- * Reads the current company from a headline ("Role at Company"). Returns null
- * for former-employer phrasing or when no company phrase is present.
+ * Reads the current company from a headline ("Role at Company", "Role @ Company"
+ * or "Role @Company"). Returns null for former-employer phrasing or when no
+ * company phrase is present. A bare "Company | title" headline is not read:
+ * it cannot be told apart from a skill list such as "Angular | TypeScript".
  */
 export function companyNameFromHeadline(headline: string): string | null {
-  const marker = / (?:at|@) /i.exec(headline);
+  const marker = COMPANY_MARKER.exec(headline);
   if (!marker) return null;
   if (FORMER_BEFORE_AT.test(headline.slice(0, marker.index))) return null;
   const rest = headline.slice(marker.index + marker[0].length);
   const company = rest.split(/[|,•·—-]/)[0].trim();
   return company || null;
+}
+
+/**
+ * True when a normalized deny company name appears as whole words inside the
+ * normalized current-company phrase (deny `acme` matches `Acme AI`).
+ */
+export function companyMatchesDenyName(
+  company: string,
+  denyName: string
+): boolean {
+  const phrase = normalizeCompanyName(company);
+  const name = normalizeCompanyName(denyName);
+  if (!phrase || !name) return false;
+  return ` ${phrase} `.includes(` ${name} `);
 }
 
 /** Hostnames mentioned in free text, lowercased and unique, excluding LinkedIn's own. */

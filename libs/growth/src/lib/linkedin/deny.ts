@@ -1,5 +1,6 @@
 import type { SqlExecutor, SqlTransaction } from '../database.ts';
 import {
+  companyMatchesDenyName,
   companyNameFromHeadline,
   domainsInText,
   normalizeCompanyName,
@@ -127,29 +128,69 @@ export interface DenyProbe {
   headline: string;
 }
 
-/** Returns the first matching active deny id, or null. One query. */
+/**
+ * Returns the earliest matching active deny id, or null. One query: profile
+ * and domain matches are filtered in SQL; every active company_name row is
+ * loaded and matched in TypeScript as whole words inside the headline's
+ * current-company phrase, so deny `acme` matches `Staff Engineer at Acme AI`.
+ * Former-employer phrasing yields no company and so never matches by name.
+ */
 export async function matchDeny(
   tx: SqlTransaction,
   probe: DenyProbe
 ): Promise<string | null> {
   const company = companyNameFromHeadline(probe.headline);
-  const companyName = company ? normalizeCompanyName(company) : '';
-  const result = await tx.execute<{ id: string }>(
+  const result = await tx.execute<{
+    id: string;
+    kind: LinkedInDenyKind;
+    value: string;
+  }>(
     `/* growth:linkedin-deny-match */
-select id from growth_linkedin_deny
+select id, kind, value from growth_linkedin_deny
 where removed_at is null
   and ((kind = 'profile_url' and value = $1)
     or (kind = 'company_domain' and value = any($2::text[]))
-    or (kind = 'company_name' and value = any($3::text[])))
-order by added_at
-limit 1`,
+    or kind = 'company_name')
+order by added_at, id`,
     [
       normalizeLinkedInProfileUrl(probe.profileUrl) ?? probe.profileUrl,
       domainsInText(probe.headline),
-      companyName ? [companyName] : [],
     ]
   );
-  return result.rows[0]?.id ?? null;
+  const hit = result.rows.find((row) =>
+    row.kind === 'company_name'
+      ? company !== null && companyMatchesDenyName(company, row.value)
+      : true
+  );
+  return hit?.id ?? null;
+}
+
+/** SQL predicate: lead alias `l` has no active profile_url deny row. */
+export const LEAD_PROFILE_NOT_DENIED_SQL = `not exists (
+    select 1 from growth_linkedin_deny d
+    where d.kind = 'profile_url' and d.removed_at is null
+      and d.value = l.profile_url)`;
+
+/**
+ * Drops rows whose stored company matches an active company_name deny value
+ * (whole words, as in `matchDeny`). Pair with `LEAD_PROFILE_NOT_DENIED_SQL`;
+ * every lead list that feeds drafting or the digest uses both.
+ */
+export async function excludeDeniedCompanies<
+  T extends { company_name: string | null }
+>(ex: SqlTransaction, rows: T[]): Promise<T[]> {
+  const denied = await ex.execute<{ value: string }>(
+    `/* growth:linkedin-deny-company-names */
+select value from growth_linkedin_deny
+where kind = 'company_name' and removed_at is null`
+  );
+  const names = denied.rows.map((row) => row.value);
+  return rows.filter((row) => {
+    const company = row.company_name;
+    return (
+      !company || !names.some((name) => companyMatchesDenyName(company, name))
+    );
+  });
 }
 
 /** Records that a receipt was dropped by a deny entry; carries no identity. */

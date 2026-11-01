@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 
 import {
+  companyMatchesDenyName,
   companyNameFromHeadline,
   domainsInText,
   headlineSignal,
@@ -38,6 +39,33 @@ test('current company comes from at/@ and never from ex- phrasing', () => {
   expect(companyNameFromHeadline('ex-Acme, building things')).toBeNull();
   expect(companyNameFromHeadline('Formerly at Acme')).toBeNull();
   expect(companyNameFromHeadline('Angular developer')).toBeNull();
+});
+
+test('current company accepts @ without a following space', () => {
+  expect(companyNameFromHeadline('Engineer @Acme')).toBe('Acme');
+  expect(companyNameFromHeadline('Engineer @Acme AI | Angular')).toBe(
+    'Acme AI'
+  );
+  expect(companyNameFromHeadline('ex-@Acme')).toBeNull();
+  expect(companyNameFromHeadline('previously @Acme')).toBeNull();
+  expect(companyNameFromHeadline('jane@acme.example')).toBeNull();
+});
+
+test('a bare "<segment> | <segment>" headline yields no company', () => {
+  // Skill lists ("Angular | TypeScript") are indistinguishable from
+  // "<Company> | <title>", and deny-forever would deny the skill as a company.
+  expect(companyNameFromHeadline('Angular | TypeScript | RxJS')).toBeNull();
+  expect(companyNameFromHeadline('Acme | Building agent UIs')).toBeNull();
+  expect(companyNameFromHeadline('Globex | CTO at Acme')).toBe('Acme');
+});
+
+test('deny company names match as whole words inside the current company', () => {
+  expect(companyMatchesDenyName('Acme AI', 'acme')).toBe(true);
+  expect(companyMatchesDenyName('Acme, Inc.', 'acme')).toBe(true);
+  expect(companyMatchesDenyName('The Acme Group', 'acme group')).toBe(true);
+  expect(companyMatchesDenyName('Acmeco', 'acme')).toBe(false);
+  expect(companyMatchesDenyName('Acme AI', 'acme labs')).toBe(false);
+  expect(companyMatchesDenyName('Acme', '')).toBe(false);
 });
 
 test('headline signal', () => {

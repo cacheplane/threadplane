@@ -4,7 +4,7 @@ import {
   type LinkedInLeadSummary,
   mapLeadRow,
 } from './leads.ts';
-import { normalizeCompanyName } from './normalize.ts';
+import { excludeDeniedCompanies, LEAD_PROFILE_NOT_DENIED_SQL } from './deny.ts';
 
 /** Counts only; the digest context never carries identities. */
 export interface LinkedInDigestContext {
@@ -18,8 +18,9 @@ export interface LinkedInDigestContext {
 /**
  * Reads the digest context. `since` is the sent_at of the latest digest, else
  * now - 24h. ingestCount = receipts received since; unparsedCount = unparsed
- * receipts since; dropCount = drops since; forwardBacklog = receipts that need
- * forwarding with no provider id, older than 15 minutes.
+ * receipts since; dropCount = drops since; forwardBacklog = receipts older
+ * than 15 minutes that need forwarding with no provider id, or that are still
+ * pending (processing never finished).
  */
 export async function readLinkedInDigestContext(
   ex: SqlTransaction,
@@ -45,7 +46,7 @@ select b.since,
   (select count(*) from growth_linkedin_receipts r
     where r.received_at > b.since) as ingest,
   (select count(*) from growth_linkedin_receipts r
-    where r.forward_required and r.forward_provider_id is null
+    where ((r.forward_required and r.forward_provider_id is null) or r.status = 'pending')
       and r.received_at < $1::timestamptz - interval '15 minutes') as forward_backlog
 from bounds b`,
     [input.now]
@@ -74,14 +75,6 @@ const DIGEST_LEAD_LIMIT = 100;
 export async function readLinkedInDigestLeads(
   ex: SqlTransaction
 ): Promise<LinkedInDigestLead[]> {
-  const denied = await ex.execute<{ value: string }>(
-    `/* growth:linkedin-digest-deny-names */
-select value from growth_linkedin_deny
-where kind = 'company_name' and removed_at is null`
-  );
-  const deniedNames = new Set(
-    denied.rows.map((row) => normalizeCompanyName(row.value))
-  );
   const result = await ex.execute<LeadListRow>(
     `/* growth:linkedin-digest-leads */
 select l.id, l.profile_url, l.display_name, l.headline, l.company_name,
@@ -97,25 +90,16 @@ left join growth_linkedin_engagements e on e.lead_id = l.id
 left join growth_linkedin_posts p on p.id = e.post_id
 where (l.status = 'new'
     or (l.status = 'rejected' and l.last_seen_at > l.decided_at))
-  and not exists (
-    select 1 from growth_linkedin_deny d
-    where d.kind = 'profile_url' and d.removed_at is null
-      and d.value = l.profile_url)
+  and ${LEAD_PROFILE_NOT_DENIED_SQL}
 group by l.id
 order by l.score desc, l.last_seen_at desc
 limit $1`,
     [DIGEST_LEAD_LIMIT]
   );
-  return result.rows
-    .filter(
-      (row) =>
-        !row.company_name ||
-        !deniedNames.has(normalizeCompanyName(row.company_name))
-    )
-    .map((row) => ({
-      ...mapLeadRow(row),
-      previouslyRejected: row.status === 'rejected',
-    }));
+  return (await excludeDeniedCompanies(ex, result.rows)).map((row) => ({
+    ...mapLeadRow(row),
+    previouslyRejected: row.status === 'rejected',
+  }));
 }
 
 /**

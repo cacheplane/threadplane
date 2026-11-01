@@ -78,7 +78,9 @@ function confirmationResponse(token: string, decision: Decision): NextResponse {
     decision === 'deny' ? 'Deny this lead forever' : 'Reject this lead';
   return htmlResponse(
     heading,
-    'Submit this form to confirm.',
+    decision === 'deny'
+      ? "Denying also adds this lead's company to the permanent deny list when one is known. Nothing is sent to anyone."
+      : 'Submit this form to confirm.',
     `<form method="post" action="/api/growth/linkedin-decide"><input type="hidden" name="token" value="${escapeHtmlAttribute(
       token
     )}"><button type="submit">Confirm</button></form>`

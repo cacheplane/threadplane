@@ -320,15 +320,23 @@ export async function dispatchLifecycleJobs(
         tickSignal.throwIfAborted();
       }
     }
+    // Retention scrubbing runs on every tick, even with ingest switched off, so
+    // raw receipt bodies never outlive 30 days. Contained like marketing: a
+    // LinkedIn failure never blocks leasing.
+    try {
+      await dependencies.scrubLinkedInReceipts(executor, {
+        now: dependencies.now(),
+      });
+    } catch {
+      operatorAlerts.push('linkedin_ingest_failed');
+    }
+    tickSignal.throwIfAborted();
     if (input.linkedInIngestEnabled === true) {
-      // Contained like marketing: a LinkedIn failure never blocks leasing.
       try {
         const now = dependencies.now();
-        await dependencies.scrubLinkedInReceipts(executor, { now });
-        const context = await dependencies.readLinkedInDigestContext(
-          executor,
-          { now }
-        );
+        const context = await dependencies.readLinkedInDigestContext(executor, {
+          now,
+        });
         if (context.forwardBacklog > 0) {
           operatorAlerts.push('linkedin_forward_failed');
         }
@@ -341,7 +349,8 @@ export async function dispatchLifecycleJobs(
           });
         }
       } catch {
-        operatorAlerts.push('linkedin_ingest_failed');
+        if (!operatorAlerts.includes('linkedin_ingest_failed'))
+          operatorAlerts.push('linkedin_ingest_failed');
       }
       tickSignal.throwIfAborted();
     }

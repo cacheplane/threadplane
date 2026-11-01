@@ -101,7 +101,9 @@ const LeadSchema = z.object({
   companyName: safeText(LINKEDIN_DIGEST_LIMITS.companyName).nullable(),
   score: z.number().int(),
   previouslyRejected: z.boolean(),
-  engagements: z.array(EngagementSchema).max(LINKEDIN_DIGEST_LIMITS.engagements),
+  engagements: z
+    .array(EngagementSchema)
+    .max(LINKEDIN_DIGEST_LIMITS.engagements),
   // Validated against the configured origin by the input-level refinement below.
   rejectUrl: z.string().min(1).max(2_048),
   denyUrl: z.string().min(1).max(2_048),
@@ -206,7 +208,10 @@ function block(lead: Lead): string {
     ...lead.engagements.map(engagementLine),
     'Reject (valid 7 days):',
     lead.rejectUrl,
-    'Deny forever (valid 7 days):',
+    // Deny forever also denies the lead's company; say so before the click.
+    lead.companyName
+      ? `Deny forever (also denies company ${lead.companyName}) (valid 7 days):`
+      : 'Deny forever (valid 7 days):',
     lead.denyUrl
   );
   return lines.join('\n');
@@ -218,7 +223,9 @@ export function renderLinkedInDigest(candidate: unknown): string {
   const count = input.leads.length;
   return [
     `Threadplane LinkedIn leads for ${input.businessDate}`,
-    `${count} ${count === 1 ? 'lead' : 'leads'} engaged with your LinkedIn posts.`,
+    `${count} ${
+      count === 1 ? 'lead' : 'leads'
+    } engaged with your LinkedIn posts.`,
     'This digest sends nothing to any lead.',
     'No approve link: approvals happen in the /week session.',
     '',

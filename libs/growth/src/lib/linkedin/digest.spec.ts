@@ -62,14 +62,29 @@ test('context maps counts and passes now', async () => {
   expect(calls[0].params).toEqual([now]);
 });
 
+test('forward backlog also counts receipts stuck pending past 15 minutes', async () => {
+  const { executor, calls } = executorWith({
+    'linkedin-digest-context': () => contextRow(),
+  });
+  await executor.transaction((tx) => readLinkedInDigestContext(tx, { now }));
+  const sql = calls[0].sql.replace(/\s+/g, ' ');
+  expect(sql).toContain(
+    "(r.forward_required and r.forward_provider_id is null) or r.status = 'pending'"
+  );
+  expect(sql).toContain(
+    "r.received_at < $1::timestamptz - interval '15 minutes') as forward_backlog"
+  );
+});
+
 test('leads drop denied companies by normalized name and flag rejected', async () => {
   const { executor } = executorWith({
-    'linkedin-digest-deny-names': () => ({ rows: [{ value: 'acme' }] }),
+    'linkedin-deny-company-names': () => ({ rows: [{ value: 'acme' }] }),
     'linkedin-digest-leads': () => ({
       rows: [
         leadRow(),
         leadRow({ id: 'l2', company_name: 'Globex', status: 'rejected' }),
         leadRow({ id: 'l3', company_name: null }),
+        leadRow({ id: 'l4', company_name: 'Acme AI' }),
       ],
     }),
   });
@@ -94,7 +109,7 @@ test('enqueue skips when the job exists', async () => {
 test('enqueue skips when there are no leads and zero counts', async () => {
   const { executor, calls } = executorWith({
     'linkedin-digest-job-exists': () => ({ rows: [] }),
-    'linkedin-digest-deny-names': () => ({ rows: [] }),
+    'linkedin-deny-company-names': () => ({ rows: [] }),
     'linkedin-digest-leads': () => ({ rows: [] }),
     'linkedin-digest-context': () => contextRow({ forward_backlog: '9' }),
   });
@@ -107,7 +122,7 @@ test('enqueue skips when there are no leads and zero counts', async () => {
 test('enqueue inserts the digest job', async () => {
   const { executor, calls } = executorWith({
     'linkedin-digest-job-exists': () => ({ rows: [] }),
-    'linkedin-digest-deny-names': () => ({ rows: [] }),
+    'linkedin-deny-company-names': () => ({ rows: [] }),
     'linkedin-digest-leads': () => ({ rows: [leadRow()] }),
     'linkedin-digest-context': () => contextRow(),
     'enqueue-linkedin-digest': () => ({ rows: [{ id: 'job-1' }] }),
@@ -123,7 +138,7 @@ test('enqueue inserts the digest job', async () => {
 test('enqueue also fires on unparsed receipts alone', async () => {
   const { executor } = executorWith({
     'linkedin-digest-job-exists': () => ({ rows: [] }),
-    'linkedin-digest-deny-names': () => ({ rows: [] }),
+    'linkedin-deny-company-names': () => ({ rows: [] }),
     'linkedin-digest-leads': () => ({ rows: [] }),
     'linkedin-digest-context': () => contextRow({ unparsed: '1' }),
     'enqueue-linkedin-digest': () => ({ rows: [{ id: 'job-2' }] }),

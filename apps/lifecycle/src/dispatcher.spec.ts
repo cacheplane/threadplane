@@ -1311,14 +1311,46 @@ describe('LinkedIn ingest tick step', () => {
   });
 
   it.each([undefined, false])(
-    'calls none of the LinkedIn dependencies when the switch is %s',
+    'still scrubs but reads no context and enqueues nothing when the switch is %s',
     async (enabled) => {
       const deps = dependencies({ now: vi.fn(() => WEDNESDAY) });
-      await run(deps, enabled);
-      expect(deps.scrubLinkedInReceipts).not.toHaveBeenCalled();
+      const result = await run(deps, enabled);
+      expect(deps.scrubLinkedInReceipts).toHaveBeenCalledOnce();
+      expect(deps.scrubLinkedInReceipts).toHaveBeenCalledWith(
+        expect.anything(),
+        { now: WEDNESDAY }
+      );
       expect(deps.readLinkedInDigestContext).not.toHaveBeenCalled();
       expect(deps.enqueueLinkedInDigestJob).not.toHaveBeenCalled();
       expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+      expect(result.operatorAlerts).toEqual([]);
     }
   );
+
+  it('contains a scrub failure as linkedin_ingest_failed when the switch is off', async () => {
+    const deps = dependencies({
+      now: vi.fn(() => WEDNESDAY),
+      scrubLinkedInReceipts: vi
+        .fn()
+        .mockRejectedValue(new Error('database unavailable')),
+    });
+    const result = await run(deps, false);
+    expect(deps.leaseDueJobs).toHaveBeenCalledOnce();
+    expect(result.operatorAlerts).toEqual(['linkedin_ingest_failed']);
+  });
+
+  it('a scrub failure does not stop the enabled step and alerts once', async () => {
+    const deps = dependencies({
+      now: vi.fn(() => WEDNESDAY),
+      scrubLinkedInReceipts: vi
+        .fn()
+        .mockRejectedValue(new Error('database unavailable')),
+      readLinkedInDigestContext: vi
+        .fn()
+        .mockRejectedValue(new Error('database unavailable')),
+    });
+    const result = await run(deps, true);
+    expect(deps.readLinkedInDigestContext).toHaveBeenCalledOnce();
+    expect(result.operatorAlerts).toEqual(['linkedin_ingest_failed']);
+  });
 });

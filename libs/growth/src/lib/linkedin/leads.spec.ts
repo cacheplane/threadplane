@@ -198,6 +198,22 @@ test('decideLead approve enforces variant limits', async () => {
   ).rejects.toThrow();
 });
 
+test('decideLead approve rejects empty or whitespace-only text', async () => {
+  const { executor, calls } = decideExecutor();
+  for (const text of ['', '   \n\t '])
+    await expect(
+      decideLead(executor, {
+        leadId: 'lead-1',
+        decision: 'approve',
+        variant: 'message',
+        text,
+        decidedBy: 'brian',
+        now,
+      })
+    ).rejects.toThrow(/empty/);
+  expect(calls).toHaveLength(0);
+});
+
 test('decideLead approve applies and stores the variant text', async () => {
   const { executor, calls } = decideExecutor();
   const result = await decideLead(executor, {
@@ -294,7 +310,8 @@ test('decideLead returns not_found when the lead is missing', async () => {
 });
 
 test('listLeads maps rows, clamps the limit and passes the status filter', async () => {
-  const { executor, calls } = executorWith({
+  const { executor, calls: allCalls } = executorWith({
+    'linkedin-deny-company-names': () => ({ rows: [] }),
     'linkedin-leads-list': () => ({
       rows: [
         {
@@ -324,6 +341,7 @@ test('listLeads maps rows, clamps the limit and passes the status filter', async
     }),
   });
   const leads = await listLeads(executor, { status: 'new', limit: 999 });
+  const calls = allCalls.filter((c) => c.marker === 'linkedin-leads-list');
   expect(calls[0].params).toEqual(['new', 200]);
   expect(leads[0].engagements).toEqual([
     {
@@ -336,7 +354,46 @@ test('listLeads maps rows, clamps the limit and passes the status filter', async
   ]);
   expect(leads[0].displayName).toBe('Jane Doe');
   await listLeads(executor, {});
-  expect(calls[1].params).toEqual([null, 50]);
+  expect(
+    allCalls.filter((c) => c.marker === 'linkedin-leads-list')[1].params
+  ).toEqual([null, 50]);
+});
+
+test('listLeads excludes leads matching an active deny row', async () => {
+  const row = (id: string, company_name: string | null) => ({
+    id,
+    profile_url: `https://www.linkedin.com/in/${id}`,
+    display_name: id,
+    headline: '',
+    company_name,
+    status: 'new',
+    score: 10,
+    first_seen_at: now,
+    last_seen_at: now,
+    decided_at: null,
+    approved_variant: null,
+    approved_text: null,
+    engagements: [],
+  });
+  const { executor, calls } = executorWith({
+    'linkedin-deny-company-names': () => ({ rows: [{ value: 'acme' }] }),
+    'linkedin-leads-list': () => ({
+      rows: [
+        row('a', 'Acme AI'),
+        row('b', 'Globex'),
+        row('c', null),
+        row('d', 'Acmeco'),
+      ],
+    }),
+  });
+  const leads = await listLeads(executor, { status: 'new' });
+  expect(leads.map((lead) => lead.id)).toEqual(['b', 'c', 'd']);
+  const list = calls.find((c) => c.marker === 'linkedin-leads-list')!;
+  expect(list.sql.replace(/\s+/g, ' ')).toContain(
+    "not exists ( select 1 from growth_linkedin_deny d where d.kind = 'profile_url' and d.removed_at is null and d.value = l.profile_url)"
+  );
+  const denied = await listLeads(executor, { status: 'denied' });
+  expect(denied.map((lead) => lead.id)).toEqual(['a', 'b', 'c', 'd']);
 });
 
 test('deleteLead reports whether a lead was removed', async () => {

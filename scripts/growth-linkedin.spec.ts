@@ -180,6 +180,54 @@ describe('growth:linkedin runner', () => {
     ]);
   });
 
+  test('decide --approve with an empty text file is a usage error', async () => {
+    const h = harness({ '/empty.txt': ' \n\t\n' });
+    expect(
+      await runGrowthLinkedIn(
+        [
+          'decide',
+          '--target=preview',
+          '--lead',
+          'L1',
+          '--approve',
+          '--variant',
+          'message',
+          '--text-file',
+          '/empty.txt',
+        ],
+        h.deps
+      )
+    ).toBe(2);
+    expect(h.calls['decide']).toBeUndefined();
+  });
+
+  test('decide exits 1 when the deny list blocks the approval', async () => {
+    const h = harness(
+      { '/t.txt': 'hello' },
+      {},
+      { decide: async () => 'denied_by_list' }
+    );
+    expect(
+      await runGrowthLinkedIn(
+        [
+          'decide',
+          '--target=preview',
+          '--lead',
+          'L1',
+          '--approve',
+          '--variant',
+          'connection',
+          '--text-file',
+          '/t.txt',
+        ],
+        h.deps
+      )
+    ).toBe(1);
+    expect(h.out).toEqual([
+      '{"command":"decide","leadId":"L1","result":"denied_by_list"}',
+    ]);
+  });
+
   test('decide exits 1 when the lead is not found', async () => {
     const h = harness({}, {}, { decide: async () => 'not_found' });
     expect(

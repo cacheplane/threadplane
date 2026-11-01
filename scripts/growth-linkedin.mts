@@ -456,6 +456,9 @@ export async function runGrowthLinkedIn(
           const text = (
             await dependencies.readFile(command.textFile ?? '')
           ).trim();
+          if (!text) {
+            throw new GrowthLinkedInUsageError('--text-file is empty');
+          }
           input = {
             leadId: command.leadId,
             decision: 'approve',
@@ -474,7 +477,7 @@ export async function runGrowthLinkedIn(
         }
         const result = await operations.decide(input);
         emit({ command: 'decide', leadId: command.leadId, result });
-        return result === 'not_found' ? 1 : 0;
+        return result === 'not_found' || result === 'denied_by_list' ? 1 : 0;
       }
       case 'delete-lead': {
         const deleted = await operations.deleteLead(command.profileUrl);

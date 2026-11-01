@@ -77,13 +77,19 @@ describe('/api/growth/linkedin-decide', () => {
     expect(deny.status).toBe(200);
     expect(denyBody).toContain('Deny this lead forever');
     expect(denyBody).toContain(`name="token" value="${token()}"`);
+    expect(denyBody).toContain(
+      "<p>Denying also adds this lead's company to the permanent deny list when one is known. Nothing is sent to anyone.</p>"
+    );
 
     const reject = await h.GET(
       request(
         `/api/growth/linkedin-decide?token=${token({ reason: 'reject' })}`
       ) as never
     );
-    expect(await reject.text()).toContain('Reject this lead');
+    const rejectBody = await reject.text();
+    expect(rejectBody).toContain('Reject this lead');
+    expect(rejectBody).toContain('<p>Submit this form to confirm.</p>');
+    expect(rejectBody).not.toContain('deny list');
     expect(h.decide).not.toHaveBeenCalled();
   });
 

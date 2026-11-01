@@ -40,13 +40,15 @@ test('matchDeny probes profile url, headline domains and current company only', 
   expect(calls[0].params).toEqual([
     'https://www.linkedin.com/in/jane',
     ['acme.example'],
-    ['acme widgets'],
   ]);
+  expect(calls[0].sql).toContain("or kind = 'company_name'");
 });
 
 test('matchDeny returns the first matching deny id', async () => {
   const { executor } = executorWith({
-    'linkedin-deny-match': () => ({ rows: [{ id: 'deny-1' }] }),
+    'linkedin-deny-match': () => ({
+      rows: [{ id: 'deny-1', kind: 'profile_url', value: 'x' }],
+    }),
   });
   expect(
     await executor.transaction((tx) =>
@@ -58,17 +60,55 @@ test('matchDeny returns the first matching deny id', async () => {
   ).toBe('deny-1');
 });
 
-test('matchDeny sends no company candidate for ex- phrasing', async () => {
-  const { executor, calls } = executorWith({
-    'linkedin-deny-match': () => ({ rows: [] }),
+const companyDeny = (value: string) => () => ({
+  rows: [{ id: 'deny-acme', kind: 'company_name', value }],
+});
+const probe = (headline: string) => ({
+  profileUrl: 'https://www.linkedin.com/in/jane',
+  headline,
+});
+
+test('matchDeny matches a company deny value as whole words in the current company', async () => {
+  const { executor } = executorWith({
+    'linkedin-deny-match': companyDeny('acme'),
   });
-  await executor.transaction((tx) =>
-    matchDeny(tx, {
-      profileUrl: 'https://www.linkedin.com/in/jane',
-      headline: 'ex-Acme, now independent',
-    })
-  );
-  expect(calls[0].params[2]).toEqual([]);
+  const match = (headline: string) =>
+    executor.transaction((tx) => matchDeny(tx, probe(headline)));
+  expect(await match('Staff Engineer at Acme AI')).toBe('deny-acme');
+  expect(await match('Engineer @Acme')).toBe('deny-acme');
+  expect(await match('CTO at Acme, Inc.')).toBe('deny-acme');
+  expect(await match('CTO at Acmeco')).toBeNull();
+  expect(await match('Engineer, building Acme things')).toBeNull();
+});
+
+test('matchDeny never matches a company from ex- phrasing', async () => {
+  const { executor } = executorWith({
+    'linkedin-deny-match': companyDeny('acme'),
+  });
+  for (const headline of [
+    'ex-Acme, now independent',
+    'Formerly at Acme',
+    'Engineer, previously @Acme',
+  ])
+    expect(
+      await executor.transaction((tx) => matchDeny(tx, probe(headline)))
+    ).toBeNull();
+});
+
+test('matchDeny returns the earliest row that actually matches', async () => {
+  const { executor } = executorWith({
+    'linkedin-deny-match': () => ({
+      rows: [
+        { id: 'deny-globex', kind: 'company_name', value: 'globex' },
+        { id: 'deny-acme', kind: 'company_name', value: 'acme' },
+      ],
+    }),
+  });
+  expect(
+    await executor.transaction((tx) =>
+      matchDeny(tx, probe('Staff Engineer at Acme AI'))
+    )
+  ).toBe('deny-acme');
 });
 
 test('addDenyEntry reports whether a row was created', async () => {

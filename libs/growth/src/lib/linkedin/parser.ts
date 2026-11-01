@@ -7,7 +7,9 @@
  * text, and tracking parameters are replaced with stable placeholders.
  *
  * `LINKEDIN_UNSUPPORTED_KINDS` is currently all five kinds, so no mail can be
- * classified as parsed yet.
+ * classified as parsed yet. Until the real parser lands, every trusted receipt
+ * is `no_fixtures_yet`, which is stored headers-only (no raw subject or body)
+ * and forwarded to the operator.
  */
 import { inboxSenderAddress } from '../inbox-replies.ts';
 
@@ -18,11 +20,22 @@ export type LinkedInNotificationKind =
   | 'repost'
   | 'mention';
 
+/**
+ * Why a receipt was not parsed. Only `unsupported_kind` and `no_actor` keep
+ * the raw subject and body; the rest are stored headers-only.
+ * - `untrusted_sender`: not from linkedin.com with passing SPF and DKIM.
+ * - `unsupported_kind`: an engagement notification of a kind with no fixture.
+ * - `no_actor`: an engagement notification that named no individual actor.
+ * - `no_fixtures_yet`: the stub parser cannot classify trusted mail yet.
+ * - `not_notification`: trusted LinkedIn mail that is not an engagement
+ *   notification (sign-in codes, verification, digests).
+ */
 export type LinkedInUnparsedReason =
   | 'untrusted_sender'
   | 'unsupported_kind'
   | 'no_actor'
-  | 'no_fixtures_yet';
+  | 'no_fixtures_yet'
+  | 'not_notification';
 
 /** A member who engaged with a post. */
 export interface LinkedInActor {

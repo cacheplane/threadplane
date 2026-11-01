@@ -27,9 +27,23 @@ import {
 type EnabledConfig = Extract<LinkedInIngestConfig, { enabled: true }>;
 
 /**
+ * Unparsed reasons that still identify the mail as an engagement notification,
+ * so its raw subject and body are kept for parser work until scrubbing. Every
+ * other reason stores headers only.
+ */
+const RAW_BODY_REASONS: ReadonlySet<LinkedInUnparsedReason> = new Set([
+  'unsupported_kind',
+  'no_actor',
+]);
+
+/**
  * Durably admits received mail addressed to the LinkedIn ingest address. Mail
  * that also lists the reply inbox is left to the reply processor. Returns the
  * provider id, or null when the event is not ours.
+ *
+ * A receipt is admitted with `forward_required = true`, so mail whose
+ * processing fails is still forwarded; a parsed receipt lowers it to the
+ * configured value.
  */
 export async function admitLinkedInReceipt(
   ex: SqlExecutor,
@@ -53,8 +67,8 @@ export async function admitLinkedInReceipt(
     throw new Error('Invalid received timestamp');
   await ex.execute(
     `/* growth:linkedin-receipt-admit */
-insert into growth_linkedin_receipts (id, recipient, received_at)
-values ($1, $2, $3)
+insert into growth_linkedin_receipts (id, recipient, received_at, forward_required)
+values ($1, $2, $3, true)
 on conflict (id) do nothing`,
     [id, config.address, receivedAt]
   );
@@ -222,6 +236,9 @@ where id = $1`,
       : result.outcome === 'unparsed'
       ? result.reason
       : 'no_actor';
+    // Only mail recognized as an engagement notification keeps its body; a
+    // sign-in code or verification mail is stored headers-only (spec §1).
+    const keepBody = RAW_BODY_REASONS.has(reason);
     await tx.execute(
       `/* growth:linkedin-receipt-unparsed */
 update growth_linkedin_receipts
@@ -234,9 +251,9 @@ where id = $1`,
         reason,
         sender,
         headersJson,
-        trusted ? email.subject ?? null : null,
-        trusted ? email.text ?? null : null,
-        trusted ? email.html ?? null : null,
+        keepBody ? email.subject ?? null : null,
+        keepBody ? email.text ?? null : null,
+        keepBody ? email.html ?? null : null,
         true,
       ]
     );
