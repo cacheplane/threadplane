@@ -8,6 +8,37 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { deriveCockpitCaps } from './cockpit-matrix.mjs';
 import { classifyFromAffected } from './ci-scope.mjs';
+import { parse as parseYaml } from 'yaml';
+
+it('reuses only same-run dependencies while preserving every isolated Cockpit proof step', async () => {
+  const workflow = parseYaml(await readFile('.github/workflows/ci.yml', 'utf8'));
+  const producer = workflow.jobs['cockpit-e2e-dispatcher'];
+  const consumer = workflow.jobs['cockpit-e2e'];
+  const pack = producer.steps.find(step => step.name === 'Package verified Cockpit dependencies');
+  const upload = producer.steps.find(step => step.name === 'Upload same-run Cockpit dependencies');
+  const download = consumer.steps.find(step => step.name === 'Download same-run Cockpit dependencies');
+  const restore = consumer.steps.find(step => step.name === 'Restore verified Cockpit dependencies');
+  assert.ok(pack && upload && download && restore, 'all dependency ownership steps are required');
+  assert.ok(producer.steps.indexOf(pack) > producer.steps.findIndex(step => step.run === 'npm ci'));
+  assert.ok(producer.steps.indexOf(pack) < producer.steps.findIndex(step => step.name === 'Emit cap matrix'));
+  assert.equal(upload.with.name, '${{ steps.dependencies.outputs.artifact }}');
+  assert.equal(upload.with['if-no-files-found'], 'error');
+  assert.equal(upload.with['retention-days'], 1);
+  assert.equal(upload.with['compression-level'], 1);
+  assert.equal(producer.outputs.dependency_artifact, '${{ steps.dependencies.outputs.artifact }}');
+  assert.equal(producer.outputs.dependency_attempt, '${{ steps.dependencies.outputs.attempt }}');
+  assert.equal(download.with.name, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_artifact }}');
+  assert.equal(restore.env.COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_attempt }}');
+  assert.equal(restore.if, undefined, 'a failed restore must prevent proofs from running');
+  assert.equal(restore['continue-on-error'], undefined);
+  assert.equal(consumer.strategy['max-parallel'], 5);
+  assert.equal(consumer.strategy['fail-fast'], false);
+  assert.equal(consumer.steps.some(step => step.run === 'npm ci'), false);
+  const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step));
+  assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
+    '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
+    'all original setup, Python, source, fixture, browser and artifact steps remain identical');
+});
 
 it('requires the Scripts owner for reviewed test-only changes while allowing unrelated skips', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');

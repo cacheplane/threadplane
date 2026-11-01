@@ -40,6 +40,16 @@ export function selectCockpitCaps(allCockpitCaps, affectedNames, { fullFleet }) 
   return allCockpitCaps.filter((cap) => isCapAffected(cap, affectedNames));
 }
 
+const SHARED_SETUP_FILES = new Set([
+  '.github/workflows/ci.yml', 'package.json', 'package-lock.json', '.npmrc',
+  'scripts/cockpit-dependencies.mjs', 'scripts/cockpit-dependencies-archive.py',
+  'scripts/cockpit-dependencies.spec.mjs', 'scripts/cockpit-matrix.mjs', 'scripts/cockpit-matrix.spec.mjs',
+]);
+
+export function requiresFullCockpitFleet(changedFiles) {
+  return changedFiles.some(file => SHARED_SETUP_FILES.has(file.replace(/^\.\//, '')));
+}
+
 // ── CLI wrapper ────────────────────────────────────────────────────────────
 // Only runs when invoked as a script (not when imported by tests).
 import { execFileSync } from 'node:child_process';
@@ -167,9 +177,14 @@ function loadAffectedNames(base, head) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const allCaps = deriveCockpitCaps();
+  const sharedSetupChanged = !args.fullFleet && requiresFullCockpitFleet(
+    execFileSync('git', ['diff', '--no-renames', '--name-only', args.base, args.head], { encoding: 'utf8' })
+      .split('\n').filter(Boolean),
+  );
+  const fullFleet = args.fullFleet || sharedSetupChanged;
 
   let affected;
-  if (args.fullFleet) {
+  if (fullFleet) {
     affected = new Set();
   } else {
     affected = loadAffectedNames(args.base, args.head);
@@ -178,7 +193,7 @@ function main() {
   // Empty-affected fallback: when scope says e2e is required but nx
   // didn't attribute any cap (lib fanout), run all caps.
   const haveAnyCockpitAffected = allCaps.some((c) => isCapAffected(c, affected));
-  const effectiveFullFleet = args.fullFleet || !haveAnyCockpitAffected;
+  const effectiveFullFleet = fullFleet || !haveAnyCockpitAffected;
 
   const selected = selectCockpitCaps(allCaps, affected, {
     fullFleet: effectiveFullFleet,

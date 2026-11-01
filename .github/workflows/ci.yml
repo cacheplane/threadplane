@@ -101,7 +101,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -895,6 +895,8 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       caps: ${{ steps.matrix.outputs.caps }}
+      dependency_artifact: ${{ steps.dependencies.outputs.artifact }}
+      dependency_attempt: ${{ steps.dependencies.outputs.attempt }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -904,6 +906,20 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Package verified Cockpit dependencies
+        id: dependencies
+        run: |
+          node scripts/cockpit-dependencies.mjs pack "$RUNNER_TEMP/cockpit-dependencies"
+          echo "artifact=cockpit-dependencies-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: Upload same-run Cockpit dependencies
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.dependencies.outputs.artifact }}
+          path: ${{ runner.temp }}/cockpit-dependencies
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
       - name: Compute affected base + head
         id: refs
         run: |
@@ -950,7 +966,15 @@ jobs:
           python-version: '3.12'
           # Node-only caps and isolated A2UI preparation do not populate this cache.
           enable-cache: ${{ matrix.cap.python != '' && matrix.cap.angular != 'cockpit-ag-ui-a2ui-react' }}
-      - run: npm ci
+      - name: Download same-run Cockpit dependencies
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_artifact }}
+          path: ${{ runner.temp }}/cockpit-dependencies
+      - name: Restore verified Cockpit dependencies
+        env:
+          COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT: ${{ needs.cockpit-e2e-dispatcher.outputs.dependency_attempt }}
+        run: node scripts/cockpit-dependencies.mjs restore "$RUNNER_TEMP/cockpit-dependencies"
       # matrix.cap.python is '' for caps whose backend is not Python (e.g.
       # cockpit-runtimes-mastra-angular — its backend is the
       # deployments/ag-ui-mastra Node service, installed by the example's

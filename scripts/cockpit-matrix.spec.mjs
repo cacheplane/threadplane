@@ -1,10 +1,70 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveCockpitCaps, isCapAffected, selectCockpitCaps } from './cockpit-matrix.mjs';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 import { classifyFromAffected } from './ci-scope.mjs';
+import * as matrixPolicy from './cockpit-matrix.mjs';
+
+test('shared dependency setup changes qualify every existing cockpit browser target', () => {
+  const caps = deriveCockpitCaps();
+  assert.ok(caps.length > 0);
+  for (const path of [
+    '.github/workflows/ci.yml', 'package.json', 'package-lock.json', '.npmrc',
+    'scripts/cockpit-dependencies.mjs', 'scripts/cockpit-dependencies-archive.py',
+    'scripts/cockpit-dependencies.spec.mjs', 'scripts/cockpit-matrix.mjs', 'scripts/cockpit-matrix.spec.mjs',
+  ]) {
+    assert.equal(matrixPolicy.requiresFullCockpitFleet?.([path]), true, path);
+    assert.equal(Object.values(classifyFromAffected([path], [])).every(Boolean), true, path);
+    assert.deepEqual(selectCockpitCaps(caps, new Set([caps[0].angular]), {
+      fullFleet: matrixPolicy.requiresFullCockpitFleet([path]),
+    }), caps);
+  }
+  for (const paths of [[], ['scripts/cockpit-dependencies-other.mjs'], ['cockpit/chat/messages/react/src/app.tsx']]) {
+    assert.equal(matrixPolicy.requiresFullCockpitFleet(paths), false);
+  }
+});
+
+test('actual CLI expands shared setup diffs without Nx and keeps ordinary discovery fail-closed', t => {
+  const root = mkdtempSync(join(tmpdir(), 'cockpit-setup-selection-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const bin = join(root, 'bin');
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'npx'), '#!/bin/sh\nprintf called > "$NX_SETUP_SENTINEL"\nexit 71\n');
+  chmodSync(join(bin, 'npx'), 0o755);
+  const marker = join(root, 'nx-called');
+  const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}`, NX_SETUP_SENTINEL: marker,
+    GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' };
+  const git = args => execFileSync('git', ['-c', 'user.name=CI fixture', '-c', 'user.email=ci@example.invalid',
+    '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args], { cwd: root, env, encoding: 'utf8' }).trim();
+  git(['init', '--quiet']);
+  git(['commit', '--allow-empty', '--quiet', '-m', 'base']);
+  const base = git(['rev-parse', 'HEAD']);
+  mkdirSync(join(root, 'scripts'));
+  writeFileSync(join(root, 'scripts/cockpit-dependencies.mjs'), '// changed shared setup\n');
+  git(['add', 'scripts']);
+  git(['commit', '--quiet', '-m', 'shared setup']);
+  const head = git(['rev-parse', 'HEAD']);
+  const script = fileURLToPath(new URL('./cockpit-matrix.mjs', import.meta.url));
+  const output = join(root, 'outputs');
+  const run = args => spawnSync(process.execPath, [script, ...args], { cwd: root, env: { ...env, GITHUB_OUTPUT: output }, encoding: 'utf8', timeout: 10000 });
+  const selected = run(['--base', base, '--head', head]);
+  assert.equal(selected.status, 0, selected.stderr);
+  assert.deepEqual(JSON.parse(readFileSync(output, 'utf8').trim().slice('caps='.length)),
+    deriveCockpitCaps().map(({ angular, python }) => ({ angular, python })));
+  assert.equal(existsSync(marker), false);
+  rmSync(output);
+  writeFileSync(join(root, 'ordinary.txt'), 'ordinary diff');
+  git(['add', 'ordinary.txt']);
+  git(['commit', '--quiet', '-m', 'ordinary']);
+  const ordinary = run(['--base', head, '--head', git(['rev-parse', 'HEAD'])]);
+  assert.equal(ordinary.status, 1);
+  assert.equal(existsSync(marker), true);
+  assert.equal(existsSync(output), false);
+});
 
 describe('Strands native fixture CI ownership', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
