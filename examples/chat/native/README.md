@@ -208,7 +208,7 @@ Archiving or restoring a selected conversation changes directory classification
 only. The selected transcript, composer draft, session and running response stay
 mounted and selected, with no reload, stop or navigation. Archived rows remain
 selectable. This deliberately differs from the Angular demo clearing selection
-when it archives. Remaining project actions, drag reordering and full thread lifecycle/T29
+when it archives. Remaining project actions, broader drag interaction parity and full thread lifecycle/T29
 parity remain open; the ThreadList row API is unchanged.
 
 Native React full directories also compose permanent Delete through the private
@@ -793,7 +793,7 @@ or revert its confirmed project; fresh post-creation reads remain authoritative.
 Navigation, disposal and newer creation intents fence late completions.
 
 The association survives backend reloads; the selected project filter stays
-ephemeral. Confirmed project deletion is described below. Shared catalogs, drag reordering and full T29 parity
+ephemeral. Confirmed project deletion is described below. Shared catalogs, broader drag interaction parity and full T29 parity
 remain open. This is private native dogfood with no new library export.
 
 ### Confirmed project deletion (private native React T29 slice)
@@ -825,7 +825,7 @@ also reject incoming local associations for the application owner's lifetime.
 The backend has no atomic project-deletion operation: another client can create
 or move conversations concurrently, and fresh backend reads remain authoritative.
 Catalog updates preserve the latest observed entries without an atomic multi-tab
-guarantee. Project names remain browser-local. Shared catalogs, drag reordering
+guarantee. Project names remain browser-local. Shared catalogs, broader drag interaction parity
 and full T29 parity remain open; this slice adds no public library export.
 
 ### Loaded checkpoint metadata timeline (private React)
@@ -872,3 +872,24 @@ states and the resulting change list fit the Debug display limits completely:
 Otherwise it explains why comparison is unavailable. Arrays compare as whole
 values; property paths use JSON Pointer. No comparison of truncated prefixes,
 historical checkpoint read, replay, fork or full state-history parity is claimed.
+
+### Native pinned conversation drag ordering (private)
+
+Native React full active directories now compose desktop drag handles beside
+pinned conversation actions. Drop above or below another visible pin to use the
+existing confirmed rank command. The destination uses the complete loaded pinned
+order, including neighbors hidden by title or project filters. The controlled
+ThreadList still renders supplied order; this adds no library prop or export.
+
+Only visible active pins are drag targets. Archived, unpinned and compact rows
+have no handles; fewer than two visible pins disables dragging. Keyboard and
+touch users retain Actions → Move up/Move down. This does not claim touchscreen
+dragging or general drag-and-drop parity.
+
+Hover and cancellation issue no commands or network reads. A valid move keeps
+the last confirmed display until every rank write is acknowledged. Pending or
+unconfirmed ordering and deletion block dragging; partial failure retains the
+existing explicit Refresh recovery. Scope changes, list replacement, Escape,
+drag end, blur and unmount retire local captures. Foreign payloads cannot supply
+conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
+URL and an active response. Shared catalogs and full T29 parity remain open.

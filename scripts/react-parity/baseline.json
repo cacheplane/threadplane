@@ -1,17 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "33572ec705d4359ec9d380480a1f58e2cc313d16",
+  "baselineHead": "a38cdf19d63771773a3e0de460ba301c721e0226",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/debug/chat-debug.tsx",
-      "libs/react/src/debug/index.ts",
-      "libs/react/src/debug/styles.css"
+      "libs/react/README.md"
     ],
-    "untracked": [
-      "libs/react/src/debug/debug-state-diff.tsx",
-      "libs/react/src/debug/state-diff.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -857,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "99ba51c97f4f99a25819f90c0476efdb107a2f740204a75b6766cf46a17b382b"
+      "sha256": "032de0bdceba0f4ce83b9e951c873da2ae70415f1f6110dcb03ec81408a1ca9e"
     },
     {
       "id": "asset:libs/react/package.json",
