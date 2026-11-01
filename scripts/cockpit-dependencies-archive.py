@@ -11,9 +11,11 @@ from pathlib import PurePosixPath
 def validate(archive, policy):
     roots = policy["roots"]
     links = policy["workspaceLinks"]
+    root_names = set(roots)
+    root_prefixes = tuple(root + "/" for root in roots)
 
     def inside_installation(name):
-        return any(name == root or name.startswith(root + "/") for root in roots)
+        return name in root_names or name.startswith(root_prefixes)
 
     def relative(name):
         path = PurePosixPath(name)
@@ -46,11 +48,23 @@ def validate(archive, policy):
         seen[name] = member
     # Never traverse a link while extracting another entry, even when its
     # destination would otherwise be a permitted workspace or package path.
+    checked_ancestors = set()
     for name in seen:
-        for parent in PurePosixPath(name).parents:
-            ancestor = seen.get(str(parent))
+        chain = []
+        parent = posixpath.dirname(name) or "."
+        while parent not in checked_ancestors:
+            ancestor = seen.get(parent)
             if ancestor and not ancestor.isdir():
                 raise ValueError(f"Archive member traverses a link or file: {name}")
+            if ancestor is not None or parent == ".":
+                chain.append(parent)
+            if parent == ".":
+                break
+            parent = posixpath.dirname(parent) or "."
+        # Bound retained paths to declared directories and the terminal root.
+        # Implicit ancestors can have quadratically many prefix bytes.
+        # Reuse a chain only after every ancestor in the complete graph passed.
+        checked_ancestors.update(chain)
     # Resolve against the complete archive graph, regardless of entry order.
     # Normalizing '..' before following workspace links can hide an escape.
     for name, member in seen.items():

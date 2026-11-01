@@ -325,6 +325,26 @@ os.replace(path+'.shared',path)
   }
 });
 
+test('validates deep implicit paths without retaining every ancestor prefix', () => {
+  execFileSync('python3', ['-c', `
+import io,runpy,sys,tarfile,tracemalloc
+validate=runpy.run_path(sys.argv[1])['validate']
+name='node_modules/'+'a/'*6000+'file'
+data=io.BytesIO()
+with tarfile.open(fileobj=data,mode='w',format=tarfile.PAX_FORMAT) as archive:
+ root=tarfile.TarInfo('node_modules');root.type=tarfile.DIRTYPE;archive.addfile(root)
+ archive.addfile(tarfile.TarInfo(name))
+with tarfile.open(fileobj=io.BytesIO(data.getvalue()),mode='r:') as archive:
+ tracemalloc.start()
+ members=validate(archive,{'roots':['node_modules'],'workspaceLinks':{}})
+ peak=tracemalloc.get_traced_memory()[1]
+ tracemalloc.stop()
+assert [member.name for member in members]==['node_modules',name]
+# A 12 KiB implicit path must not retain tens of MiB of decreasing prefixes.
+assert peak<8*1024*1024, f'Validation retained {peak} bytes for a {len(name)} byte path'
+`, fileURLToPath(new URL('./cockpit-dependencies-archive.py', import.meta.url))], { stdio: ['ignore', 'pipe', 'pipe'] });
+});
+
 test('matches independent pathlib ancestry rules on seeded real-tar path and root variants', () => {
   execFileSync('python3', ['-I', '-c', `
 import io,random,runpy,sys,tarfile
