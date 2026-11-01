@@ -99,6 +99,7 @@ for (const route of ['/docs/chat/getting-started/quickstart', '/docs/api/langgra
   test(`code copy buttons sit inside their code block on ${route}`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(route);
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     const block = page.locator('.mdx-pre-wrap').first();
     await expect(block).toBeVisible();
     const offsets = await block.evaluate(el => {
