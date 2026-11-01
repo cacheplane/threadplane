@@ -1,3 +1,65 @@
+## 0.3.4 (2026-10-31)
+
+### ✨ Highlights
+
+- **chat:** upward scrolling during a streamed reply keeps history in view across token rendering and stream completion; the native return control resumes following the response.
+- **langgraph:** interrupted and dispatched runs recover through read-only history reconciliation.
+
+### 🚀 Features
+
+- development-only devtools hook — adapters report which signals each event wrote ([#1203](https://github.com/cacheplane/threadplane/pull/1203))
+- **blog:** publish AG-UI vs. WebMCP post with a custom share card ([#1370](https://github.com/cacheplane/threadplane/pull/1370))
+- **langgraph:** reconcile interrupted resume attempts from history ([#1361](https://github.com/cacheplane/threadplane/pull/1361))
+- **marketing:** add LinkedIn channel adapter ([#1379](https://github.com/cacheplane/threadplane/pull/1379))
+- **marketing:** weekly content queue, cloud posting, and /week planning ([#1396](https://github.com/cacheplane/threadplane/pull/1396))
+- **react:** present pinned conversation metadata ([#1349](https://github.com/cacheplane/threadplane/pull/1349))
+- **react:** support collapsed sidenav content ([#1352](https://github.com/cacheplane/threadplane/pull/1352))
+- **react:** add opt-in sidenav toggle shortcut ([#1353](https://github.com/cacheplane/threadplane/pull/1353))
+- **react:** add app-owned sidenav search request ([#1354](https://github.com/cacheplane/threadplane/pull/1354))
+- **react:** support app-owned thread row actions ([#1355](https://github.com/cacheplane/threadplane/pull/1355))
+- **react:** add controlled overflow menu ([#1357](https://github.com/cacheplane/threadplane/pull/1357))
+- **react:** support conversation context menus ([#1358](https://github.com/cacheplane/threadplane/pull/1358))
+- **react:** support app-owned conversation renaming ([#1359](https://github.com/cacheplane/threadplane/pull/1359))
+- **react:** support conversation pin and unpin ([#1362](https://github.com/cacheplane/threadplane/pull/1362))
+- **react:** support conversation archive and unarchive ([#1363](https://github.com/cacheplane/threadplane/pull/1363))
+- **react:** group and reorder pinned conversations ([#1365](https://github.com/cacheplane/threadplane/pull/1365))
+- **react:** confirm conversation deletion ([#1368](https://github.com/cacheplane/threadplane/pull/1368))
+- **react:** support custom conversation row templates ([#1373](https://github.com/cacheplane/threadplane/pull/1373))
+- **react:** add controlled loaded project navigation ([#1377](https://github.com/cacheplane/threadplane/pull/1377))
+- **react:** add project creation and browser-local names ([#1380](https://github.com/cacheplane/threadplane/pull/1380))
+- **react:** add confirmed conversation project assignment ([#1383](https://github.com/cacheplane/threadplane/pull/1383))
+- **react:** create conversations in the selected project ([#1384](https://github.com/cacheplane/threadplane/pull/1384))
+- **react:** delete projects while preserving conversations ([#1386](https://github.com/cacheplane/threadplane/pull/1386))
+- **react:** add loaded conversation search palette ([#1403](https://github.com/cacheplane/threadplane/pull/1403))
+- **react:** inspect loaded checkpoint metadata in native timeline ([17088c979](https://github.com/cacheplane/threadplane/commit/17088c979))
+- **react:** add bounded state comparison ([#1407](https://github.com/cacheplane/threadplane/pull/1407))
+- **react:** add native pinned conversation drag ordering ([#1413](https://github.com/cacheplane/threadplane/pull/1413))
+- **render, chat:** development-only render report for the AG-UI DevTools UI tab ([#1215](https://github.com/cacheplane/threadplane/pull/1215))
+
+### 🩹 Fixes
+
+- **chat:** preserve upward scrolling during streamed replies ([a11b2225f](https://github.com/cacheplane/threadplane/commit/a11b2225f))
+- **chat-popup:** exposing message action buttons ([#1269](https://github.com/cacheplane/threadplane/pull/1269), [#1268](https://github.com/cacheplane/threadplane/issues/1268))
+- **chat-sidebar:** forward message action outputs from the inner chat ([#1369](https://github.com/cacheplane/threadplane/pull/1369), [#1268](https://github.com/cacheplane/threadplane/issues/1268))
+- **ci:** pin the aimock drift check to ubuntu-24.04 ([#1367](https://github.com/cacheplane/threadplane/pull/1367))
+- **ci:** await Debug fixture response shutdown ([#1401](https://github.com/cacheplane/threadplane/pull/1401))
+- **e2e:** give live-provider drift recordings a 120s test budget ([#1372](https://github.com/cacheplane/threadplane/pull/1372))
+- **langgraph:** recover dispatched runtime runs through read-only checks ([#1360](https://github.com/cacheplane/threadplane/pull/1360))
+- **langgraph:** run the automatic history read when a stream throws ([#1364](https://github.com/cacheplane/threadplane/pull/1364))
+- **lifecycle:** enrichment reconciliation backs off and gives up ([#1107](https://github.com/cacheplane/threadplane/pull/1107))
+- **marketing:** reject LinkedIn firstComment without partner access ([#1388](https://github.com/cacheplane/threadplane/pull/1388))
+- **posthog:** the weekly report reports real numbers ([#1109](https://github.com/cacheplane/threadplane/pull/1109))
+- **react:** scope project deletion absence to winning association ([#1392](https://github.com/cacheplane/threadplane/pull/1392))
+- **react:** preserve focus after deleting the last project ([#1395](https://github.com/cacheplane/threadplane/pull/1395))
+- **react-parity:** keep candidate vendor overrides effective under npm 11 ([#1366](https://github.com/cacheplane/threadplane/pull/1366))
+- **test:** allow bounded graceful debug worker exit ([#1356](https://github.com/cacheplane/threadplane/pull/1356))
+- **website:** remove a fabricated anecdote from the 0.1.0 post ([#1076](https://github.com/cacheplane/threadplane/pull/1076))
+
+### 🔥 Performance
+
+- **ci:** reuse Website runtime consumer preparation ([#1399](https://github.com/cacheplane/threadplane/pull/1399))
+
+
 ## 0.3.3 (2026-10-23)
 
 ### ✨ Highlights
