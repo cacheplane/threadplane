@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/render!SignalStateStore:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "The StateStore that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
+  "summary": "The `StateStore` that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
   "declarations": [
     {
       "name": "SignalStateStore",
@@ -28,7 +28,7 @@
         }
       ],
       "docs": {
-        "summary": "The StateStore that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
+        "summary": "The `StateStore` that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

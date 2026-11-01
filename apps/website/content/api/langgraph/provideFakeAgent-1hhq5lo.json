@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/langgraph!provideFakeAgent:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
+  "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to `@threadplane/ag-ui`'s `provideFakeAgent()`. For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
   "declarations": [
     {
       "name": "provideFakeAgent",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
+        "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to `@threadplane/ag-ui`'s `provideFakeAgent()`. For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatSidenavScrimComponent:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n<chat-sidenav> so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>",
+  "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n`<chat-sidenav>` so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n```html\n  <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n  <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>\n```",
   "declarations": [
     {
       "name": "ChatSidenavScrimComponent",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n<chat-sidenav> so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>",
+        "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n`<chat-sidenav>` so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n```html\n  <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n  <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>\n```",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -69,7 +69,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-            "line": 46
+            "line": 49
           },
           "isStatic": false,
           "isReadonly": true,
@@ -115,7 +115,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-            "line": 44
+            "line": 47
           },
           "isStatic": false,
           "isReadonly": true,
@@ -124,7 +124,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-        "line": 13
+        "line": 16
       },
       "angular": {
         "selector": "chat-sidenav-scrim",
@@ -149,6 +149,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-    "line": 13
+    "line": 16
   }
 }

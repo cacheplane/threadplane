@@ -15,7 +15,7 @@ export const RENDER_CONFIG = new InjectionToken<RenderConfig>('RENDER_CONFIG');
  * dynamically rendered components. Call this once in `bootstrapApplication`
  * (or the root `ApplicationConfig`).
  *
- * @param config Options bag that controls the render feature set:
+ * @param config - Options bag that controls the render feature set:
  *   - `registry` — component registry returned by {@link defineAngularRegistry};
  *     maps tool-call names to Angular components.
  *   - `store` — optional `StateStore` for `\@json-render/core` state binding.

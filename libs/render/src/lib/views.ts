@@ -5,7 +5,7 @@ import { defineAngularRegistry } from './define-angular-registry';
 /**
  * A registry of view components available for generative UI rendering.
  * Each entry is either a bare component Type (legacy shape) or a
- * `RenderViewEntry` { component, fallback? }.
+ * `RenderViewEntry` with the shape `{ component, fallback? }`.
  */
 export type ViewRegistry = Readonly<Record<string, Type<unknown> | RenderViewEntry>>;
 

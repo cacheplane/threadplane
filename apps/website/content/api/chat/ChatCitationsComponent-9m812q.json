@@ -66,7 +66,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-            "line": 132
+            "line": 135
           },
           "isStatic": false,
           "isReadonly": false,
@@ -112,7 +112,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-            "line": 127
+            "line": 130
           },
           "isStatic": false,
           "isReadonly": true,
@@ -168,7 +168,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-            "line": 126
+            "line": 129
           },
           "isStatic": false,
           "isReadonly": true,
@@ -177,7 +177,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-        "line": 38
+        "line": 41
       },
       "angular": {
         "selector": "chat-citations",
@@ -201,6 +201,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-    "line": 38
+    "line": 41
   }
 }

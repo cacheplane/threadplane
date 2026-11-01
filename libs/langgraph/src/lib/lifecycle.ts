@@ -8,7 +8,7 @@ export interface AgentLifecycle {
   /**
    * Epoch ms + failure class of the most recent stream error. Resets on switchThread().
    *
-   * `kind` is the {@link AgentErrorKind} of the normalized `AgentError`
+   * `kind` is the {@link @threadplane/chat#AgentErrorKind | AgentErrorKind} of the normalized `AgentError`
    * (`connection` | `auth` | `server` | `interrupted` | `aborted`) — the same
    * value `agent.error()?.kind` carries. For a failure the runtime could not
    * normalize it falls back to the error's constructor name.
@@ -16,7 +16,7 @@ export interface AgentLifecycle {
   readonly streamErrorAt: Signal<{ at: number; kind: AgentErrorKind | string } | null>;
   /** Epoch ms of the first interrupt$ non-null in this stream. Resets on switchThread(). */
   readonly interruptReceivedAt: Signal<number | null>;
-  /** Epoch ms of the most recent submit({ resume }) call. Resets on switchThread(). */
+  /** Epoch ms of the most recent `submit({ resume })` call. Resets on switchThread(). */
   readonly interruptResolvedAt: Signal<number | null>;
   /** Epoch ms when the agent's "create new thread" branch fired. Resets on switchThread(). */
   readonly threadCreatedAt: Signal<number | null>;

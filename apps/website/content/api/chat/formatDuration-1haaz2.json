@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!formatDuration:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- <1 s → \"<1s\"\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to \"<1s\" so a corrupted timing\nmap never produces noisy output.",
+  "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- Less than 1 s → `<1s`\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to `<1s` so a corrupted timing\nmap never produces noisy output.",
   "declarations": [
     {
       "name": "formatDuration",
@@ -35,7 +35,7 @@
         }
       ],
       "docs": {
-        "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- <1 s → \"<1s\"\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to \"<1s\" so a corrupted timing\nmap never produces noisy output.",
+        "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- Less than 1 s → `<1s`\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to `<1s` so a corrupted timing\nmap never produces noisy output.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

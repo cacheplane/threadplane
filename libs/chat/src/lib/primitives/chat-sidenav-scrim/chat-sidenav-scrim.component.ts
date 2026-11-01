@@ -3,12 +3,15 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 /**
  * Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of
- * <chat-sidenav> so its z-index sits cleanly between the page content
+ * `<chat-sidenav>` so its z-index sits cleanly between the page content
  * and the drawer host (escapes the drawer host's stacking context).
  *
  * Usage:
+ *
+ * ```html
  *   <chat-sidenav-scrim [open]="drawerOpen()" (dismiss)="drawerOpen.set(false)" />
  *   <chat-sidenav [(open)]="drawerOpen" ...></chat-sidenav>
+ * ```
  */
 @Component({
   selector: 'chat-sidenav-scrim',

@@ -13,7 +13,7 @@ import type { AngularRegistry } from '../render.types';
  */
 export type RenderElementState = 'mounted' | 'fallback' | 'unresolved' | 'hidden';
 
-/** One element of a {@link RenderResolution}. Structure only, never props. */
+/** One element of a {@link "ɵRenderResolution" | RenderResolution}. Structure only, never props. */
 export interface RenderResolvedElement {
   key: string;
   type: string;

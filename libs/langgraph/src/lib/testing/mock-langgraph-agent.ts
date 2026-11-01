@@ -28,7 +28,7 @@ import type {
 /**
  * A LangGraphAgent mock with writable signals for easy test control.
  *
- * Builds on the runtime-neutral {@link MockAgent} from `@threadplane/chat`
+ * Builds on the runtime-neutral {@link @threadplane/chat#MockAgent | MockAgent} from `@threadplane/chat`
  * (which supplies the neutral `Agent`-contract writable signals plus
  * `submit`/`stop`/`regenerate` call tracking) and layers the LangGraph-specific
  * writable signals on top.
@@ -75,7 +75,7 @@ export interface MockLangGraphAgent extends LangGraphAgent<any, any> {
  * Creates a mock LangGraphAgent with writable signals for testing.
  * Control state by writing to the returned writable signals directly.
  *
- * Neutral `Agent`-contract signals come from {@link mockAgent}; LangGraph-specific
+ * Neutral `Agent`-contract signals come from {@link @threadplane/chat#mockAgent | mockAgent}; LangGraph-specific
  * signals are declared here and layered on top.
  *
  * @example

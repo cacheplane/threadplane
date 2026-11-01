@@ -726,7 +726,7 @@
             }
           ],
           "docs": {
-            "summary": "Per-item counterpart of mountClass.",
+            "summary": "Per-item counterpart of [RenderElementComponent.mountClass](/docs/api/render/RenderElementComponent#member-mountClass-1p3t8qy).",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -768,7 +768,7 @@
             }
           ],
           "docs": {
-            "summary": "Per-item counterpart of notReady: a row whose `$item`-bound props\n have not resolved yet shows the fallback while its ready siblings mount\n the real component. Latched per index, exactly as the single mount is.",
+            "summary": "Per-item counterpart of [RenderElementComponent.notReady](/docs/api/render/RenderElementComponent#member-notReady-1qovpl3): a row whose `$item`-bound props\n have not resolved yet shows the fallback while its ready siblings mount\n the real component. Latched per index, exactly as the single mount is.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

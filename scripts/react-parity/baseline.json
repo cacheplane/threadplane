@@ -1,17 +1,16 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "830abf2bbe565e8a96918e516ce97fb33b22954e",
+  "baselineHead": "605ab371aa611c5b77693593cc251bf81c664e4d",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
       "libs/react/src/chat/index.ts",
       "libs/react/src/chat/overflow-menu.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": [
+      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/welcome-suggestion.tsx",
       "libs/react/src/chat/welcome.tsx"
-    ]
+    ],
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -12710,7 +12709,7 @@
       "id": "source:libs/ag-ui/src/lib/bridge-citations-state.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/bridge-citations-state.ts",
-      "sha256": "aaa6f76e35a2e3e4adc77efcef453c98ea07dbdf6a5251d4ff431a495e96fd92"
+      "sha256": "d2812e91859decd655bcd5c30662732b9d9792cc36c7d4607d042e96f1833029"
     },
     {
       "id": "source:libs/ag-ui/src/lib/client-tools.ts",
@@ -12770,7 +12769,7 @@
       "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/provide-agent.ts",
-      "sha256": "61f27d61c0fab6f9f743ca1e6b85f45751e4ca18d12eaed1c171625aa20cd816"
+      "sha256": "7f28e5f1483e4135b417a6494b4bee970e569a686146161355bde3903208466d"
     },
     {
       "id": "source:libs/ag-ui/src/lib/reducer.ts",
@@ -12782,7 +12781,7 @@
       "id": "source:libs/ag-ui/src/lib/replay.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/replay.ts",
-      "sha256": "f4b9d15ecf6ad249536cb8f944058f434b5a955b48a4eb73905431c802782b77"
+      "sha256": "e47114064eebb9f6c1af067388898c2de464c31d71b1a234d9a54ae4cdf4f789"
     },
     {
       "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
@@ -12806,13 +12805,13 @@
       "id": "source:libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "sha256": "2dab4efd87dd5896b73e7d992f65598617485292a5eaa1dcd4b3ce3ab90831d2"
+      "sha256": "959991365ea90f086fe1d29b69396989d46add691449b641a4470e9995450f3c"
     },
     {
       "id": "source:libs/ag-ui/src/lib/to-agent.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/lib/to-agent.ts",
-      "sha256": "31ced5dd10d063b7fea035f0e5537c362862870b9ac82c3e2cf8d46221c3c01c"
+      "sha256": "a5edfe610e0271eff38ca72ce6e9a059eba9aeb91cf4d857ebf3c19519c80a90"
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -13304,7 +13303,7 @@
       "id": "source:libs/chat/src/lib/a2ui/envelope-normalizer.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/envelope-normalizer.ts",
-      "sha256": "8e2ff8724bddc35c3570dad8e055890e53d7f03445dace81a4ce3ff7db55a739"
+      "sha256": "167aad41639942fa29ef9a7c14f3a8dfa624650e5b460cf3c2fef232d69adfb1"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/extract-bindings.ts",
@@ -13316,7 +13315,7 @@
       "id": "source:libs/chat/src/lib/a2ui/partial-args-bridge.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/a2ui/partial-args-bridge.ts",
-      "sha256": "d4c2830ffa92d9cbf62efc1621acb3c3f01e76c393ed7d091a9454c31a416536"
+      "sha256": "7a3476b6fd2d85070c328c57305891386e2e2432e1de9360a24cbc7289b8722d"
     },
     {
       "id": "source:libs/chat/src/lib/a2ui/surface-store.ts",
@@ -13370,7 +13369,7 @@
       "id": "source:libs/chat/src/lib/agent/agent-ref.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/agent-ref.ts",
-      "sha256": "be52ee779f803663c66044d06ffed6c435ebfdb7dd883334337ba8feef8bdc28"
+      "sha256": "82b1573ab06129755096a530aa496aa85c0ed68e17309e586a32d73742d7f681"
     },
     {
       "id": "source:libs/chat/src/lib/agent/agent-status.ts",
@@ -13412,7 +13411,7 @@
       "id": "source:libs/chat/src/lib/agent/citation.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/citation.ts",
-      "sha256": "26411e92b16a73f03e7b07963f839ba13aaa7841abd8783459379416ffe0f1f9"
+      "sha256": "cccb7d3173c88399ec08ce9ec53495550be8b6bd6e05eefd40dcc7741ec79c1f"
     },
     {
       "id": "source:libs/chat/src/lib/agent/content-block.ts",
@@ -13436,7 +13435,7 @@
       "id": "source:libs/chat/src/lib/agent/message.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/message.ts",
-      "sha256": "e2cc58d29559c105cfc27834ade750c9140c408aa5bad38a35ad2e5e101435d4"
+      "sha256": "d167a52d847140fb564540a7c572c64df62f082852d8c6fd9b9921028884ef44"
     },
     {
       "id": "source:libs/chat/src/lib/agent/runtime-telemetry.ts",
@@ -13454,7 +13453,7 @@
       "id": "source:libs/chat/src/lib/agent/to-agent-error.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/agent/to-agent-error.ts",
-      "sha256": "a0d282320745b89ca272652a829972c188b8f4f49dfe8dd816c64eef8f365497"
+      "sha256": "298c55f4c1cc1b5655b2d5690a50144d4dc4224d5d5f378e0da974c10f81e914"
     },
     {
       "id": "source:libs/chat/src/lib/agent/tool-call.ts",
@@ -13484,7 +13483,7 @@
       "id": "source:libs/chat/src/lib/client-tools/client-tools-capability.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/client-tools-capability.ts",
-      "sha256": "ecb567572ef86390adb8dfa020d6d069aafe6680b0661ce9d7e7251024bb94fe"
+      "sha256": "c89aa58425eb68b31f386487d0b744605d535b816aff3381b3c6a00281907388"
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
@@ -13532,7 +13531,7 @@
       "id": "source:libs/chat/src/lib/client-tools/tools.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/client-tools/tools.ts",
-      "sha256": "ea5bd15643641039d9e9f11a03f9db4498c8ff315f50c3fbe1e6f249f60df1e3"
+      "sha256": "1c1999d906d43f1e2127c516a012aafef1b74786c02a3b15a0e24148a45f39fb"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
@@ -13592,13 +13591,13 @@
       "id": "source:libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
-      "sha256": "b507228856e0102560322cc61454ffb73066f2388d05fbedbacf06d025ef75f2"
+      "sha256": "0bab023d1dc8a7bc846d5bc88088b66e05d1ca5f803fd77ed3b2a2a52d230d1f"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-      "sha256": "a46f94e62f840a3be3ec78c88d5b277be5546b0172002abaa410c6fe6d664b03"
+      "sha256": "94b77b36d561d201ba9e724e8f8f548ac3c57efd4733446c5647e551974e3006"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat-render-event.ts",
@@ -13610,19 +13609,19 @@
       "id": "source:libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-      "sha256": "996f1bb4967c5a13c6ea48502dc318589977f7b12f71113d161c98a02a338db0"
+      "sha256": "70988a85f552c3823fa7e8ba21d5d26326ffb69bc6d5394b49b842cf4d704c29"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "sha256": "e7839cf508882de176335acc026188eceb5ee7564e86196bb1bafbc585c0ec88"
+      "sha256": "432e14d43760a1ee447c5f2231935b84528753ef87e4b3e63e9a4b6e49156a7e"
     },
     {
       "id": "source:libs/chat/src/lib/compositions/shared/message-utils.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/compositions/shared/message-utils.ts",
-      "sha256": "22bc4113356bfa8ceb3a1a9cfe947fa64257e829f8903fddd7feee8f95aa4bcb"
+      "sha256": "38bea3416d4140d2fd9bfd3c852d8398531bd091db88ee144e24049956bccaa9"
     },
     {
       "id": "source:libs/chat/src/lib/devtools/devtools-emitter.ts",
@@ -13634,13 +13633,13 @@
       "id": "source:libs/chat/src/lib/devtools/devtools-render-report.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/devtools/devtools-render-report.ts",
-      "sha256": "1de135d079db0ef14fb026120cd822d614325f94edad882d6e63cc352dfbfca6"
+      "sha256": "cc04136e6d66cfcd074f4e447a1a8329b2f20e0e475d2a0950e0364ead7c8ed9"
     },
     {
       "id": "source:libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/devtools/devtools-scripted-runs.ts",
-      "sha256": "2c27f62837013f6112231ca963e517c4f51606a44ebf6fed4824788ccb1ee950"
+      "sha256": "6d1abfa7951f67978a44edb0a328435f48b71f2c32c58bf202431747c45cf4c8"
     },
     {
       "id": "source:libs/chat/src/lib/internals/prettify.ts",
@@ -13658,7 +13657,7 @@
       "id": "source:libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/cacheplane-markdown-views.ts",
-      "sha256": "b3bf43c1ad235d99aed5eb512d93a8920aec0382b279fdddd243dc98cd665453"
+      "sha256": "7eea6e2879896921fbfeb0af06c18030702fd4d7702d20dda00d027064c3ab34"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/citations-resolver.service.ts",
@@ -13856,7 +13855,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-      "sha256": "0d4b7e84de8f42215f7d53669d71d2a4ffed758366c670e25bee552f8d5fd552"
+      "sha256": "37ee63867101434ef9d446959b613cf2c281f2560548f85f625283ddc6bd27f5"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/index.ts",
@@ -13874,7 +13873,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
-      "sha256": "a3b3a260a48d62c7710c7c350e889b2975209bf40f213e0441e4b28eef2e8ee4"
+      "sha256": "77b6696f4f4ad74dc9271662c4c69c939a1dde260f8156b2ae167f41b80e33b6"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-generative-ui/chat-generative-ui.component.ts",
@@ -13910,7 +13909,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
-      "sha256": "99761302146b774392f0370a1311a99c9c479df66473acbf134277d83fe21863"
+      "sha256": "d86c76c6e46c2730f9ce2f0cd2f041894fd6926da060729a483417dbf0d8ab61"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
@@ -13958,7 +13957,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-reasoning/chat-reasoning.component.ts",
-      "sha256": "ffcf3869a0c4a34630ee1616ce64095441bf223262bda011ea42e4d085c39338"
+      "sha256": "f8f31e2c4fc52eefbe39777f2fcaa094003273a1d0d077528fb8aceccc76d96b"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts",
@@ -13976,7 +13975,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
-      "sha256": "a6e12b0194fa665bc664b1f17a4f7f14e2bb0f371751ecaa839b0070999c34ac"
+      "sha256": "09ff560b1aaca5fe38eaf2aaaca9a9b736dbd67125ab53b1012a9e6c746c091d"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-subagents/chat-subagents.component.ts",
@@ -14006,7 +14005,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-      "sha256": "5b7d7704866bcd5e04fffee9387fe74bf7972ee8a442dddaa0ac78dc40d1e5db"
+      "sha256": "de3262be014ec277a29a4a539980b9dd071add7f7f43b2538f403bbfd9328bea"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
@@ -14042,7 +14041,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts",
-      "sha256": "2d436714bd980043a3ecd738395388348765bea7b7ee9b6dc107a5ae1326187b"
+      "sha256": "6dc22f25f48574726602cfce4f3b84ba380c30ee4d7becc283e06067da9f5be8"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
@@ -14096,13 +14095,13 @@
       "id": "source:libs/chat/src/lib/streaming/markdown-render.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/streaming/markdown-render.ts",
-      "sha256": "f4d30337cbf0dbd749e5d16f08930e6c3cb1418955ea32a4e13157d2ba3bfe52"
+      "sha256": "2828c99ad81f0833d45d97be4ec86f7bf5bc03805dd038b684eeae4198b237f5"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/parse-tree-store.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
-      "sha256": "93b219b621936ed91398a92c5de0f3771fb8c1035d03b5010e74154519924901"
+      "sha256": "4a0ead26755c8c6b7c0aa103939b03492580bfeefd08a7028f0d31291ca5b4eb"
     },
     {
       "id": "source:libs/chat/src/lib/streaming/streaming-markdown.component.ts",
@@ -14276,13 +14275,13 @@
       "id": "source:libs/chat/src/lib/testing/mock-agent.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/testing/mock-agent.ts",
-      "sha256": "eb93fc0ed7605a9a240b673883e50044fb4ece4dc2f7db58351df530a5107321"
+      "sha256": "c29cb45be06d557484ea6bdaa9b19077ee1311ae00ab6387b3e93a6730d5fd84"
     },
     {
       "id": "source:libs/chat/src/lib/utils/format-duration.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/utils/format-duration.ts",
-      "sha256": "3296dc42d20c79f9cae60db2856856200d36cd3e8506011bb71430db01cb153c"
+      "sha256": "319815c2a0222aec6be43bf4fead7f35e6bc9eabe34b6bc6c5b85bd60bd618b1"
     },
     {
       "id": "source:libs/chat/src/public-api.ts",
@@ -14318,7 +14317,7 @@
       "id": "source:libs/chat/testing/fake-agent-config.ts",
       "kind": "source",
       "path": "libs/chat/testing/fake-agent-config.ts",
-      "sha256": "b95f6d85a5a102d3d9c9cd208155f165eda7005d6cba7d978a816c0b362cc5fb"
+      "sha256": "a0b96339496ecde9327f99caea8fcf5c772ea4ccdd148dbc43b76fca979b319e"
     },
     {
       "id": "source:libs/chat/testing/interrupt-conformance.ts",
@@ -15014,7 +15013,7 @@
       "id": "source:libs/langgraph/src/lib/agent.types.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/agent.types.ts",
-      "sha256": "a98150c0946b53e2c235826ab2ff3f7674ed427909e980ddae2c2a9c35ca76a6"
+      "sha256": "89de60df9dce8d6766e8eed378670326a3e8820d55134a9fe71aac3fad69c005"
     },
     {
       "id": "source:libs/langgraph/src/lib/client-tools.ts",
@@ -15056,7 +15055,7 @@
       "id": "source:libs/langgraph/src/lib/internals/extract-citations.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/extract-citations.ts",
-      "sha256": "bafeca3c422659792e986b76aa5d8117592402bbdfbb60fbed7d356d8e901ffb"
+      "sha256": "8a96406fb971e6a4b3644a59beab004a0222bb8ba4b989e17360f12095554cfb"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/history-restore.ts",
@@ -15080,7 +15079,7 @@
       "id": "source:libs/langgraph/src/lib/lifecycle.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/lifecycle.ts",
-      "sha256": "57fff43890404e1027828984c3d9af2633b37c60ce9dcd9fc22f56b5d5a0096c"
+      "sha256": "dcab03669fda05eedaaba3d2eb29608fcf8ab5d4277488dcb16882fef90274c0"
     },
     {
       "id": "source:libs/langgraph/src/lib/package-version.ts",
@@ -15104,13 +15103,13 @@
       "id": "source:libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
-      "sha256": "fbce931562ce9b3ab4c6c02d4c0c737844f40eb3cd26426dc0f2b1778db1a466"
+      "sha256": "a8ca77d5e3113853d402da757df1b1e8a393ea7c08633076f34cfaeece36933a"
     },
     {
       "id": "source:libs/langgraph/src/lib/testing/provide-fake-agent.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/testing/provide-fake-agent.ts",
-      "sha256": "f7ea443643ae997c1714756e3a9917d1782e02b94d233d037a05d3ab9fb5fbf8"
+      "sha256": "ed4ff9d3c114531924df097a69d132114672ee589391556e575c89bc7b92cd5e"
     },
     {
       "id": "source:libs/langgraph/src/lib/threads/refresh-on.ts",
@@ -15122,7 +15121,7 @@
       "id": "source:libs/langgraph/src/lib/threads/threads-adapter.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
-      "sha256": "ee41cb6e2708c770f2a392128d05b0fb3546140ebd6aeb85d133f31749a0bcab"
+      "sha256": "90b4e1fdf6cb86745684da02c1709da8427cde9bf44e8da6aea5bde37d6129f7"
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
@@ -15332,7 +15331,7 @@
       "id": "source:libs/langgraph/src/runtime/transport.types.ts",
       "kind": "source",
       "path": "libs/langgraph/src/runtime/transport.types.ts",
-      "sha256": "75f20753e1cb2d05af549e3441d017e291f20f0a47650ad47bde9dd195fecc80"
+      "sha256": "ae485540be34c51cf54d9be2772620b018eaa3d0ef9651128b768409b10744c0"
     },
     {
       "id": "source:libs/langgraph/src/runtime/values-projection.ts",
@@ -15386,7 +15385,7 @@
       "id": "source:libs/middleware/src/langgraph/channel.ts",
       "kind": "source",
       "path": "libs/middleware/src/langgraph/channel.ts",
-      "sha256": "95b4fe5d599b1f9874284e4c7e38d28396d4fc503d6f698cea17ad22aa6a4d9f"
+      "sha256": "b0c80177422c7489239bf67ff82362038097283d396c380979f4aae3415d1b30"
     },
     {
       "id": "source:libs/middleware/src/langgraph/client-tool-execution-store.ts",
@@ -15770,13 +15769,13 @@
       "id": "source:libs/render/src/lib/define-angular-registry.ts",
       "kind": "source",
       "path": "libs/render/src/lib/define-angular-registry.ts",
-      "sha256": "2a00d974e156aa9103afee9241e1e29d3280fe9caeb5079270f081271d7c6777"
+      "sha256": "58ec9f393ad234260804cfc1513ed0a35b93cc7d3408a2669a8e7545398f9d95"
     },
     {
       "id": "source:libs/render/src/lib/devtools/render-devtools.ts",
       "kind": "source",
       "path": "libs/render/src/lib/devtools/render-devtools.ts",
-      "sha256": "ca4c788dff1f0b86562955def9e68b275ad094574c431e958ab89b10d14c90e5"
+      "sha256": "9d414e458e822e02b7b13dfddc18838cd48497388d88cb46e1ae491f446cfd18"
     },
     {
       "id": "source:libs/render/src/lib/internals/element-readiness.ts",
@@ -15812,19 +15811,19 @@
       "id": "source:libs/render/src/lib/provide-render.ts",
       "kind": "source",
       "path": "libs/render/src/lib/provide-render.ts",
-      "sha256": "a4471748fe7ede27e3780c2f1959cce6462cbb831029193b7a32e83ec6d2ae34"
+      "sha256": "93e6e52b9389a3f2235902ac0c23d493794dc355995cb5ec13d6db05b23e7e9a"
     },
     {
       "id": "source:libs/render/src/lib/provide-views.ts",
       "kind": "source",
       "path": "libs/render/src/lib/provide-views.ts",
-      "sha256": "eabd7b66f3b70e7c4a48d643874440d76c2c8d123cb3d515127e3357da09372e"
+      "sha256": "49cbd01d87582974c61739c7000526d8316b6527f93263f81eb759131f3500e2"
     },
     {
       "id": "source:libs/render/src/lib/render-element.component.ts",
       "kind": "source",
       "path": "libs/render/src/lib/render-element.component.ts",
-      "sha256": "da33ff38539573cfe814f56f97caf156da648dd95e411272aed5f4db031c5c3b"
+      "sha256": "b35159beea683d007827e5ef9d8e96ec58e4406d7d815fdf364d5878d6182370"
     },
     {
       "id": "source:libs/render/src/lib/render-event.ts",
@@ -15842,7 +15841,7 @@
       "id": "source:libs/render/src/lib/render-spec.component.ts",
       "kind": "source",
       "path": "libs/render/src/lib/render-spec.component.ts",
-      "sha256": "4fc6abe46b903aa064501b7e915cf4f53b38fc1b2484880f15c88ce8c5391a39"
+      "sha256": "66c4bcfd0a8b0b1bf513466aa62809e149ff650106f82bc3fb0f24dd92aceede"
     },
     {
       "id": "source:libs/render/src/lib/render.types.ts",
@@ -15854,7 +15853,7 @@
       "id": "source:libs/render/src/lib/signal-state-store.ts",
       "kind": "source",
       "path": "libs/render/src/lib/signal-state-store.ts",
-      "sha256": "25982a53de56996702e683d8d516a04267f1c30b46ec9204138581afa9b28efd"
+      "sha256": "4623852e80b6dbe591d47fada3f33adb3b014a34a41dec43b93dff387040a544"
     },
     {
       "id": "source:libs/render/src/lib/standard-schema.ts",
@@ -15866,7 +15865,7 @@
       "id": "source:libs/render/src/lib/views.ts",
       "kind": "source",
       "path": "libs/render/src/lib/views.ts",
-      "sha256": "e91e80bb36cfe78c444644a96dfa7b175aa61b3d31ab673aedbba6947fbec99b"
+      "sha256": "b0c5716ae7a3a405118c5d222cff31c4c840057e64042286c3b596f71f727dd6"
     },
     {
       "id": "source:libs/render/src/public-api.ts",

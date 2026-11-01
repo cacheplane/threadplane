@@ -5,7 +5,7 @@ import { AgentError, AGENT_ERROR_MESSAGES, type AgentErrorKind } from './agent-e
  * or an abort-ish message). Shared by the runtime adapters and {@link toAgentError}
  * so a user-requested stop settles to idle instead of surfacing as an error.
  *
- * @param raw Any thrown/rejected value.
+ * @param raw - Any thrown/rejected value.
  * @returns `true` if it looks like an abort.
  */
 export function isAbortError(raw: unknown): boolean {
@@ -79,7 +79,7 @@ function classifyByStatus(status: number, raw: unknown): AgentError {
  * `cause`. Runtime adapters call this before setting `Agent.error`; custom
  * backends can call it too (or throw an `AgentError` directly).
  *
- * @param raw Any thrown/rejected value — an `Error`, a `{ status }` object, a string, etc.
+ * @param raw - Any thrown/rejected value — an `Error`, a `{ status }` object, a string, etc.
  * @returns The classified {@link AgentError} (kind, retryable, status?, cause).
  * @example
  * ```ts

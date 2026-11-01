@@ -5,7 +5,9 @@ import type { ClientToolSpec } from './types.js';
  * State channels for the client-tools catalog. Spread into Annotation.Root so a graph
  * declares the `tools` (primary) and `client_tools` (fallback) slices in one line:
  *
- *   const State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });
+ * ```ts
+ * const State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });
+ * ```
  *
  * Both are last-value-wins channels (the catalog is replaced per run, not accumulated).
  */

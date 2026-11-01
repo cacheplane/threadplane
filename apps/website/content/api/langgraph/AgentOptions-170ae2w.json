@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/langgraph!AgentOptions:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Options for creating a LangGraph-backed agent via agent.",
+  "summary": "Options used internally by the `agent()` factory to create a LangGraph-backed agent.",
   "declarations": [
     {
       "name": "AgentOptions",
@@ -29,7 +29,7 @@
         }
       ],
       "docs": {
-        "summary": "Options for creating a LangGraph-backed agent via agent.",
+        "summary": "Options used internally by the `agent()` factory to create a LangGraph-backed agent.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

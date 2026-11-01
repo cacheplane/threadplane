@@ -1,6 +1,6 @@
 /**
  * Shared config for the adapters' `provideFakeAgent()` helpers
- * (@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process
+ * (`@threadplane/langgraph` and `@threadplane/ag-ui`). Drives an in-process
  * fake backend that streams a canned assistant reply.
  */
 export interface FakeAgentConfig {

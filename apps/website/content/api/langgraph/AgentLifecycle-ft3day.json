@@ -94,7 +94,7 @@
             }
           ],
           "docs": {
-            "summary": "Epoch ms of the most recent submit({ resume }) call. Resets on switchThread().",
+            "summary": "Epoch ms of the most recent `submit({ resume })` call. Resets on switchThread().",
             "remarks": "",
             "deprecated": "",
             "returns": "",

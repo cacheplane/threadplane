@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatCitationCardTemplateDirective:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "ContentChild template directive for custom citation card rendering.\nUsage: <ng-template chatCitationCard let-citation>...</ng-template>",
+  "summary": "ContentChild template directive for custom citation card rendering.\n```html\n<ng-template chatCitationCard let-citation>...</ng-template>\n```",
   "declarations": [
     {
       "name": "ChatCitationCardTemplateDirective",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "ContentChild template directive for custom citation card rendering.\nUsage: <ng-template chatCitationCard let-citation>...</ng-template>",
+        "summary": "ContentChild template directive for custom citation card rendering.\n```html\n<ng-template chatCitationCard let-citation>...</ng-template>\n```",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -75,7 +75,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-            "line": 22
+            "line": 25
           },
           "isStatic": false,
           "isReadonly": true,
@@ -84,7 +84,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-        "line": 20
+        "line": 23
       },
       "angular": {
         "selector": "ng-template[chatCitationCard]",
@@ -95,6 +95,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-    "line": 20
+    "line": 23
   }
 }
