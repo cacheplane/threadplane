@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import subprocess
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import call, mock_open, patch
 
 SCRIPT = Path(__file__).with_name("pin_shared_deployment_image.py")
 SHA = "1" * 40
@@ -133,7 +133,7 @@ class ImageTests(unittest.TestCase):
         handler = self.module.NoRedirect()
         self.assertIsNone(handler.redirect_request(None, None, 302, "", {}, "https://other.invalid"))
 
-    def inspect_evidence(self, images):
+    def inspect_evidence(self, images, env=None):
         expected_calls = [
             call(["git", "rev-parse", "HEAD"], check=True, capture_output=True,
                  text=True, timeout=25),
@@ -149,7 +149,7 @@ class ImageTests(unittest.TestCase):
             self.assertEqual(call(*args, **kwargs), expected_calls[index])
             return subprocess.CompletedProcess(args[0], 0, responses[index], "")
 
-        with patch.dict(self.module.os.environ, self.env, clear=True), \
+        with patch.dict(self.module.os.environ, env or self.env, clear=True), \
                 patch.object(self.module.subprocess, "run", side_effect=run) as inspect, \
                 contextlib.redirect_stdout(io.StringIO()) as out, \
                 contextlib.redirect_stderr(io.StringIO()) as err:
@@ -177,7 +177,7 @@ class ImageTests(unittest.TestCase):
                 result, out, err = self.inspect_evidence([repository + "@sha256:" + "a" * 64])
                 self.assertEqual(result, 1)
                 self.assertEqual(out, "")
-                self.assertEqual(err, "Shared deployment image validation failed.\n")
+                self.assertEqual(err, "Shared deployment image validation failed. [digest_repository_or_format_invalid]\n")
 
     def test_inspect_rejects_malformed_or_ambiguous_structured_evidence(self):
         values = [b"not-json", b"null", b"{}", b'"image"',
@@ -206,6 +206,124 @@ class ImageTests(unittest.TestCase):
                 self.assertEqual(self.module.main(["evidence"]), 1)
                 self.assertEqual(out.getvalue(), "")
                 self.assertNotIn(SECRET, err.getvalue())
+
+    def diagnostic_evidence(self, responses, code, env=None, mode=None, write_failure=None,
+                            open_failure=None):
+        out, err = io.StringIO(), io.StringIO()
+        target = mock_open()
+        if write_failure is not None:
+            target.return_value.write.side_effect = write_failure
+        if open_failure is not None:
+            target.side_effect = open_failure
+        with patch.dict(self.module.os.environ,
+                        {**self.env, "GITHUB_OUTPUT": SECRET, **(env or {})}, clear=True), \
+                patch.object(self.module.subprocess, "run", side_effect=responses) as run, \
+                patch("builtins.open", target), \
+                patch.object(self.module.urllib.request, "build_opener") as provider, \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            result = self.module.main(["evidence"] if mode is None else mode)
+        self.assertEqual(result, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(),
+                         "Shared deployment image validation failed. [" + code + "]\n")
+        for value in [SECRET, SHA, REPOSITORY, IMAGE, DEPLOYMENT]:
+            self.assertNotIn(value, err.getvalue())
+        provider.assert_not_called()
+        if write_failure is None and open_failure is None:
+            target.assert_not_called()
+        return run, target
+
+    def test_evidence_reports_invalid_mode_and_sha_without_commands(self):
+        run, _ = self.diagnostic_evidence([], "mode_invalid", mode=[SECRET])
+        run.assert_not_called()
+        for value in ["", SECRET, "A" * 40, SHA + "\n", "1" * 39, "1" * 41]:
+            with self.subTest(value=value):
+                run, _ = self.diagnostic_evidence([], "sha_invalid", env={"GITHUB_SHA": value})
+                run.assert_not_called()
+
+    def test_evidence_reports_checkout_mismatch_before_inspection(self):
+        run, _ = self.diagnostic_evidence([
+            subprocess.CompletedProcess([], 0, SECRET, SECRET)], "checkout_mismatch")
+        self.assertEqual(run.call_count, 1)
+
+    def test_evidence_command_failures_have_fixed_stage_codes(self):
+        failures = [
+            (subprocess.CalledProcessError(1, [SECRET], output=SECRET, stderr=SECRET), "command_failed"),
+            (subprocess.TimeoutExpired([SECRET], 25, output=SECRET, stderr=SECRET), "timeout"),
+            (FileNotFoundError(SECRET), "command_failed"),
+            (OSError(SECRET), "command_failed"),
+        ]
+        for stage in ["checkout", "inspect"]:
+            for failure, suffix in failures:
+                with self.subTest(stage=stage, suffix=suffix, failure=type(failure)):
+                    responses = [] if stage == "checkout" else [
+                        subprocess.CompletedProcess([], 0, SHA + "\n", SECRET)]
+                    run, _ = self.diagnostic_evidence(responses + [failure], stage + "_" + suffix)
+                    self.assertEqual(run.call_count, 1 if stage == "checkout" else 2)
+
+    def test_evidence_structured_failures_have_fixed_stage_codes(self):
+        cases = [
+            (SECRET * self.module.LIMIT, "inspect_output_oversized"),
+            (SECRET, "inspect_json_invalid"),
+            ("[" * 2000, "inspect_json_invalid"),
+            ("null", "digest_shape_invalid"),
+            (json.dumps({SECRET: SECRET}), "digest_shape_invalid"),
+            (json.dumps(SECRET), "digest_shape_invalid"),
+            ("[]", "digest_count_zero"),
+            (json.dumps([IMAGE, IMAGE]), "digest_count_multiple"),
+            (json.dumps([IMAGE, SECRET]), "digest_count_multiple"),
+        ]
+        for value in [SECRET, None, {}, 1, IMAGE + "\n", IMAGE.upper(),
+                      REPOSITORY + ":" + SHA, REPOSITORY + "@sha256:" + "a" * 63,
+                      "foreign.invalid/" + SECRET + "@sha256:" + "a" * 64]:
+            cases.append((json.dumps([value]), "digest_repository_or_format_invalid"))
+        for stdout, code in cases:
+            with self.subTest(code=code):
+                run, _ = self.diagnostic_evidence([
+                    subprocess.CompletedProcess([], 0, SHA + "\n", SECRET),
+                    subprocess.CompletedProcess([], 0, stdout, SECRET)], code)
+                self.assertEqual(run.call_count, 2)
+
+    def test_evidence_output_write_failure_is_safe_and_has_no_success_output(self):
+        responses = [subprocess.CompletedProcess([], 0, SHA + "\n", SECRET),
+                     subprocess.CompletedProcess([], 0, json.dumps([IMAGE]), SECRET)]
+        _, target = self.diagnostic_evidence(responses, "output_write_failed",
+                                             write_failure=OSError(SECRET))
+        target.return_value.write.assert_called_once_with(f"source_sha={SHA}\nimage_uri={IMAGE}\n")
+
+    def test_evidence_output_open_failure_is_safe_and_has_no_success_output(self):
+        self.diagnostic_evidence([
+            subprocess.CompletedProcess([], 0, SHA + "\n", SECRET),
+            subprocess.CompletedProcess([], 0, json.dumps([IMAGE]), SECRET)],
+            "output_write_failed", open_failure=OSError(SECRET))
+
+    def test_evidence_success_output_file_and_stdout_are_unchanged(self):
+        target = mock_open()
+        with patch("builtins.open", target):
+            result, out, err = self.inspect_evidence([IMAGE], {**self.env, "GITHUB_OUTPUT": SECRET})
+        self.assertEqual(result, 0)
+        self.assertEqual(out, f"source_sha={SHA}\nimage_uri={IMAGE}\n")
+        self.assertEqual(err, "")
+        target.assert_called_once_with(SECRET, "a", encoding="utf8")
+        target.return_value.write.assert_called_once_with(out)
+
+    def test_unknown_diagnostic_code_cannot_leak_exception_payload(self):
+        with patch.dict(self.module.os.environ, self.env, clear=True), \
+                patch.object(self.module, "inspect_image", side_effect=self.module.EvidenceError(SECRET)), \
+                contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(self.module.main(["evidence"]), 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "Shared deployment image validation failed.\n")
+
+    def test_unexpected_exception_payload_is_never_rendered(self):
+        with patch.dict(self.module.os.environ, self.env, clear=True), \
+                patch.object(self.module, "inspect_image", side_effect=RuntimeError(SECRET)), \
+                contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(self.module.main(["evidence"]), 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "Shared deployment image validation failed.\n")
 
 
 if __name__ == "__main__":
