@@ -194,6 +194,23 @@ for (const [name, terminator] of [['CR', '\r'], ['LS', '\u2028'], ['PS', '\u2029
   });
 }
 
+test('preserves safe chained links within the private installation', async t => {
+  const f = await fixture(t);
+  await symlink('dependency', join(f.root, 'node_modules/alias'));
+  await symlink('../alias/cli.cjs', join(f.root, 'node_modules/.bin/chained'));
+  await createDependencyBundle({ ...f, context });
+  const root = await f.checkout('consumer');
+  await restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context });
+  assert.match(execFileSync(join(root, 'node_modules/.bin/chained'), { encoding: 'utf8' }), /restored executable/);
+});
+
+test('rejects cyclic archive link graphs before publishing', async t => {
+  const f = await fixture(t);
+  await symlink('second', join(f.root, 'node_modules/first'));
+  await symlink('first', join(f.root, 'node_modules/second'));
+  await assert.rejects(createDependencyBundle({ ...f, context }), /cyclic|link graph/i);
+});
+
 test('physical entries avoid redundant path resolution while links retain the data filter', async t => {
   const f = await fixture(t);
   for (let i = 0; i < 30; i++) await writeFile(join(f.root, `node_modules/dependency/file-${i}`), 'dependency');
@@ -235,7 +252,7 @@ test('restored files retain the data filter permission and ownership policy', as
   assert.equal((await stat(join(root, file))).uid, process.getuid());
 });
 
-for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link']) {
+for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special', 'unexpected', 'duplicate', 'contiguous', 'sparse', 'linked-ancestor', 'resolved-link', 'resolved-link-first']) {
   test(`rejects ${attack} tar members before publishing, even with a matching archive digest`, async t => {
     const f = await fixture(t);
     await createDependencyBundle({ ...f, context });
@@ -244,7 +261,6 @@ for (const attack of ['traversal', 'absolute', 'symlink', 'hardlink', 'special',
 import os,tarfile,sys
 path,attack,absolute=sys.argv[1:]
 with tarfile.open(path) as source, tarfile.open(path+'.attack','w') as t:
- for item in source.getmembers():t.addfile(item,source.extractfile(item) if item.isfile() else None)
  names={'traversal':'node_modules/../../escaped','absolute':absolute,'unexpected':'other/file'}
  info=tarfile.TarInfo(names.get(attack,'node_modules/attack'))
  if attack=='symlink':info.type=tarfile.SYMTYPE;info.linkname='../../escaped'
@@ -254,8 +270,10 @@ with tarfile.open(path) as source, tarfile.open(path+'.attack','w') as t:
  elif attack=='contiguous':info.type=tarfile.CONTTYPE
  elif attack=='sparse':info.type=tarfile.GNUTYPE_SPARSE
  elif attack=='linked-ancestor':info.name='node_modules/@fixture/workspace/child'
- elif attack=='resolved-link':info.type=tarfile.SYMTYPE;info.linkname='@fixture/workspace/../../../node_modules/X'
- t.addfile(info)
+ elif attack.startswith('resolved-link'):info.type=tarfile.SYMTYPE;info.linkname='@fixture/workspace/../../../node_modules/X'
+ if attack=='resolved-link-first':t.addfile(info)
+ for item in source.getmembers():t.addfile(item,source.extractfile(item) if item.isfile() else None)
+ if attack!='resolved-link-first':t.addfile(info)
 os.replace(path+'.attack',path)
 `, archive, attack, join(f.directory, 'escaped')]);
     const manifestPath = join(f.artifactDirectory, 'manifest.json');
@@ -263,6 +281,12 @@ os.replace(path+'.attack',path)
     const bytes = await readFile(archive);
     manifest.archive = { ...manifest.archive, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
     await writeFile(manifestPath, JSON.stringify(manifest));
+    const lock = JSON.parse(await readFile(join(f.root, 'package-lock.json'), 'utf8'));
+    const policy = { roots: manifest.roots, workspaceLinks: Object.fromEntries(Object.entries(lock.packages)
+      .filter(([, value]) => value.link).map(([path, value]) => [path, value.resolved])) };
+    assert.throws(() => execFileSync('python3', ['-I', fileURLToPath(new URL('./cockpit-dependencies-archive.py', import.meta.url)), 'validate', archive], {
+      input: JSON.stringify(policy), stdio: ['pipe', 'pipe', 'pipe'],
+    }), /archive|member|root|link|path|duplicate|special/i);
     const root = await f.checkout('consumer');
     await assert.rejects(restoreDependencyBundle({ root, artifactDirectory: f.artifactDirectory, context }), /archive|member|root|link|path|duplicate|special/i);
     await assert.rejects(stat(join(root, 'node_modules')), { code: 'ENOENT' });

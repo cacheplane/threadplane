@@ -4,6 +4,7 @@ import json
 import posixpath
 import sys
 import tarfile
+from collections import deque
 from pathlib import PurePosixPath
 
 
@@ -50,6 +51,34 @@ def validate(archive, policy):
             ancestor = seen.get(str(parent))
             if ancestor and not ancestor.isdir():
                 raise ValueError(f"Archive member traverses a link or file: {name}")
+    # Resolve against the complete archive graph, regardless of entry order.
+    # Normalizing '..' before following workspace links can hide an escape.
+    for name, member in seen.items():
+        if not member.issym():
+            continue
+        pending = deque(PurePosixPath(posixpath.join(posixpath.dirname(name), member.linkname)).parts)
+        resolved = []
+        followed = 0
+        while pending:
+            part = pending.popleft()
+            if part == "..":
+                if not resolved:
+                    raise ValueError(f"Escaping archive link graph: {name}")
+                resolved.pop()
+                continue
+            resolved.append(part)
+            ancestor = seen.get("/".join(resolved))
+            if ancestor and ancestor.issym():
+                followed += 1
+                if followed > 40:
+                    raise ValueError(f"Cyclic archive link graph: {name}")
+                resolved.pop()
+                pending.extendleft(reversed(PurePosixPath(ancestor.linkname).parts))
+            elif ancestor and pending and not ancestor.isdir():
+                raise ValueError(f"Archive link traverses a file: {name}")
+        target = "/".join(resolved)
+        if not inside_installation(target) and links.get(name) != target:
+            raise ValueError(f"Escaping archive resolved link: {name}")
     for root in roots:
         if root not in seen or not seen[root].isdir():
             raise ValueError(f"Missing archive installation root: {root}")
