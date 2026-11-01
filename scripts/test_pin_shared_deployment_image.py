@@ -4,10 +4,16 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
+import signal
+import stat
+import tempfile
+import time
+import urllib.error
 from pathlib import Path
 import subprocess
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("pin_shared_deployment_image.py")
 SHA = "1" * 40
@@ -29,9 +35,12 @@ class Response:
     def __init__(self, body, status=200):
         self.body = body if isinstance(body, bytes) else json.dumps(body).encode()
         self.status = status
+        self.position = 0
 
     def read(self, limit):
-        return self.body[:limit]
+        result = self.body[self.position:self.position + limit]
+        self.position += len(result)
+        return result
 
     def __enter__(self):
         return self
@@ -40,13 +49,16 @@ class Response:
         pass
 
 
-class ImageTests(unittest.TestCase):
+class BaseTests(unittest.TestCase):
     def setUp(self):
         spec = importlib.util.spec_from_file_location("pin_image", SCRIPT)
         self.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.module)
         self.env = {"GITHUB_SHA": SHA, "IMAGE_URI": IMAGE, "LANGSMITH_API_KEY": SECRET}
 
+
+
+class ImageTests(BaseTests):
     def invoke(self, responses, env=None):
         calls = []
         def request(method, url, **kwargs):
@@ -133,79 +145,575 @@ class ImageTests(unittest.TestCase):
         handler = self.module.NoRedirect()
         self.assertIsNone(handler.redirect_request(None, None, 302, "", {}, "https://other.invalid"))
 
-    def inspect_evidence(self, images):
-        expected_calls = [
-            call(["git", "rev-parse", "HEAD"], check=True, capture_output=True,
-                 text=True, timeout=25),
-            call(["docker", "image", "inspect",
-                  "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev:" + SHA,
-                  "--format", "{{json .RepoDigests}}"],
-                 check=True, capture_output=True, text=True, timeout=25),
-        ]
-        responses = [SHA + "\n", json.dumps(images)]
 
-        def run(*args, **kwargs):
-            index = len(inspect.call_args_list) - 1
-            self.assertEqual(call(*args, **kwargs), expected_calls[index])
-            return subprocess.CompletedProcess(args[0], 0, responses[index], "")
 
-        with patch.dict(self.module.os.environ, self.env, clear=True), \
-                patch.object(self.module.subprocess, "run", side_effect=run) as inspect, \
-                contextlib.redirect_stdout(io.StringIO()) as out, \
-                contextlib.redirect_stderr(io.StringIO()) as err:
-            result = self.module.main(["evidence"])
-        self.assertEqual(inspect.call_args_list, expected_calls,
-                         f"Expected {expected_calls!r}; got {inspect.call_args_list!r}")
+class ReceiptTests(BaseTests):
+    def setUp(self):
+        super().setUp()
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name).resolve()
+        self.docker = self.root / "real-docker"
+        self.docker.write_text("#!/usr/bin/env python3\nimport os,sys,time,signal\n" +
+            "open(os.environ['ARGS'], 'w').write(repr(sys.argv[1:]))\n" +
+            "exec(os.environ['PROGRAM'])\n")
+        self.docker.chmod(0o700)
+        self.env.update(GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="1",
+            RUNNER_TEMP=str(self.root), GITHUB_ENV=str(self.root / "env"),
+            GITHUB_PATH=str(self.root / "path"), GITHUB_OUTPUT=str(self.root / "output"),
+            PATH=os.environ["PATH"], ARGS=str(self.root / "args"), PROGRAM="")
+        self.envpatch = patch.dict(os.environ, self.env, clear=True)
+        self.envpatch.start()
+        self.addCleanup(self.envpatch.stop)
+        self.checkout = patch.object(self.module.subprocess, "run", return_value=
+            subprocess.CompletedProcess([], 0, SHA + "\n", ""))
+        self.checkout.start()
+        self.addCleanup(self.checkout.stop)
+        self.which = patch.object(self.module.shutil, "which", return_value=str(self.docker))
+        self.which.start()
+        self.addCleanup(self.which.stop)
+
+    def runmode(self, args):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            result = self.module.main(args)
         self.assertNotIn(SECRET, out.getvalue() + err.getvalue())
         return result, out.getvalue(), err.getvalue()
 
-    def test_evidence_inspects_exact_pushed_us_east4_tag(self):
-        image = "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev@sha256:" + "a" * 64
-        result, out, err = self.inspect_evidence([image])
-        self.assertEqual(result, 0)
-        self.assertEqual(out, f"source_sha={SHA}\nimage_uri={image}\n")
-        self.assertEqual(err, "")
+    def prepare(self):
+        result, out, err = self.runmode(["prepare"])
+        self.assertEqual((result, out, err), (0, "", ""))
+        for line in (self.root / "env").read_text().splitlines():
+            key, value = line.split("=", 1)
+            os.environ[key] = value
+        self.state = Path(os.environ["SHARED_PUSH_STATE"])
+        self.assertEqual(stat.S_IMODE(self.state.stat().st_mode), 0o700)
 
-    def test_evidence_rejects_old_region_and_foreign_repositories(self):
-        repositories = [
-            "us-central1-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev",
-            "foreign.invalid/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/shared-dev",
-            "us-east4-docker.pkg.dev/langchain-prod/cockpit-dev-free-6957db75280055dcbbf2a4916c04b66f/other",
-        ]
-        for repository in repositories:
-            with self.subTest(repository=repository):
-                result, out, err = self.inspect_evidence([repository + "@sha256:" + "a" * 64])
-                self.assertEqual(result, 1)
-                self.assertEqual(out, "")
-                self.assertEqual(err, "Shared deployment image validation failed.\n")
+    def push(self, output=None, exit_code=0, program=None, args=None):
+        receipt = SHA + ": digest: sha256:" + "a" * 64 + " size: 42\n"
+        os.environ["PROGRAM"] = program if program is not None else (
+            "sys.stdout.buffer.write(" + repr((receipt if output is None else output).encode()) +
+            ");sys.stdout.flush();sys.exit(" + str(exit_code) + ")")
+        return self.runmode(["shim", *(args or ["--config", SECRET, "push", REPOSITORY + ":" + SHA])])
 
-    def test_inspect_rejects_malformed_or_ambiguous_structured_evidence(self):
-        values = [b"not-json", b"null", b"{}", b'"image"',
-                  json.dumps([IMAGE, IMAGE]).encode(),
-                  json.dumps([IMAGE, "foreign@sha256:" + "a" * 64]).encode()]
-        for value in values:
-            with self.subTest(value=value), \
-                    patch.dict(self.module.os.environ, self.env, clear=True), \
-                    patch.object(self.module.subprocess, "run", side_effect=[
-                        subprocess.CompletedProcess([], 0, SHA + "\n", ""),
-                        subprocess.CompletedProcess([], 0, value.decode(), "")]), \
-                    contextlib.redirect_stdout(io.StringIO()) as out, \
-                    contextlib.redirect_stderr(io.StringIO()) as err:
-                self.assertEqual(self.module.main(["evidence"]), 1)
-                self.assertEqual(out.getvalue(), "")
-                self.assertNotIn(SECRET, err.getvalue())
+    def test_prepare_push_receipt_and_evidence(self):
+        self.prepare()
+        self.assertEqual(self.push()[0], 0)
+        self.assertEqual((self.root / "args").read_text(), repr(["--config", SECRET, "push", REPOSITORY + ":" + SHA]))
+        self.assertEqual(self.runmode(["evidence"]), (0, f"source_sha={SHA}\nimage_uri={IMAGE}\n", ""))
+        self.assertEqual((self.root / "output").read_text(), f"source_sha={SHA}\nimage_uri={IMAGE}\n")
+        for p in self.state.iterdir():
+            if p.is_file():
+                self.assertNotIn(SECRET, p.read_text())
 
-    def test_subprocess_failure_never_leaks_output(self):
-        for failure in [subprocess.CalledProcessError(1, [SECRET], output=SECRET),
-                        subprocess.TimeoutExpired([SECRET], 25, output=SECRET),
-                        FileNotFoundError(SECRET)]:
-            with patch.dict(self.module.os.environ, self.env, clear=True), \
-                    patch.object(self.module.subprocess, "run", side_effect=failure), \
-                    contextlib.redirect_stdout(io.StringIO()) as out, \
-                    contextlib.redirect_stderr(io.StringIO()) as err:
-                self.assertEqual(self.module.main(["evidence"]), 1)
-                self.assertEqual(out.getvalue(), "")
-                self.assertNotIn(SECRET, err.getvalue())
+    def test_fallback_notes_unicode_ansi_and_crlf_are_discarded(self):
+        self.prepare()
+        receipt = SHA + ": digest: sha256:" + "a" * 64 + " size: 42\r\n"
+        notes = "progress ☃ \x1b[31msha256:" + "b" * 64 + "\x1b[0m\n" + SECRET + "\n"
+        self.assertEqual(self.push(notes + receipt + notes)[0], 0)
+        self.assertEqual(self.runmode(["evidence"])[0], 0)
+
+    def test_malformed_and_untrusted_receipts_fail(self):
+        good = SHA + ": digest: sha256:" + "a" * 64 + " size: 42\n"
+        cases = ["", REPOSITORY + ":" + SHA + "\n", "sha256:" + "a" * 64 + "\n",
+            good * 2, good + good.replace("a" * 64, "b" * 64), good.rstrip("\n"),
+            good.replace(SHA, "2" * 40), good.replace("a" * 64, "A" * 64),
+            good.replace("42", "0"), good.replace("42", str(2**63)),
+            good.replace("sha256", "sha512"), good.replace(": digest:", ": digest:BAD"),
+            "\x1b[31m" + good, good + "foreign: digest: sha256:" + "a" * 64 + " size: 42\n"]
+        for output in cases:
+            with self.subTest(output=output):
+                self.prepare()
+                self.assertEqual(self.push(output)[0], 1)
+                self.assertEqual(self.runmode(["evidence"])[0], 1)
+                os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_nonzero_signal_and_130_are_failures(self):
+        for code in [1, 130, -signal.SIGTERM]:
+            self.prepare()
+            program = None if code >= 0 else "os.kill(os.getpid(), signal.SIGTERM)"
+            self.assertEqual(self.push(exit_code=code, program=program)[0], 1)
+            self.assertEqual(self.runmode(["evidence"])[0], 1)
+            os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_failed_retry_success_and_terminal_duplicate(self):
+        self.prepare()
+        self.assertEqual(self.push(exit_code=1)[0], 1)
+        self.assertEqual(self.push()[0], 0)
+        (self.root / "args").unlink()
+        for _ in range(3):
+            self.assertEqual(self.push()[0], 1)
+            self.assertFalse((self.root / "args").exists())
+            self.assertEqual(self.runmode(["evidence"])[0], 1)
+
+    def test_foreign_push_after_success_is_also_terminal(self):
+        self.prepare()
+        self.assertEqual(self.push()[0], 0)
+        (self.root / "args").unlink()
+        self.assertEqual(self.push(args=["--config", SECRET, "push", "foreign"])[0], 1)
+        self.assertFalse((self.root / "args").exists())
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+        self.assertEqual(self.push()[0], 1)
+        self.assertFalse((self.root / "args").exists())
+
+    def test_only_three_attempts(self):
+        self.prepare()
+        for _ in range(3):
+            self.assertEqual(self.push(exit_code=1)[0], 1)
+        (self.root / "args").unlink()
+        self.assertEqual(self.push()[0], 1)
+        self.assertFalse((self.root / "args").exists())
+
+    def test_nonpush_argv_and_login_stdin_are_passthrough(self):
+        self.prepare()
+        for args in [["--config", SECRET, "login", "--password-stdin"], ["build", "--label", "push"], ["version"], ["info"], ["tag", "push", "other"], ["buildx", "build", "."]]:
+            with patch.object(self.module.os, "execv") as execute:
+                self.assertEqual(self.runmode(["shim", *args])[0], 0)
+                execute.assert_called_once_with(str(self.docker), [str(self.docker), *args])
+        self.assertFalse((self.root / "args").exists())
+
+    def test_pinned_pull_and_buildx_cleanup_passthrough_unchanged(self):
+        self.prepare()
+        for args in [["pull", "langchain/langgraph-api:3.12"], ["--config", SECRET, "pull", "langchain/langgraph-api:3.12"], ["buildx", "rm", "temporary-builder"], ["build", "-f", "-", "-t", "langgraph-deploy-tmp:123", "--build-context", "extra=/public/context", "."], ["buildx", "build", "-f", "-", "-t", "langgraph-deploy-tmp:123", "--platform", "linux/amd64", "--load", "--progress=quiet", "--label", "push", "."]]:
+            with patch.object(self.module.os, "execv") as execute:
+                self.assertEqual(self.runmode(["shim", *args])[0], 0)
+                execute.assert_called_once_with(str(self.docker), [str(self.docker), *args])
+
+    def test_explicit_untracked_publishing_forms_never_execute(self):
+        for successful in [False, True]:
+            for args in [["build", "--push", "."], ["buildx", "build", "--push", "."], ["buildx", "imagetools", "create", "--tag", "foreign", "image"], ["buildx", "build", "--output=type=registry", "."], ["build", "--output", "type=image,push=true", "."], ["buildx", "build", "-otype=registry", "."], ["buildx", "build", "--cache-to=type=registry,ref=foreign", "."]]:
+                self.prepare()
+                if successful: self.assertEqual(self.push()[0], 0)
+                with patch.object(self.module.os, "execv") as execute:
+                    self.assertEqual(self.runmode(["shim", *args])[0], 1)
+                    execute.assert_not_called()
+                self.assertEqual(self.runmode(["evidence"])[0], 1)
+                os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_unsupported_push_shapes_never_launch(self):
+        self.prepare()
+        for args in [["push", REPOSITORY + ":" + SHA], ["image", "push", REPOSITORY + ":" + SHA], ["--config", SECRET, "push", "foreign"], ["--config", SECRET, "push", REPOSITORY + ":" + SHA, "--quiet"], ["--config", SECRET, "--debug", "push", REPOSITORY + ":" + SHA]]:
+            self.assertEqual(self.push(args=args)[0], 1)
+            self.assertFalse((self.root / "args").exists())
+
+    def test_timeout_eof_hang_overflow_and_cancellation_reap(self):
+        for program in ["time.sleep(10)", "os.close(1);time.sleep(10)", "sys.stdout.write('x'*70000);sys.stdout.flush();time.sleep(10)", "sys.stdout.write(('x'*100+'\\n')*25000);sys.stdout.flush();time.sleep(10)"]:
+            self.prepare()
+            start = time.monotonic()
+            with patch.object(self.module, "PUSH_TIMEOUT", 0.15):
+                self.assertEqual(self.push(program=program)[0], 1)
+            self.assertLess(time.monotonic() - start, 3)
+            self.assertEqual(self.runmode(["evidence"])[0], 1)
+            os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_stream_and_line_bounds_report_overflow_and_reap(self):
+        for program in ["sys.stdout.write('x'*70000);sys.stdout.flush();time.sleep(10)", "sys.stdout.write('progress\\n'*10000);sys.stdout.flush();time.sleep(10)"]:
+            self.prepare()
+            real_popen = self.module.subprocess.Popen
+            children = []
+            def start(*args, **kwargs):
+                child = real_popen(*args, **kwargs); children.append(child); return child
+            with patch.object(self.module, "PUSH_LIMIT", 65536), patch.object(self.module.subprocess, "Popen", side_effect=start):
+                result, _, err = self.push(program=program)
+            self.assertEqual(result, 1)
+            self.assertIn("push_overflow", err)
+            self.assertIsNotNone(children[0].poll())
+            with self.assertRaises(ProcessLookupError): os.killpg(children[0].pid, 0)
+            os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_timeout_reaps_the_process_after_eof(self):
+        self.prepare()
+        real_popen = self.module.subprocess.Popen
+        children = []
+        def start(*args, **kwargs):
+            child = real_popen(*args, **kwargs); children.append(child); return child
+        with patch.object(self.module, "PUSH_TIMEOUT", 0.15), patch.object(self.module.subprocess, "Popen", side_effect=start):
+            result, _, err = self.push(program="os.close(1);time.sleep(10)")
+        self.assertEqual(result, 1)
+        self.assertIn("push_timeout", err)
+        self.assertIsNotNone(children[0].poll())
+        with self.assertRaises(ProcessLookupError): os.killpg(children[0].pid, 0)
+
+    def test_contention_does_not_start_or_poison_holder(self):
+        self.prepare()
+        import fcntl
+        with (self.state / "lock").open("r+") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.assertEqual(self.push()[0], 1)
+            self.assertFalse((self.root / "args").exists())
+        self.assertEqual(self.push()[0], 0)
+
+    def test_owned_receipt_file_attacks_and_strict_json_fail(self):
+        for attack in ["symlink", "fifo", "hardlink", "mode", "oversize", "duplicate", "extra", "bool", "partial"]:
+            self.prepare()
+            self.assertEqual(self.push()[0], 0)
+            receipt = self.state / "receipt.json"
+            original = receipt.read_text()
+            if attack in ["symlink", "fifo", "hardlink"]:
+                receipt.unlink()
+                if attack == "symlink": receipt.symlink_to(self.root / "never-open")
+                if attack == "fifo": os.mkfifo(receipt, 0o600)
+                if attack == "hardlink":
+                    target = self.root / "hardlink"
+                    target.write_text(original)
+                    os.link(target, receipt)
+            elif attack == "mode": receipt.chmod(0o666)
+            elif attack == "oversize": receipt.write_text("x" * 20000)
+            elif attack == "duplicate": receipt.write_text(original[:-1] + ',"source_sha":"' + SHA + '"}')
+            elif attack == "extra": receipt.write_text(original[:-1] + ',"extra":1}')
+            elif attack == "bool": receipt.write_text(original.replace('"push_size":42', '"push_size":true'))
+            elif attack == "partial": receipt.write_text('{')
+            self.assertEqual(self.runmode(["evidence"])[0], 1)
+            self.assertFalse((self.root / "output").exists())
+            os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_stale_state_run_sha_and_directory_rejected(self):
+        self.prepare()
+        self.assertEqual(self.push()[0], 0)
+        for key, value in [("GITHUB_RUN_ID", "124"), ("GITHUB_RUN_ATTEMPT", "2"), ("GITHUB_SHA", "2" * 40), ("SHARED_PUSH_STATE", str(self.root))]:
+            with patch.dict(os.environ, {key: value}):
+                self.assertEqual(self.runmode(["evidence"])[0], 1)
+        self.state.chmod(0o777)
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+
+    def test_prepare_rejects_canonical_temp_controls_before_writing(self):
+        for index, control in enumerate(["\n", "\r", "\x01", "\x7f"]):
+            target = self.root / ("unsafe" + control + str(index))
+            target.mkdir()
+            link = self.root / ("safe-temp-" + str(index))
+            link.symlink_to(target, target_is_directory=True)
+            with patch.dict(os.environ, {"RUNNER_TEMP": str(link)}):
+                result, out, _ = self.runmode(["prepare"])
+            self.assertEqual((result, out), (1, ""))
+            self.assertEqual(list(target.iterdir()), [])
+            self.assertFalse((self.root / "env").exists())
+            self.assertFalse((self.root / "path").exists())
+
+    def assert_prepare_code(self, code):
+        result, out, err = self.runmode(["prepare"])
+        self.assertEqual((result, out, err), (1, "", "Shared deployment image validation failed. [" + code + "]\n"))
+        self.assertFalse((self.root / "env").exists())
+        self.assertFalse((self.root / "path").exists())
+
+    def test_prepare_diagnostics_separate_docker_and_running_python_checks(self):
+        for role, target in [("docker", str(self.docker)), ("python", os.path.realpath(self.module.sys.executable))]:
+            problems = ["stat_failed", "type_invalid", "owner_invalid", "not_executable"]
+            if role == "docker": problems += ["group_writable", "world_writable"]
+            for problem in problems:
+                with self.subTest(role=role, problem=problem):
+                    original_stat = self.module.os.lstat
+                    original_access = self.module.os.access
+                    def altered_stat(path, *args, **kwargs):
+                        value = original_stat(path, *args, **kwargs)
+                        if str(path) != target: return value
+                        if problem == "stat_failed": raise OSError(SECRET)
+                        fields = list(value)
+                        if problem == "type_invalid": fields[0] = stat.S_IFDIR | stat.S_IMODE(value.st_mode)
+                        if problem == "owner_invalid": fields[4] = os.geteuid() + 100000
+                        if problem == "group_writable": fields[0] |= 0o020
+                        if problem == "world_writable": fields[0] |= 0o002
+                        return os.stat_result(fields)
+                    def altered_access(path, mode):
+                        if str(path) == target and problem == "not_executable": return False
+                        return original_access(path, mode)
+                    with patch.object(self.module.os, "lstat", side_effect=altered_stat), patch.object(self.module.os, "access", side_effect=altered_access):
+                        self.assert_prepare_code("prepare_" + role + "_" + problem)
+
+    def test_current_python_write_bits_allow_prepare_with_exact_manifest_and_launcher(self):
+        target = os.path.realpath(self.module.sys.executable)
+        for bits in [0o020, 0o002, 0o022]:
+            with self.subTest(bits=bits):
+                original = self.module.os.lstat
+                def toolchain_mode(path, *args, **kwargs):
+                    value = original(path, *args, **kwargs)
+                    if str(path) != target: return value
+                    fields = list(value); fields[0] |= bits
+                    return os.stat_result(fields)
+                with patch.object(self.module.os, "lstat", side_effect=toolchain_mode):
+                    self.prepare()
+                manifest = json.loads((self.state / "manifest.json").read_text())
+                self.assertEqual(manifest["python"], target)
+                launcher = (self.state / "docker").read_text()
+                self.assertTrue(launcher.startswith("#!" + target + "\n"))
+                self.assertIn("os.execv(" + repr(target), launcher)
+                os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_python_role_rejects_foreign_and_hardlink_identities(self):
+        alternate = self.root / "alternate-python"
+        os.link(self.docker, alternate)
+        # Synthetic interpreter and hardlink avoid touching the real toolchain.
+        with patch.object(self.module.sys, "executable", str(self.docker)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(str(alternate), "python")
+            self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+        with self.assertRaises(self.module.EvidenceError) as failure:
+            self.module.executable(str(self.docker), "python")
+        self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+
+    def test_python_role_direct_identity_errors_are_closed(self):
+        target = os.path.realpath(self.module.sys.executable)
+        for value in [SECRET, str(self.root) + "/../python", target + "\n" + SECRET]:
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(value, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_path_invalid")
+        with patch.object(self.module.sys, "executable", ""):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_missing")
+        with patch.object(self.module.os.path, "realpath", side_effect=OSError(SECRET)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_resolve_failed")
+
+    def test_running_python_still_rejects_access_exception_and_docker_write_bits(self):
+        target = os.path.realpath(self.module.sys.executable)
+        with patch.object(self.module.os, "access", side_effect=OSError(SECRET)):
+            with self.assertRaises(self.module.EvidenceError) as failure:
+                self.module.executable(target, "python")
+            self.assertEqual(failure.exception.code, "prepare_python_not_executable")
+        for bits, code in [(0o020, "prepare_docker_group_writable"), (0o002, "prepare_docker_world_writable")]:
+            original = self.module.os.lstat
+            def toolchain_mode(path, *args, **kwargs):
+                value = original(path, *args, **kwargs)
+                fields = list(value); fields[0] |= bits
+                return os.stat_result(fields)
+            with patch.object(self.module.os, "lstat", side_effect=toolchain_mode):
+                with self.assertRaises(self.module.EvidenceError) as failure:
+                    self.module.executable(target, "docker")
+                self.assertEqual(failure.exception.code, code)
+
+    def test_prepare_diagnostics_separate_missing_state_temp_and_commands(self):
+        for key, value, code in [("SHARED_PUSH_STATE", SECRET, "prepare_state_present"), ("GITHUB_RUN_ID", "bad", "prepare_run_identity_invalid"), ("RUNNER_TEMP", "", "prepare_temp_missing"), ("RUNNER_TEMP", SECRET, "prepare_temp_path_invalid"), ("RUNNER_TEMP", str(self.root / "absent"), "prepare_temp_not_directory"), ("GITHUB_PATH", "", "prepare_github_path_invalid"), ("GITHUB_ENV", SECRET, "prepare_github_env_invalid")]:
+            with self.subTest(code=code), patch.dict(os.environ, {key: value}):
+                self.assert_prepare_code(code)
+        with patch.object(self.module.shutil, "which", return_value=None):
+            self.assert_prepare_code("prepare_docker_missing")
+        with patch.object(self.module.sys, "executable", ""):
+            self.assert_prepare_code("prepare_python_missing")
+        with patch.object(self.module.tempfile, "mkdtemp", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_state_create_failed")
+
+    def test_prepare_write_stage_diagnostics_never_render_payloads(self):
+        with patch.object(self.module, "atomic_json", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_state_write_failed")
+        with patch("builtins.open", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_github_path_write_failed")
+
+    def test_prepare_rejects_injection_and_checkout_mismatch(self):
+        for key, value in [("SHARED_PUSH_STATE", str(self.root)), ("GITHUB_RUN_ID", "bad\n"), ("RUNNER_TEMP", str(self.root) + "\n")]:
+            with patch.dict(os.environ, {key: value}):
+                self.assertEqual(self.runmode(["prepare"])[0], 1)
+        self.checkout.stop()
+        with patch.object(self.module.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "2" * 40, SECRET)):
+            self.assertEqual(self.runmode(["prepare"])[0], 1)
+
+    def test_state_lock_and_manifest_fifo_symlink_mode_and_owner_attacks(self):
+        for name in ["state.json", "manifest.json", "lock"]:
+            for kind in ["fifo", "symlink", "mode", "owner"]:
+                self.prepare()
+                self.assertEqual(self.push()[0], 0)
+                target = self.state / name
+                if kind in ["fifo", "symlink"]:
+                    target.unlink()
+                    if kind == "fifo": os.mkfifo(target, 0o600)
+                    else: target.symlink_to(self.root / "no-open")
+                    self.assertEqual(self.runmode(["evidence"])[0], 1)
+                elif kind == "mode":
+                    target.chmod(0o666)
+                    self.assertEqual(self.runmode(["evidence"])[0], 1)
+                else:
+                    original = self.module.os.fstat
+                    def foreign_owner(fd):
+                        info = original(fd)
+                        if stat.S_ISREG(info.st_mode):
+                            fields = list(info); fields[4] = os.geteuid() + 1
+                            return os.stat_result(fields)
+                        return info
+                    with patch.object(self.module.os, "fstat", side_effect=foreign_owner):
+                        self.assertEqual(self.runmode(["evidence"])[0], 1)
+                os.environ.pop("SHARED_PUSH_STATE", None)
+
+    def test_atomic_receipt_failure_never_permits_evidence(self):
+        self.prepare()
+        original = self.module.os.replace
+        def fail_receipt(src, dst, **kwargs):
+            if dst == "receipt.json": raise OSError(SECRET)
+            return original(src, dst, **kwargs)
+        with patch.object(self.module.os, "replace", side_effect=fail_receipt):
+            self.assertEqual(self.push()[0], 1)
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+        self.assertFalse((self.state / "receipt.json").exists())
+        self.assertFalse(any(p.name.startswith(".write-") for p in self.state.iterdir()))
+        self.assertEqual(self.push()[0], 0)
+
+    def test_pending_state_and_missing_receipt_never_fallback(self):
+        self.prepare()
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+        self.assertEqual(self.push()[0], 0)
+        (self.state / "receipt.json").unlink()
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+        (self.state / "state.json").write_text('{"status":"attempt","attempts":1}')
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+
+    def test_launch_errors_and_stdout_stderr_sentinels_are_private(self):
+        self.prepare()
+        with patch.object(self.module.subprocess, "Popen", side_effect=OSError(SECRET)):
+            self.assertEqual(self.push()[0], 1)
+        good = SHA + ": digest: sha256:" + "a" * 64 + " size: 42\n"
+        program = "sys.stderr.write(" + repr(SECRET) + ");sys.stdout.write(" + repr(SECRET + "\n" + good) + ")"
+        self.assertEqual(self.push(program=program)[0], 0)
+        for path in self.state.iterdir():
+            self.assertNotIn(SECRET, path.read_text())
+
+    def test_cancellation_kills_and_reaps_separate_group(self):
+        self.prepare()
+        real_popen = self.module.subprocess.Popen
+        children = []
+        def start(*args, **kwargs):
+            child = real_popen(*args, **kwargs); children.append(child); return child
+        selector = self.module.selectors.DefaultSelector
+        class CancelSelector:
+            def __init__(self): self.inner = selector()
+            def register(self, *args): return self.inner.register(*args)
+            def get_map(self): return self.inner.get_map()
+            def select(self, timeout):
+                signal.raise_signal(signal.SIGTERM)
+            def close(self): self.inner.close()
+        with patch.object(self.module.subprocess, "Popen", side_effect=start), patch.object(self.module.selectors, "DefaultSelector", CancelSelector):
+            self.assertEqual(self.push(program="time.sleep(10)")[0], 1)
+        self.assertEqual(len(children), 1)
+        self.assertIsNotNone(children[0].poll())
+        with self.assertRaises(ProcessLookupError): os.killpg(children[0].pid, 0)
+        self.assertEqual(self.runmode(["evidence"])[0], 1)
+
+    def test_passthrough_actual_stdin_stdout_stderr_and_environment(self):
+        self.prepare()
+        shim = self.state / "docker"
+        env = dict(os.environ, PROGRAM="sys.stdout.write(sys.stdin.read());sys.stderr.write(os.environ['PUBLIC_VALUE'])", PUBLIC_VALUE="public-marker")
+        self.checkout.stop()
+        result = subprocess.run([str(shim), "--config", SECRET, "login", "--password-stdin"], input=SECRET, text=True, capture_output=True, env=env, timeout=5)
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, SECRET, "public-marker"))
+        self.assertEqual((self.root / "args").read_text(), repr(["--config", SECRET, "login", "--password-stdin"]))
+        self.assertFalse((self.state / "receipt.json").exists())
+
+    def test_main_invalid_modes_sha_and_fixed_diagnostics(self):
+        for mode in [[], [SECRET], ["pin", SECRET]]:
+            result, out, err = self.runmode(mode)
+            self.assertEqual((result, out), (1, "")); self.assertIn("mode_invalid", err)
+        with patch.dict(os.environ, {"GITHUB_SHA": SHA + "\n"}):
+            self.assertEqual(self.runmode(["evidence"])[0], 1)
+        for exception in [RuntimeError(SECRET), self.module.EvidenceError(SECRET)]:
+            with patch.object(self.module, "receipt_image", side_effect=exception):
+                self.assertEqual(self.runmode(["evidence"]), (1, "", "Shared deployment image validation failed.\n"))
+
+    def test_output_failure_precedes_stdout_and_never_leaks(self):
+        self.prepare()
+        self.assertEqual(self.push()[0], 0)
+        with patch("builtins.open", side_effect=OSError(SECRET)):
+            result, out, err = self.runmode(["evidence"])
+        self.assertEqual((result, out), (1, ""))
+        self.assertIn("output_write_failed", err)
+
+
+class ReadinessTests(BaseTests):
+    def ready(self, **changes):
+        return deployment(IMAGE, status="READY", active_revision_id=REVISION, **changes)
+
+    def revision(self, **changes):
+        return dict(id=REVISION, status="DEPLOYED", source="internal_docker", source_revision_config={"image_uri": IMAGE}) | changes
+
+    def verify(self, values, budget=60):
+        calls = []
+        ticks = [0.0]
+        def clock(): return ticks[0]
+        def sleep(seconds): ticks[0] += seconds
+        def request(req, timeout):
+            calls.append((req.method, req.full_url, timeout))
+            value = values.pop(0)
+            if isinstance(value, Exception): raise value
+            if callable(value): value = value(ticks)
+            return value if isinstance(value, Response) else Response(value)
+        with patch.object(self.module.urllib.request, "build_opener") as opener:
+            opener.return_value.open.side_effect = request
+            try:
+                result = self.module.verify_image(IMAGE, SECRET, budget=budget, clock=clock, sleep=sleep)
+                return result, calls
+            except self.module.EvidenceError:
+                return None, calls
+
+    def test_stable_same_image_current_revision_passes_get_only(self):
+        result, calls = self.verify([self.ready(), self.revision(), self.ready()])
+        self.assertEqual(result, REVISION)
+        self.assertEqual([x[0] for x in calls], ["GET"] * 3)
+        self.assertEqual([x[1] for x in calls], [self.module.URL, self.module.URL + "/revisions/" + REVISION, self.module.URL])
+
+    def test_pending_revision_and_active_then_ready(self):
+        pending = self.ready() | {"active_revision_id": None}
+        result, calls = self.verify([pending, self.revision(status="DEPLOYING"), self.ready(), self.revision(), pending, self.ready(), self.revision(), self.ready()])
+        self.assertEqual(result, REVISION)
+        self.assertEqual(len(calls), 8)
+
+    def test_all_closed_statuses_and_foreign_images(self):
+        for value in [self.ready() | {"status": s} for s in ["UNUSED", "AWAITING_DELETE", "AWAITING_FINAL_DELETE", "UNKNOWN", SECRET]] + [self.ready() | {"source": "github"}, self.ready() | {"source_revision_config": {"image_uri": None}}, self.ready() | {"source_revision_config": {}}]:
+            self.assertIsNone(self.verify([value])[0])
+        for status in ["CREATE_FAILED", "BUILD_FAILED", "DEPLOY_FAILED", "SKIPPED", "INTERRUPTED", "UNKNOWN", SECRET]:
+            self.assertIsNone(self.verify([self.ready(), self.revision(status=status)])[0])
+        for change in [{"id": "other"}, {"source": "github"}, {"source_revision_config": {}}, {"source_revision_config": {"image_uri": None}}, {"source_revision_config": {"image_uri": REPOSITORY + ":" + SHA}}]:
+            self.assertIsNone(self.verify([self.ready(), self.revision(**change)])[0])
+
+    def test_missing_ids_are_not_null_and_schema_is_closed(self):
+        for name in ["active_revision_id", "latest_revision_id", "status", "source", "id", "source_revision_config"]:
+            value = self.ready(); value.pop(name)
+            self.assertIsNone(self.verify([value])[0])
+        for name in ["active_revision_id", "latest_revision_id"]:
+            self.assertIsNone(self.verify([self.ready() | {name: SECRET}])[0])
+
+    def test_supersession_within_and_between_cycles_fails(self):
+        other = "ad846882-b58d-4d97-b47a-c5e0517eaaed"
+        new = self.ready() | {"latest_revision_id": other, "active_revision_id": other}
+        self.assertIsNone(self.verify([self.ready(), self.revision(), new])[0])
+        self.assertIsNone(self.verify([self.ready(), self.revision(status="DEPLOYING"), new])[0])
+
+    def test_http_error_order_permanent_vs_transient_and_deadline(self):
+        for code in [301, 302, 307, 308, 400, 401, 403, 404, 422]:
+            error = urllib.error.HTTPError("hidden", code, SECRET, {}, None)
+            result, calls = self.verify([error])
+            self.assertIsNone(result); self.assertEqual(len(calls), 1)
+        for error in [urllib.error.URLError(SECRET), urllib.error.HTTPError("hidden", 503, SECRET, {}, None)]:
+            result, calls = self.verify([error, self.ready(), self.revision(), self.ready()])
+            self.assertEqual(result, REVISION); self.assertEqual(len(calls), 4)
+        self.assertIsNone(self.verify([urllib.error.URLError(SECRET)] * 10, budget=20)[0])
+
+    def test_every_documented_pending_revision_status_can_poll(self):
+        for status in ["CREATING", "QUEUED", "AWAITING_BUILD", "BUILDING", "AWAITING_DEPLOY", "DEPLOYING"]:
+            result, _ = self.verify([self.ready(), self.revision(status=status), self.ready(), self.revision(), self.ready()])
+            self.assertEqual(result, REVISION)
+
+    def test_null_latest_database_transition_and_no_success_until_stable_d2(self):
+        pending = self.ready() | {"status": "AWAITING_DATABASE", "latest_revision_id": None, "active_revision_id": None}
+        self.assertEqual(self.verify([pending, self.ready(), self.revision(), self.ready()])[0], REVISION)
+        second = self.ready() | {"status": "AWAITING_DATABASE"}
+        self.assertEqual(self.verify([self.ready(), self.revision(), second, self.ready(), self.revision(), self.ready()])[0], REVISION)
+        self.assertIsNone(self.verify([self.ready(), self.revision(), self.ready() | {"source_revision_config": {"image_uri": "foreign"}}])[0])
+
+    def test_main_verify_has_only_safe_success_or_failure_projection(self):
+        for value in [REVISION, self.module.EvidenceError("verify_timeout"), RuntimeError(SECRET)]:
+            out, err = io.StringIO(), io.StringIO()
+            with patch.dict(os.environ, self.env, clear=True), patch.object(self.module, "verify_image") as verify, contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                if isinstance(value, Exception): verify.side_effect = value
+                else: verify.return_value = value
+                result = self.module.main(["verify"])
+            self.assertNotIn(SECRET, out.getvalue() + err.getvalue())
+            self.assertEqual(result, int(isinstance(value, Exception)))
+            self.assertEqual(out.getvalue(), "" if isinstance(value, Exception) else "observed_active_revision_id=" + REVISION + "\n")
+
+    def test_late_success_oversize_duplicate_and_invalid_json_fail(self):
+        def late(ticks):
+            ticks[0] = 61
+            return self.ready()
+        self.assertIsNone(self.verify([self.ready(), self.revision(), late])[0])
+        for response in [Response(b"x" * (2 * 1024 * 1024 + 1)), Response(b'{"id":1,"id":2}'), Response(SECRET.encode()), Response(self.ready(), 302)]:
+            self.assertIsNone(self.verify([response])[0])
 
 
 if __name__ == "__main__":
