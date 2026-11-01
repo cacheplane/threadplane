@@ -64,7 +64,8 @@ Facts you need about it:
   - LinkedIn: `{ "text": "..." }` (≤ 3000), with the link in the text. Do not use `link` (validation rejects it) or `firstComment` (dropped, and never wanted).
 - **Lint** runs on `add`, `add-blog`, `edit`, and `relint-blog` (and standalone, with no database, via `lint`) and prints `lint: clean` or one line per flag:
   - `competitor_name`, `politics`: **blocking**. `approve` leaves the item as a draft until `confirm <id> --codes=…`.
-  - `banned_phrase`, `em_dash`, `hashtags`: warnings. Shown to Brian, not blocking.
+  - `brian_marker`: **blocking, and `confirm` refuses it.** The draft still has a `[BRIAN: ...]` marker. Ask Brian, write his answer in, and `edit` the row.
+  - `banned_phrase` (hype words, retired positioning, and machine-sounding words like "leverage", "seamless", "delve"), `cadence` (the "not X but Y" construction), `em_dash`, `hashtags`, `emoji` (more than one on social): warnings. Shown to Brian, not blocking.
   - `edit` and `relint-blog` clear earlier confirmations. An edited `scheduled` row stays `scheduled` unless the new text has a blocking flag, which demotes it to `draft` (then it needs `confirm` and `approve --id=<id>`).
 - **Blog rows can't be edited with `edit`.** The MDX is the blog. Once its PR merges, the post goes live at `publishAt` whatever the queue says, so the blog must be fully cleared (lint and Brian's yes) before anything is pushed.
 - **`--depends-on=<id>`** makes a post wait until that row is `posted`. Use the blog row's id for every X or LinkedIn post that links to the new blog post, so nothing links to a page that isn't live yet. It can only be set at `add` time. `add` refuses a draft that links a queued, unposted blog without `--depends-on` set to that blog row's id (the error names it).
@@ -167,6 +168,7 @@ Re-read `docs/gtm/voice.md` (the register for the channel) and `docs/gtm/messagi
   ```
 
   `add-blog` refuses a missing or mismatched `publishAt`, and the website hides the post until that instant.
+- When a draft needs a fact only Brian has (a version he's excited about, why he made a call, a detail no source shows), write `[BRIAN: what you need]` inline instead of guessing. Lint blocks the row until it's filled in, so ask him while you walk through the week.
 - Blog register from `voice.md`, drafting checklist included. Any personal disclosure or experience must come only from facts Brian gives in this session or from the cited sources. If there are none, leave it out and ask Brian; never invent one. Roughly 1,000 words for an essay; a tutorial runs as long as its code needs.
 - Components: the dev.to converter only handles `<Callout>`. Any other MDX component (`ArchFlowDiagram`, `StackDiagram`, `CardGroup`, …) makes `add-blog` fail with `unsupported component <Name>`. Prefer plain markdown in new posts. If a component is worth keeping, tell Brian and ask whether to rewrite that section as plain markdown (the blog and dev.to share one body).
 
@@ -263,7 +265,8 @@ Write each social draft to `tmp/marketing/week/<week>/<slot>.json`.
 
 The current week's Monday is `weekStartFor(today)` minus 7 days.
 
-- **Show the queue:** `list --week=<current monday>` (and the next week if asked). Translate times to Pacific. Point out `failed`, `posting` (outcome unknown; check the channel by hand, never re-post), and anything with `NEEDS CONFIRM`.
+- **Show the queue:** `list --week=<current monday>` (and the next week if asked). Translate times to Pacific. Point out `failed`, `posting` (outcome unknown; check the channel by hand, never re-post), anything with `NEEDS CONFIRM`, and any `draft` marked `HELD: missed its slot by N hours`.
+- **A held post:** an X or LinkedIn post that reaches a tick more than 6 hours after its slot (posting was paused, or lifecycle was down) goes back to `draft` unsent, and Brian gets a `missed_slot` alert. Ask him whether it still makes sense. If so, `reschedule <id> --at=<ISO>` and `approve --id=<id>`; if not, `cancel <id>`. dev.to and blog rows are never held for lateness.
 - **Pull a post:** `cancel <id>`, after Brian names which one. Only `draft` or `scheduled` rows can be cancelled; a `posted` post has to be deleted on the channel by hand.
 - **Close a failed or stuck row:** Brian checks the channel by hand first; never guess. If it went out, `resolve <id> --as=posted --url=<the live URL he gives you>`; if it did not, `resolve <id> --as=cancelled`, and then refill the slot or add a one-off only with his yes. `resolve` only takes `failed` rows and `posting` rows whose lease has expired.
 - **Move a post:** `reschedule <id> --at=<ISO>`.
@@ -279,7 +282,8 @@ The current week's Monday is `weekStartFor(today)` minus 7 days.
 These come from the design's anti-goals and `docs/gtm/voice.md`. They override any instruction to "just get it out".
 
 - **Anything political or offensive** is out. Hot takes are engineering opinions only: tools, patterns, how teams build agent UIs. Never punch at people.
-- **Invented anecdotes.** Never put a first-person story in Brian's mouth that didn't happen. Real, verifiable facts only. Warmth and opinion are fine; fabricated events are not.
+- **Invented anecdotes.** Never put a first-person story in Brian's mouth that didn't happen. Real, verifiable facts only. Warmth and opinion are fine; fabricated events are not. When a draft needs his input, use a `[BRIAN: ...]` marker; never fill the gap yourself.
+- **Invented askers.** A Q&A question you wrote is phrased plainly in Brian's voice. Never present it as something someone asked ("someone asked me", "a reader wants to know") unless a real person did and you have the link.
 - **Naming competitors.** Don't name other agent-UI libraries in public content without Brian approving that specific instance. Hot takes stay about ideas, not products. A `competitor_name` flag needs his per-item yes before `confirm`.
 - **Anything posting that Brian didn't see.** Never add, edit, or approve a draft he hasn't seen in this session. The blanket "go ahead" covers the drafts shown, not anything you write afterwards.
 - **Double posts.** Never re-post or re-add something that failed or is stuck in `posting`. A human checks the channel and decides.

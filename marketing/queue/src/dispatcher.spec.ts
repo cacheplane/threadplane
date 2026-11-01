@@ -73,6 +73,15 @@ function fakeDatabase(seed: TestRow[], credentials: Record<string, TestRow> = {}
           (p[2] as Date).getTime() + (p[3] as number)
         );
       }),
+    'return-to-draft': (p) =>
+      finish(p, (row) => {
+        row['status'] = 'draft';
+        row['error'] = p[2];
+        row['lease_token'] = null;
+        row['lease_expires_at'] = null;
+        row['attempts'] = (row['attempts'] as number) - 1;
+        row['next_attempt_at'] = null;
+      }),
     'mark-posted': (p) =>
       finish(p, (row) => {
         row['status'] = 'posted';
@@ -610,6 +619,44 @@ describe('dispatchMarketingPosts', () => {
     expect(h.posts).toEqual([]);
   });
 
+  it('an X or LinkedIn row more than 6h late goes back to draft unsent and alerts', async () => {
+    const db = fakeDatabase([
+      postRow({ id: 'x-late' }),
+      postRow({ id: 'li-late', channel: 'linkedin', idempotency_key: 'li' }),
+    ]);
+    const h = harness();
+    h.setNow(at(6 * 60 + 1));
+    expect(await tick(db, h.deps)).toMatchObject({ posted: 0, waiting: 2, failed: 0 });
+    expect(h.posts).toEqual([]);
+    expect(h.calls.loadAdapterOptions).toBe(0);
+    for (const id of ['x-late', 'li-late']) {
+      expect(db.rows.get(id)).toMatchObject({
+        status: 'draft',
+        error: 'missed its slot by 6 hours',
+        lease_token: null,
+        attempts: 0,
+      });
+    }
+    expect(h.alerts.map((a) => a.key)).toEqual(['missed_slot:x-late', 'missed_slot:li-late']);
+    expect(h.alerts[0].body).toContain('Reschedule and approve it');
+  });
+
+  it('a social row just inside 6h still posts, and a late dev.to row is not held', async () => {
+    const db = fakeDatabase([
+      postRow({ id: 'x-ok' }),
+      postRow({
+        id: 'dev-late',
+        channel: 'devto',
+        idempotency_key: 'dev',
+        payload: { channel: 'devto', text: 'body', article: { title: 'T', canonicalUrl: CANONICAL } },
+      }),
+    ]);
+    const h = harness();
+    h.setNow(at(6 * 60));
+    expect(await tick(db, h.deps)).toMatchObject({ posted: 2, waiting: 0 });
+    expect(h.alerts).toEqual([]);
+  });
+
   it('devto skips posting when dev.to already has the canonical', async () => {
     const db = fakeDatabase([
       postRow({
@@ -951,12 +998,19 @@ describe('dispatchMarketingPosts', () => {
   });
 
   it('credentials_unavailable re-fires on a different Pacific day', async () => {
-    const db = fakeDatabase([postRow({ id: 'li1', channel: 'linkedin' })]);
+    // dev.to, because a social row that waits a day goes back to draft as a missed slot.
+    const db = fakeDatabase([
+      postRow({
+        id: 'dev1',
+        channel: 'devto',
+        payload: { channel: 'devto', text: 'body', article: { title: 'T', canonicalUrl: CANONICAL } },
+      }),
+    ]);
     const { alert, emails } = claimingSender(db);
     const h = harness({ alert, loadAdapterOptions: async () => ({}) });
 
     expect((await tick(db, h.deps)).alerts).toEqual([
-      'credentials_unavailable:linkedin:2026-11-03',
+      'credentials_unavailable:devto:2026-11-03',
     ]);
     h.setNow(at(60));
     await tick(db, h.deps);
@@ -965,7 +1019,7 @@ describe('dispatchMarketingPosts', () => {
     // 2026-11-04 08:40 Pacific.
     h.setNow(at(24 * 60 + 10));
     expect((await tick(db, h.deps)).alerts).toEqual([
-      'credentials_unavailable:linkedin:2026-11-04',
+      'credentials_unavailable:devto:2026-11-04',
     ]);
     expect(emails).toHaveLength(2);
   });

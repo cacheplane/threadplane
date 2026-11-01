@@ -154,3 +154,5 @@ npm run marketing:queue -- resolve <id> --as=cancelled --target=<preview|product
 ```
 
 `resolve` only accepts `failed` rows and `posting` rows whose lease has expired, so it cannot race a tick that is still posting. Expired-lease rows are surfaced by `list` and by the alert email.
+
+Turning posting back on after a pause does not dump the backlog. An X or LinkedIn row that reaches a tick more than 6 hours after its `publishAt` goes back to `draft` without sending, and a `missed_slot` alert explains it; `list` shows it as `HELD: missed its slot by N hours`. To send it anyway, `reschedule <id> --at=<ISO>` and `approve --id=<id>`; otherwise `cancel <id>`. dev.to and blog rows still go out late.

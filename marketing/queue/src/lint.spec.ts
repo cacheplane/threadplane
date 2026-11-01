@@ -35,6 +35,36 @@ describe('lintPublicCopy', () => {
     expect(lintPublicCopy('#a #b', 'devto').some((f) => f.code === 'hashtags')).toBe(false);
   });
 
+  it('a [BRIAN: ...] marker is blocking on every channel', () => {
+    for (const channel of ['x', 'linkedin', 'devto', 'blog'] as const) {
+      expect(lintPublicCopy('shipped in [BRIAN: which version?] today', channel)).toContainEqual({
+        code: 'brian_marker',
+        blocking: true,
+        match: '[BRIAN: which version?]',
+      });
+    }
+  });
+
+  it('machine-sounding words warn, inflections and curly apostrophes included', () => {
+    for (const text of ['we leveraged signals', 'Seamlessly streams', 'here’s the thing about state']) {
+      const flags = lintPublicCopy(text, 'x');
+      expect(flags.some((f) => f.code === 'banned_phrase' && !f.blocking)).toBe(true);
+    }
+    expect(lintPublicCopy('the elevator pitch', 'x')).toEqual([]);
+  });
+
+  it('the "not X but Y" cadence warns, ordinary "not sure, but" does not', () => {
+    expect(lintPublicCopy('it is not a library but a protocol', 'linkedin').some((f) => f.code === 'cadence')).toBe(true);
+    expect(lintPublicCopy('not just faster, but simpler', 'x').some((f) => f.code === 'cadence')).toBe(true);
+    expect(lintPublicCopy('not sure, but it works', 'x')).toEqual([]);
+  });
+
+  it('more than one emoji warns on social only', () => {
+    expect(lintPublicCopy('love it 💚', 'x')).toEqual([]);
+    expect(lintPublicCopy('love it 💚🔥', 'x')).toContainEqual({ code: 'emoji', blocking: false, match: '💚 🔥' });
+    expect(lintPublicCopy('💚🔥', 'blog').some((f) => f.code === 'emoji')).toBe(false);
+  });
+
   it('clean text has no flags', () => {
     expect(lintPublicCopy('Signals make streaming state easy to read.', 'x')).toEqual([]);
   });
