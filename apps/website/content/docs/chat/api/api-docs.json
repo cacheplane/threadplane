@@ -2334,9 +2334,16 @@
       },
       {
         "name": "onScroll",
-        "signature": "onScroll(): void",
+        "signature": "onScroll(event: Event): void",
         "description": "",
-        "params": []
+        "params": [
+          {
+            "name": "event",
+            "type": "Event",
+            "description": "",
+            "optional": true
+          }
+        ]
       },
       {
         "name": "onScrollBubbleClick",
