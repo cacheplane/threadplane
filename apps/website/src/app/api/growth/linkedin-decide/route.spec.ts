@@ -101,7 +101,10 @@ describe('/api/growth/linkedin-decide', () => {
 
     const second = await h.POST(post(token()) as never);
     expect(second.status).toBe(200);
-    expect(await second.text()).toContain('Lead denied forever');
+    const secondBody = await second.text();
+    expect(secondBody).toContain('No change made');
+    expect(secondBody).not.toContain('Lead denied forever');
+    expect(secondBody).not.toContain('Lead rejected');
     expect(h.decide).toHaveBeenLastCalledWith(h.database, {
       leadId,
       decision: 'deny',
@@ -151,5 +154,71 @@ describe('/api/growth/linkedin-decide', () => {
     );
     expect(get.status).toBe(400);
     expect(h.decide).not.toHaveBeenCalled();
+  });
+
+  it('POST fails and still closes the database when decideLead throws', async () => {
+    const h = harness();
+    h.decide.mockReset().mockRejectedValue(new Error('db down'));
+    expect((await h.POST(post(token()) as never)).status).toBe(400);
+    expect(h.database.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails when the token keyring cannot load', async () => {
+    const database = executor();
+    const decide = vi.fn();
+    const route = createFounderLinkedInDecideRoute({
+      now: () => now,
+      loadTokenKeyring: () => {
+        throw new Error('missing env');
+      },
+      createDatabase: () => database,
+      decideLead: decide as never,
+    });
+    expect((await route.POST(post(token()) as never)).status).toBe(400);
+    expect(
+      (
+        await route.GET(
+          request(`/api/growth/linkedin-decide?token=${token()}`) as never
+        )
+      ).status
+    ).toBe(400);
+    expect(decide).not.toHaveBeenCalled();
+  });
+
+  it('POST rejects a query string, an oversized body and extra fields', async () => {
+    const h = harness();
+    const form = {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    };
+    const withQuery = request('/api/growth/linkedin-decide?x=1', {
+      ...form,
+      body: new URLSearchParams({ token: token() }).toString(),
+    });
+    const oversized = request('/api/growth/linkedin-decide', {
+      ...form,
+      body: new URLSearchParams({ token: 'a'.repeat(5_000) }).toString(),
+    });
+    const extra = request('/api/growth/linkedin-decide', {
+      ...form,
+      body: new URLSearchParams({ token: token(), other: 'x' }).toString(),
+    });
+    for (const r of [withQuery, oversized, extra]) {
+      expect((await h.POST(r as never)).status).toBe(400);
+    }
+    expect(h.decide).not.toHaveBeenCalled();
+  });
+
+  it('GET fails for a wrong-purpose token and an expired token', async () => {
+    const h = harness();
+    for (const bad of [
+      token({ purpose: 'founder_approve_install' }),
+      token({ issuedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000) }),
+    ]) {
+      const response = await h.GET(
+        request(`/api/growth/linkedin-decide?token=${bad}`) as never
+      );
+      expect(response.status).toBe(400);
+    }
   });
 });

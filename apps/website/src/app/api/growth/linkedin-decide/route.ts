@@ -92,6 +92,13 @@ function successResponse(decision: Decision): NextResponse {
   );
 }
 
+function noChangeResponse(): NextResponse {
+  return htmlResponse(
+    'No change made',
+    'This lead was already decided in the weekly session or by an earlier link. Nothing was changed.'
+  );
+}
+
 function defaultDependencies(): FounderLinkedInDecideRouteDependencies {
   return {
     now: () => new Date(),
@@ -182,9 +189,9 @@ export function createFounderLinkedInDecideRoute(
           decidedBy: 'founder_email_link',
           now: receivedAt,
         });
-        return result === 'applied' || result === 'already_decided'
-          ? successResponse(verified.decision)
-          : failureResponse();
+        if (result === 'applied') return successResponse(verified.decision);
+        if (result === 'already_decided') return noChangeResponse();
+        return failureResponse();
       } catch {
         return failureResponse();
       } finally {
