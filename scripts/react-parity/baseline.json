@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "b0c334524338abe4998218827aaa394596b7bf92",
+  "baselineHead": "c62ad667f1e618b268f6c40cd6957af765228ffc",
   "sourceState": {
     "modified": [
-      "libs/chat/src/lib/compositions/chat/chat.component.ts"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2177,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "dbb91ff7b0d034fca3c3fa372015536b03e85197b26a48b86427c8ea1115b5b2"
+      "sha256": "2fd142f3179ed8479cbee59de46d4349729e93657343ef39a630bbb9ecb74e9d"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",

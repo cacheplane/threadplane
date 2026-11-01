@@ -27,6 +27,11 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   assert.equal(upload.with['compression-level'], 1);
   assert.equal(producer.outputs.dependency_artifact, '${{ steps.dependencies.outputs.artifact }}');
   assert.equal(producer.outputs.dependency_attempt, '${{ steps.dependencies.outputs.attempt }}');
+  assert.equal(producer.outputs.dependency_node, '${{ steps.dependencies.outputs.node }}');
+  assert.ok(pack.run.includes(`echo "node=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"`));
+  const nodeSetup = consumer.steps.find(step => step.uses?.startsWith('actions/setup-node@'));
+  assert.equal(nodeSetup.with['node-version'], '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}',
+    'mixed runner images must install exactly the producer Node patch');
   assert.equal(download.with.name, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_artifact }}');
   assert.equal(restore.env.COCKPIT_DEPENDENCY_PRODUCER_ATTEMPT, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_attempt }}');
   assert.equal(restore.if, undefined, 'a failed restore must prevent proofs from running');
@@ -34,10 +39,11 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   assert.equal(consumer.strategy['max-parallel'], 5);
   assert.equal(consumer.strategy['fail-fast'], false);
   assert.equal(consumer.steps.some(step => step.run === 'npm ci'), false);
-  const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step));
+  const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
+    .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
     '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
-    'all original setup, Python, source, fixture, browser and artifact steps remain identical');
+    'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
 it('requires the Scripts owner for reviewed test-only changes while allowing unrelated skips', async () => {
