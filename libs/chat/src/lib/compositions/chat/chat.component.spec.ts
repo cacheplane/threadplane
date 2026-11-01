@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
-import { signal, effect, DestroyRef, inject, Injector, runInInjectionContext } from '@angular/core';
+import { Component, signal, effect, DestroyRef, inject, Injector, runInInjectionContext } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { ChatComponent } from './chat.component';
@@ -17,6 +17,7 @@ import { a2uiBasicCatalog } from '../../a2ui/catalog/index';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatMessageComponent } from '../../primitives/chat-message/chat-message.component';
 import { ChatStreamingMdComponent, markdownDocument } from '../../streaming/streaming-markdown.component';
+import { ChatRunActivityTemplateDirective } from './chat-run-activity-template.directive';
 import type { Spec, StateStore } from '@json-render/core';
 import type { AgentEvent } from '../../agent/agent-event';
 import type { Subagent } from '../../agent/subagent';
@@ -1096,7 +1097,434 @@ describe('ChatComponent — markdown delivery', () => {
   });
 });
 
+@Component({
+  standalone: true,
+  imports: [ChatComponent, ChatRunActivityTemplateDirective],
+  template: '<chat [agent]="agent"><ng-template chatRunActivityTemplate>Working</ng-template></chat>',
+})
+class ScrollActivityHost {
+  readonly agent = mockAgent({ isLoading: true, messages: [{ id: 'user', role: 'user', content: 'Question', delivery: staticDelivery('user') }] });
+}
+
 describe('ChatComponent — scrollToBottom', () => {
+  const afterWheelDispatch = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+  function holdFrames() {
+    const callbacks: FrameRequestCallback[] = [];
+    const spy = vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    return { flush: () => callbacks.splice(0).forEach((callback) => callback(performance.now())), restore: () => spy.mockRestore() };
+  }
+
+  function streamingChat() {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ isLoading: true, messages: [{ id: 'stream', role: 'assistant', content: 'First token', delivery: streamingDelivery('run') }] });
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    const el = (fx.nativeElement as HTMLElement).querySelector<HTMLElement>('.chat-scroll');
+    if (!el) throw new Error('scroll container did not render');
+    let scrollTop = 2000;
+    Object.defineProperties(el, {
+      scrollHeight: { configurable: true, writable: true, value: 2400 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: { configurable: true, get: () => scrollTop, set: (value: number) => { scrollTop = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, value)); } },
+    });
+    const pinned = (fx.componentInstance as unknown as { pinned(): boolean }).pinned;
+    return { fx, agent, el, pinned };
+  }
+
+  it('keeps an upward user scroll through the public programmatic guard and the next streaming token', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      // Model the browser's clamped bottom position, with the public method's
+      // programmatic guard still pending its actual animation-frame callback.
+      el.scrollTop = 2000;
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      await afterWheelDispatch();
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, next token' })));
+      fx.detectChanges();
+      expect(el.scrollTop).toBe(1400);
+      expect(pinned()).toBe(false);
+      frames.flush();
+      expect(el.scrollTop).toBe(1400);
+      // Draining the interrupted guard must not leave the counter negative:
+      // the next public return still suppresses its own mid-frame scroll event.
+      fx.componentInstance.scrollToBottom();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      expect(pinned()).toBe(true);
+    } finally { frames.restore(); }
+  });
+
+  it('does not execute a queued loading-completion scroll after the user has unpinned', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      agent.isLoading.set(false);
+      fx.detectChanges();
+      // Completion queued a frame while pinned; the user moves before it runs.
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      await afterWheelDispatch();
+      expect(pinned()).toBe(false);
+      frames.flush();
+      expect(el.scrollTop).toBe(1400);
+      expect(pinned()).toBe(false);
+    } finally { frames.restore(); }
+  });
+
+  it.each(['frame first', 'dispatch first'] as const)('keeps compositor-first movement when completion and dispatch settle in %s order', async (order) => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      agent.isLoading.set(false);
+      fx.detectChanges();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      expect(pinned()).toBe(true); // Whole-dispatch cancellation is not known yet.
+      if (order === 'frame first') frames.flush();
+      await afterWheelDispatch();
+      if (order === 'dispatch first') frames.flush();
+      expect(el.scrollTop).toBe(1400);
+      expect(pinned()).toBe(false);
+    } finally { frames.restore(); }
+  });
+
+  it('holds a streaming-token follow while observed upward movement awaits whole-dispatch cancellation', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, before dispatch settles' })));
+      fx.detectChanges();
+      expect(pinned()).toBe(true);
+      expect(el.scrollTop).toBe(1400);
+      await afterWheelDispatch();
+      expect(pinned()).toBe(false);
+      expect(el.scrollTop).toBe(1400);
+    } finally { frames.restore(); }
+  });
+
+  it.each([
+    { cancelled: [false, true], movement: true },
+    { cancelled: [true, false], movement: true },
+    { cancelled: [true, true], movement: true },
+    { cancelled: [false, true], movement: false },
+    { cancelled: [true, true], movement: false },
+  ])('preserves valid input across bursty upward wheels (cancelled=$cancelled, movement=$movement)', async ({ cancelled, movement }) => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      if (movement) { el.scrollTop = 1400; el.dispatchEvent(new Event('scroll')); }
+      for (const [index, cancel] of cancelled.entries()) {
+        if (cancel) el.parentElement?.addEventListener('wheel', (event) => event.preventDefault(), { once: true });
+        const wheel = new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true });
+        el.dispatchEvent(wheel);
+        expect(wheel.defaultPrevented).toBe(cancel);
+        if (index === 0) {
+          agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, during a burst of wheel events' })));
+          fx.detectChanges();
+        }
+        expect(el.scrollTop).toBe(movement ? 1400 : 2000);
+        expect(pinned()).toBe(true);
+      }
+      await afterWheelDispatch();
+      const interrupted = movement && cancelled.some((cancel) => !cancel);
+      expect(pinned()).toBe(!interrupted);
+      expect(el.scrollTop).toBe(interrupted ? 1400 : 2000);
+    } finally { frames.restore(); }
+  });
+
+  it('preserves fully dispatched upward support when its main scroll arrives during a later cancelled wheel', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      await afterWheelDispatch(); // Confirmed input, but no main movement delivered yet.
+      expect(pinned()).toBe(true);
+      el.parentElement?.addEventListener('wheel', (event) => event.preventDefault(), { once: true });
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, after the earlier native scroll arrives' })));
+      fx.detectChanges();
+      expect(el.scrollTop).toBe(1400);
+      await afterWheelDispatch();
+      expect(pinned()).toBe(false);
+      expect(el.scrollTop).toBe(1400);
+    } finally { frames.restore(); }
+  });
+
+  it.each(['cancelled', 'within tolerance'] as const)('resumes a held completion follow after a %s wheel decision', async (kind) => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      agent.isLoading.set(false);
+      fx.detectChanges();
+      const top = kind === 'cancelled' ? 1400 : 1851;
+      el.scrollTop = top;
+      el.dispatchEvent(new Event('scroll'));
+      if (kind === 'cancelled') el.parentElement?.addEventListener('wheel', (event) => event.preventDefault(), { once: true });
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      frames.flush();
+      expect(el.scrollTop).toBe(top);
+      expect(pinned()).toBe(true);
+      await afterWheelDispatch();
+      expect(el.scrollTop).toBe(2000);
+      expect(pinned()).toBe(true);
+    } finally { frames.restore(); }
+  });
+
+  it('refreshes the allowed automatic-write baseline before later native movement is delivered', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      Object.defineProperty(el, 'scrollHeight', { configurable: true, writable: true, value: 3000 });
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, grows before native movement' })));
+      fx.detectChanges();
+      expect(el.scrollTop).toBe(2600);
+      el.scrollTop = 2000;
+      el.dispatchEvent(new Event('scroll'));
+      expect(pinned()).toBe(true);
+      await afterWheelDispatch();
+      expect(pinned()).toBe(false);
+      expect(el.scrollTop).toBe(2000);
+    } finally { frames.restore(); }
+  });
+
+  it('holds an actual run-region ResizeObserver follow until the wheel dispatch decision is settled', async () => {
+    const frames = holdFrames();
+    const originalObserver = globalThis.ResizeObserver;
+    const observers: Array<{ callback: () => void; observed: Element[] }> = [];
+    globalThis.ResizeObserver = class {
+      readonly entry: { callback: () => void; observed: Element[] };
+      constructor(callback: () => void) { this.entry = { callback, observed: [] }; observers.push(this.entry); }
+      observe(target: Element) { this.entry.observed.push(target); }
+      disconnect() { this.entry.observed = []; }
+    } as unknown as typeof ResizeObserver;
+    try {
+      TestBed.configureTestingModule({ imports: [ScrollActivityHost] });
+      const fx = TestBed.createComponent(ScrollActivityHost);
+      fx.detectChanges();
+      const chat = fx.debugElement.query(By.directive(ChatComponent)).componentInstance as ChatComponent;
+      const el = (fx.nativeElement as HTMLElement).querySelector<HTMLElement>('.chat-scroll');
+      if (!el) throw new Error('scroll container did not render');
+      let scrollTop = 2000;
+      Object.defineProperties(el, {
+        scrollHeight: { value: 2400 }, clientHeight: { value: 400 },
+        scrollTop: { get: () => scrollTop, set: (value: number) => { scrollTop = Math.max(0, Math.min(2000, value)); } },
+      });
+      const observer = observers.find((entry) => entry.observed.some((node) => node.classList.contains('chat-run-activity')));
+      if (!observer) throw new Error('run-region observer did not attach');
+      frames.flush();
+      chat.scrollToBottom();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      observer.callback();
+      expect(el.scrollTop).toBe(1400);
+      expect((chat as unknown as { pinned(): boolean }).pinned()).toBe(true);
+      await afterWheelDispatch();
+      expect(el.scrollTop).toBe(1400);
+      expect((chat as unknown as { pinned(): boolean }).pinned()).toBe(false);
+    } finally { globalThis.ResizeObserver = originalObserver; frames.restore(); }
+  });
+
+  it.each(['new message', 'public return', 'submitted'] as const)('lets %s override a pending wheel decision without a late unpin', async (action) => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      if (action === 'new message') agent.messages.update((messages) => [...messages, { id: 'override', role: 'user', content: 'New turn', delivery: staticDelivery('override') }]);
+      if (action === 'public return') fx.componentInstance.scrollToBottom();
+      if (action === 'submitted') {
+        fx.debugElement.query(By.css('chat-input')).triggerEventHandler('submitted', 'Next turn');
+        agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, after pending submit' })));
+      }
+      fx.detectChanges();
+      await afterWheelDispatch();
+      expect(pinned()).toBe(true);
+      expect(el.scrollTop).toBe(2000);
+    } finally { frames.restore(); }
+  });
+
+  it('recognizes compositor movement and its scroll event delivered before the upward wheel listener', async () => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      expect(pinned()).toBe(true);
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      await afterWheelDispatch();
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, next token after compositor scroll' })));
+      fx.detectChanges();
+      expect(el.scrollTop).toBe(1400);
+      expect(pinned()).toBe(false);
+    } finally { frames.restore(); }
+  });
+
+  it.each(['cancelled', 'downward', 'no movement'] as const)('does not unpin for a %s wheel during programmatic suppression', async (kind) => {
+    const frames = holdFrames();
+    try {
+      const { fx, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      // An ancestor may cancel after the passive scroller listener has run.
+      if (kind === 'cancelled') el.parentElement?.addEventListener('wheel', (event) => event.preventDefault(), { once: true });
+      if (kind !== 'no movement') {
+        el.scrollTop = 1400;
+        el.dispatchEvent(new Event('scroll'));
+      }
+      const wheel = new WheelEvent('wheel', { deltaY: kind === 'downward' ? 600 : -600, bubbles: true, cancelable: true });
+      el.dispatchEvent(wheel);
+      await afterWheelDispatch();
+      expect(wheel.defaultPrevented).toBe(kind === 'cancelled');
+      expect(pinned()).toBe(true);
+    } finally { frames.restore(); }
+  });
+
+  it.each([149, 150])('preserves the existing pin tolerance for %i pixels of confirmed upward movement', async (distance) => {
+    const frames = holdFrames();
+    try {
+      const { fx, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -distance, bubbles: true, cancelable: true }));
+      el.scrollTop = 2000 - distance;
+      el.dispatchEvent(new Event('scroll'));
+      await afterWheelDispatch();
+      expect(pinned()).toBe(distance < 150);
+    } finally { frames.restore(); }
+  });
+
+  it.each([0, 200])('only attributes nested upward wheel movement to the transcript when the child cannot consume it (child top=%i)', async (childTop) => {
+    const frames = holdFrames();
+    try {
+      const { fx, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      const child = document.createElement('div');
+      child.style.overflowY = 'auto';
+      Object.defineProperties(child, { scrollHeight: { value: 800 }, clientHeight: { value: 100 }, scrollTop: { writable: true, value: childTop } });
+      el.append(child);
+      child.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      // A child scroll event must never act as the transcript's scroll event.
+      child.dispatchEvent(new Event('scroll', { bubbles: true }));
+      expect(pinned()).toBe(true);
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      await afterWheelDispatch();
+      expect(pinned()).toBe(childTop > 0);
+    } finally { frames.restore(); }
+  });
+
+  it('owns a passive wheel listener only for the rendered transcript and cleans it up on view replacement and destroy', () => {
+    const frames = holdFrames();
+    const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+    try {
+      const { fx, agent, el } = streamingChat();
+      const index = add.mock.contexts.findIndex((target, i) => target === el && add.mock.calls[i][0] === 'wheel');
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(add.mock.calls[index][2]).toEqual({ passive: true });
+      const remove = vi.spyOn(el, 'removeEventListener');
+      agent.messages.set([]);
+      fx.detectChanges();
+      expect(remove).toHaveBeenCalledWith('wheel', add.mock.calls[index][1]);
+      agent.messages.set([{ id: 'new', role: 'assistant', content: 'New transcript', delivery: staticDelivery('new') }]);
+      fx.detectChanges();
+      const replacement = (fx.nativeElement as HTMLElement).querySelector<HTMLElement>('.chat-scroll');
+      expect(replacement).not.toBe(el);
+      if (!replacement) throw new Error('replacement transcript did not render');
+      const removeReplacement = vi.spyOn(replacement, 'removeEventListener');
+      fx.destroy();
+      expect(removeReplacement).toHaveBeenCalledWith('wheel', expect.any(Function));
+    } finally { add.mockRestore(); frames.restore(); }
+  });
+
+  it.each(['new message', 'return button', 'submitted'] as const)('retains canonical re-pinning for %s after native interruption', async (action) => {
+    const frames = holdFrames();
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      await afterWheelDispatch();
+      fx.detectChanges();
+      expect(pinned()).toBe(false);
+      if (action === 'new message') agent.messages.update((messages) => [...messages, { id: 'new', role: 'user', content: 'Next turn', delivery: staticDelivery('new') }]);
+      if (action === 'return button') (fx.nativeElement.querySelector('chat-scroll-bubble button') as HTMLButtonElement).click();
+      if (action === 'submitted') {
+        fx.debugElement.query(By.css('chat-input')).triggerEventHandler('submitted', 'Next turn');
+        agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, after submitted' })));
+      }
+      fx.detectChanges();
+      expect(pinned()).toBe(true);
+      expect(el.scrollTop).toBe(2000);
+    } finally { frames.restore(); }
+  });
+
+  it('waits for dispatch-completion when a browser microtask checkpoint precedes ancestor cancellation', async () => {
+    const frames = holdFrames();
+    const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+    try {
+      const { fx, agent, el, pinned } = streamingChat();
+      frames.flush();
+      fx.componentInstance.scrollToBottom();
+      frames.flush(); // The programmatic counter is fully drained before cancellation.
+      const index = add.mock.contexts.findIndex((target, i) => target === el && add.mock.calls[i][0] === 'wheel');
+      const listener = add.mock.calls[index][1] as EventListener;
+      const wheel = new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true });
+      // jsdom dispatchEvent runs listeners synchronously; explicitly model the
+      // native browser checkpoint between this listener and a cancelling ancestor.
+      listener.call(el, wheel);
+      el.scrollTop = 1400;
+      el.dispatchEvent(new Event('scroll'));
+      agent.messages.update((messages) => messages.map((message) => ({ ...message, content: 'First token, during the native dispatch checkpoint' })));
+      fx.detectChanges();
+      expect(pinned()).toBe(true);
+      expect(el.scrollTop).toBe(1400);
+      await Promise.resolve();
+      wheel.preventDefault();
+      await afterWheelDispatch();
+      expect(pinned()).toBe(true);
+      expect(el.scrollTop).toBe(2000);
+    } finally { add.mockRestore(); frames.restore(); }
+  });
+
   it('scrolls the transcript to its end, re-pins, and does not read its own scroll as the user unpinning', () => {
     TestBed.configureTestingModule({});
     const fx = TestBed.createComponent(ChatComponent);
