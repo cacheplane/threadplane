@@ -11,6 +11,9 @@ import { NativeProjects } from './native-projects';
 import { PROJECT_CATALOG_KEY as key } from './project-catalog';
 
 beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    {},
+  ] as unknown as DOMRectList);
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
   };
@@ -30,9 +33,6 @@ function deferred() {
 }
 const rows = [{ id: 'a', title: 'Alpha', projectId: ' p/x ' }];
 function setupLastProject() {
-  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
-    {},
-  ] as unknown as DOMRectList);
   localStorage.setItem(
     key,
     JSON.stringify({ version: 1, projects: [{ id: 'last', name: 'Last' }] })
@@ -59,11 +59,12 @@ function setupLastProject() {
   const view = render(<Host />);
   const confirmDeletion = () => {
     const trigger = view.getByRole('button', {
-      name: 'Delete project Last (last)',
+      name: 'More actions for project Last (last)',
       exact: true,
     });
     trigger.focus();
     fireEvent.click(trigger);
+    fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
     const confirm = within(view.getByRole('alertdialog')).getByRole('button', {
       name: 'Delete project',
       exact: true,
@@ -165,19 +166,21 @@ it('requires confirmation and captures exact target through filter changes; pend
   const { view, deletion, held, select } = setup();
   fireEvent.click(
     view.getByRole('button', {
-      name: 'Delete project <First> ( p/x )',
+      name: 'More actions for project <First> ( p/x )',
       exact: true,
     })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   expect(deletion.deleteProject).not.toHaveBeenCalled();
   fireEvent.click(view.getByRole('button', { name: 'Cancel', exact: true }));
   expect(deletion.deleteProject).not.toHaveBeenCalled();
   fireEvent.click(
     view.getByRole('button', {
-      name: 'Delete project <First> ( p/x )',
+      name: 'More actions for project <First> ( p/x )',
       exact: true,
     })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   const confirm = within(view.getByRole('alertdialog')).getByRole('button', {
     name: 'Delete project',
     exact: true,
@@ -207,8 +210,9 @@ it('requires confirmation and captures exact target through filter changes; pend
 it('retains label on uncertain backend result and explicitly retries the captured ID', async () => {
   const { view, deletion, held, select } = setup();
   fireEvent.click(
-    view.getByRole('button', { name: /^Delete project <First>/ })
+    view.getByRole('button', { name: /^More actions for project <First>/ })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   fireEvent.click(
     within(view.getByRole('alertdialog')).getByRole('button', {
       name: 'Delete project',
@@ -232,8 +236,9 @@ it('retains label on uncertain backend result and explicitly retries the capture
 it('keeps failed catalog persistence recoverable and rereads latest storage on retry', async () => {
   const { view, deletion, held } = setup();
   fireEvent.click(
-    view.getByRole('button', { name: /^Delete project <First>/ })
+    view.getByRole('button', { name: /^More actions for project <First>/ })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   fireEvent.click(
     within(view.getByRole('alertdialog')).getByRole('button', {
       name: 'Delete project',
@@ -280,8 +285,9 @@ it('ignores completion after unmount or owner replacement', async () => {
     { name: 'Outside replacement' }
   );
   fireEvent.click(
-    view.getByRole('button', { name: /^Delete project <First>/ })
+    view.getByRole('button', { name: /^More actions for project <First>/ })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   fireEvent.click(
     within(view.getByRole('alertdialog')).getByRole('button', {
       name: 'Delete project',
@@ -312,13 +318,13 @@ it('ignores completion after unmount or owner replacement', async () => {
 });
 
 it('returns focus to All conversations after confirmation disables the original action', async () => {
-  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
-    {},
-  ] as unknown as DOMRectList);
   const { view, held } = setup();
-  const trigger = view.getByRole('button', { name: /^Delete project <First>/ });
+  const trigger = view.getByRole('button', {
+    name: /^More actions for project <First>/,
+  });
   trigger.focus();
   fireEvent.click(trigger);
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   const confirm = within(view.getByRole('alertdialog')).getByRole('button', {
     name: 'Delete project',
     exact: true,
@@ -340,8 +346,9 @@ it('does not remove the local label after an actual unmount', async () => {
     name: 'Outside unmount',
   });
   fireEvent.click(
-    view.getByRole('button', { name: /^Delete project <First>/ })
+    view.getByRole('button', { name: /^More actions for project <First>/ })
   );
+  fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
   fireEvent.click(
     within(view.getByRole('alertdialog')).getByRole('button', {
       name: 'Delete project',

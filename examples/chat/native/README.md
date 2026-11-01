@@ -645,10 +645,9 @@ code point of the trimmed title (or ID), with `?` for empty content, while keepi
 full accessible names, tooltips and pin/time descriptions. It has no extra New,
 filter or Refresh controls. The full directory remains mounted; compact rows
 remain mounted and hidden/inert when expanded or in either drawer state.
-This bounded composed
-navigation does not implement Angular project menus, backend search or other global shortcuts,
-debug ownership or full T30 parity. Popup and sidebar remain separate
-presentations.
+The project Rename/Delete menus are described below. Backend search, other global
+shortcuts, debug ownership and full T30 parity remain open. Popup and sidebar
+remain separate presentations.
 
 The palette searches titles from up to 50 already loaded conversations across
 all projects, including archived rows, independently of the directory filters.
@@ -729,6 +728,23 @@ Project selection, naming and persistence preserve the selected conversation,
 transcript, composer draft and running session without extra network calls.
 Confirmed project deletion is described below; shared catalogs and full T29 parity remain open. Confirmed
 conversation assignment/removal is described below.
+
+### Native project action menus (private React T29/T30 slice)
+
+Native full project rows compose the existing controlled `OverflowMenu` through
+`ProjectList.renderActions`. Each contextual **More actions** trigger offers
+**Rename** and, when a deletion owner is available, destructive **Delete**.
+Deletion capability controls the Delete item; unavailable project storage or a
+pending project deletion disables the trigger. Opening or dismissing a menu does
+not select a project, write data or replace an existing editor draft.
+
+Rename keeps the existing browser-local editor and storage Retry behavior. Delete
+keeps the exact-target confirmation and backend membership recovery described
+below, preserving conversations. Editors and confirmations retain the persistent
+row trigger for focus restoration. Scope changes expire old menu requests; the
+existing menu supplies keyboard navigation, dismissal, inherited theme and
+viewport containment. This adds no public API or backend contract; shared catalogs
+and full T29/T30 parity remain open.
 
 Conversation menus also retain their opening through a queued scroll notification
 from an anchor ancestor whose vertical/horizontal offsets already settled before

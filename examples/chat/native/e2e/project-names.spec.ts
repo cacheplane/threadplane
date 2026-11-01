@@ -9,8 +9,7 @@ test('installed React project creation and renaming persist locally without conv
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const row = {
     ...threadEnvelope('a', 'Alpha notes'),
     metadata: { title: 'Alpha notes', projectId: 'project-a' },
@@ -115,10 +114,11 @@ test('installed React project creation and renaming persist locally without conv
     expect(backend.requests).toHaveLength(3);
     await nav
       .getByRole('button', {
-        name: 'Rename project <Local project> (00000000-0000-4000-8000-000000000001)',
+        name: 'More actions for project <Local project> (00000000-0000-4000-8000-000000000001)',
         exact: true,
       })
       .click();
+    await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
     await editor.fill('Discard this');
     await editor.press('Escape');
     await expect(
@@ -126,10 +126,11 @@ test('installed React project creation and renaming persist locally without conv
     ).toBeVisible();
     await nav
       .getByRole('button', {
-        name: 'Rename project <Local project> (00000000-0000-4000-8000-000000000001)',
+        name: 'More actions for project <Local project> (00000000-0000-4000-8000-000000000001)',
         exact: true,
       })
       .click();
+    await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
     await editor.fill('<Renamed project>');
     await nav.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(
@@ -145,10 +146,11 @@ test('installed React project creation and renaming persist locally without conv
       .click();
     await nav
       .getByRole('button', {
-        name: 'Rename project project-a (project-a)',
+        name: 'More actions for project project-a (project-a)',
         exact: true,
       })
       .click();
+    await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
     await editor.fill(importedName);
     expect(
       await editor.evaluate(
@@ -165,10 +167,11 @@ test('installed React project creation and renaming persist locally without conv
     ).toBeVisible();
     await nav
       .getByRole('button', {
-        name: `Rename project ${importedName} (project-a)`,
+        name: `More actions for project ${importedName} (project-a)`,
         exact: true,
       })
       .click();
+    await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
     expect(
       await nav
         .locator('.native-projects')
