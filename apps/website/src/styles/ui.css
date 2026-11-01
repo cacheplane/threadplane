@@ -57,10 +57,10 @@
  * (default 'md' has no attribute — see components/ui/Card.tsx). */
 [data-ui="card"] {
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: var(--space-6);
 }
 [data-ui="card"][data-padding="lg"] {
-  padding: 28px;
+  padding: var(--space-8);
 }
 
 /* UI primitive — Container */
@@ -128,13 +128,14 @@
 [data-ui="pill"] {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
-  padding: 4px 10px;
+  min-height: 28px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
-  line-height: 1.4;
+  line-height: 20px;
 }
 [data-ui="pill"][data-variant="neutral"] {
   background: var(--color-surface);
@@ -180,8 +181,7 @@
  * that first exposed this are gone, but --color-surface still dresses the
  * secondary Button and the focus halo in this band, and a neutral
  * rgb(28,28,28) left those grey-black on a navy ground.
- * Treatment B (spec): vertical gradient canvas, 1px accent seam at the
- * light→dark boundary. */
+ * A flat navy canvas retains the Threadplane contrast band. */
 [data-ui="section"][data-surface="dark"] {
   /* Navy-family surfaces. The ground goes DARKER and the surfaces go LIGHTER,
    * which is the hierarchy that was missing — before, the two darks were
@@ -205,7 +205,7 @@
   --color-accent-border-hover: rgba(255, 175, 0, 0.4);
   --color-accent-surface: rgba(255, 175, 0, 0.1);
 
-  background: linear-gradient(180deg, #0b1622 0%, #0f1c2e 100%);
+  background: var(--color-canvas);
   color: var(--color-text-primary);
   position: relative;
 }
@@ -227,28 +227,25 @@
   pointer-events: none;
 }
 
-/* Signal section scope (the ATC hero block).
- * Aviation yellow is a FILL: this scope flips the ink to near-black rather
- * than tinting the yellow, because #FFAF00 carries text at 1.84:1 on white
- * and 10.73:1 under #0A0A0A. Same re-scoping mechanism as the dark surface
- * above. */
+/* The existing hero surface keeps its component API and adopts direction
+ * A: white ground, navy actions and restrained yellow highlights. */
 [data-ui="section"][data-surface="signal"] {
-  --color-canvas: var(--color-signal);
-  --color-surface: var(--color-signal);
-  --color-surface-tinted: var(--color-signal-strong);
-  --color-border: rgba(10, 10, 10, 0.18);
-  --color-border-strong: rgba(10, 10, 10, 0.32);
+  --color-canvas: #fff;
+  --color-surface: #fff;
+  --color-surface-tinted: var(--site-hover);
+  --color-border: #e7e9ed;
+  --color-border-strong: #c8ced8;
   --color-text-primary: var(--color-ink);
   --color-text-secondary: rgba(10, 10, 10, 0.78);
   --color-text-muted: rgba(10, 10, 10, 0.6);
-  --color-text-inverted: var(--color-signal);
-  --color-accent: var(--color-ink);
-  --color-accent-hover: #000000;
-  --color-accent-surface: rgba(10, 10, 10, 0.08);
-  --color-accent-border: rgba(10, 10, 10, 0.25);
+  --color-text-inverted: #fff;
+  --color-accent: var(--color-scope);
+  --color-accent-hover: #0e1b2e;
+  --color-accent-surface: var(--site-highlight);
+  --color-accent-border: var(--color-border);
   --shadow-focus: 0 0 0 3px rgba(10, 10, 10, 0.45);
 
-  background: var(--color-signal);
+  background: var(--color-canvas);
   color: var(--color-text-primary);
 }
 
@@ -261,34 +258,36 @@
   font-family: var(--font-sans);
   font-weight: 600;
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   cursor: pointer;
   text-decoration: none;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
   white-space: nowrap;
 }
 [data-ui="button"][data-size="md"] {
-  height: 40px;
+  height: var(--site-control-md);
   padding: 0 16px;
   font-size: 14px;
 }
 [data-ui="button"][data-size="lg"] {
-  height: 48px;
-  padding: 0 22px;
-  font-size: 16px;
+  height: var(--site-control-lg);
+  padding: 0 var(--space-5);
+  font-size: 15px;
 }
 [data-ui="button"][data-variant="primary"] {
-  background: var(--color-signal);
-  color: var(--color-ink);
-  border: 1px solid var(--color-signal);
+  background: var(--color-accent);
+  color: #fff;
+  border: 1px solid var(--color-accent);
   box-shadow: var(--shadow-sm);
 }
-/* On the yellow hero block the fill inverts — a yellow button on a yellow
- * ground has nothing to sit against. */
+[data-ui="section"][data-surface="dark"] [data-ui="button"][data-variant="primary"] {
+  color: var(--color-ink);
+}
+/* Explicit hero scope keeps the action consistent with the navy site CTA. */
 [data-ui="section"][data-surface="signal"] [data-ui="button"][data-variant="primary"] {
-  background: var(--color-ink);
-  color: var(--color-signal);
-  border-color: var(--color-ink);
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
 }
 [data-ui="button"][data-variant="secondary"] {
   background: var(--color-surface);
@@ -374,6 +373,8 @@
   align-items: center;
   gap: 8px;
   font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.035em;
   color: var(--color-text-primary);
   line-height: 1;
 }
@@ -381,7 +382,7 @@
   font-size: 14px;
 }
 [data-ui="logo-mark"][data-size="md"] {
-  font-size: 16px;
+  font-size: 22px;
 }
 /* The mark is the ATC app icon in miniature: a signal-yellow squircle with an
  * ink glyph. A bare yellow glyph on the white nav would be 1.84:1 — yellow is
@@ -455,14 +456,16 @@
 [data-ui="browser-frame-titlebar"] {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: var(--space-3);
+  height: 48px;
+  padding: 0 var(--space-4);
   background: var(--color-surface-tinted);
   border-bottom: 1px solid var(--color-border);
 }
 [data-ui="browser-frame-dots"] {
   display: flex;
-  gap: 6px;
+  flex-shrink: 0;
+  gap: var(--space-2);
 }
 [data-ui="browser-frame-dots"] > span {
   width: 12px;
@@ -494,7 +497,9 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  height: 28px;
+  line-height: 26px;
+  padding: 0 var(--space-3);
   max-width: 360px;
   margin: 0 auto;
   overflow: hidden;
@@ -502,7 +507,9 @@
   white-space: nowrap;
 }
 [data-ui="browser-frame-spacer"] {
-  width: 54px;
+  /* Three 12px dots plus two 8px gaps: equal sides centre the URL. */
+  width: 52px;
+  flex-shrink: 0;
 }
 [data-ui="browser-frame-body"] {
   position: relative;
@@ -531,14 +538,14 @@
  * above.) */
 [data-ui="tab-group-list"] {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 12px;
 }
 [data-ui="tab-group-tab"] {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 8px var(--space-4);
   border-radius: 8px;
   border: none;
   cursor: pointer;
@@ -556,6 +563,7 @@
 }
 [data-ui="section-header"] .section-header-heading {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   letter-spacing: -0.015em;
@@ -579,7 +587,7 @@
 [data-ui="section-header"][data-variant="rail"] .section-header-eyebrow {
   border-top: 2px solid var(--color-text-primary);
   padding-top: 8px;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 [data-ui="section-header"][data-variant="rail"] .section-header-heading {
   font-size: clamp(32px, 3.4vw, 44px);
@@ -608,8 +616,8 @@
 }
 [data-ui="modal-close"] {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   width: 36px;
   height: 36px;
   border: 0;
