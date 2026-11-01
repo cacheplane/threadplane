@@ -77,10 +77,47 @@ DIAGNOSTIC_CODES = DIAGNOSTIC_CODES | frozenset({
 })
 
 
-def safe_path(value):
+# Literal role maps keep diagnostics bounded. No inspected value contributes
+# to a diagnostic; Python is the interpreter already running this helper.
+EXECUTABLE_DIAGNOSTICS = {
+    "docker": {
+        "path": "prepare_docker_path_invalid", "stat": "prepare_docker_stat_failed",
+        "type": "prepare_docker_type_invalid", "owner": "prepare_docker_owner_invalid",
+        "group": "prepare_docker_group_writable", "world": "prepare_docker_world_writable",
+        "access": "prepare_docker_not_executable",
+    },
+    "python": {
+        "path": "prepare_python_path_invalid", "stat": "prepare_python_stat_failed",
+        "type": "prepare_python_type_invalid", "owner": "prepare_python_owner_invalid",
+        "group": "prepare_python_group_writable", "world": "prepare_python_world_writable",
+        "access": "prepare_python_not_executable",
+    },
+}
+DIAGNOSTIC_CODES = DIAGNOSTIC_CODES | frozenset({
+    "prepare_state_present", "prepare_run_identity_invalid", "prepare_temp_missing",
+    "prepare_temp_path_invalid", "prepare_temp_not_directory",
+    "prepare_docker_missing", "prepare_docker_resolve_failed",
+    "prepare_python_missing", "prepare_python_resolve_failed",
+    "prepare_helper_path_invalid", "prepare_docker_recursive",
+    "prepare_github_path_invalid", "prepare_github_env_invalid",
+    "prepare_state_create_failed", "prepare_state_write_failed",
+    "prepare_launcher_write_failed", "prepare_github_path_write_failed",
+    "prepare_github_env_write_failed",
+}) | frozenset(code for role in EXECUTABLE_DIAGNOSTICS.values() for code in role.values())
+
+
+@contextlib.contextmanager
+def prepare_stage(code):
+    try:
+        yield
+    except Exception:
+        raise EvidenceError(code) from None
+
+
+def safe_path(value, code="state_invalid"):
     require(type(value) is str and value.startswith("/") and
-            all(ord(c) >= 32 and ord(c) != 127 for c in value), "state_invalid")
-    require(os.path.normpath(value) == value, "state_invalid")
+            all(ord(c) >= 32 and ord(c) != 127 for c in value), code)
+    require(os.path.normpath(value) == value, code)
     return value
 
 
@@ -168,47 +205,73 @@ def atomic_json(directory, name, value):
             pass
 
 
-def executable(path):
-    safe_path(path)
-    info = os.lstat(path)
-    require(stat.S_ISREG(info.st_mode) and info.st_uid in (0, os.geteuid()) and
-            not (info.st_mode & 0o022) and os.access(path, os.X_OK), "prepare_invalid")
+def executable(path, role="docker"):
+    codes = EXECUTABLE_DIAGNOSTICS[role]
+    safe_path(path, codes["path"])
+    with prepare_stage(codes["stat"]):
+        info = os.lstat(path)
+    require(stat.S_ISREG(info.st_mode), codes["type"])
+    require(info.st_uid in (0, os.geteuid()), codes["owner"])
+    require(not (info.st_mode & 0o020), codes["group"])
+    require(not (info.st_mode & 0o002), codes["world"])
+    with prepare_stage(codes["access"]):
+        accessible = os.access(path, os.X_OK)
+    require(accessible, codes["access"])
     return path
 
 
 def prepare(sha):
-    require(STATE_ENV not in os.environ, "prepare_invalid")
+    require(STATE_ENV not in os.environ, "prepare_state_present")
     checked_sha(sha)
-    run_id, run_attempt = run_identity()
-    temporary = safe_path(os.path.realpath(safe_path(os.environ.get("RUNNER_TEMP", ""))))
-    require(os.path.isdir(temporary), "prepare_invalid")
-    docker = executable(os.path.realpath(shutil.which("docker") or ""))
-    python = executable(os.path.realpath(sys.executable))
-    helper = os.path.realpath(__file__)
-    safe_path(helper)
-    require(docker != helper and os.path.basename(os.path.dirname(docker))[:12] != "shared-push-", "prepare_invalid")
+    with prepare_stage("prepare_run_identity_invalid"):
+        run_id, run_attempt = run_identity()
+    require(bool(os.environ.get("RUNNER_TEMP", "")), "prepare_temp_missing")
+    with prepare_stage("prepare_temp_path_invalid"):
+        temporary = safe_path(os.path.realpath(safe_path(os.environ.get("RUNNER_TEMP", ""))))
+    with prepare_stage("prepare_temp_not_directory"):
+        require(os.path.isdir(temporary))
+    with prepare_stage("prepare_docker_resolve_failed"):
+        docker_path = shutil.which("docker")
+    require(bool(docker_path), "prepare_docker_missing")
+    with prepare_stage("prepare_docker_resolve_failed"):
+        docker_path = os.path.realpath(docker_path)
+    docker = executable(docker_path, "docker")
+    require(bool(sys.executable), "prepare_python_missing")
+    with prepare_stage("prepare_python_resolve_failed"):
+        python_path = os.path.realpath(sys.executable)
+    python = executable(python_path, "python")
+    with prepare_stage("prepare_helper_path_invalid"):
+        helper = os.path.realpath(__file__)
+        safe_path(helper)
+    require(docker != helper and os.path.basename(os.path.dirname(docker))[:12] != "shared-push-", "prepare_docker_recursive")
     # Validate command file paths before creating any state or appending output.
-    outputs = [safe_path(os.environ.get(k, "")) for k in ("GITHUB_PATH", "GITHUB_ENV")]
-    root = safe_path(tempfile.mkdtemp(prefix="shared-push-", dir=temporary))
-    os.chmod(root, 0o700)
-    directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    outputs = [safe_path(os.environ.get(k, ""), code) for k, code in (
+        ("GITHUB_PATH", "prepare_github_path_invalid"), ("GITHUB_ENV", "prepare_github_env_invalid"))]
+    with prepare_stage("prepare_state_create_failed"):
+        root = safe_path(tempfile.mkdtemp(prefix="shared-push-", dir=temporary))
+        os.chmod(root, 0o700)
+        directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
     try:
-        atomic_json(directory, "manifest.json", dict(schema_version=1, run_id=run_id,
-            run_attempt=run_attempt, source_sha=sha, expected_tag=REPOSITORY + ":" + sha,
-            docker=docker, helper=helper, python=python))
-        atomic_json(directory, "state.json", {"status": "prepared", "attempts": 0})
-        lock = os.open("lock", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                       0o600, dir_fd=directory)
-        os.close(lock)
-        launcher = "#!" + python + "\nimport os\nos.execv(" + repr(python) + ", [" + repr(python) + ", " + repr(helper) + ", 'shim', *__import__('sys').argv[1:]])\n"
-        fd = os.open("docker", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                     0o700, dir_fd=directory)
-        with os.fdopen(fd, "w", encoding="ascii") as target:
-            target.write(launcher)
-        with open(outputs[0], "a", encoding="utf8") as target:
-            target.write(root + "\n")
-        with open(outputs[1], "a", encoding="utf8") as target:
-            target.write(STATE_ENV + "=" + root + "\n")
+        with prepare_stage("prepare_state_write_failed"):
+            atomic_json(directory, "manifest.json", dict(schema_version=1, run_id=run_id,
+                run_attempt=run_attempt, source_sha=sha, expected_tag=REPOSITORY + ":" + sha,
+                docker=docker, helper=helper, python=python))
+            atomic_json(directory, "state.json", {"status": "prepared", "attempts": 0})
+            lock = os.open("lock", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                           0o600, dir_fd=directory)
+            os.close(lock)
+        with prepare_stage("prepare_launcher_write_failed"):
+            launcher = "#!" + python + "\nimport os\nos.execv(" + repr(python) + ", [" + repr(python) + ", " + repr(helper) + ", 'shim', *__import__('sys').argv[1:]])\n"
+            fd = os.open("docker", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o700, dir_fd=directory)
+            with os.fdopen(fd, "w", encoding="ascii") as target:
+                target.write(launcher)
+        with prepare_stage("prepare_github_path_write_failed"):
+            with open(outputs[0], "a", encoding="utf8") as target:
+                target.write(root + "\n")
+        with prepare_stage("prepare_github_env_write_failed"):
+            with open(outputs[1], "a", encoding="utf8") as target:
+                target.write(STATE_ENV + "=" + root + "\n")
     finally:
         os.close(directory)
 

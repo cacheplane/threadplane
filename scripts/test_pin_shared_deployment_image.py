@@ -389,6 +389,51 @@ class ReceiptTests(BaseTests):
             self.assertFalse((self.root / "env").exists())
             self.assertFalse((self.root / "path").exists())
 
+    def assert_prepare_code(self, code):
+        result, out, err = self.runmode(["prepare"])
+        self.assertEqual((result, out, err), (1, "", "Shared deployment image validation failed. [" + code + "]\n"))
+        self.assertFalse((self.root / "env").exists())
+        self.assertFalse((self.root / "path").exists())
+
+    def test_prepare_diagnostics_separate_docker_and_running_python_checks(self):
+        for role, target in [("docker", str(self.docker)), ("python", os.path.realpath(self.module.sys.executable))]:
+            for problem in ["stat_failed", "type_invalid", "owner_invalid", "group_writable", "world_writable", "not_executable"]:
+                with self.subTest(role=role, problem=problem):
+                    original_stat = self.module.os.lstat
+                    original_access = self.module.os.access
+                    def altered_stat(path, *args, **kwargs):
+                        value = original_stat(path, *args, **kwargs)
+                        if str(path) != target: return value
+                        if problem == "stat_failed": raise OSError(SECRET)
+                        fields = list(value)
+                        if problem == "type_invalid": fields[0] = stat.S_IFDIR | stat.S_IMODE(value.st_mode)
+                        if problem == "owner_invalid": fields[4] = os.geteuid() + 100000
+                        if problem == "group_writable": fields[0] |= 0o020
+                        if problem == "world_writable": fields[0] |= 0o002
+                        return os.stat_result(fields)
+                    def altered_access(path, mode):
+                        if str(path) == target and problem == "not_executable": return False
+                        return original_access(path, mode)
+                    with patch.object(self.module.os, "lstat", side_effect=altered_stat), patch.object(self.module.os, "access", side_effect=altered_access):
+                        self.assert_prepare_code("prepare_" + role + "_" + problem)
+
+    def test_prepare_diagnostics_separate_missing_state_temp_and_commands(self):
+        for key, value, code in [("SHARED_PUSH_STATE", SECRET, "prepare_state_present"), ("GITHUB_RUN_ID", "bad", "prepare_run_identity_invalid"), ("RUNNER_TEMP", "", "prepare_temp_missing"), ("RUNNER_TEMP", SECRET, "prepare_temp_path_invalid"), ("RUNNER_TEMP", str(self.root / "absent"), "prepare_temp_not_directory"), ("GITHUB_PATH", "", "prepare_github_path_invalid"), ("GITHUB_ENV", SECRET, "prepare_github_env_invalid")]:
+            with self.subTest(code=code), patch.dict(os.environ, {key: value}):
+                self.assert_prepare_code(code)
+        with patch.object(self.module.shutil, "which", return_value=None):
+            self.assert_prepare_code("prepare_docker_missing")
+        with patch.object(self.module.sys, "executable", ""):
+            self.assert_prepare_code("prepare_python_missing")
+        with patch.object(self.module.tempfile, "mkdtemp", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_state_create_failed")
+
+    def test_prepare_write_stage_diagnostics_never_render_payloads(self):
+        with patch.object(self.module, "atomic_json", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_state_write_failed")
+        with patch("builtins.open", side_effect=OSError(SECRET)):
+            self.assert_prepare_code("prepare_github_path_write_failed")
+
     def test_prepare_rejects_injection_and_checkout_mismatch(self):
         for key, value in [("SHARED_PUSH_STATE", str(self.root)), ("GITHUB_RUN_ID", "bad\n"), ("RUNNER_TEMP", str(self.root) + "\n")]:
             with patch.dict(os.environ, {key: value}):
