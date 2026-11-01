@@ -93,7 +93,7 @@ export interface CustomStreamEvent {
 
 // ── Options ──────────────────────────────────────────────────────────────────
 
-/** Options for creating a LangGraph-backed agent via {@link agent}. */
+/** Options used internally by the `agent()` factory to create a LangGraph-backed agent. */
 // The second generic is retained for source compatibility with existing typed
 // AgentOptions references even though the options shape no longer depends on it.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!normalizeEnvelopeArgs:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical {envelopes: [...]},\na singular typo {envelope: [...]}, positional keys {0: env, 1: env, ...}\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net.",
+  "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical `{envelopes: [...]}`,\na singular typo `{envelope: [...]}`, positional keys `{0: env, 1: env, ...}`\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net.",
   "declarations": [
     {
       "name": "normalizeEnvelopeArgs",
@@ -40,7 +40,7 @@
         }
       ],
       "docs": {
-        "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical {envelopes: [...]},\na singular typo {envelope: [...]}, positional keys {0: env, 1: env, ...}\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net.",
+        "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical `{envelopes: [...]}`,\na singular typo `{envelope: [...]}`, positional keys `{0: env, 1: env, ...}`\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

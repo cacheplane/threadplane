@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ViewRegistry:type",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` { component, fallback? }.",
+  "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` with the shape `{ component, fallback? }`.",
   "declarations": [
     {
       "name": "ViewRegistry",
@@ -60,7 +60,7 @@
         }
       ],
       "docs": {
-        "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` { component, fallback? }.",
+        "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` with the shape `{ component, fallback? }`.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

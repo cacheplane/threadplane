@@ -57,7 +57,7 @@
             }
           ],
           "docs": {
-            "summary": "Make every result recorded via settle durable on the server\nWITHOUT continuing the run. No-op for adapters whose settle() is already\ndurable. Adapters that buffer locally MUST clear their buffer only on a\nsuccessful write, so a failure degrades to a later flush or submit.",
+            "summary": "Make every result recorded via [ClientToolsCapability.settle](/docs/api/chat/ClientToolsCapability#member-settle-j6dcxt) durable on the server\nWITHOUT continuing the run. No-op for adapters whose settle() is already\ndurable. Adapters that buffer locally MUST clear their buffer only on a\nsuccessful write, so a failure degrades to a later flush or submit.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

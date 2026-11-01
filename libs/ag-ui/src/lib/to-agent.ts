@@ -172,7 +172,7 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
 /**
  * Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.
  *
- * The adapter subscribes to source.subscribe({ onEvent }) and reduces every
+ * The adapter subscribes to `source.subscribe({ onEvent })` and reduces every
  * event into the produced Agent's signals. submit() optimistically appends the
  * user message to both our signals and the source agent's internal message
  * list, then calls source.runAgent(). stop() calls source.abortRun().

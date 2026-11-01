@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/ag-ui!provideFakeAgent:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
+  "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\n`provideAgent({ url })` when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
   "declarations": [
     {
       "name": "provideFakeAgent",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
+        "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\n`provideAgent({ url })` when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

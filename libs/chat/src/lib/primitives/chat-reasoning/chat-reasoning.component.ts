@@ -15,7 +15,7 @@ import { formatDuration } from '../../utils/format-duration';
  *
  * - Streaming: pill shows "Thinking…" with a pulsing dot; auto-expanded
  *   so the user sees reasoning stream in real time.
- * - Idle, with durationMs known: pill shows "Thought for {duration}";
+ * - Idle, with durationMs known: pill shows `Thought for {duration}`;
  *   collapsed by default, expand on click.
  * - Idle, no duration: pill shows "Show reasoning"; collapsed by default.
  *

@@ -921,7 +921,7 @@
       "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink."
+      "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent#member-provideAgent-1iabkey).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink."
     },
     {
       "name": "AgUiAgent",
@@ -1101,7 +1101,7 @@
       "canonicalReference": "@threadplane/ag-ui!provideFakeAgent:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\nprovideAgent({ url }) when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`."
+      "summary": "Registers an in-process FakeAgent under AGENT.\n\nUse for offline demos and development. Drop-in replacement for\n`provideAgent({ url })` when no real backend is available.\n\nPass `script` to stream exact AG-UI events instead of the canned token\nreply — the adapter reduces them into `toolCalls()`, `state()`,\n`customEvents()`, and `interrupt()` exactly as it would real wire events,\nand emits each one on `rawEvents$`."
     },
     {
       "name": "ResumeAttempt",
@@ -1131,7 +1131,7 @@
       "canonicalReference": "@threadplane/ag-ui!toAgent:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to source.subscribe({ onEvent }) and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter."
+      "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to `source.subscribe({ onEvent })` and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter."
     },
     {
       "name": "ToAgentOptions",
@@ -1921,7 +1921,7 @@
       "canonicalReference": "@threadplane/chat!cacheplaneMarkdownViews:var",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Default view registry consumed by <chat-streaming-md>. Maps every\nMarkdownNode.type emitted by @cacheplane/partial-markdown@0.2 to its\ncorresponding Angular component.\n\nOverride per-node-type via `withViews(cacheplaneMarkdownViews, { … })`."
+      "summary": "Default view registry consumed by `<chat-streaming-md>`. Maps every\n`MarkdownNode.type` emitted by `@cacheplane/partial-markdown@0.2` to its\ncorresponding Angular component.\n\nOverride per-node-type via `withViews(cacheplaneMarkdownViews, { … })`."
     },
     {
       "name": "cancelledClientToolResult",
@@ -1961,7 +1961,7 @@
       "canonicalReference": "@threadplane/chat!ChatActivityTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers a per-message activity renderer on `<chat>`. When present, the\ntemplate replaces the reasoning pill and the tool-call region\n(`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message.\nMarkdown, tool views, generative UI and message actions still render.\n\nThe template renders at message level, so tall activity (nested subagent\nturns, approval cards) is never clipped by a trace body.\n\nPrecedence: the activity template owns the whole region, so any\n`chatToolCallTemplate` projected into `<chat>` is not used while an\nactivity template is present. Render `<chat-tool-calls>` inside the\nactivity template to keep per-tool templates.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatActivityTemplate let-message let-toolCalls=\"toolCalls\" let-subagents=\"subagents\">\n <my-activity-summary [message]=\"message\" [calls]=\"toolCalls\" [subagents]=\"subagents\" />\n </ng-template>\n </chat>"
+      "summary": "Registers a per-message activity renderer on `<chat>`. When present, the\ntemplate replaces the reasoning pill and the tool-call region\n(`<chat-reasoning>` + `<chat-tool-calls>`) of every assistant message.\nMarkdown, tool views, generative UI and message actions still render.\n\nThe template renders at message level, so tall activity (nested subagent\nturns, approval cards) is never clipped by a trace body.\n\nPrecedence: the activity template owns the whole region, so any\n`chatToolCallTemplate` projected into `<chat>` is not used while an\nactivity template is present. Render `<chat-tool-calls>` inside the\nactivity template to keep per-tool templates.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatActivityTemplate let-message let-toolCalls=\"toolCalls\" let-subagents=\"subagents\">\n      <my-activity-summary [message]=\"message\" [calls]=\"toolCalls\" [subagents]=\"subagents\" />\n    </ng-template>\n  </chat>\n```"
     },
     {
       "name": "ChatApprovalAction",
@@ -1991,7 +1991,7 @@
       "canonicalReference": "@threadplane/chat!ChatCitationCardTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "ContentChild template directive for custom citation card rendering.\nUsage: <ng-template chatCitationCard let-citation>...</ng-template>"
+      "summary": "ContentChild template directive for custom citation card rendering.\n```html\n<ng-template chatCitationCard let-citation>...</ng-template>\n```"
     },
     {
       "name": "ChatCitationPreviewComponent",
@@ -2141,7 +2141,7 @@
       "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n </ng-template>\n </chat>"
+      "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n      <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n    </ng-template>\n  </chat>\n```"
     },
     {
       "name": "ChatLauncherButtonComponent",
@@ -2251,7 +2251,7 @@
       "canonicalReference": "@threadplane/chat!ChatReasoningComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders an assistant's reasoning content as a compact pill that\nexpands to reveal the underlying text. Three visual states:\n\n- Streaming: pill shows \"Thinking…\" with a pulsing dot; auto-expanded\n so the user sees reasoning stream in real time.\n- Idle, with durationMs known: pill shows \"Thought for {duration}\";\n collapsed by default, expand on click.\n- Idle, no duration: pill shows \"Show reasoning\"; collapsed by default.\n\nThe body re-uses chat-streaming-md so reasoning content gets the same\nmarkdown rendering pipeline as the visible response (lists, code,\nstep labels often appear in reasoning output).\n\nInternal state: a tristate \"expanded\" — null means follow auto state-\ndriven logic (force-expand while delivery is streaming, otherwise honor\ndefaultExpanded), boolean is a manual user choice that wins for the\nlifetime of the instance."
+      "summary": "Renders an assistant's reasoning content as a compact pill that\nexpands to reveal the underlying text. Three visual states:\n\n- Streaming: pill shows \"Thinking…\" with a pulsing dot; auto-expanded\n so the user sees reasoning stream in real time.\n- Idle, with durationMs known: pill shows `Thought for {duration}`;\n collapsed by default, expand on click.\n- Idle, no duration: pill shows \"Show reasoning\"; collapsed by default.\n\nThe body re-uses chat-streaming-md so reasoning content gets the same\nmarkdown rendering pipeline as the visible response (lists, code,\nstep labels often appear in reasoning output).\n\nInternal state: a tristate \"expanded\" — null means follow auto state-\ndriven logic (force-expand while delivery is streaming, otherwise honor\ndefaultExpanded), boolean is a manual user choice that wins for the\nlifetime of the instance."
     },
     {
       "name": "ChatRenderEvent",
@@ -2281,7 +2281,7 @@
       "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatRunActivityTemplate let-agent>\n <my-turn-activity [agent]=\"agent\" />\n </ng-template>\n </chat>"
+      "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatRunActivityTemplate let-agent>\n      <my-turn-activity [agent]=\"agent\" />\n    </ng-template>\n  </chat>\n```"
     },
     {
       "name": "ChatScrollBubbleComponent",
@@ -2361,7 +2361,7 @@
       "canonicalReference": "@threadplane/chat!ChatSidenavScrimComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n<chat-sidenav> so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>"
+      "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n`<chat-sidenav>` so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n```html\n  <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n  <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>\n```"
     },
     {
       "name": "ChatStreamingMdComponent",
@@ -2471,7 +2471,7 @@
       "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n\n<chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n </ng-template>\n <ng-template chatToolCallTemplate=\"*\" let-call>\n <chat-tool-call-card [toolCall]=\"call\"/>\n </ng-template>\n </chat-tool-calls>"
+      "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n```html\n  <chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n    <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n      <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n    </ng-template>\n    <ng-template chatToolCallTemplate=\"*\" let-call>\n      <chat-tool-call-card [toolCall]=\"call\"/>\n    </ng-template>\n  </chat-tool-calls>\n```"
     },
     {
       "name": "ChatToolViewsComponent",
@@ -2541,7 +2541,7 @@
       "canonicalReference": "@threadplane/chat!Citation:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n/citations/{messageId}). Pandoc-formatted [^id]: ... defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time."
+      "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n`/citations/{messageId}`). Pandoc-formatted `[^id]: ...` defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time."
     },
     {
       "name": "CitationImageVisual",
@@ -2941,7 +2941,7 @@
       "canonicalReference": "@threadplane/chat!createPartialArgsBridge:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds\nthe surface store envelope-by-envelope as the parent LLM streams its\ntool_call.arguments JSON. Uses @cacheplane/partial-json to extract\nstructurally-complete envelope objects from the growing args string.\n\nSynthesis safety net: v0.9 requires a `createSurface` envelope before\nany `updateComponents`. If a complete `updateComponents` arrives for a\nsurface with no `createSurface` seen yet this turn, the bridge\nsynthesises one (basic catalog) so the surface can mount as soon as its\n`root` component is defined — the store gates rendering on\ncreateSurface + root, and fills the tree in progressively after that.\n\nThe store treats a later \"real\" createSurface for the same surface as an\nidempotent refresh, so LLMs that emit one out of order are harmless."
+      "summary": "Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds\nthe surface store envelope-by-envelope as the parent LLM streams its\ntool_call.arguments JSON. Uses `@cacheplane/partial-json` to extract\nstructurally-complete envelope objects from the growing args string.\n\nSynthesis safety net: v0.9 requires a `createSurface` envelope before\nany `updateComponents`. If a complete `updateComponents` arrives for a\nsurface with no `createSurface` seen yet this turn, the bridge\nsynthesises one (basic catalog) so the surface can mount as soon as its\n`root` component is defined — the store gates rendering on\ncreateSurface + root, and fills the tree in progressively after that.\n\nThe store treats a later \"real\" createSurface for the same surface as an\nidempotent refresh, so LLMs that emit one out of order are harmless."
     },
     {
       "name": "defaultInterruptedClientToolResult",
@@ -3091,7 +3091,7 @@
       "canonicalReference": "@threadplane/chat!formatDuration:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- <1 s → \"<1s\"\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to \"<1s\" so a corrupted timing\nmap never produces noisy output."
+      "summary": "Render a millisecond duration as a human-readable label suitable for\nthe chat-reasoning \"Thought for Ns\" pill.\n\n- Less than 1 s → `<1s`\n- 1–59 s → \"Ns\" (e.g. \"4s\")\n- ≥60 s → \"Nm Ms\" (e.g. \"1m 12s\", \"60m 0s\")\n\nNegative or non-finite inputs collapse to `<1s` so a corrupted timing\nmap never produces noisy output."
     },
     {
       "name": "formatPublished",
@@ -3631,7 +3631,7 @@
       "canonicalReference": "@threadplane/chat!normalizeEnvelopeArgs:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical {envelopes: [...]},\na singular typo {envelope: [...]}, positional keys {0: env, 1: env, ...}\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net."
+      "summary": "The parent LLM may emit envelope-tool arguments in four shapes (observed in\nthe spike across gpt-5-mini and gpt-5): the canonical `{envelopes: [...]}`,\na singular typo `{envelope: [...]}`, positional keys `{0: env, 1: env, ...}`\nwhen the model treats the args as the array, or a flat single envelope.\nThis pure function maps all four into a canonical envelope list.\n\nStrict-mode tool binding (OpenAI) should eliminate the non-canonical\nshapes in production, but the normalizer is the safety net."
     },
     {
       "name": "normalizeViewEntry",
@@ -3711,7 +3711,7 @@
       "canonicalReference": "@threadplane/chat!renderMarkdown:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline->br conversion if `marked` is not installed."
+      "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline-to-`<br>` conversion if `marked` is not installed."
     },
     {
       "name": "ResolvedCitation",
@@ -4061,7 +4061,7 @@
       "canonicalReference": "@threadplane/chat!ViewRegistry:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` { component, fallback? }."
+      "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` with the shape `{ component, fallback? }`."
     },
     {
       "name": "views",
@@ -4151,7 +4151,7 @@
       "canonicalReference": "@threadplane/chat!FakeAgentConfig:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process\nfake backend that streams a canned assistant reply."
+      "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(`@threadplane/langgraph` and `@threadplane/ag-ui`). Drives an in-process\nfake backend that streams a canned assistant reply."
     },
     {
       "name": "INTERRUPT_CONFORMANCE_BATCH",
@@ -4981,7 +4981,7 @@
       "canonicalReference": "@threadplane/langgraph!AgentOptions:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Options for creating a LangGraph-backed agent via agent."
+      "summary": "Options used internally by the `agent()` factory to create a LangGraph-backed agent."
     },
     {
       "name": "AgentQueue",
@@ -5241,7 +5241,7 @@
       "canonicalReference": "@threadplane/langgraph!provideFakeAgent:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`."
+      "summary": "Wire an in-process fake LangGraph agent into Angular DI.\n\nStreams a canned assistant reply (see FakeAgentConfig) with no backend —\nthe symmetric counterpart to `@threadplane/ag-ui`'s `provideFakeAgent()`. For\nadvanced manual scripting (tool calls, interrupts, multi-batch), provide\nthe agent yourself with\n`provideAgent({ assistantId, transport: new MockAgentTransport(...) })`."
     },
     {
       "name": "refreshOnRunEnd",
@@ -5411,7 +5411,7 @@
       "canonicalReference": "@threadplane/middleware!clientToolsChannel:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated)."
+      "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n```ts\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n```\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated)."
     },
     {
       "name": "ClientToolSpec",
@@ -6371,7 +6371,7 @@
       "canonicalReference": "@threadplane/render!defineAngularRegistry:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Build an [AngularRegistry](/docs/api/render/AngularRegistry) from a plain object mapping tool-call names\nto Angular components (or fully specified [RenderViewEntry](/docs/api/render/RenderViewEntry) objects).\n\nThe returned registry is consumed by `provideRender` to drive dynamic\ncomponent rendering.\n\n**Entry forms**\n- Bare `Type<unknown>` — the component is paired with the built-in\n `DefaultFallbackComponent` while its props are still streaming.\n- `RenderViewEntry` object — lets you supply a custom `fallback` component,\n an optional Standard Schema (`schema`) used as a mount-readiness gate, and\n an optional `description` for model-facing tool registration.\n\n**Registry accessor**\nThe returned object exposes a single `getEntry(name: string)` accessor that\nreturns the fully-normalized NormalizedEntry (component + fallback +\noptional schema + optional description) or `undefined` when the name is not\nregistered. Use `names()` to enumerate all registered names."
+      "summary": "Build an [AngularRegistry](/docs/api/render/AngularRegistry) from a plain object mapping tool-call names\nto Angular components (or fully specified [RenderViewEntry](/docs/api/render/RenderViewEntry) objects).\n\nThe returned registry is consumed by `provideRender` to drive dynamic\ncomponent rendering.\n\n**Entry forms**\n- Bare `Type<unknown>` — the component is paired with the built-in\n `DefaultFallbackComponent` while its props are still streaming.\n- `RenderViewEntry` object — lets you supply a custom `fallback` component,\n an optional Standard Schema (`schema`) used as a mount-readiness gate, and\n an optional `description` for model-facing tool registration.\n\n**Registry accessor**\nThe returned object exposes a single `getEntry(name: string)` accessor that\nreturns the fully-normalized `NormalizedEntry` (component + fallback +\noptional schema + optional description) or `undefined` when the name is not\nregistered. Use `names()` to enumerate all registered names."
     },
     {
       "name": "injectRenderHost",
@@ -6601,7 +6601,7 @@
       "canonicalReference": "@threadplane/render!signalStateStore:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Create a signal-backed StateStore for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws."
+      "summary": "Create a signal-backed `StateStore` for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws."
     },
     {
       "name": "SignalStateStore",
@@ -6611,7 +6611,7 @@
       "canonicalReference": "@threadplane/render!SignalStateStore:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "The StateStore that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member."
+      "summary": "The `StateStore` that [signalStateStore](/docs/api/render/signalStateStore) returns.\n\nAdds `lastChange()` on top of the `@json-render/core` interface, which is\nhow `<render-spec>` reports the mutated path on a `stateChange` render\nevent — `StateStore.subscribe` itself carries no path. A store from any\nother implementation simply omits the member."
     },
     {
       "name": "StandardSchemaInferInput",
@@ -6681,7 +6681,7 @@
       "canonicalReference": "@threadplane/render!ViewRegistry:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` { component, fallback? }."
+      "summary": "A registry of view components available for generative UI rendering.\nEach entry is either a bare component Type (legacy shape) or a\n`RenderViewEntry` with the shape `{ component, fallback? }`."
     },
     {
       "name": "views",

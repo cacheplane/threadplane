@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
+  "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent#member-provideAgent-1iabkey).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
   "declarations": [
     {
       "name": "AgentConfig",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
+        "summary": "Connection options for the AG-UI agent provider, passed to [provideAgent](/docs/api/ag-ui/provideAgent#member-provideAgent-1iabkey).\nMirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional\ntelemetry sink.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

@@ -26,8 +26,8 @@ import { MarkdownTableCellComponent } from './views/markdown-table-cell.componen
 import { MarkdownHtmlComponent } from './views/markdown-html.component';
 
 /**
- * Default view registry consumed by <chat-streaming-md>. Maps every
- * MarkdownNode.type emitted by @cacheplane/partial-markdown@0.2 to its
+ * Default view registry consumed by `<chat-streaming-md>`. Maps every
+ * `MarkdownNode.type` emitted by `@cacheplane/partial-markdown@0.2` to its
  * corresponding Angular component.
  *
  * Override per-node-type via `withViews(cacheplaneMarkdownViews, { … })`.

@@ -10,7 +10,7 @@ import { CHAT_ERROR_STYLES } from '../../styles/chat-error.styles';
  * rest. Useful when rendering an agent's `error` outside the built-in
  * `chat-error` component.
  *
- * @param error Any caught/agent error value.
+ * @param error - Any caught/agent error value.
  * @returns The message text, or `null` when `error` is nullish.
  * @example
  * ```ts

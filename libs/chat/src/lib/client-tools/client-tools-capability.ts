@@ -21,7 +21,7 @@ export interface ClientToolsCapability {
   /** Record a client tool's result without continuing the run. */
   settle?(toolCallId: string, result: ClientToolResult): void;
   /**
-   * Make every result recorded via {@link settle} durable on the server
+   * Make every result recorded via {@link ClientToolsCapability.settle} durable on the server
    * WITHOUT continuing the run. No-op for adapters whose settle() is already
    * durable. Adapters that buffer locally MUST clear their buffer only on a
    * successful write, so a failure degrades to a later flush or submit.

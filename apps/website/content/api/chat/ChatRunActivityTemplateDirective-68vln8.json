@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatRunActivityTemplateDirective:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatRunActivityTemplate let-agent>\n <my-turn-activity [agent]=\"agent\" />\n </ng-template>\n </chat>",
+  "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatRunActivityTemplate let-agent>\n      <my-turn-activity [agent]=\"agent\" />\n    </ng-template>\n  </chat>\n```",
   "declarations": [
     {
       "name": "ChatRunActivityTemplateDirective",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatRunActivityTemplate let-agent>\n <my-turn-activity [agent]=\"agent\" />\n </ng-template>\n </chat>",
+        "summary": "Registers a turn-level run-activity renderer on `<chat>`. The template\nrenders after the last message, inside the transcript's scroll region,\nwhile a run is active and the current run has no assistant message yet:\nthe window between the user's submit and the first assistant message,\nwhich can be long when the first model call is slow. It replaces the\ndefault typing indicator in that window.\n\nThe current run is every message after the last user message. Once an\nassistant message arrives, the template stops rendering and the\nper-message `chatActivityTemplate` (or the default reasoning and tool-call\nregion) takes over. A resumed run that continues an existing assistant\nmessage never shows it.\n\nWithout this template, `<chat>` renders the default typing indicator.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatRunActivityTemplate let-agent>\n      <my-turn-activity [agent]=\"agent\" />\n    </ng-template>\n  </chat>\n```",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -89,7 +89,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-            "line": 61
+            "line": 63
           },
           "overloadIndex": 1,
           "isStatic": true,
@@ -163,7 +163,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-            "line": 59
+            "line": 61
           },
           "isStatic": false,
           "isReadonly": true,
@@ -172,7 +172,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-        "line": 54
+        "line": 56
       },
       "angular": {
         "selector": "ng-template[chatRunActivityTemplate]",
@@ -183,6 +183,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat/chat-run-activity-template.directive.ts",
-    "line": 54
+    "line": 56
   }
 }
