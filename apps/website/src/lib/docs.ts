@@ -70,10 +70,24 @@ export function readFrontmatterDescription(content: string): string | null {
 }
 
 function normalizeDescription(description: string): string {
-  return description
+  const value = description
     .replace(/`([^`]+)`/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  let text = '';
+  let spanStart = 0;
+  let tagStart = -1;
+  // Drop complete markup spans without a partial multi-character sanitizer.
+  for (let index = 0; index < value.length; index++) {
+    if (value[index] === '<' && tagStart === -1) tagStart = index;
+    else if (value[index] === '>' && tagStart !== -1) {
+      text += value.slice(spanStart, tagStart);
+      spanStart = index + 1;
+      tagStart = -1;
+    }
+  }
+  // Malformed or unmatched delimiters must not survive in plain metadata.
+  return (text + value.slice(spanStart))
+    .replace(/[<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

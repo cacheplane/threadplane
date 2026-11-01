@@ -11,6 +11,7 @@ import {
   getDocBySlug,
   getDocMetadata,
   readFrontmatterDescription,
+  resolveDocDescription,
   stripFrontmatter,
 } from './docs';
 import {
@@ -265,6 +266,26 @@ describe('website docs bindings', () => {
     expect(metadata?.description).toBe(
       "The ChatReasoningComponent pill that expands to reveal an assistant's reasoning text, its five inputs, and the auto-collapse behavior."
     );
+  });
+
+  it.each([
+    ['Metadata with a dangling <script', 'Metadata with a dangling script'],
+    ['Metadata with a stray > bracket', 'Metadata with a stray bracket'],
+    ['Metadata <<script>script>', 'Metadata script'],
+    ['Metadata <img src=x onerror=alert(1)> label', 'Metadata label'],
+    [
+      'Read `API` and [the guide](/docs), with <strong>safe text</strong>.',
+      'Read API and the guide, with safe text.',
+    ],
+  ])('normalizes description markup completely: %s', (description, expected) => {
+    const doc = getDocBySlug('langgraph', 'getting-started', 'introduction');
+    if (!doc) throw new Error('Missing description fixture');
+    const resolved = resolveDocDescription(
+      { ...doc, content: `---\ndescription: ${description}\n---\n` },
+      'langgraph'
+    );
+    expect(resolved).toBe(expected);
+    expect(resolved).not.toMatch(/[<>]/u);
   });
 
   it('strips only a matched pair of surrounding quotes', () => {
