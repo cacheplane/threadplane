@@ -14,6 +14,7 @@
     "card:demos": "node scripts/export-demo-cards.mjs",
     "db:migrate": "tsx scripts/apply-migrations.mts",
     "growth:control": "tsx scripts/growth-control.mts",
+    "growth:linkedin": "tsx --env-file=.env scripts/growth-linkedin.mts",
     "growth:observability": "tsx scripts/growth-observability.mts",
     "growth:cancel-resend": "tsx scripts/cancel-resend-lifecycle.mts",
     "growth:import-resend": "tsx scripts/import-resend-lifecycle.mts",
