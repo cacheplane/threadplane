@@ -77,7 +77,7 @@ Modify:
 **Interfaces:**
 - Produces: the tables below; every later task's SQL targets these names.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 Tables, in this order (lowercase SQL like `0008`/`0009`):
 
@@ -181,16 +181,16 @@ create table growth_linkedin_digests (
 );
 ```
 
-- [ ] **Step 2: Write the integration smoke spec**
+- [x] **Step 2: Write the integration smoke spec**
 
 `libs/growth/test/linkedin.integration.spec.ts`, modeled on `libs/growth/test/migrations.integration.spec.ts`: after applying migrations, `select to_regclass(...)` for each of the seven tables is non-null, and inserting a drop row without `receipt_id` fails. Skip when `DATABASE_URL` is unset the way sibling integration specs do.
 
-- [ ] **Step 3: Verify discovery**
+- [x] **Step 3: Verify discovery**
 
 Run: `npx nx test growth -- scripts/apply-migrations.spec.ts`
 Expected: PASS (the file-name pattern accepts `0012_growth_linkedin_leads.sql`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add migrations/0012_growth_linkedin_leads.sql libs/growth/test/linkedin.integration.spec.ts
@@ -216,7 +216,7 @@ git commit -m "feat(growth): LinkedIn engagement lead tables"
   - `LINKEDIN_ICP_KEYWORDS: readonly string[]` and `LINKEDIN_NEGATIVE_KEYWORDS: readonly string[]`
   - `headlineSignal(headline: string): 'icp' | 'negative' | 'neutral'` (negative wins over icp)
 
-- [ ] **Step 1: Write failing tests** in `config.spec.ts` and `normalize.spec.ts`
+- [x] **Step 1: Write failing tests** in `config.spec.ts` and `normalize.spec.ts`
 
 ```ts
 test('ingest is off when unset or false', () => {
@@ -259,19 +259,19 @@ test('domains in text exclude linkedin hosts', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx nx test growth -- libs/growth/src/lib/linkedin`
 Expected: FAIL, modules not found.
 
-- [ ] **Step 3: Implement** `config.ts` and `normalize.ts` per the Interfaces block. ICP keywords: `angular`, `langgraph`, `ag-ui`, `a2ui`, `frontend`, `front-end`, `front end`, `staff`, `principal`, `cto`, `vp engineering`, `vp of engineering`, `head of engineering`, `engineering manager`, `architect`, `fintech`, `insurance`, `healthcare`. Negative: `recruiter`, `recruiting`, `talent acquisition`, `headhunter`, `staffing`, `sourcing`, `agency`, `growth hacker`, `lead generation`, `lead gen`, `appointment setting`. Matching is whole-word, case-insensitive. Create `linkedin/index.ts` exporting both modules and add `export * from './lib/linkedin/index.ts';` to `libs/growth/src/index.ts`.
+- [x] **Step 3: Implement** `config.ts` and `normalize.ts` per the Interfaces block. ICP keywords: `angular`, `langgraph`, `ag-ui`, `a2ui`, `frontend`, `front-end`, `front end`, `staff`, `principal`, `cto`, `vp engineering`, `vp of engineering`, `head of engineering`, `engineering manager`, `architect`, `fintech`, `insurance`, `healthcare`. Negative: `recruiter`, `recruiting`, `talent acquisition`, `headhunter`, `staffing`, `sourcing`, `agency`, `growth hacker`, `lead generation`, `lead gen`, `appointment setting`. Matching is whole-word, case-insensitive. Create `linkedin/index.ts` exporting both modules and add `export * from './lib/linkedin/index.ts';` to `libs/growth/src/index.ts`.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npx nx test growth -- libs/growth/src/lib/linkedin`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add libs/growth/src/lib/linkedin libs/growth/src/index.ts
@@ -321,7 +321,7 @@ export const parseLinkedInNotification: LinkedInParser;
 - `isTrustedLinkedInSender`: From address (via `inboxSenderAddress`) ends with `@linkedin.com` or a subdomain of `linkedin.com`, **and** `headers['authentication-results']` contains both `spf=pass` and `dkim=pass` (case-insensitive). Anything else is untrusted.
 - `parseLinkedInNotification` (stub): returns `{ outcome: 'unparsed', reason: 'untrusted_sender' }` when the sender is untrusted, otherwise `{ outcome: 'unparsed', reason: 'no_fixtures_yet' }`. A module-level comment states that the real parser is written test-first against redacted `.eml` fixtures under `libs/growth/src/lib/linkedin/fixtures/` once Brian supplies samples, lists the fixture redaction rules from the design (names, slugs, comment text, tracking parameters replaced with stable placeholders), and that `LINKEDIN_UNSUPPORTED_KINDS` is currently all five kinds.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 const trusted = { from: 'LinkedIn <notifications-noreply@linkedin.com>', headers: { 'authentication-results': 'mx.example; spf=pass smtp.mailfrom=linkedin.com; dkim=pass header.d=linkedin.com' } };
@@ -337,10 +337,10 @@ test('the stub classifies trusted mail as unparsed with no_fixtures_yet', () => 
 });
 ```
 
-- [ ] **Step 2: Run to verify failure** (`npx nx test growth -- libs/growth/src/lib/linkedin/parser`). Expected: FAIL.
-- [ ] **Step 3: Implement** per Interfaces; export from `linkedin/index.ts`.
-- [ ] **Step 4: Run to verify pass.** Expected: PASS.
-- [ ] **Step 5: Commit** `feat(growth): LinkedIn notification parser interface and stub`
+- [x] **Step 2: Run to verify failure** (`npx nx test growth -- libs/growth/src/lib/linkedin/parser`). Expected: FAIL.
+- [x] **Step 3: Implement** per Interfaces; export from `linkedin/index.ts`.
+- [x] **Step 4: Run to verify pass.** Expected: PASS.
+- [x] **Step 5: Commit** `feat(growth): LinkedIn notification parser interface and stub`
 
 ---
 
@@ -370,7 +370,7 @@ export async function recordDrop(tx: SqlTransaction, input: { receiptId: string;
 
 - `matchDeny` builds candidate values in TypeScript: the normalized profile URL; `domainsInText(headline)` plus the domains of the profile URL slug are not domains, so only headline domains; `normalizeCompanyName(companyNameFromHeadline(headline))` when non-null. It runs one query: `select id from growth_linkedin_deny where removed_at is null and ((kind='profile_url' and value = $1) or (kind='company_domain' and value = any($2::text[])) or (kind='company_name' and value = any($3::text[]))) order by added_at limit 1`. Company-name candidates are the full normalized phrase only (whole-phrase equality, which is the conservative whole-word match the design asks for; "ex-Acme" never produces a candidate because `companyNameFromHeadline` returns null).
 
-- [ ] **Step 1: Write failing tests** with `executorWith`:
+- [x] **Step 1: Write failing tests** with `executorWith`:
 
 ```ts
 test('normalizeDenyValue by kind', () => {
@@ -394,10 +394,10 @@ test('addDenyEntry reports whether a row was created', async () => { /* rows:[{i
 test('recordDrop stores only receipt and deny ids', async () => { /* params equal [receiptId, denyId, droppedAt] */ });
 ```
 
-- [ ] **Step 2: Run to verify failure.** Expected: FAIL.
-- [ ] **Step 3: Implement** per Interfaces.
-- [ ] **Step 4: Run to verify pass.** Expected: PASS.
-- [ ] **Step 5: Commit** `feat(growth): LinkedIn deny list`
+- [x] **Step 2: Run to verify failure.** Expected: FAIL.
+- [x] **Step 3: Implement** per Interfaces.
+- [x] **Step 4: Run to verify pass.** Expected: PASS.
+- [x] **Step 5: Commit** `feat(growth): LinkedIn deny list`
 
 ---
 
@@ -437,7 +437,7 @@ export async function deleteLead(ex: SqlExecutor, input: { profileUrl: string })
 - `scoreLead`: sum of the kind weights over engagements, plus `extraPost` for each distinct `postId` beyond the first, plus `icpHeadline` when `headlineSignal` is `icp`, plus `negativeHeadline` when it is `negative`.
 - `recordEngagement` lead upsert: `insert ... on conflict (profile_url) do update set display_name = excluded.display_name, headline = case when excluded.headline <> '' then excluded.headline else growth_linkedin_leads.headline end, company_name = coalesce(excluded.company_name, growth_linkedin_leads.company_name), last_seen_at = greatest(...), updated_at = now() returning id, (xmax = 0) as created`. Status is not touched by re-engagement. `comment_hash` is `sha256(commentText)` hex, `''` when null.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 test('scoreLead applies the design weights', () => {
@@ -455,10 +455,10 @@ test('decideLead deny adds profile_url and company_name deny rows', async () => 
 test('decideLead returns already_decided for approved leads on reject', async () => { /* lock row status approved → 'already_decided' and no update */ });
 ```
 
-- [ ] **Step 2: Run to verify failure.** Expected: FAIL.
-- [ ] **Step 3: Implement** per Interfaces (use `createHash('sha256')` from `node:crypto`; lead row lock with `for update` under marker `growth:linkedin-lead-lock`).
-- [ ] **Step 4: Run to verify pass.** Expected: PASS.
-- [ ] **Step 5: Commit** `feat(growth): LinkedIn leads, engagements, scoring and decisions`
+- [x] **Step 2: Run to verify failure.** Expected: FAIL.
+- [x] **Step 3: Implement** per Interfaces (use `createHash('sha256')` from `node:crypto`; lead row lock with `for update` under marker `growth:linkedin-lead-lock`).
+- [x] **Step 4: Run to verify pass.** Expected: PASS.
+- [x] **Step 5: Commit** `feat(growth): LinkedIn leads, engagements, scoring and decisions`
 
 ---
 
@@ -502,7 +502,7 @@ export async function ingestManualEngagement(ex: SqlExecutor, input: { receiptId
 
 `forwardLinkedInReceipt`: read receipt (`growth:linkedin-forward-receipt`); if `forward_required` is false → null; if `forward_provider_id` set → return it; check `growth_provider_attempts` for an accepted attempt under key `providerIdempotencyKey(env, 'linkedin-forward:'+id)` and finish with it; loop suppression when `x-threadplane-forwarded` header present or sender is `INBOX_FORWARD_TO` (set `last_error_code='forward_loop_suppressed'`, return null); otherwise fetch, build, `reserveProviderAttempt`, `send`, `completeProviderAttempt`, `update ... set forward_provider_id` (`growth:linkedin-forward-complete`). No erasure check is needed (senders are not contacts).
 
-- [ ] **Step 1: Write failing tests** with `executorWith`:
+- [x] **Step 1: Write failing tests** with `executorWith`:
 
 ```ts
 test('admit ignores events not addressed to the ingest address and defers to the reply inbox when both are listed', async () => {
@@ -524,10 +524,10 @@ test('a required forward that fails throws', async () => { /* send rejects → r
 test('scrub targets receipts older than 30 days', async () => { /* params[0] equals now - 30d */ });
 ```
 
-- [ ] **Step 2: Run to verify failure.** Expected: FAIL.
-- [ ] **Step 3: Implement** per Interfaces and algorithm.
-- [ ] **Step 4: Run to verify pass.** Expected: PASS.
-- [ ] **Step 5: Commit** `feat(growth): LinkedIn receipt admission, processing, forwarding and retention`
+- [x] **Step 2: Run to verify failure.** Expected: FAIL.
+- [x] **Step 3: Implement** per Interfaces and algorithm.
+- [x] **Step 4: Run to verify pass.** Expected: PASS.
+- [x] **Step 5: Commit** `feat(growth): LinkedIn receipt admission, processing, forwarding and retention`
 
 ---
 
@@ -548,7 +548,7 @@ test('scrub targets receipts older than 30 days', async () => { /* params[0] equ
 
 Behavior: after `admit` (reply flow) returns null and the LinkedIn config is enabled, call `admitLinkedIn`; when it returns an id, run `processLinkedIn` then `forwardLinkedIn`, each in its own try, and return 503 if either fails (same containment shape as the reply flow). The route still returns 503 before touching the database when the reply inbox config is disabled (receiving is production-only and the reply inbox is always on there). The default `forwardLinkedIn` builds `forwardLinkedInReceipt` with `createInboxRuntime()`'s `getReceived`, `downloadInboxRaw`, and the same `send` closure shape as `inbox-runtime.ts` (extract that closure into an exported `createResendForwardSender(sendingKey)` in `inbox-runtime.ts` so both paths share it).
 
-- [ ] **Step 1: Write failing tests** in `route.spec.ts`:
+- [x] **Step 1: Write failing tests** in `route.spec.ts`:
 
 ```ts
 test('mail for the LinkedIn ingest address is admitted, processed and forwarded', async () => {
@@ -564,10 +564,10 @@ test('reply-inbox mail never reaches the LinkedIn branch', async () => { /* admi
 
 Existing tests must keep passing with `loadLinkedInConfig` defaulting to `{ enabled: false }` in `setup`.
 
-- [ ] **Step 2: Run to verify failure.** Run from `apps/website`: `npx vitest run src/app/api/webhooks/resend-inbound`. Expected: FAIL.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run to verify pass**, plus `npx nx test growth -- libs/growth/src/lib/inbox` for the extracted sender.
-- [ ] **Step 5: Commit** `feat(website): route LinkedIn ingest mail in the Resend inbound webhook`
+- [x] **Step 2: Run to verify failure.** Run from `apps/website`: `npx vitest run src/app/api/webhooks/resend-inbound`. Expected: FAIL.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run to verify pass**, plus `npx nx test growth -- libs/growth/src/lib/inbox` for the extracted sender.
+- [x] **Step 5: Commit** `feat(website): route LinkedIn ingest mail in the Resend inbound webhook`
 
 ---
 
@@ -583,7 +583,7 @@ Existing tests must keep passing with `loadLinkedInConfig` defaulting to `{ enab
   - `GrowthTokenPurpose` gains `'founder_linkedin_decide'`; `export const FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;` The token's `reason` field carries `'reject'` or `'deny'`; `contactId` carries the lead id.
   - `createFounderLinkedInDecideRoute(overrides)` → `{ GET, POST }` at `/api/growth/linkedin-decide`, mirroring `approve-install/route.ts`: GET with `?token=` renders a confirmation form whose heading is `Reject this lead` or `Deny forever` by the token's reason; POST (form-encoded, single `token` field) verifies with purpose `founder_linkedin_decide` and max age, then calls `decideLead(db, { leadId: payload.contactId, decision: payload.reason, decidedBy: 'founder_email_link', now })`. Results `applied` and `already_decided` both render a success page (`Lead rejected` / `Lead denied`); `not_found` and verification failures render the 400 failure response. Tokens without a `reason` of `reject` or `deny` are rejected.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 tokens.spec.ts: round-trip a `founder_linkedin_decide` token with `reason: 'deny'` and verify `expectedPurpose: 'founder_linkedin_decide'`; verification with `expectedPurpose: 'founder_approve_install'` returns null.
 
@@ -595,10 +595,10 @@ test('POST rejects a token with the wrong purpose or no reason', ...); // 400
 test('POST never approves', ...); // a forged reason 'approve' → 400, decideLead not called
 ```
 
-- [ ] **Step 2: Run to verify failure.** Expected: FAIL.
-- [ ] **Step 3: Implement.** Update `assertPurpose` and `parseWirePayload` purpose checks in `tokens.ts`.
-- [ ] **Step 4: Run to verify pass**: `npx nx test growth -- libs/growth/src/lib/tokens` and `npx vitest run src/app/api/growth/linkedin-decide` from `apps/website`.
-- [ ] **Step 5: Commit** `feat(growth): signed LinkedIn lead decide links`
+- [x] **Step 2: Run to verify failure.** Expected: FAIL.
+- [x] **Step 3: Implement.** Update `assertPurpose` and `parseWirePayload` purpose checks in `tokens.ts`.
+- [x] **Step 4: Run to verify pass**: `npx nx test growth -- libs/growth/src/lib/tokens` and `npx vitest run src/app/api/growth/linkedin-decide` from `apps/website`.
+- [x] **Step 5: Commit** `feat(growth): signed LinkedIn lead decide links`
 
 ---
 
@@ -625,11 +625,11 @@ export async function enqueueLinkedInDigestJob(ex: SqlTransaction, input: { now:
 export async function markLinkedInDigestSent(ex: SqlTransaction, input: { businessDate: string; jobId: string; sentAt: Date; leadCount: number; context: LinkedInDigestContext }): Promise<void>;
 ```
 
-- [ ] **Step 1: Write failing tests** with `executorWith`: enqueue skips on existing job; enqueue skips when no leads and zero counts; enqueue inserts with the payload above; key prefix validation throws; `markLinkedInDigestSent` params.
-- [ ] **Step 2: Run to verify failure.** Expected: FAIL.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run to verify pass.**
-- [ ] **Step 5: Commit** `feat(growth): LinkedIn digest reads and enqueue`
+- [x] **Step 1: Write failing tests** with `executorWith`: enqueue skips on existing job; enqueue skips when no leads and zero counts; enqueue inserts with the payload above; key prefix validation throws; `markLinkedInDigestSent` params.
+- [x] **Step 2: Run to verify failure.** Expected: FAIL.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run to verify pass.**
+- [x] **Step 5: Commit** `feat(growth): LinkedIn digest reads and enqueue`
 
 ---
 
@@ -667,14 +667,14 @@ if (input.linkedInIngestEnabled === true) {
 
 `dispatchLinkedInDigestJob` follows `dispatchInstallDigestJob` step for step: defer when delivery is disabled; business date from payload; read leads and context; when `leads.length === 0 && context.unparsedCount === 0 && context.dropCount === 0` complete the job; otherwise render (tokens: `contactId: lead.id, purpose: 'founder_linkedin_decide', reason: 'reject' | 'deny', eventNonce: job.id`), claim, send to `founderNotificationEmail` with subject `Threadplane LinkedIn leads for <date>: <n> new`, unknown → `linkedin_digest_outcome_unknown`, rejected → `linkedin_digest_rejected`, accepted → `markLinkedInDigestSent` + `completeJob` in one transaction.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
   - `linkedin-digest.spec.ts`: renders header, one block per lead with name, headline, company, score, each engagement line (`commented: "<text>"` / `reacted` / `reposted` / `mentioned you` / `replied: "<text>"`), the two links labeled `Reject (valid 7 days):` and `Deny forever (valid 7 days):`, `previously rejected` marker, footer `Since last digest: <ingest> received, <unparsed> unparsed, <drops> dropped by the deny list.`, the line `No approve link: approvals happen in the /week session.`; rejects a `http://` link, a non-origin link, and `\r\n` in a headline.
   - `dispatcher.spec.ts`: enqueues `linkedin_digest:<date>` on a weekday when enabled; raises `linkedin_forward_failed` when context backlog > 0; a throwing `readLinkedInDigestContext` yields `linkedin_ingest_failed` and leasing still runs; disabled → none of the three dependencies called.
   - `send.spec.ts` (or a new `linkedin-digest-job.spec.ts` beside `send.spec.ts`): a `digest` job with `digest_kind: 'linkedin_leads'` and no leads/counts completes without sending; with one lead sends once and records `markLinkedInDigestSent` with `jobId`; install digest jobs still route to the install handler.
-- [ ] **Step 2: Run to verify failure**: `npx nx test lifecycle`. Expected: FAIL on the new specs.
-- [ ] **Step 3: Implement.** Pass `linkedInIngestEnabled` through `apps/lifecycle/src/app/dispatch/index.ts`.
-- [ ] **Step 4: Run to verify pass**: `npx nx test lifecycle`. Expected: PASS.
-- [ ] **Step 5: Commit** `feat(lifecycle): daily LinkedIn leads heads-up email`
+- [x] **Step 2: Run to verify failure**: `npx nx test lifecycle`. Expected: FAIL on the new specs.
+- [x] **Step 3: Implement.** Pass `linkedInIngestEnabled` through `apps/lifecycle/src/app/dispatch/index.ts`.
+- [x] **Step 4: Run to verify pass**: `npx nx test lifecycle`. Expected: PASS.
+- [x] **Step 5: Commit** `feat(lifecycle): daily LinkedIn leads heads-up email`
 
 ---
 
@@ -728,7 +728,7 @@ npm run growth:linkedin -- <verb> --target=preview|production
 
 Output lines are JSON objects (like `growth-control.mts`). `leads` prints one JSON object per lead with engagements. `decide --approve` reads the text file and passes `decidedBy: 'founder_cli'`. `parseEml` is a small in-script helper: split at the first blank line, unfold headers, lowercase keys, take `text` from a `text/plain` body (or the whole body when not multipart) and `html` from a `text/html` part when the boundary is simple; anything it cannot read becomes `null`. `ingest --file` runs the parser on the `.eml` and writes through `ingestManualEngagement` when parsed (source `manual` by default; this is the backfill path from design section 8) or records an `unparsed` manual receipt otherwise.
 
-- [ ] **Step 1: Write failing tests** in `scripts/growth-linkedin.spec.ts` (same injected-dependency style as `growth-control.spec.ts`):
+- [x] **Step 1: Write failing tests** in `scripts/growth-linkedin.spec.ts` (same injected-dependency style as `growth-control.spec.ts`):
 
 ```ts
 test('deny-import refuses a path inside a git worktree', async () => { /* isInsideGitWorktree → true; exit 2; operations.denyImport not called; error mentions worktree */ });
@@ -739,15 +739,15 @@ test('replay prints the parser result without a target', async () => { /* parseE
 test('a database verb without --target is a usage error', async () => { /* exit 2 */ });
 ```
 
-- [ ] **Step 2: Run to verify failure**: `npx nx test-operator-cli growth`. Expected: FAIL.
-- [ ] **Step 3: Implement**; add to `package.json` scripts `"growth:linkedin": "tsx --env-file=.env scripts/growth-linkedin.mts"`; add the spec to `vite.operator-cli.config.mts`; add to `.env.example` under the growth section:
+- [x] **Step 2: Run to verify failure**: `npx nx test-operator-cli growth`. Expected: FAIL.
+- [x] **Step 3: Implement**; add to `package.json` scripts `"growth:linkedin": "tsx --env-file=.env scripts/growth-linkedin.mts"`; add the spec to `vite.operator-cli.config.mts`; add to `.env.example` under the growth section:
   ```
   # growth:linkedin CLI --target=preview|production (lifecycle Growth DATABASE_URL values)
   GROWTH_DATABASE_URL_PREVIEW=
   GROWTH_DATABASE_URL_PRODUCTION=
   ```
-- [ ] **Step 4: Run to verify pass**: `npx nx test-operator-cli growth`, then `npm run growth:linkedin -- deny-list` with no `--target` to see the usage error, exit 2.
-- [ ] **Step 5: Commit** `feat(growth): growth:linkedin operator CLI`
+- [x] **Step 4: Run to verify pass**: `npx nx test-operator-cli growth`, then `npm run growth:linkedin -- deny-list` with no `--target` to see the usage error, exit 2.
+- [x] **Step 5: Commit** `feat(growth): growth:linkedin operator CLI`
 
 ---
 
@@ -756,29 +756,29 @@ test('a database verb without --target is a usage error', async () => { /* exit 
 **Files:**
 - Modify: `marketing/cowork/week/SKILL.md`, `apps/lifecycle/README.md`, `docs/growth/README.md`
 
-- [ ] **Step 1: `/week` skill.** Add `Bash(npm run growth:linkedin *)` to `allowed-tools`. Add a step **"2a. LinkedIn leads"** between "Last week recap" and "Gather sources":
+- [x] **Step 1: `/week` skill.** Add `Bash(npm run growth:linkedin *)` to `allowed-tools`. Add a step **"2a. LinkedIn leads"** between "Last week recap" and "Gather sources":
   1. `npm run growth:linkedin -- leads --status new --target=<target>`; if none, say so and move on.
   2. For each lead, in score order, draft in the Social register using the `/gtm` lead-triage rules: name what they said (comment text, or the post topic for reactions/reposts), offer one concrete next step (a code sketch, a pattern, or a 15-minute call; never calendar-first), no hype. Two variants when both apply: a connection note (≤ 300 characters) and a message or public reply (≤ 600 characters). Do not invent anything about the person beyond their headline and what they did.
   3. Show Brian the lead (name, headline, profile link, what they did, score) and the drafts. He says approve (with the variant), edit, reject, or deny forever. Write the final text to `tmp/marketing/week/<week>/linkedin-lead-<id>.txt` and run `decide --lead <id> --approve --variant <v> --text-file <path>`, or `--reject`, or `--deny`. A `denied_by_list` result means the deny list caught them since the digest: tell Brian and move on.
   4. After all decisions, print each approved lead's profile link and final text. Brian sends it himself on LinkedIn. Nothing in this step sends anything.
   Add to **Hard rules**: "LinkedIn leads: never message, connect with, or reply to anyone; the skill produces text Brian sends. Never approve a lead without showing the exact text in this session. Never write a competitor's name into the repo; deny-list changes go through `growth:linkedin`."
   Add to **Reference**: the design doc path.
-- [ ] **Step 2: `apps/lifecycle/README.md`.** Add a paragraph after the install digest paragraph: the three switches with the exact-string rule, `GROWTH_LINKEDIN_INGEST_ADDRESS` requirements, that the website webhook and the lifecycle tick both read `GROWTH_LINKEDIN_INGEST_ENABLED`, the daily digest (idempotency key `linkedin_digest:<YYYY-MM-DD>`, Pacific business days, sent to `FOUNDER_NOTIFICATION_EMAIL` when there is a new lead or any unparsed receipts or drops), the 30-day raw retention, and the operator alerts `linkedin_ingest_failed` and `linkedin_forward_failed`.
-- [ ] **Step 3: `docs/growth/README.md`.** Add a CLI row for `npm run growth:linkedin -- leads --status new --target=production` to the entry-point table and a short "LinkedIn engagement leads" subsection with the rollout order from design section 9 verbatim (migrate; deploy switch off; seed deny list with `deny-import`; enable ingest with `GROWTH_LINKEDIN_FORWARD_NOTIFICATIONS=true`; send a controlled non-LinkedIn email and confirm it is forwarded with headers only retained; change the LinkedIn primary email and confirm the verification mail is forwarded; trigger a controlled comment and verify lead, digest, links, one deny-forever drop, and a `decide` round-trip), plus a note that the parser is a stub until redacted fixtures exist, so every receipt is `unparsed` with reason `no_fixtures_yet` and forwarded.
-- [ ] **Step 4: Verify** `rg -n "GROWTH_LINKEDIN_INGEST_ENABLED" apps/lifecycle/README.md docs/growth/README.md` lists both files.
-- [ ] **Step 5: Commit** `docs(growth): LinkedIn leads switches, CLI and /week step`
+- [x] **Step 2: `apps/lifecycle/README.md`.** Add a paragraph after the install digest paragraph: the three switches with the exact-string rule, `GROWTH_LINKEDIN_INGEST_ADDRESS` requirements, that the website webhook and the lifecycle tick both read `GROWTH_LINKEDIN_INGEST_ENABLED`, the daily digest (idempotency key `linkedin_digest:<YYYY-MM-DD>`, Pacific business days, sent to `FOUNDER_NOTIFICATION_EMAIL` when there is a new lead or any unparsed receipts or drops), the 30-day raw retention, and the operator alerts `linkedin_ingest_failed` and `linkedin_forward_failed`.
+- [x] **Step 3: `docs/growth/README.md`.** Add a CLI row for `npm run growth:linkedin -- leads --status new --target=production` to the entry-point table and a short "LinkedIn engagement leads" subsection with the rollout order from design section 9 verbatim (migrate; deploy switch off; seed deny list with `deny-import`; enable ingest with `GROWTH_LINKEDIN_FORWARD_NOTIFICATIONS=true`; send a controlled non-LinkedIn email and confirm it is forwarded with headers only retained; change the LinkedIn primary email and confirm the verification mail is forwarded; trigger a controlled comment and verify lead, digest, links, one deny-forever drop, and a `decide` round-trip), plus a note that the parser is a stub until redacted fixtures exist, so every receipt is `unparsed` with reason `no_fixtures_yet` and forwarded.
+- [x] **Step 4: Verify** `rg -n "GROWTH_LINKEDIN_INGEST_ENABLED" apps/lifecycle/README.md docs/growth/README.md` lists both files.
+- [x] **Step 5: Commit** `docs(growth): LinkedIn leads switches, CLI and /week step`
 
 ---
 
 ### Task 13: Full verification
 
-- [ ] `npx nx test growth` → all pass.
-- [ ] `npx nx test-operator-cli growth` → all pass.
-- [ ] `npx nx test lifecycle` → all pass.
-- [ ] From `apps/website`: `npx vitest run src/app/api/webhooks/resend-inbound src/app/api/growth/linkedin-decide` → all pass.
-- [ ] `npx nx lint growth && npx nx lint lifecycle && npx nx lint website` → no errors (warnings are acceptable per repo convention).
-- [ ] `npx nx run lifecycle:check` → typecheck passes (uses Node 24 via npx).
-- [ ] Record each command's summary line in the final report.
+- [x] `npx nx test growth` → all pass.
+- [x] `npx nx test-operator-cli growth` → all pass.
+- [x] `npx nx test lifecycle` → all pass.
+- [x] From `apps/website`: `npx vitest run src/app/api/webhooks/resend-inbound src/app/api/growth/linkedin-decide` → all pass.
+- [x] `npx nx lint growth && npx nx lint lifecycle && npx nx lint website` → no errors (warnings are acceptable per repo convention).
+- [x] `npx nx run lifecycle:check` → typecheck passes (uses Node 24 via npx).
+- [x] Record each command's summary line in the final report.
 
 ---
 
