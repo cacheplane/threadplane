@@ -153,22 +153,45 @@ describe('shared free deployment routing', () => {
     ).toBe(true);
   });
 
-  it('pins only after evidence through the actual helper and output binding', () => {
-    const evidence = deploySteps.findIndex(
-      (step) => step.name === 'Record shared deployment image evidence'
+  it('prepares before the unchanged deployment, then evidence, pin and GET-only verification', () => {
+    const names = [
+      'Prepare shared deployment push receipt',
+      'Update existing cockpit-dev-free',
+      'Record shared deployment image evidence',
+      'Pin existing shared deployment image',
+      'Verify shared deployment readiness',
+    ];
+    const indices = names.map((name) =>
+      deploySteps.findIndex((step) => step.name === name)
     );
-    const pin = deploySteps.findIndex(
-      (step) => step.name === 'Pin existing shared deployment image'
+    expect(indices.every((index) => index >= 0)).toBe(true);
+    expect(indices).toEqual([...indices].sort((a, b) => a - b));
+    expect(indices.slice(1).every((index, i) => index === indices[i] + 1)).toBe(
+      true
     );
-    expect(pin).toBeGreaterThan(evidence);
-    expect(deploySteps[pin]).toMatchObject({
-      run: 'python3 scripts/pin_shared_deployment_image.py pin',
-      env: {
-        IMAGE_URI: '${{ steps.image_evidence.outputs.image_uri }}',
-        LANGSMITH_API_KEY: '${{ secrets.LANGSMITH_API_KEY }}',
-      },
+    expect(deploySteps[indices[0]].run).toBe(
+      'python3 scripts/pin_shared_deployment_image.py prepare'
+    );
+    expect(deploySteps[indices[1]]).toMatchObject({
+      'working-directory': 'deployments/shared-dev',
+      run: 'uv run --with langgraph-cli==0.4.21 langgraph deploy --config langgraph.json --deployment-id 6d350054-14ea-4031-8463-010ec27f9059 --no-wait --tag "$GITHUB_SHA"',
     });
-    expect(deploySteps[evidence]).toMatchObject({ id: 'image_evidence' });
+    expect(deploySteps[indices[2]]).toMatchObject({
+      id: 'image_evidence',
+      run: 'python3 scripts/pin_shared_deployment_image.py evidence',
+    });
+    for (const [index, mode] of [
+      [indices[3], 'pin'],
+      [indices[4], 'verify'],
+    ] as const) {
+      expect(deploySteps[index]).toMatchObject({
+        run: `python3 scripts/pin_shared_deployment_image.py ${mode}`,
+        env: {
+          IMAGE_URI: '${{ steps.image_evidence.outputs.image_uri }}',
+          LANGSMITH_API_KEY: '${{ secrets.LANGSMITH_API_KEY }}',
+        },
+      });
+    }
   });
 });
 
@@ -186,55 +209,59 @@ describe('shared deployment image evidence (offline command tests)', () => {
     dockerStatus = 0,
     workflowSha = sha
   ) {
-    const step = deploySteps.find(
-      (candidate) =>
-        candidate.name === 'Record shared deployment image evidence'
-    );
-    expect(
-      step,
-      'workflow must capture immutable image evidence'
-    ).toBeDefined();
-    expect(step!.shell).toBe('bash');
-    expect(deploySteps.indexOf(step!)).toBeGreaterThan(
-      deploySteps.findIndex(
-        (candidate) => candidate.name === 'Update existing cockpit-dev-free'
-      )
-    );
-    const directory = mkdtempSync(resolve(tmpdir(), 'shared-image-evidence-'));
+    const directory = mkdtempSync(resolve(tmpdir(), 'shared-image-receipt-'));
     try {
       writeFileSync(
         resolve(directory, 'docker'),
-        '#!/bin/bash\nprintf "%s\\n" "$@" > "$DOCKER_ARGS"\nif [[ "$2" == "ls" ]]; then printf "%s@<none>\\n" "$REPOSITORY"; else printf "%s" "$DOCKER_OUTPUT"; fi\nexit "$DOCKER_STATUS"\n',
-        { mode: 0o755 }
+        '#!/bin/bash\nprintf "%s\\n" "$@" > "$DOCKER_ARGS"\nprintf "%s" "$DOCKER_OUTPUT"\nexit "$DOCKER_STATUS"\n',
+        { mode: 0o700 }
       );
       writeFileSync(
         resolve(directory, 'git'),
         '#!/bin/bash\n[[ "$*" == "rev-parse HEAD" ]] || exit 99\nprintf "%s\\n" "$CHECKOUT_SHA"\n',
-        { mode: 0o755 }
+        { mode: 0o700 }
       );
       const argsPath = resolve(directory, 'docker-args');
       const outputPath = resolve(directory, 'github-output');
-      const result = spawnSync(
-        '/bin/bash',
-        ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step!.run!],
-        {
-          cwd: root,
-          encoding: 'utf8',
-          env: {
-            PATH: `${directory}:/usr/bin:/bin`,
-            REPOSITORY: repository,
-            GITHUB_SHA: workflowSha,
-            GITHUB_OUTPUT: outputPath,
-            PYTHONDONTWRITEBYTECODE: '1',
-            CHECKOUT_SHA: checkoutSha,
-            DOCKER_OUTPUT: JSON.stringify(
-              dockerOutput ? dockerOutput.trim().split('\n') : []
-            ),
-            DOCKER_STATUS: String(dockerStatus),
-            DOCKER_ARGS: argsPath,
-          },
+      const pathFile = resolve(directory, 'github-path');
+      const envFile = resolve(directory, 'github-env');
+      const env: NodeJS.ProcessEnv = {
+        PATH: `${directory}:${process.env.PATH}`,
+        REPOSITORY: repository,
+        GITHUB_SHA: workflowSha,
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        RUNNER_TEMP: directory,
+        GITHUB_ENV: envFile,
+        GITHUB_PATH: pathFile,
+        GITHUB_OUTPUT: outputPath,
+        PYTHONDONTWRITEBYTECODE: '1',
+        CHECKOUT_SHA: checkoutSha,
+        DOCKER_OUTPUT: dockerOutput,
+        DOCKER_STATUS: String(dockerStatus),
+        DOCKER_ARGS: argsPath,
+      };
+      const execute = (command: string) =>
+        spawnSync(
+          '/bin/bash',
+          ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', command],
+          { cwd: root, encoding: 'utf8', env }
+        );
+      const command = (name: string) =>
+        deploySteps.find((step) => step.name === name)!.run!;
+      let result = execute(command('Prepare shared deployment push receipt'));
+      if (result.status === 0) {
+        for (const line of readFileSync(envFile, 'utf8').trim().split('\n')) {
+          const split = line.indexOf('=');
+          env[line.slice(0, split)] = line.slice(split + 1);
         }
-      );
+        env.PATH = `${readFileSync(pathFile, 'utf8').trim()}:${env.PATH}`;
+        result = execute(
+          `docker --config OPAQUE_AUTH_DIRECTORY push "${repository}:$GITHUB_SHA"`
+        );
+        if (result.status === 0)
+          result = execute(command('Record shared deployment image evidence'));
+      }
       expect(result.error).toBeUndefined();
       return {
         ...result,
@@ -249,60 +276,56 @@ describe('shared deployment image evidence (offline command tests)', () => {
       rmSync(directory, { recursive: true, force: true });
     }
   }
-
-  it('prints exact source and one immutable RepoDigest from exact image inspection', () => {
-    const result = runEvidence(`${image}\n`);
-    expect(result.status).toBe(0);
+  const receipt = `${sha}: digest: sha256:${'a'.repeat(64)} size: 42\n`;
+  it('captures only the actual unchanged push receipt including fallback notes', () => {
+    const result = runEvidence(
+      `progress ☃\n${receipt}\u001b[33mNote: sha256:${'b'.repeat(
+        64
+      )} fell back\u001b[0m\n`
+    );
+    expect(result.status, result.stderr).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toBe(`source_sha=${sha}\nimage_uri=${image}\n`);
     expect(result.workflowOutput).toBe(result.stdout);
     expect(result.dockerArgs).toEqual([
-      'image',
-      'inspect',
+      '--config',
+      'OPAQUE_AUTH_DIRECTORY',
+      'push',
       `${repository}:${sha}`,
-      '--format',
-      '{{json .RepoDigests}}',
     ]);
   });
-
   it.each([
-    ['missing image', ''],
-    ['ambiguous images', `${image}\n${image}\n`],
-    ['missing digest', `${repository}@<none>\n`],
-    ['short digest', `${repository}@sha256:abc\n`],
-    ['uppercase digest', `${repository}@sha256:${'A'.repeat(64)}\n`],
-    ['wrong registry', `other.example/shared-dev@sha256:${'a'.repeat(64)}\n`],
-    [
-      'wrong deployment repository',
-      `${repository}-other@sha256:${'a'.repeat(64)}\n`,
-    ],
-  ])('fails closed for %s', (_name, output) => {
+    '',
+    image + '\n',
+    receipt + receipt,
+    receipt.replace(sha, 'b'.repeat(40)),
+    receipt.trim(),
+    receipt.replace('42', '0'),
+  ])('rejects untrusted push output %s', (output) => {
     const result = runEvidence(output);
-    expect(result.status).not.toBe(0);
+    expect(result.status).toBe(1);
     expect(result.stdout).toBe('');
+    expect(result.workflowOutput).toBe('');
   });
-
-  it('fails before inspecting images when checkout differs from the workflow source', () => {
-    const result = runEvidence(`${image}\n`, 'b'.repeat(40));
-    expect(result.status).not.toBe(0);
-    expect(result.stdout).toBe('');
+  it('rejects source mismatch before Docker', () => {
+    const result = runEvidence(receipt, 'b'.repeat(40));
+    expect(result.status).toBe(1);
     expect(result.dockerArgs).toEqual([]);
   });
-
-  it.each(['', 'a'.repeat(39), 'A'.repeat(40), `${sha}\n`])(
-    'rejects malformed workflow source %s',
+  it.each(['', 'a'.repeat(39), 'A'.repeat(40), sha + '\n'])(
+    'rejects malformed source %s',
     (source) => {
-      const result = runEvidence(image, sha, 0, source);
-      expect(result.status).not.toBe(0);
-      expect(result.stdout).toBe('');
-      expect(result.workflowOutput).toBe('');
+      const result = runEvidence(receipt, sha, 0, source);
+      expect(result.status).toBe(1);
       expect(result.dockerArgs).toEqual([]);
     }
   );
-
-  it('fails closed when Docker fails even with valid-looking output', () => {
-    const result = runEvidence(`${image}\n`, sha, 1);
-    expect(result.status).not.toBe(0);
-    expect(result.stdout).toBe('');
-  });
+  it.each([1, 130])(
+    'rejects Docker exit %s even with a valid receipt',
+    (status) => {
+      const result = runEvidence(receipt, sha, status);
+      expect(result.status).toBe(1);
+      expect(result.workflowOutput).toBe('');
+    }
+  );
 });
