@@ -274,6 +274,7 @@ function fixture(t, framework = 'react') {
         'message-actions',
         'citations',
         'text-transcript',
+        'suggestions',
       ]) {
         const local = 'src/chat/' + name + extension;
         const path = 'node_modules/@threadplane/react/' + local;
@@ -599,6 +600,18 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/chat/text-transcript' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /TextTranscript/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed Suggestions ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/suggestions' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /Suggestions/);
   });
 
 for (const framework of ['react', 'angular']) {

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ChatInput,
+  Suggestions,
   Welcome,
   WelcomeSuggestion,
   type ChatInputHandle,
@@ -19,6 +20,15 @@ const suggestions = [
   },
 ] as const;
 
+const followups = [
+  { id: 'concise', label: 'Make it shorter', value: 'Make that more concise.' },
+  {
+    id: 'example',
+    label: 'Give an example',
+    value: 'Give me a concrete example.',
+  },
+] as const;
+
 function deletionBlocked(snapshot: ApplicationSnapshot) {
   return (
     snapshot.deletion.id === snapshot.selection.id &&
@@ -27,18 +37,30 @@ function deletionBlocked(snapshot: ApplicationSnapshot) {
   );
 }
 
-function welcomeEligible(snapshot: ApplicationSnapshot) {
-  return (
-    snapshot.selection.status === 'ready' &&
-    snapshot.selection.id !== null &&
-    snapshot.runtime?.status === 'idle' &&
-    !snapshot.runtime.error &&
-    !snapshot.runtime.reconnect &&
-    snapshot.runtime.messages.length === 0 &&
-    snapshot.messages.length === 0 &&
-    !snapshot.submission.active &&
-    !deletionBlocked(snapshot)
-  );
+function suggestionMode(snapshot: ApplicationSnapshot) {
+  const runtime = snapshot.runtime;
+  if (
+    !(
+      snapshot.selection.status === 'ready' &&
+      snapshot.selection.id !== null &&
+      runtime?.status === 'idle' &&
+      !runtime.error &&
+      !runtime.reconnect &&
+      !snapshot.submission.active &&
+      !deletionBlocked(snapshot)
+    )
+  )
+    return null;
+  if (runtime.messages.length === 0 && snapshot.messages.length === 0)
+    return 'welcome';
+  if (
+    snapshot.submissionKind === 'text' &&
+    snapshot.submission.outcome === 'success' &&
+    runtime.messages.some((message) => message.role === 'assistant') &&
+    snapshot.messages.some((row) => row.message.role === 'assistant')
+  )
+    return 'followup';
+  return null;
 }
 
 export function NativeComposer({
@@ -53,11 +75,13 @@ export function NativeComposer({
   const input = useRef<ChatInputHandle>(null);
   const active = snapshot.submission.active;
   const canSubmit = application.canSubmit();
-  const eligible = welcomeEligible(snapshot) && canSubmit;
+  const mode = canSubmit ? suggestionMode(snapshot) : null;
+  const eligible = mode !== null;
   const threadId = snapshot.selection.id;
   // Each committed owner/eligibility occurrence expires the preceding controls,
   // including A-B-A transitions, while ordinary renders retain their scope.
-  const scope = useMemo(() => ({}), [application, threadId, eligible]);
+  const submission = snapshot.submission;
+  const scope = useMemo(() => ({}), [application, threadId, mode, submission]);
   const committed = useRef<object | null>(null);
   useLayoutEffect(() => {
     committed.current = scope;
@@ -76,7 +100,8 @@ export function NativeComposer({
     const current = application.getSnapshot();
     if (
       current.selection.id !== threadId ||
-      !welcomeEligible(current) ||
+      current.submission !== submission ||
+      suggestionMode(current) !== mode ||
       !application.canSubmit()
     )
       return;
@@ -86,7 +111,8 @@ export function NativeComposer({
       committed.current !== scope ||
       liveDraft.current !== '' ||
       latest.selection.id !== threadId ||
-      !welcomeEligible(latest)
+      latest.submission !== submission ||
+      suggestionMode(latest) !== mode
     )
       return;
     changeDraft(value);
@@ -97,9 +123,9 @@ export function NativeComposer({
     <div className="composer">
       <Welcome
         className={`native-react-welcome${
-          eligible ? '' : ' native-react-welcome--plain'
+          mode === 'welcome' ? '' : ' native-react-welcome--plain'
         }`}
-        title={eligible ? undefined : null}
+        title={mode === 'welcome' ? undefined : null}
         suggestions={
           eligible ? (
             <>
@@ -107,14 +133,22 @@ export function NativeComposer({
                 Choose a suggestion to fill your draft. Review it before
                 pressing Send.
               </p>
-              {suggestions.map((suggestion) => (
-                <WelcomeSuggestion
-                  key={suggestion.label}
-                  {...suggestion}
+              {mode === 'followup' ? (
+                <Suggestions
+                  suggestions={followups}
                   disabled={draft.length > 0}
                   onSelect={selectSuggestion}
                 />
-              ))}
+              ) : (
+                suggestions.map((suggestion) => (
+                  <WelcomeSuggestion
+                    key={suggestion.label}
+                    {...suggestion}
+                    disabled={draft.length > 0}
+                    onSelect={selectSuggestion}
+                  />
+                ))
+              )}
             </>
           ) : null
         }

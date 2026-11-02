@@ -2157,9 +2157,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
-      "reason": "Native component. Suggestion selection/submission semantics and empty/loading behavior."
+      "reason": "Private controlled Suggestions renders app-authored literal choices with exact raw values and unique IDs. Native T23 admits local successful text follow-ups with runtime, draft and submission-occurrence ownership; selection only prefills and focuses, never sends. AI-generated suggestions and full T22/T23 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts#ChatThreadListComponent",
@@ -5454,9 +5454,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
-      "reason": "Native component. Suggestion selection/submission semantics and empty/loading behavior."
+      "reason": "Private controlled Suggestions renders app-authored literal choices with exact raw values and unique IDs. Native T23 admits local successful text follow-ups with runtime, draft and submission-occurrence ownership; selection only prefills and focuses, never sends. AI-generated suggestions and full T22/T23 parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatThreadListComponent",
@@ -10429,7 +10429,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/suggestions.tsx",
+      "reason": "Private controlled literal Suggestions and app-authored local text-success follow-ups are implemented. Draft and exact submission occurrence remain app-owned. AI suggestions and full T22/T23 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts",
@@ -10770,7 +10772,9 @@
         "T22"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Scoped wrapping Suggestions styles use existing theme tokens and visible keyboard focus. Full T22 style parity remains open."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-thread-list.styles.ts",
@@ -16016,6 +16020,38 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/internal/name-form.tsx",
       "reason": "Private controlled project selection and optional app-owned New request now compose readonly app-owned renderActions beside selection. ProjectNameForm supports explicit project naming with controlled value, labels, pending/error, submitDisabled and IME safety; native browser-local validated catalog dogfoods create/rename. Native full active/archived directories compose confirmed backend assignment/removal through existing selection and action primitives, with exact raw/null evidence, independent stale-read protection and preserved filter/session/draft ownership. Catalog sharing, deletion and full T29 parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Suggestions",
+      "taskIds": ["T22"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/suggestions.tsx",
+      "reason": "Private controlled literal Suggestions and app-authored local text-success follow-ups are implemented. Draft and exact submission occurrence remain app-owned. AI suggestions and full T22/T23 parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SuggestionItem",
+      "taskIds": ["T22"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/suggestions.tsx",
+      "reason": "Readonly explicit suggestion identity, literal label and raw value; full T22/T23 parity remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SuggestionsProps",
+      "taskIds": ["T22"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/suggestions.tsx",
+      "reason": "Readonly controlled choices and callback; no owner observation or implicit submission. Full T22/T23 parity remains open."
+    },
+    {
+      "id": "source:libs/react/src/chat/suggestions.tsx",
+      "taskIds": ["T22"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/suggestions.tsx",
+      "reason": "Private controlled literal Suggestions and app-authored local text-success follow-ups are implemented. Draft and exact submission occurrence remain app-owned. AI suggestions and full T22/T23 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Welcome",

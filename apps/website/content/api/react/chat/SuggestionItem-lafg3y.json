@@ -1,0 +1,187 @@
+{
+  "name": "SuggestionItem",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SuggestionItem",
+  "canonicalReference": "@threadplane/react!SuggestionItem:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A caller-authored literal suggestion with stable identity.",
+  "declarations": [
+    {
+      "name": "SuggestionItem",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SuggestionItem:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SuggestionItem "
+        }
+      ],
+      "docs": {
+        "summary": "A caller-authored literal suggestion with stable identity.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionItem#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Prevents selection only when strictly true.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionItem#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Stable, unique identity within the group.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionItem#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Literal visible button label.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionItem#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Exact value passed to onSelect without transformation.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/suggestions.tsx",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/suggestions.tsx",
+    "line": 4
+  }
+}

@@ -465,3 +465,268 @@ it('keeps the textarea, draft and passive focus across welcome, first messages, 
   expect(f.application.dispose).not.toHaveBeenCalled();
   expect(f.commands).toEqual(['history']);
 });
+
+async function followupOwner() {
+  const fixture = applicationFixture();
+  const actual = createReactApplication({
+    ...fixture.options,
+    sessionFactory: (id) =>
+      createSession({
+        assistantId: 'assistant',
+        threadId: id,
+        transport: {
+          async getHistory() {
+            return [
+              {
+                checkpoint: {
+                  thread_id: id,
+                  checkpoint_ns: '',
+                  checkpoint_id: 'saved',
+                  checkpoint_map: {},
+                },
+                parent_checkpoint: null,
+                created_at: '2026-09-28T00:00:00.000Z',
+                next: [],
+                tasks: [],
+                metadata: null,
+                values: {
+                  messages: [{ type: 'ai', id: 'answer', content: 'Answer' }],
+                },
+              },
+            ];
+          },
+          async *stream() {
+            yield {
+              type: 'values',
+              data: {
+                messages: [{ type: 'ai', id: 'answer', content: 'Answer' }],
+              },
+            };
+          },
+        },
+      }),
+  });
+  disposals.push(actual.dispose);
+  actual.start();
+  await waitFor(() =>
+    expect(actual.getSnapshot().selection.status).toBe('ready')
+  );
+  const restored = actual.getSnapshot();
+  act(() => {
+    expect(actual.submit('Initial request')).toBe(true);
+  });
+  await waitFor(() =>
+    expect(actual.getSnapshot().submission.outcome).toBe('success')
+  );
+  const completed = actual.getSnapshot();
+  expect(
+    completed.runtime?.messages.some((message) => message.role === 'assistant')
+  ).toBe(true);
+  expect(
+    completed.messages.some((row) => row.message.role === 'assistant')
+  ).toBe(true);
+  let snapshot = completed;
+  const application = {
+    ...actual,
+    getSnapshot: vi.fn(() => snapshot),
+    canSubmit: vi.fn(() => actual.canSubmit()),
+    submit: vi.fn((text: string) => actual.submit(text)),
+  };
+  return {
+    application,
+    completed,
+    restored,
+    set(next: ReactApplicationSnapshot) {
+      snapshot = next;
+    },
+    snapshot: () => snapshot,
+  };
+}
+
+it('admits app-authored follow-ups only after real text success and keeps selection local until Send', async () => {
+  const f = await followupOwner();
+  const view = render(
+    <NativeComposer application={f.application} snapshot={f.restored} />
+  );
+  const input = inputOf(view);
+  expect(view.queryByRole('button', { name: 'Make it shorter' })).toBeNull();
+  view.rerender(
+    <NativeComposer application={f.application} snapshot={f.completed} />
+  );
+  expect(inputOf(view)).toBe(input);
+  expect(view.queryByRole('heading', { name: 'How can I help?' })).toBeNull();
+  for (const [label, value] of [
+    ['Make it shorter', 'Make that more concise.'],
+    ['Give an example', 'Give me a concrete example.'],
+  ]) {
+    fireEvent.click(view.getByRole('button', { name: label }));
+    expect(input.value).toBe(value);
+    expect(document.activeElement).toBe(input);
+    expect(f.application.submit).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: '' } });
+  }
+  fireEvent.click(view.getByRole('button', { name: 'Make it shorter' }));
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Send', exact: true }));
+  });
+  expect(f.application.submit.mock.calls).toEqual([
+    ['Make that more concise.'],
+  ]);
+});
+
+it.each([
+  'restored',
+  'decision',
+  'active',
+  'running',
+  'paused',
+  'error',
+  'aborted',
+  'interrupted',
+  'missing runtime assistant',
+  'missing projected assistant',
+  'pending deletion',
+  'unconfirmed deletion',
+  'reconnect',
+])(
+  'excludes follow-ups for %s and rejects retained live controls',
+  async (mode) => {
+    const f = await followupOwner();
+    const ready = f.completed;
+    const view = render(
+      <NativeComposer application={f.application} snapshot={ready} />
+    );
+    const click = retainedClick(
+      view.getByRole('button', { name: 'Make it shorter' })
+    );
+    let next = ready;
+    if (mode === 'restored') next = f.restored;
+    else if (mode === 'decision')
+      next = { ...ready, submissionKind: 'decision' };
+    else if (['paused', 'error', 'aborted', 'interrupted'].includes(mode))
+      next = {
+        ...ready,
+        submission: {
+          active: false,
+          outcome: mode as ReactApplicationSnapshot['submission']['outcome'],
+        },
+      };
+    else if (mode === 'missing runtime assistant')
+      next = { ...ready, runtime: { ...ready.runtime!, messages: [] } };
+    else if (mode === 'missing projected assistant')
+      next = { ...ready, messages: [] };
+    else next = ineligible(ready, mode);
+    f.set(next);
+    act(click);
+    expect(inputOf(view).value).toBe('');
+    view.rerender(
+      <NativeComposer application={f.application} snapshot={next} />
+    );
+    expect(view.queryByRole('button', { name: 'Make it shorter' })).toBeNull();
+    expect(f.application.submit).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['before capability', 'during capability'])(
+  'rejects a different successful submission occurrence %s without a render',
+  async (boundary) => {
+    const f = await followupOwner();
+    const view = render(
+      <NativeComposer application={f.application} snapshot={f.completed} />
+    );
+    const click = retainedClick(
+      view.getByRole('button', { name: 'Make it shorter' })
+    );
+    const replace = () =>
+      f.set({ ...f.completed, submission: { ...f.completed.submission } });
+    if (boundary === 'before capability') replace();
+    else
+      f.application.canSubmit.mockImplementationOnce(() => {
+        replace();
+        return true;
+      });
+    act(click);
+    expect(inputOf(view).value).toBe('');
+    expect(f.application.submit).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['application', 'thread', 'eligibility', 'submission'])(
+  'expires completed %s occurrences through A-B-A',
+  async (mode) => {
+    const f = await followupOwner();
+    const g = await followupOwner();
+    const content = (application = f.application, snapshot = f.snapshot()) => (
+      <StrictMode>
+        <NativeComposer application={application} snapshot={snapshot} />
+      </StrictMode>
+    );
+    const view = render(content());
+    const input = inputOf(view);
+    const click = retainedClick(
+      view.getByRole('button', { name: 'Make it shorter' })
+    );
+    if (mode === 'application')
+      view.rerender(content(g.application, g.snapshot()));
+    else {
+      f.set(
+        mode === 'thread'
+          ? { ...f.completed, selection: { ...f.completed.selection, id: 'b' } }
+          : mode === 'submission'
+          ? { ...f.completed, submission: { ...f.completed.submission } }
+          : ineligible(f.completed, 'active')
+      );
+      view.rerender(content());
+    }
+    f.set(f.completed);
+    view.rerender(content());
+    act(click);
+    expect(input.value).toBe('');
+    const current = retainedClick(
+      view.getByRole('button', { name: 'Make it shorter' })
+    );
+    const competing = retainedClick(
+      view.getByRole('button', { name: 'Give an example' })
+    );
+    act(() => {
+      current();
+      competing();
+    });
+    expect(inputOf(view)).toBe(input);
+    expect(input.value).toBe('Make that more concise.');
+    expect(f.application.submit).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['   ', 'Keep my draft'])(
+  'protects follow-up draft %j and claimed events',
+  async (draft) => {
+    const f = await followupOwner();
+    const view = render(
+      <div onClickCapture={(event) => event.preventDefault()}>
+        <NativeComposer application={f.application} snapshot={f.completed} />
+      </div>
+    );
+    const input = inputOf(view);
+    const button = view.getByRole('button', {
+      name: 'Make it shorter',
+    }) as HTMLButtonElement;
+    fireEvent.click(button);
+    expect(input.value).toBe('');
+    const click = retainedClick(button);
+    fireEvent.change(input, { target: { value: draft } });
+    expect(button.disabled).toBe(true);
+    act(click);
+    expect(input.value).toBe(draft);
+    view.rerender(
+      <div onClickCapture={(event) => event.preventDefault()}>
+        <NativeComposer
+          application={f.application}
+          snapshot={ineligible(f.completed, 'running')}
+        />
+      </div>
+    );
+    expect(inputOf(view).value).toBe(draft);
+    expect(inputOf(view)).toBe(input);
+  }
+);

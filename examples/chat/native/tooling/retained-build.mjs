@@ -230,6 +230,15 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    const suggestions = 'node_modules/@threadplane/react/src/chat/suggestions';
+    assert.ok(
+      p.compiler.inputs[suggestions + '.d.ts'],
+      'Installed Suggestions declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[suggestions + '.js'],
+      'Installed Suggestions runtime required'
+    );
     const inline =
       'node_modules/@threadplane/react/src/markdown/inline-citation';
     assert.ok(

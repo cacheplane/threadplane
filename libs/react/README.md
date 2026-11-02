@@ -290,6 +290,20 @@ prefills and focuses the existing input, leaving sending explicit. Styles remain
 opt-in through `/chat/styles.css`. This private, unpublished slice does not establish
 full T22/T23 or legacy welcome parity.
 
+## Controlled suggested replies
+
+`Suggestions`, `SuggestionItem` and `SuggestionsProps` are available from
+`@threadplane/react/chat`. Supply a readonly array of literal `id`, `label` and
+`value` items and `onSelect(value)`. Selection emits the exact untrimmed value;
+it never sends, fills a draft or moves focus. IDs must be unique (duplicates
+throw `TypeError`); duplicate labels and values are allowed. An empty array
+renders nothing. The native button group defaults to the accessible label
+`Suggested replies`; `label` and `className` customize the group. Group or item
+`disabled` prevents selection only when strictly true, and claimed clicks are
+ignored. Native React uses app-authored follow-ups after a local successful text
+response. The app owns runtime eligibility, live draft protection and submission
+occurrence checks. This does not generate AI suggestions or establish full parity.
+
 ## Controlled conversation lists
 
 The private `ThreadList` view from `@threadplane/react/chat` renders supplied
