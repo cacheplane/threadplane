@@ -6,13 +6,13 @@ interface ThreadStateLike {
 }
 
 /**
- * Attach per-message {@link Citation}s carried in an AG-UI thread's `state`
+ * Attach per-message {@link @threadplane/chat#Citation | Citation}s carried in an AG-UI thread's `state`
  * (`state.citations`, keyed by message id) onto the corresponding assistant
- * {@link Message}s — for advanced consumers wiring citations from STATE events
+ * {@link @threadplane/chat#Message | Message}s — for advanced consumers wiring citations from STATE events
  * into the neutral chat contract.
  *
- * @param thread The thread-state container holding `state.citations`.
- * @param messages The messages to enrich.
+ * @param thread - The thread-state container holding `state.citations`.
+ * @param messages - The messages to enrich.
  * @returns A new array where matching messages gain their `citations`; messages
  *   without citations are returned unchanged.
  * @example

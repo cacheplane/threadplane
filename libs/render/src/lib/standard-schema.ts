@@ -8,6 +8,10 @@
 // so the nested types are flattened to top-level `StandardSchema*` aliases. The
 // `StandardSchemaV1` interface itself is unchanged from the spec.
 
+/**
+ * Standard Schema v1 validation contract for a render view's props.
+ * The contract permits asynchronous validation, but only synchronous results gate render mount readiness.
+ */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly '~standard': StandardSchemaProps<Input, Output>;
 }
@@ -48,8 +52,10 @@ export interface StandardSchemaTypes<Input = unknown, Output = Input> {
   readonly output: Output;
 }
 
+/** Infers the input type advertised by a Standard Schema validator. */
 export type StandardSchemaInferInput<Schema extends StandardSchemaV1> =
   NonNullable<Schema['~standard']['types']>['input'];
 
+/** Infers the validated output type advertised by a Standard Schema validator. */
 export type StandardSchemaInferOutput<Schema extends StandardSchemaV1> =
   NonNullable<Schema['~standard']['types']>['output'];

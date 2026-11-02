@@ -1,0 +1,66 @@
+{
+  "name": "LANGGRAPH_CLIENT_OPTIONS",
+  "entrypointId": "langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/langgraph/LANGGRAPH_CLIENT_OPTIONS",
+  "canonicalReference": "@threadplane/langgraph!LANGGRAPH_CLIENT_OPTIONS:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "App-wide LangGraph SDK client tuning (e.g. `maxRetries`). Provide once at the\napp root; both the agent's default [FetchStreamTransport](/docs/api/langgraph/FetchStreamTransport) and the\n[LangGraphThreadsAdapter](/docs/api/langgraph/LangGraphThreadsAdapter) read it so the retry budget is configured in\none place. A call-site `agent({ clientOptions })` or per-agent\n`provideAgent({ clientOptions })` overrides it for that agent.\nAbsent → the SDK default.",
+  "declarations": [
+    {
+      "name": "LANGGRAPH_CLIENT_OPTIONS",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/langgraph!LANGGRAPH_CLIENT_OPTIONS:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "LANGGRAPH_CLIENT_OPTIONS: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "LangGraphClientOptions",
+          "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions:interface",
+          "href": "/docs/api/langgraph/LangGraphClientOptions"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "App-wide LangGraph SDK client tuning (e.g. `maxRetries`). Provide once at the\napp root; both the agent's default [FetchStreamTransport](/docs/api/langgraph/FetchStreamTransport) and the\n[LangGraphThreadsAdapter](/docs/api/langgraph/LangGraphThreadsAdapter) read it so the retry budget is configured in\none place. A call-site `agent({ clientOptions })` or per-agent\n`provideAgent({ clientOptions })` overrides it for that agent.\nAbsent → the SDK default.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/client/client-options.ts",
+        "line": 12
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/client/client-options.ts",
+    "line": 12
+  }
+}

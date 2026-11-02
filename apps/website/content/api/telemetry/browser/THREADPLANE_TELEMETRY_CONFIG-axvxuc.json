@@ -1,0 +1,66 @@
+{
+  "name": "THREADPLANE_TELEMETRY_CONFIG",
+  "entrypointId": "telemetry/browser",
+  "kind": "Variable",
+  "href": "/docs/api/telemetry/browser/THREADPLANE_TELEMETRY_CONFIG",
+  "canonicalReference": "@threadplane/telemetry!THREADPLANE_TELEMETRY_CONFIG:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Angular injection token for the explicit browser service's optional capture configuration.",
+  "declarations": [
+    {
+      "name": "THREADPLANE_TELEMETRY_CONFIG",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/telemetry!THREADPLANE_TELEMETRY_CONFIG:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "THREADPLANE_TELEMETRY_CONFIG: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadplaneTelemetryConfig",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryConfig:interface",
+          "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryConfig"
+        },
+        {
+          "kind": "Content",
+          "text": " | null>"
+        }
+      ],
+      "docs": {
+        "summary": "Angular injection token for the explicit browser service's optional capture configuration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/tokens.ts",
+        "line": 47
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/tokens.ts",
+    "line": 47
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "name": "ChatActivityTemplateContext",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ChatActivityTemplateContext",
+  "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Template context for a per-message activity template projected into\n`<chat>`. One context is built for every assistant message.",
+  "declarations": [
+    {
+      "name": "ChatActivityTemplateContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatActivityTemplateContext "
+        }
+      ],
+      "docs": {
+        "summary": "Template context for a per-message activity template projected into\n`<chat>`. One context is built for every assistant message.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "$implicit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext#$implicit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "$implicit: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The assistant message the activity belongs to (`let-message`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "agent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "agent: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The agent bound to `<chat>` (`let-agent=\"agent\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 27
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "index",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext#index:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "index: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Index of the message in `agent.messages()` (`let-i=\"index\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "subagents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/chat!Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Subagents spawned by this message's tool calls, anchored by\n`Subagent.toolCallId` and ordered like the spawning calls\n(`let-subagents=\"subagents\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 25
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatActivityTemplateContext#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The tool calls this message emitted, in emission order, excluding the\ngenerative-UI dispatcher and view-backed tool names that `<chat>` never\nrenders as cards (`let-toolCalls=\"toolCalls\"`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+        "line": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts",
+    "line": 9
+  }
+}

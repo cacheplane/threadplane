@@ -1,0 +1,120 @@
+{
+  "name": "LangGraphClientOptions",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/LangGraphClientOptions",
+  "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tuning options for the underlying LangGraph SDK `Client` constructed by the\ndefault [FetchStreamTransport](/docs/api/langgraph/FetchStreamTransport). Ignored when a custom `transport` is\nsupplied (the transport owns its own client).",
+  "declarations": [
+    {
+      "name": "LangGraphClientOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface LangGraphClientOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Tuning options for the underlying LangGraph SDK `Client` constructed by the\ndefault [FetchStreamTransport](/docs/api/langgraph/FetchStreamTransport). Ignored when a custom `transport` is\nsupplied (the transport owns its own client).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "defaultHeaders",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions#defaultHeaders:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "defaultHeaders?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Headers attached to every request the SDK client makes, including the run\nstream. Use this for a per-user session token that your LangGraph\ndeployment's custom `authenticate` handler validates.\n\nThere is deliberately no `apiKey` option: a deployment credential passed\nfrom Angular is bundled into the browser build like any other constant.\nKeep deployment keys on a same-origin proxy or gateway you own, and point\n`apiUrl` at it. The client is constructed with `apiKey: null`, so the SDK\nnever attaches a key from the environment either.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 218
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "maxRetries",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions#maxRetries:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "maxRetries?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "How many times a failed request — including the initial stream connect —\nis retried with exponential backoff before the error surfaces. Maps to the\nSDK's `callerOptions.maxRetries`. Omitted → the SDK default (currently 4).\n\nSet `0` to fail fast: useful for e2e tests that force a connection failure\nand assert the error surfaces promptly, rather than after the full\nmulti-second backoff window.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 228
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 206
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 206
+  }
+}

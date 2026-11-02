@@ -1,0 +1,66 @@
+{
+  "name": "AGENT_ERROR_MESSAGES",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/AGENT_ERROR_MESSAGES",
+  "canonicalReference": "@threadplane/chat!AGENT_ERROR_MESSAGES:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Default, human-facing copy per [AgentErrorKind](/docs/api/chat/AgentErrorKind). Used as the message when\na classified error has no better text. Override by mapping `error.kind` to your\nown strings in a custom error component.\n\nFor `interrupted` errors, prefer `AGENT_RECOVERY_MESSAGES[recovery]` once\n`recovery` is known — it carries the correct per-case copy. The `interrupted`\nentry here is only the fallback for errors constructed without a recovery value.",
+  "declarations": [
+    {
+      "name": "AGENT_ERROR_MESSAGES",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!AGENT_ERROR_MESSAGES:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "AGENT_ERROR_MESSAGES: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentErrorKind",
+          "canonicalReference": "@threadplane/chat!AgentErrorKind:type",
+          "href": "/docs/api/chat/AgentErrorKind"
+        },
+        {
+          "kind": "Content",
+          "text": ", string>"
+        }
+      ],
+      "docs": {
+        "summary": "Default, human-facing copy per [AgentErrorKind](/docs/api/chat/AgentErrorKind). Used as the message when\na classified error has no better text. Override by mapping `error.kind` to your\nown strings in a custom error component.\n\nFor `interrupted` errors, prefer `AGENT_RECOVERY_MESSAGES[recovery]` once\n`recovery` is known — it carries the correct per-case copy. The `interrupted`\nentry here is only the fallback for errors constructed without a recovery value.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 120
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 120
+  }
+}

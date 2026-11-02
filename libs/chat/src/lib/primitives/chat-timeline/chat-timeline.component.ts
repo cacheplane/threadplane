@@ -5,6 +5,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import type { AgentWithHistory, AgentCheckpoint } from '../../agent';
 
+/** Projects agent history checkpoints through a supplied template and emits selections dispatched through selectCheckpoint(). */
 @Component({
   selector: 'chat-timeline',
   standalone: true,

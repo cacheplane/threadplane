@@ -1,0 +1,63 @@
+{
+  "name": "BagTemplate",
+  "entrypointId": "langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/langgraph/BagTemplate",
+  "canonicalReference": "@threadplane/langgraph!BagTemplate:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Template for the bag type.\n@template ConfigurableType - Type for the `config.configurable` property\n@template InterruptType - Type for interrupt values\n@template CustomEventType - Type for custom events\n@template UpdateType - Type for the submit function updates\n@template MetaType - Type for the meta property",
+  "declarations": [
+    {
+      "name": "BagTemplate",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/langgraph!BagTemplate:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "type BagTemplate = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n  ConfigurableType?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>;\n  InterruptType?: unknown;\n  CustomEventType?: unknown;\n  UpdateType?: unknown;\n  MetaType?: unknown;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Template for the bag type.\n@template ConfigurableType - Type for the `config.configurable` property\n@template InterruptType - Type for interrupt values\n@template CustomEventType - Type for custom events\n@template UpdateType - Type for the submit function updates\n@template MetaType - Type for the meta property",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 4
+      },
+      "source": {
+        "path": "libs/langgraph/src/public-api.ts",
+        "line": 33
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/public-api.ts",
+    "line": 33
+  }
+}

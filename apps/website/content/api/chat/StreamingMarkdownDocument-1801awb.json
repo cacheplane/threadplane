@@ -1,0 +1,151 @@
+{
+  "name": "StreamingMarkdownDocument",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/StreamingMarkdownDocument",
+  "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An atomic markdown snapshot whose generation identifies one append-only stream ending in completion.",
+  "declarations": [
+    {
+      "name": "StreamingMarkdownDocument",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StreamingMarkdownDocument "
+        }
+      ],
+      "docs": {
+        "summary": "An atomic markdown snapshot whose generation identifies one append-only stream ending in completion.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "generation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument#generation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly generation: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!StreamingMarkdownDocument#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly phase: "
+            },
+            {
+              "kind": "Content",
+              "text": "'streaming' | 'complete'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+        "line": 28
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+    "line": 28
+  }
+}

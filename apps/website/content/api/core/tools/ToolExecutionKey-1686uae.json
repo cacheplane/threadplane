@@ -1,0 +1,115 @@
+{
+  "name": "ToolExecutionKey",
+  "entrypointId": "core/tools",
+  "kind": "Interface",
+  "href": "/docs/api/core/tools/ToolExecutionKey",
+  "canonicalReference": "@threadplane/core!ToolExecutionKey:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Stable execution-store identity combining a thread with its tool call ID.",
+  "declarations": [
+    {
+      "name": "ToolExecutionKey",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!ToolExecutionKey:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolExecutionKey "
+        }
+      ],
+      "docs": {
+        "summary": "Stable execution-store identity combining a thread with its tool call ID.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolExecutionKey#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!ToolExecutionKey#toolCallId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/tools/execution-context.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/tools/execution-context.ts",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/tools/execution-context.ts",
+    "line": 14
+  }
+}

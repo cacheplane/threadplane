@@ -151,7 +151,7 @@ Read `error()?.recovery`: `retry` permits that captured-input replay, `check` me
 
 ## History or time-travel does not work
 
-Checkpoint browsing and time-travel are not implemented by the AG-UI adapter today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/ag-ui/api/to-agent#restoring-a-thread-from-the-server).
+Checkpoint browsing and time-travel are not implemented by the AG-UI adapter today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
 
 Current scope is messages, status/loading/error, tool calls, state/custom events, reasoning messages, message snapshots, interrupts from `CUSTOM` `on_interrupt` events and from `RUN_FINISHED` interrupt outcomes, subagent progress from `SUBAGENT_*` and `ACTIVITY_*` events, and citations from state.
 

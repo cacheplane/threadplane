@@ -1,0 +1,54 @@
+{
+  "name": "LangGraphMultitaskStrategy",
+  "entrypointId": "langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/langgraph/LangGraphMultitaskStrategy",
+  "canonicalReference": "@threadplane/langgraph!LangGraphMultitaskStrategy:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Strategy for handling concurrent LangGraph runs on the same thread.",
+  "declarations": [
+    {
+      "name": "LangGraphMultitaskStrategy",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/langgraph!LangGraphMultitaskStrategy:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type LangGraphMultitaskStrategy = "
+        },
+        {
+          "kind": "Content",
+          "text": "'reject' | 'interrupt' | 'rollback' | 'enqueue'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Strategy for handling concurrent LangGraph runs on the same thread.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 51
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 51
+  }
+}

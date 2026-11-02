@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownImageComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownImageComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownImageComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a markdown image with an accessible fallback when the image fails to load.",
+  "declarations": [
+    {
+      "name": "MarkdownImageComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownImageComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownImageComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a markdown image with an accessible fallback when the image fails to load.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownImageComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownImageNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownImageNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-image.component.ts",
+            "line": 34
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-image.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "chat-md-image",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownImageNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-image.component.ts",
+    "line": 6
+  }
+}

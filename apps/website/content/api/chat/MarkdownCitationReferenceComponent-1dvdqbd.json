@@ -1,0 +1,138 @@
+{
+  "name": "MarkdownCitationReferenceComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownCitationReferenceComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownCitationReferenceComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Inline citation marker. Renders a numbered pill and reveals a provenance\npreview card (portaled via the connected-overlay primitive) on hover/focus\n(desktop) or tap (touch). Click navigates on desktop when a url exists;\non touch it previews instead of navigating.",
+  "declarations": [
+    {
+      "name": "MarkdownCitationReferenceComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownCitationReferenceComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownCitationReferenceComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Inline citation marker. Renders a numbered pill and reveals a provenance\npreview card (portaled via the connected-overlay primitive) on hover/focus\n(desktop) or tap (touch). Click navigates on desktop when a url exists;\non touch it previews instead of navigating.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!MarkdownCitationReferenceComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `MarkdownCitationReferenceComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
+            "line": 100
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownCitationReferenceComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownCitationReferenceNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownCitationReferenceNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
+            "line": 76
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
+        "line": 26
+      },
+      "angular": {
+        "selector": "chat-md-citation-reference",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownCitationReferenceNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
+    "line": 26
+  }
+}

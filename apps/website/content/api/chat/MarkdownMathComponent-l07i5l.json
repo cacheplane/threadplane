@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownMathComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownMathComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownMathComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a `math-inline` / `math-display` markdown node as KaTeX. KaTeX is\nlazy-loaded (see katex-loader); until it resolves, or if the LaTeX is\ninvalid, the raw `$…$` source is shown — never blank, never a crash.",
+  "declarations": [
+    {
+      "name": "MarkdownMathComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownMathComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownMathComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a `math-inline` / `math-display` markdown node as KaTeX. KaTeX is\nlazy-loaded (see katex-loader); until it resolves, or if the LaTeX is\ninvalid, the raw `$…$` source is shown — never blank, never a crash.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownMathComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MathNode",
+              "canonicalReference": "@threadplane/chat!~MathNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-math.component.ts",
+            "line": 50
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-math.component.ts",
+        "line": 32
+      },
+      "angular": {
+        "selector": "chat-md-math",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MathNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-math.component.ts",
+    "line": 32
+  }
+}

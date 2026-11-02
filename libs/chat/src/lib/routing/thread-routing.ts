@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, NavigationEnd, type NavigationExtras } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
 
+/** Configures synchronization between the active thread signal and Angular router URLs. */
 export interface ThreadRoutingConfig {
   /** The app-owned source-of-truth signal for the active thread id. */
   threadId: WritableSignal<string | null>;

@@ -1,0 +1,203 @@
+{
+  "name": "Markdown",
+  "entrypointId": "content/markdown",
+  "kind": "Interface",
+  "href": "/docs/api/content/markdown/Markdown",
+  "canonicalReference": "@threadplane/content!Markdown:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned incremental Markdown parser with snapshot observation, document updates, and explicit disposal.",
+  "declarations": [
+    {
+      "name": "Markdown",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!Markdown:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface Markdown "
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned incremental Markdown parser with snapshot observation, document updates, and explicit disposal.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "dispose",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Markdown#dispose:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly dispose: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 44
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "getSnapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Markdown#getSnapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly getSnapshot: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownSnapshot",
+              "canonicalReference": "@threadplane/content!MarkdownSnapshot:interface",
+              "href": "/docs/api/content/markdown/MarkdownSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 41
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subscribe",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Markdown#subscribe:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subscribe: "
+            },
+            {
+              "kind": "Content",
+              "text": "(notify: () => void) => () => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 42
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "update",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!Markdown#update:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly update: "
+            },
+            {
+              "kind": "Content",
+              "text": "(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownDocument",
+              "canonicalReference": "@threadplane/content!MarkdownDocument:interface",
+              "href": "/docs/api/content/markdown/MarkdownDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 43
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/markdown/types.ts",
+        "line": 40
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/markdown/types.ts",
+    "line": 40
+  }
+}

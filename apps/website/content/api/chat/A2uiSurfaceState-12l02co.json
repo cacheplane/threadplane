@@ -1,0 +1,132 @@
+{
+  "name": "A2uiSurfaceState",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/A2uiSurfaceState",
+  "canonicalReference": "@threadplane/chat!A2uiSurfaceState:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Chat-side state for a surface — wraps the wire-format `A2uiSurface`\nwith the per-component projection the progressive renderer consumes.\nBoth maps are kept in sync; the wire shape preserves existing\n`surfaceToSpec` semantics, the view shape carries readiness.",
+  "declarations": [
+    {
+      "name": "A2uiSurfaceState",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!A2uiSurfaceState:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiSurfaceState "
+        }
+      ],
+      "docs": {
+        "summary": "Chat-side state for a surface — wraps the wire-format `A2uiSurface`\nwith the per-component projection the progressive renderer consumes.\nBoth maps are kept in sync; the wire shape preserves existing\n`surfaceToSpec` semantics, the view shape carries readiness.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "componentViews",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceState#componentViews:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly componentViews: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReadonlyMap",
+              "canonicalReference": "!ReadonlyMap:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiComponentView",
+              "canonicalReference": "@threadplane/chat!A2uiComponentView:interface",
+              "href": "/docs/api/chat/A2uiComponentView"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "surface",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceState#surface:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surface: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurface",
+              "canonicalReference": "@threadplane/chat!A2uiSurface:interface",
+              "href": "/docs/api/chat/A2uiSurface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+        "line": 25
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+    "line": 25
+  }
+}

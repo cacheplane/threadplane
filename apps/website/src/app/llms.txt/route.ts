@@ -22,6 +22,8 @@ function buildLlmsTxt(): string {
     "Threadplane is a runtime-neutral chat UI SDK for Angular. The @threadplane/chat library provides streaming chat primitives bound to a runtime-neutral 'Agent' contract; runtime adapters (@threadplane/langgraph, @threadplane/ag-ui) translate between the contract and the actual backend.",
     '',
     '## Packages',
+    '- Full generated Angular, React and shared API reference: https://threadplane.ai/docs/api',
+    '- Unpublished development APIs are explicitly labeled in the reference; consult the exact import path and package status.',
     '- @threadplane/chat — chat UI primitives (messages, input, tool calls, interrupt, debug, etc.) consuming the Agent contract',
     '- @threadplane/langgraph — adapter for LangGraph / LangGraph Platform',
     '- @threadplane/ag-ui — adapter for AG-UI-compatible backends including CrewAI, Mastra, Microsoft AF, AG2, Pydantic AI, and AWS Strands',

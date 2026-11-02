@@ -1,0 +1,222 @@
+{
+  "name": "provideAgent",
+  "entrypointId": "ag-ui",
+  "kind": "Function",
+  "href": "/docs/api/ag-ui/provideAgent",
+  "canonicalReference": "@threadplane/ag-ui!provideAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Provides an Agent instance wired through HttpAgent and toAgent.\nConstructs an HttpAgent from config and wraps it in the runtime-neutral\nAgent contract via toAgent(). Returns a provider array suitable for\nbootstrapApplication or TestBed.configureTestingModule().\n\n**Static vs factory config.** Pass a plain `AgentConfig` object when the\nconfig is known up front. Pass a `() => AgentConfig` factory when the config\ndepends on runtime/DI state — the factory runs inside an Angular injection\ncontext, so it may call `inject()` to read services or route params.\n\n**Typed state via AgentRef.** Pass a typed ref as the first argument to flow\nthe state shape from `provideAgent` to `injectAgent` without repeating the\ngeneric at every call site.\n\n**Several agents at one injector level.** Each `provideAgent(ref, …)` call\nbuilds its own agent, so two (or more) refs may be provided side by side in a\nsingle `providers` array and `injectAgent(refA)` / `injectAgent(refB)` return\ndistinct agents. The ref-less `injectAgent()` resolves a single shared token,\nwhich can only point at one of them: when more than one ref is provided at\nthe same level the **last** call wins. Always inject by ref when an injector\nprovides more than one agent. Development builds emit a one-time\n`console.warn` naming the refs involved when an injector level registers more\nthan one, so the silent last-ref-wins aliasing is visible during development.",
+  "declarations": [
+    {
+      "name": "provideAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!provideAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideAgent<T = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ">(ref: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentRef",
+          "canonicalReference": "@threadplane/ag-ui!~AgentRef:interface",
+          "href": "/docs/api/chat/AgentRef"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": ", configOrFactory: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+          "href": "/docs/api/ag-ui/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": " | (() => "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+          "href": "/docs/api/ag-ui/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": ")"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Provides an Agent instance wired through HttpAgent and toAgent.\nConstructs an HttpAgent from config and wraps it in the runtime-neutral\nAgent contract via toAgent(). Returns a provider array suitable for\nbootstrapApplication or TestBed.configureTestingModule().\n\n**Static vs factory config.** Pass a plain `AgentConfig` object when the\nconfig is known up front. Pass a `() => AgentConfig` factory when the config\ndepends on runtime/DI state — the factory runs inside an Angular injection\ncontext, so it may call `inject()` to read services or route params.\n\n**Typed state via AgentRef.** Pass a typed ref as the first argument to flow\nthe state shape from `provideAgent` to `injectAgent` without repeating the\ngeneric at every call site.\n\n**Several agents at one injector level.** Each `provideAgent(ref, …)` call\nbuilds its own agent, so two (or more) refs may be provided side by side in a\nsingle `providers` array and `injectAgent(refA)` / `injectAgent(refB)` return\ndistinct agents. The ref-less `injectAgent()` resolves a single shared token,\nwhich can only point at one of them: when more than one ref is provided at\nthe same level the **last** call wins. Always inject by ref when an injector\nprovides more than one agent. Development builds emit a one-time\n`console.warn` naming the refs involved when an injector level registers more\nthan one, so the silent last-ref-wins aliasing is visible during development.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "Typed state via AgentRef\n```ts\ninterface TripState { day: number; places: string[]; }\nexport const TRIP = createAgentRef<TripState>('trip');\n// app.config.ts:\nproviders: [provideAgent(TRIP, { url: 'http://localhost:8000/agent' })]\n// component:\nconst agent = injectAgent(TRIP); // AgUiAgent<TripState>\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/provide-agent.ts",
+        "line": 150
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "ref",
+          "parameterTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "configOrFactory",
+          "parameterTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 12,
+        "endIndex": 14
+      }
+    },
+    {
+      "name": "provideAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!provideAgent:function(2)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideAgent(configOrFactory: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+          "href": "/docs/api/ag-ui/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": " | (() => "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/ag-ui!AgentConfig:interface",
+          "href": "/docs/api/ag-ui/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": ")"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/provide-agent.ts",
+        "line": 154
+      },
+      "overloadIndex": 2,
+      "parameters": [
+        {
+          "parameterName": "configOrFactory",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/provide-agent.ts",
+    "line": 150
+  }
+}

@@ -1,0 +1,925 @@
+{
+  "name": "ChatPopupComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatPopupComponent",
+  "canonicalReference": "@threadplane/chat!ChatPopupComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Hosts an agent chat in a toggleable popup with a launcher and configurable keyboard shortcut.",
+  "declarations": [
+    {
+      "name": "ChatPopupComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatPopupComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatPopupComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Hosts an agent chat in a toggleable popup with a launcher and configurable keyboard shortcut.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatPopupComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 132
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "agent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly agent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 93
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "clientTools",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#clientTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clientTools: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, import(\"../../client-tools/tool-def\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolDef",
+              "canonicalReference": "@threadplane/chat!ClientToolDef:type",
+              "href": "/docs/api/chat/ClientToolDef"
+            },
+            {
+              "kind": "Content",
+              "text": ">> | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Frontend-declared client tools forwarded to the inner `<chat>`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 99
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "closeOnEscape",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#closeOnEscape:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly closeOnEscape: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Close the popup on Escape (default true).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 121
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "closeWindow",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#closeWindow:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "closeWindow(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 160
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "messageCopy",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#messageCopy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageCopy: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        messageIndex: number;\n        content: string;\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user copies an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 127
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "modelOptions",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#modelOptions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly modelOptions: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSelectOption",
+              "canonicalReference": "@threadplane/chat!ChatSelectOption:interface",
+              "href": "/docs/api/chat/ChatSelectOption"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Forwarded to the inner <chat>. When non-empty, a model picker pill\nrenders in the chat-input chrome.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 102
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "ModelSignal",
+              "canonicalReference": "@angular/core!ModelSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 113
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "openWindow",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#openWindow:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "openWindow(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 159
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "rate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#rate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly rate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        messageIndex: number;\n        rating: \"up\" | \"down\";\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user rates an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 125
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "regenerate",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#regenerate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly regenerate: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emitted when the user clicks the regenerate button on an assistant message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 123
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "selectedModel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#selectedModel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selectedModel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "ModelSignal",
+              "canonicalReference": "@angular/core!ModelSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Two-way bound current model value.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 112
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "shortcut",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#shortcut:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly shortcut: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Keyboard shortcut (single key) that toggles the popup with cmd (mac)\nor ctrl (other). Set to `null` to disable. Default: 'k' — matches the\nwidely-used cmd/ctrl+K convention.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 119
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "showModelPicker",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#showModelPicker:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly showModelPicker: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Forwarded to the inner `<chat>`. When `false`, hides the\nauto-rendered model picker even with non-empty `modelOptions`.\nUse this in narrow surfaces (the chat-sidebar panel is 28rem\nwide; chat-popup is 24rem) where the picker crowds the input.\nDefaults to `true`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 110
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toggle",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#toggle:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toggle(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 158
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "views",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatPopupComponent#views:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly views: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, import(\"@threadplane/render\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderViewEntry",
+              "canonicalReference": "@threadplane/chat!~RenderViewEntry:interface",
+              "href": "/docs/api/render/RenderViewEntry"
+            },
+            {
+              "kind": "Content",
+              "text": " | import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Type",
+              "canonicalReference": "@angular/core!Type:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>> | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "A2UI component catalog forwarded to the inner <chat>. Without it,\nmessages classified as A2UI parse correctly but never mount a\nsurface. Pass `a2uiBasicCatalog()` from `@threadplane/chat`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+            "line": 97
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+        "line": 12
+      },
+      "angular": {
+        "selector": "chat-popup",
+        "inputs": [
+          {
+            "name": "agent",
+            "alias": "agent",
+            "required": true,
+            "type": "Agent<unknown>"
+          },
+          {
+            "name": "clientTools",
+            "alias": "clientTools",
+            "required": false,
+            "type": "Readonly<Record<string, ClientToolDef>> | undefined"
+          },
+          {
+            "name": "closeOnEscape",
+            "alias": "closeOnEscape",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "modelOptions",
+            "alias": "modelOptions",
+            "required": false,
+            "type": "readonly ChatSelectOption[]"
+          },
+          {
+            "name": "open",
+            "alias": "open",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "selectedModel",
+            "alias": "selectedModel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "shortcut",
+            "alias": "shortcut",
+            "required": false,
+            "type": "string | null"
+          },
+          {
+            "name": "showModelPicker",
+            "alias": "showModelPicker",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "views",
+            "alias": "views",
+            "required": false,
+            "type": "Readonly<Record<string, RenderViewEntry | Type<unknown>>> | undefined"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "messageCopy",
+            "alias": "messageCopy",
+            "required": false,
+            "type": "{ messageIndex: number; content: string; }"
+          },
+          {
+            "name": "openChange",
+            "alias": "openChange",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "rate",
+            "alias": "rate",
+            "required": false,
+            "type": "{ messageIndex: number; rating: \"up\" | \"down\"; }"
+          },
+          {
+            "name": "regenerate",
+            "alias": "regenerate",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "selectedModelChange",
+            "alias": "selectedModelChange",
+            "required": false,
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+    "line": 12
+  }
+}

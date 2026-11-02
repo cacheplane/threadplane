@@ -2,6 +2,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownThematicBreakNode } from '@cacheplane/partial-markdown';
 
+/** Renders a markdown thematic-break node as a horizontal rule. */
 @Component({
   selector: 'chat-md-thematic-break',
   standalone: true,

@@ -2,6 +2,7 @@ import { A2UI_WIRE_VERSION, type A2uiMessage } from './types.js';
 
 const ENVELOPE_KEYS = ['createSurface', 'updateComponents', 'updateDataModel', 'deleteSurface'] as const;
 
+/** Stateful JSONL parser that buffers incomplete lines and returns recognized A2UI envelopes from stream chunks. */
 export interface A2uiMessageParser {
   /** Push a JSONL stream chunk and return every complete A2UI envelope parsed from it. */
   push(chunk: string): A2uiMessage[];

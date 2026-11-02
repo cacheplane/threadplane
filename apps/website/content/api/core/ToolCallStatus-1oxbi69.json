@@ -1,0 +1,54 @@
+{
+  "name": "ToolCallStatus",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/ToolCallStatus",
+  "canonicalReference": "@threadplane/core!ToolCallStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tool execution stage; pending calls already have finalized, decoded arguments.",
+  "declarations": [
+    {
+      "name": "ToolCallStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!ToolCallStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolCallStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'complete' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Tool execution stage; pending calls already have finalized, decoded arguments.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/tool.ts",
+        "line": 40
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/tool.ts",
+    "line": 40
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/middleware/langgraph/THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
+  "canonicalReference": "@threadplane/middleware!THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Fresh installations only. Existing tables require the explicit migration.",
+  "declarations": [
+    {
+      "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/middleware!THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_SCHEMA = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"\\nCREATE TABLE IF NOT EXISTS threadplane_client_tool_executions (\\n  tenant_id     text        NOT NULL DEFAULT '',\\n  thread_id     text        NOT NULL,\\n  tool_call_id  text        NOT NULL,\\n  status        text        NOT NULL,\\n  result        jsonb,\\n  invocation    text,\\n  owner_token   text        NOT NULL,\\n  encoded_result text,\\n  created_at    timestamptz NOT NULL DEFAULT now(),\\n  updated_at    timestamptz NOT NULL DEFAULT now(),\\n  PRIMARY KEY (tenant_id, thread_id, tool_call_id)\\n);\\n\""
+        }
+      ],
+      "docs": {
+        "summary": "Fresh installations only. Existing tables require the explicit migration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+        "line": 2
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+    "line": 2
+  }
+}

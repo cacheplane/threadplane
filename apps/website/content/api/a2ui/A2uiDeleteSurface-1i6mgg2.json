@@ -1,0 +1,79 @@
+{
+  "name": "A2uiDeleteSurface",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiDeleteSurface",
+  "canonicalReference": "@threadplane/a2ui!A2uiDeleteSurface:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Agent-to-client payload identifying the surface to remove.",
+  "declarations": [
+    {
+      "name": "A2uiDeleteSurface",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiDeleteSurface:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiDeleteSurface "
+        }
+      ],
+      "docs": {
+        "summary": "Agent-to-client payload identifying the surface to remove.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "surfaceId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiDeleteSurface#surfaceId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "surfaceId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 287
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 286
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 286
+  }
+}

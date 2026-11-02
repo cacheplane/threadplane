@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownHeadingNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders a markdown heading and its child nodes at the specified heading level. */
 @Component({
   selector: 'chat-md-heading',
   standalone: true,

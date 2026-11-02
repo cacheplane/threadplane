@@ -49,7 +49,7 @@ describe('SiteFooter', () => {
     expect(
       screen.getByRole('link', { name: 'API Reference' }).getAttribute('href'),
     ).toBe(
-      '/docs/langgraph/api/inject-agent',
+      '/docs/api',
     );
     expect(
       screen.getByRole('link', { name: 'LangGraph demo' }).getAttribute('href'),

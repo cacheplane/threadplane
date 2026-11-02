@@ -1,0 +1,88 @@
+{
+  "name": "ChatSidenav",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ChatSidenav",
+  "canonicalReference": "@threadplane/react!ChatSidenav:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Controlled navigation presentation; children remain mounted in every mode.",
+  "declarations": [
+    {
+      "name": "ChatSidenav",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ChatSidenav:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ChatSidenav(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatSidenavProps",
+          "canonicalReference": "@threadplane/react!ChatSidenavProps:interface",
+          "href": "/docs/api/react/chat/ChatSidenavProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Controlled navigation presentation; children remain mounted in every mode.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidenav.tsx",
+        "line": 51
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ mode, open, onOpenChange, onModeChange, children, collapsedContent, className, label, launcherLabel, closeLabel, expandLabel, collapseLabel, toggleShortcut, onSearch, searchLabel, searchShortcut, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidenav.tsx",
+    "line": 51
+  }
+}

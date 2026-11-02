@@ -1,0 +1,88 @@
+{
+  "name": "OverflowMenu",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/OverflowMenu",
+  "canonicalReference": "@threadplane/react!OverflowMenu:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "A controlled command menu. The owner supplies commands and owns async work.",
+  "declarations": [
+    {
+      "name": "OverflowMenu",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!OverflowMenu:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function OverflowMenu(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "OverflowMenuProps",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps:interface",
+          "href": "/docs/api/react/chat/OverflowMenuProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A controlled command menu. The owner supplies commands and owns async work.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/overflow-menu.tsx",
+        "line": 102
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/overflow-menu.tsx",
+    "line": 102
+  }
+}

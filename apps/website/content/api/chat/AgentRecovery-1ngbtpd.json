@@ -1,0 +1,54 @@
+{
+  "name": "AgentRecovery",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/AgentRecovery",
+  "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "What the adapter can safely offer after an unexpectedly closed stream:\n\n- `retry` — the request is known not to have been dispatched. Re-running it\n cannot duplicate server-side work.\n- `check` — the outcome is uncertain and the backend supports a read-only\n status check, so a caller may offer one.\n- `none` — the outcome is uncertain and nothing can verify it. Explain, and\n offer no action.",
+  "declarations": [
+    {
+      "name": "AgentRecovery",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentRecovery = "
+        },
+        {
+          "kind": "Content",
+          "text": "'retry' | 'check' | 'none'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "What the adapter can safely offer after an unexpectedly closed stream:\n\n- `retry` — the request is known not to have been dispatched. Re-running it\n cannot duplicate server-side work.\n- `check` — the outcome is uncertain and the backend supports a read-only\n status check, so a caller may offer one.\n- `none` — the outcome is uncertain and nothing can verify it. Explain, and\n offer no action.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 23
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 23
+  }
+}

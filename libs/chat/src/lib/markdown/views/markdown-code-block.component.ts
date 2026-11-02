@@ -2,6 +2,7 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import type { MarkdownCodeBlockNode } from '@cacheplane/partial-markdown';
 
+/** Renders a markdown code block as escaped text with an optional language CSS class. */
 @Component({
   selector: 'chat-md-code-block',
   standalone: true,

@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownParagraphComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownParagraphComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownParagraphComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders the child nodes of a markdown paragraph inside a paragraph element.",
+  "declarations": [
+    {
+      "name": "MarkdownParagraphComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownParagraphComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownParagraphComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders the child nodes of a markdown paragraph inside a paragraph element.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownParagraphComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownParagraphNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownParagraphNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
+            "line": 15
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-paragraph",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownParagraphNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-paragraph.component.ts",
+    "line": 7
+  }
+}

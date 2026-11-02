@@ -1,0 +1,66 @@
+{
+  "name": "AGENT_RECOVERY_DETAILS",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/AGENT_RECOVERY_DETAILS",
+  "canonicalReference": "@threadplane/chat!AGENT_RECOVERY_DETAILS:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "The second line of the `interrupted` banner, per [AgentRecovery](/docs/api/chat/AgentRecovery). Each\nentry is written to be read as a continuation of the matching\n[AGENT_RECOVERY_MESSAGES](/docs/api/chat/AGENT_RECOVERY_MESSAGES) sentence, never on its own: the `check` entry\nsupplies only the action that follows, and the `none` entry only its cost.\nAdapters set `AgentError.detail` from here so every transport says the same\nthing. Keep the pairs in sync when editing either table.",
+  "declarations": [
+    {
+      "name": "AGENT_RECOVERY_DETAILS",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!AGENT_RECOVERY_DETAILS:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "AGENT_RECOVERY_DETAILS: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentRecovery",
+          "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+          "href": "/docs/api/chat/AgentRecovery"
+        },
+        {
+          "kind": "Content",
+          "text": ", string>"
+        }
+      ],
+      "docs": {
+        "summary": "The second line of the `interrupted` banner, per [AgentRecovery](/docs/api/chat/AgentRecovery). Each\nentry is written to be read as a continuation of the matching\n[AGENT_RECOVERY_MESSAGES](/docs/api/chat/AGENT_RECOVERY_MESSAGES) sentence, never on its own: the `check` entry\nsupplies only the action that follows, and the `none` entry only its cost.\nAdapters set `AgentError.detail` from here so every transport says the same\nthing. Keep the pairs in sync when editing either table.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 40
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 40
+  }
+}

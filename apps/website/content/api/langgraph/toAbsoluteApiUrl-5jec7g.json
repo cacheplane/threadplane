@@ -1,0 +1,73 @@
+{
+  "name": "toAbsoluteApiUrl",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/toAbsoluteApiUrl",
+  "canonicalReference": "@threadplane/langgraph!toAbsoluteApiUrl:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Exported separately so non-Client callers (e.g. raw fetch) can\n share the same normalization logic.",
+  "declarations": [
+    {
+      "name": "toAbsoluteApiUrl",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!toAbsoluteApiUrl:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function toAbsoluteApiUrl(apiUrl: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Exported separately so non-Client callers (e.g. raw fetch) can\n share the same normalization logic.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+        "line": 74
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "apiUrl",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/client/create-langgraph-client.ts",
+    "line": 74
+  }
+}

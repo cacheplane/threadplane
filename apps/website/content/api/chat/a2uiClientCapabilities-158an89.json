@@ -1,0 +1,60 @@
+{
+  "name": "a2uiClientCapabilities",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/a2uiClientCapabilities",
+  "canonicalReference": "@threadplane/chat!a2uiClientCapabilities:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "The A2UI client capabilities this renderer supports — the typed\n`a2uiClientCapabilities` metadata a host attaches to agent requests so\nthe agent knows which component catalogs it may target\n(catalog negotiation, A2UI v0.9 transport metadata).",
+  "declarations": [
+    {
+      "name": "a2uiClientCapabilities",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!a2uiClientCapabilities:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function a2uiClientCapabilities(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiClientCapabilities",
+          "canonicalReference": "@threadplane/chat!A2uiClientCapabilities:interface",
+          "href": "/docs/api/chat/A2uiClientCapabilities"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The A2UI client capabilities this renderer supports — the typed\n`a2uiClientCapabilities` metadata a host attaches to agent requests so\nthe agent knows which component catalogs it may target\n(catalog negotiation, A2UI v0.9 transport metadata).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst metadata = { a2uiClientCapabilities: a2uiClientCapabilities() };\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/capabilities.ts",
+        "line": 14
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/capabilities.ts",
+    "line": 14
+  }
+}

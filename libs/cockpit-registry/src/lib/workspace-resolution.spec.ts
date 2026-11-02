@@ -71,12 +71,12 @@ describe('workspace identity resolution', () => {
   it('returns a discriminated docs-only resolution for an unmapped valid Docs page', () => {
     expect(
       resolveDocsWorkspace(
-        '/docs/langgraph/api/inject-agent',
+        '/docs/api/langgraph/injectAgent',
         'Inject an agent into Angular'
       )
     ).toEqual({
       kind: 'docs-only',
-      docsPath: '/docs/langgraph/api/inject-agent',
+      docsPath: '/docs/api/langgraph/injectAgent',
       title: 'Inject an agent into Angular',
       unavailableReason: 'no-workspace-capability',
     });
@@ -88,7 +88,7 @@ describe('workspace identity resolution', () => {
       'Streaming'
     );
     const docsOnly = resolveDocsWorkspace(
-      '/docs/langgraph/api/inject-agent',
+      '/docs/api/langgraph/injectAgent',
       'Inject an agent into Angular'
     );
     expect(getRouteDefaultMode(mappedDocs)).toBe('Docs');
@@ -129,15 +129,15 @@ describe('canonical Website workspace destinations', () => {
 
   it('serializes docs-only resolutions without accepting source query data', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/api/inject-agent',
+      '/docs/api/langgraph/injectAgent',
       'Inject an agent into Angular'
     );
 
     expect(getCanonicalWebsiteWorkspaceHref(resolution, 'Docs')).toBe(
-      '/docs/langgraph/api/inject-agent'
+      '/docs/api/langgraph/injectAgent'
     );
     expect(getCanonicalWebsiteWorkspaceHref(resolution, 'Run')).toBe(
-      '/docs/langgraph/api/inject-agent?mode=run'
+      '/docs/api/langgraph/injectAgent?mode=run'
     );
   });
 });

@@ -1,0 +1,211 @@
+{
+  "name": "ParseTreeStore",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ParseTreeStore",
+  "canonicalReference": "@threadplane/chat!ParseTreeStore:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Accepts JSON chunks and exposes the materialized render specification and element accumulation signals.",
+  "declarations": [
+    {
+      "name": "ParseTreeStore",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ParseTreeStore:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ParseTreeStore "
+        }
+      ],
+      "docs": {
+        "summary": "Accepts JSON chunks and exposes the materialized render specification and element accumulation signals.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "elementStates",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ParseTreeStore#elementStates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly elementStates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "ElementAccumulationState",
+              "canonicalReference": "@threadplane/chat!ElementAccumulationState:interface",
+              "href": "/docs/api/chat/ElementAccumulationState"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "push",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ParseTreeStore#push:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "push(chunk: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 16
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "chunk",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "spec",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ParseTreeStore#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+        "line": 15
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/parse-tree-store.ts",
+    "line": 15
+  }
+}

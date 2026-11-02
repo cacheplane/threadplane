@@ -1,0 +1,225 @@
+{
+  "name": "ToolCallInfo",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ToolCallInfo",
+  "canonicalReference": "@threadplane/chat!ToolCallInfo:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tool invocation details consumed by the default tool call card.",
+  "declarations": [
+    {
+      "name": "ToolCallInfo",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ToolCallInfo:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolCallInfo "
+        }
+      ],
+      "docs": {
+        "summary": "Tool invocation details consumed by the default tool call card.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "args",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#args:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "args: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "result?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallStatus",
+              "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+              "href": "/docs/api/chat/ToolCallStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional — present when the parent provides it. Drives the pill + default-collapsed logic.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+    "line": 8
+  }
+}

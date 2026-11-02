@@ -1,0 +1,92 @@
+{
+  "name": "MessageActions",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/MessageActions",
+  "canonicalReference": "@threadplane/react!MessageActions:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Borrowed action presentation. Commands, clipboard and feedback belong to the app.",
+  "declarations": [
+    {
+      "name": "MessageActions",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!MessageActions:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function MessageActions(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageActionsProps",
+          "canonicalReference": "@threadplane/react!MessageActionsProps:interface",
+          "href": "/docs/api/react/chat/MessageActionsProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Borrowed action presentation. Commands, clipboard and feedback belong to the app.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/message-actions.tsx",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ actions, disabled, label, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-actions.tsx",
+    "line": 20
+  }
+}

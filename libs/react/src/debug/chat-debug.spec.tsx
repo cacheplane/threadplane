@@ -34,6 +34,87 @@ afterEach(() => {
   vi.restoreAllMocks();
   localStorage.clear();
 });
+it('compares the matched historical checkpoint before current state in a collapsed passive disclosure', () => {
+  const onRefresh = vi.fn(() => undefined);
+  const onInspect = vi.fn(() => undefined);
+  const v = render(
+    <ChatDebug {...base} onRefresh={onRefresh} onInspect={onInspect} />
+  );
+  const summary = v.getByText('Compare selected checkpoint with current state');
+  expect(summary.closest('details')?.open).toBe(false);
+  fireEvent.click(summary);
+  const comparison = v.getByRole('region', {
+    name: 'Selected checkpoint to current state',
+  });
+  expect(
+    JSON.parse(String(comparison.querySelector('pre')?.textContent))
+  ).toEqual([
+    { kind: 'removed', path: '/historical', before: 'then' },
+    { kind: 'added', path: '/current', after: 'now' },
+  ]);
+  expect(onRefresh).not.toHaveBeenCalled();
+  expect(onInspect).not.toHaveBeenCalled();
+  expect(comparison.querySelector('button')).toBeNull();
+});
+it('retires checkpoint comparison immediately on all unavailable and mismatched ownership states', () => {
+  const v = render(<ChatDebug {...base} />);
+  const page = base.checkpointPage;
+  if (!page) throw new Error('Missing fixture page');
+  const changes: Partial<ChatDebugProps>[] = [
+    { current: { contextKey: 'owner', status: 'unknown' } },
+    { current: { contextKey: 'owner', status: 'unavailable' } },
+    { current: { contextKey: 'other', status: 'ready', values: {} } },
+    { inspection: { status: 'idle' } },
+    { inspection: { status: 'loading', selection } },
+    { inspection: { status: 'error', selection, message: 'Failed' } },
+    { inspection: { status: 'unavailable', selection } },
+    {
+      inspection: {
+        status: 'ready',
+        selection: { ...selection, pageGeneration: 2 },
+        values: {},
+      },
+    },
+    {
+      inspection: {
+        status: 'ready',
+        selection: { ...selection, contextKey: 'other' },
+        values: {},
+      },
+    },
+    {
+      inspection: {
+        status: 'ready',
+        selection: { ...selection, rowKey: 'other' },
+        values: {},
+      },
+    },
+    { checkpointPage: undefined },
+    { checkpointPage: { ...page, contextKey: 'other' } },
+    { checkpointPage: { ...page, pageGeneration: 2 } },
+    {
+      checkpointPage: {
+        ...page,
+        rows: [{ ...page.rows[0], inspectable: false }],
+      },
+    },
+    { selection: undefined },
+    { contextKey: 'other' },
+  ];
+  for (const changed of changes) {
+    v.rerender(<ChatDebug {...base} />);
+    expect(
+      v.getByText('Compare selected checkpoint with current state')
+    ).toBeTruthy();
+    v.rerender(<ChatDebug {...base} {...changed} />);
+    expect(
+      v.queryByText('Compare selected checkpoint with current state')
+    ).toBeNull();
+    expect(
+      v.queryByRole('region', { name: 'Selected checkpoint to current state' })
+    ).toBeNull();
+  }
+});
 it('separates observed current and controlled historical values with identity', () => {
   const v = render(<ChatDebug {...base} />);
   expect(v.getByRole('heading', { name: 'Current state' })).toBeTruthy();

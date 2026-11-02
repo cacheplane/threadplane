@@ -4,6 +4,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
+import { readApiIndex, readApiSymbol } from './api-reference';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -276,16 +277,17 @@ describe('public copy', () => {
    * the API rows and leaving developers with an undocumented option.
    */
   it('still documents the telemetry config field on every adapter', () => {
-    const documented = [
-      'docs/ag-ui/api/provide-agent.mdx',
-      'docs/ag-ui/api/to-agent.mdx',
-      'docs/langgraph/api/provide-agent.mdx',
-    ];
-    for (const relativePath of documented) {
-      const source = readFileSync(join(CONTENT_ROOT, relativePath), 'utf8');
-      expect(source, `${relativePath} must document the field`).toMatch(
-        /\|\s*`telemetry`\s*\|/u
-      );
+    for (const [entrypoint, name] of [
+      ['ag-ui', 'AgentConfig'],
+      ['ag-ui', 'ToAgentOptions'],
+      ['langgraph', 'AgentConfig'],
+    ]) {
+      const symbol = readApiSymbol(entrypoint, name);
+      expect(symbol, `${entrypoint}/${name} must document the field`).not.toBeNull();
+      const fields = symbol!.declarations.flatMap(declaration => declaration.members);
+      const telemetry = fields.find(field => field.name === 'telemetry');
+      expect(telemetry, `${entrypoint}/${name} must document the field`).toBeDefined();
+      expect(telemetry!.excerptTokens.map(token => token.text).join('')).toBe('telemetry?: AgentRuntimeTelemetrySink | false;');
     }
   });
 });
@@ -531,21 +533,13 @@ describe('the source scan is not vacuous', () => {
  * committed output is public, and it is the thing readers see.
  */
 describe('generated public API docs', () => {
-  const libraries = [
-    'a2ui',
-    'ag-ui',
-    'chat',
-    'langgraph',
-    'middleware',
-    'render',
-  ];
-
-  it.each(libraries)('%s carries no barred claim', (library) => {
-    const source = readFileSync(
-      join(CONTENT_ROOT, 'docs', library, 'api', 'api-docs.json'),
-      'utf8'
-    );
-    expect(findBarredCopy(source, BANNED_CLAIMS)).toEqual([]);
+  it('every generated symbol carries no barred public copy', () => {
+    const index = readApiIndex();
+    expect(index.symbols.length).toBeGreaterThan(600);
+    for (const summary of index.symbols) {
+      const symbol = readApiSymbol(summary.entrypointId, summary.name)!;
+      expect(findBarredCopy(JSON.stringify(symbol), BANNED_CLAIMS), summary.href).toEqual([]);
+    }
   });
 
   it('no longer ships the retired library', () => {

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
-const route = '/docs/render/api/provide-render';
+const route = '/docs/render/guides/computed-functions';
 const reactFrame =
   /(?:localhost:4619(?:[/?#]|$)|\/render\/computed-functions\/react\/?(?:[?#]|$))/;
 const iframe = (page: Page) =>

@@ -1,5 +1,6 @@
 'use client';
 
+/** Controls backdrop visibility and the dismissal callback, with an accessible button label. */
 export interface ChatSidenavScrimProps {
   readonly open: boolean;
   readonly onDismiss: () => void;

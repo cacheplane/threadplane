@@ -373,7 +373,39 @@ A stateless one starts the turn over.
 A connection that stays open but stops producing events is a different problem.
 The adapter does not classify it; a timeout of your own is what catches that.
 
-The `persistence` option on `provideAgent()` can restore the committed transcript, state, and pending interrupt session across a reload. The store is yours to implement, and `agent.ready` resolves once hydration completes. For server-retained event history, configure `replay`; see [Restoring a thread from the server](/docs/ag-ui/api/to-agent#restoring-a-thread-from-the-server). The [Interrupts guide](/docs/ag-ui/guides/interrupts#failures-retry-and-restoration) covers the persistence contract and reconciliation step.
+The `persistence` option on `provideAgent()` can restore the committed transcript, state, and pending interrupt session across a reload. The store is yours to implement, and `agent.ready` resolves once hydration completes. The [Interrupts guide](/docs/ag-ui/guides/interrupts#failures-retry-and-restoration) covers the persistence contract and reconciliation step. For server-retained event history, configure `replay` as described below.
+
+## Restoring a thread from the server
+
+The adapter can restore a reopened thread from two sources, and they restore different things.
+
+- **`persistence`** stores the last committed protocol messages and state, plus the interrupt session. It restores the transcript and a pending approval, but not details carried only by events, such as reasoning, subagent nesting, and step-level progress.
+- **`replay`** loads the thread's protocol events from your server and folds them through the same reducer and interrupt bookkeeping as a live run. It restores messages, tool calls, reasoning, subagent cards, and pending interrupts from those events, and emits each replayed event on `rawEvents$`.
+
+```typescript
+import { HttpAgent } from '@ag-ui/client';
+import { httpReplay, toAgent } from '@threadplane/ag-ui';
+
+const agent = toAgent(new HttpAgent({ url: '/api/agent', threadId }), {
+  replay: httpReplay({
+    url: (id) => `/api/threads/${encodeURIComponent(id)}/events`,
+  }),
+});
+await agent.ready;
+```
+
+A replay source is a function `(threadId, signal) => Promise<readonly BaseEvent[]> | Observable<BaseEvent>`. An Observable must complete before hydration applies its events. `httpReplay({ url, fetch?, headers? })` sends `GET url(threadId)` and expects a JSON body `{ events: BaseEvent[] }`. A `404` returns no events; other failed statuses, a missing events array, or entries without a string `type` are failed replays.
+
+Hydration follows these rules:
+
+- **Nonempty replay wins.** The persistence store is not read during hydration, though later runs still write to it when configured.
+- **Empty or failed replay falls back to persistence**, or an empty thread without a store. A fold that fails partway is discarded whole, with no partial event emission. `ready` does not reject for a failed replay; development builds log a warning.
+- **The final run determines status.** Success leaves the agent idle; `RUN_ERROR` restores an error, with the provider's error protection applied. A paused run restores its interrupt, and a later run can resolve an earlier pause. Replay that ends without a terminal outcome settles its unfinished messages as interrupted and leaves the agent idle, since it is not attached to the active backend run.
+- **User messages come from run input.** Messages in `RUN_STARTED.input.messages` are restored in order; `MESSAGES_SNAPSHOT` events are also reduced normally.
+- **Reasoning durations use event timestamps**, when both start and end timestamps are available, rather than elapsed replay time.
+- **The next request uses replayed history.** The underlying protocol client's messages and state are restored from the same events.
+
+Subscribe to `rawEvents$` before awaiting `ready` if your view model needs the replayed events. The adapter binds to one thread. Dispose it before constructing an adapter for a different thread; disposal aborts replay and prevents its result from applying. With `provideAgent()`, injector destruction handles disposal, and replay is requested only when a thread ID is configured. See [`ToAgentOptions`](/docs/api/ag-ui/ToAgentOptions) and [`httpReplay()`](/docs/api/ag-ui/httpReplay) for the generated contracts.
 
 ## Hosting the Angular app
 
@@ -530,7 +562,7 @@ That is the part that matters.
   <Card title="Architecture" href="/docs/ag-ui/concepts/architecture">
     How the adapter maps AG-UI events onto the Agent contract.
   </Card>
-  <Card title="API Reference" href="/docs/ag-ui/api/provide-agent">
+  <Card title="API Reference" href="/docs/api/ag-ui/provideAgent">
     Full reference for provideAgent configuration options.
   </Card>
   <Card title="Event Mapping" href="/docs/ag-ui/reference/event-mapping">

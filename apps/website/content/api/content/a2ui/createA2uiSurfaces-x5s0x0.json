@@ -1,0 +1,58 @@
+{
+  "name": "createA2uiSurfaces",
+  "entrypointId": "content/a2ui",
+  "kind": "Function",
+  "href": "/docs/api/content/a2ui/createA2uiSurfaces",
+  "canonicalReference": "@threadplane/content!createA2uiSurfaces:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Create an application-owned accumulator for already parsed A2UI envelopes.\nObservation borrows the owner; only its creator should dispose it.",
+  "declarations": [
+    {
+      "name": "createA2uiSurfaces",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/content!createA2uiSurfaces:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createA2uiSurfaces(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiSurfaces",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces:interface",
+          "href": "/docs/api/content/a2ui/A2uiSurfaces"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Create an application-owned accumulator for already parsed A2UI envelopes.\nObservation borrows the owner; only its creator should dispose it.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/a2ui/create-surfaces.ts",
+        "line": 7
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/a2ui/create-surfaces.ts",
+    "line": 7
+  }
+}

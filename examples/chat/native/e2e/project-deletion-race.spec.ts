@@ -10,8 +10,7 @@ test('installed React confirmed project move survives another project deletion a
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const sourceId = ' p/one ';
   const destinationId = '__proto__';
   const title = '<Alpha notes>';
@@ -136,10 +135,11 @@ test('installed React confirmed project move survives another project deletion a
     await backend.steps[3].received;
     await projects
       .getByRole('button', {
-        name: `Delete project Source project (${sourceId})`,
+        name: `More actions for project Source project (${sourceId})`,
         exact: true,
       })
       .click();
+    await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     await page
       .getByRole('alertdialog', { name: 'Delete project?', exact: true })
       .getByRole('button', { name: 'Delete project', exact: true })

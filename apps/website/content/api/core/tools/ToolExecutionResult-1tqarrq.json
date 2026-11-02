@@ -1,0 +1,64 @@
+{
+  "name": "ToolExecutionResult",
+  "entrypointId": "core/tools",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/tools/ToolExecutionResult",
+  "canonicalReference": "@threadplane/core!ToolExecutionResult:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Settled tool outcome containing either a portable result value or a displayable error string.",
+  "declarations": [
+    {
+      "name": "ToolExecutionResult",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!ToolExecutionResult:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolExecutionResult = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly ok: true;\n    readonly value: "
+        },
+        {
+          "kind": "Reference",
+          "text": "PlainValue",
+          "canonicalReference": "@threadplane/core!~PlainValue:type",
+          "href": "/docs/api/core/PlainValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | {\n    readonly ok: false;\n    readonly error: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Settled tool outcome containing either a portable result value or a displayable error string.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/tools/execution-context.ts",
+        "line": 9
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/tools/execution-context.ts",
+    "line": 9
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "name": "A2uiSurfaces",
+  "entrypointId": "content/a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/content/a2ui/A2uiSurfaces",
+  "canonicalReference": "@threadplane/content!A2uiSurfaces:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots.",
+  "declarations": [
+    {
+      "name": "A2uiSurfaces",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!A2uiSurfaces:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiSurfaces "
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "apply",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces#apply:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly apply: "
+            },
+            {
+              "kind": "Content",
+              "text": "(message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiMessage",
+              "canonicalReference": "@threadplane/content!~A2uiMessage:type",
+              "href": "/docs/api/a2ui/A2uiMessage"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 35
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "dispose",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces#dispose:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly dispose: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 36
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "getSnapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces#getSnapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly getSnapshot: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfacesSnapshot",
+              "canonicalReference": "@threadplane/content!A2uiSurfacesSnapshot:interface",
+              "href": "/docs/api/content/a2ui/A2uiSurfacesSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subscribe",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces#subscribe:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subscribe: "
+            },
+            {
+              "kind": "Content",
+              "text": "(notify: () => void) => () => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 34
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/a2ui/types.ts",
+        "line": 32
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/a2ui/types.ts",
+    "line": 32
+  }
+}

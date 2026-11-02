@@ -1,0 +1,108 @@
+{
+  "name": "InferBag",
+  "entrypointId": "langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/langgraph/InferBag",
+  "canonicalReference": "@threadplane/langgraph!InferBag:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Infer the Bag type from an agent, defaulting to the provided Bag.\n\nCurrently returns the provided Bag for all types.\nCan be extended in the future to extract Bag from agent types.",
+  "declarations": [
+    {
+      "name": "InferBag",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/langgraph!InferBag:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "type InferBag<T, B extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "BagTemplate",
+          "canonicalReference": "@threadplane/langgraph!BagTemplate:type",
+          "href": "/docs/api/langgraph/BagTemplate"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "BagTemplate",
+          "canonicalReference": "@threadplane/langgraph!BagTemplate:type",
+          "href": "/docs/api/langgraph/BagTemplate"
+        },
+        {
+          "kind": "Content",
+          "text": "> = "
+        },
+        {
+          "kind": "Content",
+          "text": "T extends {\n  \"~agentTypes\": unknown;\n} ? "
+        },
+        {
+          "kind": "Reference",
+          "text": "BagTemplate",
+          "canonicalReference": "@threadplane/langgraph!BagTemplate:type",
+          "href": "/docs/api/langgraph/BagTemplate"
+        },
+        {
+          "kind": "Content",
+          "text": " : B"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Infer the Bag type from an agent, defaulting to the provided Bag.\n\nCurrently returns the provided Bag for all types.\nCan be extended in the future to extract Bag from agent types.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        },
+        {
+          "typeParameterName": "B",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        }
+      ],
+      "typeTokenRange": {
+        "startIndex": 5,
+        "endIndex": 8
+      },
+      "source": {
+        "path": "libs/langgraph/src/public-api.ts",
+        "line": 34
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/public-api.ts",
+    "line": 34
+  }
+}

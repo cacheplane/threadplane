@@ -1,0 +1,93 @@
+{
+  "name": "VIEW_REGISTRY",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/VIEW_REGISTRY",
+  "canonicalReference": "@threadplane/render!VIEW_REGISTRY:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token for the component view registry installed by provideViews.",
+  "declarations": [
+    {
+      "name": "VIEW_REGISTRY",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!VIEW_REGISTRY:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "VIEW_REGISTRY: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Readonly",
+          "canonicalReference": "!Readonly:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, import(\"./render.types\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderViewEntry",
+          "canonicalReference": "@threadplane/render!RenderViewEntry:interface",
+          "href": "/docs/api/render/RenderViewEntry"
+        },
+        {
+          "kind": "Content",
+          "text": " | import(\"@angular/core\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "Type",
+          "canonicalReference": "@angular/core!Type:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<unknown>>>>"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token for the component view registry installed by provideViews.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/provide-views.ts",
+        "line": 5
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/provide-views.ts",
+    "line": 5
+  }
+}

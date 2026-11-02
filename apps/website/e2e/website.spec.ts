@@ -268,7 +268,7 @@ test('docs landing page carries the control plane', async ({ page }) => {
 });
 
 test('api reference renders in docs', async ({ page }) => {
-  await page.goto('/docs/langgraph/api/inject-agent');
+  await page.goto('/docs/api/langgraph/injectAgent');
   await expect(page.locator('article').first()).toBeVisible();
 });
 
@@ -443,13 +443,25 @@ test('/llms-full.txt includes generated API reference content', async ({ request
   expect(response.headers()['content-type']).toContain('text/plain');
 
   const body = await response.text();
-  expect(body).toContain('## API Reference (TypeDoc)');
-  expect(body).toContain('### a2ui');
-  expect(body).toContain('### langgraph');
-  expect(body).toContain('### chat');
-  // The dedicated telemetry docs library is retired, so its generated API
-  // section no longer ships in the public bundle.
-  expect(body).not.toContain('### telemetry');
+  expect(body).toContain('## API Reference (API Extractor)');
+  for (const entrypoint of [
+    'a2ui',
+    'ag-ui',
+    'angular',
+    'chat',
+    'content',
+    'core',
+    'langgraph',
+    'middleware/langgraph',
+    'react',
+    'render',
+    'telemetry',
+  ]) {
+    expect(body).toContain(`### @threadplane/${entrypoint}\n`);
+  }
+  expect(body).toContain('Reference: /docs/api/angular/');
+  expect(body).toContain('Reference: /docs/api/react/');
+  expect(body).toContain('Reference: /docs/api/telemetry/');
   expect(body).not.toContain('API reference not yet generated');
 });
 
@@ -508,7 +520,7 @@ test.describe('representative docs pages do not create page-level horizontal ove
   const routes = [
     '/docs',
     '/docs/langgraph/getting-started/introduction',
-    '/docs/langgraph/api/inject-agent',
+    '/docs/api/langgraph/injectAgent',
     '/docs/chat/components/chat-tool-calls',
     '/docs/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',

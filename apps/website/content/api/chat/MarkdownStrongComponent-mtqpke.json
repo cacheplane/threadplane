@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownStrongComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownStrongComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownStrongComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders markdown strong-emphasis content inside a strong element.",
+  "declarations": [
+    {
+      "name": "MarkdownStrongComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownStrongComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownStrongComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders markdown strong-emphasis content inside a strong element.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownStrongComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownStrongNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownStrongNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
+            "line": 15
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-strong",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownStrongNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-strong.component.ts",
+    "line": 7
+  }
+}

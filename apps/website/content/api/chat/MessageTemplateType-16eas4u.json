@@ -1,0 +1,54 @@
+{
+  "name": "MessageTemplateType",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/MessageTemplateType",
+  "canonicalReference": "@threadplane/chat!MessageTemplateType:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Message categories supported by custom chat message templates.",
+  "declarations": [
+    {
+      "name": "MessageTemplateType",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!MessageTemplateType:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type MessageTemplateType = "
+        },
+        {
+          "kind": "Content",
+          "text": "'human' | 'ai' | 'tool' | 'system' | 'function'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Message categories supported by custom chat message templates.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/chat.types.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/chat.types.ts",
+    "line": 2
+  }
+}

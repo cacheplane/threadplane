@@ -32,6 +32,7 @@ import {
 import type { Agent, AgentWithHistory } from '../../agent';
 import { CHAT_DEBUG_INCLUDED } from './chat-debug-gate';
 
+/** Display modes for the conversation sidebar, including a dismissible drawer. */
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 type ChatDebugDock = 'right' | 'bottom' | 'left';
 

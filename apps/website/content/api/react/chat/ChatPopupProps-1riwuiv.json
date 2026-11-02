@@ -1,0 +1,332 @@
+{
+  "name": "ChatPopupProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatPopupProps",
+  "canonicalReference": "@threadplane/react!ChatPopupProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controlled popup visibility, accessible labels, Escape dismissal policy, and persistent panel content.",
+  "declarations": [
+    {
+      "name": "ChatPopupProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatPopupProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatPopupProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controlled popup visibility, accessible labels, Escape dismissal policy, and persistent panel content.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "closeLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#closeLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly closeLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "closeOnEscape",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#closeOnEscape:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly closeOnEscape?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "launcherLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#launcherLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly launcherLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onOpenChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#onOpenChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onOpenChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(open: boolean) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "title",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatPopupProps#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-popup.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-popup.tsx",
+        "line": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-popup.tsx",
+    "line": 6
+  }
+}

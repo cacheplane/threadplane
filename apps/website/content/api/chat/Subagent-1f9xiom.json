@@ -1,0 +1,318 @@
+{
+  "name": "Subagent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/Subagent",
+  "canonicalReference": "@threadplane/chat!Subagent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Reactive messages, state, and execution status for a subagent spawned by a tool call.",
+  "declarations": [
+    {
+      "name": "Subagent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!Subagent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface Subagent "
+        }
+      ],
+      "docs": {
+        "summary": "Reactive messages, state, and execution status for a subagent spawned by a tool call.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional human-readable name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "state",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "state: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStatus",
+              "canonicalReference": "@threadplane/chat!SubagentStatus:type",
+              "href": "/docs/api/chat/SubagentStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#toolCallId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCallId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tool call ID that spawned this subagent.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Subagent#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The subagent's own tool calls (name/args/result), referenced by\n`Message.toolCallIds` in `messages`. Optional: adapters that don't surface\nsubagent tool calls omit it; consumers default to `[]`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/subagent.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/subagent.ts",
+        "line": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/subagent.ts",
+    "line": 9
+  }
+}

@@ -1,0 +1,602 @@
+{
+  "name": "ThreadListProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ThreadListProps",
+  "canonicalReference": "@threadplane/react!ThreadListProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies ordered conversations and controlled selection, with creation, row rendering, action, and context-menu hooks.",
+  "declarations": [
+    {
+      "name": "ThreadListProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ThreadListProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadListProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies ordered conversations and controlled selection, with creation, row rendering, action, and context-menu hooks.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activeThreadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#activeThreadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activeThreadId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "newThreadDisabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#newThreadDisabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly newThreadDisabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "newThreadLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#newThreadLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly newThreadLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "now",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#now:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly now?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onContextMenu",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#onContextMenu:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onContextMenu?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(threadId: string, event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MouseEvent",
+              "canonicalReference": "@types/react!React.MouseEvent:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLButtonElement",
+              "canonicalReference": "!HTMLButtonElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "> | "
+            },
+            {
+              "kind": "Reference",
+              "text": "KeyboardEvent",
+              "canonicalReference": "@types/react!React.KeyboardEvent:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLButtonElement",
+              "canonicalReference": "!HTMLButtonElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Synchronous context request from the selection button; the owner claims input.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 40
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onNewThread",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#onNewThread:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onNewThread?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "(threadId: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "renderActions",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#renderActions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderActions?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(thread: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadListItem",
+              "canonicalReference": "@threadplane/react!ThreadListItem:interface",
+              "href": "/docs/api/react/chat/ThreadListItem"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned controls rendered beside the selection button.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 38
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderItem",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#renderItem:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderItem?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(thread: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadListItem",
+              "canonicalReference": "@threadplane/react!ThreadListItem:interface",
+              "href": "/docs/api/react/chat/ThreadListItem"
+            },
+            {
+              "kind": "Content",
+              "text": ", isActive: boolean) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replaces the complete row content; owner supplies controls and accessibility.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderTitle",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#renderTitle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderTitle?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(thread: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadListItem",
+              "canonicalReference": "@threadplane/react!ThreadListItem:interface",
+              "href": "/docs/api/react/chat/ThreadListItem"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Noninteractive phrasing content inside the row button. Original title/id labels remain.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 36
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "threads",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ThreadListProps#threads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threads: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadListItem",
+              "canonicalReference": "@threadplane/react!ThreadListItem:interface",
+              "href": "/docs/api/react/chat/ThreadListItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/thread-list.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/thread-list.tsx",
+        "line": 20
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/thread-list.tsx",
+    "line": 20
+  }
+}

@@ -13,12 +13,14 @@ import {
   dialogPresentation,
 } from './internal/dialog-presentation.js';
 
+/** App-supplied search row whose unique ID is returned on selection, with title and optional subtitle. */
 export interface HistorySearchResult {
   readonly id: string;
   readonly title: string;
   readonly subtitle?: string;
 }
 
+/** Controls the search dialog's query, results, loading state, selection/close requests, and return-focus target. */
 export interface HistorySearchPaletteProps {
   readonly open: boolean;
   readonly query: string;

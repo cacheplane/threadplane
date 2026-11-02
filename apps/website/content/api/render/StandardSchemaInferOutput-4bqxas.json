@@ -1,0 +1,82 @@
+{
+  "name": "StandardSchemaInferOutput",
+  "entrypointId": "render",
+  "kind": "TypeAlias",
+  "href": "/docs/api/render/StandardSchemaInferOutput",
+  "canonicalReference": "@threadplane/render!StandardSchemaInferOutput:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Infers the validated output type advertised by a Standard Schema validator.",
+  "declarations": [
+    {
+      "name": "StandardSchemaInferOutput",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/render!StandardSchemaInferOutput:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type StandardSchemaInferOutput<Schema extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "StandardSchemaV1",
+          "canonicalReference": "@threadplane/render!StandardSchemaV1:interface",
+          "href": "/docs/api/render/StandardSchemaV1"
+        },
+        {
+          "kind": "Content",
+          "text": "> = "
+        },
+        {
+          "kind": "Reference",
+          "text": "NonNullable",
+          "canonicalReference": "!NonNullable:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<Schema['~standard']['types']>['output']"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Infers the validated output type advertised by a Standard Schema validator.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/standard-schema.ts",
+        "line": 60
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "Schema",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          }
+        }
+      ],
+      "typeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/standard-schema.ts",
+    "line": 60
+  }
+}

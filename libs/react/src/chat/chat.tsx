@@ -7,6 +7,7 @@ import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList } from './message-list.js';
 
+/** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
   extends Pick<
     ChatInputProps,

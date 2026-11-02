@@ -1,0 +1,54 @@
+{
+  "name": "DevelopmentMilestone",
+  "entrypointId": "telemetry/browser",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/browser/DevelopmentMilestone",
+  "canonicalReference": "@threadplane/telemetry!DevelopmentMilestone:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Closed set of development progress milestones deduplicated by integration within an inactivity session.",
+  "declarations": [
+    {
+      "name": "DevelopmentMilestone",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!DevelopmentMilestone:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DevelopmentMilestone = "
+        },
+        {
+          "kind": "Content",
+          "text": "'transport.connected' | 'runtime.first_stream_completed' | 'thread.persisted' | 'interrupt.handled' | 'generative_ui.rendered'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Closed set of development progress milestones deduplicated by integration within an inactivity session.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/development/types.ts",
+        "line": 3
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/development/types.ts",
+    "line": 3
+  }
+}

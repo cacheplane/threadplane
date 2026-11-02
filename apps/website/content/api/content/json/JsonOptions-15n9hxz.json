@@ -1,0 +1,79 @@
+{
+  "name": "JsonOptions",
+  "entrypointId": "content/json",
+  "kind": "Interface",
+  "href": "/docs/api/content/json/JsonOptions",
+  "canonicalReference": "@threadplane/content!JsonOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls whether invalid same-generation document transitions throw (the default) or rebuild the parser.",
+  "declarations": [
+    {
+      "name": "JsonOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!JsonOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface JsonOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Controls whether invalid same-generation document transitions throw (the default) or rebuild the parser.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "violationPolicy",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!JsonOptions#violationPolicy:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly violationPolicy?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'throw' | 'rebuild'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/json/types.ts",
+            "line": 67
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 66
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 66
+  }
+}

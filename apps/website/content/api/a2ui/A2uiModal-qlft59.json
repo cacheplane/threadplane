@@ -1,0 +1,161 @@
+{
+  "name": "A2uiModal",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiModal",
+  "canonicalReference": "@threadplane/a2ui!A2uiModal:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Basic-catalog modal referencing separate trigger and content component IDs.",
+  "declarations": [
+    {
+      "name": "A2uiModal",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiModal:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiModal extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Basic-catalog modal referencing separate trigger and content component IDs.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiModal#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "'Modal'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 170
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiModal#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 172
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "trigger",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiModal#trigger:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "trigger: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 171
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 169
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 169
+  }
+}

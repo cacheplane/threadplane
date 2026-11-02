@@ -1,0 +1,153 @@
+{
+  "name": "ChatRenderEvent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ChatRenderEvent",
+  "canonicalReference": "@threadplane/chat!ChatRenderEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A rendered UI event associated with its transcript message and optional surface identifier.",
+  "declarations": [
+    {
+      "name": "ChatRenderEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ChatRenderEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatRenderEvent "
+        }
+      ],
+      "docs": {
+        "summary": "A rendered UI event associated with its transcript message and optional surface identifier.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "event",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRenderEvent#event:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderEvent",
+              "canonicalReference": "@threadplane/chat!~RenderEvent:type",
+              "href": "/docs/api/render/RenderEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "messageIndex",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRenderEvent#messageIndex:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageIndex: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "surfaceId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatRenderEvent#surfaceId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surfaceId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat/chat-render-event.ts",
+    "line": 4
+  }
+}

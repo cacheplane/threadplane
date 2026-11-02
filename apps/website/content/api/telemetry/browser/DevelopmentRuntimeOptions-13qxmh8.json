@@ -1,0 +1,224 @@
+{
+  "name": "DevelopmentRuntimeOptions",
+  "entrypointId": "telemetry/browser",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/browser/DevelopmentRuntimeOptions",
+  "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Package metadata and an optional dynamic enablement policy for a lazy development runtime handle.\nCollection requires a matching integration/package pair, a valid version, and the runtime's development/browser checks.",
+  "declarations": [
+    {
+      "name": "DevelopmentRuntimeOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface DevelopmentRuntimeOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Package metadata and an optional dynamic enablement policy for a lazy development runtime handle.\nCollection requires a matching integration/package pair, a valid version, and the runtime's development/browser checks.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions#enabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "enabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Evaluated at use and send time; omission allows collection subject to the runtime's other checks.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/development/types.ts",
+            "line": 23
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "installationToken",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions#installationToken:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "installationToken?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Opaque package-local correlation, never identity or authorization.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/development/types.ts",
+            "line": 21
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "integration",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions#integration:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "integration: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DevelopmentIntegration",
+              "canonicalReference": "@threadplane/telemetry!~DevelopmentIntegration:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/development/types.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "packageName",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions#packageName:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "packageName: "
+            },
+            {
+              "kind": "Content",
+              "text": "'@threadplane/langgraph' | '@threadplane/ag-ui' | '@threadplane/render'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/development/types.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "packageVersion",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!DevelopmentRuntimeOptions#packageVersion:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "packageVersion: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/development/types.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/development/types.ts",
+        "line": 13
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/development/types.ts",
+    "line": 13
+  }
+}

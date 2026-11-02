@@ -1,0 +1,66 @@
+{
+  "name": "CHAT_LIFECYCLE",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/CHAT_LIFECYCLE",
+  "canonicalReference": "@threadplane/chat!CHAT_LIFECYCLE:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token for the lifecycle signals provided by a chat component.",
+  "declarations": [
+    {
+      "name": "CHAT_LIFECYCLE",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!CHAT_LIFECYCLE:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "CHAT_LIFECYCLE: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatLifecycle",
+          "canonicalReference": "@threadplane/chat!ChatLifecycle:interface",
+          "href": "/docs/api/chat/ChatLifecycle"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token for the lifecycle signals provided by a chat component.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/lifecycle.ts",
+        "line": 16
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/lifecycle.ts",
+    "line": 16
+  }
+}

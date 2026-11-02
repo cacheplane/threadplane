@@ -17,6 +17,7 @@ import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-butt
 import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
 
+/** Hosts an agent chat in a toggleable side panel alongside projected application content. */
 @Component({
   selector: 'chat-sidebar',
   standalone: true,

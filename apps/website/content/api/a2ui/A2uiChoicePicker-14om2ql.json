@@ -1,0 +1,329 @@
+{
+  "name": "A2uiChoicePicker",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiChoicePicker",
+  "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Basic-catalog single- or multiple-choice input whose selected values are a dynamic string list.",
+  "declarations": [
+    {
+      "name": "A2uiChoicePicker",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiChoicePicker extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": ", "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiCheckable",
+          "canonicalReference": "@threadplane/a2ui!A2uiCheckable:interface",
+          "href": "/docs/api/a2ui/A2uiCheckable"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Basic-catalog single- or multiple-choice input whose selected values are a dynamic string list.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "'ChoicePicker'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 219
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "displayStyle",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#displayStyle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "displayStyle?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'checkbox' | 'chips'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 223
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "filterable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#filterable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "filterable?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 224
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "label?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicString",
+              "canonicalReference": "@threadplane/a2ui!DynamicString:type",
+              "href": "/docs/api/a2ui/DynamicString"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 225
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "options",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#options:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "options: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        label: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicString",
+              "canonicalReference": "@threadplane/a2ui!DynamicString:type",
+              "href": "/docs/api/a2ui/DynamicString"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        value: string;\n    }[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 220
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicStringList",
+              "canonicalReference": "@threadplane/a2ui!DynamicStringList:type",
+              "href": "/docs/api/a2ui/DynamicStringList"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 221
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "variant",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiChoicePicker#variant:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "variant?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'mutuallyExclusive' | 'multipleSelection'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 222
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 218
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 218
+  }
+}

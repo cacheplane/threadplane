@@ -1,0 +1,238 @@
+{
+  "name": "ThreadRoutingConfig",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ThreadRoutingConfig",
+  "canonicalReference": "@threadplane/chat!ThreadRoutingConfig:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Configures synchronization between the active thread signal and Angular router URLs.",
+  "declarations": [
+    {
+      "name": "ThreadRoutingConfig",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ThreadRoutingConfig:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadRoutingConfig "
+        }
+      ],
+      "docs": {
+        "summary": "Configures synchronization between the active thread signal and Angular router URLs.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "navigationExtras",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig#navigationExtras:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "navigationExtras?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "NavigationExtras",
+              "canonicalReference": "@angular/router!NavigationExtras:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Extras merged into every navigate (default `{ queryParamsHandling: 'preserve' }`).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/routing/thread-routing.ts",
+            "line": 19
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "threadId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig#threadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "threadId: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The app-owned source-of-truth signal for the active thread id.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/routing/thread-routing.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "threadIdFromUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig#threadIdFromUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "threadIdFromUrl?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(url: string) => string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Extract the thread id from a URL (null = bare). Default: last non-empty path segment.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/routing/thread-routing.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "toCommands",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig#toCommands:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toCommands?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(id: string | null) => unknown[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Router commands for a thread id (or the bare/welcome path when null).\n Default: `(id) => (id ? ['/', id] : ['/'])`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/routing/thread-routing.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "validate",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ThreadRoutingConfig#validate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "validate?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(id: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional async validity check; on `false` the helper redirects to the bare path\n (`replaceUrl: true`). LangGraph apps pass `id => threads.getThread(id).then(Boolean)`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/routing/thread-routing.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/routing/thread-routing.ts",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/routing/thread-routing.ts",
+    "line": 7
+  }
+}

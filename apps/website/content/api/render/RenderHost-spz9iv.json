@@ -1,0 +1,254 @@
+{
+  "name": "RenderHost",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/RenderHost",
+  "canonicalReference": "@threadplane/render!RenderHost:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The element-scoped host a mounted view component talks back through.\nAgent-agnostic: `result(value)` just means \"this component produced a\nvalue\"; the render lib surfaces it as a RenderResultEvent and never\ninterprets it. Provided per-element by RenderElementComponent, and once\nper row for a repeating element, so `emit` carries the row that fired it\nand `{ $item: … }` action params resolve in that row's scope.",
+  "declarations": [
+    {
+      "name": "RenderHost",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!RenderHost:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderHost "
+        }
+      ],
+      "docs": {
+        "summary": "The element-scoped host a mounted view component talks back through.\nAgent-agnostic: `result(value)` just means \"this component produced a\nvalue\"; the render lib surfaces it as a RenderResultEvent and never\ninterprets it. Provided per-element by RenderElementComponent, and once\nper row for a repeating element, so `emit` carries the row that fired it\nand `{ $item: … }` action params resolve in that row's scope.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "emit",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/render!RenderHost#emit:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "emit(event: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fire a named event; routed to the element's `on[event]` handlers.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/render-host.ts",
+            "line": 15
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "event",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "result",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/render!RenderHost#result:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "result(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Announce this component's result value (e.g. a HITL submission).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/render-host.ts",
+            "line": 17
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "set",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/render!RenderHost#set:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "set(path: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Write a value to the render state store at a JSON-Pointer path.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/contexts/render-host.ts",
+            "line": 13
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "path",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/contexts/render-host.ts",
+        "line": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/render-host.ts",
+    "line": 11
+  }
+}

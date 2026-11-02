@@ -200,7 +200,8 @@ export function WebsiteWorkspaceSurface({
       })),
     }));
   }, [resolution, selectedVariant, navigationTree]);
-  const unavailableReact = frontend === 'react' && !selectedVariant;
+  const apiReference = Boolean(docsContext?.apiContext);
+  const unavailableReact = frontend === 'react' && !selectedVariant && !apiReference;
   const selectedResolution: WorkspaceResolution =
     selectedVariant?.resolution ??
     (unavailableReact
@@ -424,7 +425,7 @@ export function WebsiteWorkspaceSurface({
   return (
     <ThemeProvider theme="light">
       <div className="website-workspace-host" data-website-workspace-host="">
-        {(Boolean(frontendVariants?.react) || frontend === 'react') && (
+        {!apiReference && (Boolean(frontendVariants?.react) || frontend === 'react') && (
           <div className="website-workspace-frontend">
             <label>
               Example UI{' '}
@@ -477,7 +478,7 @@ export function WebsiteWorkspaceSurface({
                   to view its documentation and example.
                 </p>
               </article>
-            ) : frontend === 'react' ? (
+            ) : frontend === 'react' && !apiReference ? (
               reactDocsSlot
             ) : (
               docsSlot

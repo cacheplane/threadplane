@@ -1,0 +1,51 @@
+{
+  "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/middleware/langgraph/THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+  "canonicalReference": "@threadplane/middleware!THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Drain all writers first. This fences old INSERT/UPSERT factory statements,\nnot custom direct UPDATE writers. Historical results remain uncertified.",
+  "declarations": [
+    {
+      "name": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/middleware!THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"\\nBEGIN;\\nLOCK TABLE threadplane_client_tool_executions IN ACCESS EXCLUSIVE MODE;\\nALTER TABLE threadplane_client_tool_executions\\n  ADD COLUMN IF NOT EXISTS invocation text,\\n  ADD COLUMN IF NOT EXISTS owner_token text,\\n  ADD COLUMN IF NOT EXISTS encoded_result text;\\nUPDATE threadplane_client_tool_executions\\nSET owner_token = 'legacy-unknown'\\nWHERE owner_token IS NULL;\\nALTER TABLE threadplane_client_tool_executions\\n  ALTER COLUMN owner_token DROP DEFAULT,\\n  ALTER COLUMN owner_token SET NOT NULL;\\nCOMMIT;\\n\""
+        }
+      ],
+      "docs": {
+        "summary": "Drain all writers first. This fences old INSERT/UPSERT factory statements,\nnot custom direct UPDATE writers. Historical results remain uncertified.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+        "line": 20
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/postgres-tool-execution-schema.ts",
+    "line": 20
+  }
+}

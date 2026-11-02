@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownLinkComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownLinkComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownLinkComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a markdown link with its child nodes as the label and an optional title.",
+  "declarations": [
+    {
+      "name": "MarkdownLinkComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownLinkComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownLinkComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a markdown link with its child nodes as the label and an optional title.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownLinkComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownLinkNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownLinkNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-link.component.ts",
+            "line": 15
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-link.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-link",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownLinkNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-link.component.ts",
+    "line": 7
+  }
+}

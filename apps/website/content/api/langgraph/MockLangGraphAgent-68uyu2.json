@@ -1,0 +1,1211 @@
+{
+  "name": "MockLangGraphAgent",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/MockLangGraphAgent",
+  "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A LangGraphAgent mock with writable signals for easy test control.\n\nBuilds on the runtime-neutral [MockAgent](/docs/api/chat/MockAgent) from `@threadplane/chat`\n(which supplies the neutral `Agent`-contract writable signals plus\n`submit`/`stop`/`regenerate` call tracking) and layers the LangGraph-specific\nwritable signals on top.\n\nCast the result of `mockLangGraphAgent()` to this type to access\nwritable signals without unsafe casts in test files.",
+  "declarations": [
+    {
+      "name": "MockLangGraphAgent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MockLangGraphAgent extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "LangGraphAgent",
+          "canonicalReference": "@threadplane/langgraph!LangGraphAgent:interface",
+          "href": "/docs/api/langgraph/LangGraphAgent"
+        },
+        {
+          "kind": "Content",
+          "text": "<any, any>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "A LangGraphAgent mock with writable signals for easy test control.\n\nBuilds on the runtime-neutral [MockAgent](/docs/api/chat/MockAgent) from `@threadplane/chat`\n(which supplies the neutral `Agent`-contract writable signals plus\n`submit`/`stop`/`regenerate` call tracking) and layers the LangGraph-specific\nwritable signals on top.\n\nCast the result of `mockLangGraphAgent()` to this type to access\nwritable signals without unsafe casts in test files.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "_internal",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#_internal:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "_internal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MockAgent",
+              "canonicalReference": "@threadplane/langgraph!~MockAgent:interface",
+              "href": "/docs/api/chat/MockAgent"
+            },
+            {
+              "kind": "Content",
+              "text": "['_internal']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 56
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "activeSubagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#activeSubagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "activeSubagents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentStreamRef",
+              "canonicalReference": "@threadplane/langgraph!SubagentStreamRef:interface",
+              "href": "/docs/api/langgraph/SubagentStreamRef"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 70
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "branch",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#branch:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "branch: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 66
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "customEvents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#customEvents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "customEvents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CustomStreamEvent",
+              "canonicalReference": "@threadplane/langgraph!CustomStreamEvent:interface",
+              "href": "/docs/api/langgraph/CustomStreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 71
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentError",
+              "canonicalReference": "@threadplane/langgraph!~AgentError:class",
+              "href": "/docs/api/chat/AgentError"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 47
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "experimentalBranchTree",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#experimentalBranchTree:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "experimentalBranchTree: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentBranchTree",
+              "canonicalReference": "@threadplane/langgraph!AgentBranchTree:interface",
+              "href": "/docs/api/langgraph/AgentBranchTree"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 68
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "hasValue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#hasValue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hasValue: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 60
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "history",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#history:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "history: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentCheckpoint",
+              "canonicalReference": "@threadplane/langgraph!~AgentCheckpoint:interface",
+              "href": "/docs/api/chat/AgentCheckpoint"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 51
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "interrupt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/langgraph!~AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 49
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "isLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#isLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isLoading: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 46
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "isThreadLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#isThreadLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isThreadLoading: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 69
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphHistory",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#langGraphHistory:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphHistory: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 67
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphInterrupts",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#langGraphInterrupts:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphInterrupts: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Interrupt",
+              "canonicalReference": "@langchain/langgraph-sdk!Interrupt:interface",
+              "href": "/docs/api/langgraph/Interrupt"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 62
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphMessages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#langGraphMessages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphMessages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@langchain/core!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 59
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "langGraphToolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#langGraphToolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "langGraphToolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallWithResult",
+              "canonicalReference": "@langchain/langgraph-sdk!ToolCallWithResult:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 63
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/langgraph!~Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 44
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "queue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#queue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "queue: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueue",
+              "canonicalReference": "@threadplane/langgraph!AgentQueue:interface",
+              "href": "/docs/api/langgraph/AgentQueue"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 65
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentStatus",
+              "canonicalReference": "@threadplane/langgraph!~AgentStatus:type",
+              "href": "/docs/api/chat/AgentStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 45
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "stopCount",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#stopCount:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stopCount: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MockAgent",
+              "canonicalReference": "@threadplane/langgraph!~MockAgent:interface",
+              "href": "/docs/api/chat/MockAgent"
+            },
+            {
+              "kind": "Content",
+              "text": "['stopCount']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 55
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "subagents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/langgraph!~Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 50
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "submitCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#submitCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submitCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MockAgent",
+              "canonicalReference": "@threadplane/langgraph!~MockAgent:interface",
+              "href": "/docs/api/chat/MockAgent"
+            },
+            {
+              "kind": "Content",
+              "text": "['submitCalls']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 54
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/langgraph!~ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 48
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolProgress",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#toolProgress:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolProgress: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolProgress",
+              "canonicalReference": "@langchain/langgraph-sdk!ToolProgress:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 64
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!MockLangGraphAgent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "WritableSignal",
+              "canonicalReference": "@angular/core!WritableSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+            "line": 61
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+        "line": 39
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
+    "line": 39
+  }
+}

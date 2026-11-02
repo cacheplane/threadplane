@@ -1,0 +1,115 @@
+{
+  "name": "AbstractEvent",
+  "entrypointId": "chat/testing",
+  "kind": "Interface",
+  "href": "/docs/api/chat/testing/AbstractEvent",
+  "canonicalReference": "@threadplane/chat!AbstractEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A provider-neutral reasoning or response-text event used by adapter conformance fixtures.",
+  "declarations": [
+    {
+      "name": "AbstractEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AbstractEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AbstractEvent "
+        }
+      ],
+      "docs": {
+        "summary": "A provider-neutral reasoning or response-text event used by adapter conformance fixtures.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "delta",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AbstractEvent#delta:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "delta?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/reasoning-fixture.ts",
+            "line": 33
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AbstractEvent#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "kind: "
+            },
+            {
+              "kind": "Content",
+              "text": "'reasoning-start' | 'reasoning-chunk' | 'reasoning-end' | 'text-start' | 'text-chunk' | 'text-end'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/testing/reasoning-fixture.ts",
+            "line": 26
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/testing/reasoning-fixture.ts",
+        "line": 25
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/reasoning-fixture.ts",
+    "line": 25
+  }
+}

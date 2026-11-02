@@ -76,7 +76,7 @@ export default async function LangGraphPage() {
           { claim: 'A typed, signal-based handle, no args', api: 'injectAgent()' },
           { claim: 'Deterministic tests without a backend', api: 'MockAgentTransport' },
         ]}
-        cta={{ label: 'API reference', href: '/docs/langgraph/api/inject-agent' }}
+        cta={{ label: 'API reference', href: '/docs/api/langgraph' }}
         visual={<MediumSwitcher sectionId="lib-langgraph" panes={panes} />}
       />
 

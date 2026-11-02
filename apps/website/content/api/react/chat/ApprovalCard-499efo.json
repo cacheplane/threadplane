@@ -1,0 +1,88 @@
+{
+  "name": "ApprovalCard",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ApprovalCard",
+  "canonicalReference": "@threadplane/react!ApprovalCard:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Inline approval presentation with app-authored body and explicit actions.",
+  "declarations": [
+    {
+      "name": "ApprovalCard",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ApprovalCard:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ApprovalCard(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ApprovalCardProps",
+          "canonicalReference": "@threadplane/react!ApprovalCardProps:interface",
+          "href": "/docs/api/react/chat/ApprovalCardProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Inline approval presentation with app-authored body and explicit actions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/approval-card.tsx",
+        "line": 22
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ children, actions, title, disabled, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/approval-card.tsx",
+    "line": 22
+  }
+}

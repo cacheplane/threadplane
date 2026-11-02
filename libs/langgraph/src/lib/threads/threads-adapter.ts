@@ -40,6 +40,7 @@ export interface LangGraphThreadsConfig {
   titleFallback?: string;
 }
 
+/** Injection token supplying the thread adapter's API URL and fallback thread title. */
 export const LANGGRAPH_THREADS_CONFIG = new InjectionToken<LangGraphThreadsConfig>(
   'LANGGRAPH_THREADS_CONFIG',
 );
@@ -51,7 +52,7 @@ export const LANGGRAPH_CLIENT = new InjectionToken<Client>('LANGGRAPH_CLIENT');
 
 /**
  * SDK-backed thread store. Wraps `client.threads.*` and maps SDK
- * threads to the framework's {@link Thread} type for direct use with
+ * threads to the framework's {@link @threadplane/chat#Thread | Thread} type for direct use with
  * `<chat-thread-list>` / `<chat-sidenav>`.
  *
  * Consumers wire the framework's `ThreadActionAdapter` to instance

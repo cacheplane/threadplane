@@ -1,0 +1,89 @@
+{
+  "name": "ClientToolExecutionOptions",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolExecutionOptions",
+  "canonicalReference": "@threadplane/chat!ClientToolExecutionOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Execution policy options for browser-executed function tools.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolExecutionOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutionOptions extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolContinuationOptions",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationOptions:interface",
+          "href": "/docs/api/chat/ClientToolContinuationOptions"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Execution policy options for browser-executed function tools.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "idempotent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionOptions#idempotent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly idempotent?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True when the handler may safely re-run and should skip durable pre-claims.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 20
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 20
+  }
+}

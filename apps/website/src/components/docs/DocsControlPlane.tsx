@@ -19,12 +19,15 @@ import {
 } from '@threadplane/ui-react';
 import { getLibraryConfig, type LibraryId } from '../../lib/docs-config';
 import { DocsNavigation } from './DocsSidebar';
+import { ApiNavigation, type ApiNavigationProps } from './api/ApiNavigation';
 
 export interface DocsControlPlaneProps {
   /** `null` on a library-neutral docs page, e.g. /docs/choosing-an-adapter. */
   activeLibrary: LibraryId | null;
   activeSection: string;
   activeSlug: string;
+  /** Generated reference navigation, used by both the desktop pane and mobile sheet. */
+  apiContext?: ApiNavigationProps;
   /**
    * Where the Run rail item goes on a page that has no example of its own.
    *
@@ -45,6 +48,7 @@ export function DocsContextContent({
   activeLibrary,
   activeSection,
   activeSlug,
+  apiContext,
   mobile = false,
   onNavigate,
   onSearchHandoff,
@@ -85,11 +89,11 @@ export function DocsContextContent({
       </button>
 
       <ControlPlaneSection
-        title="Learn"
+        title={apiContext ? 'API Reference' : 'Learn'}
         open={preferences.expanded.Learn ?? true}
         onOpenChange={(open) => preferences.setExpanded('Learn', open)}
       >
-        <DocsNavigation
+        {apiContext ? <ApiNavigation {...apiContext} onNavigate={onNavigate} resolveHref={resolveHref} /> : <DocsNavigation
           activeLibrary={activeLibrary}
           activeSection={activeSection}
           activeSlug={activeSlug}
@@ -97,7 +101,7 @@ export function DocsContextContent({
           onExpandedChange={preferences.setExpanded}
           onNavigate={onNavigate}
           resolveHref={resolveHref}
-        />
+        />}
       </ControlPlaneSection>
 
       {library?.demoUrl ? (
@@ -118,9 +122,9 @@ export function DocsContextContent({
 }
 
 export function DocsControlPlane(props: DocsControlPlaneProps) {
-  const currentPath = props.activeLibrary
+  const currentPath = props.apiContext?.activeHref ?? (props.activeLibrary
     ? `/docs/${props.activeLibrary}/${props.activeSection}/${props.activeSlug}`
-    : '/docs';
+    : '/docs');
   const disabledReason = (mode: 'Run' | 'Code' | 'API') =>
     `${mode} is unavailable because this page has no workspace capability.`;
 

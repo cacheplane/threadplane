@@ -4,6 +4,7 @@ import { A2UI_BASIC_CATALOG_ID, A2UI_WIRE_VERSION, type A2uiMessage } from '@thr
 import type { A2uiSurfaceStore } from './surface-store';
 import { normalizeEnvelopeArgs } from './envelope-normalizer';
 
+/** Feeds cumulative tool argument JSON into an A2UI surface store while tracking malformed streams. */
 export interface PartialArgsBridge {
   /**
    * Replace the cumulative argument-string buffer for `toolCallId` with
@@ -159,7 +160,7 @@ function isValidJsonPrefix(s: string): boolean {
 /**
  * Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds
  * the surface store envelope-by-envelope as the parent LLM streams its
- * tool_call.arguments JSON. Uses @cacheplane/partial-json to extract
+ * tool_call.arguments JSON. Uses `@cacheplane/partial-json` to extract
  * structurally-complete envelope objects from the growing args string.
  *
  * Synthesis safety net: v0.9 requires a `createSurface` envelope before

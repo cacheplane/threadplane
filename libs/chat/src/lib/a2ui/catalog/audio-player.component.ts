@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 
+/** Renders an A2UI audio URL with native playback controls and an optional description. */
 @Component({
   selector: 'a2ui-audio-player',
   standalone: true,

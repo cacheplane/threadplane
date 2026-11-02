@@ -1,0 +1,151 @@
+{
+  "name": "MarkdownDocument",
+  "entrypointId": "content/markdown",
+  "kind": "Interface",
+  "href": "/docs/api/content/markdown/MarkdownDocument",
+  "canonicalReference": "@threadplane/content!MarkdownDocument:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Cumulative Markdown source for a generation; streaming updates append until completion, and a new generation replaces it.",
+  "declarations": [
+    {
+      "name": "MarkdownDocument",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!MarkdownDocument:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MarkdownDocument "
+        }
+      ],
+      "docs": {
+        "summary": "Cumulative Markdown source for a generation; streaming updates append until completion, and a new generation replaces it.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!MarkdownDocument#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "generation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!MarkdownDocument#generation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly generation: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!MarkdownDocument#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly phase: "
+            },
+            {
+              "kind": "Content",
+              "text": "'streaming' | 'complete'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/markdown/types.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/markdown/types.ts",
+        "line": 25
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/markdown/types.ts",
+    "line": 25
+  }
+}

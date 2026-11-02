@@ -1,0 +1,250 @@
+{
+  "name": "StreamEvent",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/StreamEvent",
+  "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An event emitted by a LangGraph stream.",
+  "declarations": [
+    {
+      "name": "StreamEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StreamEvent "
+        }
+      ],
+      "docs": {
+        "summary": "An event emitted by a LangGraph stream.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "IndexSignature",
+          "kind": "IndexSignature",
+          "canonicalReference": "@threadplane/langgraph!StreamEvent:index(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "[key: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "]: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 47
+          },
+          "overloadIndex": 1,
+          "isReadonly": false,
+          "parameters": [
+            {
+              "parameterName": "key",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "messageMetadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!StreamEvent#messageMetadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messageMetadata?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 46
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!StreamEvent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 45
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "namespace",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!StreamEvent#namespace:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "namespace?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 44
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!StreamEvent#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'values' | `values|${string}` | 'messages' | `messages|${string}` | `messages/${string}` | `messages/${string}|${string}` | 'updates' | `updates|${string}` | 'tools' | `tools|${string}` | 'custom' | `custom|${string}` | 'error' | `error|${string}` | 'metadata' | 'checkpoints' | `checkpoints|${string}` | 'tasks' | `tasks|${string}` | 'debug' | `debug|${string}` | 'events' | `events|${string}` | 'interrupt' | 'interrupts'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Event type identifier (e.g., 'values', 'messages', 'error', 'interrupt').",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/runtime/transport.types.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/runtime/transport.types.ts",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/runtime/transport.types.ts",
+    "line": 14
+  }
+}

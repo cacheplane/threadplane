@@ -4,6 +4,7 @@ import { ChatTraceComponent, type TraceState } from '../../primitives/chat-trace
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import type { ToolCallStatus } from '../../agent';
 
+/** Tool invocation details consumed by the default tool call card. */
 export interface ToolCallInfo {
   id: string;
   name: string;
@@ -13,6 +14,7 @@ export interface ToolCallInfo {
   status?: ToolCallStatus;
 }
 
+/** Displays a tool call’s status, arguments, and optional result in a collapsible trace. */
 @Component({
   selector: 'chat-tool-call-card',
   standalone: true,

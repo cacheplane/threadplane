@@ -1,0 +1,165 @@
+{
+  "name": "A2uiAudioPlayer",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiAudioPlayer",
+  "canonicalReference": "@threadplane/a2ui!A2uiAudioPlayer:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Basic-catalog audio player with a dynamic media URL and optional description.",
+  "declarations": [
+    {
+      "name": "A2uiAudioPlayer",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiAudioPlayer:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiAudioPlayer extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Basic-catalog audio player with a dynamic media URL and optional description.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiAudioPlayer#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "'AudioPlayer'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 122
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "description",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiAudioPlayer#description:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "description?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicString",
+              "canonicalReference": "@threadplane/a2ui!DynamicString:type",
+              "href": "/docs/api/a2ui/DynamicString"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 124
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "url",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiAudioPlayer#url:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "url: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicString",
+              "canonicalReference": "@threadplane/a2ui!DynamicString:type",
+              "href": "/docs/api/a2ui/DynamicString"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 123
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 121
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 121
+  }
+}

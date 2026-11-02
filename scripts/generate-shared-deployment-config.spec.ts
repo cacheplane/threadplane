@@ -1,16 +1,49 @@
 // scripts/generate-shared-deployment-config.spec.ts
-import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'child_process';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { basename, dirname, resolve } from 'path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { capabilities } from '@threadplane/cockpit-registry';
 
 describe('generate-shared-deployment-config', () => {
-  it('includes the canonical-demo chat graph in the aggregated manifest', () => {
-    const root = resolve(__dirname, '..');
-    execSync('npx tsx scripts/generate-shared-deployment-config.ts', {
+  const repoRoot = resolve(__dirname, '..');
+  let root = '';
+
+  afterAll(() => {
+    if (root) rmSync(root, { recursive: true, force: true });
+  });
+
+  beforeAll(() => {
+    root = mkdtempSync(resolve(tmpdir(), 'shared-deployment-config-'));
+    const pythonDirs = new Set([
+      ...capabilities.flatMap((capability) =>
+        capability.pythonDir ? [capability.pythonDir] : []
+      ),
+      'examples/chat/python',
+    ]);
+    for (const pythonDir of pythonDirs) {
+      const destination = resolve(root, pythonDir);
+      mkdirSync(dirname(destination), { recursive: true });
+      cpSync(resolve(repoRoot, pythonDir), destination, {
+        recursive: true,
+        // Local environments and bytecode are not authored fixture inputs.
+        filter: (source) => !['.venv', '__pycache__'].includes(basename(source)),
+      });
+    }
+    // Exercise the real CLI once; all cases read its freshly staged output.
+    execFileSync(process.execPath, [
+      resolve(repoRoot, 'node_modules/tsx/dist/cli.mjs'),
+      '--tsconfig',
+      resolve(repoRoot, 'tsconfig.base.json'),
+      resolve(repoRoot, 'scripts/generate-shared-deployment-config.ts'),
+    ], {
       cwd: root,
       stdio: 'pipe',
     });
+  });
+
+  it('includes the canonical-demo chat graph in the aggregated manifest', () => {
     const manifestPath = resolve(root, 'deployments/shared-dev/langgraph.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
       graphs: Record<string, string>;
@@ -26,11 +59,6 @@ describe('generate-shared-deployment-config', () => {
     // uvicorn backends, which made the generator try to read a langgraph.json
     // they don't have — crashing every LangGraph deploy. They must be skipped
     // (they deploy via scripts/generate-ag-ui-deployment-config.ts → Railway).
-    const root = resolve(__dirname, '..');
-    execSync('npx tsx scripts/generate-shared-deployment-config.ts', {
-      cwd: root,
-      stdio: 'pipe',
-    });
     const manifestPath = resolve(root, 'deployments/shared-dev/langgraph.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
       dependencies: string[];
@@ -50,12 +78,6 @@ describe('generate-shared-deployment-config', () => {
     // are hard dependencies of the package itself, so pinning `deepagents`
     // is what brings them; this asserts the lock agrees rather than trusting
     // that.
-    const root = resolve(__dirname, '..');
-    execSync('npx tsx scripts/generate-shared-deployment-config.ts', {
-      cwd: root,
-      stdio: 'pipe',
-    });
-
     const deepAgentAliases = ['da-planning', 'da-filesystem', 'da-subagents', 'da-memory', 'da-skills'];
     for (const alias of deepAgentAliases) {
       const depRoot = resolve(root, 'deployments/shared-dev/deps', alias);
@@ -70,7 +92,6 @@ describe('generate-shared-deployment-config', () => {
   });
 
   it('keeps every deep-agents graph in the aggregated manifest', () => {
-    const root = resolve(__dirname, '..');
     const manifest = JSON.parse(
       readFileSync(resolve(root, 'deployments/shared-dev/langgraph.json'), 'utf8'),
     ) as { graphs: Record<string, string> };

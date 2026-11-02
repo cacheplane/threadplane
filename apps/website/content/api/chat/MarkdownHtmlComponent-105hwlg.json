@@ -1,0 +1,119 @@
+{
+  "name": "MarkdownHtmlComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownHtmlComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownHtmlComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a `html-block` / `html-inline` markdown node as **escaped text** —\nthe raw HTML is shown literally (Angular interpolation auto-escapes it),\nnever injected as live markup. This preserves the pre-0.4 behavior where\nraw HTML was plain text, and keeps the chat XSS-safe: model-emitted\n`<script>`, `<iframe>`, etc. are displayed as text and never executed.",
+  "declarations": [
+    {
+      "name": "MarkdownHtmlComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownHtmlComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownHtmlComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a `html-block` / `html-inline` markdown node as **escaped text** —\nthe raw HTML is shown literally (Angular interpolation auto-escapes it),\nnever injected as live markup. This preserves the pre-0.4 behavior where\nraw HTML was plain text, and keeps the chat XSS-safe: model-emitted\n`<script>`, `<iframe>`, etc. are displayed as text and never executed.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownHtmlComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownHtmlInlineNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownHtmlInlineNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownHtmlBlockNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownHtmlBlockNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-html.component.ts",
+            "line": 22
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-html.component.ts",
+        "line": 15
+      },
+      "angular": {
+        "selector": "chat-md-html",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownHtmlInlineNode | MarkdownHtmlBlockNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-html.component.ts",
+    "line": 15
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "name": "ChatLauncherButtonComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatLauncherButtonComponent",
+  "canonicalReference": "@threadplane/chat!ChatLauncherButtonComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders an open-chat button and emits its clicks.",
+  "declarations": [
+    {
+      "name": "ChatLauncherButtonComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatLauncherButtonComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatLauncherButtonComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders an open-chat button and emits its clicks.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "clicked",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatLauncherButtonComponent#clicked:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly clicked: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fires when the inner <button> receives a click. Prefer this over\n binding `(click)` on the host element — explicit output gives\n consumers (and Playwright) an unambiguous click target that won't\n be intercepted by sibling overlays in higher stacking contexts.\n Native `(click)` on the host still works for back-compat: the\n click event bubbles through unchanged.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
+            "line": 26
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "chat-launcher-button",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "clicked",
+            "alias": "clicked",
+            "required": false,
+            "type": "void"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-launcher-button/chat-launcher-button.component.ts",
+    "line": 6
+  }
+}

@@ -26,7 +26,7 @@ export const renderElementRenderingPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Render Element Rendering (Python)',
-  docsPath: '/docs/render/api/render-spec-component',
+  docsPath: '/docs/render/guides/element-rendering',
   promptAssetPaths: ['cockpit/render/element-rendering/python/prompts/element-rendering.md'],
   codeAssetPaths: [
     'cockpit/render/element-rendering/angular/src/app/element-rendering.component.ts',

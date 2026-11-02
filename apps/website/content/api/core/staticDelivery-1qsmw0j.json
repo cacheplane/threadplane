@@ -1,0 +1,88 @@
+{
+  "name": "staticDelivery",
+  "entrypointId": "core",
+  "kind": "Function",
+  "href": "/docs/api/core/staticDelivery",
+  "canonicalReference": "@threadplane/core!staticDelivery:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Marks static message content as successfully complete, using the message ID as its generation.",
+  "declarations": [
+    {
+      "name": "staticDelivery",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/core!staticDelivery:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function staticDelivery(messageId: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Readonly",
+          "canonicalReference": "!Readonly:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<{\n    readonly generation: string;\n    readonly phase: \"complete\";\n    readonly outcome: "
+        },
+        {
+          "kind": "Reference",
+          "text": "CompleteOutcome",
+          "canonicalReference": "@threadplane/core!CompleteOutcome:type",
+          "href": "/docs/api/core/CompleteOutcome"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Marks static message content as successfully complete, using the message ID as its generation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/delivery.ts",
+        "line": 39
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "messageId",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/delivery.ts",
+    "line": 39
+  }
+}

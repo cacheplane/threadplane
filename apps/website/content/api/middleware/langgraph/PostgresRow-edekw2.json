@@ -1,0 +1,59 @@
+{
+  "name": "PostgresRow",
+  "entrypointId": "middleware/langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/middleware/langgraph/PostgresRow",
+  "canonicalReference": "@threadplane/middleware!PostgresRow:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Column-name keyed result row returned by the PostgreSQL query adapter.",
+  "declarations": [
+    {
+      "name": "PostgresRow",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/middleware!PostgresRow:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type PostgresRow = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Column-name keyed result row returned by the PostgreSQL query adapter.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+        "line": 11
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 3
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+    "line": 11
+  }
+}

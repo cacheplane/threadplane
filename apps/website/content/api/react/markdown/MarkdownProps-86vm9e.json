@@ -1,0 +1,81 @@
+{
+  "name": "MarkdownProps",
+  "entrypointId": "react/markdown",
+  "kind": "Interface",
+  "href": "/docs/api/react/markdown/MarkdownProps",
+  "canonicalReference": "@threadplane/react!MarkdownProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies the accepted Markdown snapshot to present, with parser ownership retained by the caller.",
+  "declarations": [
+    {
+      "name": "MarkdownProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MarkdownProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MarkdownProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies the accepted Markdown snapshot to present, with parser ownership retained by the caller.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "snapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MarkdownProps#snapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly snapshot: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownSnapshot",
+              "canonicalReference": "@threadplane/react!~MarkdownSnapshot:interface",
+              "href": "/docs/api/content/markdown/MarkdownSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/markdown/markdown.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/markdown/markdown.tsx",
+        "line": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/markdown/markdown.tsx",
+    "line": 12
+  }
+}

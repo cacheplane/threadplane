@@ -38,8 +38,10 @@ export interface ClientToolContinuationPolicy {
   readonly onLimit?: (event: ClientToolContinuationLimitEvent) => void;
 }
 
+/** The execution phase exposed to a mounted client tool component. */
 export type ClientToolLifecyclePhase = 'running' | 'complete' | 'error';
 
+/** Execution status, result availability, and error details supplied to a client tool view. */
 export interface ClientToolLifecycle {
   readonly id: string;
   readonly name: string;
@@ -50,6 +52,7 @@ export interface ClientToolLifecycle {
   readonly error?: unknown;
 }
 
+/** Schema output properties augmented with optional execution status and lifecycle details. */
 export type ClientToolViewProps<S extends StandardSchemaV1> =
   StandardSchemaInferOutput<S> & {
     readonly status?: ToolCallStatus;
@@ -85,6 +88,7 @@ export interface AnyFunctionToolDef {
   readonly handler: (args: any, context: FunctionToolHandlerContext) => unknown | Promise<unknown>;
 }
 
+/** Defines a schema-backed Angular tool view that the coordinator automatically acknowledges. */
 export interface ViewToolDef<S extends StandardSchemaV1 = StandardSchemaV1, C = unknown> {
   readonly kind: 'view';
   readonly description: string;
@@ -93,6 +97,7 @@ export interface ViewToolDef<S extends StandardSchemaV1 = StandardSchemaV1, C = 
   readonly component: Type<C>;
 }
 
+/** Defines a schema-backed Angular tool view that resolves through a rendered user interaction. */
 export interface AskToolDef<S extends StandardSchemaV1 = StandardSchemaV1, C = unknown> {
   readonly kind: 'ask';
   readonly description: string;

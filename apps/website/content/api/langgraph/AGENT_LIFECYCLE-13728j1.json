@@ -1,0 +1,66 @@
+{
+  "name": "AGENT_LIFECYCLE",
+  "entrypointId": "langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/langgraph/AGENT_LIFECYCLE",
+  "canonicalReference": "@threadplane/langgraph!AGENT_LIFECYCLE:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token exposing the lifecycle signals of the LangGraph agent provided in the current injector.",
+  "declarations": [
+    {
+      "name": "AGENT_LIFECYCLE",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/langgraph!AGENT_LIFECYCLE:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "AGENT_LIFECYCLE: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentLifecycle",
+          "canonicalReference": "@threadplane/langgraph!AgentLifecycle:interface",
+          "href": "/docs/api/langgraph/AgentLifecycle"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token exposing the lifecycle signals of the LangGraph agent provided in the current injector.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/lifecycle.ts",
+        "line": 32
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/lifecycle.ts",
+    "line": 32
+  }
+}

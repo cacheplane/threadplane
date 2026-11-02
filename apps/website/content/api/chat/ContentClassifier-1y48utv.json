@@ -1,0 +1,546 @@
+{
+  "name": "ContentClassifier",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ContentClassifier",
+  "canonicalReference": "@threadplane/chat!ContentClassifier:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Accumulates assistant content and exposes its markdown, json-render, or A2UI representation as signals.",
+  "declarations": [
+    {
+      "name": "ContentClassifier",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ContentClassifier:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ContentClassifier "
+        }
+      ],
+      "docs": {
+        "summary": "Accumulates assistant content and exposes its markdown, json-render, or A2UI representation as signals.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "a2uiSurfaces",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#a2uiSurfaces:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly a2uiSurfaces: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurface",
+              "canonicalReference": "@threadplane/chat!A2uiSurface:interface",
+              "href": "/docs/api/chat/A2uiSurface"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "a2uiSurfaceStates",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#a2uiSurfaceStates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly a2uiSurfaceStates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfaceState",
+              "canonicalReference": "@threadplane/chat!A2uiSurfaceState:interface",
+              "href": "/docs/api/chat/A2uiSurfaceState"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "dispose",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#dispose:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "dispose(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 26
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "elementStates",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#elementStates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly elementStates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "ElementAccumulationState",
+              "canonicalReference": "@threadplane/chat!ElementAccumulationState:interface",
+              "href": "/docs/api/chat/ElementAccumulationState"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "errors",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#errors:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly errors: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "markdown",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#markdown:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly markdown: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "spec",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#spec:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly spec: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Spec",
+              "canonicalReference": "@json-render/core!Spec:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "streaming",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#streaming:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly streaming: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly type: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ContentType",
+              "canonicalReference": "@threadplane/chat!ContentType:type",
+              "href": "/docs/api/chat/ContentType"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "update",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ContentClassifier#update:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "update(content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+            "line": 17
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "content",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+    "line": 16
+  }
+}

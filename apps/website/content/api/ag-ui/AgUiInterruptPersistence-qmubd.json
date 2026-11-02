@@ -1,0 +1,228 @@
+{
+  "name": "AgUiInterruptPersistence",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/AgUiInterruptPersistence",
+  "canonicalReference": "@threadplane/ag-ui!AgUiInterruptPersistence:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned interrupt storage using revision-based writes and optional authoritative recovery reconciliation.",
+  "declarations": [
+    {
+      "name": "AgUiInterruptPersistence",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!AgUiInterruptPersistence:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgUiInterruptPersistence "
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned interrupt storage using revision-based writes and optional authoritative recovery reconciliation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "namespace",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiInterruptPersistence#namespace:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "namespace: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "reconcile",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiInterruptPersistence#reconcile:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reconcile?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(record: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgUiThreadRecord",
+              "canonicalReference": "@threadplane/ag-ui!AgUiThreadRecord:interface",
+              "href": "/docs/api/ag-ui/AgUiThreadRecord"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<{\n        status: 'unknown';\n    } | {\n        status: 'pending' | 'acknowledged' | 'completed';\n        committed: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadSnapshot",
+              "canonicalReference": "@threadplane/ag-ui!ThreadSnapshot:interface",
+              "href": "/docs/api/ag-ui/ThreadSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        session: "
+            },
+            {
+              "kind": "Reference",
+              "text": "InterruptSessionSnapshot",
+              "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot:interface",
+              "href": "/docs/api/ag-ui/InterruptSessionSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    }>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
+            "line": 22
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "store",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiInterruptPersistence#store:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "store: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        load(key: string): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgUiThreadRecord",
+              "canonicalReference": "@threadplane/ag-ui!AgUiThreadRecord:interface",
+              "href": "/docs/api/ag-ui/AgUiThreadRecord"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>;\n        compareAndSwap(key: string, expectedRevision: number | null, next: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgUiThreadRecord",
+              "canonicalReference": "@threadplane/ag-ui!AgUiThreadRecord:interface",
+              "href": "/docs/api/ag-ui/AgUiThreadRecord"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
+            "line": 18
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/interrupt-persistence.ts",
+    "line": 16
+  }
+}

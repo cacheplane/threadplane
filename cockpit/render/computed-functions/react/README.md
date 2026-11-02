@@ -12,4 +12,4 @@ npx nx build cockpit-render-computed-functions-react
 npx nx e2e cockpit-render-computed-functions-react
 ```
 
-The isolated build installs local core/content/React packages and root-locked presentation dependencies. Canonical docs stay at `/docs/render/api/provide-render`; Angular remains the default. Native React runs at `/render/computed-functions/react/` on development port 4619.
+The isolated build installs local core/content/React packages and root-locked presentation dependencies. Canonical docs stay at `/docs/render/guides/computed-functions`; Angular remains the default. Native React runs at `/render/computed-functions/react/` on development port 4619.

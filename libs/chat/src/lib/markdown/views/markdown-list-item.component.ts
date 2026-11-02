@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownListItemNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders a markdown list item with a disabled checkbox for task items. */
 @Component({
   selector: 'chat-md-list-item',
   standalone: true,

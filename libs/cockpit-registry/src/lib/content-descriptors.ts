@@ -569,7 +569,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Element Rendering (Python)',
-    docsPath: '/docs/render/api/render-spec-component',
+    docsPath: '/docs/render/guides/element-rendering',
     promptAssetPaths: [
       'cockpit/render/element-rendering/python/prompts/element-rendering.md',
     ],
@@ -659,7 +659,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Computed Functions (Python)',
-    docsPath: '/docs/render/api/provide-render',
+    docsPath: '/docs/render/guides/computed-functions',
     promptAssetPaths: [
       'cockpit/render/computed-functions/python/prompts/computed-functions.md',
     ],

@@ -1,0 +1,1155 @@
+{
+  "name": "BaseMessage",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Class",
+  "href": "/docs/api/middleware/langgraph/BaseMessage",
+  "canonicalReference": "@threadplane/middleware!BaseMessage:class",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Base class for all types of messages in a conversation. It includes\nproperties like `content`, `name`, and `additional_kwargs`. It also\nincludes methods like `toDict()` and `_getType()`.",
+  "declarations": [
+    {
+      "name": "BaseMessage",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/middleware!BaseMessage:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "declare abstract class BaseMessage<TStructure extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageStructure",
+          "canonicalReference": "@threadplane/middleware!MessageStructure:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageStructure",
+          "canonicalReference": "@threadplane/middleware!MessageStructure:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ", TRole extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageType",
+          "canonicalReference": "@threadplane/middleware!MessageType:type"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "MessageType",
+          "canonicalReference": "@threadplane/middleware!MessageType:type"
+        },
+        {
+          "kind": "Content",
+          "text": "> extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Serializable",
+          "canonicalReference": "@threadplane/middleware!Serializable:class"
+        },
+        {
+          "kind": "Content",
+          "text": " implements "
+        },
+        {
+          "kind": "Reference",
+          "text": "Message",
+          "canonicalReference": "@threadplane/middleware!Message:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<TStructure, TRole>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Base class for all types of messages in a conversation. It includes\nproperties like `content`, `name`, and `additional_kwargs`. It also\nincludes methods like `toDict()` and `_getType()`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "__computed",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#__computed:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly ["
+            },
+            {
+              "kind": "Reference",
+              "text": "MESSAGE_SYMBOL",
+              "canonicalReference": "@threadplane/middleware!MESSAGE_SYMBOL:var"
+            },
+            {
+              "kind": "Content",
+              "text": "]: "
+            },
+            {
+              "kind": "Content",
+              "text": "true"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "_getType",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#_getType:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "_getType(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageType",
+              "canonicalReference": "@threadplane/middleware!MessageType:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "Use .getType() instead or import the proper typeguard.\nFor example:\n```ts\nimport { isAIMessage } from \"@langchain/core/messages\";\n\nconst message = new AIMessage(\"Hello!\");\nisAIMessage(message); // true\n```",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "_printableFields",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#_printableFields:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "get _printableFields(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "_updateId",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#_updateId:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "_updateId(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "[Symbol.hasInstance]",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage.[Symbol.hasInstance]:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "static ["
+            },
+            {
+              "kind": "Reference",
+              "text": "Symbol.hasInstance",
+              "canonicalReference": "!SymbolConstructor#hasInstance"
+            },
+            {
+              "kind": "Content",
+              "text": "](obj: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "obj",
+              "canonicalReference": "@threadplane/middleware!obj"
+            },
+            {
+              "kind": "Content",
+              "text": " is "
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@threadplane/middleware!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageStructure",
+              "canonicalReference": "@threadplane/middleware!MessageStructure:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageToolSet",
+              "canonicalReference": "@threadplane/middleware!MessageToolSet:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">, "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageType",
+              "canonicalReference": "@threadplane/middleware!MessageType:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": true,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "obj",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "[Symbol.toStringTag]",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#[Symbol.toStringTag]:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "get ["
+            },
+            {
+              "kind": "Reference",
+              "text": "Symbol.toStringTag",
+              "canonicalReference": "!SymbolConstructor#toStringTag"
+            },
+            {
+              "kind": "Content",
+              "text": "](): "
+            },
+            {
+              "kind": "Content",
+              "text": "any"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/middleware!BaseMessage:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor(arg: "
+            },
+            {
+              "kind": "Reference",
+              "text": "$InferMessageContent",
+              "canonicalReference": "@threadplane/middleware!$InferMessageContent:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TStructure, TRole> | "
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessageFields",
+              "canonicalReference": "@threadplane/middleware!BaseMessageFields:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TStructure, TRole>"
+            },
+            {
+              "kind": "Content",
+              "text": ");"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `BaseMessage` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "arg",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 5
+              },
+              "isOptional": false
+            }
+          ]
+        },
+        {
+          "name": "additional_kwargs",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#additional_kwargs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "additional_kwargs: "
+            },
+            {
+              "kind": "Reference",
+              "text": "NonNullable",
+              "canonicalReference": "!NonNullable:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessageFields",
+              "canonicalReference": "@threadplane/middleware!BaseMessageFields:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TStructure, TRole>[\"additional_kwargs\"]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "content",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "content: "
+            },
+            {
+              "kind": "Reference",
+              "text": "$InferMessageContent",
+              "canonicalReference": "@threadplane/middleware!$InferMessageContent:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TStructure, TRole>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "contentBlocks",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#contentBlocks:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "get contentBlocks(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ContentBlock.Standard",
+              "canonicalReference": "@threadplane/middleware!ContentBlock.Standard:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "getType",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#getType:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getType(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageType",
+              "canonicalReference": "@threadplane/middleware!MessageType:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "Use .type instead\nThe type of the message.",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "id",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "isInstance",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage.isInstance:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "static isInstance(obj: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "obj",
+              "canonicalReference": "@threadplane/middleware!obj"
+            },
+            {
+              "kind": "Content",
+              "text": " is "
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessage",
+              "canonicalReference": "@threadplane/middleware!BaseMessage:class",
+              "href": "/docs/api/middleware/langgraph/BaseMessage"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": true,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "obj",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "lc_aliases",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#lc_aliases:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "get lc_aliases(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "lc_name",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage.lc_name:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "static lc_name(): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": true,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "lc_namespace",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#lc_namespace:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lc_namespace: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "lc_serializable",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#lc_serializable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lc_serializable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "response_metadata",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#response_metadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "response_metadata: "
+            },
+            {
+              "kind": "Reference",
+              "text": "NonNullable",
+              "canonicalReference": "!NonNullable:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseMessageFields",
+              "canonicalReference": "@threadplane/middleware!BaseMessageFields:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TStructure, TRole>[\"response_metadata\"]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "text",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#text:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "get text(): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Get text content of the message.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toDict",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#toDict:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toDict(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "StoredMessage",
+              "canonicalReference": "@threadplane/middleware!StoredMessage:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "toFormattedString",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#toFormattedString:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toFormattedString(format?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageStringFormat",
+              "canonicalReference": "@threadplane/middleware!MessageStringFormat:type"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "format",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "type",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/middleware!BaseMessage#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "abstract readonly type: "
+            },
+            {
+              "kind": "Content",
+              "text": "TRole"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "TStructure",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "typeParameterName": "TRole",
+          "constraintTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 8
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/middleware/src/langgraph/index.ts",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/index.ts",
+    "line": 5
+  }
+}

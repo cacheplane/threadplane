@@ -11,6 +11,7 @@ type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
   : TRow;
 
+/** Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows. */
 export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly rows: readonly TRow[];
   /**

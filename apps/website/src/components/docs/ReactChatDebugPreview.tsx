@@ -87,7 +87,9 @@ npx nx build cockpit-chat-debug-react
 npx nx e2e cockpit-chat-debug-react
 ~~~
 
-T29 remains partial: historical diff, Replay/Fork callbacks and controls, the full checkpoint tree and broader devtools parity are still planned. The React panel has no Replay or Fork buttons in this slice. The canonical Angular guide retains its own API and behavior.
+When an inspected checkpoint and the current observation are both ready and match the panel's context, the State tab offers **Compare selected checkpoint with current state**. It compares the supplied complete bounded values without another read. Added, removed and changed properties use JSON Pointer paths; changed arrays are shown whole. Invalid or oversized inputs, or an oversized change list, show an unavailable notice rather than a partial comparison or a false no-change result. The standalone private \`StateDiff\` view uses the same explicit debug entry and stylesheet.
+
+T29 remains partial: comparison between historical checkpoints, Replay/Fork callbacks and controls, the full checkpoint tree and broader devtools parity are still planned. The React panel has no Replay or Fork buttons in this slice. The canonical Angular guide retains its own API and behavior.
 `;
 
 export function ReactChatDebugPreview({ exampleCode }: { readonly exampleCode: ExampleCodeContext | null }) {

@@ -1,0 +1,80 @@
+{
+  "name": "captureStreamEnded",
+  "entrypointId": "telemetry/node",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/node/captureStreamEnded",
+  "canonicalReference": "@threadplane/telemetry!captureStreamEnded:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Capture a stream-end event with optional duration for a plain object with nonblank provider and model, suppressing failures.\nOmitted transport becomes `unknown`; the Node client applies validation, opt-outs, and sampling.",
+  "declarations": [
+    {
+      "name": "captureStreamEnded",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!captureStreamEnded:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function captureStreamEnded(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "StreamTelemetry",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry:interface",
+          "href": "/docs/api/telemetry/node/StreamTelemetry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Capture a stream-end event with optional duration for a plain object with nonblank provider and model, suppressing failures.\nOmitted transport becomes `unknown`; the Node client applies validation, opt-outs, and sampling.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 68
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 68
+  }
+}

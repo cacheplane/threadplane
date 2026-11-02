@@ -1,0 +1,263 @@
+{
+  "name": "AgentError",
+  "entrypointId": "core",
+  "kind": "Interface",
+  "href": "/docs/api/core/AgentError",
+  "canonicalReference": "@threadplane/core!AgentError:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Plain display projection. Classification and raw causes remain with the adapter.",
+  "declarations": [
+    {
+      "name": "AgentError",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!AgentError:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentError "
+        }
+      ],
+      "docs": {
+        "summary": "Plain display projection. Classification and raw causes remain with the adapter.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "detail",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#detail:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly detail?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly kind: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentErrorKind",
+              "canonicalReference": "@threadplane/core!AgentErrorKind:type",
+              "href": "/docs/api/core/AgentErrorKind"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "message",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#message:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly message: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "recovery",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#recovery:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly recovery?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentRecovery",
+              "canonicalReference": "@threadplane/core!AgentRecovery:type",
+              "href": "/docs/api/core/AgentRecovery"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "retryable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#retryable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retryable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!AgentError#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly status?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/error.ts",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/contracts/error.ts",
+        "line": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/error.ts",
+    "line": 12
+  }
+}

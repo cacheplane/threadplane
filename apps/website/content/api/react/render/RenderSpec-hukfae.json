@@ -1,0 +1,92 @@
+{
+  "name": "RenderSpec",
+  "entrypointId": "react/render",
+  "kind": "Function",
+  "href": "/docs/api/react/render/RenderSpec",
+  "canonicalReference": "@threadplane/react!RenderSpec:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Present a caller-prepared read-only tree; application code owns validation and state.",
+  "declarations": [
+    {
+      "name": "RenderSpec",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!RenderSpec:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function RenderSpec(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderSpecProps",
+          "canonicalReference": "@threadplane/react!RenderSpecProps:interface",
+          "href": "/docs/api/react/render/RenderSpecProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Present a caller-prepared read-only tree; application code owns validation and state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/render/render-spec.tsx",
+        "line": 147
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ spec, registry, state, functions, loading, fallback, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/render/render-spec.tsx",
+    "line": 147
+  }
+}

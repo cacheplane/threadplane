@@ -1,0 +1,151 @@
+{
+  "name": "AgentInterrupt",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentInterrupt",
+  "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A runtime interrupt payload, its identifier, and whether the agent can resume it.",
+  "declarations": [
+    {
+      "name": "AgentInterrupt",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentInterrupt "
+        }
+      ],
+      "docs": {
+        "summary": "A runtime interrupt payload, its identifier, and whether the agent can resume it.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentInterrupt#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Stable identifier for this interrupt instance.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
+            "line": 4
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "resumable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentInterrupt#resumable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "resumable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True when the runtime supports resuming via `submit({ resume })`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentInterrupt#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Opaque payload the app renders. Runtime-specific shape.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
+            "line": 6
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
+        "line": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-interrupt.ts",
+    "line": 2
+  }
+}

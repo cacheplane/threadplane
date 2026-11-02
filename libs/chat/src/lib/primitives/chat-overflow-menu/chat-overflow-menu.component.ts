@@ -10,6 +10,7 @@ import {
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_OVERFLOW_MENU_STYLES } from '../../styles/chat-overflow-menu.styles';
 
+/** An action menu item with an identifier, label, optional tone, and disabled state. */
 export interface OverflowMenuItem {
   /** Stable id emitted via (itemSelected). */
   id: string;
@@ -20,6 +21,7 @@ export interface OverflowMenuItem {
   disabled?: boolean;
 }
 
+/** Displays a keyboard-navigable action menu anchored to an element or viewport coordinates. */
 @Component({
   selector: 'chat-overflow-menu',
   standalone: true,

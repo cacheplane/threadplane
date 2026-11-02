@@ -1,0 +1,467 @@
+{
+  "name": "ChatDebugProps",
+  "entrypointId": "react/debug",
+  "kind": "Interface",
+  "href": "/docs/api/react/debug/ChatDebugProps",
+  "canonicalReference": "@threadplane/react!ChatDebugProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Passive view requests are synchronous notifications, never readers. The app\nowns SDK calls, cancellation, stale-result checks and snapshot lifetimes.",
+  "declarations": [
+    {
+      "name": "ChatDebugProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatDebugProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatDebugProps "
+        }
+      ],
+      "docs": {
+        "summary": "Passive view requests are synchronous notifications, never readers. The app\nowns SDK calls, cancellation, stale-result checks and snapshot lifetimes.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activity",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#activity:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activity?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        readonly busy: boolean;\n        readonly status?: string;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 80
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "checkpointPage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#checkpointPage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly checkpointPage?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugCheckpointPage",
+              "canonicalReference": "@threadplane/react!DebugCheckpointPage:interface",
+              "href": "/docs/api/react/debug/DebugCheckpointPage"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 77
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 85
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "contextKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#contextKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly contextKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 75
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "current",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#current:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly current: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugCurrentObservation",
+              "canonicalReference": "@threadplane/react!DebugCurrentObservation:type",
+              "href": "/docs/api/react/debug/DebugCurrentObservation"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 76
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "defaultOpen",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#defaultOpen:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly defaultOpen?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 83
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inspection",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#inspection:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inspection?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugInspection",
+              "canonicalReference": "@threadplane/react!DebugInspection:type",
+              "href": "/docs/api/react/debug/DebugInspection"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 79
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onInspect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#onInspect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onInspect?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(selection: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugSelection",
+              "canonicalReference": "@threadplane/react!DebugSelection:interface",
+              "href": "/docs/api/react/debug/DebugSelection"
+            },
+            {
+              "kind": "Content",
+              "text": ") => undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 81
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onRefresh",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#onRefresh:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onRefresh?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(request: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugRefreshRequest",
+              "canonicalReference": "@threadplane/react!DebugRefreshRequest:interface",
+              "href": "/docs/api/react/debug/DebugRefreshRequest"
+            },
+            {
+              "kind": "Content",
+              "text": ") => undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 82
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "selection",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#selection:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selection?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugSelection",
+              "canonicalReference": "@threadplane/react!DebugSelection:interface",
+              "href": "/docs/api/react/debug/DebugSelection"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 78
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "storageKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatDebugProps#storageKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly storageKey?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 84
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 74
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 74
+  }
+}

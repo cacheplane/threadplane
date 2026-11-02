@@ -1,0 +1,125 @@
+{
+  "name": "ClientToolContinuationPolicy",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolContinuationPolicy",
+  "canonicalReference": "@threadplane/chat!ClientToolContinuationPolicy:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Policy for automatic client-tool continuation.",
+  "declarations": [
+    {
+      "name": "ClientToolContinuationPolicy",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolContinuationPolicy:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolContinuationPolicy "
+        }
+      ],
+      "docs": {
+        "summary": "Policy for automatic client-tool continuation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "maxTurns",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationPolicy#maxTurns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly maxTurns?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Maximum consecutive client-tool continuation groups per user turn. Default: 10. Use 0 for unlimited.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 36
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onLimit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationPolicy#onLimit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onLimit?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolContinuationLimitEvent",
+              "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent:interface",
+              "href": "/docs/api/chat/ClientToolContinuationLimitEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Called when the max-turn guard stops a continuation group.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 38
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 34
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 34
+  }
+}

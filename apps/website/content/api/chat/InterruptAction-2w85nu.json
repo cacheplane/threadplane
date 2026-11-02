@@ -1,0 +1,54 @@
+{
+  "name": "InterruptAction",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/InterruptAction",
+  "canonicalReference": "@threadplane/chat!InterruptAction:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Review actions emitted by the interrupt panel for the host to handle.",
+  "declarations": [
+    {
+      "name": "InterruptAction",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!InterruptAction:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type InterruptAction = "
+        },
+        {
+          "kind": "Content",
+          "text": "'accept' | 'edit' | 'respond' | 'ignore'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Review actions emitted by the interrupt panel for the host to handle.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
+        "line": 13
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
+    "line": 13
+  }
+}

@@ -100,6 +100,7 @@ export function isPinned(
   return scrollHeight - scrollTop - clientHeight < tolerance;
 }
 
+/** Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates. */
 @Component({
   selector: 'chat',
   standalone: true,
@@ -208,7 +209,7 @@ export function isPinned(
       <div class="chat-shell__main">
         <chat-window>
           <ng-content select="[chatHeader]" chatHeader />
-          <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll()">
+          <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)">
             <chat-message-list [agent]="agent()">
               <ng-template chatMessageTemplate="human" let-message let-i="index">
                 <chat-message [role]="'user'" [prevRole]="prevRole(i)">{{ humanContent(message) }}</chat-message>
@@ -681,8 +682,8 @@ export class ChatComponent {
    * Aggregate the reasoning RUN starting at `index`: joins each step's
    * reasoning, sums durations, counts steps, and returns the last step's
    * delivery because that step owns the current aggregate snapshot. Also
-   * computes the merged label when N > 1 ("Thought for {total} · {N} steps",
-   * or just "{N} steps" when no step reported timing).
+   * computes the merged label when `N > 1` (`Thought for {total} · {N} steps`,
+   * or just `{N} steps` when no step reported timing).
    */
   protected reasoningRun(index: number): {
     content: string;
@@ -719,7 +720,7 @@ export class ChatComponent {
 
   private readonly classifiers = new Map<
     string,
-    { generation: string; classifier: ContentClassifier }
+    { generation: string; classifier: ContentClassifier; content?: string }
   >();
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
   private readonly destroyRef = inject(DestroyRef);
@@ -745,6 +746,8 @@ export class ChatComponent {
   private wasLoading = false;
   protected readonly pinned = signal<boolean>(true);
   private programmaticScrollCount = 0;
+  private programmaticScrollTop = 0;
+  private upwardWheel: { events: WheelEvent[]; scrollTop: number; settled: boolean; supported: boolean; followDeferred: boolean } | undefined;
   private static readonly PIN_TOLERANCE_PX = 150;
 
   /**
@@ -757,8 +760,11 @@ export class ChatComponent {
    * to enable `.chat-message__caret`.
    *
    * Restricted to assistant role because the caret only renders on
-   * assistant bubbles (`:host([data-role="assistant"][data-current=...
-   *  ][data-streaming=...])`).
+   * assistant bubbles matching:
+   *
+   * ```css
+   * :host([data-role="assistant"][data-current="true"][data-streaming="true"])
+   * ```
    */
   protected readonly currentAssistantStreaming = computed(() => {
     const msgs = this.agent().messages();
@@ -834,6 +840,58 @@ export class ChatComponent {
       }
     });
 
+    // Native scroll events can arrive while our programmatic frame guard is
+    // still live. Retain upward intent without cancelling or moving the user;
+    // only actual transcript movement can interrupt that guard.
+    effect((onCleanup) => {
+      const el = this.scrollContainer()?.nativeElement;
+      if (!el) return;
+      const dispatchTasks = new Set<ReturnType<typeof setTimeout>>();
+      const onWheel = (event: WheelEvent) => {
+        if (event.deltaY >= 0 || event.ctrlKey || event.defaultPrevented) return;
+        for (const target of event.composedPath()) {
+          if (target === el) break;
+          if (!(target instanceof HTMLElement) || target.scrollTop <= 0 || target.scrollHeight <= target.clientHeight) continue;
+          if (/^(auto|scroll|overlay)$/.test(getComputedStyle(target).overflowY)) return;
+        }
+        const previous = this.upwardWheel;
+        if (previous && !previous.settled) {
+          previous.events.push(event);
+          return;
+        }
+        const intent = {
+          events: [event], scrollTop: Math.max(this.programmaticScrollTop, el.scrollTop, previous?.scrollTop ?? 0),
+          settled: false, supported: previous?.supported ?? false, followDeferred: previous?.followDeferred ?? false,
+        };
+        this.upwardWheel = intent;
+        // A task observes cancellation after the whole native dispatch: browser
+        // microtask checkpoints can run before later bubbling listeners. The
+        // compositor may already have moved the transcript before wheel delivery.
+        const task = setTimeout(() => {
+          dispatchTasks.delete(task);
+          if (this.upwardWheel !== intent || this.scrollContainer()?.nativeElement !== el) return;
+          intent.settled = true;
+          // Later cancelled events in the same burst cannot erase valid input.
+          // Release dispatch references once only the confirmed support is needed.
+          intent.supported ||= intent.events.some((wheel) => !wheel.defaultPrevented);
+          intent.events = [];
+          if (!intent.supported) this.upwardWheel = undefined;
+          else if (el.scrollTop < intent.scrollTop) this.onScroll();
+          const followDeferred = intent.followDeferred;
+          intent.followDeferred = false;
+          if (followDeferred) this.followIfPinned();
+        }, 0);
+        dispatchTasks.add(task);
+      };
+      el.addEventListener('wheel', onWheel, { passive: true });
+      onCleanup(() => {
+        el.removeEventListener('wheel', onWheel);
+        for (const task of dispatchTasks) clearTimeout(task);
+        dispatchTasks.clear();
+        this.upwardWheel = undefined;
+      });
+    });
+
     // Auto-scroll-to-bottom. Fires on every signal update during streaming
     // (each token mutates the last message's content), so this MUST be cheap
     // and idempotent. Earlier this used scrollTo({ behavior: 'smooth' }) per
@@ -850,12 +908,11 @@ export class ChatComponent {
       if (!el) return;
       const isNewMessage = count !== this.prevMessageCount;
       this.prevMessageCount = count;
-      if (isNewMessage || this.pinned()) {
-        this.programmaticScrollCount++;
-        el.scrollTop = el.scrollHeight;
-        requestAnimationFrame(() => { this.programmaticScrollCount--; });
-        if (isNewMessage) untracked(() => this.pinned.set(true));
+      if (isNewMessage) {
+        this.upwardWheel = undefined;
+        untracked(() => this.pinned.set(true));
       }
+      if (isNewMessage || this.pinned()) this.followIfPinned();
     });
 
     // Final scroll when streaming completes. The content-mutation effect above
@@ -872,13 +929,7 @@ export class ChatComponent {
       this.wasLoading = false;
       if (this.pinned()) {
         // Defer one frame so message-actions have rendered.
-        requestAnimationFrame(() => {
-          const el2 = this.scrollContainer()?.nativeElement;
-          if (!el2) return;
-          this.programmaticScrollCount++;
-          el2.scrollTop = el2.scrollHeight;
-          requestAnimationFrame(() => { this.programmaticScrollCount--; });
-        });
+        requestAnimationFrame(() => this.followIfPinned());
       }
     });
 
@@ -985,10 +1036,14 @@ export class ChatComponent {
     return undefined;
   }
 
-  protected onScroll(): void {
-    if (this.programmaticScrollCount > 0) return;
+  protected onScroll(event?: Event): void {
     const el = this.scrollContainer()?.nativeElement;
-    if (!el) return;
+    if (!el || (event && event.target !== el)) return;
+    const intent = this.upwardWheel;
+    if (intent && !intent.settled) return;
+    const userScrolledUp = intent && intent.supported && el.scrollTop < intent.scrollTop;
+    if (intent && el.scrollTop !== intent.scrollTop) this.upwardWheel = undefined;
+    if (this.programmaticScrollCount > 0 && !userScrolledUp) return;
     const nextPinned = isPinned(el.scrollHeight, el.scrollTop, el.clientHeight, ChatComponent.PIN_TOLERANCE_PX);
     if (nextPinned !== this.pinned()) this.pinned.set(nextPinned);
   }
@@ -1003,10 +1058,12 @@ export class ChatComponent {
    * the scroll event it raises does not read as the user unpinning.
    */
   scrollToBottom(): void {
+    this.upwardWheel = undefined;
     const el = this.scrollContainer()?.nativeElement;
     if (!el) return;
     this.programmaticScrollCount++;
     el.scrollTop = el.scrollHeight;
+    this.programmaticScrollTop = el.scrollTop;
     requestAnimationFrame(() => { this.programmaticScrollCount--; });
     this.pinned.set(true);
   }
@@ -1016,8 +1073,21 @@ export class ChatComponent {
     if (!untracked(() => this.pinned())) return;
     const el = this.scrollContainer()?.nativeElement;
     if (!el) return;
+    const intent = this.upwardWheel;
+    if (intent && el.scrollTop < intent.scrollTop) {
+      if (!intent.settled) {
+        // A token, completion frame or ResizeObserver must not erase movement
+        // before the whole wheel dispatch can confirm or cancel its intent.
+        intent.followDeferred = true;
+        return;
+      }
+      this.onScroll();
+      if (!untracked(() => this.pinned())) return;
+    }
     this.programmaticScrollCount++;
     el.scrollTop = el.scrollHeight;
+    this.programmaticScrollTop = el.scrollTop;
+    if (intent && this.upwardWheel === intent) intent.scrollTop = this.programmaticScrollTop;
     requestAnimationFrame(() => { this.programmaticScrollCount--; });
   }
 
@@ -1026,6 +1096,7 @@ export class ChatComponent {
   }
 
   protected onUserSubmitted(): void {
+    this.upwardWheel = undefined;
     this.pinned.set(true);
     this.recordSubmit();
   }
@@ -1182,7 +1253,10 @@ export class ChatComponent {
       entry = { generation, classifier: createContentClassifier() };
       this.classifiers.set(message.id, entry);
     }
-    entry.classifier.update(content);
+    if (entry.content !== content) {
+      entry.classifier.update(content);
+      entry.content = content;
+    }
     return entry.classifier;
   }
 

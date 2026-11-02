@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownEmphasisNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders the child nodes of markdown emphasis inside an emphasis element. */
 @Component({
   selector: 'chat-md-emphasis',
   standalone: true,

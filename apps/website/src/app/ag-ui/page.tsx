@@ -98,7 +98,7 @@ export default async function AgUiPage() {
           { claim: 'Same components, themes, citations', api: '@threadplane/chat' },
           { claim: 'Same deterministic testing', api: 'MockAgentTransport' },
         ]}
-        cta={{ label: 'API reference', href: '/docs/langgraph/api/inject-agent' }}
+        cta={{ label: 'API reference', href: '/docs/api/ag-ui' }}
         visualLeft
         visual={<MediumSwitcher sectionId="lib-ag-ui" panes={panes} />}
       />

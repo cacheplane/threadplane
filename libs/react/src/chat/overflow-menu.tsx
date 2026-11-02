@@ -9,12 +9,14 @@ import {
 import { createPortal } from 'react-dom';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
+/** Menu option identified on selection, with a display label, optional disabled state, and visual tone. */
 export interface OverflowMenuItem {
   readonly id: string;
   readonly label: string;
   readonly disabled?: boolean;
   readonly tone?: 'normal' | 'destructive';
 }
+/** Controls menu visibility, item selection, optional pointer anchoring, and focus restoration. */
 export interface OverflowMenuProps {
   readonly items: readonly OverflowMenuItem[];
   readonly open: boolean;
@@ -273,12 +275,14 @@ export function OverflowMenu({
         (event.target instanceof win.Node && panel.contains(event.target))
       )
         return;
-      if (event.target instanceof win.Element) {
-        const original = openingScroll.get(event.target);
+      const target =
+        event.target === doc ? doc.scrollingElement : event.target;
+      if (target instanceof win.Element) {
+        const original = openingScroll.get(target);
         if (
           original &&
-          event.target.scrollTop === original.top &&
-          event.target.scrollLeft === original.left
+          target.scrollTop === original.top &&
+          target.scrollLeft === original.left
         )
           return;
       }

@@ -1,0 +1,262 @@
+{
+  "name": "RenderViewProps",
+  "entrypointId": "react/render",
+  "kind": "Interface",
+  "href": "/docs/api/react/render/RenderViewProps",
+  "canonicalReference": "@threadplane/react!RenderViewProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Resolved component props, binding paths, rendered children, and element/loading metadata passed to registry views.",
+  "declarations": [
+    {
+      "name": "RenderViewProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!RenderViewProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderViewProps "
+        }
+      ],
+      "docs": {
+        "summary": "Resolved component props, binding paths, rendered children, and element/loading metadata passed to registry views.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "bindings",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderViewProps#bindings:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly bindings?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderViewProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "elementKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderViewProps#elementKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly elementKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "loading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderViewProps#loading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly loading?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "props",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!RenderViewProps#props:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly props: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderValue",
+              "canonicalReference": "@threadplane/react!RenderValue:type",
+              "href": "/docs/api/react/render/RenderValue"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/render/types.ts",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/render/types.ts",
+        "line": 24
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/render/types.ts",
+    "line": 24
+  }
+}

@@ -7,12 +7,14 @@ export type DebugValue =
   | readonly DebugValue[]
   | { readonly [key: string]: DebugValue };
 
+/** Identifies an inspectable checkpoint row within a specific application context and page generation. */
 export interface DebugSelection {
   readonly contextKey: string;
   readonly pageGeneration: number;
   readonly rowKey: string;
 }
 
+/** Refresh intent scoped to the current context; pageGeneration is null when no matching page is displayed. */
 export interface DebugRefreshRequest {
   readonly contextKey: string;
   readonly pageGeneration: number | null;
@@ -31,6 +33,7 @@ export interface DebugCheckpointRow {
   readonly inspectable: boolean;
 }
 
+/** App-supplied checkpoint rows scoped to a context and generation, with a flag indicating omitted rows. */
 export interface DebugCheckpointPage {
   readonly contextKey: string;
   readonly pageGeneration: number;
@@ -45,6 +48,7 @@ export type DebugCurrentObservation = { readonly contextKey: string } & (
   | { readonly status: 'ready'; readonly values: DebugValue }
 );
 
+/** App-owned checkpoint read state; every active result carries the selection that produced it. */
 export type DebugInspection =
   | { readonly status: 'idle' }
   | { readonly status: 'loading'; readonly selection: DebugSelection }

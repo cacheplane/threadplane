@@ -1,0 +1,115 @@
+{
+  "name": "CustomStreamEvent",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/CustomStreamEvent",
+  "canonicalReference": "@threadplane/ag-ui!CustomStreamEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A custom event surfaced to consumers via the agent's `customEvents` signal.\nMirrors the LangGraph adapter's CustomStreamEvent shape so the chat\na2ui partial-args bridge consumes both transports identically.",
+  "declarations": [
+    {
+      "name": "CustomStreamEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!CustomStreamEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CustomStreamEvent "
+        }
+      ],
+      "docs": {
+        "summary": "A custom event surfaced to consumers via the agent's `customEvents` signal.\nMirrors the LangGraph adapter's CustomStreamEvent shape so the chat\na2ui partial-args bridge consumes both transports identically.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "data",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!CustomStreamEvent#data:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "data: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Arbitrary payload from the backend (JSON-string values are parsed).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/reducer.ts",
+            "line": 51
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!CustomStreamEvent#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Event name set by the backend (e.g. 'a2ui-partial', 'state_update').",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/reducer.ts",
+            "line": 49
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/reducer.ts",
+        "line": 47
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/reducer.ts",
+    "line": 47
+  }
+}

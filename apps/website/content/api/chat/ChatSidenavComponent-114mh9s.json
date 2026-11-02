@@ -1,0 +1,1106 @@
+{
+  "name": "ChatSidenavComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatSidenavComponent",
+  "canonicalReference": "@threadplane/chat!ChatSidenavComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "The conversation sidebar: thread list, projects, search, and the new-chat\naction. Pair it with a runtime's thread store (e.g. `LangGraphThreadsAdapter`)\nand a [ThreadActionAdapter](/docs/api/chat/ThreadActionAdapter) for the per-row rename/delete/archive menu.\n\n**This component renders the sidebar only — it is not a layout wrapper.** Its\n`<ng-content>` slots are all named (`sidenavHeader`, `sidenavPrimary`,\n`sidenavSections`, `sidenavFooterLeft`, `sidenavFooterRight`,\n`sidenavAccount`) and target regions *inside* the sidebar. There is no default\nslot, so a `<chat>` placed between the tags is silently dropped. Render the\nchat as a sibling and lay the two out yourself:",
+  "declarations": [
+    {
+      "name": "ChatSidenavComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatSidenavComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatSidenavComponent "
+        }
+      ],
+      "docs": {
+        "summary": "The conversation sidebar: thread list, projects, search, and the new-chat\naction. Pair it with a runtime's thread store (e.g. `LangGraphThreadsAdapter`)\nand a [ThreadActionAdapter](/docs/api/chat/ThreadActionAdapter) for the per-row rename/delete/archive menu.\n\n**This component renders the sidebar only — it is not a layout wrapper.** Its\n`<ng-content>` slots are all named (`sidenavHeader`, `sidenavPrimary`,\n`sidenavSections`, `sidenavFooterLeft`, `sidenavFooterRight`,\n`sidenavAccount`) and target regions *inside* the sidebar. There is no default\nslot, so a `<chat>` placed between the tags is silently dropped. Render the\nchat as a sibling and lay the two out yourself:",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```html\n<chat-sidenav\n  [threads]=\"threads.threads()\"\n  [activeThreadId]=\"activeThread()\"\n  [actions]=\"threadActions\"\n  [agent]=\"agent\"\n  (newChat)=\"activeThread.set(null)\"\n  (threadSelected)=\"activeThread.set($event)\"\n/>\n<main class=\"chat-pane\">\n  <chat [agent]=\"agent\" />\n</main>\n```\n\n```css\n:host { display: flex; height: 100dvh; }\n.chat-pane { flex: 1; min-width: 0; }\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor();"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `ChatSidenavComponent` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 368
+          },
+          "overloadIndex": 1,
+          "parameters": []
+        },
+        {
+          "name": "actions",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#actions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly actions: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadActionAdapter",
+              "canonicalReference": "@threadplane/chat!ThreadActionAdapter:interface",
+              "href": "/docs/api/chat/ThreadActionAdapter"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 335
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "activeThreadId",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#activeThreadId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activeThreadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 334
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "agent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly agent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown> | "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentWithHistory",
+              "canonicalReference": "@threadplane/chat!AgentWithHistory:interface",
+              "href": "/docs/api/chat/AgentWithHistory"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown> | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 340
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "archivedThreads",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#archivedThreads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly archivedThreads: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/chat!Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 336
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "debug",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#debug:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly debug: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 341
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "mode",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#mode:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly mode: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSidenavMode",
+              "canonicalReference": "@threadplane/chat!ChatSidenavMode:type",
+              "href": "/docs/api/chat/ChatSidenavMode"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 331
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "modeChange",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#modeChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly modeChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatSidenavMode",
+              "canonicalReference": "@threadplane/chat!ChatSidenavMode:type",
+              "href": "/docs/api/chat/ChatSidenavMode"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 347
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "newChat",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#newChat:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly newChat: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 343
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "newProjectRequested",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#newProjectRequested:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly newProjectRequested: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 349
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 332
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "openChange",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#openChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly openChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 346
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "projectActions",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#projectActions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly projectActions: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ProjectActionAdapter",
+              "canonicalReference": "@threadplane/chat!ProjectActionAdapter:interface",
+              "href": "/docs/api/chat/ProjectActionAdapter"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 339
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "projects",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#projects:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly projects: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Project",
+              "canonicalReference": "@threadplane/chat!Project:type",
+              "href": "/docs/api/chat/Project"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 337
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "projectSelected",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#projectSelected:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly projectSelected: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 348
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "searchOpened",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#searchOpened:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly searchOpened: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 345
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "selectedProjectId",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#selectedProjectId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selectedProjectId: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 338
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threads",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#threads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threads: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/chat!Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 333
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "threadSelected",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatSidenavComponent#threadSelected:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threadSelected: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+            "line": 344
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+        "line": 81
+      },
+      "angular": {
+        "selector": "chat-sidenav",
+        "inputs": [
+          {
+            "name": "actions",
+            "alias": "actions",
+            "required": false,
+            "type": "ThreadActionAdapter | null"
+          },
+          {
+            "name": "activeThreadId",
+            "alias": "activeThreadId",
+            "required": false,
+            "type": "string | null"
+          },
+          {
+            "name": "agent",
+            "alias": "agent",
+            "required": false,
+            "type": "Agent<unknown> | AgentWithHistory<unknown> | null"
+          },
+          {
+            "name": "archivedThreads",
+            "alias": "archivedThreads",
+            "required": false,
+            "type": "Thread[] | null"
+          },
+          {
+            "name": "debug",
+            "alias": "debug",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "mode",
+            "alias": "mode",
+            "required": false,
+            "type": "ChatSidenavMode"
+          },
+          {
+            "name": "open",
+            "alias": "open",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "projectActions",
+            "alias": "projectActions",
+            "required": false,
+            "type": "ProjectActionAdapter | null"
+          },
+          {
+            "name": "projects",
+            "alias": "projects",
+            "required": false,
+            "type": "Project[] | null"
+          },
+          {
+            "name": "selectedProjectId",
+            "alias": "selectedProjectId",
+            "required": false,
+            "type": "string | null"
+          },
+          {
+            "name": "threads",
+            "alias": "threads",
+            "required": false,
+            "type": "Thread[] | null"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "modeChange",
+            "alias": "modeChange",
+            "required": false,
+            "type": "ChatSidenavMode"
+          },
+          {
+            "name": "newChat",
+            "alias": "newChat",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "newProjectRequested",
+            "alias": "newProjectRequested",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "openChange",
+            "alias": "openChange",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "projectSelected",
+            "alias": "projectSelected",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "searchOpened",
+            "alias": "searchOpened",
+            "required": false,
+            "type": "void"
+          },
+          {
+            "name": "threadSelected",
+            "alias": "threadSelected",
+            "required": false,
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+    "line": 81
+  }
+}

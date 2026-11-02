@@ -1,0 +1,283 @@
+{
+  "name": "ChatInterruptComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatInterruptComponent",
+  "canonicalReference": "@threadplane/chat!ChatInterruptComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Displays the agent’s current interrupt using a projected template or a default payload preview.",
+  "declarations": [
+    {
+      "name": "ChatInterruptComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatInterruptComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatInterruptComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Displays the agent’s current interrupt using a projected template or a default payload preview.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "agent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatInterruptComponent#agent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly agent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Agent",
+              "canonicalReference": "@threadplane/chat!Agent:interface",
+              "href": "/docs/api/chat/Agent"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+            "line": 61
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "defaultText",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatInterruptComponent#defaultText:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "defaultText(i: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+            "line": 65
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "i",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "interrupt",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatInterruptComponent#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly interrupt: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+            "line": 63
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "templateRef",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatInterruptComponent#templateRef:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly templateRef: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateRef",
+              "canonicalReference": "@angular/core!TemplateRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<any> | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+            "line": 62
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+        "line": 33
+      },
+      "angular": {
+        "selector": "chat-interrupt",
+        "inputs": [
+          {
+            "name": "agent",
+            "alias": "agent",
+            "required": true,
+            "type": "Agent<unknown>"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts",
+    "line": 33
+  }
+}

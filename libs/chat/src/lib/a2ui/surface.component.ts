@@ -15,6 +15,18 @@ import type { A2uiSurfaceState } from './surface-store';
 import type { A2uiViews } from './views';
 import { ɵprovideRenderDevtools } from '../devtools/devtools-render-report';
 
+/**
+ * Renders an A2UI surface. Supports two input shapes:
+ * - `state` (preferred): chat-side `A2uiSurfaceState`, converted to a
+ *   json-render spec whose `$bindState` props defer each component until
+ *   its data has arrived.
+ * - `surface` (legacy): wire-format `A2uiSurface` fed into `<render-spec>`;
+ *   kept for backwards compatibility.
+ *
+ * When both inputs are set, `state` takes priority for rendering AND for
+ * action-message construction; `surface` is only consulted when `state`
+ * is unset.
+ */
 @Component({
   selector: 'a2ui-surface',
   standalone: true,
@@ -81,18 +93,6 @@ import { ɵprovideRenderDevtools } from '../devtools/devtools-render-report';
     }
   `,
 })
-/**
- * Renders an A2UI surface. Supports two input shapes:
- * - `state` (preferred): chat-side `A2uiSurfaceState`, converted to a
- *   json-render spec whose `$bindState` props defer each component until
- *   its data has arrived.
- * - `surface` (legacy): wire-format `A2uiSurface` fed into `<render-spec>`;
- *   kept for backwards compatibility.
- *
- * When both inputs are set, `state` takes priority for rendering AND for
- * action-message construction; `surface` is only consulted when `state`
- * is unset.
- */
 export class A2uiSurfaceComponent {
   /** Wire-format surface (legacy path — kept for backwards compat). */
   readonly surface = input<A2uiSurface>();

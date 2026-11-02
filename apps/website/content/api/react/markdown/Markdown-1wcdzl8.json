@@ -1,0 +1,88 @@
+{
+  "name": "Markdown",
+  "entrypointId": "react/markdown",
+  "kind": "Function",
+  "href": "/docs/api/react/markdown/Markdown",
+  "canonicalReference": "@threadplane/react!Markdown:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Present an accepted snapshot. Its lifetime belongs to the application.",
+  "declarations": [
+    {
+      "name": "Markdown",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!Markdown:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function Markdown(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "MarkdownProps",
+          "canonicalReference": "@threadplane/react!MarkdownProps:interface",
+          "href": "/docs/api/react/markdown/MarkdownProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Present an accepted snapshot. Its lifetime belongs to the application.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/markdown/markdown.tsx",
+        "line": 16
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ snapshot }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/markdown/markdown.tsx",
+    "line": 16
+  }
+}

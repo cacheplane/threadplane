@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
+/** Configures a controlled or local message draft, submission and stop callbacks, and composer labels. */
 export interface ChatInputProps {
   readonly value?: string;
   readonly defaultValue?: string;
@@ -26,10 +27,12 @@ export interface ChatInputProps {
   readonly id?: string;
   readonly className?: string;
 }
+/** Imperative access to focus the composer's textarea. */
 export interface ChatInputHandle {
   focus(): void;
 }
 
+/** Auto-sizing composer that submits nonblank drafts and clears its local draft or requests an empty controlled value unless onSubmit returns false. */
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
     {

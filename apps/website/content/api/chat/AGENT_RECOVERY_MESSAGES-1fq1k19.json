@@ -1,0 +1,66 @@
+{
+  "name": "AGENT_RECOVERY_MESSAGES",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/AGENT_RECOVERY_MESSAGES",
+  "canonicalReference": "@threadplane/chat!AGENT_RECOVERY_MESSAGES:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Human-facing copy per [AgentRecovery](/docs/api/chat/AgentRecovery), used for `interrupted` errors.",
+  "declarations": [
+    {
+      "name": "AGENT_RECOVERY_MESSAGES",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!AGENT_RECOVERY_MESSAGES:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "AGENT_RECOVERY_MESSAGES: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentRecovery",
+          "canonicalReference": "@threadplane/chat!AgentRecovery:type",
+          "href": "/docs/api/chat/AgentRecovery"
+        },
+        {
+          "kind": "Content",
+          "text": ", string>"
+        }
+      ],
+      "docs": {
+        "summary": "Human-facing copy per [AgentRecovery](/docs/api/chat/AgentRecovery), used for `interrupted` errors.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-error.ts",
+        "line": 26
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-error.ts",
+    "line": 26
+  }
+}

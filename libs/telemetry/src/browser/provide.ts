@@ -3,10 +3,10 @@ import { THREADPLANE_TELEMETRY_CONFIG, type ThreadplaneTelemetryConfig } from '.
 import { ThreadplaneTelemetryService } from './service';
 
 /**
- * Provide browser telemetry configuration for an Angular app.
+ * Configure ThreadplaneTelemetryService for an Angular app.
  *
- * Browser telemetry remains off unless this provider is installed with
- * `enabled: true`. Delivery goes through `sink`, `endpoint`, or the legacy
+ * Set `enabled: true` to enable this service's capture methods.
+ * Delivery goes through `sink`, `endpoint`, or the legacy
  * PostHog options configured on `ThreadplaneTelemetryConfig`.
  */
 export function provideThreadplaneTelemetry(config: ThreadplaneTelemetryConfig): EnvironmentProviders {

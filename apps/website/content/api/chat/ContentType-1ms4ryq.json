@@ -1,0 +1,54 @@
+{
+  "name": "ContentType",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ContentType",
+  "canonicalReference": "@threadplane/chat!ContentType:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The detected format of accumulated assistant content, or pending while its prefix is incomplete.",
+  "declarations": [
+    {
+      "name": "ContentType",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ContentType:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ContentType = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'markdown' | 'json-render' | 'a2ui'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The detected format of accumulated assistant content, or pending while its prefix is incomplete.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+        "line": 11
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/content-classifier.ts",
+    "line": 11
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "name": "LANGGRAPH_CLIENT",
+  "entrypointId": "langgraph",
+  "kind": "Variable",
+  "href": "/docs/api/langgraph/LANGGRAPH_CLIENT",
+  "canonicalReference": "@threadplane/langgraph!LANGGRAPH_CLIENT:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Optional adapter clients can pass an explicit Client (e.g. for\n testing). When omitted, the adapter constructs one via\n [createLangGraphClient](/docs/api/langgraph/createLangGraphClient).",
+  "declarations": [
+    {
+      "name": "LANGGRAPH_CLIENT",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/langgraph!LANGGRAPH_CLIENT:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "LANGGRAPH_CLIENT: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Client",
+          "canonicalReference": "@langchain/langgraph-sdk!Client:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<import(\"@langchain/langgraph-sdk\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "DefaultValues",
+          "canonicalReference": "@langchain/langgraph-sdk!DefaultValues:type"
+        },
+        {
+          "kind": "Content",
+          "text": ", import(\"@langchain/langgraph-sdk\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "DefaultValues",
+          "canonicalReference": "@langchain/langgraph-sdk!DefaultValues:type"
+        },
+        {
+          "kind": "Content",
+          "text": ", unknown>>"
+        }
+      ],
+      "docs": {
+        "summary": "Optional adapter clients can pass an explicit Client (e.g. for\n testing). When omitted, the adapter constructs one via\n [createLangGraphClient](/docs/api/langgraph/createLangGraphClient).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+        "line": 51
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+    "line": 51
+  }
+}

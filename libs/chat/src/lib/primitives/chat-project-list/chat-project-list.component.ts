@@ -18,6 +18,7 @@ import {
 } from '../chat-overflow-menu/chat-overflow-menu.component';
 import { ChatConfirmDialogComponent } from '../chat-confirm-dialog/chat-confirm-dialog.component';
 
+/** A selectable project identified by its id and display name, with optional consumer metadata. */
 export type Project = {
   id: string;
   name: string;
@@ -40,6 +41,7 @@ export interface ProjectActionAdapter {
   delete?(projectId: string): Promise<void>;
 }
 
+/** Lists selectable projects with optional creation, rename, and confirmed deletion actions. */
 @Component({
   selector: 'chat-project-list',
   standalone: true,

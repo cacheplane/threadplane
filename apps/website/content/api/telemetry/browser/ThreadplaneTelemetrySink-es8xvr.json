@@ -1,0 +1,73 @@
+{
+  "name": "ThreadplaneTelemetrySink",
+  "entrypointId": "telemetry/browser",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/browser/ThreadplaneTelemetrySink",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetrySink:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned synchronous or asynchronous event delivery callback whose failures the browser service suppresses.",
+  "declarations": [
+    {
+      "name": "ThreadplaneTelemetrySink",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetrySink:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ThreadplaneTelemetrySink = "
+        },
+        {
+          "kind": "Content",
+          "text": "(payload: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadplaneTelemetryEventPayload",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneTelemetryEventPayload:interface",
+          "href": "/docs/api/telemetry/browser/ThreadplaneTelemetryEventPayload"
+        },
+        {
+          "kind": "Content",
+          "text": ") => void | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned synchronous or asynchronous event delivery callback whose failures the browser service suppresses.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/tokens.ts",
+        "line": 20
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/tokens.ts",
+    "line": 20
+  }
+}

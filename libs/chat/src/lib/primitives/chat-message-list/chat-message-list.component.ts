@@ -31,6 +31,7 @@ export function getMessageType(message: Message): MessageTemplateType {
   }
 }
 
+/** Renders agent messages using the custom template registered for each message category. */
 @Component({
   selector: 'chat-message-list',
   standalone: true,

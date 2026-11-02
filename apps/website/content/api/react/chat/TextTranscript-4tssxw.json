@@ -1,0 +1,88 @@
+{
+  "name": "TextTranscript",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/TextTranscript",
+  "canonicalReference": "@threadplane/react!TextTranscript:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders messages as an ordered plain-text transcript with speaker labels and preserved whitespace.",
+  "declarations": [
+    {
+      "name": "TextTranscript",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!TextTranscript:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function TextTranscript(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "TextTranscriptProps",
+          "canonicalReference": "@threadplane/react!TextTranscriptProps:interface",
+          "href": "/docs/api/react/chat/TextTranscriptProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Renders messages as an ordered plain-text transcript with speaker labels and preserved whitespace.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/text-transcript.tsx",
+        "line": 16
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ messages, label, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/text-transcript.tsx",
+    "line": 16
+  }
+}

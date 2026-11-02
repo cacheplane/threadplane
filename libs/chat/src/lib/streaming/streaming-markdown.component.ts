@@ -24,6 +24,7 @@ import { MARKDOWN_VIEW_REGISTRY } from '../markdown/markdown-view-registry';
 import { cacheplaneMarkdownViews } from '../markdown/cacheplane-markdown-views';
 import { CHAT_MARKDOWN_STYLES } from '../styles/chat-markdown.styles';
 
+/** An atomic markdown snapshot whose generation identifies one append-only stream ending in completion. */
 export interface StreamingMarkdownDocument {
   readonly generation: string;
   readonly phase: 'streaming' | 'complete';
@@ -43,8 +44,10 @@ export function markdownDocument(
   };
 }
 
+/** Determines whether invalid updates within a markdown generation throw or rebuild the parser session. */
 export type StreamingMarkdownContractViolationPolicy = 'throw' | 'rebuild';
 
+/** Configures invalid markdown update handling; defaults to throwing in development and rebuilding in production. */
 export const STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY =
   new InjectionToken<StreamingMarkdownContractViolationPolicy>(
     'STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY',

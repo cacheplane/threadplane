@@ -1,0 +1,66 @@
+{
+  "name": "RENDER_CONTEXT",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/RENDER_CONTEXT",
+  "canonicalReference": "@threadplane/render!RENDER_CONTEXT:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token through which a render spec supplies its current context to descendant elements.",
+  "declarations": [
+    {
+      "name": "RENDER_CONTEXT",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!RENDER_CONTEXT:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "RENDER_CONTEXT: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderContext",
+          "canonicalReference": "@threadplane/render!RenderContext:interface",
+          "href": "/docs/api/render/RenderContext"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token through which a render spec supplies its current context to descendant elements.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/contexts/render-context.ts",
+        "line": 17
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/contexts/render-context.ts",
+    "line": 17
+  }
+}

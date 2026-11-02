@@ -1,0 +1,111 @@
+{
+  "name": "runInterruptConformance",
+  "entrypointId": "chat/testing",
+  "kind": "Function",
+  "href": "/docs/api/chat/testing/runInterruptConformance",
+  "canonicalReference": "@threadplane/chat!runInterruptConformance:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Separate from base conformance so agents without interrupts remain supported.",
+  "declarations": [
+    {
+      "name": "runInterruptConformance",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!runInterruptConformance:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function runInterruptConformance(label: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", factory: "
+        },
+        {
+          "kind": "Content",
+          "text": "() => "
+        },
+        {
+          "kind": "Reference",
+          "text": "InterruptConformanceHarness",
+          "canonicalReference": "@threadplane/chat!InterruptConformanceHarness:interface",
+          "href": "/docs/api/chat/testing/InterruptConformanceHarness"
+        },
+        {
+          "kind": "Content",
+          "text": ", options?: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    restoration?: boolean;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Separate from base conformance so agents without interrupts remain supported.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/interrupt-conformance.ts",
+        "line": 37
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "label",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "factory",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "options",
+          "parameterTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 7
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 8,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/interrupt-conformance.ts",
+    "line": 37
+  }
+}

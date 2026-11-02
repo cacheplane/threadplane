@@ -12,13 +12,13 @@ interface Slug {
 
 /**
  * A spread of shapes rather than every page: one per description source
- * (frontmatter, first-paragraph fallback), an API page, and a page that is
+ * (frontmatter, first-paragraph fallback), a moved walkthrough, and a page that is
  * itself the library's breadcrumb target.
  */
 const SAMPLES: Slug[] = [
   { library: 'langgraph', section: 'guides', slug: 'streaming' },
   { library: 'langgraph', section: 'getting-started', slug: 'introduction' },
-  { library: 'langgraph', section: 'api', slug: 'inject-agent' },
+  { library: 'render', section: 'guides', slug: 'element-rendering' },
   { library: 'chat', section: 'getting-started', slug: 'introduction' },
   { library: 'a2ui', section: 'getting-started', slug: 'introduction' },
 ];

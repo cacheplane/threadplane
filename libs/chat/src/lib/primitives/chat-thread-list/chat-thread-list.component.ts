@@ -21,6 +21,7 @@ import {
 import { ChatConfirmDialogComponent } from '../chat-confirm-dialog/chat-confirm-dialog.component';
 import type { Project } from '../chat-project-list/chat-project-list.component';
 
+/** A conversation list entry with optional title, timestamp, lifecycle, pin, and project metadata. */
 export type Thread = {
   id: string;
   /** Optional human-friendly label. Falls back to a slice of the id. */
@@ -76,6 +77,7 @@ export interface ThreadActionAdapter {
   reorderPinned?(threadId: string, beforeId: string | null): Promise<void>;
 }
 
+/** Lists selectable conversations with custom templates and optional thread management actions. */
 @Component({
   selector: 'chat-thread-list',
   standalone: true,

@@ -1,0 +1,887 @@
+{
+  "name": "Agent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/Agent",
+  "canonicalReference": "@threadplane/chat!Agent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Runtime-neutral contract chat primitives consume.\n\nImplementations are produced by runtime adapters (e.g. a LangGraph or\nAG-UI adapter) or by user code for custom backends.\n\n`interrupt` and `subagents` are optional: runtimes that do not support these\nconcepts should leave them undefined, and primitives that need them check\npresence and render a neutral fallback when absent.\n\nInvariant: state lives on signals; `events$` carries only things that are\nnot derivable from signals.",
+  "declarations": [
+    {
+      "name": "Agent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!Agent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface Agent<TState = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "Runtime-neutral contract chat primitives consume.\n\nImplementations are produced by runtime adapters (e.g. a LangGraph or\nAG-UI adapter) or by user code for custom backends.\n\n`interrupt` and `subagents` are optional: runtimes that do not support these\nconcepts should leave them undefined, and primitives that need them check\npresence and render a neutral fallback when absent.\n\nInvariant: state lives on signals; `events$` carries only things that are\nnot derivable from signals.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "checkStatus",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#checkStatus:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkStatus?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional read-only reconciliation of an uncertain run outcome, offered when\n`error().recovery === 'check'`. Asks the backend what happened.\n\nThe answer arrives on the signals, not in the return value: a run the\nbackend reports as finished clears `error` and returns `status` to idle,\nand any messages it committed appear on `messages`. An outcome that stays\nunknown leaves the existing error in place, so the caller can offer the\ncheck again later.\n\nAdapters implementing this must not resubmit the operation and must not\nappend a message; a dropped stream is not proof that the server did\nnothing. They should reject while a request is in flight, and must discard\na result that resolves after a newer request has started.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 95
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "clientTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#clientTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clientTools?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolsCapability",
+              "canonicalReference": "@threadplane/chat!ClientToolsCapability:interface",
+              "href": "/docs/api/chat/ClientToolsCapability"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional: client-declared, client-executed tools (see ClientToolsCapability).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 72
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentError",
+              "canonicalReference": "@threadplane/chat!AgentError:class",
+              "href": "/docs/api/chat/AgentError"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 34
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "events$",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#events$:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "events$: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Observable",
+              "canonicalReference": "rxjs!Observable:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentEvent",
+              "canonicalReference": "@threadplane/chat!AgentEvent:type",
+              "href": "/docs/api/chat/AgentEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 98
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "interrupt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#interrupt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interrupt?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentInterrupt",
+              "canonicalReference": "@threadplane/chat!AgentInterrupt:interface",
+              "href": "/docs/api/chat/AgentInterrupt"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional display projection of the pending interrupt. A runtime may expose\na separate full batch and lifecycle surface. A cleared display projection\ndoes not by itself prove that resumed backend work completed.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 69
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "isInputBlocked",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#isInputBlocked:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isInputBlocked?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional gate for ordinary composer input while the runtime requires resolution or recovery. Resume actions remain adapter-controlled.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 33
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "isLoading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#isLoading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isLoading: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 31
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "messages: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/chat!Message:interface",
+              "href": "/docs/api/chat/Message"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 29
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "regenerate",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#regenerate:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "regenerate: "
+            },
+            {
+              "kind": "Content",
+              "text": "(assistantMessageIndex: number) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Discards the assistant message at the given index AND all messages after\nit, then re-runs the agent against the trimmed conversation tail. The\npreceding user message (at index - 1) is preserved and re-submitted as\nthe agent's input. No new user message is added to the history.\n\nThrows if the message at `index` is not 'assistant' role, or if the\nagent is currently loading another response.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 61
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "retry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#retry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "retry: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Re-run the captured submission after a failure, including a resume command\nwith no message payload. Does not append another user message or reuse an\naborted request signal. Does not restart an in-flight request; no-op when\nnothing is saved.\nAdapters may reject unsafe resume retries until the backend outcome has\nbeen reconciled; a transport failure alone does not prove non-execution.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 50
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "state",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "state: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<TState>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 36
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "status: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentStatus",
+              "canonicalReference": "@threadplane/chat!AgentStatus:type",
+              "href": "/docs/api/chat/AgentStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 30
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "stop",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#stop:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stop: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 40
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "subagents?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/chat!Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 70
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "submit",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#submit:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submit: "
+            },
+            {
+              "kind": "Content",
+              "text": "(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitInput",
+              "canonicalReference": "@threadplane/chat!AgentSubmitInput:interface",
+              "href": "/docs/api/chat/AgentSubmitInput"
+            },
+            {
+              "kind": "Content",
+              "text": ", opts?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitOptions",
+              "canonicalReference": "@threadplane/chat!AgentSubmitOptions:interface",
+              "href": "/docs/api/chat/AgentSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 39
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "toolCalls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#toolCalls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "toolCalls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 35
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "usage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!Agent#usage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "usage?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentUsage",
+              "canonicalReference": "@threadplane/chat!AgentUsage:interface",
+              "href": "/docs/api/chat/AgentUsage"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional token usage for the most recent completed or errored run.\nAdapters whose runtime reports usage set it at the run boundary; it is\n`undefined` while a run is in flight and after a run that reported none.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent.ts",
+            "line": 78
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent.ts",
+        "line": 27
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "TState",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent.ts",
+    "line": 27
+  }
+}

@@ -3,6 +3,7 @@ import { getAllSolutionSlugs } from './solutions-data';
 import { docsConfig, specialDocsPages } from './docs-config';
 import { getAllPosts } from './blog';
 import { SITE_ORIGIN } from './site-origin';
+import { apiPagePaths, readApiIndex } from './api-reference';
 
 export { SITE_ORIGIN };
 export const SITE_NAME = 'Threadplane';
@@ -183,11 +184,11 @@ export function getSitemapRoutes(): string[] {
   const solutionRoutes = getAllSolutionSlugs().map((slug) => `/solutions/${slug}`);
   const docsRoutes = docsConfig.flatMap((library) =>
     library.sections.flatMap((section) =>
-      section.pages.map((page) => `/docs/${library.id}/${page.section}/${page.slug}`),
+      section.pages.map((page) => ('href' in page && typeof page.href === 'string') ? page.href : `/docs/${library.id}/${page.section}/${page.slug}`),
     ),
   );
   const specialDocsRoutes = specialDocsPages.map((page) => page.path);
   const blogRoutes = getAllPosts().map((p) => `/blog/${p.slug}`);
 
-  return [...staticRoutes, ...solutionRoutes, ...docsRoutes, ...specialDocsRoutes, ...blogRoutes];
+  return [...new Set([...staticRoutes, ...solutionRoutes, ...docsRoutes, ...specialDocsRoutes, ...blogRoutes, ...apiPagePaths(readApiIndex())])];
 }

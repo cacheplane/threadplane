@@ -14,6 +14,7 @@ import { deriveJsonSchema } from './to-json-schema';
 import { startClientToolExecutor } from './client-tool-executor';
 import type { ClientToolsCapability, ClientToolResult } from './client-tools-capability';
 
+/** Connects client tools to an agent and routes rendered tool events back to the runtime. */
 export interface ClientToolsCoordinator {
   /** Components for `view`/`ask` tools, keyed by tool name — merge into the chat `views`. */
   readonly viewRegistry: ViewRegistry;

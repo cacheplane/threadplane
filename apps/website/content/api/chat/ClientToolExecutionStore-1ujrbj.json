@@ -1,0 +1,299 @@
+{
+  "name": "ClientToolExecutionStore",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolExecutionStore",
+  "canonicalReference": "@threadplane/chat!ClientToolExecutionStore:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Structural store contract for guarded browser client-tool execution.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionStore",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolExecutionStore:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutionStore "
+        }
+      ],
+      "docs": {
+        "summary": "Structural store contract for guarded browser client-tool execution.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "claim",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionStore#claim:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "claim(key: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionKey",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionKey:interface",
+              "href": "/docs/api/chat/ClientToolExecutionKey"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<'claimed' | "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionRecord",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionRecord:type",
+              "href": "/docs/api/chat/ClientToolExecutionRecord"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Atomically claim a tool-call execution. Returns prior state when present.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+            "line": 19
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "key",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "lookup",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionStore#lookup:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "lookup(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", toolCallIds: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly string[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionRecord",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionRecord:type",
+              "href": "/docs/api/chat/ClientToolExecutionRecord"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Lookup prior execution states for pending tool calls on a thread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+            "line": 23
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "toolCallIds",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "record",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutionStore#record:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "record(key: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionKey",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionKey:interface",
+              "href": "/docs/api/chat/ClientToolExecutionKey"
+            },
+            {
+              "kind": "Content",
+              "text": ", result: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolResult",
+              "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+              "href": "/docs/api/chat/ClientToolResult"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Record the final client-tool result for a claimed execution.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+            "line": 21
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "key",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "result",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+        "line": 17
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tool-execution-guard.ts",
+    "line": 17
+  }
+}

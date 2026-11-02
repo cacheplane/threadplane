@@ -1,0 +1,51 @@
+{
+  "name": "REASONING_FIXTURE_MESSAGE_ID",
+  "entrypointId": "chat/testing",
+  "kind": "Variable",
+  "href": "/docs/api/chat/testing/REASONING_FIXTURE_MESSAGE_ID",
+  "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_MESSAGE_ID:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Shared assistant message identifier for adapter reasoning conformance fixtures.",
+  "declarations": [
+    {
+      "name": "REASONING_FIXTURE_MESSAGE_ID",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_MESSAGE_ID:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "REASONING_FIXTURE_MESSAGE_ID = "
+        },
+        {
+          "kind": "Content",
+          "text": "\"fixture-msg-1\""
+        }
+      ],
+      "docs": {
+        "summary": "Shared assistant message identifier for adapter reasoning conformance fixtures.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/reasoning-fixture.ts",
+        "line": 18
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/reasoning-fixture.ts",
+    "line": 18
+  }
+}

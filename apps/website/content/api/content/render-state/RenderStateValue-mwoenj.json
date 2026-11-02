@@ -1,0 +1,74 @@
+{
+  "name": "RenderStateValue",
+  "entrypointId": "content/render-state",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/render-state/RenderStateValue",
+  "canonicalReference": "@threadplane/content!RenderStateValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Plain application-owned data. All captured containers are recursively frozen.",
+  "declarations": [
+    {
+      "name": "RenderStateValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!RenderStateValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type RenderStateValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "string | number | boolean | null | undefined | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderStateValue",
+          "canonicalReference": "@threadplane/content!RenderStateValue:type",
+          "href": "/docs/api/content/render-state/RenderStateValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderStateValue",
+          "canonicalReference": "@threadplane/content!RenderStateValue:type",
+          "href": "/docs/api/content/render-state/RenderStateValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Plain application-owned data. All captured containers are recursively frozen.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/render-state/types.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/render-state/types.ts",
+    "line": 2
+  }
+}

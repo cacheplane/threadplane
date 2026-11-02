@@ -1,0 +1,191 @@
+{
+  "name": "StateDiffProps",
+  "entrypointId": "react/debug",
+  "kind": "Interface",
+  "href": "/docs/api/react/debug/StateDiffProps",
+  "canonicalReference": "@threadplane/react!StateDiffProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies plain before/after states for a bounded JSON Pointer diff and an optional comparison label.",
+  "declarations": [
+    {
+      "name": "StateDiffProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!StateDiffProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StateDiffProps "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies plain before/after states for a bounded JSON Pointer diff and an optional comparison label.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "after",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StateDiffProps#after:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly after: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugValue",
+              "canonicalReference": "@threadplane/react!DebugValue:type",
+              "href": "/docs/api/react/debug/DebugValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/debug-state-diff.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "before",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StateDiffProps#before:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly before: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DebugValue",
+              "canonicalReference": "@threadplane/react!DebugValue:type",
+              "href": "/docs/api/react/debug/DebugValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/debug-state-diff.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StateDiffProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/debug-state-diff.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StateDiffProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/debug-state-diff.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/debug/debug-state-diff.tsx",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/debug-state-diff.tsx",
+    "line": 5
+  }
+}

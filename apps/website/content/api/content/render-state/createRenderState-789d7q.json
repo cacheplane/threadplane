@@ -1,0 +1,89 @@
+{
+  "name": "createRenderState",
+  "entrypointId": "content/render-state",
+  "kind": "Function",
+  "href": "/docs/api/content/render-state/createRenderState",
+  "canonicalReference": "@threadplane/content!createRenderState:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "An application owns commands and disposal; observers only borrow this owner.",
+  "declarations": [
+    {
+      "name": "createRenderState",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/content!createRenderState:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createRenderState(initialState?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Readonly",
+          "canonicalReference": "!Readonly:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderState",
+          "canonicalReference": "@threadplane/content!RenderState:interface",
+          "href": "/docs/api/content/render-state/RenderState"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "An application owns commands and disposal; observers only borrow this owner.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/render-state/create-render-state.ts",
+        "line": 6
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "initialState",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 5
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/render-state/create-render-state.ts",
+    "line": 6
+  }
+}

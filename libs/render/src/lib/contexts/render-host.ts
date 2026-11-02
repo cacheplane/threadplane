@@ -17,6 +17,7 @@ export interface RenderHost {
   result(value: unknown): void;
 }
 
+/** Injection token for the element-scoped state, event, and result bridge used by mounted view components. */
 export const RENDER_HOST = new InjectionToken<RenderHost>('RENDER_HOST');
 
 /**

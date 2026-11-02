@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownAutolinkComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownAutolinkComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownAutolinkComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a markdown autolink node as a link whose label is its URL.",
+  "declarations": [
+    {
+      "name": "MarkdownAutolinkComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownAutolinkComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownAutolinkComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a markdown autolink node as a link whose label is its URL.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownAutolinkComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownAutolinkNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownAutolinkNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
+            "line": 13
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "chat-md-autolink",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownAutolinkNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-autolink.component.ts",
+    "line": 6
+  }
+}

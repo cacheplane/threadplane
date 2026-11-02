@@ -1,0 +1,54 @@
+{
+  "name": "ToolExecutionAcquisition",
+  "entrypointId": "core/tools",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/tools/ToolExecutionAcquisition",
+  "canonicalReference": "@threadplane/core!ToolExecutionAcquisition:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Store acquisition outcome: execution authority, an encoded cached result, unavailable ownership, or an invocation conflict.",
+  "declarations": [
+    {
+      "name": "ToolExecutionAcquisition",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!ToolExecutionAcquisition:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolExecutionAcquisition = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly status: 'acquired';\n    readonly token: string;\n} | {\n    readonly status: 'complete';\n    readonly result: string;\n} | {\n    readonly status: 'unavailable';\n} | {\n    readonly status: 'conflict';\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Store acquisition outcome: execution authority, an encoded cached result, unavailable ownership, or an invocation conflict.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/tools/execution-context.ts",
+        "line": 20
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/tools/execution-context.ts",
+    "line": 20
+  }
+}

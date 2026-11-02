@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownListComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownListComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownListComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders an ordered or unordered markdown list, preserving its optional starting number.",
+  "declarations": [
+    {
+      "name": "MarkdownListComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownListComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownListComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders an ordered or unordered markdown list, preserving its optional starting number.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownListComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownListNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownListNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-list.component.ts",
+            "line": 21
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-list.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-list",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownListNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-list.component.ts",
+    "line": 7
+  }
+}

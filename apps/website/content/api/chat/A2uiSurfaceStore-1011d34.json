@@ -1,0 +1,511 @@
+{
+  "name": "A2uiSurfaceStore",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/A2uiSurfaceStore",
+  "canonicalReference": "@threadplane/chat!A2uiSurfaceStore:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Applies A2UI envelopes and exposes reactive wire surfaces and component readiness projections.",
+  "declarations": [
+    {
+      "name": "A2uiSurfaceStore",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!A2uiSurfaceStore:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiSurfaceStore "
+        }
+      ],
+      "docs": {
+        "summary": "Applies A2UI envelopes and exposes reactive wire surfaces and component readiness projections.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "apply",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#apply:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "apply(message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiMessage",
+              "canonicalReference": "@threadplane/chat!~A2uiMessage:type",
+              "href": "/docs/api/a2ui/A2uiMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 32
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "message",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "applyPartialArgs",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#applyPartialArgs:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "applyPartialArgs(toolCallId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", envelopes: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiMessage",
+              "canonicalReference": "@threadplane/chat!~A2uiMessage:type",
+              "href": "/docs/api/a2ui/A2uiMessage"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Live-stream entry point. Iterates envelopes and feeds each through\n`apply()`. Records the tool_call_id so the wrapped-content classifier\ncan short-circuit duplicate dispatch when the final AIMessage arrives.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 38
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "toolCallId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "envelopes",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 8
+          }
+        },
+        {
+          "name": "isPartialLive",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#isPartialLive:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isPartialLive(toolCallId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True if a tool_call_id has produced live envelopes via applyPartialArgs.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 40
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "toolCallId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "surface",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#surface:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "surface(surfaceId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurface",
+              "canonicalReference": "@threadplane/chat!A2uiSurface:interface",
+              "href": "/docs/api/chat/A2uiSurface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 43
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "surfaceId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "surfaces",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#surfaces:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surfaces: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurface",
+              "canonicalReference": "@threadplane/chat!A2uiSurface:interface",
+              "href": "/docs/api/chat/A2uiSurface"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Wire-format surfaces, for downstream consumers (e.g. surfaceToSpec).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 42
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "surfaceState",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#surfaceState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "surfaceState(surfaceId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfaceState",
+              "canonicalReference": "@threadplane/chat!A2uiSurfaceState:interface",
+              "href": "/docs/api/chat/A2uiSurfaceState"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 46
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "surfaceId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "surfaceStates",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore#surfaceStates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surfaceStates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfaceState",
+              "canonicalReference": "@threadplane/chat!A2uiSurfaceState:interface",
+              "href": "/docs/api/chat/A2uiSurfaceState"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Chat-side projections with per-component readiness.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+            "line": 45
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+        "line": 31
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+    "line": 31
+  }
+}

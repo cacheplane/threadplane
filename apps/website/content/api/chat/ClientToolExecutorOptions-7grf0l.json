@@ -1,0 +1,239 @@
+{
+  "name": "ClientToolExecutorOptions",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolExecutorOptions",
+  "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Options for wiring automatic browser function-tool execution.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutorOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutorOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Options for wiring automatic browser function-tool execution.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "executionGuard",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions#executionGuard:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly executionGuard?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolExecutionGuard",
+              "canonicalReference": "@threadplane/chat!ClientToolExecutionGuard:interface",
+              "href": "/docs/api/chat/ClientToolExecutionGuard"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "settleToolCall",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions#settleToolCall:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly settleToolCall?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(toolCall: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": ", result: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolResult",
+              "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+              "href": "/docs/api/chat/ClientToolResult"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "settleWithoutContinuing",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions#settleWithoutContinuing:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly settleWithoutContinuing?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(toolCall: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": ", result: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolResult",
+              "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+              "href": "/docs/api/chat/ClientToolResult"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Settlement for calls that must NOT continue the run (user abort, teardown).",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "shouldExecuteToolCall",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolExecutorOptions#shouldExecuteToolCall:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly shouldExecuteToolCall?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(toolCall: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCall",
+              "canonicalReference": "@threadplane/chat!ToolCall:interface",
+              "href": "/docs/api/chat/ToolCall"
+            },
+            {
+              "kind": "Content",
+              "text": ") => boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tool-executor.ts",
+    "line": 18
+  }
+}

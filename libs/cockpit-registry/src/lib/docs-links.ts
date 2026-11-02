@@ -82,14 +82,14 @@ export const COCKPIT_DOCS_LINKS: Readonly<Record<string, string>> = {
     '/docs/render/getting-started/introduction',
   'render/core-capabilities/spec-rendering': '/docs/render/guides/specs',
   'render/core-capabilities/element-rendering':
-    '/docs/render/api/render-spec-component',
+    '/docs/render/guides/element-rendering',
   'render/core-capabilities/state-management':
     '/docs/render/guides/state-store',
   'render/core-capabilities/registry': '/docs/render/guides/registry',
   'render/core-capabilities/repeat-loops': '/docs/render/guides/repeat-loops',
   // `$computed` resolves against the `functions` map registered by provideRender().
   'render/core-capabilities/computed-functions':
-    '/docs/render/api/provide-render',
+    '/docs/render/guides/computed-functions',
 
   // chat
   'chat/getting-started/overview': '/docs/chat/getting-started/introduction',

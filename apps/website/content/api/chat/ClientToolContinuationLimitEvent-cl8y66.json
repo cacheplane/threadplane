@@ -1,0 +1,187 @@
+{
+  "name": "ClientToolContinuationLimitEvent",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolContinuationLimitEvent",
+  "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Diagnostic emitted when client-tool continuation would exceed the configured max turn count.",
+  "declarations": [
+    {
+      "name": "ClientToolContinuationLimitEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolContinuationLimitEvent "
+        }
+      ],
+      "docs": {
+        "summary": "Diagnostic emitted when client-tool continuation would exceed the configured max turn count.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "attemptedTurn",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent#attemptedTurn:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly attemptedTurn: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "maxTurns",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent#maxTurns:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly maxTurns: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallIds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent#toolCallIds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallIds: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolNames",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolContinuationLimitEvent#toolNames:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolNames: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+        "line": 26
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/tool-def.ts",
+    "line": 26
+  }
+}

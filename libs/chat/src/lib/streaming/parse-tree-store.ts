@@ -3,6 +3,7 @@ import type { Spec } from '@json-render/core';
 import type { PartialJsonParser, JsonObjectNode } from '@cacheplane/partial-json';
 import { materialize } from '@cacheplane/partial-json';
 
+/** Tracks which element fields have arrived and whether its JSON object is still streaming. */
 export interface ElementAccumulationState {
   hasType: boolean;
   hasProps: boolean;
@@ -10,6 +11,7 @@ export interface ElementAccumulationState {
   streaming: boolean;
 }
 
+/** Accepts JSON chunks and exposes the materialized render specification and element accumulation signals. */
 export interface ParseTreeStore {
   push(chunk: string): void;
   readonly spec: Signal<Spec | null>;
@@ -22,7 +24,7 @@ export interface ParseTreeStore {
  * per-element accumulation state as signals, so a generative-UI surface can
  * render while the spec is still arriving.
  *
- * @param parser The partial-JSON parser used to incrementally materialize chunks.
+ * @param parser - The partial-JSON parser used to incrementally materialize chunks.
  * @returns A {@link ParseTreeStore}; call `push(chunk)` as bytes stream in.
  * @example
  * ```ts

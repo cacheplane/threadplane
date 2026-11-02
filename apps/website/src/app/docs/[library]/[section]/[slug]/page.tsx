@@ -61,14 +61,9 @@ import {
   techArticleJsonLd,
 } from '../../../../../lib/structured-data';
 import { getDocLastModified } from '../../../../../lib/sitemap-dates';
-import {
-  ApiDocRenderer,
-  type ApiDocEntry,
-} from '../../../../../components/docs/ApiDocRenderer';
 import { DocsTOC } from '../../../../../components/docs/DocsTOC';
 import { extractHeadings } from '../../../../../lib/extract-headings';
 import {
-  findDocsPage,
   getDocsSection,
   getLibraryConfig,
   libraryIntroPath,
@@ -79,36 +74,6 @@ import {
   getExampleCodeContext,
   getWebsiteWorkspacePage,
 } from '../../../../../lib/workspace-page';
-import fs from 'fs';
-import path from 'path';
-
-function loadApiDocs(library: string): ApiDocEntry[] {
-  const candidates = [
-    path.join(
-      process.cwd(),
-      'apps',
-      'website',
-      'content',
-      'docs',
-      library,
-      'api',
-      'api-docs.json'
-    ),
-    path.join(
-      process.cwd(),
-      'content',
-      'docs',
-      library,
-      'api',
-      'api-docs.json'
-    ),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-  }
-  return [];
-}
-
 interface DocsRouteProps {
   params: Promise<{ library: string; section: string; slug: string }>;
 }
@@ -190,7 +155,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
   ];
 
   const docsSlot = (
-    <div className="docs-workspace-article">
+    <div className="docs-workspace-article" data-docs-section={section}>
       <DocsSearch library={library as LibraryId} />
       <div className="flex min-w-0 docs-article-layout">
         <div className="flex-1 min-w-0">
@@ -218,36 +183,6 @@ export default async function DocsPage({ params }: DocsRouteProps) {
               docsPath={pathname}
             />
           </article>
-          {section === 'api' &&
-            (() => {
-              const entries = loadApiDocs(library);
-              const target = doc.title.replace(/\(\)$/, '');
-              const byName = (name: string) =>
-                entries.find((e: ApiDocEntry) => e.name === name);
-
-              // A page normally documents the one export named by its H1. Pages
-              // covering a group of exports declare them via `apiEntries`.
-              const configured = findDocsPage(
-                library,
-                section,
-                slug
-              )?.apiEntries;
-              const rendered = configured
-                ? configured
-                    .map(byName)
-                    .filter((e): e is ApiDocEntry => Boolean(e))
-                : [byName(target) ?? byName(doc.title)].filter(
-                    (e): e is ApiDocEntry => Boolean(e)
-                  );
-
-              return rendered.length > 0 ? (
-                <div className="px-4 sm:px-6 md:px-12 max-w-3xl pb-8">
-                  {rendered.map((entry) => (
-                    <ApiDocRenderer key={entry.name} entry={entry} />
-                  ))}
-                </div>
-              ) : null;
-            })()}
           <div className="px-4 sm:px-6 md:px-12 max-w-3xl pb-8">
             <DocsPrevNext
               library={library as LibraryId}
@@ -300,7 +235,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
             (library === 'runtimes' && section === 'mastra' && slug === 'overview') ||
             (library === 'runtimes' && section === 'microsoft-agent-framework' && slug === 'overview') ||
             (library === 'deep-agents' && section === 'capabilities' && ['planning', 'filesystem', 'subagents', 'skills', 'memory'].includes(slug)) ||
-            (library === 'render' && ((section === 'guides' && ['specs','state-store','repeat-loops','registry'].includes(slug)) || (section === 'api' && ['render-spec-component','provide-render'].includes(slug)))) ||
+            (library === 'render' && section === 'guides' && ['specs','state-store','repeat-loops','registry','element-rendering','computed-functions'].includes(slug)) ||
             (library === 'ag-ui' && ((section === 'reference' && slug === 'event-mapping') || (section === 'guides' && ['interrupts','tool-views','client-tools','json-render','subagents'].includes(slug)))) ||
             (library === 'chat' && ((section === 'a2ui' && slug === 'overview') || (section === 'guides' && ['thread-routing', 'generative-ui', 'theming'].includes(slug)) || slug === 'client-tools' || (section === 'concepts' && slug === 'message-model') || (section === 'components' && ['chat-debug', 'chat-trace', 'chat-input', 'chat-interrupt-panel', 'chat-tool-calls', 'chat-subagent-card'].includes(slug))))) ? (
             library === 'a2ui' && section === 'getting-started' && slug === 'introduction' ? (
@@ -322,8 +257,8 @@ export default async function DocsPage({ params }: DocsRouteProps) {
             ) : library === 'deep-agents' && section === 'capabilities' && slug === 'planning' ? (
               <ReactDeepAgentsPlanningPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} />
             ) : library === 'render' ? (
-              slug === 'provide-render' ? <ReactComputedFunctionsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
-              slug === 'render-spec-component' ? <ReactElementRenderingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
+              slug === 'computed-functions' ? <ReactComputedFunctionsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
+              slug === 'element-rendering' ? <ReactElementRenderingPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'registry' ? <ReactRegistryPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'repeat-loops' ? <ReactRepeatLoopsPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :
               slug === 'state-store' ? <ReactStateManagementPreview exampleCode={getExampleCodeContext(workspacePage.frontendVariants.react)} /> :

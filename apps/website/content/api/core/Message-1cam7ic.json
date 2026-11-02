@@ -1,0 +1,381 @@
+{
+  "name": "Message",
+  "entrypointId": "core",
+  "kind": "Interface",
+  "href": "/docs/api/core/Message",
+  "canonicalReference": "@threadplane/core!Message:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Owned text and source metadata; rich content and SDK objects remain outside this slice.",
+  "declarations": [
+    {
+      "name": "Message",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/core!Message:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface Message "
+        }
+      ],
+      "docs": {
+        "summary": "Owned text and source metadata; rich content and SDK objects remain outside this slice.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "citations",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#citations:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citations?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/core!Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "delivery",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#delivery:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly delivery: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageDelivery",
+              "canonicalReference": "@threadplane/core!MessageDelivery:type",
+              "href": "/docs/api/core/MessageDelivery"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "reasoning",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#reasoning:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly reasoning?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Backend-supplied reasoning display text.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "role",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#role:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly role: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Role",
+              "canonicalReference": "@threadplane/core!Role:type",
+              "href": "/docs/api/core/Role"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCallId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#toolCallId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "toolCallIds",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/core!Message#toolCallIds:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCallIds?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/core/src/contracts/message.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/core/src/contracts/message.ts",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/message.ts",
+    "line": 8
+  }
+}

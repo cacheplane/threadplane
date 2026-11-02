@@ -214,11 +214,12 @@ test('installed React project deletion drains unloaded membership and explicitly
     const heldDraft = await draft.inputValue();
     const stop = page.getByRole('button', { name: 'Stop', exact: true });
     await expect(stop).toBeEnabled();
-    const deleteButton = projects.getByRole('button', {
-      name: `Delete project ${name} (${projectId})`,
+    const projectActions = projects.getByRole('button', {
+      name: `More actions for project ${name} (${projectId})`,
       exact: true,
     });
-    await deleteButton.click();
+    await projectActions.click();
+    await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     const dialog = page.getByRole('alertdialog', {
       name: 'Delete project?',
       exact: true,
@@ -229,7 +230,8 @@ test('installed React project deletion drains unloaded membership and explicitly
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
     expect(backend.requests).toHaveLength(4);
     await expect(target).toBeVisible();
-    await deleteButton.click();
+    await projectActions.click();
+    await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     await page.screenshot({
       path: testInfo.outputPath('project-deletion-desktop.png'),
       fullPage: true,
@@ -443,10 +445,11 @@ for (const focus of ['project controls', 'draft'] as const) {
         .click();
       await nav
         .getByRole('button', {
-          name: 'Delete project Last project (last)',
+          name: 'More actions for project Last project (last)',
           exact: true,
         })
         .click();
+      await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
       await page
         .getByRole('alertdialog', { name: 'Delete project?', exact: true })
         .getByRole('button', { name: 'Delete project', exact: true })

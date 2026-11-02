@@ -1,0 +1,54 @@
+{
+  "name": "AgentStatus",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/AgentStatus",
+  "canonicalReference": "@threadplane/chat!AgentStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The agent execution state exposed to chat consumers.",
+  "declarations": [
+    {
+      "name": "AgentStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!AgentStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'idle' | 'running' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The agent execution state exposed to chat consumers.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-status.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-status.ts",
+    "line": 2
+  }
+}

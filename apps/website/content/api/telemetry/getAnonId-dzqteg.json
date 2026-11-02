@@ -1,0 +1,56 @@
+{
+  "name": "getAnonId",
+  "entrypointId": "telemetry",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/getAnonId",
+  "canonicalReference": "@threadplane/telemetry!getAnonId:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Return a lazily generated `anon_` UUID cached in this module's memory without persistence.",
+  "declarations": [
+    {
+      "name": "getAnonId",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!getAnonId:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function getAnonId(): "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Return a lazily generated `anon_` UUID cached in this module's memory without persistence.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/shared/anon-id.ts",
+        "line": 6
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/shared/anon-id.ts",
+    "line": 6
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY",
+  "entrypointId": "chat",
+  "kind": "Variable",
+  "href": "/docs/api/chat/STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY",
+  "canonicalReference": "@threadplane/chat!STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Configures invalid markdown update handling; defaults to throwing in development and rebuilding in production.",
+  "declarations": [
+    {
+      "name": "STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "StreamingMarkdownContractViolationPolicy",
+          "canonicalReference": "@threadplane/chat!StreamingMarkdownContractViolationPolicy:type",
+          "href": "/docs/api/chat/StreamingMarkdownContractViolationPolicy"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Configures invalid markdown update handling; defaults to throwing in development and rebuilding in production.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+        "line": 51
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/streaming/streaming-markdown.component.ts",
+    "line": 51
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "RENDER_CONFIG",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/RENDER_CONFIG",
+  "canonicalReference": "@threadplane/render!RENDER_CONFIG:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token for the registry, state, functions, handlers, and telemetry options registered by provideRender.",
+  "declarations": [
+    {
+      "name": "RENDER_CONFIG",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!RENDER_CONFIG:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "RENDER_CONFIG: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderConfig",
+          "canonicalReference": "@threadplane/render!RenderConfig:interface",
+          "href": "/docs/api/render/RenderConfig"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token for the registry, state, functions, handlers, and telemetry options registered by provideRender.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/provide-render.ts",
+        "line": 7
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/provide-render.ts",
+    "line": 7
+  }
+}

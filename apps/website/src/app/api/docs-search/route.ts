@@ -3,6 +3,7 @@ import { getAllDocSlugs, getDocBySlug } from '../../../lib/docs';
 import { getLibraryConfig } from '../../../lib/docs-config';
 import { indexDocSections } from '../../../lib/docs-search-index';
 import { searchIndexedDocs, type IndexedDoc } from '../../../lib/docs-search-query';
+import { buildApiSearchIndex } from '../../../lib/api-search-index';
 
 const MIN_QUERY_LENGTH = 2;
 
@@ -71,7 +72,7 @@ let index: IndexedDoc[] | null = null;
 
 function getIndex(): IndexedDoc[] {
   if (!index) {
-    index = buildIndex(getAllDocSlugs());
+    index = [...buildIndex(getAllDocSlugs()), ...buildApiSearchIndex()];
   }
   return index;
 }

@@ -1,0 +1,151 @@
+{
+  "name": "HistorySearchResult",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/HistorySearchResult",
+  "canonicalReference": "@threadplane/react!HistorySearchResult:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "App-supplied search row whose unique ID is returned on selection, with title and optional subtitle.",
+  "declarations": [
+    {
+      "name": "HistorySearchResult",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!HistorySearchResult:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface HistorySearchResult "
+        }
+      ],
+      "docs": {
+        "summary": "App-supplied search row whose unique ID is returned on selection, with title and optional subtitle.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchResult#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subtitle",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchResult#subtitle:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subtitle?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "title",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!HistorySearchResult#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/history-search-palette.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/history-search-palette.tsx",
+        "line": 17
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/history-search-palette.tsx",
+    "line": 17
+  }
+}

@@ -1,0 +1,400 @@
+{
+  "name": "OverflowMenuProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/OverflowMenuProps",
+  "canonicalReference": "@threadplane/react!OverflowMenuProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls menu visibility, item selection, optional pointer anchoring, and focus restoration.",
+  "declarations": [
+    {
+      "name": "OverflowMenuProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!OverflowMenuProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface OverflowMenuProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls menu visibility, item selection, optional pointer anchoring, and focus restoration.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "anchorPoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#anchorPoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly anchorPoint?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        readonly x: number;\n        readonly y: number;\n    } | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "items",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#items:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly items: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "OverflowMenuItem",
+              "canonicalReference": "@threadplane/react!OverflowMenuItem:interface",
+              "href": "/docs/api/react/chat/OverflowMenuItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onOpenChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#onOpenChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onOpenChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(open: boolean) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "(itemId: string, event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MouseEvent",
+              "canonicalReference": "@types/react!React.MouseEvent:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLButtonElement",
+              "canonicalReference": "!HTMLButtonElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "returnFocusTo",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!OverflowMenuProps#returnFocusTo:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly returnFocusTo?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLElement",
+              "canonicalReference": "!HTMLElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/overflow-menu.tsx",
+            "line": 32
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/overflow-menu.tsx",
+        "line": 20
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/overflow-menu.tsx",
+    "line": 20
+  }
+}

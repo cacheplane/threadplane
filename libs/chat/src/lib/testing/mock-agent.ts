@@ -14,6 +14,7 @@ import type {
 } from '../agent';
 import type { AgentError } from '../agent/agent-error';
 
+/** An in-memory agent with writable test signals, captured submissions, and a stop invocation counter. */
 export interface MockAgent extends Agent {
   messages:      WritableSignal<Message[]>;
   status:        WritableSignal<AgentStatus>;
@@ -49,6 +50,7 @@ export interface MockAgent extends Agent {
   stopCount: number;
 }
 
+/** Initial mock agent state and opt-in interrupt, subagent, history, and event support. */
 export interface MockAgentOptions {
   messages?: Message[];
   status?: AgentStatus;
@@ -67,7 +69,7 @@ export interface MockAgentOptions {
  * network. Every field is a writable signal so a test can drive UI states
  * (loading, error, interrupts, tool calls, subagents) deterministically.
  *
- * @param opts Initial values for the mock's signals; all optional.
+ * @param opts - Initial values for the mock's signals; all optional.
  * @returns A {@link MockAgent} satisfying the full `Agent` contract.
  * @example
  * ```ts

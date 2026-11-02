@@ -1,0 +1,229 @@
+{
+  "name": "ChatProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatProps",
+  "canonicalReference": "@threadplane/react!ChatProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options.",
+  "declarations": [
+    {
+      "name": "ChatProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatProps extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Pick",
+          "canonicalReference": "!Pick:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatInputProps",
+          "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+          "href": "/docs/api/react/chat/ChatInputProps"
+        },
+        {
+          "kind": "Content",
+          "text": ", 'label' | 'placeholder' | 'hint' | 'submitOnEnter'>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "content",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#content:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly content?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageContent",
+              "canonicalReference": "@threadplane/react!~MessageContent:interface",
+              "href": "/docs/api/content/messages/MessageContent"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned projection; reused across remounts and never disposed by Chat.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderMessage",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#renderMessage:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderMessage?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(row: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageRow",
+              "canonicalReference": "@threadplane/react!~MessageRow:interface",
+              "href": "/docs/api/content/messages/MessageRow"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Must be referentially stable; see `MessageListProps.renderMessage`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "session",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#session:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly session: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSession",
+              "canonicalReference": "@threadplane/react!~AgentSession:type",
+              "href": "/docs/api/core/AgentSession"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned session. Chat observes and dispatches; it never disposes it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat.tsx",
+        "line": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat.tsx",
+    "line": 11
+  }
+}

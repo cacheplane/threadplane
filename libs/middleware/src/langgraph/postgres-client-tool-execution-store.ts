@@ -7,11 +7,14 @@ export {
   THREADPLANE_CLIENT_TOOL_EXECUTIONS_MIGRATION,
 } from './postgres-tool-execution-schema.js';
 
+/** Column-name keyed result row returned by the PostgreSQL query adapter. */
 export type PostgresRow = Record<string, unknown>;
+/** Parameterized SQL template-tag contract used by the PostgreSQL client-tool execution store. */
 export type PostgresTaggedSql = (
   strings: TemplateStringsArray,
   ...values: unknown[]
 ) => Promise<readonly PostgresRow[]>;
+/** Tenant-scoping options for the PostgreSQL client-tool execution store. */
 export interface PostgresClientToolExecutionStoreOptions {
   /** Tenant scope for every read and write. Defaults to the empty scope. */
   readonly tenantId?: string | null;

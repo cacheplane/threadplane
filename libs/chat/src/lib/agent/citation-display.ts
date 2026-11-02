@@ -2,8 +2,10 @@
 // the preview card, and the sources panel so provenance rendering stays DRY.
 import type { Citation } from './citation';
 
+/** Supported source categories used for citation icons and visual tones. */
 export type CitationTypeIcon = 'web' | 'file' | 'app' | 'memory' | 'generic';
 
+/** Normalized source type, label, icon, tone, and recognition status for citation display. */
 export interface CitationTypeMeta {
   type: string;
   label: string | null;
@@ -12,11 +14,13 @@ export interface CitationTypeMeta {
   isKnown: boolean;
 }
 
+/** A citation source marker rendered from a provider image URL. */
 export interface CitationImageVisual {
   kind: 'image';
   iconUrl: string;
 }
 
+/** A citation source marker rendered with a source-category icon and tone. */
 export interface CitationTypeIconVisual {
   kind: 'type-icon';
   icon: CitationTypeIcon;
@@ -24,12 +28,14 @@ export interface CitationTypeIconVisual {
   label: string | null;
 }
 
+/** A citation source marker rendered as a colored initial. */
 export interface CitationMonogramVisual {
   kind: 'monogram';
   monogram: string;
   color: string;
 }
 
+/** The image, source-category icon, or monogram selected to identify a citation source. */
 export type CitationSourceVisual =
   | CitationImageVisual
   | CitationTypeIconVisual

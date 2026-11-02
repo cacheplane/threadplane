@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownEmphasisComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownEmphasisComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownEmphasisComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders the child nodes of markdown emphasis inside an emphasis element.",
+  "declarations": [
+    {
+      "name": "MarkdownEmphasisComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownEmphasisComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownEmphasisComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders the child nodes of markdown emphasis inside an emphasis element.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownEmphasisComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownEmphasisNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownEmphasisNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
+            "line": 15
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
+        "line": 7
+      },
+      "angular": {
+        "selector": "chat-md-emphasis",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownEmphasisNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-emphasis.component.ts",
+    "line": 7
+  }
+}

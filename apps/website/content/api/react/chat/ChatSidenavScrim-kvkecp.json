@@ -1,0 +1,92 @@
+{
+  "name": "ChatSidenavScrim",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ChatSidenavScrim",
+  "canonicalReference": "@threadplane/react!ChatSidenavScrim:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Controlled backdrop; the owner decides whether to accept dismissal.",
+  "declarations": [
+    {
+      "name": "ChatSidenavScrim",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ChatSidenavScrim:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ChatSidenavScrim(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatSidenavScrimProps",
+          "canonicalReference": "@threadplane/react!ChatSidenavScrimProps:interface",
+          "href": "/docs/api/react/chat/ChatSidenavScrimProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Controlled backdrop; the owner decides whether to accept dismissal.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+        "line": 12
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ open, onDismiss, label, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidenav-scrim.tsx",
+    "line": 12
+  }
+}

@@ -1,0 +1,444 @@
+{
+  "name": "ConfirmDialogProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ConfirmDialogProps",
+  "canonicalReference": "@threadplane/react!ConfirmDialogProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls confirmation visibility, intent callbacks, pending confirmation, labels, and the return-focus target.",
+  "declarations": [
+    {
+      "name": "ConfirmDialogProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ConfirmDialogProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ConfirmDialogProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls confirmation visibility, intent callbacks, pending confirmation, labels, and the return-focus target.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "body",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#body:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly body?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "cancelLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#cancelLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cancelLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "confirmLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#confirmLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly confirmLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onCancel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#onCancel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onCancel: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onConfirm",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#onConfirm:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onConfirm: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "pending",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#pending:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pending?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "returnFocusTo",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#returnFocusTo:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly returnFocusTo?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLElement",
+              "canonicalReference": "!HTMLElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "title",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "tone",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps#tone:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tone?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'normal' | 'destructive'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/confirm-dialog.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/confirm-dialog.tsx",
+        "line": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/confirm-dialog.tsx",
+    "line": 11
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "ToolCallStatus",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ToolCallStatus",
+  "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The execution state of an agent tool call.",
+  "declarations": [
+    {
+      "name": "ToolCallStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolCallStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'complete' | 'error'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The execution state of an agent tool call.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/tool-call.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/tool-call.ts",
+    "line": 2
+  }
+}

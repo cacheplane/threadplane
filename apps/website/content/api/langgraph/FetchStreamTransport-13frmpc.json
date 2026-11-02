@@ -1,0 +1,1133 @@
+{
+  "name": "FetchStreamTransport",
+  "entrypointId": "langgraph",
+  "kind": "Class",
+  "href": "/docs/api/langgraph/FetchStreamTransport",
+  "canonicalReference": "@threadplane/langgraph!FetchStreamTransport:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Production transport that connects to a LangGraph Platform API via HTTP and SSE.\n\nCreates threads automatically if no threadId is provided, and streams events\nusing the LangGraph SDK client.",
+  "declarations": [
+    {
+      "name": "FetchStreamTransport",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/langgraph!FetchStreamTransport:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class FetchStreamTransport implements "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentTransport",
+          "canonicalReference": "@threadplane/langgraph!AgentTransport:interface",
+          "href": "/docs/api/langgraph/AgentTransport"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Production transport that connects to a LangGraph Platform API via HTTP and SSE.\n\nCreates threads automatically if no threadId is provided, and streams events\nusing the LangGraph SDK client.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```typescript\nconst transport = new FetchStreamTransport(\n  'http://localhost:2024',\n  (id) => console.log('New thread:', id),\n);\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "Constructor",
+          "kind": "Constructor",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport:constructor(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "constructor(apiUrl: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", onThreadId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(id: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ", clientOptions?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphClientOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphClientOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphClientOptions"
+            },
+            {
+              "kind": "Content",
+              "text": ", \n    reportOperationFailure?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RuntimeOperationFailureReporter",
+              "canonicalReference": "@threadplane/langgraph!ɵLangGraphRuntimeOperationFailureReporter:type"
+            },
+            {
+              "kind": "Content",
+              "text": ");"
+            }
+          ],
+          "docs": {
+            "summary": "Constructs a new instance of the `FetchStreamTransport` class",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [
+              {
+                "name": "apiUrl",
+                "description": "Base URL of the LangGraph Platform API"
+              },
+              {
+                "name": "onThreadId",
+                "description": "Optional callback invoked when a new thread is created"
+              },
+              {
+                "name": "clientOptions",
+                "description": "Optional SDK client tuning (e.g. `maxRetries`)"
+              }
+            ],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 42
+          },
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "apiUrl",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "onThreadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            },
+            {
+              "parameterName": "clientOptions",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            },
+            {
+              "parameterName": "reportOperationFailure",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": true
+            }
+          ]
+        },
+        {
+          "name": "cancelRun",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#cancelRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cancelRun(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Cancel a server-side run.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 179
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "createQueuedRun",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#createQueuedRun:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "createQueuedRun(assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentQueueEntry",
+              "canonicalReference": "@threadplane/langgraph!AgentQueueEntry:interface",
+              "href": "/docs/api/langgraph/AgentQueueEntry"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Create a pending server-side run using LangGraph's enqueue strategy.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 143
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "getChildState",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#getChildState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getChildState(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", checkpointNs: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Read the newest checkpoint saved under one child checkpoint namespace.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 197
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "checkpointNs",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "getHistory",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#getHistory:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getHistory(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Load persisted checkpoint history for a thread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 188
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          }
+        },
+        {
+          "name": "getState",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#getState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getState(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", checkpoint: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadState",
+              "canonicalReference": "@langchain/langgraph-sdk!ThreadState:interface",
+              "href": "/docs/api/langgraph/ThreadState"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Read one exact saved checkpoint with the command's cancellation signal.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 215
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "checkpoint",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          }
+        },
+        {
+          "name": "joinStream",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#joinStream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "joinStream(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", runId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", lastEventId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        streamMode?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamMode",
+              "canonicalReference": "@langchain/langgraph-sdk!StreamMode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Join an already-started run without creating a new thread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 108
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "runId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "lastEventId",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 12
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 13,
+            "endIndex": 17
+          }
+        },
+        {
+          "name": "stream",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#stream:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "stream(assistantId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ", payload: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LangGraphSubmitOptions",
+              "canonicalReference": "@threadplane/langgraph!LangGraphSubmitOptions:interface",
+              "href": "/docs/api/langgraph/LangGraphSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "AsyncIterable",
+              "canonicalReference": "!AsyncIterable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "StreamEvent",
+              "canonicalReference": "@threadplane/langgraph!StreamEvent:interface",
+              "href": "/docs/api/langgraph/StreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Open a streaming connection, creating a thread if needed.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 66
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "assistantId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "payload",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 10
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 11,
+            "endIndex": 15
+          }
+        },
+        {
+          "name": "updateState",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!FetchStreamTransport#updateState:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "updateState(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", values: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ", signal: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AbortSignal",
+              "canonicalReference": "!AbortSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", options?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        asNode?: string;\n        checkpoint?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void | "
+            },
+            {
+              "kind": "Reference",
+              "text": "OwnedCheckpointPosition",
+              "canonicalReference": "@threadplane/langgraph!~OwnedCheckpointPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Update state once and return only usable root routing, when supplied.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+            "line": 230
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "values",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "signal",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "options",
+              "parameterTypeTokenRange": {
+                "startIndex": 8,
+                "endIndex": 11
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 12,
+            "endIndex": 16
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+        "line": 29
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+    "line": 29
+  }
+}

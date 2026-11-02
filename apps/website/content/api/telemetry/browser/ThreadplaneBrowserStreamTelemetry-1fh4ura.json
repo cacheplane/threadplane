@@ -1,0 +1,89 @@
+{
+  "name": "ThreadplaneBrowserStreamTelemetry",
+  "entrypointId": "telemetry/browser",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/browser/ThreadplaneBrowserStreamTelemetry",
+  "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Stream telemetry properties captured from browser-side agent adapters.",
+  "declarations": [
+    {
+      "name": "ThreadplaneBrowserStreamTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ThreadplaneBrowserStreamTelemetry extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadplaneBrowserRuntimeTelemetry",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserRuntimeTelemetry:interface",
+          "href": "/docs/api/telemetry/browser/ThreadplaneBrowserRuntimeTelemetry"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Stream telemetry properties captured from browser-side agent adapters.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "durationMs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!ThreadplaneBrowserStreamTelemetry#durationMs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "durationMs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Stream duration in milliseconds, when known.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/browser/service.ts",
+            "line": 29
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/browser/service.ts",
+        "line": 27
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/service.ts",
+    "line": 27
+  }
+}

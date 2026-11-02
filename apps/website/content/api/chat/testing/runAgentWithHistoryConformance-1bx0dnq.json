@@ -1,0 +1,105 @@
+{
+  "name": "runAgentWithHistoryConformance",
+  "entrypointId": "chat/testing",
+  "kind": "Function",
+  "href": "/docs/api/chat/testing/runAgentWithHistoryConformance",
+  "canonicalReference": "@threadplane/chat!runAgentWithHistoryConformance:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Conformance suite for AgentWithHistory implementations.\n\nRuns the base Agent conformance suite, then verifies the history\nsignal is present and returns an array of AgentCheckpoint-shaped entries.",
+  "declarations": [
+    {
+      "name": "runAgentWithHistoryConformance",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!runAgentWithHistoryConformance:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function runAgentWithHistoryConformance(label: "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ", factory: "
+        },
+        {
+          "kind": "Content",
+          "text": "(seed?: {\n    history?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentCheckpoint",
+          "canonicalReference": "@threadplane/chat!~AgentCheckpoint:interface",
+          "href": "/docs/api/chat/AgentCheckpoint"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n}) => "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentWithHistory",
+          "canonicalReference": "@threadplane/chat!~AgentWithHistory:interface",
+          "href": "/docs/api/chat/AgentWithHistory"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "void"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Conformance suite for AgentWithHistory implementations.\n\nRuns the base Agent conformance suite, then verifies the history\nsignal is present and returns an array of AgentCheckpoint-shaped entries.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/agent-with-history-conformance.ts",
+        "line": 11
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "label",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "factory",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 8,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/agent-with-history-conformance.ts",
+    "line": 11
+  }
+}

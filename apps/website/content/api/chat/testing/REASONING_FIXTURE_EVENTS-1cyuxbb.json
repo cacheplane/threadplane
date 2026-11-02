@@ -1,0 +1,57 @@
+{
+  "name": "REASONING_FIXTURE_EVENTS",
+  "entrypointId": "chat/testing",
+  "kind": "Variable",
+  "href": "/docs/api/chat/testing/REASONING_FIXTURE_EVENTS",
+  "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_EVENTS:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Canonical sequence: reasoning starts, three reasoning chunks, reasoning\nends, text starts, three text chunks, text ends.",
+  "declarations": [
+    {
+      "name": "REASONING_FIXTURE_EVENTS",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/chat!REASONING_FIXTURE_EVENTS:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "REASONING_FIXTURE_EVENTS: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AbstractEvent",
+          "canonicalReference": "@threadplane/chat!AbstractEvent:interface",
+          "href": "/docs/api/chat/testing/AbstractEvent"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        }
+      ],
+      "docs": {
+        "summary": "Canonical sequence: reasoning starts, three reasoning chunks, reasoning\nends, text starts, three text chunks, text ends.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/testing/reasoning-fixture.ts",
+        "line": 40
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 3
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/testing/reasoning-fixture.ts",
+    "line": 40
+  }
+}

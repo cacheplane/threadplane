@@ -26,7 +26,32 @@
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
+    "generate-api-docs": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/scripts/generate-api-docs.ts",
+        "{projectRoot}/scripts/api-reference/**/*",
+        "{projectRoot}/scripts/tsconfig.api.json",
+        "{projectRoot}/scripts/public-doc-projection.ts",
+        "{projectRoot}/src/lib/api-reference-model.ts",
+        "{workspaceRoot}/tsconfig.base.json",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/package-lock.json",
+        "sdkApiSources"
+      ],
+      "outputs": ["{projectRoot}/content/api"],
+      "options": { "command": "node --import tsx apps/website/scripts/generate-api-docs.ts" }
+    },
+    "package-content": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["generate-api-docs"],
+      "outputs": ["{workspaceRoot}/dist/apps/website/content"],
+      "options": { "command": "node apps/website/scripts/package-website-content.mjs" }
+    },
     "build": {
+      "dependsOn": ["package-content"],
       "executor": "@nx/next:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
@@ -43,6 +68,7 @@
       },
       "inputs": [
         "default",
+        "sdkApiSources",
         "deploymentConfig",
         "^default",
         { "env": "THREADPLANE_DOCS_BUILD_REVISION" },
@@ -342,6 +368,20 @@
     }
   },
   "namedInputs": {
+    "sdkApiSources": [
+      "{workspaceRoot}/libs/*/project.json",
+      "{workspaceRoot}/libs/a2ui/**/*",
+      "{workspaceRoot}/libs/ag-ui/**/*",
+      "{workspaceRoot}/libs/angular/**/*",
+      "{workspaceRoot}/libs/chat/**/*",
+      "{workspaceRoot}/libs/content/**/*",
+      "{workspaceRoot}/libs/core/**/*",
+      "{workspaceRoot}/libs/langgraph/**/*",
+      "{workspaceRoot}/libs/middleware/**/*",
+      "{workspaceRoot}/libs/react/**/*",
+      "{workspaceRoot}/libs/render/**/*",
+      "{workspaceRoot}/libs/telemetry/**/*"
+    ],
     "deploymentConfig": ["{workspaceRoot}/vercel.json"]
   }
 }

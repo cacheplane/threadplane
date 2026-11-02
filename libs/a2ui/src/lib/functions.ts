@@ -11,11 +11,13 @@ export interface A2uiFunctionContext {
   locale?: string;
 }
 
+/** Client-side function implementation receiving named arguments and a context for resolving dynamic values. */
 export type A2uiFunctionImpl = (
   args: Record<string, unknown>,
   ctx: A2uiFunctionContext,
 ) => unknown;
 
+/** Read-only lookup of client-side function implementations by their A2UI call names. */
 export type A2uiFunctionRegistry = ReadonlyMap<string, A2uiFunctionImpl>;
 
 function toNumber(v: unknown): number | undefined {

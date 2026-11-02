@@ -6,8 +6,10 @@ import { ChatCitationsComponent } from '../chat-citations/chat-citations.compone
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 import type { Message } from '../../agent/message';
 
+/** Message roles used to select the chat message layout. */
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
+/** Provides role-specific message layout, projected controls, and citations for assistant messages. */
 @Component({
   selector: 'chat-message',
   standalone: true,

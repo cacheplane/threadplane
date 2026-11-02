@@ -8,6 +8,10 @@ function hashString(s: string): number {
   return h;
 }
 
+/**
+ * Make a deterministic sampling decision by hashing the anonymous ID against the rate.
+ * Rates at or below zero exclude all IDs; rates at or above one include all IDs.
+ */
 export function shouldSample(rate: number, anonId: string): boolean {
   if (rate <= 0) return false;
   if (rate >= 1) return true;

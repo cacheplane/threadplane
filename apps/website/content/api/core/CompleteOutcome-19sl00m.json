@@ -1,0 +1,54 @@
+{
+  "name": "CompleteOutcome",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/CompleteOutcome",
+  "canonicalReference": "@threadplane/core!CompleteOutcome:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Terminal result of one response attempt; paused awaits resumable input.",
+  "declarations": [
+    {
+      "name": "CompleteOutcome",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!CompleteOutcome:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CompleteOutcome = "
+        },
+        {
+          "kind": "Content",
+          "text": "'success' | 'error' | 'aborted' | 'interrupted' | 'paused'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Terminal result of one response attempt; paused awaits resumable input.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/delivery.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/delivery.ts",
+    "line": 2
+  }
+}

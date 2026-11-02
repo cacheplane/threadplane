@@ -1,3 +1,6 @@
+import apiEntrypoints from '../../content/api/entrypoints.json';
+import { apiSymbolHref } from './api-reference-model';
+
 export type LibraryId =
   | 'langgraph'
   | 'render'
@@ -12,12 +15,8 @@ export interface DocsPage {
   title: string;
   slug: string;
   section: string;
-  /**
-   * API pages auto-render the generated `api-docs.json` entry whose name
-   * matches the page's H1. Set this on a page that covers a *group* of exports
-   * instead — each named entry is rendered in order, below the page prose.
-   */
-  apiEntries?: string[];
+  /** Navigation destination for generated reference pages; no authored MDX. */
+  href?: string;
 }
 
 export interface DocsSection {
@@ -160,30 +159,6 @@ export const docsConfig: DocsLibrary[] = [
           },
         ],
       },
-      {
-        title: 'API Reference',
-        id: 'api',
-        color: 'blue',
-        pages: [
-          { title: 'injectAgent()', slug: 'inject-agent', section: 'api' },
-          { title: 'provideAgent()', slug: 'provide-agent', section: 'api' },
-          {
-            title: 'FetchStreamTransport',
-            slug: 'fetch-stream-transport',
-            section: 'api',
-          },
-          {
-            title: 'MockAgentTransport',
-            slug: 'mock-stream-transport',
-            section: 'api',
-          },
-          {
-            title: 'LangGraphThreadsAdapter',
-            slug: 'langgraph-threads-adapter',
-            section: 'api',
-          },
-        ],
-      },
     ],
   },
   {
@@ -222,6 +197,8 @@ export const docsConfig: DocsLibrary[] = [
         color: 'blue',
         pages: [
           { title: 'Component Registry', slug: 'registry', section: 'guides' },
+          { title: 'Element Rendering', slug: 'element-rendering', section: 'guides' },
+          { title: 'Computed Functions', slug: 'computed-functions', section: 'guides' },
           { title: 'State Store', slug: 'state-store', section: 'guides' },
           { title: 'Specs & Elements', slug: 'specs', section: 'guides' },
           { title: 'Repeat Loops', slug: 'repeat-loops', section: 'guides' },
@@ -239,30 +216,6 @@ export const docsConfig: DocsLibrary[] = [
             slug: 'json-render-vs-a2ui',
             section: 'concepts',
           },
-        ],
-      },
-      {
-        title: 'API Reference',
-        id: 'api',
-        color: 'blue',
-        pages: [
-          {
-            title: 'RenderSpecComponent',
-            slug: 'render-spec-component',
-            section: 'api',
-          },
-          {
-            title: 'defineAngularRegistry()',
-            slug: 'define-angular-registry',
-            section: 'api',
-          },
-          { title: 'views()', slug: 'views', section: 'api' },
-          {
-            title: 'signalStateStore()',
-            slug: 'signal-state-store',
-            section: 'api',
-          },
-          { title: 'provideRender()', slug: 'provide-render', section: 'api' },
         ],
       },
     ],
@@ -422,24 +375,6 @@ export const docsConfig: DocsLibrary[] = [
         ],
       },
       {
-        title: 'API Reference',
-        id: 'api',
-        color: 'blue',
-        pages: [
-          { title: 'mockAgent()', slug: 'mock-agent', section: 'api' },
-          {
-            title: 'createContentClassifier()',
-            slug: 'content-classifier',
-            section: 'api',
-          },
-          {
-            title: 'createParseTreeStore()',
-            slug: 'parse-tree-store',
-            section: 'api',
-          },
-        ],
-      },
-      {
         title: 'Migrations',
         id: 'migrations',
         color: 'blue',
@@ -520,17 +455,6 @@ export const docsConfig: DocsLibrary[] = [
             slug: 'event-mapping',
             section: 'reference',
           },
-        ],
-      },
-      {
-        title: 'API Reference',
-        id: 'api',
-        color: 'blue',
-        pages: [
-          { title: 'provideAgent()', slug: 'provide-agent', section: 'api' },
-          { title: 'injectAgent()', slug: 'inject-agent', section: 'api' },
-          { title: 'toAgent()', slug: 'to-agent', section: 'api' },
-          { title: 'FakeAgent', slug: 'fake-agent', section: 'api' },
         ],
       },
     ],
@@ -628,29 +552,6 @@ export const docsConfig: DocsLibrary[] = [
             title: 'Python LangGraph Middleware',
             slug: 'python-langgraph',
             section: 'guides',
-          },
-        ],
-      },
-      {
-        title: 'API Reference',
-        id: 'api',
-        color: 'blue',
-        pages: [
-          {
-            title: 'LangGraph.js Helpers',
-            slug: 'client-tool-helpers',
-            section: 'api',
-            apiEntries: [
-              'bindClientTools',
-              'clientToolsChannel',
-              'clientToolsRouter',
-              'clientToolSpecs',
-              'clientToolNames',
-              'hasClientToolCall',
-              'hasServerToolCall',
-              'routeAfterAgent',
-              'lastMessage',
-            ],
           },
         ],
       },
@@ -764,6 +665,23 @@ export const docsConfig: DocsLibrary[] = [
     ],
   },
 ];
+
+// Keep guide bundles small: this manifest contains import paths, not symbol data.
+for (const library of docsConfig) {
+  const entrypoints = apiEntrypoints.filter(entry => entry.docLibrary === library.id);
+  if (entrypoints.length === 0) continue;
+  library.sections.push({
+    title: 'API Reference',
+    id: 'api',
+    color: 'blue',
+    pages: entrypoints.map(entry => ({
+      title: entry.importPath,
+      section: 'api',
+      slug: entry.id,
+      href: apiSymbolHref(entry.id),
+    })),
+  });
+}
 
 export function getLibraryConfig(libraryId: string): DocsLibrary | undefined {
   return docsConfig.find((l) => l.id === libraryId);

@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
+/** Displays an animated loading placeholder while generative UI is being built. */
 @Component({
   selector: 'chat-genui-skeleton',
   standalone: true,

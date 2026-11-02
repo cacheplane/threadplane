@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownCodeBlockComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownCodeBlockComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownCodeBlockComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a markdown code block as escaped text with an optional language CSS class.",
+  "declarations": [
+    {
+      "name": "MarkdownCodeBlockComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownCodeBlockComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownCodeBlockComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a markdown code block as escaped text with an optional language CSS class.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "node",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownCodeBlockComponent#node:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly node: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownCodeBlockNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownCodeBlockNode:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
+            "line": 13
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "chat-md-code-block",
+        "inputs": [
+          {
+            "name": "node",
+            "alias": "node",
+            "required": true,
+            "type": "MarkdownCodeBlockNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
+    "line": 6
+  }
+}

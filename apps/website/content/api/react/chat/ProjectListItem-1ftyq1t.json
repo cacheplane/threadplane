@@ -1,0 +1,115 @@
+{
+  "name": "ProjectListItem",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ProjectListItem",
+  "canonicalReference": "@threadplane/react!ProjectListItem:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Project selection row identified by ID and displayed by name, falling back to the ID for an empty name.",
+  "declarations": [
+    {
+      "name": "ProjectListItem",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ProjectListItem:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ProjectListItem "
+        }
+      ],
+      "docs": {
+        "summary": "Project selection row identified by ID and displayed by name, falling back to the ID for an empty name.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectListItem#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-list.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ProjectListItem#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/project-list.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/project-list.tsx",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/project-list.tsx",
+    "line": 5
+  }
+}

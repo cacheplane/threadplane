@@ -8,6 +8,7 @@ import {
 // Inlined from shared/events.ts: ng-packagr enforces rootDir at the entry-file
 // level (src/browser/), so the browser entry cannot import from ../shared/.
 // Keep this type in sync with shared/events.ts.
+/** Alias for every event name accepted by the explicit browser service, including runtime and stream events. */
 export type ThreadplaneBrowserEvent = ThreadplaneTelemetryEvent;
 
 /** Runtime lifecycle properties captured from browser-side agent adapters. */
@@ -63,7 +64,7 @@ export class ThreadplaneTelemetryService {
   private postHogPromise: Promise<typeof import('posthog-js')['default'] | null> | null = null;
   private distinctId: string | null = null;
 
-  /** Capture an arbitrary enabled browser telemetry event. */
+  /** Capture an event using the configured delivery and sampling options. */
   async capture(event: ThreadplaneTelemetryEvent, properties?: Record<string, unknown>): Promise<void> {
     if (!this.config?.enabled) return;
     const sampleRate = normalizeSampleRate(this.config.sampleRate);

@@ -6,6 +6,7 @@ export type CompleteOutcome =
   | 'interrupted'
   | 'paused';
 
+/** Identifies a message's response generation and whether it is streaming or finished with an outcome. */
 export type MessageDelivery =
   | { readonly generation: string; readonly phase: 'streaming' }
   | {
@@ -14,6 +15,7 @@ export type MessageDelivery =
       readonly outcome: CompleteOutcome;
     };
 
+/** Creates a frozen streaming delivery marker for a response generation. */
 export function streamingDelivery(generation: string) {
   return Object.freeze({
     generation,
@@ -21,6 +23,7 @@ export function streamingDelivery(generation: string) {
   } as const satisfies MessageDelivery);
 }
 
+/** Creates a frozen terminal delivery marker with the supplied generation and outcome. */
 export function completeDelivery<const TOutcome extends CompleteOutcome>(
   generation: string,
   outcome: TOutcome
@@ -32,6 +35,7 @@ export function completeDelivery<const TOutcome extends CompleteOutcome>(
   } as const satisfies MessageDelivery);
 }
 
+/** Marks static message content as successfully complete, using the message ID as its generation. */
 export function staticDelivery(messageId: string) {
   return completeDelivery(messageId, 'success');
 }

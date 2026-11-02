@@ -1,0 +1,187 @@
+{
+  "name": "ToolObservationProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ToolObservationProps",
+  "canonicalReference": "@threadplane/react!ToolObservationProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Literal observed text. The caller owns tool/result association and formatting.",
+  "declarations": [
+    {
+      "name": "ToolObservationProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ToolObservationProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolObservationProps "
+        }
+      ],
+      "docs": {
+        "summary": "Literal observed text. The caller owns tool/result association and formatting.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "argumentsText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolObservationProps#argumentsText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly argumentsText: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-observation.tsx",
+            "line": 4
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolObservationProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-observation.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolObservationProps#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-observation.tsx",
+            "line": 3
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "resultText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolObservationProps#resultText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly resultText?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-observation.tsx",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/tool-observation.tsx",
+        "line": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-observation.tsx",
+    "line": 2
+  }
+}

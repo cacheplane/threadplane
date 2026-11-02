@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ProjectList, ProjectNameForm } from '@threadplane/react/chat';
 import type { ThreadRow } from '../../shared/contracts';
 import {
@@ -15,6 +15,7 @@ import {
   useProjectDeletion,
   type ProjectDeletionOwner,
 } from './use-project-deletion';
+import { NativeProjectActions } from './native-project-actions';
 
 type Editor = {
   readonly id: string | null;
@@ -78,6 +79,13 @@ export function NativeProjects({
     };
   }, []);
   const projects = mergeProjects(catalog, rows);
+  const [menu, setMenu] = useState<{
+    id: string;
+    rows: typeof rows;
+    catalog: typeof catalog;
+    projectId: typeof projectId;
+    deletion: typeof deletion;
+  } | null>(null);
   const open = (
     id: string | null,
     name: string,
@@ -120,6 +128,22 @@ export function NativeProjects({
       if (active?.id === id) close(active);
     },
   });
+  const blocked = !ready || problem || projectDeletion.busy;
+  const activeMenu =
+    menu &&
+    !blocked &&
+    menu.rows === rows &&
+    menu.catalog === catalog &&
+    menu.projectId === projectId &&
+    menu.deletion === deletion &&
+    projects.some((project) => project.id === menu.id)
+      ? menu
+      : null;
+  useLayoutEffect(() => {
+    if (menu && !activeMenu) setMenu(null);
+  }, [menu, activeMenu]);
+  const liveMenu = useRef({ activeMenu, blocked, projects, deletion });
+  liveMenu.current = { activeMenu, blocked, projects, deletion };
   const save = (request: Editor) => {
     if (
       current.current !== request ||
@@ -208,35 +232,51 @@ export function NativeProjects({
             onSelect={onSelect}
             label="Projects"
             renderActions={(project) => (
-              <>
-                <button
-                  type="button"
-                  disabled={!ready || problem || projectDeletion.busy}
-                  aria-label={`Rename project ${project.name} (${project.id})`}
-                  onClick={(event) =>
-                    open(project.id, project.name, event.currentTarget)
+              <NativeProjectActions
+                project={project}
+                disabled={blocked}
+                open={activeMenu?.id === project.id}
+                canDelete={
+                  deletion ? deletion.canDeleteProject(project.id) : undefined
+                }
+                onOpenChange={(next) => {
+                  if (next) {
+                    if (!liveMenu.current.blocked)
+                      setMenu({
+                        id: project.id,
+                        rows,
+                        catalog,
+                        projectId,
+                        deletion,
+                      });
+                  } else {
+                    // A closing portal must not dismiss a newer row's menu.
+                    const request =
+                      activeMenu?.id === project.id ? activeMenu : null;
+                    setMenu((current) =>
+                      current === request ? null : current
+                    );
                   }
-                >
-                  Rename
-                </button>
-                {deletion && (
-                  <button
-                    type="button"
-                    disabled={
-                      !ready ||
-                      problem ||
-                      projectDeletion.busy ||
-                      !deletion.canDeleteProject(project.id)
-                    }
-                    aria-label={`Delete project ${project.name} (${project.id})`}
-                    onClick={(event) =>
-                      projectDeletion.request(project, event.currentTarget)
-                    }
-                  >
-                    Delete
-                  </button>
-                )}
-              </>
+                }}
+                onAction={(action, invoker) => {
+                  const latest = liveMenu.current;
+                  if (
+                    !activeMenu ||
+                    latest.activeMenu !== activeMenu ||
+                    activeMenu.id !== project.id ||
+                    latest.blocked
+                  )
+                    return;
+                  const target = latest.projects.find(
+                    (item) => item.id === project.id
+                  );
+                  if (!target) return;
+                  if (action === 'rename')
+                    open(target.id, target.name, invoker);
+                  else if (latest.deletion?.canDeleteProject(target.id))
+                    projectDeletion.request(target, invoker);
+                }}
+              />
             )}
           />
           {editor && (

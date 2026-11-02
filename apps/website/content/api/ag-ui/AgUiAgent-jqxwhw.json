@@ -1,0 +1,544 @@
+{
+  "name": "AgUiAgent",
+  "entrypointId": "ag-ui",
+  "kind": "Interface",
+  "href": "/docs/api/ag-ui/AgUiAgent",
+  "canonicalReference": "@threadplane/ag-ui!AgUiAgent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The neutral Agent contract, widened with the AG-UI adapter's\n`customEvents` signal (the chat composition feature-detects it to enable\nlive a2ui streaming), the browser client-tools capability, and concrete\nACTIVITY-backed `subagents`.\nMirrors langgraph's LangGraphAgent extension where the protocol surfaces\noverlap.",
+  "declarations": [
+    {
+      "name": "AgUiAgent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/ag-ui!AgUiAgent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgUiAgent<TState = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": "> extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "Agent",
+          "canonicalReference": "@threadplane/ag-ui!~Agent:interface",
+          "href": "/docs/api/chat/Agent"
+        },
+        {
+          "kind": "Content",
+          "text": "<TState>"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "The neutral Agent contract, widened with the AG-UI adapter's\n`customEvents` signal (the chat composition feature-detects it to enable\nlive a2ui streaming), the browser client-tools capability, and concrete\nACTIVITY-backed `subagents`.\nMirrors langgraph's LangGraphAgent extension where the protocol surfaces\noverlap.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "clientTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#clientTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clientTools: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ClientToolsCapability",
+              "canonicalReference": "@threadplane/ag-ui!~ClientToolsCapability:interface",
+              "href": "/docs/api/chat/ClientToolsCapability"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 144
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "customEvents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#customEvents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "customEvents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CustomStreamEvent",
+              "canonicalReference": "@threadplane/ag-ui!CustomStreamEvent:interface",
+              "href": "/docs/api/ag-ui/CustomStreamEvent"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 143
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "dispose",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#dispose:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "dispose(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Unsubscribe and stop local work. Does not cancel backend checkpoints.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 142
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "name": "interruptSession",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#interruptSession:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "interruptSession: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "InterruptSessionSnapshot",
+              "canonicalReference": "@threadplane/ag-ui!InterruptSessionSnapshot:interface",
+              "href": "/docs/api/ag-ui/InterruptSessionSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Full interrupt batch and its request ownership phase.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 140
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "rawEvents$",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#rawEvents$:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "rawEvents$: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Observable",
+              "canonicalReference": "rxjs!Observable:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "BaseEvent",
+              "canonicalReference": "@ag-ui/core!BaseEvent:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Every AG-UI protocol event the adapter reduced into its signals, in arrival\norder, for hosts that fold the full stream into their own view model.\n\nEmits exactly the events the signals saw: events from a superseded run,\nevents after a run was stopped or failed, and events after a terminal\noutcome are suppressed here too. Each event is emitted after the signals\nare updated for it. A run's terminal `RUN_ERROR` is always emitted once,\nafter `error()` and `status()` settle. Where `provideAgent()` protects\noperation errors, the emitted `RUN_ERROR` honours the same protection as\n`error()`: it carries only the generic message, with the server's message,\ncode and payload dropped. Hot and unbuffered — subscribe before submitting to\nsee a whole run. Completes on `dispose()`.\n\nHydration from a configured `replay` source emits every replayed event, in\norder, once the whole replay has been folded into the signals; subscribe\nbefore awaiting `ready` to see them. Hydration from `persistence` restores a\ncommitted snapshot rather than replaying protocol events, so nothing is\nemitted for it; read the hydrated `messages()` and `state()` instead.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 169
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "ready",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#ready:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "ready: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Resolves after replayed or persisted thread state is hydrated; actions wait for it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 130
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "reconcileInterrupt",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#reconcileInterrupt:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reconcileInterrupt(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Recover an uncertain attempt using the configured authoritative reconciler,\nadopting whatever it reports — including an `acknowledged` answer that only\nproves the resume was started. The imperative escape hatch; prefer the base\ncontract's `checkStatus` for the control offered to a user when\n`error().recovery === 'check'`, which settles only on a conclusive answer.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 138
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "subagents: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, "
+            },
+            {
+              "kind": "Reference",
+              "text": "Subagent",
+              "canonicalReference": "@threadplane/ag-ui!~Subagent:interface",
+              "href": "/docs/api/chat/Subagent"
+            },
+            {
+              "kind": "Content",
+              "text": ">>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Subagent activities (activityType==='subagent') projected to the neutral\n Subagent contract, keyed by messageId. Narrows the base Agent's optional\n `subagents?` to a concrete signal for AG-UI consumers.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 148
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "submit",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/ag-ui!AgUiAgent#submit:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "submit(input: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentSubmitInput",
+              "canonicalReference": "@threadplane/ag-ui!~AgentSubmitInput:interface",
+              "href": "/docs/api/chat/AgentSubmitInput"
+            },
+            {
+              "kind": "Content",
+              "text": ", opts?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgUiSubmitOptions",
+              "canonicalReference": "@threadplane/ag-ui!AgUiSubmitOptions:interface",
+              "href": "/docs/api/ag-ui/AgUiSubmitOptions"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/ag-ui/src/lib/to-agent.ts",
+            "line": 128
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "input",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opts",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/ag-ui/src/lib/to-agent.ts",
+        "line": 127
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "TState",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/to-agent.ts",
+    "line": 127
+  }
+}

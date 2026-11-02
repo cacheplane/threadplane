@@ -1,0 +1,250 @@
+{
+  "name": "provideAgent",
+  "entrypointId": "langgraph",
+  "kind": "Function",
+  "href": "/docs/api/langgraph/provideAgent",
+  "canonicalReference": "@threadplane/langgraph!provideAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Wire the LangGraph adapter into Angular's dependency injection.\n\nRegisters a singleton `LangGraphAgent` constructed from `config`. Retrieve it\nin any component with `injectAgent()`. Provide this at the application root\n(`app.config.ts`) for an app-wide agent.\n\nTo use a different agent in a component subtree, re-provide\n`provideAgent({...})` in that component's `providers: []` array —\nAngular's hierarchical DI scopes the singleton accordingly.\n\n**Static vs factory config.** Pass a plain `AgentConfig` object when the\nconfig is known up front. Pass a `() => AgentConfig` factory when the config\ndepends on runtime/DI state — the factory runs inside an Angular injection\ncontext, so it may call `inject()` to read services, route params, or\ncomponent-scoped signals.\n\n**Typed state via AgentRef.** Pass a typed ref as the first argument to flow\nthe state shape from `provideAgent` to `injectAgent` without repeating the\ngeneric at every call site.\n\n**Several agents at one injector level.** Each `provideAgent(ref, …)` call\nbuilds its own agent from its own config, so two (or more) refs may be\nprovided side by side in a single `providers` array and `injectAgent(refA)`\n/ `injectAgent(refB)` return distinct agents. The ref-less `injectAgent()`\nresolves a single shared token, which can only point at one of them: when\nmore than one ref is provided at the same level the **last** call wins, and\nresolving it in dev mode logs a `console.warn` naming every competing ref.\nThe `AGENT_LIFECYCLE` token follows the same rule. Always inject by ref when\nan injector provides more than one agent.\n\n**Lifecycle token.** Every form also provides `AGENT_LIFECYCLE`, so\n`inject(AGENT_LIFECYCLE)` returns the same object as `injectAgent().lifecycle`\nwithout reaching for the agent itself.",
+  "declarations": [
+    {
+      "name": "provideAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!provideAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideAgent<T = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ">(ref: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentRef",
+          "canonicalReference": "@threadplane/langgraph!~AgentRef:interface",
+          "href": "/docs/api/chat/AgentRef"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>"
+        },
+        {
+          "kind": "Content",
+          "text": ", configOrFactory: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/langgraph!AgentConfig:interface",
+          "href": "/docs/api/langgraph/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "<T> | (() => "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/langgraph!AgentConfig:interface",
+          "href": "/docs/api/langgraph/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>)"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Wire the LangGraph adapter into Angular's dependency injection.\n\nRegisters a singleton `LangGraphAgent` constructed from `config`. Retrieve it\nin any component with `injectAgent()`. Provide this at the application root\n(`app.config.ts`) for an app-wide agent.\n\nTo use a different agent in a component subtree, re-provide\n`provideAgent({...})` in that component's `providers: []` array —\nAngular's hierarchical DI scopes the singleton accordingly.\n\n**Static vs factory config.** Pass a plain `AgentConfig` object when the\nconfig is known up front. Pass a `() => AgentConfig` factory when the config\ndepends on runtime/DI state — the factory runs inside an Angular injection\ncontext, so it may call `inject()` to read services, route params, or\ncomponent-scoped signals.\n\n**Typed state via AgentRef.** Pass a typed ref as the first argument to flow\nthe state shape from `provideAgent` to `injectAgent` without repeating the\ngeneric at every call site.\n\n**Several agents at one injector level.** Each `provideAgent(ref, …)` call\nbuilds its own agent from its own config, so two (or more) refs may be\nprovided side by side in a single `providers` array and `injectAgent(refA)`\n/ `injectAgent(refB)` return distinct agents. The ref-less `injectAgent()`\nresolves a single shared token, which can only point at one of them: when\nmore than one ref is provided at the same level the **last** call wins, and\nresolving it in dev mode logs a `console.warn` naming every competing ref.\nThe `AGENT_LIFECYCLE` token follows the same rule. Always inject by ref when\nan injector provides more than one agent.\n\n**Lifecycle token.** Every form also provides `AGENT_LIFECYCLE`, so\n`inject(AGENT_LIFECYCLE)` returns the same object as `injectAgent().lifecycle`\nwithout reaching for the agent itself.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "Two agents in one providers array\n```ts\nexport const LIVE = createAgentRef<ChatState>('live');\nexport const REPLAY = createAgentRef<ChatState>('replay');\nproviders: [\n  provideAgent(LIVE, { assistantId: 'chat' }),\n  provideAgent(REPLAY, { assistantId: 'chat', transport: replayTransport }),\n];\n// component: injectAgent(LIVE) !== injectAgent(REPLAY)\n```",
+          "Factory config reading route params\n```ts\nproviders: [\n  provideAgent(() => {\n    const route = inject(ActivatedRoute);\n    return { assistantId: 'chat', threadId: toSignal(route.paramMap) };\n  }),\n];\n```",
+          "Typed state via AgentRef\n```ts\nexport const TRIP = createAgentRef<TripState>('trip');\n// app.config.ts:\nproviders: [provideAgent(TRIP, { assistantId: 'trip-graph' })]\n// component:\nconst agent = injectAgent(TRIP); // LangGraphAgent<TripState>\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.provider.ts",
+        "line": 194
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "ref",
+          "parameterTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "configOrFactory",
+          "parameterTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 12,
+        "endIndex": 14
+      }
+    },
+    {
+      "name": "provideAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/langgraph!provideAgent:function(2)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function provideAgent<T = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Record",
+          "canonicalReference": "!Record:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<string, unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ">(configOrFactory: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/langgraph!AgentConfig:interface",
+          "href": "/docs/api/langgraph/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "<T> | (() => "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentConfig",
+          "canonicalReference": "@threadplane/langgraph!AgentConfig:interface",
+          "href": "/docs/api/langgraph/AgentConfig"
+        },
+        {
+          "kind": "Content",
+          "text": "<T>)"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Provider",
+          "canonicalReference": "@angular/core!Provider:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.provider.ts",
+        "line": 198
+      },
+      "overloadIndex": 2,
+      "parameters": [
+        {
+          "parameterName": "configOrFactory",
+          "parameterTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 8
+          },
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 9,
+        "endIndex": 11
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.provider.ts",
+    "line": 194
+  }
+}

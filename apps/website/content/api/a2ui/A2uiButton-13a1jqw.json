@@ -1,0 +1,199 @@
+{
+  "name": "A2uiButton",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiButton",
+  "canonicalReference": "@threadplane/a2ui!A2uiButton:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Basic-catalog button that renders a child component and dispatches its configured action.",
+  "declarations": [
+    {
+      "name": "A2uiButton",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiButton:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiButton extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Basic-catalog button that renders a child component and dispatches its configured action.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "action",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiButton#action:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "action: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiAction",
+              "canonicalReference": "@threadplane/a2ui!A2uiAction:type",
+              "href": "/docs/api/a2ui/A2uiAction"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 186
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "child",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiButton#child:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "child: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 184
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiButton#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "'Button'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 183
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "variant",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiButton#variant:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "variant?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'default' | 'primary' | 'borderless'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 185
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 182
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 182
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "ContentBlock",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ContentBlock",
+  "canonicalReference": "@threadplane/chat!ContentBlock:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A structured message segment containing text, an image, a tool invocation, or a tool result.",
+  "declarations": [
+    {
+      "name": "ContentBlock",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ContentBlock:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ContentBlock = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    type: 'text';\n    text: string;\n} | {\n    type: 'image';\n    url: string;\n    alt?: string;\n} | {\n    type: 'tool_use';\n    id: string;\n    name: string;\n    args: unknown;\n} | {\n    type: 'tool_result';\n    toolCallId: string;\n    result: unknown;\n    isError?: boolean;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A structured message segment containing text, an image, a tool invocation, or a tool result.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/content-block.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/content-block.ts",
+    "line": 2
+  }
+}

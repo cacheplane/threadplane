@@ -1,0 +1,147 @@
+{
+  "name": "AngularRegistry",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/AngularRegistry",
+  "canonicalReference": "@threadplane/render!AngularRegistry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Lookup and enumeration of normalized Angular render entries by their registered names.",
+  "declarations": [
+    {
+      "name": "AngularRegistry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!AngularRegistry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AngularRegistry "
+        }
+      ],
+      "docs": {
+        "summary": "Lookup and enumeration of normalized Angular render entries by their registered names.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "getEntry",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/render!AngularRegistry#getEntry:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getEntry(name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "NormalizedEntry",
+              "canonicalReference": "@threadplane/render!~NormalizedEntry:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The full normalized entry for a registered name, or undefined. The single\naccessor — component, fallback, schema, and description all hang off it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render.types.ts",
+            "line": 59
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "name",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "names",
+          "kind": "MethodSignature",
+          "canonicalReference": "@threadplane/render!AngularRegistry#names:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "names(): "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render.types.ts",
+            "line": 60
+          },
+          "overloadIndex": 1,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/render.types.ts",
+        "line": 56
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/render.types.ts",
+    "line": 56
+  }
+}

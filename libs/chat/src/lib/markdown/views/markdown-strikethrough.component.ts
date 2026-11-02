@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownStrikethroughNode } from '@cacheplane/partial-markdown';
 import { MarkdownChildrenComponent } from '../markdown-children.component';
 
+/** Renders markdown strikethrough content inside a deletion element. */
 @Component({
   selector: 'chat-md-strikethrough',
   standalone: true,

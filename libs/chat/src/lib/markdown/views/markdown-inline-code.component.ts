@@ -2,6 +2,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { MarkdownInlineCodeNode } from '@cacheplane/partial-markdown';
 
+/** Renders a markdown inline-code node as escaped code text. */
 @Component({
   selector: 'chat-md-inline-code',
   standalone: true,

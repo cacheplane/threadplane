@@ -1,0 +1,60 @@
+{
+  "name": "createA2uiSurfaceStore",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/createA2uiSurfaceStore",
+  "canonicalReference": "@threadplane/chat!createA2uiSurfaceStore:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Create an [A2uiSurfaceStore](/docs/api/chat/A2uiSurfaceStore) — the per-conversation store that buffers\nstreamed A2UI v0.9 envelopes, tracks each surface's data model + lifecycle\nstate, and exposes them as signals for rendering. One store backs a chat\nthread's A2UI surfaces.\n\nA surface becomes visible once its `createSurface` envelope has arrived AND\na component with id `root` has been defined (the v0.9 progressive-rendering\nrule). Everything received earlier is buffered; afterwards, components merge\nincrementally by id and data-model updates apply immediately.",
+  "declarations": [
+    {
+      "name": "createA2uiSurfaceStore",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!createA2uiSurfaceStore:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function createA2uiSurfaceStore(): "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiSurfaceStore",
+          "canonicalReference": "@threadplane/chat!A2uiSurfaceStore:interface",
+          "href": "/docs/api/chat/A2uiSurfaceStore"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Create an [A2uiSurfaceStore](/docs/api/chat/A2uiSurfaceStore) — the per-conversation store that buffers\nstreamed A2UI v0.9 envelopes, tracks each surface's data model + lifecycle\nstate, and exposes them as signals for rendering. One store backs a chat\nthread's A2UI surfaces.\n\nA surface becomes visible once its `createSurface` envelope has arrived AND\na component with id `root` has been defined (the v0.9 progressive-rendering\nrule). Everything received earlier is buffered; afterwards, components merge\nincrementally by id and data-model updates apply immediately.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "A fresh, empty [A2uiSurfaceStore](/docs/api/chat/A2uiSurfaceStore).",
+        "examples": [
+          "```ts\nconst store = createA2uiSurfaceStore();\nconst surfaces = store.surfaces; // Signal<Map<string, A2uiSurface>>\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+        "line": 165
+      },
+      "overloadIndex": 1,
+      "parameters": [],
+      "returnTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/a2ui/surface-store.ts",
+    "line": 165
+  }
+}

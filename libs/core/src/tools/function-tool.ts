@@ -47,6 +47,7 @@ export interface FunctionToolDefinition {
   readonly handler: (args: never, context: ExecutionContext) => unknown;
 }
 
+/** Derives each catalog tool's argument and awaited result types from its handler signature. */
 export type ToolContracts<T extends Record<string, FunctionToolDefinition>> = {
   [K in keyof T]: {
     args: Parameters<T[K]['handler']>[0];

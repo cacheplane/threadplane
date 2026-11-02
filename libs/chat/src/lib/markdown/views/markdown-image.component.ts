@@ -2,6 +2,7 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import type { MarkdownImageNode } from '@cacheplane/partial-markdown';
 
+/** Renders a markdown image with an accessible fallback when the image fails to load. */
 @Component({
   selector: 'chat-md-image',
   standalone: true,

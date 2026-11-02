@@ -23,6 +23,7 @@ export function activeSubagentsFromAgent(agent: Agent): Subagent[] {
   return out;
 }
 
+/** Renders pending and running subagents using projected templates or default subagent cards. */
 @Component({
   selector: 'chat-subagents',
   standalone: true,

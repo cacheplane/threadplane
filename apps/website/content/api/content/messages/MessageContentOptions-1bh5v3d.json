@@ -1,0 +1,42 @@
+{
+  "name": "MessageContentOptions",
+  "entrypointId": "content/messages",
+  "kind": "Interface",
+  "href": "/docs/api/content/messages/MessageContentOptions",
+  "canonicalReference": "@threadplane/content!MessageContentOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Optional Markdown owner factory override used when constructing transcript projections.",
+  "declarations": [
+    {
+      "name": "MessageContentOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!MessageContentOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageContentOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Optional Markdown owner factory override used when constructing transcript projections.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/messages/create-message-content.ts",
+        "line": 44
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/messages/create-message-content.ts",
+    "line": 44
+  }
+}

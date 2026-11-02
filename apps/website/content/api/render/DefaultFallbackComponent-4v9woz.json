@@ -1,0 +1,47 @@
+{
+  "name": "DefaultFallbackComponent",
+  "entrypointId": "render",
+  "kind": "Class",
+  "href": "/docs/api/render/DefaultFallbackComponent",
+  "canonicalReference": "@threadplane/render!DefaultFallbackComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Built-in loading skeleton used when a render entry does not provide its own fallback component.",
+  "declarations": [
+    {
+      "name": "DefaultFallbackComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/render!DefaultFallbackComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class DefaultFallbackComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Built-in loading skeleton used when a render entry does not provide its own fallback component.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/default-fallback.component.ts",
+        "line": 4
+      },
+      "angular": {
+        "selector": "render-default-fallback",
+        "inputs": [],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/default-fallback.component.ts",
+    "line": 4
+  }
+}

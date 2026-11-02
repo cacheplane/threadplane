@@ -1,0 +1,110 @@
+{
+  "name": "MarkdownChildrenComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/MarkdownChildrenComponent",
+  "canonicalReference": "@threadplane/chat!MarkdownChildrenComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Recursively dispatches a parent node's children through the markdown view\nregistry. Each child's `type` is looked up in the registry; the resolved\ncomponent is rendered with `[node]` bound to that child.\n\nPosition-stable: `track $index` avoids NG0956 re-creation warnings that\noccur when the markdown pipeline re-parses content on every stream delta,\nproducing new child object references even for unchanged nodes.",
+  "declarations": [
+    {
+      "name": "MarkdownChildrenComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!MarkdownChildrenComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownChildrenComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Recursively dispatches a parent node's children through the markdown view\nregistry. Each child's `type` is looked up in the registry; the resolved\ncomponent is rendered with `[node]` bound to that child.\n\nPosition-stable: `track $index` avoids NG0956 re-creation warnings that\noccur when the markdown pipeline re-parses content on every stream delta,\nproducing new child object references even for unchanged nodes.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "parent",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!MarkdownChildrenComponent#parent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly parent: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownNode",
+              "canonicalReference": "@cacheplane/partial-markdown!MarkdownNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/markdown/markdown-children.component.ts",
+            "line": 39
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/markdown/markdown-children.component.ts",
+        "line": 24
+      },
+      "angular": {
+        "selector": "chat-md-children",
+        "inputs": [
+          {
+            "name": "parent",
+            "alias": "parent",
+            "required": true,
+            "type": "MarkdownNode"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/markdown/markdown-children.component.ts",
+    "line": 24
+  }
+}

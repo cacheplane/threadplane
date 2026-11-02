@@ -1,0 +1,54 @@
+{
+  "name": "ChatSidenavMode",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ChatSidenavMode",
+  "canonicalReference": "@threadplane/react!ChatSidenavMode:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Navigation presentation: expanded body, collapsed content, or a drawer controlled by open.",
+  "declarations": [
+    {
+      "name": "ChatSidenavMode",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ChatSidenavMode:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ChatSidenavMode = "
+        },
+        {
+          "kind": "Content",
+          "text": "'expanded' | 'collapsed' | 'drawer'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Navigation presentation: expanded body, collapsed content, or a drawer controlled by open.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-sidenav.tsx",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-sidenav.tsx",
+    "line": 6
+  }
+}

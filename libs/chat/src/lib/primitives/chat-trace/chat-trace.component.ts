@@ -3,8 +3,10 @@ import { Component, ChangeDetectionStrategy, input, signal, effect, computed } f
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_TRACE_STYLES } from '../../styles/chat-trace.styles';
 
+/** The visual execution state used by a collapsible chat trace. */
 export type TraceState = 'pending' | 'running' | 'done' | 'error';
 
+/** Provides a collapsible trace section that expands automatically for running or error states. */
 @Component({
   selector: 'chat-trace',
   standalone: true,

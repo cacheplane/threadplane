@@ -8,6 +8,7 @@ import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.
 import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-button/chat-launcher-button.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
 
+/** Hosts an agent chat in a toggleable popup with a launcher and configurable keyboard shortcut. */
 @Component({
   selector: 'chat-popup',
   standalone: true,

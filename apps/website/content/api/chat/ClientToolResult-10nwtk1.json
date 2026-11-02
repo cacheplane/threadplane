@@ -1,0 +1,54 @@
+{
+  "name": "ClientToolResult",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ClientToolResult",
+  "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The outcome of running a client tool.",
+  "declarations": [
+    {
+      "name": "ClientToolResult",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ClientToolResult:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ClientToolResult = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly ok: true;\n    readonly value: unknown;\n} | {\n    readonly ok: false;\n    readonly error: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The outcome of running a client tool.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tools-capability.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tools-capability.ts",
+    "line": 6
+  }
+}

@@ -2,7 +2,7 @@
 name: week
 description: Threadplane weekly content planner. Use to plan, draft, review, and schedule a week of Brian's public posts (7 X posts, 2-3 LinkedIn posts, 1 blog post plus its dev.to cross-post) into the Neon marketing queue, and mid-week to show the queue, cancel, reschedule, or add a one-off post. Invoke when Brian runs /week or asks about the content queue.
 disable-model-invocation: false
-allowed-tools: Read, Edit, Write, Bash(npm run marketing:queue *), Bash(npm run posthog:*), Bash(npm view *), Bash(node_modules/.bin/tsx *), Bash(gh pr *), Bash(git *), Bash(ls *), Bash(head *), Bash(mkdir *), Glob, Grep
+allowed-tools: Read, Edit, Write, Bash(npm run marketing:queue *), Bash(npm run growth:linkedin *), Bash(npm run posthog:*), Bash(npm view *), Bash(node_modules/.bin/tsx *), Bash(gh pr *), Bash(git *), Bash(ls *), Bash(head *), Bash(mkdir *), Glob, Grep
 ---
 
 # Threadplane weekly content planner
@@ -94,6 +94,13 @@ Facts you need about it:
 2. Say plainly: **X and LinkedIn engagement numbers are not available.** Their metrics APIs are stubbed (X needs a paid API tier, LinkedIn needs partner access).
 3. PostHog: follow the `/gtm` weekly snapshot procedure's data source. If a `docs/gtm/reports/<date>-weekly.md` exists from the last few days, read it; otherwise ask Brian whether to run `npm run posthog:report` (it writes that report file, which belongs to `/gtm`'s PR flow, so don't commit it from here). Look for social-sourced sessions by `utm_campaign`. If the report has no per-campaign breakdown, say that the number is unavailable rather than estimating it.
 4. One or two sentences on what that suggests for this week, only if the data supports it.
+
+### 2a. LinkedIn leads
+
+1. `npm run growth:linkedin -- leads --status new --target=<target>`. If there are none, say so and move on.
+2. For each lead, in score order, draft in the Social register using the `/gtm` lead-triage rules: name what they said (the comment text, or the post topic for reactions and reposts), offer one concrete next step (a code sketch, a pattern, or a 15-minute call; never calendar-first), no hype. Write two variants when both apply: a connection note (300 characters or fewer) and a message or public reply (600 characters or fewer). Do not invent anything about the person beyond their headline and what they did.
+3. Show Brian the lead (name, headline, profile link, what they did, score) and the drafts. He says approve (with the variant), edit, reject, or deny forever. For an approval, write the final text to `tmp/marketing/week/<week>/linkedin-lead-<id>.txt` and run `npm run growth:linkedin -- decide --lead <id> --approve --variant <connection|message> --text-file <path> --target=<target>`. For the others, run `decide --lead <id> --reject` or `--deny` with the same `--target`. A `denied_by_list` result (exit code 1) means the deny list caught them since the digest: tell Brian and move on. An empty text file is refused with exit code 2.
+4. After all decisions, print each approved lead's profile link and final text. Brian sends it himself on LinkedIn. Nothing in this step sends anything.
 
 ### 3. Gather sources
 
@@ -286,6 +293,7 @@ These come from the design's anti-goals and `docs/gtm/voice.md`. They override a
 - **Content that reads like marketing copy.** No hype words, no growth-hacker CTAs, no "in this article we'll explore", no stagey structural fragments ("Now the honest part.").
 - **Social register:** plain text, short lines, minimal punctuation, no em dashes, 0-1 hashtags, at most one emoji from the voice.md list, an occasional natural typo never in code, package names, commands, URLs, or numbers.
 - **Links:** every threadplane.ai link carries `utm_source=<channel>&utm_medium=social&utm_campaign=<slug>`. X: link in the last part (a reply), card on the first. LinkedIn: link in the body, never a first comment.
+- **LinkedIn leads:** never message, connect with, or reply to anyone; the skill produces text Brian sends. Never approve a lead without showing the exact text in this session. Never write a competitor's name into the repo; deny-list changes go through `growth:linkedin`.
 - **State the target** (preview or production) and the database host before the first write of the session.
 - **Repo:** commit only the blog MDX, on its `blog/<slug>` branch. Don't commit drafts, cards, or reports from this skill.
 
@@ -305,4 +313,5 @@ These come from the design's anti-goals and `docs/gtm/voice.md`. They override a
 - [../../../docs/gtm/voice.md](../../../docs/gtm/voice.md): voice, blog and social registers
 - [../../../docs/gtm/messaging.md](../../../docs/gtm/messaging.md): positioning
 - [../../../docs/superpowers/specs/2026-10-29-weekly-content-automation-design.md](../../../docs/superpowers/specs/2026-10-29-weekly-content-automation-design.md): design
+- [../../../docs/superpowers/specs/gtm/2026-10-31-linkedin-engagement-leads-design.md](../../../docs/superpowers/specs/gtm/2026-10-31-linkedin-engagement-leads-design.md): LinkedIn engagement leads design
 - [../../../apps/lifecycle/README.md](../../../apps/lifecycle/README.md): the dispatcher and `MARKETING_POSTING_ENABLED`

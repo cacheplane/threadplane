@@ -1,0 +1,151 @@
+{
+  "name": "A2uiTheme",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/A2uiTheme",
+  "canonicalReference": "@threadplane/chat!A2uiTheme:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Optional surface branding: primary color, icon URL, and agent display name.",
+  "declarations": [
+    {
+      "name": "A2uiTheme",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!A2uiTheme:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiTheme "
+        }
+      ],
+      "docs": {
+        "summary": "Optional surface branding: primary color, icon URL, and agent display name.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "agentDisplayName",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiTheme#agentDisplayName:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "agentDisplayName?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 256
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "iconUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiTheme#iconUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "iconUrl?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 255
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "primaryColor",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!A2uiTheme#primaryColor:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "primaryColor?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 254
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 253
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 253
+  }
+}

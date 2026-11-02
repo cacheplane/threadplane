@@ -1,0 +1,331 @@
+{
+  "name": "AgentUsageEntry",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/AgentUsageEntry",
+  "canonicalReference": "@threadplane/chat!AgentUsageEntry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Token accounting for one run, as the runtime reported it. Every count is\noptional: absent means the provider did not report it, which is distinct\nfrom zero. Reasoning, cached, and cache-write counts are parts of the\ninput/output totals, never additions to them.",
+  "declarations": [
+    {
+      "name": "AgentUsageEntry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!AgentUsageEntry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentUsageEntry "
+        }
+      ],
+      "docs": {
+        "summary": "Token accounting for one run, as the runtime reported it. Every count is\noptional: absent means the provider did not report it, which is distinct\nfrom zero. Reasoning, cached, and cache-write counts are parts of the\ninput/output totals, never additions to them.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "cachedInputTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#cachedInputTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cachedInputTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "cacheWriteInputTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#cacheWriteInputTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cacheWriteInputTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "inputTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#inputTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "inputTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 10
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "outputTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#outputTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "outputTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 11
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "reasoningTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#reasoningTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reasoningTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "totalTokens",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!AgentUsageEntry#totalTokens:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "totalTokens?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/agent/agent-usage.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-usage.ts",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-usage.ts",
+    "line": 7
+  }
+}

@@ -1,10 +1,15 @@
 export type DevelopmentIntegration = 'langgraph' | 'ag-ui' | 'render';
+/** Closed set of development progress milestones deduplicated by integration within an inactivity session. */
 export type DevelopmentMilestone =
   | 'transport.connected'
   | 'runtime.first_stream_completed'
   | 'thread.persisted'
   | 'interrupt.handled'
   | 'generative_ui.rendered';
+/**
+ * Package metadata and an optional dynamic enablement policy for a lazy development runtime handle.
+ * Collection requires a matching integration/package pair, a valid version, and the runtime's development/browser checks.
+ */
 export interface DevelopmentRuntimeOptions {
   integration: DevelopmentIntegration;
   packageName:
@@ -14,8 +19,13 @@ export interface DevelopmentRuntimeOptions {
   packageVersion: string;
   /** Opaque package-local correlation, never identity or authorization. */
   installationToken?: string | null;
+  /** Evaluated at use and send time; omission allows collection subject to the runtime's other checks. */
   enabled?: () => boolean;
 }
+/**
+ * Lazy development collection handle that records activity and deduplicated milestones when collection is allowed.
+ * Activity may initialize a stored browser identity and inactivity session; disposing disables this handle and prunes its pending work.
+ */
 export interface DevelopmentRuntime {
   touch(): void;
   milestone(kind: DevelopmentMilestone, durationMs?: number): void;

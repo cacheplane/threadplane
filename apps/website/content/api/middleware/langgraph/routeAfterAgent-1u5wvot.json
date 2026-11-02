@@ -1,0 +1,112 @@
+{
+  "name": "routeAfterAgent",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Function",
+  "href": "/docs/api/middleware/langgraph/routeAfterAgent",
+  "canonicalReference": "@threadplane/middleware!routeAfterAgent:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Routing helper for a LangGraph conditional edge. Returns `toolsNode` when the last\nmessage has a server tool call (dispatch to the server ToolNode); otherwise `end`\n(client-only calls — the browser executes them — and no-tool-call turns both end).\n\n`toolsNode` defaults to `'server_tools'`. It cannot default to `'tools'`, because\n[clientToolsChannel](/docs/api/middleware/langgraph/clientToolsChannel) declares a `tools` state channel and LangGraph.js shares\none namespace between channel names and node names — `addNode('tools', …)` throws\n\"tools is already being used as a state attribute\".",
+  "declarations": [
+    {
+      "name": "routeAfterAgent",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/middleware!routeAfterAgent:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function routeAfterAgent(state: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolsState",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolsState"
+        },
+        {
+          "kind": "Content",
+          "text": ", serverToolNames: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Iterable",
+          "canonicalReference": "!Iterable:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<string>"
+        },
+        {
+          "kind": "Content",
+          "text": ", opts?: "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    toolsNode?: string;\n    end?: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Routing helper for a LangGraph conditional edge. Returns `toolsNode` when the last\nmessage has a server tool call (dispatch to the server ToolNode); otherwise `end`\n(client-only calls — the browser executes them — and no-tool-call turns both end).\n\n`toolsNode` defaults to `'server_tools'`. It cannot default to `'tools'`, because\n[clientToolsChannel](/docs/api/middleware/langgraph/clientToolsChannel) declares a `tools` state channel and LangGraph.js shares\none namespace between channel names and node names — `addNode('tools', …)` throws\n\"tools is already being used as a state attribute\".",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/middleware.ts",
+        "line": 94
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "state",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "serverToolNames",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "opts",
+          "parameterTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 7
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 8,
+        "endIndex": 9
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/middleware.ts",
+    "line": 94
+  }
+}

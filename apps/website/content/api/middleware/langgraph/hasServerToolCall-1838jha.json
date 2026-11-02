@@ -1,0 +1,96 @@
+{
+  "name": "hasServerToolCall",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Function",
+  "href": "/docs/api/middleware/langgraph/hasServerToolCall",
+  "canonicalReference": "@threadplane/middleware!hasServerToolCall:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "True if the last message calls at least one server (non-client) tool.\nA call is server-side when its name is in serverToolNames OR is not a known\nclient tool (unknown tools are assumed server-side).",
+  "declarations": [
+    {
+      "name": "hasServerToolCall",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/middleware!hasServerToolCall:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function hasServerToolCall(state: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolsState",
+          "canonicalReference": "@threadplane/middleware!ClientToolsState:interface",
+          "href": "/docs/api/middleware/langgraph/ClientToolsState"
+        },
+        {
+          "kind": "Content",
+          "text": ", serverToolNames: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Iterable",
+          "canonicalReference": "!Iterable:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<string>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "boolean"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "True if the last message calls at least one server (non-client) tool.\nA call is server-side when its name is in serverToolNames OR is not a known\nclient tool (unknown tools are assumed server-side).",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/middleware.ts",
+        "line": 58
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "state",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "serverToolNames",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/middleware.ts",
+    "line": 58
+  }
+}

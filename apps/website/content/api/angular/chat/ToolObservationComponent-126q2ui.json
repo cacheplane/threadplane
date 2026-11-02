@@ -1,0 +1,257 @@
+{
+  "name": "ToolObservationComponent",
+  "entrypointId": "angular/chat",
+  "kind": "Class",
+  "href": "/docs/api/angular/chat/ToolObservationComponent",
+  "canonicalReference": "@threadplane/angular!ToolObservationComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Literal observed text. The caller owns tool/result association and formatting.",
+  "declarations": [
+    {
+      "name": "ToolObservationComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/angular!ToolObservationComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ToolObservationComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Literal observed text. The caller owns tool/result association and formatting.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "argumentsText",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!ToolObservationComponent#argumentsText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly argumentsText: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/tool-observation.component.ts",
+            "line": 34
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!ToolObservationComponent#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/tool-observation.component.ts",
+            "line": 36
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!ToolObservationComponent#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/tool-observation.component.ts",
+            "line": 33
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "resultText",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!ToolObservationComponent#resultText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly resultText: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/chat/src/tool-observation.component.ts",
+            "line": 35
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/angular/chat/src/tool-observation.component.ts",
+        "line": 4
+      },
+      "angular": {
+        "selector": "threadplane-tool-observation",
+        "inputs": [
+          {
+            "name": "argumentsText",
+            "alias": "argumentsText",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "label",
+            "alias": "label",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "alias": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resultText",
+            "alias": "resultText",
+            "required": false,
+            "type": "string | undefined"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/angular/chat/src/tool-observation.component.ts",
+    "line": 4
+  }
+}

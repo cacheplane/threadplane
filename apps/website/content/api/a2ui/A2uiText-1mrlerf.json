@@ -1,0 +1,163 @@
+{
+  "name": "A2uiText",
+  "entrypointId": "a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/a2ui/A2uiText",
+  "canonicalReference": "@threadplane/a2ui!A2uiText:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Basic-catalog text component with a dynamic string and optional typographic variant.",
+  "declarations": [
+    {
+      "name": "A2uiText",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/a2ui!A2uiText:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiText extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "A2uiComponentBase",
+          "canonicalReference": "@threadplane/a2ui!A2uiComponentBase:interface",
+          "href": "/docs/api/a2ui/A2uiComponentBase"
+        },
+        {
+          "kind": "Content",
+          "text": " "
+        }
+      ],
+      "docs": {
+        "summary": "Basic-catalog text component with a dynamic string and optional typographic variant.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "component",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiText#component:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "component: "
+            },
+            {
+              "kind": "Content",
+              "text": "'Text'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 94
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "text",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiText#text:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "text: "
+            },
+            {
+              "kind": "Reference",
+              "text": "DynamicString",
+              "canonicalReference": "@threadplane/a2ui!DynamicString:type",
+              "href": "/docs/api/a2ui/DynamicString"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 95
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "variant",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/a2ui!A2uiText#variant:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "variant?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/a2ui/src/lib/types.ts",
+            "line": 96
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 93
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 93
+  }
+}

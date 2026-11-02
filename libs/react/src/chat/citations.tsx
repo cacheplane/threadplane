@@ -2,6 +2,7 @@
 import type { Citation } from '@threadplane/core';
 import { markdownUrl } from '@threadplane/content/markdown';
 
+/** Supplied citation list with unique IDs and an optional source-section label and CSS class. */
 export interface CitationsProps {
   readonly citations: readonly Citation[];
   readonly label?: string;

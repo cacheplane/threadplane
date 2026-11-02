@@ -8,6 +8,7 @@ export interface MessageAction {
   readonly disabled?: boolean;
 }
 
+/** Supplies message action buttons, an optional group-wide disabled state, and an accessible group label. */
 export interface MessageActionsProps {
   readonly actions: readonly MessageAction[];
   readonly disabled?: boolean;

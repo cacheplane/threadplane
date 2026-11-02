@@ -1,0 +1,66 @@
+{
+  "name": "RENDER_LIFECYCLE",
+  "entrypointId": "render",
+  "kind": "Variable",
+  "href": "/docs/api/render/RENDER_LIFECYCLE",
+  "canonicalReference": "@threadplane/render!RENDER_LIFECYCLE:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Injection token exposing render lifecycle measurements through the service registered by provideRender.",
+  "declarations": [
+    {
+      "name": "RENDER_LIFECYCLE",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/render!RENDER_LIFECYCLE:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "RENDER_LIFECYCLE: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "RenderLifecycle",
+          "canonicalReference": "@threadplane/render!RenderLifecycle:interface",
+          "href": "/docs/api/render/RenderLifecycle"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        }
+      ],
+      "docs": {
+        "summary": "Injection token exposing render lifecycle measurements through the service registered by provideRender.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/lifecycle.ts",
+        "line": 18
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/lifecycle.ts",
+    "line": 18
+  }
+}

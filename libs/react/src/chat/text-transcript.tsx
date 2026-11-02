@@ -12,6 +12,7 @@ const speakers = {
   tool: 'Tool',
 };
 
+/** Renders messages as an ordered plain-text transcript with speaker labels and preserved whitespace. */
 export function TextTranscript({
   messages,
   label = 'Conversation',

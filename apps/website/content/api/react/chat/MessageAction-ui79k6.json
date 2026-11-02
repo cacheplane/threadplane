@@ -1,0 +1,187 @@
+{
+  "name": "MessageAction",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/MessageAction",
+  "canonicalReference": "@threadplane/react!MessageAction:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An explicitly authored action; IDs must be unique within the group.",
+  "declarations": [
+    {
+      "name": "MessageAction",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MessageAction:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageAction "
+        }
+      ],
+      "docs": {
+        "summary": "An explicitly authored action; IDs must be unique within the group.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/message-actions.tsx",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-actions.tsx",
+    "line": 4
+  }
+}

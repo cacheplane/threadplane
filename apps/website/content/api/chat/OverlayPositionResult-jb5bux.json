@@ -1,0 +1,153 @@
+{
+  "name": "OverlayPositionResult",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/OverlayPositionResult",
+  "canonicalReference": "@threadplane/chat!OverlayPositionResult:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The computed overlay coordinates and the connection position selected by the positioner.",
+  "declarations": [
+    {
+      "name": "OverlayPositionResult",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!OverlayPositionResult:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface OverlayPositionResult "
+        }
+      ],
+      "docs": {
+        "summary": "The computed overlay coordinates and the connection position selected by the positioner.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "left",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!OverlayPositionResult#left:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "left: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 41
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "position",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!OverlayPositionResult#position:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ConnectedPosition",
+              "canonicalReference": "@threadplane/chat!ConnectedPosition:interface",
+              "href": "/docs/api/chat/ConnectedPosition"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 42
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "top",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!OverlayPositionResult#top:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "top: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 40
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+        "line": 39
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+    "line": 39
+  }
+}

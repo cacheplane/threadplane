@@ -11,6 +11,7 @@ import { createThreadDirectory } from '../../shared/directory';
 import { browserHistory } from '../../shared/route';
 import '../../shared/tokens.css';
 import '@threadplane/react/chat/styles.css';
+import '@threadplane/react/debug/styles.css';
 import '../../shared/styles.css';
 import './popup.css';
 import './sidenav.css';

@@ -47,6 +47,7 @@ import { InterruptPersistence, type AgUiInterruptPersistence, type AgUiThreadRec
 import { collectReplay, type AgUiReplaySource } from './replay';
 import { messageContentFromParts } from './internal/content-parts';
 
+/** Options for adapting an AG-UI agent, including replay, interrupt persistence and transport, telemetry, and A2UI capabilities. */
 export interface ToAgentOptions {
   /** Application-owned durable storage. Requires a stable source threadId and scoped namespace. */
   persistence?: AgUiInterruptPersistence;
@@ -171,7 +172,7 @@ export interface AgUiAgent<TState = Record<string, unknown>> extends Agent<TStat
 /**
  * Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.
  *
- * The adapter subscribes to source.subscribe({ onEvent }) and reduces every
+ * The adapter subscribes to `source.subscribe({ onEvent })` and reduces every
  * event into the produced Agent's signals. submit() optimistically appends the
  * user message to both our signals and the source agent's internal message
  * list, then calls source.runAgent(). stop() calls source.abortRun().

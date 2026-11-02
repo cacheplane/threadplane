@@ -11,7 +11,7 @@ export interface AgentRef<TState> {
 /**
  * Create a typed agent handle.
  *
- * @param debugName Optional name shown in Angular DI error messages.
+ * @param debugName - Optional name shown in Angular DI error messages.
  * @returns An {@link AgentRef} carrying a state-typed `InjectionToken`.
  * @example
  * ```ts

@@ -1,0 +1,113 @@
+{
+  "name": "bridgeCitationsState",
+  "entrypointId": "ag-ui",
+  "kind": "Function",
+  "href": "/docs/api/ag-ui/bridgeCitationsState",
+  "canonicalReference": "@threadplane/ag-ui!bridgeCitationsState:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Attach per-message [Citation](/docs/api/chat/Citation)s carried in an AG-UI thread's `state`\n(`state.citations`, keyed by message id) onto the corresponding assistant\n[Message](/docs/api/chat/Message)s — for advanced consumers wiring citations from STATE events\ninto the neutral chat contract.",
+  "declarations": [
+    {
+      "name": "bridgeCitationsState",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/ag-ui!bridgeCitationsState:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function bridgeCitationsState(thread: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ThreadStateLike",
+          "canonicalReference": "@threadplane/ag-ui!~ThreadStateLike:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ", messages: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Message",
+          "canonicalReference": "@threadplane/ag-ui!~Message_2:interface",
+          "href": "/docs/api/chat/Message"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Message",
+          "canonicalReference": "@threadplane/ag-ui!~Message_2:interface",
+          "href": "/docs/api/chat/Message"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Attach per-message [Citation](/docs/api/chat/Citation)s carried in an AG-UI thread's `state`\n(`state.citations`, keyed by message id) onto the corresponding assistant\n[Message](/docs/api/chat/Message)s — for advanced consumers wiring citations from STATE events\ninto the neutral chat contract.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "A new array where matching messages gain their `citations`; messages\n without citations are returned unchanged.",
+        "examples": [
+          "```ts\nconst enriched = bridgeCitationsState(threadState, agent.messages());\n```"
+        ],
+        "see": [],
+        "params": [
+          {
+            "name": "thread",
+            "description": "The thread-state container holding `state.citations`."
+          },
+          {
+            "name": "messages",
+            "description": "The messages to enrich."
+          }
+        ],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/bridge-citations-state.ts",
+        "line": 23
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "thread",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "messages",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/bridge-citations-state.ts",
+    "line": 23
+  }
+}

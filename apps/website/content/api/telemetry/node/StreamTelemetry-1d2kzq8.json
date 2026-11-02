@@ -1,0 +1,187 @@
+{
+  "name": "StreamTelemetry",
+  "entrypointId": "telemetry/node",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/node/StreamTelemetry",
+  "canonicalReference": "@threadplane/telemetry!StreamTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Explicit Node stream metadata requiring provider and model, with an optional transport and duration in milliseconds.",
+  "declarations": [
+    {
+      "name": "StreamTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!StreamTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StreamTelemetry "
+        }
+      ],
+      "docs": {
+        "summary": "Explicit Node stream metadata requiring provider and model, with an optional transport and duration in milliseconds.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "durationMs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry#durationMs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "durationMs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 18
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "transport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry#transport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "transport?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Runtime transport when known; legacy calls without it report `unknown`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 13
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 13
+  }
+}

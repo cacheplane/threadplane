@@ -1,0 +1,54 @@
+{
+  "name": "CaptureResult",
+  "entrypointId": "telemetry/node",
+  "kind": "TypeAlias",
+  "href": "/docs/api/telemetry/node/CaptureResult",
+  "canonicalReference": "@threadplane/telemetry!CaptureResult:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Outcome of an explicit Node capture: a successful HTTP response, or a disable, sampling, validation, or send failure reason.",
+  "declarations": [
+    {
+      "name": "CaptureResult",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/telemetry!CaptureResult:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CaptureResult = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    sent: true;\n} | {\n    sent: false;\n    reason: 'disabled' | 'sampled' | 'failed' | 'invalid';\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Outcome of an explicit Node capture: a successful HTTP response, or a disable, sampling, validation, or send failure reason.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/node/client.ts",
+        "line": 15
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/client.ts",
+    "line": 15
+  }
+}

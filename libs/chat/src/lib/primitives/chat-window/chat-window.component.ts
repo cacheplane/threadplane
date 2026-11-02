@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_WINDOW_STYLES } from '../../styles/chat-window.styles';
 
+/** Provides header, body, and footer slots for a chat window. */
 @Component({
   selector: 'chat-window',
   standalone: true,

@@ -1,6 +1,7 @@
 import type { MessageDelivery } from './delivery.js';
 import type { Citation } from './citation.js';
 
+/** Identifies whether a message comes from the user, assistant, system, or a tool result. */
 export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
 /** Owned text and source metadata; rich content and SDK objects remain outside this slice. */

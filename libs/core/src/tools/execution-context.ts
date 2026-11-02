@@ -5,21 +5,25 @@ export interface ExecutionContext {
   readonly signal: AbortSignal;
 }
 
+/** Settled tool outcome containing either a portable result value or a displayable error string. */
 export type ToolExecutionResult =
   | { readonly ok: true; readonly value: PlainValue }
   | { readonly ok: false; readonly error: string };
 
+/** Stable execution-store identity combining a thread with its tool call ID. */
 export interface ToolExecutionKey {
   readonly threadId: string;
   readonly toolCallId: string;
 }
 
+/** Store acquisition outcome: execution authority, an encoded cached result, unavailable ownership, or an invocation conflict. */
 export type ToolExecutionAcquisition =
   | { readonly status: 'acquired'; readonly token: string }
   | { readonly status: 'complete'; readonly result: string }
   | { readonly status: 'unavailable' }
   | { readonly status: 'conflict' };
 
+/** Settlement for an acquired invocation, carrying its ownership token and a reusable encoded result or null. */
 export interface ToolExecutionSettlement {
   readonly invocation: string;
   readonly token: string;

@@ -1,0 +1,192 @@
+{
+  "name": "RenderHandlerEvent",
+  "entrypointId": "render",
+  "kind": "Interface",
+  "href": "/docs/api/render/RenderHandlerEvent",
+  "canonicalReference": "@threadplane/render!RenderHandlerEvent:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Render notification identifying an invoked action, its parameters, and the result observed by the handler wrapper.",
+  "declarations": [
+    {
+      "name": "RenderHandlerEvent",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/render!RenderHandlerEvent:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderHandlerEvent "
+        }
+      ],
+      "docs": {
+        "summary": "Render notification identifying an invoked action, its parameters, and the result observed by the handler wrapper.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "action",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderHandlerEvent#action:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly action: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 4
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "params",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderHandlerEvent#params:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly params: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderHandlerEvent#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/render!RenderHandlerEvent#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'handler'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/render/src/lib/render-event.ts",
+            "line": 3
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/render/src/lib/render-event.ts",
+        "line": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/render-event.ts",
+    "line": 2
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "AngularComponentRenderer",
+  "entrypointId": "render",
+  "kind": "TypeAlias",
+  "href": "/docs/api/render/AngularComponentRenderer",
+  "canonicalReference": "@threadplane/render!AngularComponentRenderer:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Angular component class that can be registered as the renderer for a spec element type.",
+  "declarations": [
+    {
+      "name": "AngularComponentRenderer",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/render!AngularComponentRenderer:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AngularComponentRenderer = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Type",
+          "canonicalReference": "@angular/core!Type:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<unknown>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Angular component class that can be registered as the renderer for a spec element type.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/render/src/lib/render.types.ts",
+        "line": 22
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 3
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/render/src/lib/render.types.ts",
+    "line": 22
+  }
+}

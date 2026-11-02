@@ -1,0 +1,335 @@
+{
+  "name": "RenderState",
+  "entrypointId": "content/render-state",
+  "kind": "Interface",
+  "href": "/docs/api/content/render-state/RenderState",
+  "canonicalReference": "@threadplane/content!RenderState:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Application-owned immutable state with JSON Pointer reads and writes, atomic batches, and change subscriptions.",
+  "declarations": [
+    {
+      "name": "RenderState",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!RenderState:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RenderState "
+        }
+      ],
+      "docs": {
+        "summary": "Application-owned immutable state with JSON Pointer reads and writes, atomic batches, and change subscriptions.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "dispose",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#dispose:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly dispose: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "get",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#get:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly get: "
+            },
+            {
+              "kind": "Content",
+              "text": "(path: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderStateValue",
+              "canonicalReference": "@threadplane/content!RenderStateValue:type",
+              "href": "/docs/api/content/render-state/RenderStateValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "getSnapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#getSnapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly getSnapshot: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderStateSnapshot",
+              "canonicalReference": "@threadplane/content!RenderStateSnapshot:type",
+              "href": "/docs/api/content/render-state/RenderStateSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "lastChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#lastChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly lastChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => "
+            },
+            {
+              "kind": "Reference",
+              "text": "RenderStateChange",
+              "canonicalReference": "@threadplane/content!RenderStateChange:interface",
+              "href": "/docs/api/content/render-state/RenderStateChange"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 28
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "set",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#set:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly set: "
+            },
+            {
+              "kind": "Content",
+              "text": "(path: string, value: unknown) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "subscribe",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#subscribe:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subscribe: "
+            },
+            {
+              "kind": "Content",
+              "text": "(notify: () => void) => () => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "update",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!RenderState#update:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly update: "
+            },
+            {
+              "kind": "Content",
+              "text": "(updates: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Readonly",
+              "canonicalReference": "!Readonly:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>>) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/render-state/types.ts",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/render-state/types.ts",
+        "line": 23
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/render-state/types.ts",
+    "line": 23
+  }
+}

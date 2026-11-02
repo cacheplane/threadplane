@@ -1,0 +1,99 @@
+{
+  "name": "AgUiReplaySource",
+  "entrypointId": "ag-ui",
+  "kind": "TypeAlias",
+  "href": "/docs/api/ag-ui/AgUiReplaySource",
+  "canonicalReference": "@threadplane/ag-ui!AgUiReplaySource:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Loads a thread's AG-UI protocol events from the server, in the order a live\nstream delivered them, so the adapter can rebuild the thread exactly as the\nlive view showed it.\n\nReturn the events as a Promise of an array or as an Observable that\ncompletes. Resolve to an empty array when the server has nothing for the\nthread; reject (or error) for any other failure. `signal` aborts when the\nadapter is disposed; honour it to cancel the request.",
+  "declarations": [
+    {
+      "name": "AgUiReplaySource",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/ag-ui!AgUiReplaySource:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgUiReplaySource = "
+        },
+        {
+          "kind": "Content",
+          "text": "(threadId: string, signal: "
+        },
+        {
+          "kind": "Reference",
+          "text": "AbortSignal",
+          "canonicalReference": "!AbortSignal:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ") => "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "BaseEvent",
+          "canonicalReference": "@ag-ui/core!BaseEvent:type"
+        },
+        {
+          "kind": "Content",
+          "text": "[]> | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Observable",
+          "canonicalReference": "rxjs!Observable:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "BaseEvent",
+          "canonicalReference": "@ag-ui/core!BaseEvent:type"
+        },
+        {
+          "kind": "Content",
+          "text": ">"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Loads a thread's AG-UI protocol events from the server, in the order a live\nstream delivered them, so the adapter can rebuild the thread exactly as the\nlive view showed it.\n\nReturn the events as a Promise of an array or as an Observable that\ncompletes. Resolve to an empty array when the server has nothing for the\nthread; reject (or error) for any other failure. `signal` aborts when the\nadapter is disposed; honour it to cancel the request.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/ag-ui/src/lib/replay.ts",
+        "line": 14
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/ag-ui/src/lib/replay.ts",
+    "line": 14
+  }
+}

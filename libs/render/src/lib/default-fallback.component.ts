@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 
+/** Built-in loading skeleton used when a render entry does not provide its own fallback component. */
 @Component({
   selector: 'render-default-fallback',
   standalone: true,

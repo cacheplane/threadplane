@@ -1,0 +1,182 @@
+[
+  {
+    "source": "/docs/render/api/render-spec-component",
+    "destination": "/docs/render/guides/element-rendering",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/render/api/render-spec-component",
+    "destination": "/api/markdown/render/guides/element-rendering",
+    "permanent": true
+  },
+  {
+    "source": "/docs/render/api/provide-render",
+    "destination": "/docs/render/guides/computed-functions",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/render/api/provide-render",
+    "destination": "/api/markdown/render/guides/computed-functions",
+    "permanent": true
+  },
+  {
+    "source": "/docs/render/api/define-angular-registry",
+    "destination": "/docs/api/render/defineAngularRegistry",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/render/api/define-angular-registry",
+    "destination": "/api/markdown/api/render/defineAngularRegistry",
+    "permanent": true
+  },
+  {
+    "source": "/docs/render/api/signal-state-store",
+    "destination": "/docs/api/render/signalStateStore",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/render/api/signal-state-store",
+    "destination": "/api/markdown/api/render/signalStateStore",
+    "permanent": true
+  },
+  {
+    "source": "/docs/render/api/views",
+    "destination": "/docs/api/render/views",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/render/api/views",
+    "destination": "/api/markdown/api/render/views",
+    "permanent": true
+  },
+  {
+    "source": "/docs/langgraph/api/inject-agent",
+    "destination": "/docs/api/langgraph/injectAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/langgraph/api/inject-agent",
+    "destination": "/api/markdown/api/langgraph/injectAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/langgraph/api/provide-agent",
+    "destination": "/docs/api/langgraph/provideAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/langgraph/api/provide-agent",
+    "destination": "/api/markdown/api/langgraph/provideAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/langgraph/api/fetch-stream-transport",
+    "destination": "/docs/api/langgraph/FetchStreamTransport",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/langgraph/api/fetch-stream-transport",
+    "destination": "/api/markdown/api/langgraph/FetchStreamTransport",
+    "permanent": true
+  },
+  {
+    "source": "/docs/langgraph/api/mock-stream-transport",
+    "destination": "/docs/api/langgraph/MockAgentTransport",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/langgraph/api/mock-stream-transport",
+    "destination": "/api/markdown/api/langgraph/MockAgentTransport",
+    "permanent": true
+  },
+  {
+    "source": "/docs/langgraph/api/langgraph-threads-adapter",
+    "destination": "/docs/api/langgraph/LangGraphThreadsAdapter",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/langgraph/api/langgraph-threads-adapter",
+    "destination": "/api/markdown/api/langgraph/LangGraphThreadsAdapter",
+    "permanent": true
+  },
+  {
+    "source": "/docs/ag-ui/api/inject-agent",
+    "destination": "/docs/api/ag-ui/injectAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/ag-ui/api/inject-agent",
+    "destination": "/api/markdown/api/ag-ui/injectAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/ag-ui/api/provide-agent",
+    "destination": "/docs/api/ag-ui/provideAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/ag-ui/api/provide-agent",
+    "destination": "/api/markdown/api/ag-ui/provideAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/ag-ui/api/to-agent",
+    "destination": "/docs/api/ag-ui/toAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/ag-ui/api/to-agent",
+    "destination": "/api/markdown/api/ag-ui/toAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/ag-ui/api/fake-agent",
+    "destination": "/docs/api/ag-ui/FakeAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/ag-ui/api/fake-agent",
+    "destination": "/api/markdown/api/ag-ui/FakeAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/chat/api/content-classifier",
+    "destination": "/docs/api/chat/createContentClassifier",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/chat/api/content-classifier",
+    "destination": "/api/markdown/api/chat/createContentClassifier",
+    "permanent": true
+  },
+  {
+    "source": "/docs/chat/api/parse-tree-store",
+    "destination": "/docs/api/chat/createParseTreeStore",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/chat/api/parse-tree-store",
+    "destination": "/api/markdown/api/chat/createParseTreeStore",
+    "permanent": true
+  },
+  {
+    "source": "/docs/chat/api/mock-agent",
+    "destination": "/docs/api/chat/mockAgent",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/chat/api/mock-agent",
+    "destination": "/api/markdown/api/chat/mockAgent",
+    "permanent": true
+  },
+  {
+    "source": "/docs/middleware/api/client-tool-helpers",
+    "destination": "/docs/api/middleware/langgraph",
+    "permanent": true
+  },
+  {
+    "source": "/api/markdown/middleware/api/client-tool-helpers",
+    "destination": "/api/markdown/api/middleware/langgraph",
+    "permanent": true
+  }
+]

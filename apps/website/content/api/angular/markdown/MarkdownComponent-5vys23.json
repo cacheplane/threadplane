@@ -1,0 +1,111 @@
+{
+  "name": "MarkdownComponent",
+  "entrypointId": "angular/markdown",
+  "kind": "Class",
+  "href": "/docs/api/angular/markdown/MarkdownComponent",
+  "canonicalReference": "@threadplane/angular!MarkdownComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders an owned Markdown snapshot as Angular elements, filtering URLs and displaying raw HTML as text.",
+  "declarations": [
+    {
+      "name": "MarkdownComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/angular!MarkdownComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class MarkdownComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders an owned Markdown snapshot as Angular elements, filtering URLs and displaying raw HTML as text.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "snapshot",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/angular!MarkdownComponent#snapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly snapshot: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownSnapshot",
+              "canonicalReference": "@threadplane/angular!~MarkdownSnapshot:interface",
+              "href": "/docs/api/content/markdown/MarkdownSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/angular/markdown/src/markdown.component.ts",
+            "line": 308
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/angular/markdown/src/markdown.component.ts",
+        "line": 14
+      },
+      "angular": {
+        "selector": "threadplane-markdown",
+        "inputs": [
+          {
+            "name": "snapshot",
+            "alias": "snapshot",
+            "required": true,
+            "type": "MarkdownSnapshot"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/angular/markdown/src/markdown.component.ts",
+    "line": 14
+  }
+}

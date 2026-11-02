@@ -8,6 +8,7 @@ import {
 } from '@threadplane/content/markdown';
 import { MarkdownImage } from './markdown-image.js';
 
+/** Supplies the accepted Markdown snapshot to present, with parser ownership retained by the caller. */
 export interface MarkdownProps {
   readonly snapshot: MarkdownSnapshot;
 }

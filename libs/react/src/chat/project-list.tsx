@@ -1,11 +1,13 @@
 'use client';
 import type { ReactNode } from 'react';
 
+/** Project selection row identified by ID and displayed by name, falling back to the ID for an empty name. */
 export interface ProjectListItem {
   readonly id: string;
   readonly name: string;
 }
 
+/** Supplies ordered projects, controlled selection, optional creation intent, and per-project action content. */
 export interface ProjectListProps {
   readonly projects: readonly ProjectListItem[];
   readonly onSelect: (projectId: string) => void;

@@ -1,5 +1,7 @@
+/** The execution state of an agent tool call. */
 export type ToolCallStatus = 'pending' | 'running' | 'complete' | 'error';
 
+/** An agent tool invocation with arguments, execution status, and optional result or error. */
 export interface ToolCall {
   id: string;
   name: string;

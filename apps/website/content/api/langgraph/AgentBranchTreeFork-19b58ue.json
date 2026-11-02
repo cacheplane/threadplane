@@ -1,0 +1,142 @@
+{
+  "name": "AgentBranchTreeFork",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/AgentBranchTreeFork",
+  "canonicalReference": "@threadplane/langgraph!AgentBranchTreeFork:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A branch fork where each item is an alternate checkpoint sequence.",
+  "declarations": [
+    {
+      "name": "AgentBranchTreeFork",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!AgentBranchTreeFork:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface AgentBranchTreeFork<T = "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "A branch fork where each item is an alternate checkpoint sequence.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "items",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentBranchTreeFork#items:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "items: "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentBranchTree",
+              "canonicalReference": "@threadplane/langgraph!AgentBranchTree:interface",
+              "href": "/docs/api/langgraph/AgentBranchTree"
+            },
+            {
+              "kind": "Content",
+              "text": "<T>[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 77
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "type",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!AgentBranchTreeFork#type:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "type: "
+            },
+            {
+              "kind": "Content",
+              "text": "'fork'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/agent.types.ts",
+            "line": 76
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/agent.types.ts",
+        "line": 75
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "T",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/agent.types.ts",
+    "line": 75
+  }
+}

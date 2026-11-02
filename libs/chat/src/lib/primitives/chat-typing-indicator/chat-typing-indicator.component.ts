@@ -8,7 +8,7 @@ import { CHAT_TYPING_INDICATOR_STYLES } from '../../styles/chat-typing-indicator
  * Whether the agent should show a "typing" indicator — it is loading and has
  * not yet started streaming the assistant's reply.
  *
- * @param agent The agent to inspect.
+ * @param agent - The agent to inspect.
  * @returns `true` while the agent is awaiting a response but no assistant text
  *   has streamed yet; `false` once tokens arrive or the agent is idle.
  * @example
@@ -30,6 +30,7 @@ export function isTyping(agent: Agent): boolean {
   return false;
 }
 
+/** Displays animated typing dots while a loading agent has not produced assistant content. */
 @Component({
   selector: 'chat-typing-indicator',
   standalone: true,

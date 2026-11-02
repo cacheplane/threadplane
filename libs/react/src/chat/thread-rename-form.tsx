@@ -1,6 +1,7 @@
 'use client';
 import { NameForm } from './internal/name-form.js';
 
+/** Controls a conversation-title draft, save/cancel intents, and pending or error feedback. */
 export interface ThreadRenameFormProps {
   readonly value: string;
   readonly onValueChange: (value: string) => void;

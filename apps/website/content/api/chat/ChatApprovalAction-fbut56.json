@@ -1,0 +1,54 @@
+{
+  "name": "ChatApprovalAction",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ChatApprovalAction",
+  "canonicalReference": "@threadplane/chat!ChatApprovalAction:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Actions emitted by the approval dialog for the host to handle.",
+  "declarations": [
+    {
+      "name": "ChatApprovalAction",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ChatApprovalAction:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ChatApprovalAction = "
+        },
+        {
+          "kind": "Content",
+          "text": "'approve' | 'edit' | 'cancel'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Actions emitted by the approval dialog for the host to handle.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+        "line": 18
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+    "line": 18
+  }
+}

@@ -10,7 +10,7 @@ export const A2UI_BASIC_CATALOG_ID =
 
 // --- Dynamic values ---
 // A dynamic value is a bare literal, a data-model binding, or a client-side
-// function call (typed here; function execution ships in a later phase).
+// function call resolved through a client-side function registry.
 
 /** JSON-pointer data-model binding. Absolute (`/a/b`) or relative inside templates. */
 export interface A2uiPathRef {
@@ -24,9 +24,13 @@ export interface A2uiFunctionCall {
   returnType?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'any' | 'void';
 }
 
+/** String literal, data-model path reference, or client-side function call. */
 export type DynamicString = string | A2uiPathRef | A2uiFunctionCall;
+/** Numeric literal, data-model path reference, or client-side function call. */
 export type DynamicNumber = number | A2uiPathRef | A2uiFunctionCall;
+/** Boolean literal, data-model path reference, or client-side function call. */
 export type DynamicBoolean = boolean | A2uiPathRef | A2uiFunctionCall;
+/** String-list literal, data-model path reference, or client-side function call. */
 export type DynamicStringList = string[] | A2uiPathRef | A2uiFunctionCall;
 /** Any dynamic value position where the concrete type is component-defined. */
 export type DynamicValue = unknown;
@@ -51,10 +55,12 @@ export interface A2uiFunctionAction {
   functionCall: A2uiFunctionCall;
 }
 
+/** Component action that sends an event to the agent or invokes a local function. */
 export type A2uiAction = A2uiEventAction | A2uiFunctionAction;
 
 // --- Validation checks (spec `CheckRule`) ---
 
+/** Client-side validation condition paired with the message shown on failure. */
 export interface A2uiCheck {
   /** A DynamicBoolean — typically a validator function call (`required`,
    * `regex`, `length`, `numeric`, `email`) or a logic combinator. The rule
@@ -66,6 +72,7 @@ export interface A2uiCheck {
 
 // --- Components (flat, discriminated by the `component` string) ---
 
+/** Shared identity, catalog override, layout weight, and accessibility fields for an A2UI component. */
 export interface A2uiComponentBase {
   id: string;
   component: string;
@@ -82,12 +89,14 @@ export interface A2uiCheckable {
   checks?: A2uiCheck[];
 }
 
+/** Basic-catalog text component with a dynamic string and optional typographic variant. */
 export interface A2uiText extends A2uiComponentBase {
   component: 'Text';
   text: DynamicString;
   variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body';
 }
 
+/** Basic-catalog image component with a dynamic URL, description, and display options. */
 export interface A2uiImage extends A2uiComponentBase {
   component: 'Image';
   url: DynamicString;
@@ -96,16 +105,19 @@ export interface A2uiImage extends A2uiComponentBase {
   variant?: 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
 }
 
+/** Basic-catalog icon component identified by a dynamic name or an SVG path. */
 export interface A2uiIcon extends A2uiComponentBase {
   component: 'Icon';
   name: DynamicString | { svgPath: string };
 }
 
+/** Basic-catalog video component whose media URL can be a literal or dynamic value. */
 export interface A2uiVideo extends A2uiComponentBase {
   component: 'Video';
   url: DynamicString;
 }
 
+/** Basic-catalog audio player with a dynamic media URL and optional description. */
 export interface A2uiAudioPlayer extends A2uiComponentBase {
   component: 'AudioPlayer';
   url: DynamicString;
@@ -117,6 +129,7 @@ type A2uiJustify =
   | 'spaceAround' | 'spaceBetween' | 'spaceEvenly' | 'stretch';
 type A2uiAlign = 'start' | 'center' | 'end' | 'stretch';
 
+/** Basic-catalog horizontal container for static or templated children. */
 export interface A2uiRow extends A2uiComponentBase {
   component: 'Row';
   children: A2uiChildren;
@@ -124,6 +137,7 @@ export interface A2uiRow extends A2uiComponentBase {
   align?: A2uiAlign;
 }
 
+/** Basic-catalog vertical container for static or templated children. */
 export interface A2uiColumn extends A2uiComponentBase {
   component: 'Column';
   children: A2uiChildren;
@@ -131,6 +145,7 @@ export interface A2uiColumn extends A2uiComponentBase {
   align?: A2uiAlign;
 }
 
+/** Basic-catalog list of static or templated children with configurable direction and alignment. */
 export interface A2uiList extends A2uiComponentBase {
   component: 'List';
   children: A2uiChildren;
@@ -138,27 +153,32 @@ export interface A2uiList extends A2uiComponentBase {
   align?: A2uiAlign;
 }
 
+/** Basic-catalog card that wraps the component identified by its child ID. */
 export interface A2uiCard extends A2uiComponentBase {
   component: 'Card';
   child: string;
 }
 
+/** Basic-catalog tab container pairing dynamic tab titles with child component IDs. */
 export interface A2uiTabs extends A2uiComponentBase {
   component: 'Tabs';
   tabs: { title: DynamicString; child: string }[];
 }
 
+/** Basic-catalog modal referencing separate trigger and content component IDs. */
 export interface A2uiModal extends A2uiComponentBase {
   component: 'Modal';
   trigger: string;
   content: string;
 }
 
+/** Basic-catalog separator with an optional horizontal or vertical axis. */
 export interface A2uiDivider extends A2uiComponentBase {
   component: 'Divider';
   axis?: 'horizontal' | 'vertical';
 }
 
+/** Basic-catalog button that renders a child component and dispatches its configured action. */
 export interface A2uiButton extends A2uiComponentBase {
   component: 'Button';
   child: string;
@@ -166,12 +186,14 @@ export interface A2uiButton extends A2uiComponentBase {
   action: A2uiAction;
 }
 
+/** Basic-catalog checkbox with dynamic label and boolean value plus optional validation checks. */
 export interface A2uiCheckBox extends A2uiComponentBase, A2uiCheckable {
   component: 'CheckBox';
   label: DynamicString;
   value: DynamicBoolean;
 }
 
+/** Basic-catalog text input with a dynamic label and value, input variant, and optional validation. */
 export interface A2uiTextField extends A2uiComponentBase, A2uiCheckable {
   component: 'TextField';
   label: DynamicString;
@@ -180,6 +202,7 @@ export interface A2uiTextField extends A2uiComponentBase, A2uiCheckable {
   validationRegexp?: string;
 }
 
+/** Basic-catalog date/time input with an ISO 8601 value and optional date, time, and range controls. */
 export interface A2uiDateTimeInput extends A2uiComponentBase, A2uiCheckable {
   component: 'DateTimeInput';
   /** ISO 8601 value. */
@@ -191,6 +214,7 @@ export interface A2uiDateTimeInput extends A2uiComponentBase, A2uiCheckable {
   label?: DynamicString;
 }
 
+/** Basic-catalog single- or multiple-choice input whose selected values are a dynamic string list. */
 export interface A2uiChoicePicker extends A2uiComponentBase, A2uiCheckable {
   component: 'ChoicePicker';
   options: { label: DynamicString; value: string }[];
@@ -201,6 +225,7 @@ export interface A2uiChoicePicker extends A2uiComponentBase, A2uiCheckable {
   label?: DynamicString;
 }
 
+/** Basic-catalog numeric slider with a dynamic value, fixed bounds, and optional validation checks. */
 export interface A2uiSlider extends A2uiComponentBase, A2uiCheckable {
   component: 'Slider';
   value: DynamicNumber;
@@ -224,6 +249,7 @@ export type A2uiComponent = A2uiCatalogComponent | (A2uiComponentBase & Record<s
 
 // --- Theme ---
 
+/** Optional surface branding: primary color, icon URL, and agent display name. */
 export interface A2uiTheme {
   primaryColor?: string;
   iconUrl?: string;
@@ -232,6 +258,7 @@ export interface A2uiTheme {
 
 // --- Envelopes (agent → client) ---
 
+/** Agent-to-client payload that creates a surface with its catalog, theme, and data-model sharing preference. */
 export interface A2uiCreateSurface {
   surfaceId: string;
   catalogId: string;
@@ -240,11 +267,13 @@ export interface A2uiCreateSurface {
   sendDataModel?: boolean;
 }
 
+/** Agent-to-client payload carrying component definitions for the identified surface. */
 export interface A2uiUpdateComponents {
   surfaceId: string;
   components: A2uiComponent[];
 }
 
+/** Agent-to-client payload that replaces or deletes a value at a surface data-model path. */
 export interface A2uiUpdateDataModel {
   surfaceId: string;
   /** JSON pointer into the data model. Omitted or `/` targets the whole model. */
@@ -253,6 +282,7 @@ export interface A2uiUpdateDataModel {
   value?: unknown;
 }
 
+/** Agent-to-client payload identifying the surface to remove. */
 export interface A2uiDeleteSurface {
   surfaceId: string;
 }
@@ -262,6 +292,7 @@ interface A2uiEnvelopeBase {
   version: string;
 }
 
+/** Versioned agent-to-client envelope containing one surface or data-model operation. */
 export type A2uiMessage = A2uiEnvelopeBase &
   (
     | { createSurface: A2uiCreateSurface }
@@ -272,15 +303,18 @@ export type A2uiMessage = A2uiEnvelopeBase &
 
 // --- Client → agent messages ---
 
+/** Surface-ID keyed data models attached to outbound messages when surface data-model sharing is enabled. */
 export interface A2uiClientDataModel {
   surfaces: Record<string, Record<string, unknown>>;
 }
 
+/** Catalog IDs and optional inline catalog definitions advertised by the client. */
 export interface A2uiClientCapabilities {
   supportedCatalogIds: string[];
   inlineCatalogs?: unknown[];
 }
 
+/** Versioned client-to-agent event with its surface, source component, timestamp, and optional context. */
 export interface A2uiActionMessage {
   version: string;
   action: {
@@ -303,6 +337,7 @@ export interface A2uiActionMessage {
   };
 }
 
+/** Versioned A2UI error envelope with a code and optional surface, path, and message details. */
 export interface A2uiErrorMessage {
   version: string;
   error: {
@@ -315,6 +350,7 @@ export interface A2uiErrorMessage {
 
 // --- Surface (internal renderer model, not wire format) ---
 
+/** Renderer-side surface state combining catalog settings, components indexed by ID, and the current data model. */
 export interface A2uiSurface {
   surfaceId: string;
   catalogId: string;

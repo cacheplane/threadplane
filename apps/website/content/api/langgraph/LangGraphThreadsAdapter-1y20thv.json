@@ -1,0 +1,899 @@
+{
+  "name": "LangGraphThreadsAdapter",
+  "entrypointId": "langgraph",
+  "kind": "Class",
+  "href": "/docs/api/langgraph/LangGraphThreadsAdapter",
+  "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "SDK-backed thread store. Wraps `client.threads.*` and maps SDK\nthreads to the framework's [Thread](/docs/api/chat/Thread) type for direct use with\n`<chat-thread-list>` / `<chat-sidenav>`.\n\nConsumers wire the framework's `ThreadActionAdapter` to instance\nmethods (rename/delete/archive/pin/...) so the right-click menu\nround-trips through the LangGraph SDK without per-app boilerplate.",
+  "declarations": [
+    {
+      "name": "LangGraphThreadsAdapter",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class LangGraphThreadsAdapter "
+        }
+      ],
+      "docs": {
+        "summary": "SDK-backed thread store. Wraps `client.threads.*` and maps SDK\nthreads to the framework's [Thread](/docs/api/chat/Thread) type for direct use with\n`<chat-thread-list>` / `<chat-sidenav>`.\n\nConsumers wire the framework's `ThreadActionAdapter` to instance\nmethods (rename/delete/archive/pin/...) so the right-click menu\nround-trips through the LangGraph SDK without per-app boilerplate.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [
+          "```ts\nconst svc = inject(LangGraphThreadsAdapter);\nconst actions: ThreadActionAdapter = {\n  rename: (id, t) => svc.rename(id, t),\n  delete: (id) => svc.delete(id),\n};\n```"
+        ],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "archive",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#archive:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "archive(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 192
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "archivedThreads",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#archivedThreads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly archivedThreads: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/langgraph!~Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Threads whose `metadata.archived === true`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 111
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "create",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#create:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "create(metadata?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 171
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "metadata",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isOptional": true
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 4,
+            "endIndex": 6
+          }
+        },
+        {
+          "name": "delete",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#delete:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "delete(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 182
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "getThread",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#getThread:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getThread(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/langgraph!~Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fetch a single thread by id. Returns `null` when the server\n returns 404 (thread doesn't exist) so callers can distinguish\n \"missing\" from \"couldn't reach the server\" — genuine network\n errors rethrow. Used by URL-based thread routing to validate a\n pasted/shared thread id before activating it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 155
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "moveToProject",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#moveToProject:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "moveToProject(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", projectId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 212
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "projectId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "pin",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#pin:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "pin(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 202
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "refresh",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#refresh:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "refresh(): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Fetch the latest thread list from the server. Failures are\n logged via `console.error` (not swallowed silently — silent\n catches have masked prod issues in the past).\n\nInvocation and resolution are logged at `console.debug` so prod\n inspection can distinguish \"never called\" from \"called but\n resolved empty\" from \"called and threw.\" This was prompted by a\n demo.threadplane.ai cold-load bug where the sidenav stayed empty\n with no visible signal. Tighten the log volume if it becomes\n noisy.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 123
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "name": "rename",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#rename:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "rename(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", newTitle: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 187
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "newTitle",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "reorderPinned",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#reorderPinned:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "reorderPinned(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", beforeId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Re-stamp `metadata.pinnedOrder = 0,1,2,...` for the pinned slice\n to reflect the new ordering.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 219
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "beforeId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          }
+        },
+        {
+          "name": "threads",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#threads:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly threads: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Thread",
+              "canonicalReference": "@threadplane/langgraph!~Thread:type",
+              "href": "/docs/api/chat/Thread"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Active (non-archived) threads, sorted with pinned first.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 109
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "unarchive",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#unarchive:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "unarchive(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 197
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        },
+        {
+          "name": "unpin",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/langgraph!LangGraphThreadsAdapter#unpin:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "unpin(threadId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<void>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+            "line": 207
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "threadId",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+        "line": 71
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/lib/threads/threads-adapter.ts",
+    "line": 71
+  }
+}

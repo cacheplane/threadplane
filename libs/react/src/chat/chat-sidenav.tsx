@@ -2,8 +2,10 @@
 import { useId, useRef, type ReactNode } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
+/** Navigation presentation: expanded body, collapsed content, or a drawer controlled by open. */
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 
+/** Controls navigation mode and drawer visibility, persistent content slots, labels, and optional keyboard shortcuts. */
 export interface ChatSidenavProps {
   readonly mode: ChatSidenavMode;
   readonly open: boolean;

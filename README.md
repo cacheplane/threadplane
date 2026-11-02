@@ -247,11 +247,16 @@ hook, projected through the runtime-neutral `Agent` contract.
 - [LangGraph quickstart](https://threadplane.ai/docs/langgraph/getting-started/quickstart)
 - [AG-UI quickstart](https://threadplane.ai/docs/ag-ui/getting-started/quickstart)
 - [Choosing an adapter](https://threadplane.ai/docs/choosing-an-adapter)
-- [`injectAgent()` API](https://threadplane.ai/docs/langgraph/api/inject-agent)
+- [API Reference](https://threadplane.ai/docs/api)
 - [Chat introduction](https://threadplane.ai/docs/chat/getting-started/introduction)
 - [Human approvals and interrupts](https://threadplane.ai/docs/langgraph/guides/interrupts)
 - [Durable threads](https://threadplane.ai/docs/langgraph/guides/persistence)
 - [Subgraph and subagent streaming](https://threadplane.ai/docs/langgraph/guides/subgraphs)
+
+### Generated API reference
+
+Run `npm run generate-api-docs` after changing public TypeScript exports or TSDoc. API Extractor reads checked TypeScript declarations and TSDoc directly, without a model. Its output in `apps/website/content/api` drives import-path indexes and symbol pages at `/docs/api`. Run `npm run generate-api-docs:check` to verify the committed reference is current. The website build generates the reference and packages runtime content into the build artifact for search and dynamic routes. Narrative guides remain authored MDX.
+
 
 ---
 

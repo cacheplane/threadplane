@@ -1,0 +1,426 @@
+{
+  "name": "ChatToolCallCardComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatToolCallCardComponent",
+  "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Displays a tool call’s status, arguments, and optional result in a collapsible trace.",
+  "declarations": [
+    {
+      "name": "ChatToolCallCardComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatToolCallCardComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Displays a tool call’s status, arguments, and optional result in a collapsible trace.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "ariaLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#ariaLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly ariaLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 130
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "autoExpanded",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#autoExpanded:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly autoExpanded: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 124
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "defaultCollapsed",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#defaultCollapsed:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly defaultCollapsed: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 107
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "formatJson",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#formatJson:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "formatJson(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 139
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        },
+        {
+          "name": "state",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#state:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly state: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "TraceState",
+              "canonicalReference": "@threadplane/chat!TraceState:type",
+              "href": "/docs/api/chat/TraceState"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 115
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "status",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#status:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly status: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallStatus",
+              "canonicalReference": "@threadplane/chat!ToolCallStatus:type",
+              "href": "/docs/api/chat/ToolCallStatus"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 109
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolCall",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallCardComponent#toolCall:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolCall: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolCallInfo",
+              "canonicalReference": "@threadplane/chat!ToolCallInfo:interface",
+              "href": "/docs/api/chat/ToolCallInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 106
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+        "line": 18
+      },
+      "angular": {
+        "selector": "chat-tool-call-card",
+        "inputs": [
+          {
+            "name": "defaultCollapsed",
+            "alias": "defaultCollapsed",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "toolCall",
+            "alias": "toolCall",
+            "required": true,
+            "type": "ToolCallInfo"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+    "line": 18
+  }
+}

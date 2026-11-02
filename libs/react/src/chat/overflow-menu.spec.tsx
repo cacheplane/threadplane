@@ -986,3 +986,73 @@ it('keeps a context menu through a queued unchanged ancestor scroll notification
   expect(view.queryByRole('menu')).toBeNull();
   unrelated.remove();
 });
+
+it.each(['scrollTop', 'scrollLeft'] as const)(
+  'ignores queued document scroll at the opening baseline but dismisses later %s movement',
+  (offset) => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'scrollingElement'
+    );
+    const root = document.documentElement;
+    const originalOffset = root[offset];
+    Object.defineProperty(document, 'scrollingElement', {
+      configurable: true,
+      value: root,
+    });
+    try {
+      root[offset] = 85;
+      const view = render(<Controlled />);
+      const trigger = view.getByRole('button', {
+        name: 'Actions for literal <ID>',
+      });
+      fireEvent.click(trigger);
+      const menu = view.getByRole('menu');
+      const item = view.getByRole('menuitem', { name: 'Beta' });
+      item.focus();
+
+      fireEvent.scroll(document);
+      expect(view.getByRole('menu')).toBe(menu);
+      expect(document.activeElement).toBe(item);
+
+      root[offset] = 86;
+      fireEvent.scroll(document);
+      expect(view.queryByRole('menu')).toBeNull();
+
+      fireEvent.click(trigger);
+      const reopened = view.getByRole('menu');
+      fireEvent.scroll(document);
+      expect(view.getByRole('menu')).toBe(reopened);
+      root[offset] = 87;
+      fireEvent.scroll(document);
+      expect(view.queryByRole('menu')).toBeNull();
+    } finally {
+      cleanup();
+      root[offset] = originalOffset;
+      if (descriptor)
+        Object.defineProperty(document, 'scrollingElement', descriptor);
+      else Reflect.deleteProperty(document, 'scrollingElement');
+    }
+  }
+);
+
+it('dismisses document scroll when its scrolling element has no opening baseline', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    document,
+    'scrollingElement'
+  );
+  Object.defineProperty(document, 'scrollingElement', {
+    configurable: true,
+    value: document.createElement('div'),
+  });
+  try {
+    const view = render(<Controlled initial />);
+    fireEvent.scroll(document);
+    expect(view.queryByRole('menu')).toBeNull();
+  } finally {
+    cleanup();
+    if (descriptor)
+      Object.defineProperty(document, 'scrollingElement', descriptor);
+    else Reflect.deleteProperty(document, 'scrollingElement');
+  }
+});

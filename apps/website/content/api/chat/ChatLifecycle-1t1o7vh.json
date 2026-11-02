@@ -1,0 +1,207 @@
+{
+  "name": "ChatLifecycle",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ChatLifecycle",
+  "canonicalReference": "@threadplane/chat!ChatLifecycle:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Reactive readiness and user submission counters for a chat component instance.",
+  "declarations": [
+    {
+      "name": "ChatLifecycle",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ChatLifecycle:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatLifecycle "
+        }
+      ],
+      "docs": {
+        "summary": "Reactive readiness and user submission counters for a chat component instance.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "componentReady",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatLifecycle#componentReady:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly componentReady: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True after `<chat>` initializes with a non-null agent binding.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/lifecycle.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "firstMessageSent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatLifecycle#firstMessageSent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly firstMessageSent: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True after the first user submit. Sticky for the life of the chat instance — does NOT reset on clearThread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/lifecycle.ts",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "inputSubmittedAt",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatLifecycle#inputSubmittedAt:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputSubmittedAt: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Epoch ms of the most recent user submit. Resets on clearThread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/lifecycle.ts",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "messageCount",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ChatLifecycle#messageCount:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageCount: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<number>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Count of user submits. Resets on clearThread.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/lifecycle.ts",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/lifecycle.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/lifecycle.ts",
+    "line": 4
+  }
+}

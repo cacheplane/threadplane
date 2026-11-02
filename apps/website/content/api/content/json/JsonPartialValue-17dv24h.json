@@ -1,0 +1,74 @@
+{
+  "name": "JsonPartialValue",
+  "entrypointId": "content/json",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/json/JsonPartialValue",
+  "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Best-effort partial JSON, with undefined for unresolved primitive values.",
+  "declarations": [
+    {
+      "name": "JsonPartialValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type JsonPartialValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "undefined | null | boolean | number | string | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonPartialValue",
+          "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+          "href": "/docs/api/content/json/JsonPartialValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "JsonPartialValue",
+          "canonicalReference": "@threadplane/content!JsonPartialValue:type",
+          "href": "/docs/api/content/json/JsonPartialValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Best-effort partial JSON, with undefined for unresolved primitive values.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/json/types.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/json/types.ts",
+    "line": 2
+  }
+}

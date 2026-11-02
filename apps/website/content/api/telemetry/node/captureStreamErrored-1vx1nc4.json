@@ -1,0 +1,93 @@
+{
+  "name": "captureStreamErrored",
+  "entrypointId": "telemetry/node",
+  "kind": "Function",
+  "href": "/docs/api/telemetry/node/captureStreamErrored",
+  "canonicalReference": "@threadplane/telemetry!captureStreamErrored:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Capture a stream-error event using the Error constructor name, or `Unknown`, without forwarding the raw error.\nRequires plain-object provider/model metadata, defaults omitted transport to `unknown`, and suppresses capture failures.",
+  "declarations": [
+    {
+      "name": "captureStreamErrored",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/telemetry!captureStreamErrored:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function captureStreamErrored(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "StreamTelemetry",
+          "canonicalReference": "@threadplane/telemetry!StreamTelemetry:interface",
+          "href": "/docs/api/telemetry/node/StreamTelemetry"
+        },
+        {
+          "kind": "Content",
+          "text": " & {\n    error: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Error",
+          "canonicalReference": "!Error:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " | unknown;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<void>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Capture a stream-error event using the Error constructor name, or `Unknown`, without forwarding the raw error.\nRequires plain-object provider/model metadata, defaults omitted transport to `unknown`, and suppresses capture failures.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 79
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 79
+  }
+}

@@ -1,5 +1,6 @@
 let disabled = false;
 
+/** Disable subsequent explicit Node client captures for this module instance; does not abort requests already in flight. */
 export function disableTelemetry(): void {
   disabled = true;
 }

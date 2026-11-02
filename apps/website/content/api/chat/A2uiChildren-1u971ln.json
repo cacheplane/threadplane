@@ -1,0 +1,54 @@
+{
+  "name": "A2uiChildren",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/A2uiChildren",
+  "canonicalReference": "@threadplane/chat!A2uiChildren:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Static child-id list, or a template stamped per element of a data-model list.",
+  "declarations": [
+    {
+      "name": "A2uiChildren",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!A2uiChildren:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type A2uiChildren = "
+        },
+        {
+          "kind": "Content",
+          "text": "string[] | {\n    path: string;\n    componentId: string;\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Static child-id list, or a template stamped per element of a data-model list.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/a2ui/src/lib/types.ts",
+        "line": 41
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/a2ui/src/lib/types.ts",
+    "line": 41
+  }
+}

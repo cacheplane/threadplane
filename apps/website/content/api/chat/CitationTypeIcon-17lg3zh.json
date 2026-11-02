@@ -1,0 +1,54 @@
+{
+  "name": "CitationTypeIcon",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/CitationTypeIcon",
+  "canonicalReference": "@threadplane/chat!CitationTypeIcon:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Supported source categories used for citation icons and visual tones.",
+  "declarations": [
+    {
+      "name": "CitationTypeIcon",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!CitationTypeIcon:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CitationTypeIcon = "
+        },
+        {
+          "kind": "Content",
+          "text": "'web' | 'file' | 'app' | 'memory' | 'generic'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Supported source categories used for citation icons and visual tones.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/citation-display.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/citation-display.ts",
+    "line": 6
+  }
+}

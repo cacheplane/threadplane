@@ -1,0 +1,156 @@
+{
+  "name": "ClientToolSpec",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ClientToolSpec",
+  "canonicalReference": "@threadplane/chat!ClientToolSpec:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A client tool spec as shipped to the model / AG-UI RunAgentInput.tools.",
+  "declarations": [
+    {
+      "name": "ClientToolSpec",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ClientToolSpec:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolSpec "
+        }
+      ],
+      "docs": {
+        "summary": "A client tool spec as shipped to the model / AG-UI RunAgentInput.tools.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "description",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolSpec#description:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly description: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/to-json-schema.ts",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolSpec#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/to-json-schema.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "parameters",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ClientToolSpec#parameters:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly parameters: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string, unknown>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/client-tools/to-json-schema.ts",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/to-json-schema.ts",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/to-json-schema.ts",
+    "line": 5
+  }
+}

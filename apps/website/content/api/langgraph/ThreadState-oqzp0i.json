@@ -1,0 +1,324 @@
+{
+  "name": "ThreadState",
+  "entrypointId": "langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/langgraph/ThreadState",
+  "canonicalReference": "@threadplane/langgraph!ThreadState:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "LangGraph SDK checkpoint snapshot containing state values, next nodes, metadata, parent checkpoint, and pending tasks.",
+  "declarations": [
+    {
+      "name": "ThreadState",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/langgraph!ThreadState:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "interface ThreadState<ValuesType = "
+        },
+        {
+          "kind": "Reference",
+          "text": "DefaultValues",
+          "canonicalReference": "@threadplane/langgraph!DefaultValues:type"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "LangGraph SDK checkpoint snapshot containing state values, next nodes, metadata, parent checkpoint, and pending tasks.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "checkpoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#checkpoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "checkpoint: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Checkpoint",
+              "canonicalReference": "@threadplane/langgraph!Checkpoint:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Checkpoint of the thread state",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "created_at",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#created_at:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "created_at: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Optional",
+              "canonicalReference": "@threadplane/langgraph!Optional:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Time of state creation",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "metadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#metadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "metadata: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Metadata",
+              "canonicalReference": "@threadplane/langgraph!Metadata:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Metadata for this state",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "next",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#next:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "next: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The next nodes to execute. If empty, the thread is done until new input is received",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "parent_checkpoint",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#parent_checkpoint:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "parent_checkpoint: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Optional",
+              "canonicalReference": "@threadplane/langgraph!Optional:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Checkpoint",
+              "canonicalReference": "@threadplane/langgraph!Checkpoint:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The parent checkpoint. If missing, this is the root checkpoint",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "tasks",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#tasks:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "tasks: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ThreadTask",
+              "canonicalReference": "@threadplane/langgraph!ThreadTask:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tasks to execute in this step. If already attempted, may contain an error",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "values",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/langgraph!ThreadState#values:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "values: "
+            },
+            {
+              "kind": "Content",
+              "text": "ValuesType"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The state values",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "typeParameters": [
+        {
+          "typeParameterName": "ValuesType",
+          "constraintTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        }
+      ],
+      "source": {
+        "path": "libs/langgraph/src/public-api.ts",
+        "line": 37
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/langgraph/src/public-api.ts",
+    "line": 37
+  }
+}

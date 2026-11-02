@@ -1,0 +1,81 @@
+{
+  "name": "toClientToolSpecs",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/toClientToolSpecs",
+  "canonicalReference": "@threadplane/chat!toClientToolSpecs:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Build the catalog spec list shipped to the model.",
+  "declarations": [
+    {
+      "name": "toClientToolSpecs",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!toClientToolSpecs:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function toClientToolSpecs(registry: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolRegistry",
+          "canonicalReference": "@threadplane/chat!ClientToolRegistry:type",
+          "href": "/docs/api/chat/ClientToolRegistry"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "ClientToolSpec",
+          "canonicalReference": "@threadplane/chat!ClientToolSpec:interface",
+          "href": "/docs/api/chat/ClientToolSpec"
+        },
+        {
+          "kind": "Content",
+          "text": "[]"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Build the catalog spec list shipped to the model.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
+        "line": 45
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "registry",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/client-tools/client-tools-coordinator.ts",
+    "line": 45
+  }
+}

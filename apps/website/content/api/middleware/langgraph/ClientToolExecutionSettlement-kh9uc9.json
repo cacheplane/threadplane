@@ -1,0 +1,151 @@
+{
+  "name": "ClientToolExecutionSettlement",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/middleware/langgraph/ClientToolExecutionSettlement",
+  "canonicalReference": "@threadplane/middleware!ClientToolExecutionSettlement:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Invocation identity and owner token used to settle an execution with an encoded result, or null when no reusable result is available.",
+  "declarations": [
+    {
+      "name": "ClientToolExecutionSettlement",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/middleware!ClientToolExecutionSettlement:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ClientToolExecutionSettlement "
+        }
+      ],
+      "docs": {
+        "summary": "Invocation identity and owner token used to settle an execution with an encoded result, or null when no reusable result is available.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "invocation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionSettlement#invocation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly invocation: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionSettlement#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "token",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!ClientToolExecutionSettlement#token:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly token: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+        "line": 15
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/client-tool-execution-store.ts",
+    "line": 15
+  }
+}

@@ -13,6 +13,7 @@ import {
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_HISTORY_SEARCH_PALETTE_STYLES } from '../../styles/chat-history-search-palette.styles';
 
+/** A conversation search result with an identifier, title, and optional secondary text. */
 export interface ThreadMatch {
   id: string;
   title: string;
@@ -22,6 +23,7 @@ export interface ThreadMatch {
 
 let paletteInstanceCounter = 0;
 
+/** Displays a conversation search dialog with a bound query, supplied results, and keyboard selection. */
 @Component({
   selector: 'chat-history-search-palette',
   standalone: true,

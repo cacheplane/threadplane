@@ -1,0 +1,111 @@
+{
+  "name": "ChatCitationsCardComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatCitationsCardComponent",
+  "canonicalReference": "@threadplane/chat!ChatCitationsCardComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Sources-panel detail card: index badge, favicon/monogram + domain + type,\ntitle, one-line snippet. Renders as an <a> (opens the source) when a url is\npresent, otherwise a non-interactive <div>. Shares the panel style module.",
+  "declarations": [
+    {
+      "name": "ChatCitationsCardComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatCitationsCardComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatCitationsCardComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Sources-panel detail card: index badge, favicon/monogram + domain + type,\ntitle, one-line snippet. Renders as an <a> (opens the source) when a url is\npresent, otherwise a non-interactive <div>. Shares the panel style module.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "citation",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatCitationsCardComponent#citation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citation: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/chat!Citation:interface",
+              "href": "/docs/api/chat/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
+            "line": 97
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
+        "line": 15
+      },
+      "angular": {
+        "selector": "chat-citations-card",
+        "inputs": [
+          {
+            "name": "citation",
+            "alias": "citation",
+            "required": true,
+            "type": "Citation"
+          }
+        ],
+        "outputs": []
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
+    "line": 15
+  }
+}

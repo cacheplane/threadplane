@@ -1,0 +1,134 @@
+{
+  "name": "TextTranscriptProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/TextTranscriptProps",
+  "canonicalReference": "@threadplane/react!TextTranscriptProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Readonly text rows with IDs unique within this list. Lifetime belongs to the caller.",
+  "declarations": [
+    {
+      "name": "TextTranscriptProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!TextTranscriptProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface TextTranscriptProps "
+        }
+      ],
+      "docs": {
+        "summary": "Readonly text rows with IDs unique within this list. Lifetime belongs to the caller.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TextTranscriptProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/text-transcript.tsx",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "messages",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TextTranscriptProps#messages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messages: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "Pick",
+              "canonicalReference": "!Pick:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Message",
+              "canonicalReference": "@threadplane/react!~Message:interface",
+              "href": "/docs/api/core/Message"
+            },
+            {
+              "kind": "Content",
+              "text": ", 'id' | 'role' | 'content'>[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/text-transcript.tsx",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/text-transcript.tsx",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/text-transcript.tsx",
+    "line": 4
+  }
+}

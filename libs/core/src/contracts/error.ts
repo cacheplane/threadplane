@@ -1,9 +1,11 @@
+/** Adapter-classified failure category for connection, authentication, server, or execution termination errors. */
 export type AgentErrorKind =
   | 'connection'
   | 'auth'
   | 'server'
   | 'interrupted'
   | 'aborted';
+/** Suggested recovery: retry a submission, reconcile its status, or offer no recovery action. */
 export type AgentRecovery = 'retry' | 'check' | 'none';
 
 /** Plain display projection. Classification and raw causes remain with the adapter. */

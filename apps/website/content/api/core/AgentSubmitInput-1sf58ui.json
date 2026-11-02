@@ -1,0 +1,54 @@
+{
+  "name": "AgentSubmitInput",
+  "entrypointId": "core",
+  "kind": "TypeAlias",
+  "href": "/docs/api/core/AgentSubmitInput",
+  "canonicalReference": "@threadplane/core!AgentSubmitInput:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The initial neutral session supports text submission only.",
+  "declarations": [
+    {
+      "name": "AgentSubmitInput",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/core!AgentSubmitInput:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type AgentSubmitInput = "
+        },
+        {
+          "kind": "Content",
+          "text": "string"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The initial neutral session supports text submission only.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/agent-session.ts",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/agent-session.ts",
+    "line": 6
+  }
+}

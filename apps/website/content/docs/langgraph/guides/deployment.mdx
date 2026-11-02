@@ -196,6 +196,10 @@ provideAgent({
 
 The handler on the LangGraph side validates the token and scopes threads and runs to that user.
 
+### Client option precedence
+
+Client options resolve as a whole object. A `clientOptions` object on `provideAgent()` takes precedence over the injected app-wide `LANGGRAPH_CLIENT_OPTIONS` token; absent both, the SDK uses its defaults. Fields are not merged. A per-agent `{ maxRetries: 0 }` therefore replaces the entire app-wide object, including any `defaultHeaders`. Include the headers explicitly in that override if the agent still needs them. See [`LangGraphClientOptions`](/docs/api/langgraph/LangGraphClientOptions) for the supported fields.
+
 ## CORS configuration
 
 When your Angular frontend and LangGraph backend are on different origins, you must configure CORS on the LangGraph side.
@@ -506,7 +510,7 @@ Confirm LangSmith traces are arriving and set up alerts for error rate spikes an
   <Card title="LangGraph Basics" href="/docs/langgraph/concepts/langgraph-basics">
     Understand the agent patterns your deployment will serve.
   </Card>
-  <Card title="API Reference" href="/docs/langgraph/api/provide-agent">
+  <Card title="API Reference" href="/docs/api/langgraph/provideAgent">
     Full reference for provideAgent configuration options.
   </Card>
   <Card title="Error Handling" href="/docs/langgraph/guides/streaming#error-handling">

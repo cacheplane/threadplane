@@ -1,0 +1,115 @@
+{
+  "name": "DebugRefreshRequest",
+  "entrypointId": "react/debug",
+  "kind": "Interface",
+  "href": "/docs/api/react/debug/DebugRefreshRequest",
+  "canonicalReference": "@threadplane/react!DebugRefreshRequest:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Refresh intent scoped to the current context; pageGeneration is null when no matching page is displayed.",
+  "declarations": [
+    {
+      "name": "DebugRefreshRequest",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!DebugRefreshRequest:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface DebugRefreshRequest "
+        }
+      ],
+      "docs": {
+        "summary": "Refresh intent scoped to the current context; pageGeneration is null when no matching page is displayed.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "contextKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugRefreshRequest#contextKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly contextKey: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "pageGeneration",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!DebugRefreshRequest#pageGeneration:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pageGeneration: "
+            },
+            {
+              "kind": "Content",
+              "text": "number | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/debug/types.ts",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 18
+  }
+}

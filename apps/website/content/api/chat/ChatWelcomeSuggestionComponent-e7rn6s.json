@@ -1,0 +1,258 @@
+{
+  "name": "ChatWelcomeSuggestionComponent",
+  "entrypointId": "chat",
+  "kind": "Class",
+  "href": "/docs/api/chat/ChatWelcomeSuggestionComponent",
+  "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent:class",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Renders a labeled welcome suggestion and emits its associated value when selected.",
+  "declarations": [
+    {
+      "name": "ChatWelcomeSuggestionComponent",
+      "kind": "Class",
+      "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent:class",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare class ChatWelcomeSuggestionComponent "
+        }
+      ],
+      "docs": {
+        "summary": "Renders a labeled welcome suggestion and emits its associated value when selected.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "description",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent#description:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly description: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional short description, surfaced as a hover/focus tooltip on the chip.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+            "line": 29
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+            "line": 26
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "selected",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent#selected:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly selected: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+            "line": 30
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "value",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatWelcomeSuggestionComponent#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+            "line": 27
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+        "line": 6
+      },
+      "angular": {
+        "selector": "chat-welcome-suggestion",
+        "inputs": [
+          {
+            "name": "description",
+            "alias": "description",
+            "required": false,
+            "type": "string | undefined"
+          },
+          {
+            "name": "label",
+            "alias": "label",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "value",
+            "alias": "value",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "selected",
+            "alias": "selected",
+            "required": false,
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
+    "line": 6
+  }
+}

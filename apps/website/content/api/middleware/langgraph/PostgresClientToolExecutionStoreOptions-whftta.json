@@ -1,0 +1,79 @@
+{
+  "name": "PostgresClientToolExecutionStoreOptions",
+  "entrypointId": "middleware/langgraph",
+  "kind": "Interface",
+  "href": "/docs/api/middleware/langgraph/PostgresClientToolExecutionStoreOptions",
+  "canonicalReference": "@threadplane/middleware!PostgresClientToolExecutionStoreOptions:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Tenant-scoping options for the PostgreSQL client-tool execution store.",
+  "declarations": [
+    {
+      "name": "PostgresClientToolExecutionStoreOptions",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/middleware!PostgresClientToolExecutionStoreOptions:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface PostgresClientToolExecutionStoreOptions "
+        }
+      ],
+      "docs": {
+        "summary": "Tenant-scoping options for the PostgreSQL client-tool execution store.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "tenantId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/middleware!PostgresClientToolExecutionStoreOptions#tenantId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tenantId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Tenant scope for every read and write. Defaults to the empty scope.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+    "line": 18
+  }
+}

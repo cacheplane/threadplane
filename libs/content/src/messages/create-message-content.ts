@@ -27,6 +27,7 @@ export interface MessageRow<
   readonly toolCalls: readonly ToolCall<TTools>[];
 }
 
+/** Owns per-message Markdown parsers and projects agent snapshots into reusable transcript rows. */
 export interface MessageContent<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
@@ -39,11 +40,13 @@ export interface MessageContent<
   dispose(): void;
 }
 
+/** Optional Markdown owner factory override used when constructing transcript projections. */
 export interface MessageContentOptions {
   /** @internal Test seam. */
   readonly markdownFactory?: typeof createMarkdown;
 }
 
+/** Creates a transcript projector that preserves unchanged row identities and releases parsers for removed messages. */
 export function createMessageContent<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,

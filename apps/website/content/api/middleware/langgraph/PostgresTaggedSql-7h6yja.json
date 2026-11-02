@@ -1,0 +1,82 @@
+{
+  "name": "PostgresTaggedSql",
+  "entrypointId": "middleware/langgraph",
+  "kind": "TypeAlias",
+  "href": "/docs/api/middleware/langgraph/PostgresTaggedSql",
+  "canonicalReference": "@threadplane/middleware!PostgresTaggedSql:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Parameterized SQL template-tag contract used by the PostgreSQL client-tool execution store.",
+  "declarations": [
+    {
+      "name": "PostgresTaggedSql",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/middleware!PostgresTaggedSql:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type PostgresTaggedSql = "
+        },
+        {
+          "kind": "Content",
+          "text": "(strings: "
+        },
+        {
+          "kind": "Reference",
+          "text": "TemplateStringsArray",
+          "canonicalReference": "!TemplateStringsArray:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ", ...values: unknown[]) => "
+        },
+        {
+          "kind": "Reference",
+          "text": "Promise",
+          "canonicalReference": "!Promise:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "<readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "PostgresRow",
+          "canonicalReference": "@threadplane/middleware!PostgresRow:type",
+          "href": "/docs/api/middleware/langgraph/PostgresRow"
+        },
+        {
+          "kind": "Content",
+          "text": "[]>"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Parameterized SQL template-tag contract used by the PostgreSQL client-tool execution store.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+        "line": 13
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/middleware/src/langgraph/postgres-client-tool-execution-store.ts",
+    "line": 13
+  }
+}

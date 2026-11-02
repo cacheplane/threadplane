@@ -3,6 +3,7 @@ import type { Spec } from '@json-render/core';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body';
 
+/** Renders A2UI text using the selected typography variant. */
 @Component({
   selector: 'a2ui-text',
   standalone: true,

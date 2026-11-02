@@ -26,7 +26,7 @@ export const renderComputedFunctionsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Render Computed Functions (Python)',
-  docsPath: '/docs/render/api/provide-render',
+  docsPath: '/docs/render/guides/computed-functions',
   promptAssetPaths: ['cockpit/render/computed-functions/python/prompts/computed-functions.md'],
   codeAssetPaths: [
     'cockpit/render/computed-functions/angular/src/app/computed-functions.component.ts',

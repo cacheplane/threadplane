@@ -5,6 +5,49 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
+test('plain declaration proof checks exact passive StateDiff types', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-state-diff-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const directory = join(consumer, 'node_modules/@threadplane/react');
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './debug': { types: './debug.d.ts' } } }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const declaration = `export type DebugValue = null | boolean | number | string | readonly DebugValue[] | { readonly [key: string]: DebugValue };
+export interface StateDiffProps { readonly before: DebugValue; readonly after: DebugValue; readonly label?: string; readonly className?: string; }
+export declare function StateDiff(props: StateDiffProps): unknown;`;
+  const source = join(consumer, 'index.ts');
+  writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/debug']));
+  const compile = text => {
+    writeFileSync(join(directory, 'debug.d.ts'), text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const [before, after] of [
+    ['readonly before: DebugValue;', 'before: DebugValue;'],
+    ['readonly before: DebugValue;', 'readonly before?: DebugValue;'],
+    ['readonly before: DebugValue;', 'readonly before: unknown;'],
+    ['readonly after: DebugValue;', 'after: DebugValue;'],
+    ['readonly after: DebugValue;', 'readonly after: any;'],
+    ['readonly label?: string;', 'label?: string;'],
+    ['readonly label?: string;', 'readonly label: string;'],
+    ['readonly className?: string;', 'readonly className?: number;'],
+    ['readonly className?: string;', 'readonly className?: string; readonly onRefresh?: () => void;'],
+  ]) {
+    const start = declaration.indexOf('export interface StateDiffProps');
+    const end = declaration.indexOf('\nexport declare', start);
+    const original = declaration.slice(start, end);
+    assert.ok(original.includes(before));
+    const mutated = declaration.slice(0, start) + original.replace(before, after) + declaration.slice(end);
+    assert.equal(mutated.slice(0, start), declaration.slice(0, start));
+    assert.match(compile(mutated), /false.*true/, `${before} → ${after}`);
+  }
+  assert.match(compile(declaration.replace('props: StateDiffProps', 'props: any')), /false.*true/);
+  assert.match(compile(declaration.replace(/export type DebugValue =[^;]+;/, 'export type DebugValue = any;')), /false.*true/);
+  assert.match(compile(declaration.replace(/export type DebugValue =[^;]+;/, 'export type DebugValue = unknown;')), /false.*true/);
+  assert.match(compile(declaration.replaceAll('StateDiffProps', 'MissingStateDiffProps')), /StateDiffProps/);
+});
+
 test('plain declaration proof checks navigation, sidebar and thread-list type-only contracts', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-sidenav-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
@@ -32,7 +75,11 @@ export interface ProjectListProps { readonly projects: readonly ProjectListItem[
 export interface ThreadListItem { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean; }
 export interface ThreadListProps { readonly threads: readonly ThreadListItem[]; readonly onSelect: (threadId: string) => void; readonly activeThreadId?: string | null; readonly label?: string; readonly className?: string; readonly onNewThread?: () => void; readonly newThreadDisabled?: boolean; readonly newThreadLabel?: string; readonly now?: number; readonly renderItem?: (thread: ThreadListItem, isActive: boolean) => import('react').ReactNode; readonly renderTitle?: (thread: ThreadListItem) => import('react').ReactNode; readonly renderActions?: (thread: ThreadListItem) => import('react').ReactNode; readonly onContextMenu?: (threadId: string, event: import('react').MouseEvent<HTMLButtonElement> | import('react').KeyboardEvent<HTMLButtonElement>) => void; }
 export interface ProjectNameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; readonly submitLabel?: string; readonly submitDisabled?: boolean; }
-export interface ConfirmDialogProps { readonly open: boolean; readonly title: string; readonly onConfirm: () => void; readonly onCancel: () => void; readonly body?: string; readonly confirmLabel?: string; readonly cancelLabel?: string; readonly tone?: 'normal' | 'destructive'; readonly pending?: boolean; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }`;
+export interface ConfirmDialogProps { readonly open: boolean; readonly title: string; readonly onConfirm: () => void; readonly onCancel: () => void; readonly body?: string; readonly confirmLabel?: string; readonly cancelLabel?: string; readonly tone?: 'normal' | 'destructive'; readonly pending?: boolean; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }
+export interface WelcomeProps { readonly title?: import('react').ReactNode; readonly children?: import('react').ReactNode; readonly suggestions?: import('react').ReactNode; readonly className?: string; }
+export interface WelcomeSuggestionProps { readonly label: string; readonly value: string; readonly onSelect: (value: string) => void; readonly description?: string; readonly icon?: import('react').ReactNode; readonly disabled?: boolean; readonly className?: string; }
+export declare function Welcome(props: WelcomeProps): unknown;
+export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -65,6 +112,28 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps']) {
+    assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
+    assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
+    assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
+  }
+  for (const [name, property, type, optional] of [
+    ...['title', 'children', 'suggestions'].map(property => ['WelcomeProps', property, "import('react').ReactNode", true]),
+    ['WelcomeProps', 'className', 'string', true],
+    ...['label', 'value'].map(property => ['WelcomeSuggestionProps', property, 'string', false]),
+    ['WelcomeSuggestionProps', 'onSelect', '(value: string) => void', false],
+    ['WelcomeSuggestionProps', 'description', 'string', true],
+    ['WelcomeSuggestionProps', 'icon', "import('react').ReactNode", true],
+    ['WelcomeSuggestionProps', 'disabled', 'boolean', true],
+    ['WelcomeSuggestionProps', 'className', 'string', true],
+  ]) {
+    const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
+    for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
+      assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
+    }
+  }
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps'])
+    assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
     assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
   for (const [name, before, after] of [
@@ -487,13 +556,17 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
+  for (const name of ['Welcome', 'WelcomeSuggestion']) {
+    for (const value of [undefined, null, {}, 'component'])
+      assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
+  }
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, execute: component }), /unexpected/);
   const forwarded = { $$typeof: Symbol.for('react.forward_ref'), render: component };
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: forwarded }));
@@ -642,10 +715,11 @@ test('installation footprint counts actual package files and bytes separately fr
 });
 
 const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
-test('React Debug exposes exactly the passive component', () => {
+test('React Debug exposes exactly the passive components', () => {
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
- assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }));
- assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, createSession() {} }), /unexpected/);
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }), /StateDiff/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, createSession() {} }), /unexpected/);
 });
 test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
  for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {

@@ -27,7 +27,7 @@ function findSiblings(library: LibraryId, section: string, slug: string): { prev
         section: p.section,
         slug: p.slug,
         title: p.title,
-        href: `/docs/${library}/${p.section}/${p.slug}`,
+        href: p.href ?? `/docs/${library}/${p.section}/${p.slug}`,
       });
     }
   }

@@ -5,6 +5,8 @@ import { getAllPosts, type Post } from './blog';
 import { specialDocsPages } from './docs-config';
 import { getSitemapRoutes } from './site-metadata';
 import { resolveWebsiteDir } from './website-dir';
+import { readApiIndex, readApiSymbol, resolveApiPage } from './api-reference';
+import { apiSymbolFileName } from './api-reference-model';
 
 /** A sitemap URL plus the honest last-modified time of the source it renders from. */
 export interface SitemapEntry {
@@ -19,7 +21,48 @@ export interface SitemapEntry {
 }
 
 /** Website-relative source paths that a route's content is rendered from. */
-function sourcePathsForRoute(route: string, postsByRoute: ReadonlyMap<string, Post>): string[] {
+export function sourcePathsForRoute(
+  route: string,
+  postsByRoute: ReadonlyMap<string, Post>
+): string[] {
+  if (route === '/docs/api' || route.startsWith('/docs/api/')) {
+    const index = readApiIndex();
+    const page = resolveApiPage(
+      route === '/docs/api'
+        ? []
+        : route.slice('/docs/api/'.length).split('/').map(decodeURIComponent),
+      index
+    );
+    const entries = page?.entrypoint ? [page.entrypoint] : index.entrypoints;
+    const summaries =
+      page?.kind === 'symbol'
+        ? [page.symbol]
+        : index.symbols.filter(
+            (symbol) =>
+              !page?.entrypoint || symbol.entrypointId === page.entrypoint.id
+          );
+    const sources = summaries.flatMap((summary) => {
+      const symbol = readApiSymbol(summary.entrypointId, summary.name);
+      return symbol?.source ? [`../../${symbol.source.path}`] : [];
+    });
+    return [
+      ...new Set([
+        path.join('content', 'api', 'index.json'),
+        ...(page?.kind === 'symbol'
+          ? [
+              path.join(
+                'content',
+                'api',
+                page.entrypoint.id,
+                apiSymbolFileName(page.symbol.name)
+              ),
+            ]
+          : []),
+        ...entries.map((entry) => `../../libs/${entry.project}/package.json`),
+        ...sources,
+      ]),
+    ];
+  }
   const post = postsByRoute.get(route);
   if (post) return [path.join('content', 'blog', post.filename)];
 
@@ -78,7 +121,11 @@ export interface GitTimes {
  * timestamp. Emitting those would claim the whole site changed at clone time,
  * which is exactly the fabrication this module exists to avoid.
  */
-export function parseGitLog(text: string, prefix: string, graftedShas: ReadonlySet<string>): Map<string, number> {
+export function parseGitLog(
+  text: string,
+  prefix: string,
+  graftedShas: ReadonlySet<string>
+): Map<string, number> {
   const times = new Map<string, number>();
   let commitTime = 0;
 
@@ -95,7 +142,8 @@ export function parseGitLog(text: string, prefix: string, graftedShas: ReadonlyS
     // Paths are emitted verbatim (core.quotePath=false), so leading whitespace
     // is part of the name; only truly empty lines are separators.
     if (line.length === 0 || !commitTime) continue;
-    const relative = prefix && line.startsWith(prefix) ? line.slice(prefix.length) : line;
+    const relative =
+      prefix && line.startsWith(prefix) ? line.slice(prefix.length) : line;
     // `git log` walks newest-first, so the first mention of a path wins.
     if (!times.has(relative)) times.set(relative, commitTime);
   }
@@ -134,18 +182,22 @@ function computeGitTimes(): GitTimes | null {
           timeout: GIT_TIMEOUT_MS,
           killSignal: 'SIGKILL',
           stdio: ['ignore', 'pipe', 'ignore'],
-        },
+        }
       );
 
     const root = git(['rev-parse', '--show-toplevel'], process.cwd()).trim();
     const graftedShas = new Set<string>();
-    const shallow = git(['rev-parse', '--is-shallow-repository'], root).trim() === 'true';
+    const shallow =
+      git(['rev-parse', '--is-shallow-repository'], root).trim() === 'true';
     if (shallow) {
       // Must be the COMMON git dir, not `--absolute-git-dir`: in a linked
       // worktree those differ (`.git/worktrees/<name>` vs `.git`) and `shallow`
       // only ever lives in the common dir. Output can be relative, and git runs
       // with cwd=root, so resolve it against root.
-      const commonDir = path.resolve(root, git(['rev-parse', '--git-common-dir'], root).trim());
+      const commonDir = path.resolve(
+        root,
+        git(['rev-parse', '--git-common-dir'], root).trim()
+      );
       const shallowFile = path.join(commonDir, 'shallow');
       if (!fs.existsSync(shallowFile)) return null;
       for (const sha of fs.readFileSync(shallowFile, 'utf8').split('\n')) {
@@ -153,7 +205,9 @@ function computeGitTimes(): GitTimes | null {
       }
     }
 
-    const prefix = fs.existsSync(path.join(root, 'apps', 'website')) ? 'apps/website/' : '';
+    const prefix = fs.existsSync(path.join(root, 'apps', 'website'))
+      ? 'apps/website/'
+      : '';
     const log = git(
       [
         'log',
@@ -163,8 +217,9 @@ function computeGitTimes(): GitTimes | null {
         `${prefix}content`,
         `${prefix}src/app`,
         `${prefix}src/lib`,
+        'libs',
       ],
-      root,
+      root
     );
 
     const times = parseGitLog(log, prefix, graftedShas);
@@ -183,9 +238,13 @@ function getGitTimes(): GitTimes | null {
   if (gitTimesCache === null) {
     // Visible in the build log: the sitemap will carry `lastmod` only for blog
     // posts (which date themselves in frontmatter) until history is available.
-    console.warn('[sitemap] git history unavailable; omitting <lastmod> for file-derived routes.');
+    console.warn(
+      '[sitemap] git history unavailable; omitting <lastmod> for file-derived routes.'
+    );
   } else if (!gitTimesCache.hasFullHistory) {
-    console.warn('[sitemap] shallow clone; omitting <lastmod> for routes older than the visible history.');
+    console.warn(
+      '[sitemap] shallow clone; omitting <lastmod> for routes older than the visible history.'
+    );
   }
 
   return gitTimesCache;
@@ -209,7 +268,10 @@ function sourceModifiedTime(relativePaths: string[]): Date | undefined {
   let newest: number | undefined;
   for (const relativePath of relativePaths) {
     if (!resolveSourcePath(relativePath)) continue;
-    const seconds = git.times.get(relativePath.split(path.sep).join('/'));
+    const normalized = relativePath.split(path.sep).join('/');
+    const seconds = git.times.get(
+      normalized.startsWith('../../libs/') ? normalized.slice(6) : normalized
+    );
     if (seconds === undefined) continue;
     if (newest === undefined || seconds > newest) newest = seconds;
   }
@@ -224,8 +286,12 @@ export function publishedDate(post: Post): Date | undefined {
 }
 
 /** Index the posts a caller wants visible, keyed by route path. */
-export function getPostsByRoute(options: { includeDrafts?: boolean } = {}): Map<string, Post> {
-  return new Map(getAllPosts(options).map((post) => [`/blog/${post.slug}`, post]));
+export function getPostsByRoute(
+  options: { includeDrafts?: boolean } = {}
+): Map<string, Post> {
+  return new Map(
+    getAllPosts(options).map((post) => [`/blog/${post.slug}`, post])
+  );
 }
 
 /**
@@ -240,14 +306,23 @@ export function getPostsByRoute(options: { includeDrafts?: boolean } = {}): Map<
  * policy chosen here. Build it with {@link getPostsByRoute}, or pass a
  * single-entry map when the post is already in hand.
  */
-export function getRouteLastModified(route: string, postsByRoute: ReadonlyMap<string, Post>): Date | undefined {
-  const committed = sourceModifiedTime(sourcePathsForRoute(route, postsByRoute));
+export function getRouteLastModified(
+  route: string,
+  postsByRoute: ReadonlyMap<string, Post>
+): Date | undefined {
+  const committed = sourceModifiedTime(
+    sourcePathsForRoute(route, postsByRoute)
+  );
 
   // "Modified" means last *modified*, so an edited post outranks its own
   // publish date; the frontmatter date still covers posts git cannot date.
   const post = postsByRoute.get(route);
   const published = post ? publishedDate(post) : undefined;
-  return committed && published ? (committed > published ? committed : published) : (committed ?? published);
+  return committed && published
+    ? committed > published
+      ? committed
+      : published
+    : committed ?? published;
 }
 
 /**

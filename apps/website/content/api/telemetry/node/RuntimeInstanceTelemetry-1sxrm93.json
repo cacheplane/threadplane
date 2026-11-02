@@ -1,0 +1,223 @@
+{
+  "name": "RuntimeInstanceTelemetry",
+  "entrypointId": "telemetry/node",
+  "kind": "Interface",
+  "href": "/docs/api/telemetry/node/RuntimeInstanceTelemetry",
+  "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Runtime construction metadata for explicit Node capture; the helper removes `apiKey` before capture.",
+  "declarations": [
+    {
+      "name": "RuntimeInstanceTelemetry",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface RuntimeInstanceTelemetry "
+        }
+      ],
+      "docs": {
+        "summary": "Runtime construction metadata for explicit Node capture; the helper removes `apiKey` before capture.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "angularVersion",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry#angularVersion:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "angularVersion?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 8
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "apiKey",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry#apiKey:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "apiKey?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 9
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "model",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry#model:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "model?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 7
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "provider",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry#provider:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "provider?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 6
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "transport",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/telemetry!RuntimeInstanceTelemetry#transport:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "transport: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/telemetry/src/node/adapter.ts",
+            "line": 5
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/telemetry/src/node/adapter.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/node/adapter.ts",
+    "line": 4
+  }
+}

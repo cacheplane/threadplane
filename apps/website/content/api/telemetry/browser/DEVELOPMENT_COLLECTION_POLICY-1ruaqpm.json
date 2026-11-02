@@ -1,0 +1,56 @@
+{
+  "name": "DEVELOPMENT_COLLECTION_POLICY",
+  "entrypointId": "telemetry/browser",
+  "kind": "Variable",
+  "href": "/docs/api/telemetry/browser/DEVELOPMENT_COLLECTION_POLICY",
+  "canonicalReference": "@threadplane/telemetry!DEVELOPMENT_COLLECTION_POLICY:var",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Optional subtree policy, evaluated at use time. App-owned render trees may provide this token.",
+  "declarations": [
+    {
+      "name": "DEVELOPMENT_COLLECTION_POLICY",
+      "kind": "Variable",
+      "canonicalReference": "@threadplane/telemetry!DEVELOPMENT_COLLECTION_POLICY:var",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "DEVELOPMENT_COLLECTION_POLICY: "
+        },
+        {
+          "kind": "Reference",
+          "text": "InjectionToken",
+          "canonicalReference": "@angular/core!InjectionToken:class"
+        },
+        {
+          "kind": "Content",
+          "text": "<() => boolean>"
+        }
+      ],
+      "docs": {
+        "summary": "Optional subtree policy, evaluated at use time. App-owned render trees may provide this token.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/telemetry/src/browser/development/runtime.ts",
+        "line": 16
+      },
+      "isReadonly": true,
+      "variableTypeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 3
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/telemetry/src/browser/development/runtime.ts",
+    "line": 16
+  }
+}

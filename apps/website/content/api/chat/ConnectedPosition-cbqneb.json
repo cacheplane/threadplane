@@ -1,0 +1,263 @@
+{
+  "name": "ConnectedPosition",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ConnectedPosition",
+  "canonicalReference": "@threadplane/chat!ConnectedPosition:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Connects an origin point to an overlay point with optional pixel offsets.",
+  "declarations": [
+    {
+      "name": "ConnectedPosition",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ConnectedPosition:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ConnectedPosition "
+        }
+      ],
+      "docs": {
+        "summary": "Connects an origin point to an overlay point with optional pixel offsets.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "offsetX",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#offsetX:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "offsetX?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 17
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "offsetY",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#offsetY:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "offsetY?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 18
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
+          "name": "originX",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#originX:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "originX: "
+            },
+            {
+              "kind": "Reference",
+              "text": "HorizontalConnectionPos",
+              "canonicalReference": "@threadplane/chat!~HorizontalConnectionPos:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 13
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "originY",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#originY:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "originY: "
+            },
+            {
+              "kind": "Reference",
+              "text": "VerticalConnectionPos",
+              "canonicalReference": "@threadplane/chat!~VerticalConnectionPos:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "overlayX",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#overlayX:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "overlayX: "
+            },
+            {
+              "kind": "Reference",
+              "text": "HorizontalConnectionPos",
+              "canonicalReference": "@threadplane/chat!~HorizontalConnectionPos:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 15
+          },
+          "isReadonly": false,
+          "isOptional": false
+        },
+        {
+          "name": "overlayY",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ConnectedPosition#overlayY:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "overlayY: "
+            },
+            {
+              "kind": "Reference",
+              "text": "VerticalConnectionPos",
+              "canonicalReference": "@threadplane/chat!~VerticalConnectionPos:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+            "line": 16
+          },
+          "isReadonly": false,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+        "line": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/overlay/connected-position.ts",
+    "line": 12
+  }
+}

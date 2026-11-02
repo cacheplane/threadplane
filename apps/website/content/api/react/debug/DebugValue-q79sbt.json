@@ -1,0 +1,74 @@
+{
+  "name": "DebugValue",
+  "entrypointId": "react/debug",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/debug/DebugValue",
+  "canonicalReference": "@threadplane/react!DebugValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Plain, app-owned JSON; no SDK objects or runtime capabilities.",
+  "declarations": [
+    {
+      "name": "DebugValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!DebugValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type DebugValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "null | boolean | number | string | readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugValue",
+          "canonicalReference": "@threadplane/react!DebugValue:type",
+          "href": "/docs/api/react/debug/DebugValue"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | {\n    readonly [key: string]: "
+        },
+        {
+          "kind": "Reference",
+          "text": "DebugValue",
+          "canonicalReference": "@threadplane/react!DebugValue:type",
+          "href": "/docs/api/react/debug/DebugValue"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Plain, app-owned JSON; no SDK objects or runtime capabilities.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/debug/types.ts",
+        "line": 2
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/debug/types.ts",
+    "line": 2
+  }
+}

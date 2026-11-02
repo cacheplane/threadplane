@@ -9,6 +9,7 @@ import type { Agent } from '../../agent';
 import type { AgentInterrupt } from '../../agent/agent-interrupt';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
+/** Review actions emitted by the interrupt panel for the host to handle. */
 export type InterruptAction = 'accept' | 'edit' | 'respond' | 'ignore';
 
 /**
@@ -36,6 +37,7 @@ export function interruptReasonText(interrupt: AgentInterrupt | undefined): stri
   return JSON.stringify(v ?? '', null, 2);
 }
 
+/** Displays the agent’s current interrupt reason and emits accept, edit, respond, or ignore actions. */
 @Component({
   selector: 'chat-interrupt-panel',
   standalone: true,

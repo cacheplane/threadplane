@@ -1,0 +1,88 @@
+{
+  "name": "ConfirmDialog",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ConfirmDialog",
+  "canonicalReference": "@threadplane/react!ConfirmDialog:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Controlled synchronous intent dialog; callers own operations and pending state.",
+  "declarations": [
+    {
+      "name": "ConfirmDialog",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ConfirmDialog:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ConfirmDialog(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ConfirmDialogProps",
+          "canonicalReference": "@threadplane/react!ConfirmDialogProps:interface",
+          "href": "/docs/api/react/chat/ConfirmDialogProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Controlled synchronous intent dialog; callers own operations and pending state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/confirm-dialog.tsx",
+        "line": 26
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ open, title, onConfirm, onCancel, body, confirmLabel, cancelLabel, tone, pending, className, returnFocusTo, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/confirm-dialog.tsx",
+    "line": 26
+  }
+}
