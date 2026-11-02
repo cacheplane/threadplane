@@ -287,7 +287,7 @@
             }
           ],
           "docs": {
-            "summary": "Reasoning text emitted by the model before/alongside the visible\nresponse. Populated by adapters from {type:'reasoning'} or\n{type:'thinking'} content blocks (LangGraph) or REASONING_MESSAGE_*\nevents (AG-UI). Always a plain string — provider-specific shape\n(encrypted blocks, multi-step summaries) is absorbed by the adapter\nand not surfaced here.",
+            "summary": "Reasoning text emitted by the model before/alongside the visible\nresponse. Populated by adapters from `{type:'reasoning'}` or\n`{type:'thinking'}` content blocks (LangGraph) or `REASONING_MESSAGE_*`\nevents (AG-UI). Always a plain string — provider-specific shape\n(encrypted blocks, multi-step summaries) is absorbed by the adapter\nand not surfaced here.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

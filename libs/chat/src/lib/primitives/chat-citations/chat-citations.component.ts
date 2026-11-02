@@ -15,7 +15,10 @@ import { CHAT_CITATIONS_PANEL_STYLES } from '../../styles/chat-citations.styles'
 
 /**
  * ContentChild template directive for custom citation card rendering.
- * Usage: <ng-template chatCitationCard let-citation>...</ng-template>
+ *
+ * ```html
+ * <ng-template chatCitationCard let-citation>...</ng-template>
+ * ```
  */
 @Directive({ selector: 'ng-template[chatCitationCard]', standalone: true })
 export class ChatCitationCardTemplateDirective {

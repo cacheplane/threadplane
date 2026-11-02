@@ -1,12 +1,29 @@
 import {
   DocExcerpt,
   DocLinkTag,
+  type DocDeclarationReference,
   type DocNode,
   TSDocParser,
 } from '@microsoft/tsdoc';
 import type { ApiDocs } from '../../src/lib/api-reference-model';
 import { assertPublicDocOutput } from '../public-doc-projection';
 const parser = new TSDocParser();
+
+/** Parse TSDoc declaration syntax, including import paths and selectors. */
+export function parseDocReference(
+  reference: string
+): DocDeclarationReference | undefined {
+  const parsed = parser.parseString(`/** {@link ${reference}} */`);
+  if (parsed.log.messages.length) return undefined;
+  let result: DocDeclarationReference | undefined;
+  const visit = (node: DocNode): void => {
+    if (node instanceof DocLinkTag) result = node.codeDestination;
+    else node.getChildNodes().forEach(visit);
+  };
+  visit(parsed.docComment);
+  return result;
+}
+
 function render(node?: DocNode): string {
   if (!node) return '';
   if (node instanceof DocLinkTag) {

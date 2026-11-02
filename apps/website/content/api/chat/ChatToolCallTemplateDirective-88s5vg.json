@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatToolCallTemplateDirective:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n\n<chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n </ng-template>\n <ng-template chatToolCallTemplate=\"*\" let-call>\n <chat-tool-call-card [toolCall]=\"call\"/>\n </ng-template>\n </chat-tool-calls>",
+  "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n```html\n  <chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n    <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n      <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n    </ng-template>\n    <ng-template chatToolCallTemplate=\"*\" let-call>\n      <chat-tool-call-card [toolCall]=\"call\"/>\n    </ng-template>\n  </chat-tool-calls>\n```",
   "declarations": [
     {
       "name": "ChatToolCallTemplateDirective",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n\n<chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n </ng-template>\n <ng-template chatToolCallTemplate=\"*\" let-call>\n <chat-tool-call-card [toolCall]=\"call\"/>\n </ng-template>\n </chat-tool-calls>",
+        "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n```html\n  <chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n    <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n      <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n    </ng-template>\n    <ng-template chatToolCallTemplate=\"*\" let-call>\n      <chat-tool-call-card [toolCall]=\"call\"/>\n    </ng-template>\n  </chat-tool-calls>\n```",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -69,7 +69,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-            "line": 39
+            "line": 41
           },
           "isStatic": false,
           "isReadonly": true,
@@ -111,7 +111,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-            "line": 40
+            "line": 42
           },
           "isStatic": false,
           "isReadonly": true,
@@ -120,7 +120,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-        "line": 33
+        "line": 35
       },
       "angular": {
         "selector": "[chatToolCallTemplate]",
@@ -138,6 +138,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
-    "line": 33
+    "line": 35
   }
 }

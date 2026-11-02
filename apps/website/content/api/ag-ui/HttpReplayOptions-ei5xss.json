@@ -65,7 +65,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/replay.ts",
-            "line": 24
+            "line": 31
           },
           "isReadonly": false,
           "isOptional": true
@@ -106,7 +106,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/replay.ts",
-            "line": 26
+            "line": 33
           },
           "isReadonly": false,
           "isOptional": true
@@ -130,11 +130,13 @@
             }
           ],
           "docs": {
-            "summary": "Builds the GET URL for a thread, e.g. `(id) => \\`/api/threads/${id}/events\\``.",
+            "summary": "Builds the GET URL for a thread.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
-            "examples": [],
+            "examples": [
+              "```ts\n(id) => `/api/threads/${id}/events`\n```"
+            ],
             "see": [],
             "params": [],
             "typeParams": []
@@ -142,7 +144,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/replay.ts",
-            "line": 22
+            "line": 29
           },
           "isReadonly": false,
           "isOptional": false

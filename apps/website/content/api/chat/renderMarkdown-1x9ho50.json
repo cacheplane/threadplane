@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!renderMarkdown:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline->br conversion if `marked` is not installed.",
+  "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline-to-`<br>` conversion if `marked` is not installed.",
   "declarations": [
     {
       "name": "renderMarkdown",
@@ -45,7 +45,7 @@
         }
       ],
       "docs": {
-        "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline->br conversion if `marked` is not installed.",
+        "summary": "Renders markdown content to sanitized HTML.\nFalls back to plain text with newline-to-`<br>` conversion if `marked` is not installed.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

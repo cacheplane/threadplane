@@ -8,7 +8,7 @@ import {
 } from './runtime-operation-reporter';
 
 /**
- * Connection options for the AG-UI agent provider, passed to {@link provideAgent}.
+ * Connection options for the AG-UI agent provider, passed to {@link (provideAgent:1) | provideAgent}.
  * Mirrors the underlying `HttpAgent` config (`@ag-ui/client`) plus an optional
  * telemetry sink.
  */

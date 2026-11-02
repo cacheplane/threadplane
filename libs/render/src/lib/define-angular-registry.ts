@@ -32,11 +32,11 @@ function normalize(entry: Type<unknown> | RenderViewEntry): NormalizedEntry {
  *
  * **Registry accessor**
  * The returned object exposes a single `getEntry(name: string)` accessor that
- * returns the fully-normalized {@link NormalizedEntry} (component + fallback +
+ * returns the fully-normalized `NormalizedEntry` (component + fallback +
  * optional schema + optional description) or `undefined` when the name is not
  * registered. Use `names()` to enumerate all registered names.
  *
- * @param componentMap Object whose keys are tool-call names and whose values
+ * @param componentMap - Object whose keys are tool-call names and whose values
  *   are either bare Angular component classes or {@link RenderViewEntry} objects.
  * @returns An {@link AngularRegistry} with `getEntry` and `names` accessors.
  * @example

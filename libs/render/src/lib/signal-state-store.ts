@@ -59,7 +59,7 @@ export interface StateChangeRecord {
 }
 
 /**
- * The {@link StateStore} that {@link signalStateStore} returns.
+ * The `StateStore` that {@link signalStateStore} returns.
  *
  * Adds `lastChange()` on top of the `@json-render/core` interface, which is
  * how `<render-spec>` reports the mutated path on a `stateChange` render
@@ -76,14 +76,14 @@ export interface SignalStateStore extends StateStore {
 }
 
 /**
- * Create a signal-backed {@link StateStore} for a generative-UI surface —
+ * Create a signal-backed `StateStore` for a generative-UI surface —
  * holds the bound state that spec `$bindState` paths read and interactive
  * elements write, with path-addressable get/set and change subscriptions.
  *
  * Every path is a JSON Pointer and must start with `/` (or be `''` / `'/'`
  * for the root); a slash-less path throws.
  *
- * @param initialState Optional starting state object.
+ * @param initialState - Optional starting state object.
  * @returns A {@link SignalStateStore} bridging Angular signals to the render engine.
  * @example
  * ```ts

@@ -140,7 +140,7 @@ export class RenderSpecComponent implements OnInit {
     return this._internalStore;
   }
 
-  /** Resolved store: input > config > internal (from spec.state). */
+  /** Resolved store precedence: input, then config, then internal (from spec.state). */
   private readonly resolvedStore = computed<StateStore>(() => {
     const inputStore = this.store();
     if (inputStore) return inputStore;
@@ -149,7 +149,7 @@ export class RenderSpecComponent implements OnInit {
     return this.getOrCreateInternalStore();
   });
 
-  /** Resolved registry: input > config > VIEW_REGISTRY token > empty fallback. */
+  /** Resolved registry precedence: input, then config, then VIEW_REGISTRY token, then empty fallback. */
   private readonly resolvedRegistry = computed<AngularRegistry>(() => {
     const inputRegistry = this.registry();
     if (inputRegistry) return inputRegistry;

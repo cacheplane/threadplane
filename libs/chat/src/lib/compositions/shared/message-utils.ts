@@ -14,7 +14,7 @@
  * message came from. Both satisfy `{ content: unknown }`, so neither has to
  * cast.
  *
- * @param message Any object carrying a `content` field.
+ * @param message - Any object carrying a `content` field.
  * @returns The concatenated visible text, or `''` when there is none.
  */
 export function messageContent(message: { content: unknown }): string {

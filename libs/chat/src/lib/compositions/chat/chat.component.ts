@@ -682,8 +682,8 @@ export class ChatComponent {
    * Aggregate the reasoning RUN starting at `index`: joins each step's
    * reasoning, sums durations, counts steps, and returns the last step's
    * delivery because that step owns the current aggregate snapshot. Also
-   * computes the merged label when N > 1 ("Thought for {total} · {N} steps",
-   * or just "{N} steps" when no step reported timing).
+   * computes the merged label when `N > 1` (`Thought for {total} · {N} steps`,
+   * or just `{N} steps` when no step reported timing).
    */
   protected reasoningRun(index: number): {
     content: string;
@@ -760,8 +760,11 @@ export class ChatComponent {
    * to enable `.chat-message__caret`.
    *
    * Restricted to assistant role because the caret only renders on
-   * assistant bubbles (`:host([data-role="assistant"][data-current=...
-   *  ][data-streaming=...])`).
+   * assistant bubbles matching:
+   *
+   * ```css
+   * :host([data-role="assistant"][data-current="true"][data-streaming="true"])
+   * ```
    */
   protected readonly currentAssistantStreaming = computed(() => {
     const msgs = this.agent().messages();

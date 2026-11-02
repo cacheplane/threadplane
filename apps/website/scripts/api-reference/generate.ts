@@ -25,7 +25,7 @@ import {
   validateRegistry,
   type SdkEntrypoint,
 } from './registry';
-import { parseDocs } from './docs';
+import { parseDocReference, parseDocs } from './docs';
 import {
   angularMetadata,
   exportedDeclarations,
@@ -600,26 +600,6 @@ function resolveLinks(
     const direct = choose(canonical.get(reference), current);
     if (direct) return direct.href;
     const normalized = reference.replace(/\s/g, '');
-    const target = choose(names.get(normalized), current);
-    if (target) return target.href;
-    const parts = normalized.split('.');
-    for (let cut = parts.length - 1; cut > 0; cut--) {
-      const owner = choose(names.get(parts.slice(0, cut).join('.')), current);
-      if (!owner) continue;
-      const path = parts.slice(cut);
-      let members = owner.declarations.flatMap(
-        (declaration) => declaration.members
-      );
-      let href = owner.href;
-      for (const part of path) {
-        const index = members.findIndex((member) => member.name === part);
-        if (index < 0) return undefined;
-        const member = members[index];
-        href = `${owner.href}#${apiMemberAnchor(member, index)}`;
-        members = member.members;
-      }
-      return href;
-    }
     const match = normalized.match(/^(.+)!([^:]+)(?::(.+))?$/);
     if (match) {
       const [, , name] = match;
@@ -631,6 +611,74 @@ function resolveLinks(
               ?.packageName === match[1]
         );
       return choose(candidates, current)?.href;
+    }
+    const parsed = parseDocReference(reference);
+    if (!parsed) return undefined;
+    const parts = parsed.memberReferences;
+    const importPath = parsed.packageName
+      ? parsed.packageName + (parsed.importPath ?? '')
+      : undefined;
+    const selects = (
+      member: ApiMember,
+      part: (typeof parts)[number]
+    ): boolean => {
+      const selector = part.selector;
+      if (!selector) return true;
+      if (selector.selectorKind === 'index')
+        return member.overloadIndex === Number(selector.selector);
+      if (selector.selector === 'static') return member.isStatic === true;
+      if (selector.selector === 'instance') return member.isStatic !== true;
+      if (selector.selector === 'type') return member.kind === 'TypeAlias';
+      return member.kind.toLowerCase() === selector.selector;
+    };
+    // A namespace member can also have its own importable symbol page. Prefer
+    // the longest exported identity, then walk members within that page.
+    for (let cut = parts.length; cut > 0; cut--) {
+      if (parts.slice(0, cut - 1).some((part) => part.selector)) continue;
+      const name = parts
+        .slice(0, cut)
+        .map((part) => part.memberIdentifier?.identifier)
+        .join('.');
+      const owner = choose(
+        names
+          .get(name)
+          ?.filter(
+            (candidate) =>
+              !importPath ||
+              entries.some(
+                (entry) =>
+                  entry.id === candidate.entrypointId &&
+                  entry.importPath === importPath
+              )
+          ),
+        current
+      );
+      if (!owner) continue;
+      const selected = owner.declarations.findIndex((member) =>
+        selects(member, parts[cut - 1])
+      );
+      if (selected < 0) return undefined;
+      let members = parts[cut - 1].selector
+        ? owner.declarations[selected].members
+        : owner.declarations.flatMap((member) => member.members);
+      let href = parts[cut - 1].selector
+        ? `${owner.href}#${apiMemberAnchor(
+            owner.declarations[selected],
+            selected
+          )}`
+        : owner.href;
+      for (const part of parts.slice(cut)) {
+        const index = members.findIndex(
+          (member) =>
+            member.name === part.memberIdentifier?.identifier &&
+            selects(member, part)
+        );
+        if (index < 0) return undefined;
+        const member = members[index];
+        href = `${owner.href}#${apiMemberAnchor(member, index)}`;
+        members = member.members;
+      }
+      return href;
     }
     return undefined;
   };

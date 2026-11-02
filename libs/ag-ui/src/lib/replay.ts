@@ -18,7 +18,14 @@ export type AgUiReplaySource = (
 
 /** Options for {@link httpReplay}. */
 export interface HttpReplayOptions {
-  /** Builds the GET URL for a thread, e.g. `(id) => \`/api/threads/${id}/events\``. */
+  /**
+   * Builds the GET URL for a thread.
+   *
+   * @example
+   * ```ts
+   * (id) => `/api/threads/${id}/events`
+   * ```
+   */
   url: (threadId: string) => string;
   /** Fetch implementation. Defaults to the global `fetch`. */
   fetch?: typeof fetch;
