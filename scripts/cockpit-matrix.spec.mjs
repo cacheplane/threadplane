@@ -1,3 +1,4 @@
+// Benchmark control: retain the production five-slot fleet configuration.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
