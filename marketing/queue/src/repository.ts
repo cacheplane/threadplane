@@ -457,6 +457,27 @@ export function releaseToScheduled(
   );
 }
 
+/**
+ * Returns a row that missed its slot to `draft` (nothing was sent). Drafts are
+ * never leased, so it waits for the operator to `reschedule` and `approve` it.
+ */
+export function returnToDraft(
+  ex: SqlTransaction,
+  id: string,
+  leaseToken: string,
+  reason: string
+): Promise<void> {
+  return finishLeased(
+    ex,
+    'return-to-draft',
+    `status = 'draft', error = $3, lease_token = null, lease_expires_at = null,
+       attempts = attempts - 1, next_attempt_at = null`,
+    id,
+    leaseToken,
+    [reason]
+  );
+}
+
 export function markPosted(
   ex: SqlTransaction,
   id: string,

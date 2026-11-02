@@ -10,6 +10,7 @@ import {
   reschedulePost,
   resolvePost,
 } from '../../repository.ts';
+import { BRIAN_MARKER_CODE } from '../../lint.ts';
 import type { MarketingPost } from '../../types.ts';
 import { requireFlag, requireId, requireWeek, type Args, type CommandDeps } from './shared.ts';
 
@@ -25,7 +26,8 @@ export async function list(args: Args, deps: CommandDeps): Promise<void> {
     const blocking = unconfirmed(post);
     deps.stdout(
       `${post.id} ${post.status.padEnd(9)} ${post.channel.padEnd(8)} ${post.publishAt}` +
-        (blocking.length > 0 ? ` NEEDS CONFIRM: ${blocking.join(',')}` : '')
+        (blocking.length > 0 ? ` NEEDS CONFIRM: ${blocking.join(',')}` : '') +
+        (post.status === 'draft' && post.error ? ` HELD: ${post.error}` : '')
     );
   }
 }
@@ -38,6 +40,9 @@ export async function confirm(args: Args, deps: CommandDeps): Promise<void> {
   const present = ((post.payload['lintFlags'] as { code: string }[] | undefined) ?? []).map((f) => f.code);
   const unknown = codes.filter((c) => !present.includes(c));
   if (unknown.length > 0) throw new Error(`${id} has no flag(s): ${unknown.join(', ')}`);
+  if (codes.includes(BRIAN_MARKER_CODE)) {
+    throw new Error(`${BRIAN_MARKER_CODE} cannot be confirmed; fill in the [BRIAN: ...] marker with edit`);
+  }
   await confirmFlags(deps.ex, id, codes);
   deps.stdout(`confirmed ${codes.join(', ')} on ${id}`);
 }
