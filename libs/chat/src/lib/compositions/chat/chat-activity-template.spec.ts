@@ -180,4 +180,24 @@ describe('ChatComponent — chatActivityTemplate', () => {
     fixture.componentInstance.agent.subagents!.set(new Map());
     expect(chat.activityContextFor(message, 1)).not.toBe(first);
   });
+
+  it('passes fresh message wrappers to the real activity template without mounting tool hosts', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    const chat = fixture.debugElement.query(By.directive(ChatComponent)).componentInstance as unknown as {
+      activityContexts: Map<string, { $implicit: Message; toolCalls: ToolCall[]; subagents: Subagent[] }>;
+    };
+    const previous = chat.activityContexts.get('a1')!;
+    const agent = fixture.componentInstance.agent;
+    agent.messages.update(messages => messages.map(message => ({ ...message, delivery: { ...message.delivery } })));
+    fixture.detectChanges();
+    const current = chat.activityContexts.get('a1')!;
+    expect(current).not.toBe(previous);
+    expect(current.$implicit).toBe(agent.messages()[1]);
+    expect(current.$implicit).not.toBe(previous.$implicit);
+    expect(current.toolCalls.map(call => call.id)).toEqual(['c_search', 'c_task']);
+    expect(current.subagents.map(subagent => subagent.toolCallId)).toEqual(['c_task']);
+    expect(fixture.nativeElement.querySelectorAll('.activity')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-calls')).toHaveLength(0);
+  });
 });

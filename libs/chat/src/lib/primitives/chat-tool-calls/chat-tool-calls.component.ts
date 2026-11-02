@@ -149,8 +149,10 @@ export class ChatToolCallsComponent {
   );
 
   readonly groups = computed((): Group[] => {
+    const resolvedCalls = this.toolCalls();
+    if (resolvedCalls.length === 0) return [];
     const excludeSet = new Set(this.excludeToolNames());
-    const calls = this.toolCalls().filter(tc => !excludeSet.has(tc.name));
+    const calls = resolvedCalls.filter(tc => !excludeSet.has(tc.name));
     // Anchor subagents by the contract field `Subagent.toolCallId` (the tool
     // call that spawned them), NOT by the adapter's map key. Adapters key the
     // map differently — LangGraph by toolCallId, AG-UI activities by
