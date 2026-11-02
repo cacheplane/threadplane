@@ -2030,10 +2030,25 @@ function mergeMessages(
   allowCrossIdAiMerge = true,
 ): BaseMessage[] {
   const merged = [...existing];
+  // Full-history snapshots repeatedly look up the same transcript. Keep the
+  // first index for each ID, matching findIndex even when IDs are duplicated.
+  const firstIndexById = mode === 'snapshot' && incoming.length > 1
+    ? new Map<unknown, number>()
+    : undefined;
+  if (firstIndexById) {
+    for (let i = 0; i < merged.length; i++) {
+      const id = (merged[i] as unknown as Record<string, unknown>)['id'];
+      if (id && !firstIndexById.has(id)) firstIndexById.set(id, i);
+    }
+  }
   for (const msg of incoming) {
     const rawIn = msg as unknown as Record<string, unknown>;
     const id = rawIn['id'];
-    let idx = id ? merged.findIndex(m => (m as unknown as Record<string, unknown>)['id'] === id) : -1;
+    let idx = id
+      ? (firstIndexById
+        ? firstIndexById.get(id) ?? -1
+        : merged.findIndex(m => (m as unknown as Record<string, unknown>)['id'] === id))
+      : -1;
     // Fallback: match by (role, content) when ids differ. This is the path
     // that fires when the server echoes back our optimistic human message
     // with a server-assigned id, or when partial AI tokens carry a chunk
@@ -2124,6 +2139,11 @@ function mergeMessages(
       }
       const changed = mode === 'delta' || messageChangedForDelivery(existing, next);
       merged[idx] = next;
+      if (firstIndexById && !existingId) {
+        const nextId = (next as unknown as Record<string, unknown>)['id'];
+        const firstIndex = firstIndexById.get(nextId);
+        if (nextId && (firstIndex === undefined || idx < firstIndex)) firstIndexById.set(nextId, idx);
+      }
       if (targetId && changed) affectedMessageIds?.add(targetId);
     } else {
       const incomingRaw = msg as unknown as Record<string, unknown>;
@@ -2141,6 +2161,9 @@ function mergeMessages(
       (next as unknown as Record<string, unknown>)['reasoning'] = initialReasoning;
       merged.push(next);
       const nextId = (next as unknown as Record<string, unknown>)['id'];
+      if (firstIndexById && nextId && !firstIndexById.has(nextId)) {
+        firstIndexById.set(nextId, merged.length - 1);
+      }
       if (typeof nextId === 'string') affectedMessageIds?.add(nextId);
     }
   }
