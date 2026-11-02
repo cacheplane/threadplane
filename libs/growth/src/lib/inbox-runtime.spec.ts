@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
 
-import { createInboxRuntime } from './inbox-runtime.ts';
+import { createInboxRuntime, createResendForwardSender } from './inbox-runtime.ts';
 import { forwardInboxReceipt } from './inbox-forward.ts';
 import { executorWith } from './inbox-test-support.ts';
 
@@ -180,4 +180,28 @@ test('runtime fails closed when an erased sender key version was dropped', async
   expect(
     calls.some((call) => call.marker === 'founder-find-contact-by-email')
   ).toBe(false);
+});
+
+test('the shared forward sender posts with the sending key, idempotency key and reply_to', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValueOnce(Response.json({ id: 'forward-9' }));
+  const send = createResendForwardSender('send-key');
+
+  await expect(
+    send({ text: 'mail', replyTo: 'reader@example.com' }, 'stable-key')
+  ).resolves.toBe('forward-9');
+
+  const [, init] = fetcher.mock.calls.at(-1) as [string, RequestInit];
+  expect((init.headers as Record<string, string>)['Authorization']).toBe(
+    'Bearer send-key'
+  );
+  expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe(
+    'stable-key'
+  );
+  expect(JSON.parse(init.body as string)).toEqual({
+    text: 'mail',
+    reply_to: 'reader@example.com',
+  });
+  fetcher.mockRestore();
 });

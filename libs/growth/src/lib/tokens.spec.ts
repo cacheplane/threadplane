@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 
 import {
   FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS,
+  FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS,
   FOUNDER_STOP_TOKEN_MAX_AGE_SECONDS,
   compareTokenHmac,
   createGrowthActionToken,
@@ -360,6 +361,43 @@ describe('founder_approve_install tokens', () => {
     expect(
       verifyGrowthActionToken(token, {
         expectedPurpose: 'founder_stop',
+        keyring: { active: key },
+        now: issuedAt,
+      })
+    ).toBeNull();
+  });
+});
+
+describe('founder_linkedin_decide tokens', () => {
+  const key = { version: 4, secret: 'linkedin-decide-token-secret-material!' };
+  const leadId = '9a1e2d3c-4b5a-4c7d-8e9f-a0b1c2d3e4f5';
+  const issuedAt = new Date('2026-11-01T15:00:00.000Z');
+
+  it('round-trips a deny reason under the decide purpose for seven days only', () => {
+    const token = createGrowthActionToken(
+      { contactId: leadId, purpose: 'founder_linkedin_decide', issuedAt, reason: 'deny' },
+      key
+    );
+    expect(FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS).toBe(7 * 24 * 60 * 60);
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_linkedin_decide',
+        keyring: { active: key },
+        now: new Date(issuedAt.getTime() + 6 * 24 * 60 * 60 * 1000),
+        maxAgeSeconds: FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS,
+      })
+    ).toMatchObject({ contactId: leadId, purpose: 'founder_linkedin_decide', reason: 'deny' });
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_linkedin_decide',
+        keyring: { active: key },
+        now: new Date(issuedAt.getTime() + 8 * 24 * 60 * 60 * 1000),
+        maxAgeSeconds: FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS,
+      })
+    ).toBeNull();
+    expect(
+      verifyGrowthActionToken(token, {
+        expectedPurpose: 'founder_approve_install',
         keyring: { active: key },
         now: issuedAt,
       })

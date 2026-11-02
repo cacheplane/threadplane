@@ -58,6 +58,13 @@ describeDatabase(
         'growth_install_digest_reports',
         'growth_install_runtime_links',
         'growth_jobs',
+        'growth_linkedin_deny',
+        'growth_linkedin_digests',
+        'growth_linkedin_drops',
+        'growth_linkedin_engagements',
+        'growth_linkedin_leads',
+        'growth_linkedin_posts',
+        'growth_linkedin_receipts',
         'growth_observation_facts',
         'growth_observation_form_links',
         'growth_observation_identities',
@@ -109,6 +116,8 @@ describeDatabase(
         { checksum_length: 64, name: '0008_growth_install_digest.sql' },
         { checksum_length: 64, name: '0009_growth_resend_receiving.sql' },
         { checksum_length: 64, name: '0010_growth_health_alerts.sql' },
+        { checksum_length: 64, name: '0011_marketing_queue.sql' },
+        { checksum_length: 64, name: '0012_growth_linkedin_leads.sql' },
       ]);
     });
 
