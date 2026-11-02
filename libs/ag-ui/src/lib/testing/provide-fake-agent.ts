@@ -19,7 +19,7 @@ export interface AgUiFakeAgentConfig extends FakeAgentConfig {
  * Registers an in-process FakeAgent under AGENT.
  *
  * Use for offline demos and development. Drop-in replacement for
- * provideAgent({ url }) when no real backend is available.
+ * `provideAgent({ url })` when no real backend is available.
  *
  * Pass `script` to stream exact AG-UI events instead of the canned token
  * reply — the adapter reduces them into `toolCalls()`, `state()`,

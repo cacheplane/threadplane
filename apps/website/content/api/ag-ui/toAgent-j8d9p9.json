@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/ag-ui!toAgent:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to source.subscribe({ onEvent }) and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter.",
+  "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to `source.subscribe({ onEvent })` and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter.",
   "declarations": [
     {
       "name": "toAgent",
@@ -48,7 +48,7 @@
         }
       ],
       "docs": {
-        "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to source.subscribe({ onEvent }) and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter.",
+        "summary": "Wraps an AG-UI AbstractAgent into the runtime-neutral Agent contract.\n\nThe adapter subscribes to `source.subscribe({ onEvent })` and reduces every\nevent into the produced Agent's signals. submit() optimistically appends the\nuser message to both our signals and the source agent's internal message\nlist, then calls source.runAgent(). stop() calls source.abortRun().\n\nSubscription cleanup: providers dispose the adapter with their injector.\nDirect callers must call dispose() when they no longer need the adapter.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

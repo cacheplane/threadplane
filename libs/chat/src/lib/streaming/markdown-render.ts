@@ -37,7 +37,7 @@ function plainTextToHtml(content: string): string {
 
 /**
  * Renders markdown content to sanitized HTML.
- * Falls back to plain text with newline->br conversion if `marked` is not installed.
+ * Falls back to plain text with newline-to-`<br>` conversion if `marked` is not installed.
  */
 export function renderMarkdown(content: string, sanitizer: DomSanitizer): SafeHtml {
   if (markedParse) {

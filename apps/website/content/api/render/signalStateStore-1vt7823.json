@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/render!signalStateStore:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Create a signal-backed StateStore for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws.",
+  "summary": "Create a signal-backed `StateStore` for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws.",
   "declarations": [
     {
       "name": "signalStateStore",
@@ -38,7 +38,7 @@
         }
       ],
       "docs": {
-        "summary": "Create a signal-backed StateStore for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws.",
+        "summary": "Create a signal-backed `StateStore` for a generative-UI surface —\nholds the bound state that spec `$bindState` paths read and interactive\nelements write, with path-addressable get/set and change subscriptions.\n\nEvery path is a JSON Pointer and must start with `/` (or be `''` / `'/'`\nfor the root); a slash-less path throws.",
         "remarks": "",
         "deprecated": "",
         "returns": "A [SignalStateStore](/docs/api/render/SignalStateStore) bridging Angular signals to the render engine.",

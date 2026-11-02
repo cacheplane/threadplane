@@ -11,7 +11,10 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { generateApiReference } from './api-reference/generate';
 import { SDK_ENTRYPOINTS, validateRegistry } from './api-reference/registry';
 import type { ApiSymbol } from '../src/lib/api-reference-model';
-import { apiSymbolFileName } from '../src/lib/api-reference-model';
+import {
+  apiMemberAnchor,
+  apiSymbolFileName,
+} from '../src/lib/api-reference-model';
 
 const root = path.resolve(__dirname, '../../..');
 mkdirSync(path.join(root, 'tmp'), { recursive: true });
@@ -90,7 +93,15 @@ export class SignalComponent {
 }
 /** Ref component props. */ export interface RefProps { label?: string }
 /** A ref component. */ export const RefComponent = forwardRef<HTMLDivElement, RefProps>(() => null);
-/** Linked transport: {@link Transport}. Member: {@link Transport.write}. */
+/** A Unicode-named export. */ export interface Café { value: string }
+/**
+ * Linked transport: {@link Transport}. Member: {@link Transport.(write:2)}.
+ * Qualified: {@link @fixture/sdk/peer#Transport | peer transport}.
+ * Imported: {@link @fixture/sdk/peer#ExternalOptions | peer options}.
+ * Overload: {@link (read:2) | numeric read}.
+ * Type selector: {@link (Mode:type) | mode type}.
+ * Unicode: {@link "Café" | Unicode export}.
+ */
 export interface Linked { transport: Transport }
 /** Imported alias options. */ export interface Imported { options: ImportedOptions }
 /** Uppercase identity. */ export interface Capability { value: string }
@@ -222,6 +233,31 @@ describe('real API Extractor declaration generation', () => {
     );
     expect(symbol('Linked').summary).toContain(
       '](/docs/api/fixture/Transport#'
+    );
+    expect(symbol('Linked').summary).toContain(
+      '[peer transport](/docs/api/fixture/peer/Transport)'
+    );
+    expect(symbol('Linked').summary).toContain(
+      '[peer options](/docs/api/fixture/peer/ExternalOptions)'
+    );
+    expect(symbol('Linked').summary).toContain(
+      `[numeric read](/docs/api/fixture/read#${apiMemberAnchor(
+        read.declarations[1],
+        1
+      )})`
+    );
+    expect(symbol('Linked').summary).toContain(
+      `[Unicode export](/docs/api/fixture/${encodeURIComponent('Café')})`
+    );
+    const mode = symbol('Mode');
+    const typeIndex = mode.declarations.findIndex(
+      (member) => member.kind === 'TypeAlias'
+    );
+    expect(symbol('Linked').summary).toContain(
+      `[mode type](/docs/api/fixture/Mode#${apiMemberAnchor(
+        mode.declarations[typeIndex],
+        typeIndex
+      )})`
     );
     expect(
       symbol('Linked').declarations[0].members[0].excerptTokens.some(

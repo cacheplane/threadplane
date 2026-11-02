@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!Citation:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n/citations/{messageId}). Pandoc-formatted [^id]: ... defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time.",
+  "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n`/citations/{messageId}`). Pandoc-formatted `[^id]: ...` defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time.",
   "declarations": [
     {
       "name": "Citation",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n/citations/{messageId}). Pandoc-formatted [^id]: ... defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time.",
+        "summary": "Provider-agnostic citation entry. Populated by adapters from message\nmetadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at\n`/citations/{messageId}`). Pandoc-formatted `[^id]: ...` defs in message\ncontent remain in the markdown AST sidecar and are merged via\nCitationsResolverService at render time.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

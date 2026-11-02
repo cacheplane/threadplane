@@ -45,11 +45,13 @@ export interface ChatRunActivityTemplateContext {
  *
  * Usage:
  *
+ * ```html
  *   <chat [agent]="agent">
  *     <ng-template chatRunActivityTemplate let-agent>
  *       <my-turn-activity [agent]="agent" />
  *     </ng-template>
  *   </chat>
+ * ```
  */
 @Directive({
   selector: 'ng-template[chatRunActivityTemplate]',

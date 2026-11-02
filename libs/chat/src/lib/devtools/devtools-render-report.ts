@@ -51,7 +51,7 @@ let pageSeq = 0;
  * gate and opt-out.
  *
  * `surfaceId` names the surface; when it returns nothing, the surface is
- * `'spec:' + root key`. Changes coalesce for {@link RENDER_REPORT_WINDOW_MS},
+ * `'spec:' + root key`. Changes coalesce for `RENDER_REPORT_WINDOW_MS` (50 ms),
  * and a report is dispatched only when the surface's resolution differs from
  * the last one this reporter dispatched.
  *

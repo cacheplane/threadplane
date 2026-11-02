@@ -161,8 +161,8 @@ export interface AgentTransport {
 
   /**
    * Optional: read the newest checkpoint a child graph saved under one
-   * checkpoint namespace of a thread (for a delegation tool call, `tools:<task
-   * id>`). Used to restore a subagent's transcript when a thread is reloaded;
+   * checkpoint namespace of a thread (for a delegation tool call,
+   * `tools:<task id>`). Used to restore a subagent's transcript when a thread is reloaded;
    * without it, a reloaded subagent shows its status and result but no
    * messages. Resolve `undefined` when the namespace has no saved state.
    */

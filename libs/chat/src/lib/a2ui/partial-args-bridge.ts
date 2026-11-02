@@ -160,7 +160,7 @@ function isValidJsonPrefix(s: string): boolean {
 /**
  * Subscribes to LangGraph custom events of name 'a2ui-partial' and feeds
  * the surface store envelope-by-envelope as the parent LLM streams its
- * tool_call.arguments JSON. Uses @cacheplane/partial-json to extract
+ * tool_call.arguments JSON. Uses `@cacheplane/partial-json` to extract
  * structurally-complete envelope objects from the growing args string.
  *
  * Synthesis safety net: v0.9 requires a `createSurface` envelope before

@@ -16,7 +16,7 @@ import { CHAT_INTERRUPT_STYLES } from '../../styles/chat-interrupt.styles';
 /**
  * Read the agent's current human-in-the-loop interrupt, if any.
  *
- * @param agent The agent to inspect.
+ * @param agent - The agent to inspect.
  * @returns The pending {@link AgentInterrupt}, or `undefined` when the agent is
  *   not currently waiting on an interrupt.
  * @example

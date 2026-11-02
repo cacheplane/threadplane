@@ -4,8 +4,8 @@ const ENVELOPE_KEYS = ['createSurface', 'updateComponents', 'updateDataModel', '
 
 /**
  * The parent LLM may emit envelope-tool arguments in four shapes (observed in
- * the spike across gpt-5-mini and gpt-5): the canonical {envelopes: [...]},
- * a singular typo {envelope: [...]}, positional keys {0: env, 1: env, ...}
+ * the spike across gpt-5-mini and gpt-5): the canonical `{envelopes: [...]}`,
+ * a singular typo `{envelope: [...]}`, positional keys `{0: env, 1: env, ...}`
  * when the model treats the args as the array, or a flat single envelope.
  * This pure function maps all four into a canonical envelope list.
  *

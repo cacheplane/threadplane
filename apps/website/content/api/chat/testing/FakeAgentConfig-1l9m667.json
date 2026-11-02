@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!FakeAgentConfig:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process\nfake backend that streams a canned assistant reply.",
+  "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(`@threadplane/langgraph` and `@threadplane/ag-ui`). Drives an in-process\nfake backend that streams a canned assistant reply.",
   "declarations": [
     {
       "name": "FakeAgentConfig",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(@threadplane/langgraph and @threadplane/ag-ui). Drives an in-process\nfake backend that streams a canned assistant reply.",
+        "summary": "Shared config for the adapters' `provideFakeAgent()` helpers\n(`@threadplane/langgraph` and `@threadplane/ag-ui`). Drives an in-process\nfake backend that streams a canned assistant reply.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

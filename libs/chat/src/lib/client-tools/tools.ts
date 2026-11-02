@@ -16,13 +16,13 @@ export type { ViewProps } from './component-inputs';
  * Declare an async function tool the model can call; its resolved return value
  * becomes the tool result shipped back to the model.
  *
- * @param description Natural-language description the model sees.
- * @param schema Standard Schema (e.g. a Zod object) for the arguments; the
+ * @param description - Natural-language description the model sees.
+ * @param schema - Standard Schema (e.g. a Zod object) for the arguments; the
  *   handler's argument type is inferred from it.
- * @param handler Runs in the browser when the model calls the tool. The second
+ * @param handler - Runs in the browser when the model calls the tool. The second
  *   argument carries an `AbortSignal`; its return type `R` is carried on the
  *   resulting {@link FunctionToolDef}.
- * @param options Execution policy options, including `idempotent: true` to skip
+ * @param options - Execution policy options, including `idempotent: true` to skip
  *   durable pre-execution claims when a guard is configured.
  * @returns A {@link FunctionToolDef} for inclusion in {@link tools}.
  * @example
@@ -53,9 +53,9 @@ export function action<S extends StandardSchemaV1, R>(
  * Author the component with `ViewProps<typeof schema>` as the input type set to
  * guarantee the shapes stay aligned.
  *
- * @param description Natural-language description the model sees.
- * @param schema Standard Schema defining the props the model must supply.
- * @param component Angular component whose signal inputs must be compatible with
+ * @param description - Natural-language description the model sees.
+ * @param schema - Standard Schema defining the props the model must supply.
+ * @param component - Angular component whose signal inputs must be compatible with
  *   the schema output. A type-level error is reported here when they diverge.
  * @returns A {@link ViewToolDef} for inclusion in {@link tools}.
  * @example
@@ -93,9 +93,9 @@ export function view<S extends StandardSchemaV1, C>(
  * fill). Author the component with `ViewProps<typeof schema>` to derive input
  * prop types directly from the schema.
  *
- * @param description Natural-language description the model sees.
- * @param schema Standard Schema defining the props the model must supply.
- * @param component Angular component whose signal inputs must be compatible with
+ * @param description - Natural-language description the model sees.
+ * @param schema - Standard Schema defining the props the model must supply.
+ * @param component - Angular component whose signal inputs must be compatible with
  *   the schema output. A type-level error is reported here when they diverge.
  * @returns An {@link AskToolDef} for inclusion in {@link tools}.
  * @example
@@ -132,7 +132,7 @@ export function ask<S extends StandardSchemaV1, C>(
  * {@link ClientToolRegistry} passed to the `clientTools` input. This lets downstream
  * consumers look up individual tools without losing generic information.
  *
- * @param map An object literal mapping tool names to tool definitions created
+ * @param map - An object literal mapping tool names to tool definitions created
  *   by {@link action}, {@link view}, or {@link ask}.
  * @returns A frozen `Readonly<M>` where `M` is the exact inferred map shape.
  * @example

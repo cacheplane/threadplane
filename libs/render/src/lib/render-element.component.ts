@@ -520,7 +520,7 @@ export class RenderElementComponent implements OnInit {
     );
   });
 
-  /** Per-index latch behind {@link repeatNotReady}; written by a constructor
+  /** Per-index latch behind {@link RenderElementComponent.repeatNotReady}; written by a constructor
    *  effect because Angular forbids signal writes inside a computed. */
   private readonly repeatMountedReal = signal<readonly boolean[]>([]);
 
@@ -536,7 +536,7 @@ export class RenderElementComponent implements OnInit {
     );
   });
 
-  /** Per-item counterpart of {@link notReady}: a row whose `$item`-bound props
+  /** Per-item counterpart of {@link RenderElementComponent.notReady}: a row whose `$item`-bound props
    *  have not resolved yet shows the fallback while its ready siblings mount
    *  the real component. Latched per index, exactly as the single mount is. */
   readonly repeatNotReady = computed<boolean[]>(() => {
@@ -546,7 +546,7 @@ export class RenderElementComponent implements OnInit {
     );
   });
 
-  /** Per-item counterpart of {@link mountClass}. */
+  /** Per-item counterpart of {@link RenderElementComponent.mountClass}. */
   readonly repeatMountClasses = computed<(AngularComponentRenderer | null)[]>(() => {
     const el = this.element();
     if (!el?.repeat) return [];

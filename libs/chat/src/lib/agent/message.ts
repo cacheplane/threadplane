@@ -19,8 +19,8 @@ export interface Message {
   name?: string;
   /**
    * Reasoning text emitted by the model before/alongside the visible
-   * response. Populated by adapters from {type:'reasoning'} or
-   * {type:'thinking'} content blocks (LangGraph) or REASONING_MESSAGE_*
+   * response. Populated by adapters from `{type:'reasoning'}` or
+   * `{type:'thinking'}` content blocks (LangGraph) or `REASONING_MESSAGE_*`
    * events (AG-UI). Always a plain string — provider-specific shape
    * (encrypted blocks, multi-step summaries) is absorbed by the adapter
    * and not surfaced here.
@@ -51,7 +51,7 @@ export interface Message {
 /**
  * Type guard narrowing a {@link Message} to `role: 'user'`.
  *
- * @param m The message to test.
+ * @param m - The message to test.
  * @returns `true` (and narrows `m`) when the message was sent by the user.
  * @example
  * ```ts
@@ -65,7 +65,7 @@ export function isUserMessage(m: Message): m is Message & { role: 'user' } {
 /**
  * Type guard narrowing a {@link Message} to `role: 'assistant'`.
  *
- * @param m The message to test.
+ * @param m - The message to test.
  * @returns `true` (and narrows `m`) when the message came from the assistant.
  * @example
  * ```ts
@@ -79,7 +79,7 @@ export function isAssistantMessage(m: Message): m is Message & { role: 'assistan
 /**
  * Type guard narrowing a {@link Message} to `role: 'tool'` (a tool result turn).
  *
- * @param m The message to test.
+ * @param m - The message to test.
  * @returns `true` (and narrows `m`) when the message is a tool result.
  * @example
  * ```ts
@@ -93,7 +93,7 @@ export function isToolMessage(m: Message): m is Message & { role: 'tool' } {
 /**
  * Type guard narrowing a {@link Message} to `role: 'system'`.
  *
- * @param m The message to test.
+ * @param m - The message to test.
  * @returns `true` (and narrows `m`) when the message is a system message.
  * @example
  * ```ts

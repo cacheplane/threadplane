@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatInterruptTemplateDirective:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n </ng-template>\n </chat>",
+  "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n      <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n    </ng-template>\n  </chat>\n```",
   "declarations": [
     {
       "name": "ChatInterruptTemplateDirective",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n\n<chat [agent]=\"agent\">\n <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n </ng-template>\n </chat>",
+        "summary": "Registers an interrupt renderer on `<chat>`. While the agent has a pending\ninterrupt (`agent.interrupt()` is defined), the template renders at the\nend of the transcript, inside the scroll region and after any run\nactivity, so approval cards and other human-in-the-loop UI sit in the\nconversation. With no pending interrupt, or no template, nothing renders:\n`<chat>` has no default interrupt UI.\n\nUsage:\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatInterruptTemplate let-agent let-interrupt=\"interrupt\">\n      <my-approval-card [interrupt]=\"interrupt\" (decide)=\"agent.submit({ resume: $event })\" />\n    </ng-template>\n  </chat>\n```",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -89,7 +89,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-            "line": 42
+            "line": 44
           },
           "overloadIndex": 1,
           "isStatic": true,
@@ -163,7 +163,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-            "line": 40
+            "line": 42
           },
           "isStatic": false,
           "isReadonly": true,
@@ -172,7 +172,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-        "line": 35
+        "line": 37
       },
       "angular": {
         "selector": "ng-template[chatInterruptTemplate]",
@@ -183,6 +183,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat/chat-interrupt-template.directive.ts",
-    "line": 35
+    "line": 37
   }
 }

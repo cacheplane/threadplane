@@ -324,7 +324,7 @@
             }
           ],
           "docs": {
-            "summary": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call, `tools:<task\nid>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
+            "summary": "Optional: read the newest checkpoint a child graph saved under one\ncheckpoint namespace of a thread (for a delegation tool call,\n`tools:<task id>`). Used to restore a subagent's transcript when a thread is reloaded;\nwithout it, a reloaded subagent shows its status and result but no\nmessages. Resolve `undefined` when the namespace has no saved state.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
