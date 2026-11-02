@@ -79,7 +79,10 @@ export interface ConfirmDialogProps { readonly open: boolean; readonly title: st
 export interface WelcomeProps { readonly title?: import('react').ReactNode; readonly children?: import('react').ReactNode; readonly suggestions?: import('react').ReactNode; readonly className?: string; }
 export interface WelcomeSuggestionProps { readonly label: string; readonly value: string; readonly onSelect: (value: string) => void; readonly description?: string; readonly icon?: import('react').ReactNode; readonly disabled?: boolean; readonly className?: string; }
 export declare function Welcome(props: WelcomeProps): unknown;
-export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknown;`;
+export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknown;
+export interface SuggestionItem { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean; }
+export interface SuggestionsProps { readonly suggestions: readonly SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
+export declare function Suggestions(props: SuggestionsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -88,6 +91,9 @@ export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknow
     return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
   };
   assert.equal(compile(declaration), '');
+  assert.match(compile(declaration.replaceAll('SuggestionsProps', 'MissingSuggestionsProps')), /SuggestionsProps/);
+  assert.match(compile(declaration.replaceAll('SuggestionItem', 'MissingSuggestionItem')), /SuggestionItem/);
+  assert.match(compile(declaration.replace('readonly suggestions: readonly SuggestionItem[]', 'suggestions: SuggestionItem[]')), /false|true/);
   assert.match(compile(declaration.replaceAll('ConfirmDialogProps', 'MissingConfirmDialogProps')), /ConfirmDialogProps/);
   assert.match(compile(declaration.replaceAll('ThreadRenameFormProps', 'MissingRenameFormProps')), /ThreadRenameFormProps/);
   const renameEnd = declaration.indexOf('export interface HistorySearchResult');
@@ -112,7 +118,7 @@ export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknow
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -126,13 +132,20 @@ export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknow
     ['WelcomeSuggestionProps', 'icon', "import('react').ReactNode", true],
     ['WelcomeSuggestionProps', 'disabled', 'boolean', true],
     ['WelcomeSuggestionProps', 'className', 'string', true],
+    ...['id', 'label', 'value'].map(property => ['SuggestionItem', property, 'string', false]),
+    ['SuggestionItem', 'disabled', 'boolean', true],
+    ['SuggestionsProps', 'suggestions', 'readonly SuggestionItem[]', false],
+    ['SuggestionsProps', 'onSelect', '(value: string) => void', false],
+    ['SuggestionsProps', 'disabled', 'boolean', true],
+    ['SuggestionsProps', 'label', 'string', true],
+    ['SuggestionsProps', 'className', 'string', true],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
     assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
@@ -557,13 +570,14 @@ for (const [name, entry, files] of [
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
   const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  supported.Suggestions = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

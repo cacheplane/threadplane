@@ -1,0 +1,233 @@
+{
+  "name": "SuggestionsProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SuggestionsProps",
+  "canonicalReference": "@threadplane/react!SuggestionsProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Configures a controlled group without owning draft or submission state.",
+  "declarations": [
+    {
+      "name": "SuggestionsProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SuggestionsProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SuggestionsProps "
+        }
+      ],
+      "docs": {
+        "summary": "Configures a controlled group without owning draft or submission state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionsProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Additional classes on the group.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionsProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Disables all items only when strictly true.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionsProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Accessible group label, defaulting to Suggested replies.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onSelect",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionsProps#onSelect:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onSelect: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Receives the exact value on an enabled, unclaimed click.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "suggestions",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SuggestionsProps#suggestions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly suggestions: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "SuggestionItem",
+              "canonicalReference": "@threadplane/react!SuggestionItem:interface",
+              "href": "/docs/api/react/chat/SuggestionItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Caller-authored items; duplicate IDs throw TypeError.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/suggestions.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/suggestions.tsx",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/suggestions.tsx",
+    "line": 16
+  }
+}

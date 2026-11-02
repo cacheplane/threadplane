@@ -1,4 +1,9 @@
 'use client';
+export {
+  Suggestions,
+  type SuggestionItem,
+  type SuggestionsProps,
+} from './suggestions.js';
 export { Welcome, type WelcomeProps } from './welcome.js';
 export {
   WelcomeSuggestion,

@@ -269,6 +269,20 @@ and disposal. The primitives add no internal lifecycle or network work. This is
 bounded private T22 presentation and T23 native composition; full parity and a
 public release remain open.
 
+After a locally completed successful text response, Native React uses the
+controlled `Suggestions` group for two app-authored presets: “Make it shorter”
+(`Make that more concise.`) and “Give an example”
+(`Give me a concrete example.`). Accepted runtime and displayed messages must
+both contain an assistant row. Restored history, decision completion, active,
+paused, failed and stopped responses do not admit these follow-ups. Runtime and
+selected-conversation safety gates still apply. Any draft, including whitespace,
+disables the buttons. Selection only prefills and focuses the same textarea;
+sending stays explicit. Current owner snapshots and the exact captured submission
+occurrence are checked both before and after capability reads. Committed owner,
+conversation, eligibility and submission changes expire old handlers, including
+A-B-A transitions. These presets are not AI-generated suggestions, and response
+completion makes no claim about graph effects or full T22/T23 parity.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

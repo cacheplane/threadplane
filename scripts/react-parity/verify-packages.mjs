@@ -239,6 +239,9 @@ import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
 export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: ReactNode; readonly children?: ReactNode; readonly suggestions?: ReactNode; readonly className?: string }>>;
+export type SuggestionItemContract = Assert<Equal<import('@threadplane/react/chat').SuggestionItem, { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean }>>;
+export type SuggestionsContract = Assert<Equal<import('@threadplane/react/chat').SuggestionsProps, { readonly suggestions: readonly import('@threadplane/react/chat').SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
+export type SuggestionsParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Suggestions>[0], import('@threadplane/react/chat').SuggestionsProps>>;
 export type WelcomeSuggestionContract = Assert<Equal<WelcomeSuggestionProps, { readonly label: string; readonly value: string; readonly onSelect: (value: string) => void; readonly description?: string; readonly icon?: ReactNode; readonly disabled?: boolean; readonly className?: string }>>;
 export type WelcomeParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Welcome>[0], WelcomeProps>>;
 export type WelcomeSuggestionParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').WelcomeSuggestion>[0], WelcomeSuggestionProps>>;
@@ -402,6 +405,7 @@ export function assertSupportedExports(project, entry) {
         'ToolObservation',
         'Welcome',
         'WelcomeSuggestion',
+        'Suggestions',
       ],
       'react/debug': ['ChatDebug', 'StateDiff'],
       'react/markdown': ['Markdown'],

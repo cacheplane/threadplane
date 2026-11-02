@@ -1033,3 +1033,38 @@
   opacity: 0.6;
   cursor: default;
 }
+
+.tp-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.tp-suggestions .tp-suggestions__button {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 1.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-suggestions .tp-suggestions__button:enabled:hover {
+  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
+}
+.tp-suggestions .tp-suggestions__button:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-suggestions .tp-suggestions__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

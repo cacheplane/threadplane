@@ -5974,6 +5974,36 @@
       "summary": "Presentation options for an application-owned reasoning document."
     },
     {
+      "name": "SuggestionItem",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SuggestionItem",
+      "canonicalReference": "@threadplane/react!SuggestionItem:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A caller-authored literal suggestion with stable identity."
+    },
+    {
+      "name": "Suggestions",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/Suggestions",
+      "canonicalReference": "@threadplane/react!Suggestions:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Presents explicit choices; callers own draft, focus and submission."
+    },
+    {
+      "name": "SuggestionsProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SuggestionsProps",
+      "canonicalReference": "@threadplane/react!SuggestionsProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Configures a controlled group without owning draft or submission state."
+    },
+    {
       "name": "TextTranscript",
       "entrypointId": "react/chat",
       "kind": "Function",
