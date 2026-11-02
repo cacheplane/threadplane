@@ -965,6 +965,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      # Benchmark control: retain the production five-slot fleet limit.
       max-parallel: 5
       matrix:
         cap: ${{ fromJson(needs.cockpit-e2e-dispatcher.outputs.caps) }}
