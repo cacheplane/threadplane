@@ -720,7 +720,7 @@ export class ChatComponent {
 
   private readonly classifiers = new Map<
     string,
-    { generation: string; classifier: ContentClassifier }
+    { generation: string; classifier: ContentClassifier; content?: string }
   >();
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
   private readonly destroyRef = inject(DestroyRef);
@@ -1253,7 +1253,10 @@ export class ChatComponent {
       entry = { generation, classifier: createContentClassifier() };
       this.classifiers.set(message.id, entry);
     }
-    entry.classifier.update(content);
+    if (entry.content !== content) {
+      entry.classifier.update(content);
+      entry.content = content;
+    }
     return entry.classifier;
   }
 
