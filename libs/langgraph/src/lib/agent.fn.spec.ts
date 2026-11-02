@@ -702,6 +702,31 @@ describe('agent', () => {
     expect(ref.isThreadLoading()).toBe(false);
   });
 
+  it('keeps the run loading when a bound threadId signal adopts the thread created for it', async () => {
+    // The host mirrors the transport-created id into its threadId signal
+    // mid-run (null → id). That is an adoption, not a switch: the bridge keeps
+    // streaming, so the derived status must not drop to idle under it.
+    const transport = new MockAgentTransport();
+    const threadId = signal<string | null>(null);
+    const ref = withInjectionContext(() =>
+      agent({ apiUrl: '', assistantId: 'a', transport, threadId })
+    );
+
+    ref.submit({ message: 'hello' });
+    transport.emit([
+      { type: 'messages', messages: [{ id: '1', type: 'human', content: 'hello' }] as any[] },
+    ]);
+    await new Promise(r => setTimeout(r, 20));
+    expect(ref.isLoading()).toBe(true);
+
+    threadId.set('thread-created');
+    await new Promise(r => setTimeout(r, 30));
+
+    expect(ref.isLoading()).toBe(true);
+    expect(ref.messages()).toHaveLength(1);
+    await ref.stop();
+  });
+
   it('langGraphInterrupts() exposes raw LangGraph interrupts signal', () => {
     const transport = new MockAgentTransport();
     const ref = withInjectionContext(() =>
