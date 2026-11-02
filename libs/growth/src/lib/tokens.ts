@@ -23,11 +23,13 @@ declare const unsubscribeActionUrlBrand: unique symbol;
 
 export const FOUNDER_STOP_TOKEN_MAX_AGE_SECONDS = 24 * 60 * 60;
 export const FOUNDER_APPROVE_INSTALL_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+export const FOUNDER_LINKEDIN_DECIDE_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 export type GrowthTokenPurpose =
   | 'unsubscribe'
   | 'founder_stop'
-  | 'founder_approve_install';
+  | 'founder_approve_install'
+  | 'founder_linkedin_decide';
 
 export interface GrowthTokenKey {
   version: number;
@@ -40,7 +42,7 @@ export interface GrowthTokenKeyring {
 }
 
 export interface CreateGrowthActionTokenInput {
-  /** Contact id for unsubscribe/founder_stop; the first install observation id for founder_approve_install. */
+  /** Contact id for unsubscribe/founder_stop; the first install observation id for founder_approve_install; the lead id for founder_linkedin_decide (reason = 'reject' | 'deny'). */
   contactId: string;
   purpose: GrowthTokenPurpose;
   issuedAt: Date;
@@ -161,7 +163,8 @@ function assertPurpose(purpose: unknown): GrowthTokenPurpose {
   if (
     purpose !== 'unsubscribe' &&
     purpose !== 'founder_stop' &&
-    purpose !== 'founder_approve_install'
+    purpose !== 'founder_approve_install' &&
+    purpose !== 'founder_linkedin_decide'
   ) {
     throw new Error('Unsupported growth action token purpose');
   }
@@ -342,7 +345,8 @@ function parseWirePayload(encodedPayload: string): WirePayload | null {
       (record['k'] as number) > 32_767 ||
       (record['p'] !== 'unsubscribe' &&
         record['p'] !== 'founder_stop' &&
-        record['p'] !== 'founder_approve_install') ||
+        record['p'] !== 'founder_approve_install' &&
+        record['p'] !== 'founder_linkedin_decide') ||
       (record['n'] !== undefined &&
         (typeof record['n'] !== 'string' ||
           record['n'].length === 0 ||

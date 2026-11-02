@@ -7,6 +7,41 @@ import { createInboxResendClient } from './inbox-resend.ts';
 import { stopContact } from './stops.ts';
 import { loadGrowthDatabaseEnvironment } from './webhooks.ts';
 
+/** Creates the Resend submission used by operator forwards; fixed to one sending key. */
+export function createResendForwardSender(sendingKey: string) {
+  return async (
+    payload: {
+      replyTo?: unknown;
+    } & Record<string, unknown>,
+    key: string
+  ): Promise<string> => {
+    const { replyTo, ...message } = payload;
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sendingKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': key,
+        },
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
+        body: JSON.stringify({ ...message, reply_to: replyTo }),
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new Error('Inbox forward submission failed');
+      }
+      const result = (await response.json()) as { id?: unknown } | null;
+      if (typeof result?.id !== 'string' || !result.id)
+        throw new Error('Inbox forward submission failed');
+      return result.id;
+    } catch {
+      throw new Error('Inbox forward submission failed');
+    }
+  };
+}
+
 /**
  * Creates receiving, reply processing, and forwarding collaborators with fixed
  * credentials and environment. Sending always uses the separate sending key.
@@ -25,6 +60,7 @@ export function createInboxRuntime(
   const now = () => new Date();
   return {
     ...client,
+    environment: deliveryEnvironment,
     stopContact,
     now,
     forwardReceipt: (db: SqlExecutor, id: string) =>
@@ -49,32 +85,7 @@ export function createInboxRuntime(
             throw new Error('Missing forwarding sender contact');
           return result.rows[0].deleted_at !== null;
         },
-        send: async (payload, key) => {
-          const { replyTo, ...message } = payload;
-          try {
-            const response = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${sendingKey}`,
-                'Content-Type': 'application/json',
-                'Idempotency-Key': key,
-              },
-              redirect: 'error',
-              signal: AbortSignal.timeout(15000),
-              body: JSON.stringify({ ...message, reply_to: replyTo }),
-            });
-            if (!response.ok) {
-              await response.body?.cancel();
-              throw new Error('Inbox forward submission failed');
-            }
-            const result = (await response.json()) as { id?: unknown } | null;
-            if (typeof result?.id !== 'string' || !result.id)
-              throw new Error('Inbox forward submission failed');
-            return result.id;
-          } catch {
-            throw new Error('Inbox forward submission failed');
-          }
-        },
+        send: createResendForwardSender(sendingKey),
       }),
   };
 }

@@ -455,6 +455,15 @@ function dependencies(
       ciInstallSubjects: 5,
     }),
     markInstallDigestReported: vi.fn().mockResolvedValue(undefined),
+    readLinkedInDigestLeads: vi.fn().mockResolvedValue([]),
+    readLinkedInDigestContext: vi.fn().mockResolvedValue({
+      since: NOW,
+      unparsedCount: 0,
+      dropCount: 0,
+      ingestCount: 0,
+      forwardBacklog: 0,
+    }),
+    markLinkedInDigestSent: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -928,6 +937,25 @@ describe('loadLifecycleRuntimeConfiguration', () => {
     expect(() =>
       loadLifecycleRuntimeConfiguration({ GROWTH_INSTALL_DIGEST_ENABLED: '1' })
     ).toThrow('GROWTH_INSTALL_DIGEST_ENABLED must be exactly true or false');
+  });
+
+  it('enables LinkedIn ingest only with the exact configured boolean', () => {
+    expect(loadLifecycleRuntimeConfiguration({})).toMatchObject({
+      linkedInIngestEnabled: false,
+    });
+    expect(
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_LINKEDIN_INGEST_ENABLED: 'true',
+      })
+    ).toMatchObject({ linkedInIngestEnabled: true });
+    expect(
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_LINKEDIN_INGEST_ENABLED: 'false',
+      })
+    ).toMatchObject({ linkedInIngestEnabled: false });
+    expect(() =>
+      loadLifecycleRuntimeConfiguration({ GROWTH_LINKEDIN_INGEST_ENABLED: 'TRUE' })
+    ).toThrow('GROWTH_LINKEDIN_INGEST_ENABLED must be exactly true or false');
   });
 
   it('enables observation projection only with the exact configured boolean', () => {
