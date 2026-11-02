@@ -3,7 +3,6 @@ import { flushSync } from 'react-dom';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
-  ChatInput,
   ChatPopup,
   ChatSidebar,
   Citations,
@@ -24,7 +23,7 @@ import {
   orderActiveThreads,
 } from '../../shared/projection';
 import type { ThreadRow } from '../../shared/contracts';
-import { submissionStatus } from '../../shared/submission-status';
+import { NativeComposer } from './native-composer';
 import { Approval } from './approval';
 import { BackgroundActivity } from './background-activity';
 import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
@@ -102,40 +101,6 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
 });
 
 const renderMessage = (row: MessageContent) => <Message row={row} />;
-
-function Composer({
-  application,
-  snapshot,
-}: {
-  application: Application;
-  snapshot: ApplicationSnapshot;
-}) {
-  const active = snapshot.submission.active;
-  const deletionBlocked =
-    snapshot.deletion.id === snapshot.selection.id &&
-    (snapshot.deletion.status === 'pending' ||
-      snapshot.deletion.status === 'unconfirmed');
-  return (
-    <div className="composer">
-      <ChatInput
-        id="message"
-        label="Message"
-        placeholder="Write a message…"
-        hint="Ctrl or ⌘ + Enter to send. Enter adds a line."
-        submitOnEnter={false}
-        disabled={
-          snapshot.selection.status !== 'ready' || active || deletionBlocked
-        }
-        busy={active || !application.canSubmit()}
-        onStop={active ? () => void application.stop() : undefined}
-        onSubmit={(text) => application.canSubmit() && application.submit(text)}
-      />
-      <p className="submission-status" role="status">
-        {submissionStatus(snapshot)}
-      </p>
-    </div>
-  );
-}
 
 function ConversationSurface({
   presentation,
@@ -904,7 +869,7 @@ function Conversation({
             </>
           )}
           <Approval application={application} snapshot={snapshot} />
-          <Composer
+          <NativeComposer
             key={selection.id}
             application={application}
             snapshot={snapshot}

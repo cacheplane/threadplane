@@ -1,0 +1,190 @@
+{
+  "name": "WelcomeProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/WelcomeProps",
+  "canonicalReference": "@threadplane/react!WelcomeProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Configures presentation slots without owning conversation visibility or state.",
+  "declarations": [
+    {
+      "name": "WelcomeProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!WelcomeProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface WelcomeProps "
+        }
+      ],
+      "docs": {
+        "summary": "Configures presentation slots without owning conversation visibility or state.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!WelcomeProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Input or other content whose mounted identity is retained as other slots change.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/welcome.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!WelcomeProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Additional classes on the welcome container.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/welcome.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "suggestions",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!WelcomeProps#suggestions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly suggestions?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Optional suggestion content; null, false and undefined omit the slot.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/welcome.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "title",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!WelcomeProps#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Custom title content; undefined uses the default h2, null or false omits it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/welcome.tsx",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/welcome.tsx",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/welcome.tsx",
+    "line": 5
+  }
+}

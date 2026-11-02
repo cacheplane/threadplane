@@ -275,12 +275,14 @@ export function OverflowMenu({
         (event.target instanceof win.Node && panel.contains(event.target))
       )
         return;
-      if (event.target instanceof win.Element) {
-        const original = openingScroll.get(event.target);
+      const target =
+        event.target === doc ? doc.scrollingElement : event.target;
+      if (target instanceof win.Element) {
+        const original = openingScroll.get(target);
         if (
           original &&
-          event.target.scrollTop === original.top &&
-          event.target.scrollLeft === original.left
+          target.scrollTop === original.top &&
+          target.scrollLeft === original.left
         )
           return;
       }

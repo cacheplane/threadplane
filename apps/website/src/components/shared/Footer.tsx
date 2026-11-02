@@ -171,7 +171,7 @@ export function Footer({
           </div>
 
           {/* Product column */}
-          <div className="flex flex-col gap-2.5 text-sm">
+          <div className="flex flex-col gap-3 text-sm">
             <Eyebrow tone="accent" className="footer-column-eyebrow">Product</Eyebrow>
             <Link href="/docs" className="transition-colors footer-link"
               onClick={() => trackFooterCta('Documentation', '/docs')}>
@@ -208,7 +208,7 @@ export function Footer({
           </div>
 
           {/* Libraries column */}
-          <div className="flex flex-col gap-2.5 text-sm">
+          <div className="flex flex-col gap-3 text-sm">
             <Eyebrow tone="accent" className="footer-column-eyebrow">Libraries</Eyebrow>
             <Link href="/langgraph" className="transition-colors footer-link"
               onClick={() => trackFooterCta('LangGraph', '/langgraph')}>
@@ -229,7 +229,7 @@ export function Footer({
           </div>
 
           {/* Solutions column */}
-          <div className="flex flex-col gap-2.5 text-sm">
+          <div className="flex flex-col gap-3 text-sm">
             <Eyebrow tone="accent" className="footer-column-eyebrow">Solutions</Eyebrow>
             <Link href="/solutions/compliance" className="transition-colors footer-link"
               onClick={() => trackFooterCta('Compliance', '/solutions/compliance')}>
@@ -250,7 +250,7 @@ export function Footer({
           </div>
 
           {/* Resources column */}
-          <div className="flex flex-col gap-2.5 text-sm">
+          <div className="flex flex-col gap-3 text-sm">
             <Eyebrow tone="accent" className="footer-column-eyebrow">Resources</Eyebrow>
             <Link href="/pilot-to-prod" className="transition-colors footer-link"
               onClick={() => trackFooterCta('Pilot to Prod', '/pilot-to-prod')}>

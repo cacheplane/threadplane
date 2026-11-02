@@ -336,8 +336,8 @@ This bounded runtime proof does not establish complete migration parity.
 | T19 | Extract JSON classification and A2UI surface processing |
 | T20 | In progress: private application-owned render state and bounded React readiness; form sessions and full parity remain open |
 | T21 | Introduce safe SSR dehydration and browser boundaries |
-| T22 | In progress: private controlled ConfirmDialog with native modal/background inertness, Cancel-first focus, pending/destructive intent, scoped theme and bounded focus restoration; full overlay-stack parity remains open |
-| T23 | Implement transcript, composer and basic chat composition |
+| T22 | In progress: private controlled ConfirmDialog with native modal/background inertness, Cancel-first focus, pending/destructive intent, scoped theme and bounded focus restoration; readonly controlled Welcome slots and exact-value native WelcomeSuggestion buttons add bounded welcome presentation without session/draft/submission ownership. Full welcome and overlay-stack parity remain open |
+| T23 | In progress: transcript, composer and basic chat composition; native React welcome suggestions prefill and focus the stable textarea only for an empty ready/idle selected conversation, protect every existing draft including whitespace, and leave sending explicit. Application ownership and stale-control guards remain separate from presentation; full composition parity and public release remain open |
 | T24 | In progress: private read-only React registry and committed readiness lifecycle; broader context and full element parity remain open |
 | T25 | Implement render actions, host events and tool views |
 | T26 | Implement all Markdown views and citation UI |

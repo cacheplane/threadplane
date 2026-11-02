@@ -69,7 +69,7 @@ export interface MockAgentOptions {
  * network. Every field is a writable signal so a test can drive UI states
  * (loading, error, interrupts, tool calls, subagents) deterministically.
  *
- * @param opts Initial values for the mock's signals; all optional.
+ * @param opts - Initial values for the mock's signals; all optional.
  * @returns A {@link MockAgent} satisfying the full `Agent` contract.
  * @example
  * ```ts

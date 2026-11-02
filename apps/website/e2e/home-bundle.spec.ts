@@ -30,16 +30,8 @@ const REGISTRY_MARKER = 'LangGraph Durable Execution (Python)';
 /** A docs route, which renders the workspace surface and so needs the catalog. */
 const DOCS_ROUTE = '/docs/langgraph/guides/streaming';
 
-/**
- * The fonts the homepage preloads, identified by family and style. See the
- * FONT PRELOADS note in app/layout.tsx for the measurements behind this list:
- * on a throttled phone every preloaded font races the hero poster for
- * bandwidth, so only faces whose late arrival would visibly hurt are here.
- * Archivo italic and JetBrains Mono were measured at -228ms and -224ms of LCP
- * each; Archivo normal stays because un-preloading it reflowed the subhead
- * (CLS 0.206). Change this list only with a measurement.
- */
-const EXPECTED_PRELOADS = ['Archivo Black normal', 'Archivo normal'];
+/** Heading and body share Hanken; code, italic and diagram faces load on use. */
+const EXPECTED_PRELOADS = ['Hanken Grotesk normal'];
 
 /**
  * The bodies of the scripts `path` itself requires: the `<script src>` tags and
@@ -81,7 +73,7 @@ test.describe('homepage bundle', () => {
     ).toBe(true);
   });
 
-  test('the homepage preloads only the H1 face and the body face', async ({ page }) => {
+  test('the homepage preloads the shared heading and body face', async ({ page }) => {
     // Read the live DOM, not the server HTML: under `next dev` React injects
     // the font preloads into <head> during hydration, while a production build
     // writes them into the HTML. The DOM has them either way.
@@ -112,17 +104,17 @@ test.describe('homepage bundle', () => {
     expect(faces.sort()).toEqual([...EXPECTED_PRELOADS].sort());
   });
 
-  test('the unpreloaded italic still merges into the Archivo family', async ({ page }) => {
-    // Archivo's italic is its own next/font instance so it can skip the
+  test('the unpreloaded italic still merges into the Hanken Grotesk family', async ({ page }) => {
+    // Hanken Grotesk's italic is its own next/font instance so it can skip the
     // preload. That only works because both instances register the real
-    // family name, `Archivo`, and the browser merges them: italic text then
+    // family name, `Hanken Grotesk`, and the browser merges them: italic text then
     // picks the true italic. If the italic ended up under any other family,
     // this load would find no italic face and every italic would turn faux.
     await page.goto('/');
     const faces = await page.evaluate(async () =>
-      (await document.fonts.load('italic 400 16px Archivo')).map((f) => `${f.family.replace(/["']/g, '')} ${f.style}`)
+      (await document.fonts.load('italic 400 16px "Hanken Grotesk"')).map((f) => `${f.family.replace(/["']/g, '')} ${f.style}`)
     );
-    expect(faces).toContain('Archivo italic');
+    expect(faces).toContain('Hanken Grotesk italic');
   });
 
   test('monospace text never falls back to a proportional font', async ({ page }) => {

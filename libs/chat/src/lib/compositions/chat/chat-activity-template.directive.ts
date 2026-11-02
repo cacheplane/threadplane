@@ -43,11 +43,13 @@ export interface ChatActivityTemplateContext {
  *
  * Usage:
  *
+ * ```html
  *   <chat [agent]="agent">
  *     <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls" let-subagents="subagents">
  *       <my-activity-summary [message]="message" [calls]="toolCalls" [subagents]="subagents" />
  *     </ng-template>
  *   </chat>
+ * ```
  */
 @Directive({
   selector: 'ng-template[chatActivityTemplate]',

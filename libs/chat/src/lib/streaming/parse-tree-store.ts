@@ -24,7 +24,7 @@ export interface ParseTreeStore {
  * per-element accumulation state as signals, so a generative-UI surface can
  * render while the spec is still arriving.
  *
- * @param parser The partial-JSON parser used to incrementally materialize chunks.
+ * @param parser - The partial-JSON parser used to incrementally materialize chunks.
  * @returns A {@link ParseTreeStore}; call `push(chunk)` as bytes stream in.
  * @example
  * ```ts

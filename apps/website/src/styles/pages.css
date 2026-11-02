@@ -13,7 +13,7 @@
 .lib-hero-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
   margin-bottom: 16px;
 }
 .lib-hero-rail-line {
@@ -31,6 +31,7 @@
 }
 .docs-index-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -58,7 +59,7 @@
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .docs-index-step-badge {
   width: 20px;
@@ -172,7 +173,7 @@
 }
 .docs-index-cta-block {
   display: inline-block;
-  margin-top: 14px;
+  margin-top: var(--space-4);
 }
 .docs-index-snippet-row {
   display: flex;
@@ -182,8 +183,8 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 5px 6px 5px 12px;
-  margin: 14px 0 16px;
+  padding: var(--space-1) var(--space-2) var(--space-1) 12px;
+  margin: var(--space-4) 0 16px;
 }
 .docs-index-snippet-code {
   /* raw font stack, not the `.family` var — see the font-exception note atop ui.css */
@@ -289,6 +290,7 @@
 }
 .about-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -310,6 +312,7 @@
 }
 .about-h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   color: var(--color-text-primary);
   margin: 0;
@@ -336,6 +339,7 @@
 }
 .sol-index-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -357,7 +361,7 @@
 .sol-index-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .sol-index-rail-line {
   flex: 1;
@@ -369,6 +373,7 @@
 }
 .sol-index-h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -433,7 +438,7 @@
 .sol-page-rail {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .sol-page-rail-line {
   flex: 1;
@@ -442,6 +447,7 @@
 }
 .sol-page-h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -479,7 +485,7 @@
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 .sol-page-card-body {
   font-family: var(--font-sans);
@@ -499,6 +505,7 @@
 }
 .sol-page-arch-title {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 22px;
   color: var(--color-text-primary);
   margin: 0;
@@ -524,6 +531,7 @@
 }
 .sol-page-metric {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 40px;
   line-height: 0.9;
   letter-spacing: -0.02em;
@@ -541,6 +549,7 @@
 }
 .sol-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -575,6 +584,7 @@
 }
 .pilot-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -650,7 +660,7 @@
 }
 .pilot-checklist-item {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   font-size: 14px;
   color: var(--color-text-secondary);
@@ -674,7 +684,7 @@
 .pilot-rail2 {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .pilot-rail2-line {
   flex: 1;
@@ -683,6 +693,7 @@
 }
 .pilot-h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   line-height: var(--text-h2--line-height);
   color: var(--color-text-primary);
@@ -693,7 +704,7 @@
   margin-bottom: 16px;
 }
 .pilot-outcome-rows {
-  margin-top: 22px;
+  margin-top: var(--space-6);
   border-top: 2px solid var(--color-text-primary);
   max-width: 56ch;
 }
@@ -703,7 +714,7 @@
   gap: 16px;
   align-items: baseline;
   border-bottom: 1px solid var(--color-border);
-  padding: 10px 0;
+  padding: var(--space-3) 0;
 }
 .pilot-outcome-claim {
   font-family: var(--font-sans);
@@ -746,6 +757,7 @@
 }
 .render-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -782,6 +794,7 @@
 }
 .chat-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -818,6 +831,7 @@
 }
 .ag-ui-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -875,6 +889,7 @@
 }
 .langgraph-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -913,14 +928,14 @@
 }
 /* Blog index page — app/blog/page.tsx */
 .blog-index-page {
-  padding-top: 80px;
+  padding-top: var(--nav-h);
   background: var(--color-canvas);
   min-height: 100vh;
 }
 .blog-index-inner {
-  max-width: 960px;
+  max-width: var(--container-page);
   margin: 0 auto;
-  padding: 35px 24px 64px;
+  padding: var(--site-page-top) var(--site-gutter) var(--site-section-gap);
 }
 .blog-index-header {
   margin-bottom: 32px;
@@ -930,6 +945,7 @@
 }
 .blog-index-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   letter-spacing: -0.02em;
@@ -971,7 +987,7 @@
 
 /* Blog post page — app/blog/[slug]/page.tsx */
 .blog-post-page {
-  padding-top: 80px;
+  padding-top: var(--nav-h);
   background: var(--color-canvas);
   min-height: 100vh;
 }
@@ -997,6 +1013,7 @@
 }
 .blog-post-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   letter-spacing: -0.02em;
@@ -1030,6 +1047,7 @@
 }
 .error-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -1072,6 +1090,7 @@
 }
 .pricing-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -1093,7 +1112,7 @@
   flex-wrap: wrap;
   gap: 8px;
   margin: 24px auto 0;
-  padding: 13px 16px;
+  padding: var(--space-3) 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface-tinted);
@@ -1141,6 +1160,7 @@
 /* Contact page — app/contact/page.tsx */
 .contact-page-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -1170,8 +1190,9 @@
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
   color: var(--color-text-primary);
-  border-left: 3px solid var(--color-accent);
-  padding: 6px 0 6px 14px;
+  border-radius: var(--radius-md);
+  background: var(--site-hover);
+  padding: var(--space-4);
   margin: 0 0 24px;
 }
 .contact-band-channels {
@@ -1219,6 +1240,7 @@
 }
 .nf-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -1250,6 +1272,7 @@
 }
 .privacy-h1 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h1);
   line-height: var(--text-h1--line-height);
   color: var(--color-text-primary);
@@ -1259,6 +1282,7 @@
 }
 .privacy-h2 {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--text-h2);
   color: var(--color-text-primary);
   margin: 0;

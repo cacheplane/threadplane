@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/middleware!clientToolsChannel:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
+  "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n```ts\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n```\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
   "declarations": [
     {
       "name": "clientToolsChannel",
@@ -65,7 +65,7 @@
         }
       ],
       "docs": {
-        "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
+        "summary": "State channels for the client-tools catalog. Spread into Annotation.Root so a graph\ndeclares the `tools` (primary) and `client_tools` (fallback) slices in one line:\n```ts\nconst State = Annotation.Root({ ...MessagesAnnotation.spec, ...clientToolsChannel() });\n```\n\nBoth are last-value-wins channels (the catalog is replaced per run, not accumulated).",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -77,7 +77,7 @@
       "members": [],
       "source": {
         "path": "libs/middleware/src/langgraph/channel.ts",
-        "line": 12
+        "line": 14
       },
       "overloadIndex": 1,
       "parameters": [],
@@ -89,6 +89,6 @@
   ],
   "source": {
     "path": "libs/middleware/src/langgraph/channel.ts",
-    "line": 12
+    "line": 14
   }
 }

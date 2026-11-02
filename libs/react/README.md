@@ -259,6 +259,30 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
+## Controlled welcome content (private React T22 slice)
+
+`@threadplane/react/chat` exports `Welcome`, `WelcomeSuggestion` and their readonly
+props. `Welcome` presents controlled `title`, `children` and `suggestions` slots,
+plus optional `className`. An undefined title uses the default `<h2>How can I
+help?</h2>`; `null` or `false` omits title content. Absent, null or false
+suggestions omit suggestion content. The children slot retains mounted identity
+when the title or suggestions change, so a composed `ChatInput` keeps its textarea.
+
+`WelcomeSuggestion` requires literal `label`, exact string `value` and
+`onSelect(value)`. Its native `type="button"` never submits a surrounding form;
+an enabled, unclaimed click emits the value without trimming or transformation.
+Optional `description` supplies the tooltip and accessible description. Optional
+`icon` is decorative, hidden from assistive technology, and should contain only
+noninteractive phrasing content. `disabled` prevents selection only when strictly
+true; `className` customizes presentation. Text remains literal.
+
+These views own no session, subscription, draft, visibility, focus, command or
+submission lifecycle. The app chooses when to show the greeting and how selection
+affects its draft. Native React dogfoods a separate bounded T23 composition that
+prefills and focuses the existing input, leaving sending explicit. Styles remain
+opt-in through `/chat/styles.css`. This private, unpublished slice does not establish
+full T22/T23 or legacy welcome parity.
+
 ## Controlled conversation lists
 
 The private `ThreadList` view from `@threadplane/react/chat` renders supplied

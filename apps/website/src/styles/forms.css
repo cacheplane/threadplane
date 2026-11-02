@@ -24,7 +24,7 @@
 [data-ui="field"] {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 [data-ui="field-label"] {
   font-family: var(--font-sans);
@@ -45,7 +45,7 @@
 [data-ui="field-error"] {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   font-family: var(--font-sans);
   font-size: 12px;
@@ -70,7 +70,7 @@
   width: 100%;
   box-sizing: border-box;
   height: var(--form-control-height);
-  padding: 0 14px;
+  padding: 0 var(--space-3);
   font-family: var(--font-sans);
   font-size: var(--text-body);
   color: var(--color-text-primary);
@@ -84,9 +84,9 @@
   color: var(--color-text-muted);
 }
 [data-ui="form-control"][data-multiline] {
-  height: auto;
-  min-height: calc(var(--form-control-height) * 2.4);
-  padding: 11px 14px;
+  height: 160px;
+  min-height: 112px;
+  padding: var(--space-3);
   resize: vertical;
   line-height: var(--text-body--line-height);
 }
@@ -113,7 +113,7 @@ select[data-ui="form-control"] {
   padding-right: 36px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23737373' stroke-width='1.5'/></svg>");
   background-repeat: no-repeat;
-  background-position: right 14px center;
+  background-position: right 12px center;
 }
 
 /* Layout helpers */
@@ -123,7 +123,7 @@ select[data-ui="form-control"] {
   gap: 16px;
 }
 [data-ui="form"][data-compact] {
-  gap: 10px;
+  gap: var(--space-2);
 }
 [data-ui="form-row"] {
   display: flex;
@@ -157,11 +157,11 @@ select[data-ui="form-control"] {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 28px;
+  padding: var(--site-card-padding);
   box-shadow: var(--shadow-lg);
 }
 [data-ui="form-card"][data-compact] {
-  padding: 18px;
+  padding: var(--space-4);
   box-shadow: var(--shadow-md);
 }
 
@@ -181,9 +181,9 @@ select[data-ui="form-control"] {
 /* Status blocks */
 [data-ui="form-status"] {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 14px 16px;
+  padding: var(--space-4) 16px;
   border-radius: var(--form-control-radius);
   font-family: var(--font-sans);
   font-size: var(--text-body);

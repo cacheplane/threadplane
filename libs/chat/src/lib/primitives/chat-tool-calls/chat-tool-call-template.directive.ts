@@ -21,6 +21,7 @@ export interface ChatToolCallTemplateContext {
  *
  * Usage:
  *
+ * ```html
  *   <chat-tool-calls [agent]="agent" [message]="msg">
  *     <ng-template chatToolCallTemplate="search_web" let-call let-status="status">
  *       <my-search-result-card [query]="call.args.query" [status]="status"/>
@@ -29,6 +30,7 @@ export interface ChatToolCallTemplateContext {
  *       <chat-tool-call-card [toolCall]="call"/>
  *     </ng-template>
  *   </chat-tool-calls>
+ * ```
  */
 @Directive({
   selector: '[chatToolCallTemplate]',

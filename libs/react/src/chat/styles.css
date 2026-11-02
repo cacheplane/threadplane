@@ -937,3 +937,99 @@
   outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
   outline-offset: 3px;
 }
+
+.tp-welcome {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: var(--tp-welcome-padding, 24px);
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+}
+.tp-welcome__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-welcome-gap, 1.25rem);
+  inline-size: 100%;
+  max-inline-size: var(--tp-welcome-max-width, 36rem);
+  min-inline-size: 0;
+}
+.tp-welcome__title {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.tp-welcome__title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.tp-welcome__content,
+.tp-welcome__suggestions {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.tp-welcome__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.tp-welcome__title:empty,
+.tp-welcome__content:empty,
+.tp-welcome__suggestions:empty,
+.tp-welcome-suggestion__icon:empty {
+  display: none;
+}
+.tp-welcome-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 2.75rem;
+  padding-block: 0.625rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.75rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.tp-welcome-suggestion__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tp-welcome-suggestion__icon,
+.tp-welcome-suggestion__chevron {
+  flex: 0 0 auto;
+  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+}
+.tp-welcome-suggestion__icon {
+  display: inline-flex;
+  max-inline-size: 2rem;
+  overflow: hidden;
+}
+.tp-welcome-suggestion:dir(rtl) .tp-welcome-suggestion__chevron {
+  transform: scaleX(-1);
+}
+.tp-welcome-suggestion:enabled:hover {
+  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
+}
+.tp-welcome-suggestion:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-welcome-suggestion:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

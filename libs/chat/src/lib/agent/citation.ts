@@ -1,7 +1,7 @@
 /**
  * Provider-agnostic citation entry. Populated by adapters from message
  * metadata (LangGraph additional_kwargs.citations, AG-UI STATE_DELTA at
- * /citations/{messageId}). Pandoc-formatted [^id]: ... defs in message
+ * `/citations/{messageId}`). Pandoc-formatted `[^id]: ...` defs in message
  * content remain in the markdown AST sidecar and are merged via
  * CitationsResolverService at render time.
  */

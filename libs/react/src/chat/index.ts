@@ -1,4 +1,9 @@
 'use client';
+export { Welcome, type WelcomeProps } from './welcome.js';
+export {
+  WelcomeSuggestion,
+  type WelcomeSuggestionProps,
+} from './welcome-suggestion.js';
 export { ConfirmDialog, type ConfirmDialogProps } from './confirm-dialog.js';
 export {
   HistorySearchPalette,

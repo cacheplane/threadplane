@@ -63,6 +63,9 @@ jobs:
           mkdir -p deployments/shared-dev
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > deployments/shared-dev/.env
 
+      - name: Prepare shared deployment push receipt
+        run: python3 scripts/pin_shared_deployment_image.py prepare
+
       # An explicit ID fails closed if the free deployment is missing. Name
       # lookup can create a paid replacement, so never use --name here.
       - name: Update existing cockpit-dev-free
@@ -71,16 +74,21 @@ jobs:
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
 
-      # Local push evidence only; --no-wait does not establish provider readiness.
+      # Consume the owned receipt from the actual nonquiet CLI push.
       - name: Record shared deployment image evidence
         id: image_evidence
         shell: bash
         run: python3 scripts/pin_shared_deployment_image.py evidence
 
-      # Desired configuration only. A separate provider check must establish
-      # active == latest, DEPLOYED, and the exact immutable image before proof.
+      # Pin desired configuration, then observe exact-image provider readiness.
       - name: Pin existing shared deployment image
         run: python3 scripts/pin_shared_deployment_image.py pin
+        env:
+          IMAGE_URI: ${{ steps.image_evidence.outputs.image_uri }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+
+      - name: Verify shared deployment readiness
+        run: python3 scripts/pin_shared_deployment_image.py verify
         env:
           IMAGE_URI: ${{ steps.image_evidence.outputs.image_uri }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}

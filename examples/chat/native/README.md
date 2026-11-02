@@ -242,6 +242,27 @@ clock; explicit application Refresh and creation outcomes supply new timestamps.
 There is no periodic timer or background request. Angular receives the optional
 row field through the shared projection and retains its existing title-only UI.
 
+## React empty-conversation welcome (private T22/T23 slice)
+
+Native React composes controlled `Welcome` and `WelcomeSuggestion` around the
+existing `ChatInput`. Suggestions appear only for a selected ready conversation
+whose runtime is idle, with no runtime or displayed messages, error, reconnect,
+active submission or pending/unconfirmed selected-conversation deletion, and
+whose application permits submission. Loading, errors, history and active runs
+do not expose suggestion controls.
+
+Selection only prefills the exact suggestion value and focuses the textarea.
+Any existing draft, including whitespace, protects that draft from replacement.
+Sending requires the existing explicit Send or Ctrl/Command+Enter action. The
+same mounted textarea survives greeting/suggestion eligibility changes, retaining
+its draft and focus. Current application, conversation and eligibility checks
+expire stale controls before they can replace a newer draft.
+
+The application still owns selection, session lifetime, draft, submission, stop
+and disposal. The primitives add no internal lifecycle or network work. This is
+bounded private T22 presentation and T23 native composition; full parity and a
+public release remain open.
+
 ## Setup and commands
 
 Run commands from the repository root using **Node 22 and npm 10** (locally

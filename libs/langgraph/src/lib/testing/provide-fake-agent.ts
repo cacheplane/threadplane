@@ -7,7 +7,7 @@ import { FakeStreamTransport } from './fake-stream.transport';
  * Wire an in-process fake LangGraph agent into Angular DI.
  *
  * Streams a canned assistant reply (see FakeAgentConfig) with no backend —
- * the symmetric counterpart to @threadplane/ag-ui's provideFakeAgent(). For
+ * the symmetric counterpart to `@threadplane/ag-ui`'s `provideFakeAgent()`. For
  * advanced manual scripting (tool calls, interrupts, multi-batch), provide
  * the agent yourself with
  * `provideAgent({ assistantId, transport: new MockAgentTransport(...) })`.

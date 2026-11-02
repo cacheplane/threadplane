@@ -15,6 +15,8 @@ export default defineConfig({
     include: [
       'scripts/apply-migrations.spec.ts',
       'scripts/growth-control.spec.ts',
+      'scripts/growth-linkedin.spec.ts',
+      'scripts/growth-linkedin-eml.spec.ts',
       'scripts/growth-observability.spec.ts',
       'scripts/import-resend-lifecycle.spec.ts',
       'scripts/cancel-resend-lifecycle.spec.ts',

@@ -155,7 +155,7 @@ export default async function DocsPage({ params }: DocsRouteProps) {
   ];
 
   const docsSlot = (
-    <div className="docs-workspace-article">
+    <div className="docs-workspace-article" data-docs-section={section}>
       <DocsSearch library={library as LibraryId} />
       <div className="flex min-w-0 docs-article-layout">
         <div className="flex-1 min-w-0">

@@ -169,20 +169,17 @@ test.describe('desktop nav panels', () => {
     await page.locator('.nav-panel').evaluate((el) =>
       Promise.all(el.getAnimations().map((animation) => animation.finished)),
     );
-    const rowBox = await page.locator('.nav-desktop').boundingBox();
     const panelBox = await page.locator('.nav-panel').boundingBox();
     const itemBox = await page
       .locator('.nav-panel .nav-panel-item')
       .first()
       .boundingBox();
-    if (!rowBox || !panelBox || !itemBox)
+    if (!panelBox || !itemBox)
       throw new Error('Nav geometry has no box');
 
-    // The band between the trigger row's bottom edge and the panel's top edge
-    // is the row's own `py-4 md:py-5` padding. It is real space the pointer
-    // has to cross, and it used to belong to neither element: leaving the row
-    // scheduled a close, and only arriving at the panel could cancel it.
-    const gapTop = rowBox.y + rowBox.height;
+    // The group now fills the header height; measure pointer travel from the
+    // visible trigger itself, not the group's enlarged hit box.
+    const gapTop = triggerBox.y + triggerBox.height;
     const gapBottom = panelBox.y;
     expect(gapBottom).toBeGreaterThan(gapTop);
 
@@ -258,9 +255,9 @@ test.describe('desktop nav row on a wide screen', () => {
     expect(Math.abs(content.left - textLeft)).toBeLessThanOrEqual(1);
     expect(Math.abs(content.right - textRight)).toBeLessThanOrEqual(1);
 
-    // The first trigger follows the logo after a 40px lead, not a 1200px one.
-    expect(libraries.x - (logo.x + logo.width)).toBeGreaterThanOrEqual(38);
-    expect(libraries.x - (logo.x + logo.width)).toBeLessThanOrEqual(42);
+    // The first trigger follows the logo by the shared 32px spacing step.
+    expect(libraries.x - (logo.x + logo.width)).toBeGreaterThanOrEqual(31);
+    expect(libraries.x - (logo.x + logo.width)).toBeLessThanOrEqual(33);
 
     // The CTA still closes the row at the content box's right edge.
     expect(Math.abs(cta.x + cta.width - content.right)).toBeLessThanOrEqual(1);

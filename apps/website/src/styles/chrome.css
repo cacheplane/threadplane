@@ -10,69 +10,24 @@
  * Fonts: unified onto the next/font vars — see the font note atop ui.css.
  */
 
-/* One nav height. Everything that offsets against the nav — the docs shell's
- * top padding, both sticky rails, the mobile overlay, and html's scroll-padding
- * for anchor jumps — reads this one variable instead of hardcoding its own
- * guess (the old hardcoded 80px left 22px of dead space on phones; anchors
- * landed 81px under the nav).
- *
- * The nav has THREE heights, not two, because padding and content step at
- * different breakpoints (Nav.tsx): the inner row is `px-6 py-4 md:px-8 md:py-5`,
- * so padding grows at md (768px), but the tall `hidden lg:flex` link row only
- * appears at lg (1024px). Between them the nav is 66px — a 25px logo in 40px of
- * padding plus the 1px border. This variable used to jump straight to 81px at
- * md, so from 768px to 1023px every offset overshot by 15px: dead space above
- * the docs column, and the mobile drawer (top: nav-h - 1px) hung 14px below the
- * nav it is supposed to be attached to. These are measured, not derived, so
- * only a real browser can hold them honest: e2e/nav-height.spec.ts asserts
- * nav.height === --nav-h at each of the three steps.
- *
- * --nav-row-pad is that same row's block padding on its own — the `py-4
- * md:py-5` half of `px-6 py-4 md:px-8 md:py-5`. It has only TWO steps, not
- * three: padding grows at md and never again, so the lg entry below is
- * deliberately absent and 20px carries through. .nav-panel-shell reads it to
- * bridge the gap between a trigger and its panel (see the note there), so a
- * wrong value here is a dead zone, not a cosmetic drift. */
+/* Hashbrown's 64px header at every width. The custom menu bridge reads the
+ * row padding so pointer travel stays inside the panel's hit area. All shell,
+ * anchor and drawer offsets continue to read --nav-h. */
 :root {
-  --nav-h: 58px;
-  --nav-row-pad: 16px;
-}
-@media (min-width: 768px) {
-  :root {
-    --nav-h: 66px;
-    --nav-row-pad: 20px;
-  }
-}
-@media (min-width: 1024px) {
-  :root {
-    --nav-h: 81px;
-  }
-}
-
-/* Docs condenses to one height at every width. The three marketing steps exist
- * because padding grows at md while the tall link row only appears at lg; docs
- * keeps the short padding throughout, so it has no such asymmetry. Still
- * measured, not derived — e2e/nav-height.spec.ts pins both ladders.
- *
- * This beats the media queries above regardless of source order: `:has()`
- * takes the specificity of its most specific argument, so this scores (0,3,0)
- * against plain `:root`'s (0,1,0), and media queries add nothing. The <nav> is
- * server-rendered, so it matches on first paint with no flash of the taller
- * marketing bar. */
-:root:has(.nav-bar[data-route='docs']) {
-  --nav-h: 58px;
-  /* Docs pins the row's padding to a flat 16px at every width (see the
-   * `.nav-bar[data-route='docs'] > div` rule below), so the bridge has to
-   * shrink with it. Left at the marketing 20px the shell would start 4px
-   * ABOVE the trigger row's bottom edge and lie over the triggers, swallowing
-   * the mouseenter that switches from one panel to the next. */
-  --nav-row-pad: 16px;
+  --nav-h: 64px;
+  --nav-row-pad: 14px;
 }
 
 /* Footer */
 .footer-root {
+  padding-inline: 0;
+  margin-top: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+}
+.footer-root > div {
+  max-width: var(--container-page);
+  padding-inline: var(--site-gutter);
 }
 .footer-tagline {
   color: var(--color-text-muted);
@@ -118,88 +73,41 @@
 /* Nav */
 .nav-logo-link {
   text-decoration: none;
-  /* The link is a flex item, so it is blockified; left alone its height came
-   * from a 24px line box with the 18px inline-flex LogoMark sitting on that
-   * line's baseline — top-aligned, its centre 3.5px above the links, the
-   * GitHub mark, and the CTA. Centre the mark inside the box instead.
-   *
-   * The 25px is that same box, kept on purpose: on docs and on phones the
-   * logo is the tallest thing in the row, so it sets the bar's measured
-   * height (16 + 25 + 16 + 1 = 58), which --nav-h and e2e/nav-height.spec.ts
-   * pin. Collapsing it to the mark's 18px would shrink the bar to 51px and
-   * leave every --nav-h offset 7px too deep. */
+  /* Centre the mark and wordmark with the 36px nav controls. The fixed
+   * row owns header height, so font baselines cannot change shell offsets. */
   display: flex;
   align-items: center;
-  min-height: 25px;
+  min-height: var(--site-control-md);
 }
 .nav-link {
-  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--site-control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.nav-link:hover {
+.nav-link:hover,
+.nav-link:focus-visible {
   color: var(--color-accent);
+  background: var(--site-hover);
 }
-/* One surface, no shadow, no state.
- *
- * A translucent, blurred bar reads correctly over the hero's saturated yellow
- * AND over white content, so there is nothing to switch: no route list, no
- * sentinel, no observer, and — critically — no hydration-dependent state, which
- * is what used to paint a white bar over the yellow hero until React caught up.
- *
- * The two fallbacks below are not optional. A translucent bar whose blur does
- * not run is an unreadable smear of hero yellow behind grey links, so both the
- * unsupported case and the reduced-transparency preference fall all the way
- * back to the opaque white surface.
- *
- * Do NOT add `-webkit-backdrop-filter` by hand. Lightning CSS (Next's CSS
- * pipeline) prefixes this for us — it emits the -webkit- line, and expands the
- * @supports condition below into `not ((-webkit-…) or (…))` on its own. Writing
- * the prefixed property in this file makes Lightning collapse the pair to the
- * *prefixed one only*, and Chromium has no `-webkit-backdrop-filter` at all
- * (`CSS.supports('-webkit-backdrop-filter','blur(1px)')` is false), so the blur
- * silently stops running in Chrome. Measured: the bar over the hero sampled
- * rgb(255,233,184) — a flat alpha blend with no saturate — until the hand
- * prefix came out. The @supports fallback cannot catch it either, because
- * Chrome does support the unprefixed property it is asking about. */
+.nav-link[aria-expanded='true'] {
+  color: var(--color-accent);
+  background: var(--site-highlight);
+}
+/* Direction A: one opaque white surface, a fine rule, no scroll state. */
 .nav-bar {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(14px);
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
 }
-@supports not (backdrop-filter: blur(1px)) {
-  .nav-bar {
-    background: var(--color-surface);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .nav-bar {
-    background: var(--color-surface);
-    backdrop-filter: none;
-  }
-}
-/* Inside docs the bar is chrome around the reader's content, not the page's
- * headline, so it condenses: the md/lg padding step is flattened back to the
- * phone's 16px at every width, and the CTA demotes from a fill button to a
- * text link.
- *
- * The demotion is also what makes the height flat. The `padding-block: 12px;
- * margin-block: -12px` pair below is the same hit-area trick as .nav-hamburger:
- * it pads the box for a larger click target, then pulls it back with an equal
- * negative margin, so the flex row sizes off the *margin* box — which is a flat
- * 16px regardless of the element's own content height. That is what actually
- * holds the 58px; `height: auto` is belt-and-braces on top of it (verified by
- * mutation: setting `height: 40px` back here still measures a flat 58px once
- * the negative margin is in place). With the margin box pinned at 16px, the
- * 25px logo is the tallest thing left in the row, so 16 + 25 + 16 + the 1px
- * border measures 58px from 375px up. Raising the padding here without
- * re-measuring --nav-h above is what re-opens the dead-space bug.
- *
- * `Button` stamps data-ui/data-variant/data-size and adds no class of its own,
- * so this has to select on the attributes — a `.btn` selector matches nothing
- * and fails silently. */
-.nav-bar[data-route='docs'] > div {
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
+
 /* Marketing rows share the page's container. Every section centres the
  * Container primitive (ui.css): --container-page wide with a
  * --spacing-container-x gutter. The bar used to span the viewport, which on
@@ -219,20 +127,15 @@
 .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
   background: none;
   color: var(--color-accent);
-  height: auto;
-  padding-inline: 0;
+  height: var(--site-control-md);
+  padding-inline: var(--space-3);
   border-color: transparent;
   box-shadow: none;
-  /* line-height:1 plus zero padding collapses the hit area to the text
-   * itself — ~16px tall (14px text + the 1px transparent border on each
-   * side). Same trick as .nav-hamburger below: pad the box for a larger
-   * click target, then pull it back with an equal negative margin so the
-   * flex row sizes off the unchanged margin box — neither the visual
-   * position nor the 58px nav height moves. 12px matches the row's own
-   * 16px top/bottom padding with room to spare, so the taller hit area
-   * still lands inside the bar instead of leaking into the content below. */
-  padding-block: 12px;
-  margin-block: -12px;
+  padding-block: 0;
+  margin-block: 0;
+}
+.nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary']:hover {
+  background: var(--site-hover);
 }
 .nav-hamburger {
   color: var(--color-text-primary);
@@ -288,14 +191,15 @@
 .nav-mobile-github-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 14px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
   border-radius: 8px;
   min-height: 48px;
   color: var(--color-text-secondary);
   text-decoration: none;
   font-family: var(--font-sans);
   font-size: 16px;
+  line-height: 24px;
 }
 .nav-mobile-cta-wrap {
   margin-top: 8px;
@@ -346,7 +250,7 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
     bottom: 16px;
     width: auto;
     max-width: none;
-    padding: 16px 18px;
+    padding: 16px var(--space-5);
   }
 }
 .toast-close {
@@ -386,10 +290,11 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 }
 .toast-title {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 1.05rem;
   color: var(--color-text-primary);
   line-height: 1.3;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 .toast-cta-copy {
   font-size: 0.82rem;
@@ -399,7 +304,7 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 }
 .toast-button-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
 }
 .toast-not-now {
@@ -410,23 +315,19 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   font-size: 0.68rem;
   color: var(--color-text-muted);
   text-decoration: underline;
-  padding: 8px 6px;
+  padding: 8px var(--space-2);
   min-height: 24px;
 }
 .toast-mt-section {
   margin-top: 8px;
 }
 
-/* Nav panels
- *
- * No borders and no dividers anywhere: the hovered item separates itself with a
- * soft shadow on white. Yellow is fill-only (1.84:1 on white) so it appears
- * here only as the footer arrow chip — never as text, never as a panel wash. */
+/* Custom nav panels: flat white, one perimeter rule, rounded hover fills.
+ * Keep the custom columns, footer links, trigger positioning and hit bridge. */
 .nav-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: none;
+  gap: var(--space-1);
   border: none;
   cursor: pointer;
 }
@@ -456,10 +357,10 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   z-index: 60;
 }
 .nav-panel {
-  background: var(--color-surface-tinted, #fafafa);
+  background: var(--color-bg);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(10, 10, 10, 0.08), 0 8px 24px rgba(10, 10, 10, 0.06);
-  padding: 28px 24px 24px;
+  border: 1px solid var(--color-border);
+  padding: var(--space-6);
   /* As wide as its columns, never the bar. The max-width is a last resort for
    * a panel wider than the viewport itself; clampPanelLeft handles the rest. */
   width: max-content;
@@ -479,10 +380,10 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 }
 .nav-panel-cols {
   display: grid;
-  gap: 20px;
+  gap: var(--space-6);
   grid-auto-flow: column;
   /* Each column is as wide as its widest item, and no item is wider than
-   * 16.5rem (.nav-panel-item below), so a column is 264px at most and a
+   * 16rem (.nav-panel-item below), so a column is 256px at most and a
    * short column stays short. Equal tracks were tried first: at 264px the
    * Docs panel came out 880px, and with the container capped at 1200px the
    * Docs trigger is a fixed 817px from the row's content edge at every wide
@@ -502,7 +403,7 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
-  gap: 6px;
+  gap: var(--space-2);
 }
 /* Four cards across is ~1080px, which is more than the row's content box
  * below ~1160px. Two rows of two keeps the cards readable there;
@@ -516,30 +417,27 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 }
 .nav-panel-col-head {
   display: block;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
   color: var(--color-text-muted);
-  margin: 0 0 12px 13px;
+  margin: 0 0 var(--space-2) var(--space-3);
 }
 .nav-panel-item {
   display: flex;
-  gap: 11px;
+  gap: var(--space-3);
   align-items: flex-start;
   /* Caps the column it sits in (see .nav-panel-cols). Most descriptions fit
    * on one line inside it; the longest wrap to two. */
-  max-width: 16.5rem;
-  padding: 12px 13px;
-  border-radius: 10px;
+  max-width: 16rem;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
   text-decoration: none;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: background 0.15s;
 }
 .nav-panel-item:hover,
 .nav-panel-item:focus-visible {
-  background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 6px 16px rgba(10, 10, 10, 0.05);
+  background: var(--site-hover);
 }
 .nav-panel-item-chip {
   width: 28px;
@@ -554,15 +452,15 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 }
 .nav-panel-item-label {
   display: block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.3;
   color: var(--color-accent);
 }
 .nav-panel-item-desc {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-muted);
   margin-top: 4px;
@@ -571,13 +469,13 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 18px;
+  margin-top: var(--space-6);
 }
 .nav-panel-footer-lead {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
   color: var(--color-text-muted);
-  padding-left: 13px;
+  padding-left: var(--space-3);
 }
 .nav-panel-footer .nav-panel-item-chip {
   background: var(--color-signal, #ffaf00);
@@ -590,29 +488,24 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
  * NavDesktop's layout effect relies on both being the same box. */
 .nav-desktop {
   position: static;
-  /* The row is `items-center`, so this box would otherwise shrink to its own
-   * tallest child and float in the middle of the row's content. On docs that
-   * left 2.5px between its bottom edge and where .nav-panel-shell's bridge
-   * starts — a second, smaller version of the dead zone the bridge exists to
-   * close, since the row's content height there is set by the 25px logo, not
-   * by these 20px links. Stretching pins the bottom edge to the content box
-   * so the two hit areas meet exactly. Children stay centred by this
-   * element's own `items-center`, so nothing moves: measured on /docs, the
-   * panel still rests at y=57 and the bar still measures 58px. On marketing
-   * the 40px CTA already made this box the full content height, so there
-   * stretching is a no-op. */
+  /* Stretch the hit area to the row's content box so the pointer bridge
+   * starts exactly where the trigger group ends. Children stay centred. */
   align-self: stretch;
   /* Fill the row so .nav-desktop-actions can reach its right edge. */
   flex: 1 1 auto;
 }
 .nav-desktop-primary {
-  margin-left: 40px;
+  margin-left: var(--space-8);
+  gap: var(--space-2);
 }
 .nav-desktop-actions {
   margin-left: auto;
+  gap: var(--space-2);
 }
 .nav-bar > div {
   position: relative;
+  height: calc(var(--nav-h) - 1px);
+  padding: 0 var(--site-gutter);
 }
 
 /* Mobile drill-in
@@ -625,29 +518,29 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   gap: 8px;
   width: 100%;
   min-height: 44px;
-  padding: 11px 10px 13px;
+  padding: var(--space-3) var(--space-3) var(--space-3);
   background: none;
   border: none;
   color: var(--color-accent);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
 .nav-mobile-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 44px;
-  padding: 13px 10px;
+  padding: var(--space-3) var(--space-3);
   border-radius: 9px;
   background: none;
   border: none;
   text-align: left;
   color: var(--color-accent);
-  font-family: var(--font-mono);
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: 15px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -656,11 +549,22 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   margin-left: auto;
   color: var(--color-text-muted);
 }
+.nav-mobile-row:hover,
+.nav-mobile-back:hover,
+.nav-mobile-github-link:hover {
+  background: var(--site-hover);
+}
+.nav-mobile-row:focus-visible,
+.nav-mobile-back:focus-visible,
+.nav-mobile-github-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .nav-mobile-panel {
   animation: nav-level-in 0.18s ease-out;
 }
 .nav-mobile-group + .nav-mobile-group {
-  margin-top: 18px;
+  margin-top: var(--space-5);
 }
 /* The desktop footer's row layout has room for the lead phrase beside the
  * link; mobile's narrower column does not, so the two wrap onto the same
@@ -669,11 +573,11 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 .nav-mobile-panel .nav-panel-footer {
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
-  margin-top: 18px;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
 }
 .nav-mobile-panel .nav-panel-footer-lead {
-  padding-left: 10px;
+  padding-left: var(--space-3);
 }
 @keyframes nav-level-in {
   from {

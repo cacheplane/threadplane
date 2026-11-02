@@ -94,7 +94,7 @@ interface PendingArm {
  * The page-wide store of armed runs: at most one pending arm per adapter.
  * Listens for arm and disarm commands on `target` and answers each with acks.
  *
- * @internal Exported for tests; adapters use {@link ɵdevtoolsScriptedRuns}.
+ * @internal Exported for tests; adapters use {@link "ɵdevtoolsScriptedRuns"}.
  */
 export interface ScriptedRunStore {
   take(adapter: DevtoolsAdapter): LangGraphScriptedRun | AgUiScriptedRun | null;
@@ -200,7 +200,7 @@ let pageStore: ScriptedRunStore | null = null;
  * The development-only scripted-run source for one adapter, or `null` in
  * production builds, outside a browser, or when the page set
  * `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true` — the same gate as
- * {@link ɵcreateDevtoolsEmitter}.
+ * {@link "ɵcreateDevtoolsEmitter"}.
  *
  * The first call on a page installs the `threadplane:devtools:arm` and
  * `threadplane:devtools:disarm` listeners; nothing listens before an agent

@@ -27,6 +27,7 @@ export async function workflow(
     campaignEnrollmentEnabled: configuration.campaignEnrollmentEnabled,
     installRuntimeHelloEnabled: configuration.installRuntimeHelloEnabled,
     installDigestEnabled: configuration.installDigestEnabled,
+    linkedInIngestEnabled: configuration.linkedInIngestEnabled,
     observationProcessingEnabled: configuration.observationProcessingEnabled,
     marketingPostingEnabled: configuration.marketingPostingEnabled,
     campaignEnrollmentStartAt: configuration.campaignEnrollmentStartAt,

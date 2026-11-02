@@ -26,11 +26,13 @@ export interface ChatInterruptTemplateContext {
  *
  * Usage:
  *
+ * ```html
  *   <chat [agent]="agent">
  *     <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
  *       <my-approval-card [interrupt]="interrupt" (decide)="agent.submit({ resume: $event })" />
  *     </ng-template>
  *   </chat>
+ * ```
  */
 @Directive({
   selector: 'ng-template[chatInterruptTemplate]',

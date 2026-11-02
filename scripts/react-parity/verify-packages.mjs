@@ -234,10 +234,14 @@ export type DebugValueContract = DebugAssert<DebugEqual<DebugValue, null | boole
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
+import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: ReactNode; readonly children?: ReactNode; readonly suggestions?: ReactNode; readonly className?: string }>>;
+export type WelcomeSuggestionContract = Assert<Equal<WelcomeSuggestionProps, { readonly label: string; readonly value: string; readonly onSelect: (value: string) => void; readonly description?: string; readonly icon?: ReactNode; readonly disabled?: boolean; readonly className?: string }>>;
+export type WelcomeParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Welcome>[0], WelcomeProps>>;
+export type WelcomeSuggestionParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').WelcomeSuggestion>[0], WelcomeSuggestionProps>>;
 export type TimelineItemContract = Assert<Equal<TimelineItem, { readonly id: string; readonly label: string; readonly description?: string; readonly disabled?: boolean }>>;
 export type TimelineContract = Assert<Equal<TimelineProps, { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => ReactNode }>>;
 export type HistorySearchResultContract = Assert<Equal<HistorySearchResult, { readonly id: string; readonly title: string; readonly subtitle?: string }>>;
@@ -396,6 +400,8 @@ export function assertSupportedExports(project, entry) {
         'ProjectNameForm',
         'ThreadRenameForm',
         'ToolObservation',
+        'Welcome',
+        'WelcomeSuggestion',
       ],
       'react/debug': ['ChatDebug', 'StateDiff'],
       'react/markdown': ['Markdown'],
