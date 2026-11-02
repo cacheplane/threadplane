@@ -7,13 +7,20 @@ import {
   type MarkdownSnapshot,
 } from '@threadplane/content/markdown';
 import { MarkdownImage } from './markdown-image.js';
+import type { Citation } from '@threadplane/core';
+import { InlineCitation } from './inline-citation.js';
 
 /** Supplies the accepted Markdown snapshot to present, with parser ownership retained by the caller. */
 export interface MarkdownProps {
   readonly snapshot: MarkdownSnapshot;
+  /** Per-message source metadata; exact IDs take precedence over Markdown definitions. */
+  readonly citations?: readonly Citation[];
 }
 /** Present an accepted snapshot. Its lifetime belongs to the application. */
-export function Markdown({ snapshot }: MarkdownProps) {
+export function Markdown({ snapshot, citations = [] }: MarkdownProps) {
+  const sources = new Map(citations.map((citation) => [citation.id, citation]));
+  if (sources.size !== citations.length)
+    throw new TypeError('Duplicate citation IDs in Markdown.');
   return (
     <div
       style={{
@@ -28,6 +35,7 @@ export function Markdown({ snapshot }: MarkdownProps) {
           key={snapshot.document.generation}
           node={snapshot.root}
           citations={snapshot.root.citations}
+          sources={sources}
         />
       )}
     </div>
@@ -37,11 +45,13 @@ export function Markdown({ snapshot }: MarkdownProps) {
 function NodeView({
   node,
   citations,
+  sources,
   header = false,
   insideAnchor = false,
 }: {
   readonly node: MarkdownNode;
   readonly citations: ReadonlyMap<string, CitationDefinition>;
+  readonly sources: ReadonlyMap<string, Citation>;
   readonly header?: boolean;
   readonly insideAnchor?: boolean;
 }) {
@@ -59,6 +69,7 @@ function NodeView({
             key={`${child.type}:${child.id}`}
             node={child}
             citations={citations}
+            sources={sources}
             header={node.type === 'table-row' && node.isHeader}
             insideAnchor={insideAnchor || href !== undefined}
           />
@@ -146,6 +157,7 @@ function NodeView({
                   key={`${row.type}:${row.id}`}
                   node={row}
                   citations={citations}
+                  sources={sources}
                   insideAnchor={insideAnchor}
                 />
               ))}
@@ -158,6 +170,7 @@ function NodeView({
                   key={`${row.type}:${row.id}`}
                   node={row}
                   citations={citations}
+                  sources={sources}
                   insideAnchor={insideAnchor}
                 />
               ))}
@@ -173,16 +186,13 @@ function NodeView({
         <td style={{ textAlign: node.alignment ?? undefined }}>{children}</td>
       );
     case 'citation-reference': {
-      // Parser 0.5.8 can overwrite the node's index with its sibling position.
-      const definition = citations.get(node.refId);
-      return definition ? (
-        <sup aria-label={`Citation ${definition.index}`}>
-          [{definition.index}]
-        </sup>
-      ) : (
-        <sup aria-label={`Unresolved citation ${node.refId}`}>
-          [^{node.refId}]
-        </sup>
+      return (
+        <InlineCitation
+          refId={node.refId}
+          sources={sources}
+          definitions={citations}
+          insideAnchor={insideAnchor}
+        />
       );
     }
     case 'link-reference': {

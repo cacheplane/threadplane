@@ -71,6 +71,7 @@ function fixture(t, framework) {
       : [
           'use-agent.js',
           'markdown/markdown.js',
+          'markdown/inline-citation.js',
           'chat/tool-observation.js',
           'chat/message-list.js',
           'chat/reasoning.js',
@@ -382,6 +383,17 @@ for (const framework of ['react', 'angular']) {
       assert.throws(() => readViewProof(f.root));
     });
 }
+test('React rejects missing installed inline citation runtime', (t) => {
+  const f = fixture(t, 'react');
+  const path =
+    'node_modules/@threadplane/react/src/markdown/inline-citation.js';
+  f.record.runtime = f.record.runtime.filter((p) => p !== path);
+  delete f.record.inputs[path];
+  rmSync(join(f.root, 'inputs', path));
+  f.save();
+  assert.throws(() => readViewProof(f.root), /inline citation runtime/);
+});
+
 for (const [graph, extension] of [
   ['runtime', '.js'],
   ['types', '.d.ts'],

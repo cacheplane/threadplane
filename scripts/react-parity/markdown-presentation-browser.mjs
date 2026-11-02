@@ -394,7 +394,13 @@ export async function verifyPresentationBrowser(browser, url) {
             '/resolved'
           );
           assert.equal(
-            await panel.locator('sup[aria-label="Citation 1"]').count(),
+            await panel
+              .locator(
+                panel === panels[0]
+                  ? 'sup[aria-label="Citation 1: Citation source"]'
+                  : 'sup[aria-label="Citation 1"]'
+              )
+              .count(),
             1
           );
           for (const name of ['collapsed', 'shortcut'])
@@ -447,10 +453,19 @@ export async function verifyPresentationBrowser(browser, url) {
       }
       if (evidence.mounted.react && evidence.mounted.angular) {
         const [react, angular] = await Promise.all(panels.map(semantics));
+        // React adds the source-specific label checked above. Compare the shared
+        // presentation without mutating the collected React semantics.
+        const sharedReact = {
+          ...react,
+          citations: react.citations.map(([text, label]) => [
+            text,
+            label === 'Citation 1: Citation source' ? 'Citation 1' : label,
+          ]),
+        };
         assert.deepEqual(
           angular,
-          react,
-          'Native semantic parity after ' + action
+          sharedReact,
+          'Shared native semantics after ' + action
         );
         assert.deepEqual(
           react.invalid,

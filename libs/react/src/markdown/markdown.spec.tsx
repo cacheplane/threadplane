@@ -326,7 +326,7 @@ describe('Markdown', () => {
     expect(view.container.textContent).toContain('$x$');
     expect(view.container.textContent).toContain('\\(y\\)');
     expect(view.container.textContent).toContain('$$\nx+y\n$$');
-    expect(view.getByLabelText('Citation 1').textContent).toBe('[1]');
+    expect(view.getByLabelText('Citation 1: Source').textContent).toBe('[1]');
   });
   it('uses definition numbering and preserves unresolved citation markers', () => {
     const view = render(
@@ -337,9 +337,9 @@ describe('Markdown', () => {
       />
     );
     expect(
-      view.getAllByLabelText('Citation 2').map((node) => node.textContent)
+      view.getAllByLabelText('Citation 2: Second').map((node) => node.textContent)
     ).toEqual(['[2]', '[2]']);
-    expect(view.getByLabelText('Citation 1').textContent).toBe('[1]');
+    expect(view.getByLabelText('Citation 1: First').textContent).toBe('[1]');
     expect(view.getByLabelText('Unresolved citation missing').textContent).toBe(
       '[^missing]'
     );

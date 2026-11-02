@@ -47,12 +47,15 @@ const values = (text) => ({
 });
 const citationSnippet =
   '<img src=x>\nLiteral evidence ' + 'Evidence'.repeat(100);
-const citationMetadata = (title = '<b>Supplied source</b>') => [
+const citationMetadata = (
+  title = '<b>Supplied source</b>',
+  url = 'https://sources.invalid/article'
+) => [
   {
     id: '__proto__',
     index: 7,
     title,
-    url: 'https://sources.invalid/article',
+    url,
     snippet: citationSnippet,
     sourceType: 'Authored',
     iconUrl: 'https://images.invalid/icon',
@@ -63,12 +66,15 @@ const citationMetadata = (title = '<b>Supplied source</b>') => [
     title: 'Blocked source',
     url: 'javascript:alert(1)',
   },
-  { id: '', index: 3, title: '', snippet: '' },
+  { id: 'absent', index: 3, title: '', snippet: '' },
+  { id: '', index: 4, title: '', snippet: '' },
 ];
-const citedValues = (text, title) => {
-  const event = values(text);
+const citationReferences =
+  '\n\nSources [^__proto__], [^blocked], [^absent], [^missing].';
+const citedValues = (text, title, url) => {
+  const event = values(text + citationReferences);
   event.data.messages[0].additional_kwargs = {
-    citations: citationMetadata(title),
+    citations: citationMetadata(title, url),
   };
   return event;
 };
@@ -77,6 +83,13 @@ const citedInitial = () => {
   steps[2].body[0].values.messages[0].additional_kwargs = {
     citations: citationMetadata(),
   };
+  steps[2].body[0].values.messages[0].content += citationReferences;
+  steps[2].body[0].values.messages.unshift({
+    type: 'human',
+    id: 'question',
+    content: 'User marker [^__proto__]',
+    additional_kwargs: { citations: citationMetadata() },
+  });
   return steps;
 };
 const summaryTitle = '<img src=x onerror=alert(1)> Supplied recap';
@@ -766,7 +779,31 @@ export async function runProductionProofs(browser, retained) {
             name: 'Sources',
             exact: true,
           });
-          await expect(sources.getByRole('listitem')).toHaveCount(3);
+          await expect(sources.getByRole('listitem')).toHaveCount(4);
+          const inline = page.getByRole('link', {
+            name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+            exact: true,
+          });
+          await expect(inline).toHaveAttribute(
+            'href',
+            'https://sources.invalid/article'
+          );
+          await expect(inline).toHaveAttribute('target', '_blank');
+          await expect(inline).toHaveAttribute('rel', 'noopener noreferrer');
+          await expect(inline).toHaveText('[7]');
+          await expect(
+            page.getByLabel('Citation 2: Blocked source', { exact: true })
+          ).toHaveText('[2]');
+          await expect(
+            page.getByLabel('Citation 3', { exact: true })
+          ).toHaveText('[3]');
+          await expect(
+            page.getByLabel('Unresolved citation missing', { exact: true })
+          ).toHaveText('[^missing]');
+          await expect(
+            page.getByLabel('Unresolved citation __proto__', { exact: true })
+          ).toHaveText('[^__proto__]');
+          await expect(page.locator('a a')).toHaveCount(0);
           await expect(sources.getByRole('link')).toHaveCount(1);
           await expect(sources.getByRole('link')).toHaveAttribute(
             'href',
@@ -1090,7 +1127,8 @@ export async function runProductionProofs(browser, retained) {
           citedValues('Draft obsolete words'),
           citedValues(
             '# Canonical answer\n\n- Corrected item',
-            'Corrected source'
+            'Corrected source',
+            'https://sources.invalid/corrected'
           ),
         ]),
       ],
@@ -1146,6 +1184,18 @@ export async function runProductionProofs(browser, retained) {
               .getByRole('region', { name: 'Sources', exact: true })
               .getByRole('link')
           ).toHaveText('Corrected source');
+          await expect(
+            page.getByRole('link', {
+              name: 'Citation 7: Corrected source (opens in new tab)',
+              exact: true,
+            })
+          ).toHaveAttribute('href', 'https://sources.invalid/corrected');
+          await expect(
+            page.getByRole('link', {
+              name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+              exact: true,
+            })
+          ).toHaveCount(0);
         }
         return {
           stopPhysicalCloseBeforeCleanup: true,

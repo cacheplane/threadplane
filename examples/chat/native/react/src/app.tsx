@@ -60,7 +60,12 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       {row.role === 'tool' ? (
         <pre>{row.message.content}</pre>
       ) : (
-        <Markdown snapshot={row.markdown} />
+        <Markdown
+          snapshot={row.markdown}
+          citations={
+            row.role === 'assistant' ? row.message.citations : undefined
+          }
+        />
       )}
       {row.role === 'assistant' && row.message.citations && (
         <Citations citations={row.message.citations} />

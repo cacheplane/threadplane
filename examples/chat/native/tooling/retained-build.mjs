@@ -230,6 +230,12 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    const inline =
+      'node_modules/@threadplane/react/src/markdown/inline-citation';
+    assert.ok(
+      p.bundler.inputs[inline + '.js'],
+      'Installed inline citation runtime required'
+    );
     for (const path of [
       'react/src/application.ts',
       'react/src/a2ui-message-content.ts',

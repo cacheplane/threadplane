@@ -150,7 +150,14 @@ after a failed load.
 
 The renderer preserves literal HTML as text, uses semantic lists/tables and
 disabled task checkboxes, and resolves references from the snapshot. Math remains
-delimited text; citations are numbered or unresolved text markers. Missing,
+delimited text. Optional readonly `citations` supplies per-message `Citation[]`:
+exact IDs override Markdown definitions, including sources with blocked or absent
+URLs. Duplicate supplied IDs throw `TypeError`. Otherwise definitions provide the
+index, literal title before their first immediate link/autolink, and destination.
+Safe targets become labelled external links; blocked or absent targets remain
+readable numbered markers, and unresolved IDs retain `[^id]`. Inside an existing
+anchor a citation stays a noninteractive marker. Replacing/removing metadata takes
+effect on the next render, with no metadata fetching or owner lifecycle. Missing,
 blocked and failed images show an accessible alt-text fallback. Destination
 classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. The root binding stays headless; rich math,

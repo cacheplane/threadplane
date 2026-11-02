@@ -241,6 +241,20 @@ function fixture(t, framework = 'react') {
     map[path] = sha256;
     artifacts['@threadplane/content'].push({ path: local, sha256 });
     if (framework === 'react') {
+      if (extension === '.js') {
+        const inline = 'src/markdown/inline-citation.js';
+        const inlinePath = 'node_modules/@threadplane/react/' + inline;
+        const inlineHash = put(
+          consumer,
+          inlinePath,
+          'installed inline citation'
+        );
+        map[inlinePath] = inlineHash;
+        artifacts['@threadplane/react'].push({
+          path: inline,
+          sha256: inlineHash,
+        });
+      }
       const render = 'src/render/render-spec' + extension;
       const renderPath = 'node_modules/@threadplane/react/' + render;
       const renderHash = put(
@@ -503,6 +517,17 @@ for (const framework of ['react', 'angular'])
         /message projection/i
       );
     });
+
+test('React retention requires installed inline citation runtime', (t) => {
+  const f = fixture(t, 'react');
+  delete f.provenance.bundler.inputs[
+    'node_modules/@threadplane/react/src/markdown/inline-citation.js'
+  ];
+  assert.throws(
+    () => captureRetainedBuild(f.directory, f),
+    /inline citation runtime/
+  );
+});
 
 for (const [graph, extension] of [
   ['compiler', '.d.ts'],
