@@ -11721,14 +11721,6 @@
       "note": "Private runtime citation projection now stages the aliases with owned plain metadata. Consolidation/removal at backend cutover remains planned; legacy arbitrary-extra and Date semantics are not claimed equivalent."
     },
     {
-      "id": "source:libs/langgraph/src/lib/internals/message-projection-cache.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "taskIds": [
         "T09",

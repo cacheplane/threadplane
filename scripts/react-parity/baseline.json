@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "fac2253daff6208702b48bff9b0291b733e2a540",
+  "baselineHead": "7f5671c97392dc824fecc80b0148b2e690f1190b",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/langgraph/src/lib/agent.fn.ts",
+      "libs/langgraph/src/lib/internals/message-projection-cache.ts",
+      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -14994,7 +14998,7 @@
       "id": "source:libs/langgraph/src/lib/agent.fn.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/agent.fn.ts",
-      "sha256": "886714789962c8acf3eba0b55bb10e7a66f4cdefdfddb2961710c760d1ac9130"
+      "sha256": "923e541fe5365584bfa67e1c047d67046fa8427ad83fe4618648233be85cdbd6"
     },
     {
       "id": "source:libs/langgraph/src/lib/agent.provider.ts",
@@ -15057,16 +15061,10 @@
       "sha256": "21b6b421d8953dbbafeb2e8cd985cf7e998c18e82332a49b17556e826222bb92"
     },
     {
-      "id": "source:libs/langgraph/src/lib/internals/message-projection-cache.ts",
-      "kind": "source",
-      "path": "libs/langgraph/src/lib/internals/message-projection-cache.ts",
-      "sha256": "0ab55a9853d18bea0e5b767df5e81eba106ef5f37e205c6b2768739db91e6767"
-    },
-    {
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "sha256": "a2f46259891a796b9bf2528afb14ad8dd677bbd9e160046ade8e863c48ee388b"
+      "sha256": "1de1fdb365951e33191cc641fa40fbe259eceae6cd0aac5daa313c229a5fe3d3"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",

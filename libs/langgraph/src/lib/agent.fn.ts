@@ -69,7 +69,6 @@ import { instrumentSubjects } from './internals/devtools';
 import { LANGGRAPH_CLIENT_OPTIONS, resolveClientOptions } from './client/client-options';
 import { buildBranchTree } from './internals/branch-tree';
 import { extractCitations } from './internals/extract-citations';
-import { createMemoizedMessageProjector } from './internals/message-projection-cache';
 import {
   createClientToolsCapability,
   mergeA2uiClientCapabilities,
@@ -398,18 +397,18 @@ export function agent<
 
   // ── Runtime-neutral projections ───────────────────────────────────────────
 
-  // Reuse only unchanged primitive history records. SDK instances and nested
-  // content remain conservative: they may mutate in place during streaming.
-  // The projector also checks delivery/timing and edits to previously returned
-  // neutral messages; raw identity alone is never proof of unchanged content.
-  const projectMessages = createMemoizedMessageProjector<BaseMessage>({
-    project: m => toMessage(m, manager.getReasoningDurationMs, manager.getMessageDelivery),
-    getDelivery: manager.getMessageDelivery,
-    getReasoningDurationMs: manager.getReasoningDurationMs,
-  });
+  // Project BaseMessage → Message on every recompute. We deliberately do
+  // NOT cache: the LangGraph SDK mutates the same AIMessage instance in
+  // place during token streaming (appends content to the same object), so
+  // any identity-based cache returns stale projections and Angular's
+  // `@let content = messageContent(message)` short-circuits — DOM never
+  // updates per token. DOM stability is provided by `track message.id`
+  // in chat-message-list, not by Message identity.
   const messagesNeutral = computed<Message[]>(() => {
     manager.deliveryRevision();
-    return projectMessages(rawMessages());
+    return rawMessages().map((m) =>
+      toMessage(m, manager.getReasoningDurationMs, manager.getMessageDelivery)
+    );
   });
 
   // Client-tool resolutions written client-side. The raw `toolCalls$` stream
