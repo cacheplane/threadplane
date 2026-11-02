@@ -33,9 +33,9 @@ describe('ChatScrollBubbleComponent', () => {
     expect(clicks).toBe(1);
   });
 
-  it('uses aria-label "Latest activity" in streaming mode', () => {
+  it('names the scroll action in streaming mode too', () => {
     expect(render('streaming').nativeElement.querySelector('button')!.getAttribute('aria-label'))
-      .toBe('Latest activity');
+      .toBe('Scroll to latest, response in progress');
   });
 
   it('uses aria-label "Scroll to latest" in idle mode', () => {

@@ -1553,3 +1553,305 @@ describe('ChatComponent — scrollToBottom', () => {
     expect(cmp.pinned()).toBe(true);
   });
 });
+
+/** jsdom reports :focus-visible false for programmatic focus; model keyboard (true) or pointer (false) focus. */
+function focusVisibleAs(keyboard: boolean) {
+  const original = Element.prototype.matches;
+  return vi.spyOn(Element.prototype, 'matches').mockImplementation(function (this: Element, selector: string) {
+    return selector === ':focus-visible' ? keyboard && this === document.activeElement : original.call(this, selector);
+  });
+}
+
+describe('ChatComponent — focus continuity from welcome to conversation', () => {
+  it('moves focus into the conversation composer when the first send replaces the welcome view', async () => {
+    const keyboard = focusVisibleAs(true);
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ messages: [] });
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    document.body.appendChild(fx.nativeElement);
+    try {
+      const welcomeTextarea = (fx.nativeElement as HTMLElement).querySelector('chat-welcome textarea') as HTMLTextAreaElement;
+      welcomeTextarea.focus();
+      expect(document.activeElement).toBe(welcomeTextarea);
+
+      agent.messages.set([{ id: 'u1', role: 'user', content: 'hello', delivery: staticDelivery('u1') }]);
+      fx.detectChanges();
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+
+      const composer = (fx.nativeElement as HTMLElement).querySelector('chat-window chat-input textarea');
+      expect(composer).not.toBeNull();
+      expect(document.activeElement).toBe(composer);
+    } finally {
+      (fx.nativeElement as HTMLElement).remove();
+      keyboard.mockRestore();
+    }
+  });
+
+  it('does not take focus when the conversation view appears without focus in the welcome view', async () => {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ messages: [] });
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    document.body.appendChild(fx.nativeElement);
+    try {
+      agent.messages.set([{ id: 'u1', role: 'user', content: 'hello', delivery: staticDelivery('u1') }]);
+      fx.detectChanges();
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+      expect(document.activeElement).toBe(document.body);
+    } finally {
+      (fx.nativeElement as HTMLElement).remove();
+    }
+  });
+});
+
+describe('ChatComponent — reading position while a reply arrives', () => {
+  function pendingChat() {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({
+      isLoading: true,
+      messages: [
+        { id: 'u0', role: 'user', content: 'Earlier question', delivery: staticDelivery('u0') },
+        { id: 'a0', role: 'assistant', content: 'Earlier answer', delivery: staticDelivery('a0') },
+        { id: 'u1', role: 'user', content: 'New question', delivery: staticDelivery('u1') },
+      ],
+    });
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    const el = (fx.nativeElement as HTMLElement).querySelector<HTMLElement>('.chat-scroll')!;
+    let scrollTop = 2000;
+    Object.defineProperties(el, {
+      scrollHeight: { configurable: true, writable: true, value: 2400 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: { configurable: true, get: () => scrollTop, set: (value: number) => { scrollTop = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, value)); } },
+    });
+    const pinned = (fx.componentInstance as unknown as { pinned(): boolean }).pinned;
+    return { fx, agent, el, pinned };
+  }
+
+  async function scrollUp(el: HTMLElement, to: number) {
+    el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
+    el.scrollTop = to;
+    el.dispatchEvent(new Event('scroll'));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+  }
+
+  it('keeps a reader scrolled up before the first token where they are when the reply message appears', async () => {
+    const { fx, agent, el, pinned } = pendingChat();
+    await scrollUp(el, 600);
+    expect(pinned()).toBe(false);
+
+    agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'First token', delivery: streamingDelivery('run') }]);
+    fx.detectChanges();
+
+    expect(el.scrollTop).toBe(600);
+    expect(pinned()).toBe(false);
+  });
+
+  it('follows a run that starts on the person\'s own prompt again, as Retry does', async () => {
+    const { fx, agent, el, pinned } = pendingChat();
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    await scrollUp(el, 600);
+    expect(pinned()).toBe(false);
+
+    agent.isLoading.set(true);
+    fx.detectChanges();
+
+    expect(pinned()).toBe(true);
+    expect(el.scrollTop).toBe(2000);
+  });
+
+  it('re-pins when the whole transcript is replaced, as on a thread switch', async () => {
+    const { fx, agent, el, pinned } = pendingChat();
+    await scrollUp(el, 600);
+    expect(pinned()).toBe(false);
+
+    agent.messages.set([
+      { id: 'x0', role: 'user', content: 'Other thread', delivery: staticDelivery('x0') },
+      { id: 'x1', role: 'assistant', content: 'Other answer', delivery: staticDelivery('x1') },
+    ]);
+    fx.detectChanges();
+
+    expect(pinned()).toBe(true);
+    expect(el.scrollTop).toBe(2000);
+  });
+});
+
+describe('ChatComponent — run endings are distinguishable', () => {
+  function runningChat() {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({
+      isLoading: true,
+      messages: [{ id: 'u1', role: 'user', content: 'Long question', delivery: staticDelivery('u1') }],
+    });
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    const host = fx.nativeElement as HTMLElement;
+    return { fx, agent, host, status: () => host.querySelector('.chat-sr-only[role="status"]')?.textContent?.trim() };
+  }
+
+  it('marks a turn the person stopped, even when no partial reply is kept, and announces it', () => {
+    const { fx, agent, host, status } = runningChat();
+    (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
+    agent.isLoading.set(false);
+    fx.detectChanges();
+
+    expect(host.querySelector('.chat-stopped-notice')?.textContent).toContain('Response stopped');
+    expect(status()).toBe('Response stopped.');
+  });
+
+  it('clears the stopped marker when the next run starts', () => {
+    const { fx, agent, host } = runningChat();
+    (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    agent.isLoading.set(true);
+    fx.detectChanges();
+    agent.messages.update((m) => [...m, { id: 'u2', role: 'user', content: 'Next', delivery: staticDelivery('u2') }]);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+
+    expect(host.querySelector('.chat-stopped-notice')).toBeNull();
+  });
+
+  it('marks a reply whose delivery ended aborted, whoever stopped it', () => {
+    const { fx, agent, host } = runningChat();
+    agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Partial', delivery: completeDelivery('run', 'aborted') }]);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    expect(host.querySelector('.chat-stopped-notice')).not.toBeNull();
+  });
+
+  it('announces completion without a stopped marker when the reply finishes', () => {
+    const { fx, agent, host, status } = runningChat();
+    agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Answer', delivery: completeDelivery('run', 'success') }]);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    expect(host.querySelector('.chat-stopped-notice')).toBeNull();
+    expect(status()).toBe('Response complete.');
+  });
+
+  it('leaves failures to the error alert', () => {
+    const { fx, agent, status } = runningChat();
+    agent.error.set({ kind: 'network', message: 'Offline', retryable: true } as never);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    expect(status()).toBe('');
+  });
+
+  it('does not mark a stopped turn whose reply then completed (adapter could not stop, or another thread)', () => {
+    const { fx, agent, host } = runningChat();
+    (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
+    agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Full answer', delivery: completeDelivery('run', 'success') }]);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    expect(host.querySelector('.chat-stopped-notice')).toBeNull();
+  });
+
+  it('does not announce completion while the run waits on an interrupt', () => {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ isLoading: true, withInterrupt: true, messages: [{ id: 'u1', role: 'user', content: 'Delete backups', delivery: staticDelivery('u1') }] } as never);
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    agent.interrupt!.set({ id: 'i1', value: { question: 'Approve?' } } as never);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    expect((fx.nativeElement as HTMLElement).querySelector('.chat-sr-only[role="status"]')?.textContent?.trim()).toBe('');
+  });
+
+  it('names the transcript region and each speaker for assistive technology', () => {
+    const { fx, agent, host } = runningChat();
+    agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Answer', delivery: completeDelivery('run', 'success') }]);
+    agent.isLoading.set(false);
+    fx.detectChanges();
+    const region = host.querySelector('.chat-scroll')!;
+    expect(region.getAttribute('role')).toBe('region');
+    expect(region.getAttribute('aria-label')).toBe('Conversation');
+    expect(region.getAttribute('tabindex')).toBe('0');
+    const speakers = [...host.querySelectorAll('.chat-message__speaker')].map((e) => e.textContent?.trim());
+    expect(speakers).toEqual(['You:', 'Assistant:']);
+  });
+});
+
+describe('ChatComponent — focus continuity when a control removes itself', () => {
+  function chatWith(agent: ReturnType<typeof mockAgent>) {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    fx.componentRef.setInput('agent', agent);
+    fx.detectChanges();
+    document.body.appendChild(fx.nativeElement);
+    return fx;
+  }
+  const frame = () => new Promise((r) => requestAnimationFrame(() => r(undefined)));
+  const composerOf = (host: HTMLElement) => host.querySelector('chat-window chat-input textarea');
+
+  it('continues in the composer after the focused Retry clears the error', async () => {
+    const keyboard = focusVisibleAs(true);
+    const agent = mockAgent({ messages: [{ id: 'u1', role: 'user', content: 'hi', delivery: staticDelivery('u1') }] });
+    agent.error.set({ kind: 'network', message: 'Offline', retryable: true } as never);
+    const fx = chatWith(agent);
+    try {
+      const host = fx.nativeElement as HTMLElement;
+      const retry = host.querySelector('chat-error button') as HTMLButtonElement;
+      retry.focus();
+      agent.error.set(undefined);
+      fx.detectChanges();
+      await frame();
+      expect(document.activeElement).toBe(composerOf(host));
+    } finally { (fx.nativeElement as HTMLElement).remove(); keyboard.mockRestore(); }
+  });
+
+  it.each([true, false])('after the scroll-to-latest bubble re-pins and disappears, keyboard=%s continues in the composer only from the keyboard', async (fromKeyboard) => {
+    const keyboard = focusVisibleAs(fromKeyboard);
+    const agent = mockAgent({ messages: [{ id: 'u1', role: 'user', content: 'hi', delivery: staticDelivery('u1') }] });
+    const fx = chatWith(agent);
+    try {
+      const host = fx.nativeElement as HTMLElement;
+      (fx.componentInstance as unknown as { pinned: { set(v: boolean): void } }).pinned.set(false);
+      fx.detectChanges();
+      const bubble = host.querySelector('chat-scroll-bubble button') as HTMLButtonElement;
+      bubble.focus();
+      bubble.click();
+      fx.detectChanges();
+      await frame();
+      expect(host.querySelector('chat-scroll-bubble')).toBeNull();
+      expect(document.activeElement).toBe(fromKeyboard ? composerOf(host) : document.body);
+    } finally { (fx.nativeElement as HTMLElement).remove(); keyboard.mockRestore(); }
+  });
+
+});
+
+describe('ChatComponent — message direction and speaker names', () => {
+  it('gives each message body and the composer an automatic base direction', () => {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatComponent);
+    fx.componentRef.setInput('agent', mockAgent({ messages: [
+      { id: 'u1', role: 'user', content: 'مرحبا، كيف حالك؟ 123 abc', delivery: staticDelivery('u1') },
+      { id: 'a1', role: 'assistant', content: 'أهلا', delivery: staticDelivery('a1') },
+    ] }));
+    fx.detectChanges();
+    const host = fx.nativeElement as HTMLElement;
+    expect(host.querySelector('chat-message[data-role="user"] .chat-message__bubble')?.getAttribute('dir')).toBe('auto');
+    expect(host.querySelector('chat-message[data-role="assistant"] .chat-message__assistant-body')?.getAttribute('dir')).toBe('auto');
+    expect(host.querySelector('chat-window chat-input textarea')?.getAttribute('dir')).toBe('auto');
+  });
+
+  it('uses an explicit speaker name in place of the default', () => {
+    TestBed.configureTestingModule({});
+    const fx = TestBed.createComponent(ChatMessageComponent);
+    fx.componentRef.setInput('role', 'assistant');
+    fx.componentRef.setInput('speaker', 'Support agent');
+    fx.detectChanges();
+    expect((fx.nativeElement as HTMLElement).querySelector('.chat-message__speaker')?.textContent?.trim()).toBe('Support agent:');
+    fx.componentRef.setInput('speaker', undefined);
+    fx.detectChanges();
+    expect((fx.nativeElement as HTMLElement).querySelector('.chat-message__speaker')?.textContent?.trim()).toBe('Assistant:');
+  });
+});

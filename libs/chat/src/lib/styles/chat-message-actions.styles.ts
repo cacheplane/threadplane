@@ -1,7 +1,8 @@
 // libs/chat/src/lib/styles/chat-message-actions.styles.ts
 //
 // Action-button row underneath assistant messages. Hidden by default, fades
-// in on hover/focus of the parent chat-message, always visible on mobile.
+// in on hover/focus of the parent chat-message, always visible on narrow or
+// hover-less (touch) devices.
 export const CHAT_MESSAGE_ACTIONS_STYLES = `
   :host {
     display: flex;
@@ -22,7 +23,8 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     opacity: 0 !important;
     pointer-events: none !important;
   }
-  @media (max-width: 768px) {
+  /* Touch-first devices of any width have no hover to reveal the row. */
+  @media (max-width: 768px), (hover: none) {
     :host-context(chat-message[data-role="assistant"]) {
       opacity: 1;
       pointer-events: auto;

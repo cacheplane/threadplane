@@ -23,6 +23,16 @@ export const CHAT_INPUT_STYLES = `
   padding: 8px 8px 8px 16px;
   min-height: 56px;
   box-sizing: border-box;
+  transition: border-color 150ms ease;
+}
+/* The textarea draws no outline of its own; the pill carries the focus cue. */
+.chat-input__pill:focus-within { border-color: var(--tplane-chat-text-muted); }
+
+.chat-input__hint > span {
+  display: block;
+  margin: 6px 16px 0;
+  font-size: var(--tplane-chat-font-size-sm);
+  color: var(--tplane-chat-text-muted);
 }
 
 .chat-input__textarea {
@@ -75,10 +85,18 @@ export const CHAT_INPUT_STYLES = `
 .chat-input__send:not(:disabled):hover { transform: scale(1.05); }
 .chat-input__send svg { width: 16px; height: 16px; }
 
+/* Stop is the live action while a reply runs, so it takes the enabled Send
+   fill rather than the muted tone that reads as unavailable. */
 .chat-input__send--stop {
-  background: var(--tplane-chat-text-muted);
+  background: var(--tplane-chat-text);
   color: var(--tplane-chat-bg);
 }
 .chat-input__send--stop:hover { transform: scale(1.05); }
+/* Forced colours drop the circular fills, leaving a bare glyph; a system-colour
+   border keeps both controls recognisable as buttons. */
+@media (forced-colors: active) {
+  .chat-input__send, .chat-input__send--stop { border: 1px solid ButtonText; }
+  .chat-input__send:disabled { border-color: GrayText; }
+}
 .chat-input__send--stop svg { width: 14px; height: 14px; }
 `;

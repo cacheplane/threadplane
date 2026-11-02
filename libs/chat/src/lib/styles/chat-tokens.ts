@@ -12,7 +12,9 @@ const LIGHT_TOKENS = `
   --tplane-chat-muted: rgb(200, 200, 200);
   --tplane-chat-error-bg: #fef2f2;
   --tplane-chat-error-border: #fecaca;
-  --tplane-chat-error-text: #dc2626;
+  /* #dc2626 measured 4.41:1 on --tplane-chat-error-bg, below 4.5:1 for the
+     14px alert text; this red is ≈5.9:1 there and 6.4:1 on white. */
+  --tplane-chat-error-text: #b91c1c;
   --tplane-chat-destructive: #dc2626;
   --tplane-chat-warning-bg: #fffbeb;
   --tplane-chat-warning-text: #b45309;

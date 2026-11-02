@@ -1,6 +1,15 @@
 // libs/chat/src/lib/styles/chat-message.styles.ts
 export const CHAT_MESSAGE_STYLES = `
   :host { display: block; }
+  .chat-message__speaker {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   :host([data-role="user"]) {
     display: block;
     margin-top: 0.5rem;
