@@ -3,6 +3,7 @@ import {
   type MarkdownSnapshot,
 } from '@threadplane/content/markdown';
 import { Markdown, type MarkdownProps } from './index.js';
+import type { Citation } from '@threadplane/core';
 const snapshot = createMarkdown({
   generation: 'a',
   phase: 'complete',
@@ -10,6 +11,13 @@ const snapshot = createMarkdown({
 }).getSnapshot();
 const props: MarkdownProps = { snapshot };
 <Markdown {...props} />;
+const citations: readonly Citation[] = [{ id: 'source', index: 1 }];
+const sourced: MarkdownProps = { snapshot, citations };
+<Markdown {...sourced} />;
+// @ts-expect-error Props are readonly.
+sourced.citations = [];
+// @ts-expect-error Citation identity is required.
+<Markdown snapshot={snapshot} citations={[{ index: 1 }]} />;
 // @ts-expect-error Whole accepted snapshot is required.
 <Markdown />;
 // @ts-expect-error String parsing is not a view responsibility.

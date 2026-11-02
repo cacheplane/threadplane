@@ -5656,7 +5656,10 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ClientToolContinuationLimitEvent",
@@ -5974,9 +5977,10 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/markdown/views/citation-reference.tsx",
-      "reason": "Native component. Message-scoped resolution, keyboard/hover preview, stable ARIA identifiers."
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#MarkdownCodeBlockComponent",
@@ -9973,7 +9977,10 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
       "id": "source:libs/chat/src/lib/markdown/katex-loader.ts",
@@ -10032,7 +10039,10 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-code-block.component.ts",
@@ -14852,8 +14862,9 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
-      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open.",
+      "target": "libs/react/src/markdown/markdown.tsx"
     },
     {
       "id": "export:libs/react/src/markdown/index.ts#MarkdownProps",
@@ -14862,8 +14873,9 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
-      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open.",
+      "target": "libs/react/src/markdown/markdown.tsx"
     },
     {
       "id": "source:libs/angular/markdown/src/markdown-image.component.ts",
@@ -14942,8 +14954,9 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private native snapshot presentation and fixed URL projection; rich rendering and legacy lifecycle migration remain separate.",
-      "note": "Readonly whole snapshots, semantic nodes, literal HTML, raw math/citation fallbacks and local image state. This records a bounded native surface, not full legacy parity or public distribution."
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open.",
+      "target": "libs/react/src/markdown/markdown.tsx"
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Reasoning",
@@ -16063,6 +16076,15 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/welcome-suggestion.tsx",
       "reason": "Private readonly controlled Welcome title/content/suggestion slots and exact-value native WelcomeSuggestion selection are implemented and dogfooded in the bounded native T23 empty ready/idle composition. The app owns draft protection, prefill/focus, explicit sending and session lifetime. Full T22/T23 welcome parity and public release remain open."
+    },
+    {
+      "id": "source:libs/react/src/markdown/inline-citation.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private pure inline citation presenter with safe URL and existing-anchor containment; no public runtime export or preview parity."
     }
   ]
 }

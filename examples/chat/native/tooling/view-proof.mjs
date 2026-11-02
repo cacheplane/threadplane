@@ -113,6 +113,12 @@ function composition(selected, types, runtime) {
   }
   if (!selected.angular) {
     assert.ok(
+      runtime.includes(
+        'node_modules/@threadplane/react/src/markdown/inline-citation.js'
+      ),
+      'Installed inline citation runtime missing'
+    );
+    assert.ok(
       types.some(
         (p) =>
           p.startsWith('node_modules/@threadplane/a2ui/') && p.endsWith('.d.ts')

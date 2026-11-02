@@ -30,6 +30,52 @@
       },
       "members": [
         {
+          "name": "citations",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MarkdownProps#citations:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citations?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/react!~Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Per-message source metadata; exact IDs take precedence over Markdown definitions.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/markdown/markdown.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "snapshot",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!MarkdownProps#snapshot:member",
@@ -62,7 +108,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/markdown/markdown.tsx",
-            "line": 13
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": false
@@ -70,12 +116,12 @@
       ],
       "source": {
         "path": "libs/react/src/markdown/markdown.tsx",
-        "line": 12
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/markdown/markdown.tsx",
-    "line": 12
+    "line": 14
   }
 }

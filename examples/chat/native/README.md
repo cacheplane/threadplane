@@ -39,11 +39,17 @@ bindings, the basic catalog, forms, actions, functions, templates, URLs,
 protocol parsing, readiness and public catalog registration remain outside this
 example.
 
-React assistant rows compose `Citations` from explicitly supplied message
+React assistant rows pass optional readonly per-message citations to `Markdown`
+and compose `Citations` from explicitly supplied message
 metadata. Sources preserve their order, indices and literal title/snippet/type
 text; links use the shared Markdown URL policy. The view does not fetch metadata
 or icons. Installed production checks cover restored sources, same-ID metadata
-updates, unsafe URLs, literal text and narrow-screen wrapping.
+updates, unsafe URLs, literal text and narrow-screen wrapping. Inline references
+resolve exact source IDs before Markdown definitions. Safe destinations open in a
+new tab with a source label; unsafe or missing destinations remain numbered text,
+and unresolved references retain their syntax. User rows receive no citation
+metadata. Sources and parser ownership remain with the application; citation
+previews and overlays remain outside this bounded private binding.
 
 The React view also composes `TextTranscript` in app-authored background activity
 disclosures for supplied child observations. Full namespace tuples identify

@@ -350,6 +350,12 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
       `Installed runtime required: ${suffix}`
     );
   }
+  assert.ok(
+    runtimeInputs.includes(
+      'node_modules/@threadplane/react/src/markdown/inline-citation.js'
+    ),
+    'Installed inline citation runtime required'
+  );
 }
 
 export async function productionOperations(buildRoot) {

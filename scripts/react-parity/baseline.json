@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7f5671c97392dc824fecc80b0148b2e690f1190b",
+  "baselineHead": "015c48d5d15df91c89ed2ce0bdcec76560362f63",
   "sourceState": {
     "modified": [
-      "libs/langgraph/src/lib/agent.fn.ts",
-      "libs/langgraph/src/lib/internals/message-projection-cache.ts",
-      "libs/langgraph/src/lib/internals/stream-manager.bridge.ts"
+      "libs/react/README.md",
+      "libs/react/src/markdown/markdown.tsx"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/markdown/inline-citation.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -853,7 +854,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "c9c10078276d808af91ac6107cd2f83f760657d1111b5a0c568e418365053d22"
+      "sha256": "1313467f97f4df36d5b1de705fed0744ca73a6c9b8ee7dd2c9573f1d0f2c94d9"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -11114,7 +11115,7 @@
           "path": "libs/react/src/markdown/markdown.tsx",
           "symbol": "Markdown",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Markdown({ snapshot }: MarkdownProps) {\n    return (<div style={{\n            color: 'var(--ds-text-primary, #142435)',\n            fontFamily: 'inherit',\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n        }}>\n      {snapshot.root && (<NodeView key={snapshot.document.generation} node={snapshot.root} citations={snapshot.root.citations}/>)}\n    </div>);\n}"
+          "signature": "export function Markdown({ snapshot, citations = [] }: MarkdownProps) {\n    const sources = new Map(citations.map((citation) => [citation.id, citation]));\n    if (sources.size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Markdown.');\n    return (<div style={{\n            color: 'var(--ds-text-primary, #142435)',\n            fontFamily: 'inherit',\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n        }}>\n      {snapshot.root && (<NodeView key={snapshot.document.generation} node={snapshot.root} citations={snapshot.root.citations} sources={sources}/>)}\n    </div>);\n}"
         }
       ]
     },
@@ -11128,7 +11129,7 @@
           "path": "libs/react/src/markdown/markdown.tsx",
           "symbol": "MarkdownProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MarkdownProps {\n    readonly snapshot: MarkdownSnapshot;\n}"
+          "signature": "export interface MarkdownProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly citations?: readonly Citation[];\n}"
         }
       ]
     },
@@ -15655,6 +15656,12 @@
       "sha256": "d6d49e217b048963d64decae4ceee0a77a7c0b4a26c558bf25ad6d1100036081"
     },
     {
+      "id": "source:libs/react/src/markdown/inline-citation.tsx",
+      "kind": "source",
+      "path": "libs/react/src/markdown/inline-citation.tsx",
+      "sha256": "ccfc70b84bcb91631d5e3aea12e9f062e9fcf3f324da7aecdc60e1419fb7e36c"
+    },
+    {
       "id": "source:libs/react/src/markdown/markdown-image.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/markdown-image.tsx",
@@ -15664,7 +15671,7 @@
       "id": "source:libs/react/src/markdown/markdown.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/markdown.tsx",
-      "sha256": "f79b4576b95c58bfdac74a9decb1231884927cc05f6bd691d8ace4b96e94fa7f"
+      "sha256": "a9519c8219e4a7cf3555df7fe383979f2bc8ec851cc15e66ff6112db4f9b81cc"
     },
     {
       "id": "source:libs/react/src/render/functions.ts",
