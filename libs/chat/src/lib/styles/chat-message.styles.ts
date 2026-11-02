@@ -93,7 +93,9 @@ export const CHAT_MESSAGE_STYLES = `
     opacity: 1;
     pointer-events: auto;
   }
-  @media (max-width: 768px) {
+  /* Must match chat-message-actions' reveal query: if only the inner row is
+     revealed, its buttons are tappable inside this still-transparent wrapper. */
+  @media (max-width: 768px), (hover: none) {
     :host([data-role="assistant"]) .chat-message__controls { opacity: 1; pointer-events: auto; }
   }
   .chat-message__control-btn {
