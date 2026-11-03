@@ -248,8 +248,16 @@ export function agent<
 
   let hasSeenThreadId = false;
   let lastThreadId: string | null = null;
+  // Mirrors the bridge's own rule, read before the bridge sees the same id
+  // (this subscription is made first). An id the bridge adopts mid-run — the
+  // thread the transport created for the run, mirrored back by the host — must
+  // keep the run's status: the bridge keeps streaming, and an Idle status
+  // would show the running reply as finished, with no Stop and Send enabled.
+  // Only reached after the first emission, so `manager` is initialised.
+  const bridgeSwitchesThread = (id: string | null): boolean =>
+    manager.currentThreadId !== null && manager.currentThreadId !== id;
   threadId$.pipe(takeUntil(destroy$)).subscribe((id) => {
-    if (hasSeenThreadId && lastThreadId !== id) {
+    if (hasSeenThreadId && lastThreadId !== id && (bridgeSwitchesThread(id) || status$.value !== ResourceStatus.Loading)) {
       resetDerivedThreadState();
     }
     hasSeenThreadId = true;

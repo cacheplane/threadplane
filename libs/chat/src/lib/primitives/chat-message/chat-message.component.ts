@@ -9,6 +9,8 @@ import type { Message } from '../../agent/message';
 /** Message roles used to select the chat message layout. */
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
+const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You', assistant: 'Assistant' };
+
 /** Provides role-specific message layout, projected controls, and citations for assistant messages. */
 @Component({
   selector: 'chat-message',
@@ -24,7 +26,12 @@ export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';
     '[attr.data-prev-role]': 'prevRole() ?? null',
   },
   template: `
-    <div [class]="bodyClass()">
+    @if (speakerText(); as speaker) {
+      <span class="chat-message__speaker">{{ speaker }}</span>
+    }
+    <!-- dir="auto": a message takes its base direction from its own first
+         strong character, so right-to-left text keeps its reading order. -->
+    <div [class]="bodyClass()" dir="auto">
       <ng-content />
       <span class="chat-message__caret" aria-hidden="true"></span>
     </div>
@@ -42,6 +49,12 @@ export class ChatMessageComponent {
   readonly streaming = input(false);
   readonly prevRole = input<ChatMessageRole | undefined>(undefined);
   readonly message = input<Message | undefined>(undefined);
+  /**
+   * Speaker name read by assistive technology before the message, so a
+   * transcript says who said what. Visually hidden; the layout already shows
+   * it. Defaults to "You" for user and "Assistant" for assistant messages.
+   */
+  readonly speaker = input<string | undefined>(undefined);
 
   private readonly resolver = inject(CitationsResolverService);
 
@@ -50,6 +63,11 @@ export class ChatMessageComponent {
       this.resolver.message.set(this.message() ?? null);
     });
   }
+
+  protected readonly speakerText = computed(() => {
+    const name = this.speaker() ?? DEFAULT_SPEAKERS[this.role()];
+    return name ? `${name}:` : undefined;
+  });
 
   readonly currentStr = computed(() => String(this.current()));
   readonly streamingStr = computed(() => String(this.streaming()));

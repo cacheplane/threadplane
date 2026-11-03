@@ -1,7 +1,7 @@
 // libs/chat/src/lib/compositions/chat/chat.component.ts
 import {
   Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, contentChildren, effect, signal, untracked, viewChild,
-  ElementRef, DestroyRef, inject, Injector, runInInjectionContext,
+  ElementRef, DestroyRef, inject, Injector, runInInjectionContext, DOCUMENT,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
@@ -91,6 +91,22 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
  * Returns true when the scroll position is within `tolerance` px of the bottom.
  * Pure helper extracted for unit testing.
  */
+/**
+ * Calls `moved` when focus left the element for somewhere else (another
+ * control, or plain page content), not when the element was removed while
+ * focused. Browsers may dispatch focusout during removal, while the target is
+ * still connected, so the removal check waits one task.
+ */
+function onFocusMovedAway(event: FocusEvent, moved: () => void): void {
+  if (event.relatedTarget) { moved(); return; }
+  const target = event.target as Node | null;
+  setTimeout(() => { if (target?.isConnected) moved(); }, 0);
+}
+
+function matchesFocusVisible(target: EventTarget | null): boolean {
+  try { return target instanceof Element && target.matches(':focus-visible'); } catch { return false; }
+}
+
 export function isPinned(
   scrollHeight: number,
   scrollTop: number,
@@ -177,10 +193,34 @@ export function isPinned(
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
+    .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-text-muted); outline-offset: -2px; }
+    .chat-stopped-notice {
+      display: flex;
+      align-items: center;
+      gap: var(--tplane-chat-space-2);
+      box-sizing: border-box;
+      width: 100%;
+      max-width: var(--tplane-chat-max-width);
+      margin: 0 auto;
+      /* Same column and inset as chat-message-list, so it aligns with replies. */
+      padding: 0 var(--tplane-chat-space-6);
+      color: var(--tplane-chat-text-muted);
+      font-size: var(--tplane-chat-font-size-sm);
+    }
+    .chat-stopped-notice svg { width: 12px; height: 12px; flex: none; }
+    .chat-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   `],
   template: `
     @if (showWelcome()) {
-      <chat-welcome>
+      <chat-welcome (focusin)="welcomeHadFocus = isKeyboardFocus($event)" (focusout)="onWelcomeFocusOut($event)">
         <chat-input chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message...">
           @if (showModelPicker() && modelOptions().length > 0) {
             <chat-select
@@ -209,7 +249,10 @@ export function isPinned(
       <div class="chat-shell__main">
         <chat-window>
           <ng-content select="[chatHeader]" chatHeader />
-          <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)">
+          <!-- A named region the keyboard can focus and scroll: a long reply
+               with no links holds no other tab stop to scroll it into view. -->
+          <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)"
+               role="region" aria-label="Conversation" tabindex="0">
             <chat-message-list [agent]="agent()">
               <ng-template chatMessageTemplate="human" let-message let-i="index">
                 <chat-message [role]="'user'" [prevRole]="prevRole(i)">{{ humanContent(message) }}</chat-message>
@@ -356,6 +399,16 @@ export function isPinned(
                 />
               </div>
             }
+
+            <!-- Where the stopped reply would have been: the stream can end
+                 with no assistant message kept, which otherwise reads as a
+                 prompt nobody answered. -->
+            @if (showStoppedNotice()) {
+              <p class="chat-stopped-notice">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                Response stopped
+              </p>
+            }
           </div>
           <div chatFooter class="chat-footer-wrap">
             @if (!pinned()) {
@@ -364,8 +417,8 @@ export function isPinned(
                 (clicked)="onScrollBubbleClick()"
               />
             }
-            <chat-error [agent]="agent()" />
-            <chat-input [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message..." (submitted)="onUserSubmitted()">
+            <chat-error [agent]="agent()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
+            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message..." (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
                   chatInputModelSelect
@@ -381,6 +434,9 @@ export function isPinned(
             </chat-input>
           </div>
         </chat-window>
+        <!-- Run endings for assistive technology. Streaming text is not
+             announced token by token; the reply is read from the region. -->
+        <div class="chat-sr-only" role="status">{{ runAnnouncement() }}</div>
       </div>
     </div>
     }
@@ -725,6 +781,7 @@ export class ChatComponent {
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly composerDocument = inject(DOCUMENT);
   // Resolved against the component's own `providers` in normal use. The fallback
   // is for tests that construct ChatComponent via `new` inside a bare injection
   // context (no element injector, so component-level providers are skipped).
@@ -741,6 +798,43 @@ export class ChatComponent {
   private partialEventsLastIndex = 0;
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
+  private readonly composer = viewChild<ChatInputComponent>('composer');
+  /**
+   * Controls that remove themselves when used — the welcome view on the first
+   * send (typed or a suggestion), Retry once the error clears — drop focus to
+   * <body>; the conversation composer is where the person continues. Each
+   * flag is true while focus is inside that control. A focusout with no
+   * relatedTarget is the removal itself, so it keeps the flag.
+   */
+  protected welcomeHadFocus = false;
+  protected errorHadFocus = false;
+
+  /**
+   * The turn the person stopped, identified by its prompt (user-message count
+   * and text survive the history refresh that can re-key message ids after a
+   * stop). Cleared when the next run starts.
+   */
+  private readonly stoppedTurn = signal<{ userCount: number; prompt: string } | null>(null);
+
+  /** True while the latest turn ended because the person (or adapter) stopped it. */
+  protected readonly showStoppedNotice = computed(() => {
+    const agent = this.agent();
+    if (agent.isLoading()) return false;
+    const msgs = agent.messages();
+    const last = msgs[msgs.length - 1];
+    const delivery = last?.role === 'assistant' ? last.delivery : undefined;
+    if (delivery?.phase === 'complete' && delivery.outcome === 'aborted') return true;
+    const stopped = this.stoppedTurn();
+    // A reply that completed after the stop (an adapter that could not stop,
+    // or another thread with the same last prompt) is not a stopped turn.
+    if (!stopped || (delivery?.phase === 'complete' && delivery.outcome === 'success')) return false;
+    const users = msgs.filter((m) => m.role === 'user');
+    const prompt = users[users.length - 1];
+    return users.length === stopped.userCount && !!prompt && messageContent(prompt) === stopped.prompt;
+  });
+
+  /** Polite status text for the end of a run; emptied when a run starts so a repeat is re-announced. */
+  protected readonly runAnnouncement = signal('');
   private readonly messageCount = computed(() => this.agent().messages().length);
   private prevMessageCount = 0;
   private wasLoading = false;
@@ -840,6 +934,53 @@ export class ChatComponent {
       }
     });
 
+    effect(() => {
+      if (!this.composer() || !this.welcomeHadFocus) return;
+      this.welcomeHadFocus = false;
+      this.continueInComposer();
+    });
+
+    effect(() => {
+      let error: unknown;
+      try { error = this.agent().error(); } catch { return; }
+      if (error || !this.errorHadFocus) return;
+      this.errorHadFocus = false;
+      this.continueInComposer();
+    });
+
+    // Run boundaries: a new run clears the stopped marker and the last
+    // announcement; its end says how it ended (errors announce via the alert).
+    let runActive = false;
+    effect(() => {
+      let loading: boolean;
+      try { loading = this.agent().isLoading(); } catch { return; }
+      if (loading) {
+        const startsRun = !runActive;
+        runActive = true;
+        untracked(() => {
+          this.stoppedTurn.set(null);
+          this.runAnnouncement.set('');
+          // A run on the person's own prompt (a send, or Retry re-sending it)
+          // follows the reply, as a submit does.
+          const msgs = this.agent().messages();
+          if (startsRun && msgs[msgs.length - 1]?.role === 'user' && !this.pinned()) {
+            this.upwardWheel = undefined;
+            this.pinned.set(true);
+            this.followIfPinned();
+          }
+        });
+        return;
+      }
+      if (!runActive) return;
+      runActive = false;
+      untracked(() => {
+        // Errors announce through the alert; a pending interrupt through the
+        // host's interrupt template.
+        if (this.agent().error() || this.agent().interrupt?.()) return;
+        this.runAnnouncement.set(this.showStoppedNotice() ? 'Response stopped.' : 'Response complete.');
+      });
+    });
+
     // Native scroll events can arrive while our programmatic frame guard is
     // still live. Retain upward intent without cancelling or moving the user;
     // only actual transcript movement can interrupt that guard.
@@ -906,9 +1047,16 @@ export class ChatComponent {
       void lastContent;
       const el = this.scrollContainer()?.nativeElement;
       if (!el) return;
-      const isNewMessage = count !== this.prevMessageCount;
+      const previousCount = this.prevMessageCount;
+      const isNewMessage = count !== previousCount;
       this.prevMessageCount = count;
-      if (isNewMessage) {
+      // Re-pin for the person's own turn or a replaced transcript: a thread
+      // switch or load empties the list first, a rollback shrinks it. A reply
+      // arriving is not a reason to move a reader who scrolled up while it
+      // was pending; the bubble offers the way back. (Ids are not compared:
+      // a history refresh can re-key optimistic ids.)
+      const replaced = previousCount === 0 || count < previousCount;
+      if (isNewMessage && (replaced || msgs[msgs.length - 1]?.role === 'user')) {
         this.upwardWheel = undefined;
         untracked(() => this.pinned.set(true));
       }
@@ -1091,8 +1239,42 @@ export class ChatComponent {
     requestAnimationFrame(() => { this.programmaticScrollCount--; });
   }
 
+  protected onUserStopped(): void {
+    if (typeof (this.agent() as { stop?: unknown }).stop !== 'function') return;
+    const users = this.agent().messages().filter((m) => m.role === 'user');
+    const prompt = users[users.length - 1];
+    this.stoppedTurn.set(prompt ? { userCount: users.length, prompt: messageContent(prompt) } : null);
+  }
+
+  protected onWelcomeFocusOut(event: FocusEvent): void {
+    onFocusMovedAway(event, () => { this.welcomeHadFocus = false; });
+  }
+
+  protected onErrorFocusOut(event: FocusEvent): void {
+    onFocusMovedAway(event, () => { this.errorHadFocus = false; });
+  }
+
+  /** Text fields always match :focus-visible; buttons only from the keyboard. */
+  protected isKeyboardFocus(event: FocusEvent): boolean {
+    return matchesFocusVisible(event.target);
+  }
+
+  /** After the current render, focuses the composer if focus fell to <body>. */
+  private continueInComposer(): void {
+    requestAnimationFrame(() => {
+      const active = this.composerDocument.activeElement;
+      if (!active || active === this.composerDocument.body) this.composer()?.focusTextarea();
+    });
+  }
+
   protected onScrollBubbleClick(): void {
+    // Re-pinning removes the bubble. From the keyboard, the latest content is
+    // where the composer is; a pointer press leaves focus alone (a touch
+    // keyboard would cover what was just scrolled to).
+    const active = this.composerDocument.activeElement;
+    const fromKeyboard = !!active?.closest('chat-scroll-bubble') && matchesFocusVisible(active);
     this.scrollToBottom();
+    if (fromKeyboard) this.continueInComposer();
   }
 
   protected onUserSubmitted(): void {
@@ -1316,6 +1498,8 @@ export class ChatComponent {
 
   /** Regenerate the assistant response at the given message index. */
   onRegenerate(messageIndex: number): void {
+    this.upwardWheel = undefined;
+    this.pinned.set(true);
     void this.agent().regenerate(messageIndex);
     this.regenerate.emit();
   }

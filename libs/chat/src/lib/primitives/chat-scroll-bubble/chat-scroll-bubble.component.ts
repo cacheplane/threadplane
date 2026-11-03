@@ -40,6 +40,7 @@ export class ChatScrollBubbleComponent {
   readonly mode = input.required<ChatScrollBubbleMode>();
   readonly clicked = output<void>();
   protected readonly ariaLabel = computed(() =>
-    this.mode() === 'streaming' ? 'Latest activity' : 'Scroll to latest',
+    // Name the action in both modes; the dots only show that more is arriving.
+    this.mode() === 'streaming' ? 'Scroll to latest, response in progress' : 'Scroll to latest',
   );
 }

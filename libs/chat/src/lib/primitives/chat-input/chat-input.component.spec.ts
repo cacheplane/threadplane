@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal, computed } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ChatInputComponent, submitMessage } from './chat-input.component';
@@ -122,6 +122,56 @@ describe('ChatInputComponent', () => {
     blocked.set(false);
     fixture.detectChanges();
     expect(button.disabled).toBe(false);
+  });
+
+  it('keeps the draft and starts no second run when Enter is pressed while a reply is running', () => {
+    const agent = mockAgent({ isLoading: true });
+    setSignalInput(fixture.componentInstance.agent, agent);
+    fixture.componentInstance.messageText.set('follow-up for later');
+    fixture.detectChanges();
+    fixture.componentInstance.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(agent.submitCalls).toHaveLength(0);
+    expect(fixture.componentInstance.messageText()).toBe('follow-up for later');
+  });
+
+  it.each([true, false])('when the focused Stop is replaced by Send, keyboard=%s moves focus to the composer only from the keyboard', async (fromKeyboard) => {
+    const original = Element.prototype.matches;
+    const spy = vi.spyOn(Element.prototype, 'matches').mockImplementation(function (this: Element, selector: string) {
+      return selector === ':focus-visible' ? fromKeyboard && this === document.activeElement : original.call(this, selector);
+    });
+    const agent = mockAgent({ isLoading: true });
+    setSignalInput(fixture.componentInstance.agent, agent);
+    fixture.detectChanges();
+    document.body.appendChild(fixture.nativeElement);
+    try {
+      const stop = fixture.nativeElement.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement;
+      stop.focus();
+      expect(document.activeElement).toBe(stop);
+      agent.isLoading.set(false);
+      fixture.detectChanges();
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+      expect(document.activeElement).toBe(fromKeyboard ? fixture.nativeElement.querySelector('textarea') : document.body);
+    } finally {
+      fixture.nativeElement.remove();
+      spy.mockRestore();
+    }
+  });
+
+  it('says why Enter did nothing while a reply runs, and clears that when the reply ends', () => {
+    const agent = mockAgent({ isLoading: true });
+    setSignalInput(fixture.componentInstance.agent, agent);
+    fixture.componentInstance.messageText.set('next question');
+    fixture.detectChanges();
+    const hint = () => (fixture.nativeElement as HTMLElement).querySelector('.chat-input__hint');
+    expect(hint()?.textContent?.trim() ?? '').toBe('');
+    fixture.componentInstance.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+    expect(hint()?.getAttribute('role')).toBe('status');
+    expect(hint()?.textContent?.trim()).toBe('A response is still running. Stop it to send now, or send when it finishes.');
+    agent.isLoading.set(false);
+    fixture.detectChanges();
+    expect(hint()?.textContent?.trim() ?? '').toBe('');
+    expect(fixture.componentInstance.messageText()).toBe('next question');
   });
 
   it('renders the pill with full border-radius', () => {

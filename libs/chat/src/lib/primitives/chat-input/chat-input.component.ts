@@ -53,6 +53,7 @@ export function submitMessage(
           (focus)="focused.set(true)"
           (blur)="focused.set(false)"
           name="messageText"
+          dir="auto"
           rows="1"
           aria-label="Type a message"
         ></textarea>
@@ -64,6 +65,8 @@ export function submitMessage(
               type="button"
               class="chat-input__send chat-input__send--stop"
               (click)="onStop()"
+              (focus)="onStopFocus($event)"
+              (blur)="onStopBlur($event)"
               aria-label="Stop generating"
               title="Stop generating"
             >
@@ -86,6 +89,13 @@ export function submitMessage(
             </button>
           }
         </div>
+      </div>
+      <!-- Persistent live region: Enter during a running reply keeps the
+           draft, and this says why nothing was sent. -->
+      <div class="chat-input__hint" role="status">
+        @if (showRunningHint()) {
+          <span>A response is still running. Stop it to send now, or send when it finishes.</span>
+        }
       </div>
       <ng-content select="[chatInputFooter]" />
     </div>
@@ -117,6 +127,19 @@ export class ChatInputComponent {
   private readonly textareaEl = viewChild<ElementRef<HTMLTextAreaElement>>('textareaEl');
 
   /**
+   * True while the Stop control holds keyboard focus. Stop is swapped for Send
+   * when the run ends — by the user or on its own — and removing the focused
+   * button would drop focus to <body>; the composer is the logical
+   * continuation. Pointer focus is left alone: moving it into the textarea
+   * would raise a touch keyboard nobody asked for.
+   */
+  protected stopHadFocus = false;
+
+  /** Enter was pressed with a draft while a reply was running; cleared when the run ends. */
+  private readonly enterBlockedByRun = signal(false);
+  protected readonly showRunningHint = computed(() => this.enterBlockedByRun() && this.isLoading());
+
+  /**
    * Auto-resize the textarea to fit its content as the user types or pastes
    * multi-line text. Caps at min(40vh, 320px); beyond that the textarea
    * scrolls. Without this, multi-line input is hidden behind the rows="1"
@@ -137,6 +160,19 @@ export class ChatInputComponent {
       el.style.overflowY = el.scrollHeight > cap ? 'auto' : 'hidden';
       void text;
     });
+
+    effect(() => {
+      if (!this.isLoading()) this.enterBlockedByRun.set(false);
+    });
+
+    effect(() => {
+      if (this.isLoading() || !this.stopHadFocus) return;
+      this.stopHadFocus = false;
+      requestAnimationFrame(() => {
+        const active = this.textareaEl()?.nativeElement.ownerDocument.activeElement;
+        if (!active || active === active.ownerDocument.body) this.focusTextarea();
+      });
+    });
   }
 
   focusTextarea(): void {
@@ -144,6 +180,12 @@ export class ChatInputComponent {
   }
 
   onSubmit(): void {
+    // Enter reaches here even while Send is disabled; a running reply keeps
+    // the draft in place instead of starting a second, concurrent run.
+    if (!this.canSubmit()) {
+      if (this.isLoading() && this.messageText().trim()) this.enterBlockedByRun.set(true);
+      return;
+    }
     const submitted = submitMessage(this.agent(), this.messageText());
     if (submitted !== null) {
       this.submitted.emit(submitted);
@@ -160,6 +202,25 @@ export class ChatInputComponent {
    *  + OnPush, leaving sent text visible in the composer (audit F1). */
   protected onInput(event: Event): void {
     this.messageText.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected onStopFocus(event: FocusEvent): void {
+    try {
+      this.stopHadFocus = (event.target as Element).matches(':focus-visible');
+    } catch {
+      this.stopHadFocus = false;
+    }
+  }
+
+  /**
+   * Focus that moved elsewhere in the page ends the hand-off; removal of the
+   * button does not. Browsers may dispatch blur during removal, while the
+   * button is still connected, so the removal check waits one task.
+   */
+  protected onStopBlur(event: FocusEvent): void {
+    if (event.relatedTarget) { this.stopHadFocus = false; return; }
+    const button = event.target as Node;
+    setTimeout(() => { if (button.isConnected) this.stopHadFocus = false; }, 0);
   }
 
   /** Abort the current streaming response (if the adapter supports it). */
