@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!MarkdownListItemComponent:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Renders a markdown list item with a disabled checkbox for task items.",
+  "summary": "Renders a markdown list item. A task item keeps a disabled native checkbox\nas the accessible control (\"checkbox, checked, unavailable\") but hides it\nvisually: browsers paint disabled checkboxes so faintly that checked and\nunchecked are hard to tell apart. A token-coloured box draws the state.",
   "declarations": [
     {
       "name": "MarkdownListItemComponent",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Renders a markdown list item with a disabled checkbox for task items.",
+        "summary": "Renders a markdown list item. A task item keeps a disabled native checkbox\nas the accessible control (\"checkbox, checked, unavailable\") but hides it\nvisually: browsers paint disabled checkboxes so faintly that checked and\nunchecked are hard to tell apart. A token-coloured box draws the state.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -78,7 +78,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-            "line": 22
+            "line": 32
           },
           "isStatic": false,
           "isReadonly": true,
@@ -87,7 +87,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-        "line": 7
+        "line": 12
       },
       "angular": {
         "selector": "chat-md-list-item",
@@ -105,6 +105,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-    "line": 7
+    "line": 12
   }
 }
