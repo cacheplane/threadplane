@@ -132,10 +132,38 @@ export const CHAT_MARKDOWN_STYLES = `
     align-items: baseline;
     gap: 0.5rem;
   }
-  chat-streaming-md li.chat-md-list-item--task > input[type="checkbox"] {
-    margin: 0;
+  chat-streaming-md li.chat-md-list-item--task { position: relative; }
+  /* The disabled input stays as the accessible checkbox; the box below draws
+     its state from the tokens (native disabled styling is too faint). */
+  chat-streaming-md li.chat-md-list-item--task > input.chat-md-task-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  chat-streaming-md .chat-md-task-box {
     flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--tplane-chat-text-muted);
+    border-radius: 3px;
     transform: translateY(2px);
+  }
+  chat-streaming-md .chat-md-task-box--checked {
+    border-color: var(--tplane-chat-text);
+    background: var(--tplane-chat-text);
+    color: var(--tplane-chat-bg);
+  }
+  chat-streaming-md .chat-md-task-box svg { width: 10px; height: 10px; display: block; }
+  @media (forced-colors: active) {
+    chat-streaming-md .chat-md-task-box { border-color: CanvasText; }
+    chat-streaming-md .chat-md-task-box--checked { background: CanvasText; color: Canvas; }
   }
   /* The chat-md-children wrapper around list-item content takes remaining width */
   chat-streaming-md li.chat-md-list-item--task > chat-md-children {
