@@ -252,9 +252,11 @@ export function isPinned(
                with no links holds no other tab stop to scroll it into view. -->
           <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)"
                role="region" aria-label="Conversation" tabindex="0">
-            <chat-message-list [agent]="agent()">
+            @let currentAgent = agent();
+            @let currentMessages = currentAgent.messages();
+            <chat-message-list [agent]="currentAgent">
               <ng-template chatMessageTemplate="human" let-message let-i="index">
-                <chat-message [role]="'user'" [prevRole]="prevRole(i)">{{ humanContent(message) }}</chat-message>
+                <chat-message [role]="'user'" [prevRole]="previousRole(currentMessages, i)">{{ humanContent(message) }}</chat-message>
               </ng-template>
 
               <ng-template chatMessageTemplate="ai" let-message let-i="index">
@@ -263,9 +265,9 @@ export function isPinned(
                 <chat-message
                   [role]="'assistant'"
                   [message]="message"
-                  [prevRole]="prevRole(i)"
+                  [prevRole]="previousRole(currentMessages, i)"
                   [streaming]="message.delivery.phase === 'streaming'"
-                  [current]="i === agent().messages().length - 1"
+                  [current]="i === currentMessages.length - 1"
                 >
                   <!-- A projected chatActivityTemplate owns the reasoning +
                        tool-call region for this message. It renders at
@@ -296,14 +298,14 @@ export function isPinned(
                          <chat-tool-calls> cannot see templates re-projected
                          through <chat>'s own ng-content. -->
                     <chat-tool-calls
-                      [agent]="agent()"
+                      [agent]="currentAgent"
                       [message]="message"
                       [excludeToolNames]="excludedToolNames()"
                       [toolCallTemplates]="toolCallTemplates()"
                     />
                   }
                   <chat-tool-views
-                    [agent]="agent()"
+                    [agent]="currentAgent"
                     [message]="message"
                     [views]="effectiveViews()"
                     [store]="resolvedStore()"
@@ -1173,7 +1175,12 @@ export class ChatComponent {
 
   prevRole(index: number): ChatMessageRole | undefined {
     if (index === 0) return undefined;
-    const prev = this.agent().messages()[index - 1];
+    return this.previousRole(this.agent().messages(), index);
+  }
+
+  protected previousRole(messages: readonly Message[], index: number): ChatMessageRole | undefined {
+    if (index === 0) return undefined;
+    const prev = messages[index - 1];
     if (!prev) return undefined;
     const role = (prev as unknown as { role?: string }).role;
     if (role === 'user') return 'user';
