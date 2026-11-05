@@ -50,10 +50,10 @@ const literal = (value: unknown) =>
 const Message = memo(function Message({ row }: { row: MessageContent }) {
   return (
     <article
-      className={`message message-${row.role}`}
+      className={`message message-${row.role} tp-chat-message tp-chat-message--${row.role}`}
       aria-label={`${row.role} message`}
     >
-      <h3 className="role-label">{row.role}</h3>
+      <h3 className="role-label tp-chat-message__role">{row.role}</h3>
       {row.role === 'assistant' && row.reasoning && (
         <Reasoning snapshot={row.reasoning} />
       )}
