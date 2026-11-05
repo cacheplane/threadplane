@@ -25,7 +25,6 @@ import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 import { itineraryClientTools } from '../client-tools';
 import { ThreadplaneTelemetryService } from '@threadplane/telemetry/browser';
 import {
-  ChatInterruptPanelComponent,
   ChatSidenavComponent,
   ChatSidenavScrimComponent,
   ChatHistorySearchPaletteComponent,
@@ -129,7 +128,6 @@ export function isConflict(err: unknown): boolean {
   standalone: true,
   imports: [
     RouterOutlet,
-    ChatInterruptPanelComponent,
     ChatSidenavComponent,
     ChatSidenavScrimComponent,
     ChatHistorySearchPaletteComponent,
@@ -826,7 +824,7 @@ export class DemoShell {
    * window.prompt() for `edit` and `respond`. A production app would
    * inline a textarea editor.
    */
-  protected async onInterruptAction(action: InterruptAction): Promise<void> {
+  async onInterruptAction(action: InterruptAction): Promise<void> {
     const interrupt = this.agent.interrupt?.();
     if (!interrupt) return;
 

@@ -8,11 +8,14 @@ import {
   input,
   model,
   output,
+  contentChild,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import type { ViewRegistry } from '@threadplane/render';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
 import { ChatComponent } from '../chat/chat.component';
+import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.directive';
 import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-button/chat-launcher-button.component';
 import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
@@ -21,7 +24,7 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
 @Component({
   selector: 'chat-sidebar',
   standalone: true,
-  imports: [ChatComponent, ChatLauncherButtonComponent],
+  imports: [ChatComponent, ChatLauncherButtonComponent, ChatInterruptTemplateDirective, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.data-push]': 'pushContent() ? "true" : "false"',
@@ -133,11 +136,18 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
       >
         <ng-content select="[chatHeader]" chatHeader />
         <ng-content select="[chatWelcomeSuggestions]" chatWelcomeSuggestions />
+        @if (interruptTemplate(); as renderer) {
+          <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+            <ng-container [ngTemplateOutlet]="renderer.templateRef"
+              [ngTemplateOutletContext]="{ $implicit: agent, interrupt: interrupt }" />
+          </ng-template>
+        }
       </chat>
     </aside>
   `,
 })
 export class ChatSidebarComponent {
+  protected readonly interruptTemplate = contentChild(ChatInterruptTemplateDirective);
   readonly agent = input.required<Agent>();
   /** A2UI component catalog forwarded to the inner <chat>. Without it,
    * messages classified as A2UI parse correctly but never mount a

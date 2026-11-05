@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, NavigationEnd } from '@angular/router';
 import {
@@ -37,6 +37,39 @@ const threadsAdapterProvider = {
   provide: LangGraphThreadsAdapter,
   useFactory: createThreadsAdapterMock,
 };
+
+describe('DemoShell — approval decisions', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function decisionShell() {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const shell = Object.create(DemoShell.prototype) as DemoShell;
+    Object.defineProperty(shell, 'agent', {
+      value: { interrupt: () => ({ value: { reason: 'Review this plan' } }), submit },
+    });
+    return { shell, submit };
+  }
+
+  it.each([
+    ['accept', 'approved'],
+    ['ignore', 'denied'],
+    ['edit', 'Use a smaller scope'],
+    ['respond', 'Please keep the latest backup'],
+  ] as const)('submits the %s decision to the existing session', async (action, resume) => {
+    const { shell, submit } = decisionShell();
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(resume);
+    await shell.onInterruptAction(action);
+    expect(submit).toHaveBeenCalledExactlyOnceWith(null, { command: { resume } });
+    expect(prompt).toHaveBeenCalledTimes(action === 'edit' || action === 'respond' ? 1 : 0);
+  });
+
+  it.each(['edit', 'respond'] as const)('keeps the interrupt pending when %s is cancelled', async action => {
+    const { shell, submit } = decisionShell();
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    await shell.onInterruptAction(action);
+    expect(submit).not.toHaveBeenCalled();
+  });
+});
 
 describe('DemoShell — mode signal', () => {
   beforeEach(() => {

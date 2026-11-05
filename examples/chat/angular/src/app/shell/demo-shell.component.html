@@ -135,11 +135,6 @@
       <app-itinerary-panel class="demo-shell__itinerary-overlay" />
       <div class="demo-shell__main">
         <router-outlet />
-        @if (agent.interrupt()) {
-          <div class="demo-shell__interrupt-panel" role="region" aria-label="Approval required">
-            <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
-          </div>
-        }
       </div>
     </div>
   } @else {
@@ -148,11 +143,6 @@
       [attr.data-sidenav-mode]="sidenavMode() !== 'drawer' ? sidenavMode() : null"
     >
       <router-outlet />
-      @if (agent.interrupt()) {
-        <div class="demo-shell__interrupt-panel" role="region" aria-label="Approval required">
-          <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
-        </div>
-      }
     </div>
   }
 

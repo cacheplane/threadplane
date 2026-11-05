@@ -8,6 +8,8 @@ description: The ChatInterruptTemplateDirective renders your approval card or ot
 
 `<chat>` has no default interrupt UI. With no pending interrupt, or no template, nothing renders.
 
+The same template works inside `<chat-popup>` and `<chat-sidebar>`. Both wrappers forward the agent and interrupt context to the inner chat, keeping approval UI inside its scrollable conversation instead of overlaying the composer.
+
 **Selector:** `ng-template[chatInterruptTemplate]`
 
 **Import:**
