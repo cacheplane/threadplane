@@ -7,7 +7,7 @@
       "packageName": "@threadplane/a2ui",
       "project": "a2ui",
       "framework": "shared",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "a2ui"
     },
@@ -17,7 +17,7 @@
       "packageName": "@threadplane/ag-ui",
       "project": "ag-ui",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "ag-ui"
     },
@@ -57,7 +57,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -67,7 +67,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -77,7 +77,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -187,7 +187,7 @@
       "packageName": "@threadplane/langgraph",
       "project": "langgraph",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "langgraph"
     },
@@ -257,7 +257,7 @@
       "packageName": "@threadplane/render",
       "project": "render",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "render"
     },
@@ -267,7 +267,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "shared",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -277,7 +277,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "angular",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -287,7 +287,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "backend",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -297,7 +297,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "shared",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "status": "published",
       "docLibrary": "telemetry"
     }

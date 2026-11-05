@@ -1,4 +1,4 @@
-# Threadplane v0.3.5
+# Threadplane v0.3.6
 
 Production-ready chat, thread/history/branch UI, interrupts, subagents, planning, memory, and generative UI for Angular agent apps.
 
