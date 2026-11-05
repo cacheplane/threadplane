@@ -45,9 +45,11 @@ metadata. Sources preserve their order, indices and literal title/snippet/type
 text; links use the shared Markdown URL policy. The view does not fetch metadata
 or icons. Installed production checks cover restored sources, same-ID metadata
 updates, unsafe URLs, literal text and narrow-screen wrapping. Inline references
-resolve exact source IDs before Markdown definitions. Safe destinations open in a
-new tab with a source label; unsafe or missing destinations remain numbered text,
-and unresolved references retain their syntax. User rows receive no citation
+resolve exact source IDs before Markdown definitions. Assistant rows opt into
+`Markdown.citationPreview`: resolved markers outside links reveal a connected
+source card; its safe **Open source** link opens a new tab. Unsafe or missing
+destinations remain literal metadata, and unresolved references retain their
+syntax. Default Markdown rendering keeps direct links. User rows receive no citation
 metadata. Sources and parser ownership remain with the application.
 
 Assistant Sources lists opt into explicit source previews. Click, tap, or activate
@@ -55,8 +57,18 @@ a source button to inspect its supplied details in a modal. Close, Escape, or a
 click outside dismisses it; Tab includes the optional safe **Open source** link.
 The preview preserves the composer and draft, performs no backend request, and
 retires on conversation changes, including A-B-A. Literal publication text and
-URLs remain supplied evidence, with no icon or metadata fetch. Hover previews and
-inline-marker overlays remain outside this bounded private feature.
+URLs remain supplied evidence, with no icon or metadata fetch.
+
+Inline cards open immediately on focus or tap, or after 120 ms of fine-pointer
+hover. A 200 ms leave delay allows moving into the card; keyboard focus keeps it
+open. Tab from the marker enters the card, Shift+Tab returns to the marker, and
+Tab past the final control continues to the next page control without trapping.
+Close and Escape restore an available marker when focus was inside the card;
+outside interaction preserves its destination focus. Cards flip above the marker
+when needed, clamp to the viewport in either text direction, and reposition on
+scroll or resize. Timers and portals retire with their message generation/source
+identity and conversation selection. The Markdown entry point supplies its own
+preview presentation without requiring the chat stylesheet.
 
 The React view also composes `TextTranscript` in app-authored background activity
 disclosures for supplied child observations. Full namespace tuples identify

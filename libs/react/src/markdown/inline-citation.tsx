@@ -1,4 +1,5 @@
 import type { Citation } from '@threadplane/core';
+import { InlinePreview } from './inline-preview.js';
 import {
   markdownUrl,
   type CitationDefinition,
@@ -34,11 +35,13 @@ export function InlineCitation({
   sources,
   definitions,
   insideAnchor,
+  preview = false,
 }: {
   readonly refId: string;
   readonly sources: ReadonlyMap<string, Citation>;
   readonly definitions: ReadonlyMap<string, CitationDefinition>;
   readonly insideAnchor: boolean;
+  readonly preview?: boolean;
 }) {
   const definition = definitions.get(refId);
   const citation =
@@ -48,6 +51,10 @@ export function InlineCitation({
   const label = `Citation ${citation.index}${
     citation.title ? `: ${citation.title}` : ''
   }`;
+  if (preview === true && !insideAnchor)
+    return (
+      <InlinePreview key={citation.id} citation={citation} label={label} />
+    );
   const href =
     !insideAnchor && citation.url !== undefined
       ? markdownUrl(citation.url, 'link')
