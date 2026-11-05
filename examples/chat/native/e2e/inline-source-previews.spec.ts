@@ -339,9 +339,14 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
       'Conversation ID: b'
     );
     await expect(dialog).toHaveCount(0);
+    expect(await old.evaluate((node) => node.isConnected)).toBe(false);
+    // Park the pointer on B so A's replacement cannot receive a fresh hover;
+    // the assertions below isolate presentation from the retired lifetime.
+    await page.mouse.move(1, 1);
     await select('a');
     await backend.steps[6].received;
     await expect(trigger).toBeVisible();
+    expect(await trigger.evaluate((node) => node.matches(':hover'))).toBe(false);
     await page.waitForTimeout(250);
     await expect(dialog).toHaveCount(0);
     expect(await old.evaluate((node) => node.isConnected)).toBe(false);

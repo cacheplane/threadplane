@@ -17,3 +17,11 @@ props.citations[0].title = 'Changed';
 <Citations citations={citations} preview="true" />;
 // @ts-expect-error The preview prop is readonly.
 props.preview = true;
+<Citations citations={citations} collapsible />;
+<Citations citations={citations} collapsible={false} />;
+// @ts-expect-error Collapsible requires a boolean flag.
+<Citations citations={citations} collapsible="true" />;
+// @ts-expect-error The collapsible prop is readonly.
+props.collapsible = true;
+// @ts-expect-error Disclosure state is local and cannot be controlled.
+<Citations citations={citations} expanded />;

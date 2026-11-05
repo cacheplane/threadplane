@@ -1,5 +1,6 @@
-import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Citation } from '@threadplane/core';
 import { Citations } from './index';
 
@@ -128,5 +129,247 @@ describe('Citations', () => {
         />
       )
     ).toThrow(/duplicate citation/i);
+  });
+});
+
+describe('collapsible Citations', () => {
+  const citations = [{ id: 'a', index: 7, title: 'Evidence', url: '/raw' }];
+  // Runtime probes also exercise invalid JavaScript flags before the declaration exists.
+  const panel = (extra: Record<string, unknown> = {}) => (
+    <Citations
+      {...({ citations, collapsible: true, ...extra } as React.ComponentProps<
+        typeof Citations
+      >)}
+    />
+  );
+  it('starts closed with a counted native heading button and stable unique existing hidden body', () => {
+    const view = render(
+      <StrictMode>
+        {panel()}
+        {panel({ label: 'Evidence' })}
+      </StrictMode>
+    );
+    const header = view.getByRole('button', { name: 'Sources (1)' });
+    expect(header.tagName).toBe('BUTTON');
+    expect(header.getAttribute('type')).toBe('button');
+    expect(header.parentElement?.tagName).toBe('H4');
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+    const id = header.getAttribute('aria-controls');
+    if (!id) throw new Error('Expected Sources body ID');
+    const body = document.getElementById(id);
+    if (!body) throw new Error('Expected Sources body');
+    expect(body.hidden).toBe(true);
+    expect(body.childElementCount).toBe(0);
+    expect(view.queryByRole('link')).toBeNull();
+    expect(
+      view
+        .getByRole('button', { name: 'Evidence (1)' })
+        .getAttribute('aria-controls')
+    ).not.toBe(id);
+    fireEvent.click(header);
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(body.hidden).toBe(false);
+    expect(view.getByRole('link').getAttribute('href')).toBe('/raw');
+    fireEvent.click(header);
+    expect(body.hidden).toBe(true);
+    expect(body.childElementCount).toBe(0);
+    expect(header.getAttribute('aria-controls')).toBe(id);
+  });
+  it('preserves expanded choice and keyed items for count, metadata and reorder updates', () => {
+    const view = render(panel());
+    const header = view.getByRole('button');
+    fireEvent.click(header);
+    const item = view.getByRole('listitem');
+    view.rerender(
+      panel({
+        citations: [
+          { id: 'b', index: 2 },
+          { ...citations[0], title: 'Changed' },
+        ],
+      })
+    );
+    expect(view.getByRole('button', { name: 'Sources (2)' })).toBe(header);
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(view.getAllByRole('listitem')[1]).toBe(item);
+    expect(item.textContent).toContain('Changed');
+    fireEvent.click(header);
+    view.rerender(panel());
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+    expect(view.queryByRole('listitem')).toBeNull();
+  });
+  it('uses strict opt-in and retires presentation across mode changes, empty and unmount', () => {
+    const view = render(panel());
+    fireEvent.click(view.getByRole('button'));
+    const old = view.getByRole('listitem');
+    for (const collapsible of [undefined, false, 'true', 1]) {
+      view.rerender(panel({ collapsible }));
+      expect(view.queryByRole('button')).toBeNull();
+      expect(view.getByRole('heading').textContent).toBe('Sources');
+    }
+    expect(old.isConnected).toBe(false);
+    view.rerender(panel());
+    expect(view.getByRole('button').getAttribute('aria-expanded')).toBe(
+      'false'
+    );
+    fireEvent.click(view.getByRole('button'));
+    view.rerender(panel({ citations: [] }));
+    expect(view.container.childElementCount).toBe(0);
+    view.rerender(panel());
+    expect(view.getByRole('button').getAttribute('aria-expanded')).toBe(
+      'false'
+    );
+    view.unmount();
+    expect(view.container.childElementCount).toBe(0);
+  });
+  it('rejects duplicate IDs before opening', () => {
+    expect(() =>
+      render(panel({ citations: [citations[0], citations[0]] }))
+    ).toThrow(/duplicate citation/i);
+  });
+  it('contains keyboard and click bubbling while preserving native activation and Tab', () => {
+    const outer = vi.fn();
+    const view = render(
+      <div onKeyDown={outer} onKeyUp={outer} onClick={outer}>
+        {panel()}
+      </div>
+    );
+    const header = view.getByRole('button');
+    for (const key of ['Enter', ' ', 'Tab']) {
+      const down = new KeyboardEvent('keydown', {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      const up = new KeyboardEvent('keyup', {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      fireEvent(header, down);
+      fireEvent(header, up);
+      expect(down.defaultPrevented).toBe(false);
+      expect(up.defaultPrevented).toBe(false);
+    }
+    fireEvent.click(header);
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(outer).not.toHaveBeenCalled();
+  });
+  it.each([
+    { repeat: true },
+    { isComposing: true },
+    { keyCode: 229 },
+    { claimed: true },
+    { ctrlKey: true },
+    { altKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+  ])(
+    'rejects ignored keyboard activation and later Space release: %j',
+    (extra) => {
+      const view = render(panel());
+      const header = view.getByRole('button');
+      for (const key of ['Enter', ' ']) {
+        const down = new KeyboardEvent('keydown', {
+          key,
+          bubbles: true,
+          cancelable: true,
+          ...extra,
+        });
+        if ('claimed' in extra) down.preventDefault();
+        fireEvent(header, down);
+        expect(down.defaultPrevented).toBe(true);
+        const up = new KeyboardEvent('keyup', {
+          key,
+          bubbles: true,
+          cancelable: true,
+        });
+        fireEvent(header, up);
+        if (key === ' ') expect(up.defaultPrevented).toBe(true);
+      }
+      expect(header.getAttribute('aria-expanded')).toBe('false');
+    }
+  );
+  it('clears Space ownership on blur, window blur and hidden document', () => {
+    const view = render(panel());
+    const header = view.getByRole('button');
+    for (const release of [
+      () => fireEvent.blur(header),
+      () => fireEvent(window, new Event('blur')),
+      () => {
+        vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+        fireEvent(document, new Event('visibilitychange'));
+      },
+    ]) {
+      fireEvent.keyDown(header, { key: ' ' });
+      release();
+      const up = new KeyboardEvent('keyup', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      });
+      fireEvent(header, up);
+      expect(up.defaultPrevented).toBe(true);
+    }
+    vi.restoreAllMocks();
+  });
+  it('restores available header from a closing list descendant without stealing outside focus', () => {
+    vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+      {},
+    ] as unknown as DOMRectList);
+    const view = render(
+      <>
+        {panel()}
+        <button>Outside</button>
+      </>
+    );
+    const header = view.getByRole('button', { name: 'Sources (1)' });
+    fireEvent.click(header);
+    view.getByRole('link').focus();
+    fireEvent.click(header);
+    expect(document.activeElement).toBe(header);
+    fireEvent.click(header);
+    const outside = view.getByRole('button', { name: 'Outside' });
+    outside.focus();
+    fireEvent.click(header);
+    expect(document.activeElement).toBe(outside);
+    fireEvent.click(header);
+    view.getByRole('link').focus();
+    header.hidden = true;
+    fireEvent.click(header);
+    expect(document.activeElement).not.toBe(header);
+    vi.restoreAllMocks();
+  });
+  it('retires preview descendants on collapse and opens fresh controls on expansion', () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value() {
+        this.setAttribute('open', '');
+      },
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value() {
+        this.removeAttribute('open');
+      },
+    });
+    const view = render(panel({ preview: true }));
+    const header = view.getByRole('button');
+    fireEvent.click(header);
+    const trigger = view.getByRole('button', { name: /^Preview source/ });
+    fireEvent.click(trigger);
+    const dialog = view.getByRole('dialog');
+    fireEvent.click(view.getByRole('button', { name: 'Close' }));
+    fireEvent.click(header);
+    expect(trigger.isConnected).toBe(false);
+    expect(dialog.isConnected).toBe(false);
+    fireEvent.click(header);
+    expect(view.getByRole('button', { name: /^Preview source/ })).not.toBe(
+      trigger
+    );
+    fireEvent.click(trigger);
+    expect(view.queryByRole('dialog')).toBeNull();
+    fireEvent.click(view.getByRole('button', { name: /^Preview source/ }));
+    view.rerender(panel({ collapsible: false, preview: true }));
+    expect(view.queryByRole('dialog')).toBeNull();
   });
 });

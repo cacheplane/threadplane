@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 8
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": false
@@ -106,7 +106,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 10
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "collapsible",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#collapsible:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly collapsible?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Literal true enables an initially closed Sources panel with local presentation state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -142,7 +178,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 9
+            "line": 12
           },
           "isReadonly": true,
           "isOptional": true
@@ -178,7 +214,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 11
+            "line": 14
           },
           "isReadonly": true,
           "isOptional": true
@@ -186,12 +222,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 7
+        "line": 10
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 7
+    "line": 10
   }
 }

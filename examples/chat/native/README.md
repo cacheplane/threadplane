@@ -52,8 +52,14 @@ destinations remain literal metadata, and unresolved references retain their
 syntax. Default Markdown rendering keeps direct links. User rows receive no citation
 metadata. Sources and parser ownership remain with the application.
 
-Assistant Sources lists opt into explicit source previews. Click, tap, or activate
-a source button to inspect its supplied details in a modal. Close, Escape, or a
+Assistant Sources lists opt into `Citations.collapsible` and explicit source
+previews. Each mounted message starts with a closed Sources header showing its
+source count. Click, tap, Enter, or Space expands or collapses the list; collapsed
+source controls are unmounted. Metadata updates preserve the user's expansion
+choice, while conversation selection, including A-B-A, starts a fresh closed
+panel. These local interactions preserve the composer and issue no backend request.
+Expand the panel and activate a source button to inspect its supplied details in
+a modal. Close, Escape, or a
 click outside dismisses it; Tab includes the optional safe **Open source** link.
 The preview preserves the composer and draft, performs no backend request, and
 retires on conversation changes, including A-B-A. Literal publication text and

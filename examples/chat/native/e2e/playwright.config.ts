@@ -11,6 +11,7 @@ export default defineConfig({
     'message-list.spec.ts',
     'reasoning.spec.ts',
     'source-previews.spec.ts',
+    'citation-disclosure.spec.ts',
     'inline-source-previews.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',
