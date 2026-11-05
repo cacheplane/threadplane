@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/markdown/markdown.tsx",
-        "line": 20
+        "line": 22
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ snapshot, citations }",
+          "parameterName": "{ snapshot, citations, citationPreview, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/markdown/markdown.tsx",
-    "line": 20
+    "line": 22
   }
 }

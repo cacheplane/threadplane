@@ -15,6 +15,7 @@ import '@threadplane/react/debug/styles.css';
 import '../../shared/styles.css';
 import './popup.css';
 import './sidenav.css';
+import './conversation.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Application root is missing');

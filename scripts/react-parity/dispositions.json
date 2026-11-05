@@ -1715,9 +1715,9 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/markdown/views/citation-reference.tsx",
-      "reason": "Native component. Message-scoped resolution, keyboard/hover preview, stable ARIA identifiers."
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/inline-citation.tsx",
+      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open."
     },
     {
       "id": "component:libs/chat/src/lib/markdown/views/markdown-code-block.component.ts#MarkdownCodeBlockComponent",
@@ -1937,7 +1937,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts#ChatCitationsCardComponent",
@@ -5058,7 +5058,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatCitationsCardComponent",
@@ -5668,7 +5668,7 @@
       "status": "in-progress",
       "target": "libs/react/src/markdown/markdown.tsx",
       "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
-      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood opts into inline previews and retains Sources modals. Full citation display parity and public distribution remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ClientToolContinuationLimitEvent",
@@ -10058,8 +10058,8 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "target": "libs/react/src/markdown/markdown.tsx",
-      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "target": "libs/react/src/markdown/inline-citation.tsx",
+      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open.",
       "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
@@ -10247,7 +10247,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
@@ -15280,7 +15280,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationsProps",
@@ -15289,7 +15289,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
@@ -15298,7 +15298,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -16139,7 +16139,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private pure inline citation presenter with safe URL and existing-anchor containment; no public runtime export or preview parity."
+      "reason": "Private inline citation presenter preserves default safe links and existing-anchor containment, with opt-in identity-scoped source previews and no new public runtime export."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationPreview",
@@ -16148,7 +16148,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationPreviewProps",
@@ -16157,7 +16157,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
       "id": "source:libs/react/src/chat/citation-preview.tsx",
@@ -16166,7 +16166,25 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
+    },
+    {
+      "id": "source:libs/react/src/markdown/inline-preview.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private Markdown source card with local mounted state, 120/200ms fine-pointer timing, keyboard/touch activation, nonmodal focus navigation, safe literal metadata and owner-document portal cleanup. Native assistant rows dogfood the installed runtime; full T26 citation display remains open."
+    },
+    {
+      "id": "source:libs/react/src/markdown/preview-position.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private pure connected preview geometry aligns below-start, flips above and clamps to the current viewport with RTL and visual viewport offsets. It does not expose a generic React overlay primitive."
     }
   ]
 }

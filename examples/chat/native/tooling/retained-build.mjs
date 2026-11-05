@@ -230,6 +230,10 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    for (const name of ['inline-preview', 'preview-position']) {
+      const path = 'node_modules/@threadplane/react/src/markdown/' + name;
+      assert.ok(p.bundler.inputs[path + '.js'], 'Installed ' + name + ' runtime required');
+    }
     const preview = 'node_modules/@threadplane/react/src/chat/citation-preview';
     assert.ok(
       p.compiler.inputs[preview + '.d.ts'],

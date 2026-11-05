@@ -14,6 +14,12 @@ const props: MarkdownProps = { snapshot };
 const citations: readonly Citation[] = [{ id: 'source', index: 1 }];
 const sourced: MarkdownProps = { snapshot, citations };
 <Markdown {...sourced} />;
+const preview: MarkdownProps = { snapshot, citations, citationPreview: true };
+<Markdown {...preview} />;
+// @ts-expect-error Preview opt-in is readonly.
+preview.citationPreview = false;
+// @ts-expect-error Preview opt-in accepts a boolean only.
+<Markdown snapshot={snapshot} citationPreview="true" />;
 // @ts-expect-error Props are readonly.
 sourced.citations = [];
 // @ts-expect-error Citation identity is required.

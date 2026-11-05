@@ -36,6 +36,19 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('lets the keyboard focus the named transcript without focusing a message action', () => {
+    const content = createMessageContent();
+    const view = render(
+      <MessageList
+        rows={content.project(snap([msg('a', 'Read this earlier answer')]))}
+      />
+    );
+    const region = view.getByRole('region', { name: 'Conversation' });
+    region.focus();
+    expect(document.activeElement).toBe(region);
+    content.dispose();
+  });
+
   it('retains row-update following when ResizeObserver is unavailable', () => {
     vi.stubGlobal('ResizeObserver', undefined);
     const content = createMessageContent();

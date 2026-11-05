@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -39,7 +40,7 @@ body {
   margin: 0;
 }
 .client-tools-demo .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
   margin-bottom: 0.4rem;
 }
@@ -56,7 +57,7 @@ body {
   max-height: 55dvh;
 }
 .client-tools-demo section {
-  border: 1px solid #dce1e6;
+  border: 1px solid var(--ds-border, light-dark(#dce1e6, #666666));
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -68,11 +69,11 @@ body {
   margin-top: 0.5rem;
 }
 .client-tools-demo [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 .client-tools-demo [role='status'] {
   font-size: 0.85rem;
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
 .client-tools-demo dl {
   display: grid;
@@ -115,8 +116,8 @@ body {
 }
 .weather-card {
   padding: 1rem;
-  background: #f1f5f9;
-  border: 1px solid #d8dee8;
+  background: var(--ds-surface-tinted, light-dark(#f1f5f9, #182638));
+  border: 1px solid var(--ds-border, light-dark(#d8dee8, #9dc1ff));
   border-radius: 0.5rem;
   overflow-wrap: anywhere;
 }

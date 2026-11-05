@@ -115,6 +115,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     <div
       ref={container}
       role="region"
+      tabIndex={0}
       aria-label={label}
       className={['tp-chat-list', className].filter(Boolean).join(' ')}
     >

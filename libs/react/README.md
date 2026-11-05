@@ -161,8 +161,21 @@ effect on the next render, with no metadata fetching or owner lifecycle. Missing
 blocked and failed images show an accessible alt-text fallback. Destination
 classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. The root binding stays headless; rich math,
-syntax highlighting, citation overlays, custom node registries, legacy migration,
+syntax highlighting, custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
+
+Set readonly `citationPreview` to `true` to replace resolved inline markers outside
+anchors with source buttons: `<Markdown snapshot={snapshot} citations={sources}
+citationPreview />`. Focus or activation opens a connected, nonmodal details card;
+fine-pointer hover opens after 120ms and leaving closes after 200ms. The card
+stays open while its trigger or controls own focus. Tab enters the card, Shift+Tab
+returns to the trigger, and Tab from the last control continues through the page.
+Escape, Close, outside pointer interaction, or focus departure dismisses it.
+Only the explicit safe “Open source” link navigates. Titles, snippets and dates
+remain literal borrowed metadata; icons and metadata are never fetched. The card
+uses the trigger's document, follows viewport/scroll changes and needs no chat
+stylesheet. Generation, marker identity, removal and unmount retire its local state.
+Omitting the opt-in preserves direct links and numbered markers.
 
 ## Chat
 
@@ -266,10 +279,26 @@ const content = createMessageContent();
 ```
 
 The app owns that projection and calls `content.dispose()` when it is done with it;
-Chat never disposes app-passed content. The stylesheet is opt-in and scoped to `.tp-chat*`
-classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
+Chat never disposes app-passed content. The stylesheet is opt-in and scoped to chat
+and Markdown classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
 Compose `MessageList` and `ChatInput` directly when your app owns selection or
 rendering.
+
+The shared presentation uses a bounded reading column, user bubbles, a pill
+composer, scrollable tables and native task-checkbox semantics. Override
+`--tp-chat-bg`, `--tp-chat-surface-alt`, `--tp-chat-reading-width`,
+`--tp-chat-font-family`, `--tp-chat-font-size-base`, or the
+`--tp-chat-radius-*` properties on the composed part to customize it. An explicit
+`color-scheme` or `--tp-chat-color-scheme` selects the host's light/dark treatment.
+Custom message renderers retain their own layout and need their own integration.
+
+The composer and authored Markdown use automatic text direction; fenced code
+blocks retain left-to-right source order. When a focused Stop button disappears
+after stopping or completing a response, focus returns to its composer. Completion
+does not move focus from another control. The named transcript is keyboard
+focusable so readers can scroll without activating a message action.
+The composer also recalculates draft height when its container or viewport
+resizes, retaining the draft and the existing viewport height cap.
 
 `MessageList` infers the concrete row type from `rows`, including authored fields
 and typed tool contracts, and passes it to `renderMessage`. Keep that callback
@@ -928,8 +957,9 @@ After hydration, a supplied application-scoped `storageKey` restores only open,
 dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
 preferences during hydration. State, history, IDs, target and selection are never
 persisted. Use separate keys for independent panels. Scoped Escape handling and
-outside-pointer close retain outside focus; user-close restores the launcher only
-while focus remains owned by that panel.
+outside-click close retain outside focus. Outside actions activate before dismissal
+so a host layout change cannot move their targets before the click. User-close
+restores the launcher only while focus remains owned by that panel.
 
 ### Passive state comparison (private React Debug)
 

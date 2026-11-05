@@ -1,8 +1,8 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #24312e;
-  background: #f4f5f0;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
   font-synthesis: none;
 }
 * {
@@ -17,10 +17,10 @@ textarea {
 }
 button {
   cursor: pointer;
-  border: 1px solid #bdcbc2;
+  border: 1px solid var(--ds-border, light-dark(#bdcbc2, #666666));
   border-radius: 8px;
-  background: #fff;
-  color: #234735;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
+  color: var(--ds-accent, light-dark(#234735, #a7d8bc));
   padding: 0.65rem 0.9rem;
 }
 button:disabled {
@@ -29,8 +29,8 @@ button:disabled {
 }
 button:focus-visible,
 summary:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #468667;
+textarea:focus-visible:where(:not(.tp-chat-input__textarea)) {
+  outline: 3px solid var(--ds-accent, light-dark(#468667, #a7d8bc));
   outline-offset: 3px;
 }
 .filesystem-demo {
@@ -53,16 +53,16 @@ h1 {
 }
 .eyebrow {
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.12em;
   margin: 0;
-  color: #456753;
+  color: var(--ds-text-secondary, light-dark(#456753, #b5b5b5));
 }
 .introduction {
   max-width: 700px;
   line-height: 1.6;
-  color: #596861;
+  color: var(--ds-text-secondary, light-dark(#596861, #b5b5b5));
   margin: 6px 0 30px;
 }
 .filesystem-layout {
@@ -73,8 +73,8 @@ h1 {
 }
 .conversation-panel {
   min-width: 0;
-  background: #fff;
-  border: 1px solid #d8dfd5;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
+  border: 1px solid var(--ds-border, light-dark(#d8dfd5, #666666));
   border-radius: 16px;
   padding: 24px;
 }
@@ -86,22 +86,22 @@ h1 {
 }
 .seed-prompts button {
   font-size: 0.84rem;
-  background: #f4f7f2;
+  background: var(--ds-surface-tinted, light-dark(#f4f7f2, #282828));
 }
 .conversation-empty {
   min-height: 210px;
   padding: 38px 12px;
   text-align: center;
-  color: #667269;
+  color: var(--ds-text-secondary, light-dark(#667269, #b5b5b5));
 }
 .conversation-empty > span {
   font-size: 2rem;
-  color: #44825c;
+  color: var(--ds-accent, light-dark(#44825c, #a7d8bc));
 }
 .conversation-empty h2 {
   font-size: 1.15rem;
   font-weight: 550;
-  color: #354a3e;
+  color: var(--ds-text-secondary, light-dark(#354a3e, #b5b5b5));
 }
 .conversation-empty p {
   font-size: 0.9rem;
@@ -121,7 +121,7 @@ pre {
 }
 .tp-chat-message--tool {
   padding: 10px 12px;
-  background: #f4f5f0;
+  background: var(--ds-surface-tinted, light-dark(#f4f5f0, #282828));
   font-size: 0.82rem;
   border-radius: 8px;
 }
@@ -137,14 +137,14 @@ summary {
 .request-error {
   font-size: 0.82rem;
   line-height: 1.6;
-  color: #7d4c24;
-  background: #fff5de;
+  color: var(--ds-accent, light-dark(#7d4c24, #ffcb8a));
+  background: var(--ds-surface-tinted, light-dark(#fff5de, #352a16));
   border-radius: 8px;
   padding: 12px;
 }
 .response-status {
   font-size: 0.78rem;
-  color: #627067;
+  color: var(--ds-text-secondary, light-dark(#627067, #b5b5b5));
   margin-bottom: 0;
 }
 @media (max-width: 720px) {
@@ -187,11 +187,11 @@ pre {
 }
 .workspace-panel,
 .approval-panel {
-  border: 1px solid #d5dce0;
+  border: 1px solid var(--ds-border, light-dark(#d5dce0, #666666));
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 18px;
-  background: #fff;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
 }
 .file-layout {
   display: grid;
@@ -206,7 +206,7 @@ pre {
   overflow-wrap: anywhere;
 }
 .file-layout nav button[aria-pressed='true'] {
-  background: #dae7df;
+  background: var(--ds-surface-tinted, light-dark(#dae7df, #282828));
 }
 pre {
   white-space: pre-wrap;
@@ -215,7 +215,7 @@ pre {
   font-family: ui-monospace, monospace;
   font-size: 0.84rem;
   padding: 12px;
-  background: #f5f7f6;
+  background: var(--ds-surface-tinted, light-dark(#f5f7f6, #282828));
   border-radius: 8px;
 }
 h3,
@@ -255,7 +255,6 @@ button {
   white-space: nowrap;
   overflow-wrap: normal;
   flex-shrink: 0;
-  min-width: 4.5rem;
 }
 .tp-chat-input__hint {
   min-width: 0;
