@@ -21,7 +21,6 @@ import type { ClientToolExecutionGuard } from '../../client-tools/client-tool-ex
 import { createClientToolsCoordinator } from '../../client-tools/client-tools-coordinator';
 import { ChatWindowComponent } from '../../primitives/chat-window/chat-window.component';
 import { ChatMessageListComponent } from '../../primitives/chat-message-list/chat-message-list.component';
-import { MessageTemplateDirective } from '../../primitives/chat-message-list/message-template.directive';
 import { ChatMessageComponent, type ChatMessageRole } from '../../primitives/chat-message/chat-message.component';
 import { ChatInputComponent } from '../../primitives/chat-input/chat-input.component';
 import { ChatTypingIndicatorComponent } from '../../primitives/chat-typing-indicator/chat-typing-indicator.component';
@@ -122,7 +121,7 @@ export function isPinned(
   standalone: true,
   imports: [
     KeyValuePipe, NgTemplateOutlet,
-    ChatWindowComponent, ChatMessageListComponent, MessageTemplateDirective, ChatMessageComponent,
+    ChatWindowComponent, ChatMessageListComponent, ChatMessageComponent,
     ChatInputComponent, ChatTypingIndicatorComponent, ChatErrorComponent,
     ChatThreadListComponent, ChatGenerativeUiComponent,
     ChatStreamingMdComponent, ChatToolCallsComponent, ChatToolViewsComponent, A2uiSurfaceComponent,
@@ -254,120 +253,121 @@ export function isPinned(
                role="region" aria-label="Conversation" tabindex="0">
             @let currentAgent = agent();
             @let currentMessages = currentAgent.messages();
-            <chat-message-list [agent]="currentAgent">
-              <ng-template chatMessageTemplate="human" let-message let-i="index">
-                <chat-message [role]="'user'" [prevRole]="previousRole(currentMessages, i)">{{ humanContent(message) }}</chat-message>
-              </ng-template>
-
-              <ng-template chatMessageTemplate="ai" let-message let-i="index">
-                @let content = messageContent(message);
-                @let classified = classifyMessage(content, message);
-                <chat-message
-                  [role]="'assistant'"
-                  [message]="message"
-                  [prevRole]="previousRole(currentMessages, i)"
-                  [streaming]="message.delivery.phase === 'streaming'"
-                  [current]="i === currentMessages.length - 1"
-                >
-                  <!-- A projected chatActivityTemplate owns the reasoning +
-                       tool-call region for this message. It renders at
-                       message level (never inside a clipped trace body). -->
-                  @if (activityTemplate(); as activity) {
-                    <ng-container
-                      [ngTemplateOutlet]="activity.templateRef"
-                      [ngTemplateOutletContext]="activityContextFor(message, i)"
-                    />
-                  } @else {
-                    <!-- Reasoning is merged across a run of consecutive (tool-
-                         separated) reasoning steps and rendered ONCE at the run's
-                         first step as "Thought for {total} · {N} steps", so a
-                         multi-step agent shows one compact pill instead of a
-                         stack of "Thought for 1s" chips. Single-step turns render
-                         a normal "Thought for {duration}" pill. -->
-                    @if (message.reasoning && reasoningRunStart(i)) {
-                      @let run = reasoningRun(i);
-                      <chat-reasoning
-                        [content]="run.content"
-                        [delivery]="run.delivery"
-                        [durationMs]="run.durationMs"
-                        [label]="run.label"
-                      />
-                    }
-                    <!-- Per-tool templates projected into <chat> are collected
-                         here and handed down as an input: a content query on
-                         <chat-tool-calls> cannot see templates re-projected
-                         through <chat>'s own ng-content. -->
-                    <chat-tool-calls
-                      [agent]="currentAgent"
+            <chat-message-list [agent]="currentAgent" [projectedMessages]="true">
+              @for (message of currentMessages; track message.id; let i = $index) {
+                @switch (message.role) {
+                  @case ('user') {
+                    <chat-message [role]="'user'" [prevRole]="previousRole(currentMessages, i)">{{ humanContent(message) }}</chat-message>
+                  }
+                  @case ('tool') {
+                    <!-- Tool messages route through chat-trace; hidden from main flow. -->
+                  }
+                  @case ('system') {
+                    <chat-message [role]="'system'">{{ messageContent(message) }}</chat-message>
+                  }
+                  @default {
+                    @let content = messageContent(message);
+                    @let classified = classifyMessage(content, message);
+                    <chat-message
+                      [role]="'assistant'"
                       [message]="message"
-                      [excludeToolNames]="excludedToolNames()"
-                      [toolCallTemplates]="toolCallTemplates()"
-                    />
-                  }
-                  <chat-tool-views
-                    [agent]="currentAgent"
-                    [message]="message"
-                    [views]="effectiveViews()"
-                    [store]="resolvedStore()"
-                    [handlers]="handlers()"
-                    (events)="onClientToolEvent($event)"
-                  />
-                  @if (classified.markdown(); as md) {
-                    <chat-streaming-md [document]="markdownDocumentFor(md, message)" />
-                  }
-                  @if (classified.spec(); as spec) {
-                    <!-- Pass ONLY the explicit consumer store (may be
-                         undefined) — never the conversation-wide internal
-                         fallback. Without a consumer store, render-spec
-                         self-seeds a per-instance store from spec.state so
-                         same-key dashboards across messages stay isolated
-                         (a2ui parity). -->
-                    <chat-generative-ui
-                      [spec]="spec"
-                      [registry]="renderRegistry()"
-                      [store]="store()"
-                      [handlers]="handlers()"
-                      [loading]="agent().isLoading()"
-                      (events)="onSpecEvent($event, i)"
-                    />
-                  }
-                  @if (classified.type() === 'a2ui' && views(); as catalog) {
-                    @for (entry of classified.a2uiSurfaces() | keyvalue; track entry.key) {
-                      <a2ui-surface
-                        [surface]="entry.value"
-                        [state]="classified.a2uiSurfaceStates().get(entry.key)"
-                        [catalog]="catalog"
+                      [prevRole]="previousRole(currentMessages, i)"
+                      [streaming]="message.delivery.phase === 'streaming'"
+                      [current]="i === currentMessages.length - 1"
+                    >
+                      <!-- A projected chatActivityTemplate owns the reasoning +
+                           tool-call region for this message. It renders at
+                           message level (never inside a clipped trace body). -->
+                      @if (activityTemplate(); as activity) {
+                        <ng-container
+                          [ngTemplateOutlet]="activity.templateRef"
+                          [ngTemplateOutletContext]="activityContextFor(message, i)"
+                        />
+                      } @else {
+                        <!-- Reasoning is merged across a run of consecutive (tool-
+                             separated) reasoning steps and rendered ONCE at the run's
+                             first step as "Thought for {total} · {N} steps", so a
+                             multi-step agent shows one compact pill instead of a
+                             stack of "Thought for 1s" chips. Single-step turns render
+                             a normal "Thought for {duration}" pill. -->
+                        @if (message.reasoning && reasoningRunStart(i)) {
+                          @let run = reasoningRun(i);
+                          <chat-reasoning
+                            [content]="run.content"
+                            [delivery]="run.delivery"
+                            [durationMs]="run.durationMs"
+                            [label]="run.label"
+                          />
+                        }
+                        <!-- Per-tool templates projected into <chat> are collected
+                             here and handed down as an input: a content query on
+                             <chat-tool-calls> cannot see templates re-projected
+                             through <chat>'s own ng-content. -->
+                        <chat-tool-calls
+                          [agent]="currentAgent"
+                          [message]="message"
+                          [excludeToolNames]="excludedToolNames()"
+                          [toolCallTemplates]="toolCallTemplates()"
+                        />
+                      }
+                      <chat-tool-views
+                        [agent]="currentAgent"
+                        [message]="message"
+                        [views]="effectiveViews()"
+                        [store]="resolvedStore()"
                         [handlers]="handlers()"
-                        (action)="onA2uiAction($event)"
-                        (events)="onA2uiEvent($event, i, entry.key)"
+                        (events)="onClientToolEvent($event)"
                       />
-                    }
+                      @if (classified.markdown(); as md) {
+                        <chat-streaming-md [document]="markdownDocumentFor(md, message)" />
+                      }
+                      @if (classified.spec(); as spec) {
+                        <!-- Pass ONLY the explicit consumer store (may be
+                             undefined) — never the conversation-wide internal
+                             fallback. Without a consumer store, render-spec
+                             self-seeds a per-instance store from spec.state so
+                             same-key dashboards across messages stay isolated
+                             (a2ui parity). -->
+                        <chat-generative-ui
+                          [spec]="spec"
+                          [registry]="renderRegistry()"
+                          [store]="store()"
+                          [handlers]="handlers()"
+                          [loading]="agent().isLoading()"
+                          (events)="onSpecEvent($event, i)"
+                        />
+                      }
+                      @if (classified.type() === 'a2ui' && views(); as catalog) {
+                        @for (entry of classified.a2uiSurfaces() | keyvalue; track entry.key) {
+                          <a2ui-surface
+                            [surface]="entry.value"
+                            [state]="classified.a2uiSurfaceStates().get(entry.key)"
+                            [catalog]="catalog"
+                            [handlers]="handlers()"
+                            (action)="onA2uiAction($event)"
+                            (events)="onA2uiEvent($event, i, entry.key)"
+                          />
+                        }
+                      }
+                      <!-- Only show message actions when there is copyable assistant
+                           text. Content-less messages (a bare tool call or a subagent
+                           delegation card) have nothing to copy/regenerate/rate, so the
+                           actions panel is pure whitespace there — suppress it to keep
+                           the stream compact. -->
+                      @if (content.trim()) {
+                        <chat-message-actions
+                          chatMessageControls
+                          [content]="content"
+                          [disabled]="agent().isLoading() || !!agent().isInputBlocked?.()"
+                          (regenerate)="onRegenerate(i)"
+                          (rate)="onRate(message, $event)"
+                          (contentCopied)="onCopy(message, $event)"
+                        />
+                      }
+                    </chat-message>
                   }
-                  <!-- Only show message actions when there is copyable assistant
-                       text. Content-less messages (a bare tool call or a subagent
-                       delegation card) have nothing to copy/regenerate/rate, so the
-                       actions panel is pure whitespace there — suppress it to keep
-                       the stream compact. -->
-                  @if (content.trim()) {
-                    <chat-message-actions
-                      chatMessageControls
-                      [content]="content"
-                      [disabled]="agent().isLoading() || !!agent().isInputBlocked?.()"
-                      (regenerate)="onRegenerate(i)"
-                      (rate)="onRate(message, $event)"
-                      (contentCopied)="onCopy(message, $event)"
-                    />
-                  }
-                </chat-message>
-              </ng-template>
-
-              <ng-template chatMessageTemplate="tool" let-message>
-                <!-- Tool messages route through chat-trace; hidden from main flow. -->
-              </ng-template>
-
-              <ng-template chatMessageTemplate="system" let-message>
-                <chat-message [role]="'system'">{{ messageContent(message) }}</chat-message>
-              </ng-template>
+                }
+              }
             </chat-message-list>
 
             <!-- A projected chatRunActivityTemplate renders the run while

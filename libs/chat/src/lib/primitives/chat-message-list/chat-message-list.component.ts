@@ -31,7 +31,7 @@ export function getMessageType(message: Message): MessageTemplateType {
   }
 }
 
-/** Renders agent messages using the custom template registered for each message category. */
+/** Renders agent messages with registered category templates, or optionally projects caller-owned message rows. */
 @Component({
   selector: 'chat-message-list',
   standalone: true,
@@ -39,19 +39,32 @@ export function getMessageType(message: Message): MessageTemplateType {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, CHAT_MESSAGE_LIST_STYLES],
   template: `
-    @for (message of messages(); track message.id) {
-      @let template = findTemplate(getMessageType(message));
-      @if (template) {
-        <ng-container
-          [ngTemplateOutlet]="template.templateRef"
-          [ngTemplateOutletContext]="{ $implicit: message, index: $index }"
-        />
+    @if (projectedMessages()) {
+      <ng-content />
+    } @else {
+      @for (message of messages(); track message.id) {
+        @let template = findTemplate(getMessageType(message));
+        @if (template) {
+          <ng-container
+            [ngTemplateOutlet]="template.templateRef"
+            [ngTemplateOutletContext]="{ $implicit: message, index: $index }"
+          />
+        }
       }
     }
   `,
 })
 export class ChatMessageListComponent {
   readonly agent = input.required<Agent>();
+
+  /**
+   * Renders projected message rows instead of the registered message templates.
+   * Defaults to false, preserving the generic list's template contexts and queries.
+   * The chat composition uses this mode for its inline built-in rows; its list
+   * therefore has no registered messageTemplates. Explicitly projected template
+   * directives remain available to this list's content query in either mode.
+   */
+  readonly projectedMessages = input(false);
 
   readonly messageTemplates = contentChildren(MessageTemplateDirective);
 

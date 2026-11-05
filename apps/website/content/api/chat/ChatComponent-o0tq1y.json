@@ -2495,7 +2495,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-        "line": 120
+        "line": 119
       },
       "angular": {
         "selector": "chat",
@@ -2640,6 +2640,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-    "line": 120
+    "line": 119
   }
 }

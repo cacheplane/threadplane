@@ -2191,7 +2191,7 @@
       "canonicalReference": "@threadplane/chat!ChatMessageListComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders agent messages using the custom template registered for each message category."
+      "summary": "Renders agent messages with registered category templates, or optionally projects caller-owned message rows."
     },
     {
       "name": "ChatMessageRole",

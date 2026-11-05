@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatMessageListComponent:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Renders agent messages using the custom template registered for each message category.",
+  "summary": "Renders agent messages with registered category templates, or optionally projects caller-owned message rows.",
   "declarations": [
     {
       "name": "ChatMessageListComponent",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Renders agent messages using the custom template registered for each message category.",
+        "summary": "Renders agent messages with registered category templates, or optionally projects caller-owned message rows.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-            "line": 54
+            "line": 58
           },
           "isStatic": false,
           "isReadonly": true,
@@ -132,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-            "line": 62
+            "line": 75
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-            "line": 60
+            "line": 73
           },
           "isStatic": false,
           "isReadonly": true,
@@ -245,7 +245,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-            "line": 58
+            "line": 71
           },
           "isStatic": false,
           "isReadonly": true,
@@ -301,7 +301,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
-            "line": 56
+            "line": 69
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "projectedMessages",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatMessageListComponent#projectedMessages:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly projectedMessages: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Renders projected message rows instead of the registered message templates.\nDefaults to false, preserving the generic list's template contexts and queries.\nThe chat composition uses this mode for its inline built-in rows; its list\ntherefore has no registered messageTemplates. Explicitly projected template\ndirectives remain available to this list's content query in either mode.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
+            "line": 67
           },
           "isStatic": false,
           "isReadonly": true,
@@ -320,6 +366,12 @@
             "alias": "agent",
             "required": true,
             "type": "Agent<unknown>"
+          },
+          {
+            "name": "projectedMessages",
+            "alias": "projectedMessages",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "outputs": []
