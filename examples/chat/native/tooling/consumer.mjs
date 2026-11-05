@@ -352,6 +352,8 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
       `Installed runtime required: ${suffix}`
     );
   }
+  for (const name of ['inline-preview', 'preview-position'])
+    assert.ok(runtimeInputs.includes('node_modules/@threadplane/react/src/markdown/' + name + '.js'), 'Installed ' + name + ' runtime required');
   assert.ok(
     runtimeInputs.includes(
       'node_modules/@threadplane/react/src/markdown/inline-citation.js'

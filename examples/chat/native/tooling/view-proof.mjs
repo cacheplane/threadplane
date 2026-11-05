@@ -114,6 +114,8 @@ function composition(selected, types, runtime) {
     );
   }
   if (!selected.angular) {
+    for (const name of ['inline-preview', 'preview-position'])
+      assert.ok(runtime.includes('node_modules/@threadplane/react/src/markdown/' + name + '.js'), 'Installed view runtime missing: ' + name);
     assert.ok(
       runtime.includes(
         'node_modules/@threadplane/react/src/markdown/inline-citation.js'

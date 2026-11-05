@@ -780,17 +780,24 @@ export async function runProductionProofs(browser, retained) {
             exact: true,
           });
           await expect(sources.getByRole('listitem')).toHaveCount(4);
-          const inline = page.getByRole('link', {
-            name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+          const inline = page.getByRole('button', {
+            name: 'Citation 7: <b>Supplied source</b>',
             exact: true,
           });
-          await expect(inline).toHaveAttribute(
+          await expect(inline).toHaveText('[7]');
+          await inline.click();
+          const inlineCard = page.getByRole('dialog', { name: 'Source 7', exact: true });
+          await expect(inlineCard.getByRole('heading')).toHaveText('<b>Supplied source</b>');
+          await expect(inlineCard.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute(
             'href',
             'https://sources.invalid/article'
           );
-          await expect(inline).toHaveAttribute('target', '_blank');
-          await expect(inline).toHaveAttribute('rel', 'noopener noreferrer');
-          await expect(inline).toHaveText('[7]');
+          await expect(inlineCard.getByRole('link')).toHaveAttribute('target', '_blank');
+          await expect(inlineCard.getByRole('link')).toHaveAttribute('rel', 'noopener noreferrer');
+          await expect(inlineCard).toContainText(citationSnippet);
+          await expect(inlineCard.locator('img,script,b')).toHaveCount(0);
+          await inlineCard.getByRole('button', { name: 'Close', exact: true }).click();
+          await expect(inlineCard).toHaveCount(0);
           await expect(
             page.getByLabel('Citation 2: Blocked source', { exact: true })
           ).toHaveText('[2]');
@@ -1236,15 +1243,18 @@ export async function runProductionProofs(browser, retained) {
           await correctedDialog
             .getByRole('button', { name: 'Close', exact: true })
             .click();
+          const correctedInline = page.getByRole('button', {
+            name: 'Citation 7: Corrected source', exact: true,
+          });
+          await correctedInline.click();
+          const correctedInlineCard = page.getByRole('dialog', { name: 'Source 7', exact: true });
+          await expect(correctedInlineCard.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute('href', 'https://sources.invalid/corrected');
+          await expect(correctedInlineCard.getByRole('link')).toHaveAttribute('target', '_blank');
+          await expect(correctedInlineCard.getByRole('link')).toHaveAttribute('rel', 'noopener noreferrer');
+          await correctedInlineCard.getByRole('button', { name: 'Close', exact: true }).click();
           await expect(
-            page.getByRole('link', {
-              name: 'Citation 7: Corrected source (opens in new tab)',
-              exact: true,
-            })
-          ).toHaveAttribute('href', 'https://sources.invalid/corrected');
-          await expect(
-            page.getByRole('link', {
-              name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+            page.getByRole('button', {
+              name: 'Citation 7: <b>Supplied source</b>',
               exact: true,
             })
           ).toHaveCount(0);

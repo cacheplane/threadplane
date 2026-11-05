@@ -15,9 +15,15 @@ export interface MarkdownProps {
   readonly snapshot: MarkdownSnapshot;
   /** Per-message source metadata; exact IDs take precedence over Markdown definitions. */
   readonly citations?: readonly Citation[];
+  /** Show local, connected source details instead of direct citation links. */
+  readonly citationPreview?: boolean;
 }
 /** Present an accepted snapshot. Its lifetime belongs to the application. */
-export function Markdown({ snapshot, citations = [] }: MarkdownProps) {
+export function Markdown({
+  snapshot,
+  citations = [],
+  citationPreview = false,
+}: MarkdownProps) {
   const sources = new Map(citations.map((citation) => [citation.id, citation]));
   if (sources.size !== citations.length)
     throw new TypeError('Duplicate citation IDs in Markdown.');
@@ -38,6 +44,7 @@ export function Markdown({ snapshot, citations = [] }: MarkdownProps) {
           node={snapshot.root}
           citations={snapshot.root.citations}
           sources={sources}
+          citationPreview={citationPreview}
         />
       )}
     </div>
@@ -50,12 +57,14 @@ function NodeView({
   sources,
   header = false,
   insideAnchor = false,
+  citationPreview = false,
 }: {
   readonly node: MarkdownNode;
   readonly citations: ReadonlyMap<string, CitationDefinition>;
   readonly sources: ReadonlyMap<string, Citation>;
   readonly header?: boolean;
   readonly insideAnchor?: boolean;
+  readonly citationPreview?: boolean;
 }) {
   const href =
     !insideAnchor &&
@@ -72,6 +81,7 @@ function NodeView({
             node={child}
             citations={citations}
             sources={sources}
+            citationPreview={citationPreview}
             header={node.type === 'table-row' && node.isHeader}
             insideAnchor={insideAnchor || href !== undefined}
           />
@@ -195,6 +205,7 @@ function NodeView({
                     node={row}
                     citations={citations}
                     sources={sources}
+                      citationPreview={citationPreview}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -208,6 +219,7 @@ function NodeView({
                     node={row}
                     citations={citations}
                     sources={sources}
+                      citationPreview={citationPreview}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -230,6 +242,7 @@ function NodeView({
           sources={sources}
           definitions={citations}
           insideAnchor={insideAnchor}
+          preview={citationPreview}
         />
       );
     }

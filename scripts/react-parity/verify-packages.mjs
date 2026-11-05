@@ -231,7 +231,13 @@ export type StateDiffParameterContract = DebugAssert<DebugEqual<Parameters<typeo
 export type DebugValueNotAnyContract = DebugAssert<DebugEqual<0 extends (1 & DebugValue) ? true : false, false>>;
 export type DebugValueContract = DebugAssert<DebugEqual<DebugValue, null | boolean | number | string | readonly DebugValue[] | { readonly [key: string]: DebugValue }>>;
 ` : '';
-  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug;
+  const markdown = specifiers.includes('@threadplane/react/markdown') ? `
+type MarkdownEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type MarkdownAssert<T extends true> = T;
+export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean }>>;
+export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<typeof import('@threadplane/react/markdown').Markdown>[0], import('@threadplane/react/markdown').MarkdownProps>>;
+` : '';
+  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + markdown;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
 import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';

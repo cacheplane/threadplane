@@ -62,6 +62,7 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       ) : (
         <Markdown
           snapshot={row.markdown}
+          citationPreview={row.role === 'assistant'}
           citations={
             row.role === 'assistant' ? row.message.citations : undefined
           }

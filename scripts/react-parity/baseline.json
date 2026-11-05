@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "f34eca5f57fade29d39bcf2bf2511af8e304b04a",
+  "baselineHead": "17b5b416a4413b1a54f926726e0335c3c7d6b318",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
@@ -9,6 +9,7 @@
       "libs/react/src/chat/styles.css",
       "libs/react/src/chat/tool-observation.tsx",
       "libs/react/src/debug/chat-debug.tsx",
+      "libs/react/src/markdown/inline-preview.tsx",
       "libs/react/src/markdown/markdown.tsx"
     ],
     "untracked": []
@@ -857,7 +858,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "e7f00d5cd567d6694cf34f8f27aad1b7ff4ea7e4aca765d0e83242f07121e28e"
+      "sha256": "8533985bd6a15b2c99bb5de59f47a15e9013e2b2475cffc48b60ddc6bbd913bc"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -11188,7 +11189,7 @@
           "path": "libs/react/src/markdown/markdown.tsx",
           "symbol": "Markdown",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Markdown({ snapshot, citations = [] }: MarkdownProps) {\n    const sources = new Map(citations.map((citation) => [citation.id, citation]));\n    if (sources.size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Markdown.');\n    return (<div dir=\"auto\" className=\"tp-markdown\" style={{\n            color: 'var(--tp-chat-text, var(--ds-text-primary, CanvasText))',\n            fontFamily: 'inherit',\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n        }}>\n      {snapshot.root && (<NodeView key={snapshot.document.generation} node={snapshot.root} citations={snapshot.root.citations} sources={sources}/>)}\n    </div>);\n}"
+          "signature": "export function Markdown({ snapshot, citations = [], citationPreview = false, }: MarkdownProps) {\n    const sources = new Map(citations.map((citation) => [citation.id, citation]));\n    if (sources.size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Markdown.');\n    return (<div dir=\"auto\" className=\"tp-markdown\" style={{\n            color: 'var(--tp-chat-text, var(--ds-text-primary, CanvasText))',\n            fontFamily: 'inherit',\n            whiteSpace: 'pre-wrap',\n            overflowWrap: 'anywhere',\n        }}>\n      {snapshot.root && (<NodeView key={snapshot.document.generation} node={snapshot.root} citations={snapshot.root.citations} sources={sources} citationPreview={citationPreview}/>)}\n    </div>);\n}"
         }
       ]
     },
@@ -11202,7 +11203,7 @@
           "path": "libs/react/src/markdown/markdown.tsx",
           "symbol": "MarkdownProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MarkdownProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly citations?: readonly Citation[];\n}"
+          "signature": "export interface MarkdownProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly citations?: readonly Citation[];\n    readonly citationPreview?: boolean;\n}"
         }
       ]
     },
@@ -15744,7 +15745,13 @@
       "id": "source:libs/react/src/markdown/inline-citation.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/inline-citation.tsx",
-      "sha256": "ccfc70b84bcb91631d5e3aea12e9f062e9fcf3f324da7aecdc60e1419fb7e36c"
+      "sha256": "e9913f31ea7c8f53087b18d2534bbb052ed946970d3c2c7726260363d04d6c00"
+    },
+    {
+      "id": "source:libs/react/src/markdown/inline-preview.tsx",
+      "kind": "source",
+      "path": "libs/react/src/markdown/inline-preview.tsx",
+      "sha256": "28e458a60db1edecd3926ab8dc80b85256a4ec0cff7ecc932ef7f693c8880ce3"
     },
     {
       "id": "source:libs/react/src/markdown/markdown-image.tsx",
@@ -15756,7 +15763,13 @@
       "id": "source:libs/react/src/markdown/markdown.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/markdown.tsx",
-      "sha256": "f06ad314b2d73110da3eef458ad896e2a4747cd851bc665ac68f9e801197e87d"
+      "sha256": "86177f36ed50f63b6a01d8e21eb2f6835ec94a41d8bfb7d2038238d2b3db36ad"
+    },
+    {
+      "id": "source:libs/react/src/markdown/preview-position.ts",
+      "kind": "source",
+      "path": "libs/react/src/markdown/preview-position.ts",
+      "sha256": "fdbc79c28fc78cce752d4f248b062284bc84edaea0b7bf7d7b68c23d4cfe36df"
     },
     {
       "id": "source:libs/react/src/render/functions.ts",

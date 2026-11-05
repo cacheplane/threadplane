@@ -161,8 +161,21 @@ effect on the next render, with no metadata fetching or owner lifecycle. Missing
 blocked and failed images show an accessible alt-text fallback. Destination
 classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. The root binding stays headless; rich math,
-syntax highlighting, citation overlays, custom node registries, legacy migration,
+syntax highlighting, custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
+
+Set readonly `citationPreview` to `true` to replace resolved inline markers outside
+anchors with source buttons: `<Markdown snapshot={snapshot} citations={sources}
+citationPreview />`. Focus or activation opens a connected, nonmodal details card;
+fine-pointer hover opens after 120ms and leaving closes after 200ms. The card
+stays open while its trigger or controls own focus. Tab enters the card, Shift+Tab
+returns to the trigger, and Tab from the last control continues through the page.
+Escape, Close, outside pointer interaction, or focus departure dismisses it.
+Only the explicit safe “Open source” link navigates. Titles, snippets and dates
+remain literal borrowed metadata; icons and metadata are never fetched. The card
+uses the trigger's document, follows viewport/scroll changes and needs no chat
+stylesheet. Generation, marker identity, removal and unmount retire its local state.
+Omitting the opt-in preserves direct links and numbered markers.
 
 ## Chat
 

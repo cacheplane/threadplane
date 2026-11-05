@@ -5,6 +5,37 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
+test('plain declaration proof checks exact opt-in Markdown preview contract', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-inline-preview-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  for (const [name, entry, declaration] of [
+    ['react', 'markdown', `export interface MarkdownProps { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; }\nexport declare function Markdown(props: MarkdownProps): unknown;`],
+    ['content', 'markdown', 'export interface MarkdownSnapshot { readonly accepted: string; }'],
+    ['core', '', 'export interface Citation { readonly id: string; readonly index: number; }'],
+  ]) {
+    const directory = join(consumer, 'node_modules/@threadplane', name);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/' + name, type: 'module', exports: { [entry ? './' + entry : '.']: { types: './index.d.ts' } } }));
+    writeFileSync(join(directory, 'index.d.ts'), declaration);
+  }
+  const source = join(consumer, 'index.ts');
+  const probe = packageVerifier.plainExportTypes(['@threadplane/react/markdown']);
+  assert.match(probe, /MarkdownContract/);
+  writeFileSync(source, probe);
+  const declarationPath = join(consumer, 'node_modules/@threadplane/react/index.d.ts');
+  const declaration = readFileSync(declarationPath, 'utf8');
+  const compile = text => {
+    writeFileSync(declarationPath, text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const replacement of ['', 'citationPreview?: boolean;', 'readonly citationPreview: boolean;', 'readonly citationPreview?: any;', 'readonly citationPreview?: string;'])
+    assert.match(compile(declaration.replace('readonly citationPreview?: boolean;', replacement)), /false.*true/, replacement);
+  assert.match(compile(declaration.replace('props: MarkdownProps', 'props: any')), /false.*true/);
+});
+
 test('plain declaration proof checks exact passive StateDiff types', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-state-diff-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
