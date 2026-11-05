@@ -55,3 +55,34 @@ test('focusing a marker opens the portaled provenance preview card', async ({ pa
   await expect(preview.locator('.chat-citation-preview__domain')).toContainText('angular.dev');
   await expect(preview.locator('.chat-citation-preview__open')).toBeVisible();
 });
+
+test('a citation marker keeps the punctuation that follows it on its line at every width', async ({ page }) => {
+  const bubble = await sendPromptAndWait(page, PROMPT);
+  await expect(bubble.locator('.chat-citation-marker').first()).toBeVisible();
+
+  // Reflow the reply across many column widths; at each one, a marker followed
+  // directly by punctuation must not leave that punctuation to start a line.
+  const results: { width: number; checked: number; stranded: number }[] = [];
+  for (let width = 1280; width >= 420; width -= 12) {
+    await page.setViewportSize({ width, height: 900 });
+    results.push({ width, ...(await bubble.evaluate((root) => {
+      let checked = 0, stranded = 0;
+      for (const ref of root.querySelectorAll('chat-md-citation-reference')) {
+        const marker = ref.querySelector('.chat-citation-marker');
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        walker.currentNode = ref;
+        let next = walker.nextNode() as Text | null;
+        while (next && ref.contains(next)) next = walker.nextNode() as Text | null;
+        if (!marker || !next || !/^[.,;:!?)]/.test(next.data)) continue;
+        const range = document.createRange();
+        range.setStart(next, 0);
+        range.setEnd(next, 1);
+        checked++;
+        if (range.getBoundingClientRect().top >= marker.getBoundingClientRect().bottom - 2) stranded++;
+      }
+      return { checked, stranded };
+    })) });
+  }
+  expect(results.some((r) => r.checked > 0)).toBe(true);
+  expect(results.filter((r) => r.stranded > 0)).toEqual([]);
+});

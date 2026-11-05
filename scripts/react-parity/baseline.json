@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "cf3582fdc599358f9e92a70b7f8d32a4d0e72107",
+  "baselineHead": "5a224a746b18b0f6215c3d0e2f4c4007a9676009",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
+      "libs/chat/src/lib/styles/chat-citations.styles.ts",
+      "libs/chat/src/lib/styles/chat-markdown.styles.ts"
+    ],
     "untracked": []
   },
   "scope": {
@@ -1639,7 +1643,7 @@
       "decorators": [
         "Component"
       ],
-      "signature": "@Component({\n    selector: 'chat-md-list-item',\n    standalone: true,\n    imports: [MarkdownChildrenComponent],\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <li [class.chat-md-list-item--task]=\"node().task !== undefined\">\n      @if (node().task !== undefined) {\n        <input type=\"checkbox\" disabled [checked]=\"node().task!.checked\" />\n      }\n      <chat-md-children [parent]=\"node()\" />\n    </li>\n  `,\n})\nexport class MarkdownListItemComponent {\n    readonly node = input.required<MarkdownListItemNode>();\n}"
+      "signature": "@Component({\n    selector: 'chat-md-list-item',\n    standalone: true,\n    imports: [MarkdownChildrenComponent],\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <li [class.chat-md-list-item--task]=\"node().task !== undefined\">\n      @if (node().task; as task) {\n        <input class=\"chat-md-task-input\" type=\"checkbox\" disabled [checked]=\"task.checked\" />\n        <span class=\"chat-md-task-box\" [class.chat-md-task-box--checked]=\"task.checked\" aria-hidden=\"true\">\n          @if (task.checked) {\n            <svg viewBox=\"0 0 12 12\"><polyline points=\"2.5 6.3 5 8.6 9.5 3.6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>\n          }\n        </span>\n      }\n      <chat-md-children [parent]=\"node()\" />\n    </li>\n  `,\n})\nexport class MarkdownListItemComponent {\n    readonly node = input.required<MarkdownListItemNode>();\n}"
     },
     {
       "id": "component:libs/chat/src/lib/markdown/views/markdown-list.component.ts#MarkdownListComponent",
@@ -6992,7 +6996,7 @@
           "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
           "symbol": "MarkdownListItemComponent",
           "syntaxKind": "ClassDeclaration",
-          "signature": "@Component({\n    selector: 'chat-md-list-item',\n    standalone: true,\n    imports: [MarkdownChildrenComponent],\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <li [class.chat-md-list-item--task]=\"node().task !== undefined\">\n      @if (node().task !== undefined) {\n        <input type=\"checkbox\" disabled [checked]=\"node().task!.checked\" />\n      }\n      <chat-md-children [parent]=\"node()\" />\n    </li>\n  `,\n})\nexport class MarkdownListItemComponent {\n    readonly node = input.required<MarkdownListItemNode>();\n}"
+          "signature": "@Component({\n    selector: 'chat-md-list-item',\n    standalone: true,\n    imports: [MarkdownChildrenComponent],\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    template: `\n    <li [class.chat-md-list-item--task]=\"node().task !== undefined\">\n      @if (node().task; as task) {\n        <input class=\"chat-md-task-input\" type=\"checkbox\" disabled [checked]=\"task.checked\" />\n        <span class=\"chat-md-task-box\" [class.chat-md-task-box--checked]=\"task.checked\" aria-hidden=\"true\">\n          @if (task.checked) {\n            <svg viewBox=\"0 0 12 12\"><polyline points=\"2.5 6.3 5 8.6 9.5 3.6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>\n          }\n        </span>\n      }\n      <chat-md-children [parent]=\"node()\" />\n    </li>\n  `,\n})\nexport class MarkdownListItemComponent {\n    readonly node = input.required<MarkdownListItemNode>();\n}"
         }
       ]
     },
@@ -13800,7 +13804,7 @@
       "id": "source:libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-      "sha256": "74951820cbb344c66f419d7716fda18ee535ebf6bbf81883a4d0a00eb838f83a"
+      "sha256": "56b9c7825dd6da7e3c8948fd1efcb35e588bcfa6f92061f0964e507956ea0192"
     },
     {
       "id": "source:libs/chat/src/lib/markdown/views/markdown-list.component.ts",
@@ -14154,7 +14158,7 @@
       "id": "source:libs/chat/src/lib/styles/chat-citations.styles.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/styles/chat-citations.styles.ts",
-      "sha256": "2e9ef1e1aae4f28830024a96812737d408556f7603a9ccbbf6b2f4e13f87887d"
+      "sha256": "70b833db239268941fafabb02268f8abf74aadf6da21185277f2b7ca99789863"
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-confirm-dialog.styles.ts",
@@ -14208,7 +14212,7 @@
       "id": "source:libs/chat/src/lib/styles/chat-markdown.styles.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/styles/chat-markdown.styles.ts",
-      "sha256": "288123cf07410db865219a8819e91cc8d0fa3f05cbf38868d88e456090955096"
+      "sha256": "7ef4d42b72a2fe918d25a0baba0a096a0100c63617331b781ef3399dc1ea2e00"
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-message-actions.styles.ts",
