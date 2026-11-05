@@ -1068,3 +1068,59 @@
   opacity: 0.6;
   cursor: default;
 }
+
+.tp-citation-preview__trigger,
+.tp-citation-preview__close {
+  box-sizing: border-box;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  max-inline-size: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-citation-preview__dialog {
+  box-sizing: border-box;
+  inline-size: min(36rem, calc(100vw - 2rem));
+  max-inline-size: calc(100vw - 2rem);
+  max-block-size: calc(100dvh - 2rem);
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.75rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tp-citation-preview__dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.tp-citation-preview__dialog h2 {
+  margin-block: 1rem;
+  font-size: 1.25em;
+}
+.tp-citation-preview__dialog dt {
+  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+}
+.tp-citation-preview__dialog dd {
+  margin-inline: 0;
+  margin-block: 0.25rem 1rem;
+}
+.tp-citation-preview__dialog a {
+  color: var(--tp-chat-accent, var(--ds-accent, LinkText));
+}
+.tp-citation-preview__trigger:focus-visible,
+.tp-citation-preview__close:focus-visible,
+.tp-citation-preview__dialog a:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}

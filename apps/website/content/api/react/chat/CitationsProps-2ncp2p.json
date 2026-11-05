@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 7
+            "line": 8
           },
           "isReadonly": true,
           "isOptional": false
@@ -106,7 +106,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 9
+            "line": 10
           },
           "isReadonly": true,
           "isOptional": true
@@ -142,7 +142,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 8
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "preview",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#preview:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly preview?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": true
@@ -150,12 +186,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 6
+        "line": 7
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 6
+    "line": 7
   }
 }

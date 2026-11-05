@@ -57,6 +57,10 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   mkdirSync(react, { recursive: true });
   writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
   writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; readonly clientX: number; } export interface KeyboardEvent<T> { readonly currentTarget: T; readonly key: string; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
+  const core = join(consumer, 'node_modules/@threadplane/core');
+  mkdirSync(core, { recursive: true });
+  writeFileSync(join(core, 'package.json'), JSON.stringify({ name: '@threadplane/core', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
+  writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; }');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
@@ -82,7 +86,11 @@ export declare function Welcome(props: WelcomeProps): unknown;
 export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknown;
 export interface SuggestionItem { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean; }
 export interface SuggestionsProps { readonly suggestions: readonly SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
-export declare function Suggestions(props: SuggestionsProps): unknown;`;
+export declare function Suggestions(props: SuggestionsProps): unknown;
+export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
+export declare function CitationPreview(props: CitationPreviewProps): unknown;
+export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly label?: string; readonly className?: string; readonly preview?: boolean; }
+export declare function Citations(props: CitationsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -118,7 +126,7 @@ export declare function Suggestions(props: SuggestionsProps): unknown;`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationPreviewProps', 'CitationsProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -139,13 +147,19 @@ export declare function Suggestions(props: SuggestionsProps): unknown;`;
     ['SuggestionsProps', 'disabled', 'boolean', true],
     ['SuggestionsProps', 'label', 'string', true],
     ['SuggestionsProps', 'className', 'string', true],
+    ['CitationPreviewProps', 'citation', "import('@threadplane/core').Citation", false],
+    ['CitationPreviewProps', 'className', 'string', true],
+    ['CitationsProps', 'citations', "readonly import('@threadplane/core').Citation[]", false],
+    ['CitationsProps', 'preview', 'boolean', true],
+    ['CitationsProps', 'label', 'string', true],
+    ['CitationsProps', 'className', 'string', true],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationPreviewProps', 'CitationsProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
     assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
@@ -571,13 +585,14 @@ test('React chat requires its real supported export', () => {
   const component = () => undefined;
   const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
+  supported.CitationPreview = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationPreview']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

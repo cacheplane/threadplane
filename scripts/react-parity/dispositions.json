@@ -1926,9 +1926,9 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Native component. Interactive preview overlay; hover delay, keyboard access and focus restoration."
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts#ChatCitationsCardComponent",
@@ -5047,9 +5047,9 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Native component. Interactive preview overlay; hover delay, keyboard access and focus restoration."
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatCitationsCardComponent",
@@ -10228,7 +10228,8 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
@@ -15261,7 +15262,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationsProps",
@@ -15270,7 +15271,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
@@ -15279,7 +15280,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Bounded readonly source metadata view; no legacy overlays, source fetching or full citation parity."
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -16121,6 +16122,33 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private pure inline citation presenter with safe URL and existing-anchor containment; no public runtime export or preview parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationPreview",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationPreviewProps",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/citation-preview.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private opt-in explicit source-details modal borrows literal Citation metadata, uses the shared safe-link policy and owns only mounted presentation, keyboard focus and dismissal. Native assistant Sources dogfoods previews; hover timing, inline-marker overlays and full T26 parity remain open."
     }
   ]
 }

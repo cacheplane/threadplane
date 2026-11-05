@@ -11,3 +11,9 @@ props.citations[0].title = 'Changed';
 <Citations />;
 // @ts-expect-error Presentation does not accept an owner or commands.
 <Citations citations={citations} onSelect={() => undefined} />;
+<Citations citations={citations} preview />;
+<Citations citations={citations} preview={false} />;
+// @ts-expect-error Preview requires a boolean flag.
+<Citations citations={citations} preview="true" />;
+// @ts-expect-error The preview prop is readonly.
+props.preview = true;

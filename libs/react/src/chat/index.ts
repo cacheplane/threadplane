@@ -44,6 +44,10 @@ export { MessageList, type MessageListProps } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export { Citations, type CitationsProps } from './citations.js';
 export {
+  CitationPreview,
+  type CitationPreviewProps,
+} from './citation-preview.js';
+export {
   MessageActions,
   type MessageAction,
   type MessageActionsProps,
