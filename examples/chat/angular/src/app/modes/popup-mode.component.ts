@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatPopupComponent } from '@threadplane/chat';
+import { ChatPopupComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/chat';
 import { DemoShell } from '../shell/demo-shell.component';
 import { DEMO_AGENT } from '../shell/shell-tokens';
 import { demoViews } from '../demo-views';
@@ -9,7 +9,7 @@ import { AppModePromoComponent } from './app-mode-promo.component';
 @Component({
   selector: 'popup-mode',
   standalone: true,
-  imports: [ChatPopupComponent, WelcomeSuggestionsComponent, AppModePromoComponent],
+  imports: [ChatPopupComponent, WelcomeSuggestionsComponent, AppModePromoComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="popup-mode__background">
@@ -33,6 +33,9 @@ import { AppModePromoComponent } from './app-mode-promo.component';
       [showModelPicker]="false"
       (selectedModelChange)="shell.onModelChange($event)"
     >
+      <ng-template chatInterruptTemplate let-agent>
+        <chat-interrupt-panel [agent]="agent" (action)="shell.onInterruptAction($event)" />
+      </ng-template>
       <welcome-suggestions chatWelcomeSuggestions [appModeOn]="shell.appMode() === 'on'"
         [featuredId]="shell.featuredSuggestionId" (selected)="send($event)" />
     </chat-popup>

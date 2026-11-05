@@ -127,18 +127,6 @@
  * and the host-scoped ::ng-deep rule no longer reaches the portaled menu.) */
 
 
-.demo-shell__interrupt-panel {
-  position: fixed;
-  left: 50%;
-  bottom: calc(80px + var(--demo-shell-interrupt-offset, 0px));
-  transform: translateX(-50%);
-  z-index: 999;
-  width: min(640px, calc(100vw - 32px));
-  max-width: min(640px, calc(100vw - 32px));
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
-  border-radius: var(--tplane-chat-radius-card, 10px);
-}
-
 .demo-shell__theme-toggle {
   width: 28px;
   height: 28px;

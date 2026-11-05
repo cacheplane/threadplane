@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatSidebarComponent } from '@threadplane/chat';
+import { ChatSidebarComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/chat';
 import { DemoShell } from '../shell/demo-shell.component';
 import { DEMO_AGENT } from '../shell/shell-tokens';
 import { MapCanvasComponent } from '../map-canvas.component';
@@ -10,7 +10,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 @Component({
   selector: 'sidebar-mode',
   standalone: true,
-  imports: [ChatSidebarComponent, MapCanvasComponent, AppModePromoComponent, WelcomeSuggestionsComponent],
+  imports: [ChatSidebarComponent, MapCanvasComponent, AppModePromoComponent, WelcomeSuggestionsComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <chat-sidebar
@@ -24,6 +24,9 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
       [pushContent]="true"
       (selectedModelChange)="shell.onModelChange($event)"
     >
+      <ng-template chatInterruptTemplate let-agent>
+        <chat-interrupt-panel [agent]="agent" (action)="shell.onInterruptAction($event)" />
+      </ng-template>
       <span chatSidebarPanelTitle>{{ shell.currentThreadTitle() }}</span>
       <!-- In App mode the map IS the main content — projected into the sidebar's
            flex content slot so it fills the area left of the drawer (no absolute

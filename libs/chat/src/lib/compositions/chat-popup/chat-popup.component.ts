@@ -1,9 +1,11 @@
 // libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts
-import { Component, ChangeDetectionStrategy, input, model, DestroyRef, inject, DOCUMENT, effect, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, model, DestroyRef, inject, DOCUMENT, effect, output, contentChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import type { ViewRegistry } from '@threadplane/render';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
 import { ChatComponent } from '../chat/chat.component';
+import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.directive';
 import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
 import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-button/chat-launcher-button.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
@@ -12,7 +14,7 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
 @Component({
   selector: 'chat-popup',
   standalone: true,
-  imports: [ChatComponent, ChatLauncherButtonComponent],
+  imports: [ChatComponent, ChatLauncherButtonComponent, ChatInterruptTemplateDirective, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, `
     :host {
@@ -85,11 +87,18 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
       >
         <ng-content select="[chatHeader]" chatHeader />
         <ng-content select="[chatWelcomeSuggestions]" chatWelcomeSuggestions />
+        @if (interruptTemplate(); as renderer) {
+          <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+            <ng-container [ngTemplateOutlet]="renderer.templateRef"
+              [ngTemplateOutletContext]="{ $implicit: agent, interrupt: interrupt }" />
+          </ng-template>
+        }
       </chat>
     </div>
   `,
 })
 export class ChatPopupComponent {
+  protected readonly interruptTemplate = contentChild(ChatInterruptTemplateDirective);
   readonly agent = input.required<Agent>();
   /** A2UI component catalog forwarded to the inner <chat>. Without it,
    * messages classified as A2UI parse correctly but never mount a

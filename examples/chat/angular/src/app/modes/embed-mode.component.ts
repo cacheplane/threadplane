@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/chat';
 import { DemoShell } from '../shell/demo-shell.component';
 import { DEMO_AGENT } from '../shell/shell-tokens';
 import { demoViews } from '../demo-views';
@@ -8,7 +8,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 @Component({
   selector: 'embed-mode',
   standalone: true,
-  imports: [ChatComponent, WelcomeSuggestionsComponent],
+  imports: [ChatComponent, WelcomeSuggestionsComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <chat
@@ -19,6 +19,9 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
       [selectedModel]="shell.model()"
       (selectedModelChange)="shell.onModelChange($event)"
     >
+      <ng-template chatInterruptTemplate let-agent>
+        <chat-interrupt-panel [agent]="agent" (action)="shell.onInterruptAction($event)" />
+      </ng-template>
       <welcome-suggestions chatWelcomeSuggestions [appModeOn]="shell.appMode() === 'on'"
         [featuredId]="shell.featuredSuggestionId" (selected)="send($event)" />
     </chat>
