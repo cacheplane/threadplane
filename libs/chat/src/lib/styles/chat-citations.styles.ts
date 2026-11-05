@@ -96,22 +96,25 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
 /** Inline pill marker (chat-md-citation-reference). */
 export const CHAT_CITATION_MARKER_STYLES = `
   :host { display: inline; }
+  /* A plain inline box, not inline-flex: an atomic inline is a line-break
+     opportunity on both sides, which strands the punctuation after a marker
+     at the start of the next line. As inline text, its digits follow the
+     normal rule of no break before . , ; : ) — in every engine. */
   .chat-citation-marker {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 17px;
-    height: 17px;
-    padding: 0 5px;
+    display: inline;
+    padding: 2px 5px;
     margin: 0 1px;
     font-size: 11px;
     font-weight: 600;
     line-height: 1;
+    text-align: center;
     color: var(--tplane-chat-citation-marker-fg);
     background: var(--tplane-chat-citation-marker-bg);
     border: 1px solid var(--tplane-chat-citation-marker-border);
     border-radius: var(--tplane-chat-citation-radius);
-    translate: 0 -1px;
+    /* translate does not apply to inline boxes; lift the pill the same 1px. */
+    position: relative;
+    top: -1px;
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;

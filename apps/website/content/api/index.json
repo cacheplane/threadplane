@@ -3421,7 +3421,7 @@
       "canonicalReference": "@threadplane/chat!MarkdownListItemComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders a markdown list item with a disabled checkbox for task items."
+      "summary": "Renders a markdown list item. A task item keeps a disabled native checkbox\nas the accessible control (\"checkbox, checked, unavailable\") but hides it\nvisually: browsers paint disabled checkboxes so faintly that checked and\nunchecked are hard to tell apart. A token-coloured box draws the state."
     },
     {
       "name": "MarkdownMathComponent",
