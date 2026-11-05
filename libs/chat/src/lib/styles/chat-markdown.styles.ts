@@ -24,12 +24,12 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md h4:first-child, chat-streaming-md h5:first-child, chat-streaming-md h6:first-child { margin-top: 0; }
   chat-streaming-md h1 { font-size: 1.5em; font-weight: 700; }
   chat-streaming-md h2 { font-size: 1.25em; }
-  chat-streaming-md h3 { font-size: 1.1em; }
+  chat-streaming-md h3 { font-size: 1.125em; }
   chat-streaming-md h4 { font-size: 1em; }
-  chat-streaming-md h5, chat-streaming-md h6 { font-size: 0.95em; color: var(--tplane-chat-text-muted); }
+  chat-streaming-md h5, chat-streaming-md h6 { font-size: var(--tplane-chat-font-size-sm); color: var(--tplane-chat-text-muted); }
 
   /* Paragraphs and inline emphasis */
-  chat-streaming-md p { margin: 0 0 0.75rem; line-height: 1.6; font-size: var(--tplane-chat-font-size); }
+  chat-streaming-md p { margin: 0 0 0.75rem; line-height: var(--tplane-chat-line-height); font-size: var(--tplane-chat-font-size); }
   chat-streaming-md p:last-child { margin-bottom: 0; }
   chat-streaming-md strong, chat-streaming-md b { font-weight: 700; }
   chat-streaming-md em, chat-streaming-md i { font-style: italic; }
@@ -48,7 +48,7 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md ol { list-style: decimal outside; }
   chat-streaming-md ul ul { list-style: circle outside; }
   chat-streaming-md ul ul ul { list-style: square outside; }
-  chat-streaming-md li { margin: 0.2rem 0; }
+  chat-streaming-md li { margin: var(--tplane-chat-space-1) 0; }
   chat-streaming-md li::marker { color: var(--tplane-chat-text-muted); }
   chat-streaming-md li > p { margin: 0 0 0.25rem; }
   chat-streaming-md li > ul, chat-streaming-md li > ol { margin: 0.25rem 0 0; }
@@ -60,15 +60,16 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md code {
     background: var(--tplane-chat-surface-alt);
     color: var(--tplane-chat-text);
-    padding: 1px 5px;
-    border-radius: 4px;
+    padding: 1px var(--tplane-chat-space-1);
+    border-radius: var(--tplane-chat-radius-sm);
     font-family: var(--tplane-chat-font-mono);
-    font-size: 0.9em;
+    /* 14px in body text: the sm step of the type scale. */
+    font-size: 0.875em;
   }
   chat-streaming-md pre {
     background: var(--tplane-chat-surface-alt);
     color: var(--tplane-chat-text);
-    padding: 12px 14px;
+    padding: var(--tplane-chat-space-3) var(--tplane-chat-space-4);
     border-radius: var(--tplane-chat-radius-card);
     overflow-x: auto;
     font-family: var(--tplane-chat-font-mono);
@@ -99,8 +100,10 @@ export const CHAT_MARKDOWN_STYLES = `
     border-collapse: collapse;
     margin: 0 0 0.75rem;
     width: 100%;
-    font-size: 0.95em;
+    font-size: var(--tplane-chat-font-size-sm);
   }
+  /* A relative size would compound inside the smaller table text (13.68px). */
+  chat-streaming-md table code { font-size: var(--tplane-chat-font-size-xs); }
   chat-streaming-md thead { background: var(--tplane-chat-surface-alt); }
   chat-streaming-md th, chat-streaming-md td {
     border: 1px solid var(--tplane-chat-separator);
@@ -118,6 +121,14 @@ export const CHAT_MARKDOWN_STYLES = `
     overflow-x: auto;
     max-width: 100%;
     margin: 0 0 0.75rem;
+    /* Scroll cue: a soft shadow shows at an edge only while more table lies
+       beyond it (the "local" covers scroll with the content and hide the
+       "scroll" shadows at the ends). Touch devices hide scrollbars. */
+    background:
+      linear-gradient(to right, var(--tplane-chat-bg) 30%, transparent) left center / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--tplane-chat-bg) 30%, transparent) right center / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--tplane-chat-text) 22%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--tplane-chat-text) 22%, transparent), transparent) right center / 12px 100% no-repeat scroll;
   }
   chat-streaming-md chat-md-table-row { display: contents; }
   chat-streaming-md chat-md-table-cell { display: contents; }
@@ -152,7 +163,7 @@ export const CHAT_MARKDOWN_STYLES = `
     align-items: center;
     justify-content: center;
     border: 1.5px solid var(--tplane-chat-text-muted);
-    border-radius: 3px;
+    border-radius: var(--tplane-chat-radius-sm);
     transform: translateY(2px);
   }
   chat-streaming-md .chat-md-task-box--checked {
@@ -185,7 +196,7 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md .chat-md-image--broken {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--tplane-chat-space-2);
     padding: 0.25rem 0.5rem;
     background: var(--tplane-chat-surface-alt);
     border: 1px dashed var(--tplane-chat-separator);

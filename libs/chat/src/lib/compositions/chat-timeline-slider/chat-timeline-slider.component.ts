@@ -20,7 +20,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
       padding: 0 var(--tplane-chat-space-1) var(--tplane-chat-space-2);
     }
     .timeline-slider__title {
-      font-size: 11px;
+      font-size: var(--tplane-chat-font-size-xs);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -70,7 +70,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
       border-radius: 9999px;
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
-      font-size: 11px;
+      font-size: var(--tplane-chat-font-size-xs);
       font-weight: 600;
       display: inline-flex;
       align-items: center;
@@ -93,7 +93,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
     }
     .timeline-slider__id {
       font-family: var(--tplane-chat-font-mono);
-      font-size: 11px;
+      font-size: var(--tplane-chat-font-size-xs);
       color: var(--tplane-chat-text-muted);
       margin: 0;
       overflow: hidden;
