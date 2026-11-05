@@ -1,22 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "1c22d08bca079f01519e3177fd6cc588ffc90411",
+  "baselineHead": "67e568d56ac46383c7e2dddc2377ee7945a3584f",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
-      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-      "libs/chat/src/lib/compositions/chat-timeline-slider/chat-timeline-slider.component.ts",
-      "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/styles/chat-citations.styles.ts",
-      "libs/chat/src/lib/styles/chat-error.styles.ts",
-      "libs/chat/src/lib/styles/chat-markdown.styles.ts",
-      "libs/chat/src/lib/styles/chat-message.styles.ts",
-      "libs/chat/src/lib/styles/chat-sidenav.styles.ts",
-      "libs/chat/src/lib/styles/chat-thread-list.styles.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
