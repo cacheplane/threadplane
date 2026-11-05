@@ -5,6 +5,29 @@ import { Citations } from './index';
 
 afterEach(cleanup);
 describe('Citations', () => {
+  it('opts into explicit preview buttons only for literal true', () => {
+    const citations = [
+      { id: 'a', index: 1, title: 'Evidence', url: 'https://example.com' },
+    ];
+    const view = render(<Citations {...{ citations, preview: true }} />);
+    expect(
+      view.getByRole('button', { name: 'Preview source 1: Evidence' })
+    ).toBeTruthy();
+    expect(view.queryByRole('link')).toBeNull();
+    for (const preview of [false, undefined, 'true', 1]) {
+      view.rerender(
+        <Citations
+          {...({ citations, preview } as unknown as React.ComponentProps<
+            typeof Citations
+          >)}
+        />
+      );
+      expect(view.queryByRole('button')).toBeNull();
+      expect(view.getByRole('link').getAttribute('href')).toBe(
+        'https://example.com'
+      );
+    }
+  });
   it('hides empty sources and borrows literal metadata without fetching icons', () => {
     const view = render(<Citations citations={[]} />);
     expect(view.container.childElementCount).toBe(0);

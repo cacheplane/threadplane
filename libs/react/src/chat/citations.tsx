@@ -1,12 +1,14 @@
 'use client';
 import type { Citation } from '@threadplane/core';
 import { markdownUrl } from '@threadplane/content/markdown';
+import { CitationPreview } from './citation-preview.js';
 
 /** Supplied citation list with unique IDs and an optional source-section label and CSS class. */
 export interface CitationsProps {
   readonly citations: readonly Citation[];
   readonly label?: string;
   readonly className?: string;
+  readonly preview?: boolean;
 }
 
 /** Present supplied sources; selection, metadata and owner lifetime belong to the app. */
@@ -14,6 +16,7 @@ export function Citations({
   citations,
   label = 'Sources',
   className,
+  preview,
 }: CitationsProps) {
   if (!citations.length) return null;
   if (
@@ -28,6 +31,12 @@ export function Citations({
       <h4 className="tp-citations__heading">{label}</h4>
       <ul className="tp-citations__list">
         {citations.map((citation) => {
+          if (preview === true)
+            return (
+              <li key={citation.id} className="tp-citations__item">
+                <CitationPreview citation={citation} />
+              </li>
+            );
           const title =
             citation.title ?? citation.url ?? `Source ${citation.index}`;
           const href =

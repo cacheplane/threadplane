@@ -68,7 +68,7 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
         />
       )}
       {row.role === 'assistant' && row.message.citations && (
-        <Citations citations={row.message.citations} />
+        <Citations preview citations={row.message.citations} />
       )}
       {row.role === 'assistant' &&
         row.a2uiTripSummaryRenders.map((prepared) => (

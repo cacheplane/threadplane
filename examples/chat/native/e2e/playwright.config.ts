@@ -10,6 +10,7 @@ export default defineConfig({
     'production.spec.ts',
     'message-list.spec.ts',
     'reasoning.spec.ts',
+    'source-previews.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',
     'sidenav.spec.ts',
