@@ -1,12 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5a224a746b18b0f6215c3d0e2f4c4007a9676009",
+  "baselineHead": "6de241806a52be4ca77dc27841f81158dff4a23e",
   "sourceState": {
-    "modified": [
-      "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
-      "libs/chat/src/lib/styles/chat-citations.styles.ts",
-      "libs/chat/src/lib/styles/chat-markdown.styles.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
