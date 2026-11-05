@@ -1,26 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "5a54f76c6742ceaa184f07bea394fc3d9507b5c5",
+  "baselineHead": "0ec7054bfd8f5c1f468c3a162ee3e0770b41762b",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "apps/website/content/docs/render/getting-started/installation.mdx",
-      "libs/a2ui/package.json",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/package-version.ts",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/package-version.ts",
-      "libs/langgraph/package.json",
-      "libs/langgraph/src/lib/package-version.ts",
-      "libs/render/package.json",
-      "libs/render/src/lib/package-version.ts",
-      "libs/telemetry/package.json",
-      "package-lock.json"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
