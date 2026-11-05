@@ -120,7 +120,7 @@ export interface SuggestionsProps { readonly suggestions: readonly SuggestionIte
 export declare function Suggestions(props: SuggestionsProps): unknown;
 export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
 export declare function CitationPreview(props: CitationPreviewProps): unknown;
-export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly label?: string; readonly className?: string; readonly preview?: boolean; }
+export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; }
 export declare function Citations(props: CitationsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -182,6 +182,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
     ['CitationPreviewProps', 'className', 'string', true],
     ['CitationsProps', 'citations', "readonly import('@threadplane/core').Citation[]", false],
     ['CitationsProps', 'preview', 'boolean', true],
+    ['CitationsProps', 'collapsible', 'boolean', true],
     ['CitationsProps', 'label', 'string', true],
     ['CitationsProps', 'className', 'string', true],
   ]) {

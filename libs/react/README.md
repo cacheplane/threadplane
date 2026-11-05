@@ -186,6 +186,14 @@ order, index, title, snippet and source-type text; IDs must be unique. Optional
 source items. An absent title falls back to the supplied URL or `Source <index>`;
 intentionally empty fields remain empty.
 
+Set `collapsible` to `true` for a Sources disclosure that starts closed. Its
+header shows the label and current source count, with `aria-expanded` and a stable
+controlled body. Enter, Space, click, or tap toggles it. Collapsed source controls
+are unmounted; reopening starts fresh source previews. Updates preserve the
+expansion choice and keyed source rows while open. The choice belongs to the
+mounted message; removing it or switching between static and collapsible modes
+retires that presentation. This adds no fetching or conversation commands.
+
 ```tsx
 import { Citations } from '@threadplane/react/chat';
 
@@ -216,8 +224,9 @@ and dismisses with Close, Escape, or a click outside its bounds. It restores
 focus to the available trigger when it still owns focus. Same-ID metadata updates
 refresh the open preview; changing the citation ID or removing its view retires
 it. Preview state belongs to the mounted view and never issues session commands.
-The default Sources list retains direct links. Hover previews, inline-marker
-overlays, and full citation parity remain open.
+The default Sources list retains direct links. `Markdown.citationPreview` provides
+the separate inline hover/keyboard/touch cards described above. Source grouping,
+custom card rendering, and full citation-display parity remain open.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`

@@ -99,6 +99,12 @@ test('installed source previews contain keyboard and pointer interaction without
     await draft.fill('Preserve this draft');
     const textarea = await draft.elementHandle();
     assert.ok(textarea);
+    const sources = page.getByRole('button', {
+      name: 'Sources (2)',
+      exact: true,
+    });
+    await expect(sources).toHaveAttribute('aria-expanded', 'false');
+    await sources.click();
     const trigger = page.getByRole('button', {
       name: `Preview source 1: ${title}`,
       exact: true,
@@ -222,6 +228,9 @@ test('installed source previews contain keyboard and pointer interaction without
     expect(await oldDialog.evaluate((node) => node.isConnected)).toBe(false);
     await select('a');
     await backend.steps[6].received;
+    await expect(sources).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveCount(0);
+    await sources.click();
     await expect(trigger).toBeVisible();
     await expect(page.getByRole('dialog', { name: /^Source / })).toHaveCount(0);
     expect(await oldTrigger.evaluate((node) => node.isConnected)).toBe(false);
