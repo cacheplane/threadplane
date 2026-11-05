@@ -158,8 +158,11 @@ export function InlinePreview({
         fontFamily: inherited.fontFamily,
         fontSize: inherited.fontSize,
         lineHeight: inherited.lineHeight,
+        colorScheme: inherited.colorScheme,
         background:
-          inherited.getPropertyValue('--ds-surface').trim() || 'white',
+          inherited.getPropertyValue('--tp-chat-surface').trim() ||
+          inherited.getPropertyValue('--ds-surface').trim() ||
+          'Canvas',
         color: inherited.color,
       });
     };
@@ -343,8 +346,8 @@ export function InlinePreview({
               padding: 16,
               border: '1px solid #9ba9b8',
               borderRadius: 8,
-              background: 'var(--ds-surface, white)',
-              color: 'var(--ds-text-primary, #142435)',
+              background: 'Canvas',
+              color: 'CanvasText',
               boxShadow: '0 6px 24px #0003',
               ...style,
             }}

@@ -66,10 +66,11 @@ async function withinViewport(locator: Locator) {
   expect(
     await locator.evaluate((element) => {
       const rect = element.getBoundingClientRect();
+      // Scrolling rounds fractional positions; use the same tolerance on each edge.
       return (
-        rect.left >= 0 &&
+        rect.left >= -1 &&
         rect.right <= innerWidth + 1 &&
-        rect.top >= 0 &&
+        rect.top >= -1 &&
         rect.bottom <= innerHeight + 1 &&
         element.scrollWidth <= element.clientWidth + 1
       );

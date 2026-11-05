@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -39,7 +40,7 @@ body {
   margin: 0;
 }
 .dashboard-demo .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
   margin-bottom: 0.4rem;
 }
@@ -52,7 +53,7 @@ body {
 }
 .dashboard-demo section {
   min-width: 0;
-  border: 1px solid #dce1e6;
+  border: 1px solid var(--ds-border, light-dark(#dce1e6, #666666));
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -64,11 +65,11 @@ body {
   margin-top: 0.5rem;
 }
 .dashboard-demo [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 .dashboard-demo [role='status'] {
   font-size: 0.85rem;
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
 .dashboard-conversation {
   flex: 1;
@@ -103,7 +104,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }
 .dashboard-card {
-  background: #fff;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
   min-width: 0;
 }
 .dashboard-card h3 {
@@ -115,11 +116,11 @@ body {
   font-weight: 650;
 }
 .dashboard-delta {
-  color: #426d48;
+  color: var(--ds-text-secondary, light-dark(#426d48, #b5b5b5));
   font-size: 0.85rem;
 }
 .dashboard-empty {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.9rem;
 }
 .dashboard-chart svg {
@@ -129,16 +130,16 @@ body {
   max-height: 14rem;
 }
 .chart-axis {
-  stroke: #ccd4df;
+  stroke: var(--ds-border, light-dark(#ccd4df, #666666));
 }
 .chart-line {
-  stroke: #425bb5;
+  stroke: var(--ds-accent, light-dark(#425bb5, #9dc1ff));
   stroke-width: 3;
   fill: none;
 }
 .chart-point,
 .chart-bar {
-  fill: #425bb5;
+  fill: var(--ds-accent, light-dark(#425bb5, #9dc1ff));
 }
 .dashboard-table-scroll,
 .dashboard-chart-data {
@@ -154,7 +155,7 @@ body {
 .dashboard-demo th,
 .dashboard-demo td {
   padding: 0.5rem;
-  border-bottom: 1px solid #e0e5ec;
+  border-bottom: 1px solid var(--ds-border, light-dark(#e0e5ec, #666666));
 }
 .dashboard-table-scroll table {
   min-width: 28rem;

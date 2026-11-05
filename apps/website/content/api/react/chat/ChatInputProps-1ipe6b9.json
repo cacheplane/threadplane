@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 20
+            "line": 21
           },
           "isReadonly": true,
           "isOptional": true
@@ -96,7 +96,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 28
+            "line": 29
           },
           "isReadonly": true,
           "isOptional": true
@@ -132,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 15
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -168,7 +168,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 21
+            "line": 22
           },
           "isReadonly": true,
           "isOptional": true
@@ -205,7 +205,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 26
+            "line": 27
           },
           "isReadonly": true,
           "isOptional": true
@@ -241,7 +241,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 27
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -277,7 +277,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 24
+            "line": 25
           },
           "isReadonly": true,
           "isOptional": true
@@ -313,7 +313,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 19
+            "line": 20
           },
           "isReadonly": true,
           "isOptional": true
@@ -349,7 +349,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 18
+            "line": 19
           },
           "isReadonly": true,
           "isOptional": false
@@ -385,7 +385,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 16
+            "line": 17
           },
           "isReadonly": true,
           "isOptional": true
@@ -421,7 +421,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 25
+            "line": 26
           },
           "isReadonly": true,
           "isOptional": true
@@ -457,7 +457,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 23
+            "line": 24
           },
           "isReadonly": true,
           "isOptional": true
@@ -493,7 +493,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 14
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": true
@@ -501,12 +501,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/chat-input.tsx",
-        "line": 13
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat-input.tsx",
-    "line": 13
+    "line": 14
   }
 }

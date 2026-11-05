@@ -59,16 +59,34 @@ export function ChatDebug(props: ChatDebugProps) {
   };
   useEffect(() => {
     if (!ui.open) return;
-    const outside = (event: PointerEvent) => {
-      if (root.current && !event.composedPath().includes(root.current)) {
-        // Pointer targets retain their native focus behavior; outside closing never steals it.
+    let active = true;
+    let dismissal: ReturnType<typeof setTimeout> | undefined;
+    const outside = (event: MouseEvent) => {
+      if (
+        dismissal === undefined &&
+        root.current &&
+        !event.composedPath().includes(root.current)
+      ) {
+        // Activate the target before closing: a host layout change on pointerdown
+        // can otherwise move it before the click. Outside closing never steals focus.
         const next = { ...ui, open: false };
-        setUi(next);
-        preferences.current?.owner.write(next);
+        const owner = preferences.current?.owner;
+        dismissal = setTimeout(() => {
+          dismissal = undefined;
+          if (!active || preferences.current?.owner !== owner) return;
+          setUi(next);
+          owner?.write(next);
+        }, 0);
       }
     };
-    document.addEventListener('pointerdown', outside);
-    return () => document.removeEventListener('pointerdown', outside);
+    // Capture also observes controls that stop bubbling. A later task preserves
+    // target activation; native event callbacks can run microtasks between them.
+    document.addEventListener('click', outside, true);
+    return () => {
+      active = false;
+      if (dismissal !== undefined) clearTimeout(dismissal);
+      document.removeEventListener('click', outside, true);
+    };
   }, [ui]);
   const tabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     const tabs: DebugTab[] = ['state', 'timeline'];

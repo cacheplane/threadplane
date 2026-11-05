@@ -336,3 +336,14 @@ it('requires literal true to opt in from JavaScript callers', () => {
   expect(v.queryByRole('button')).toBeNull();
   expect(v.getAllByRole('link')).toHaveLength(2);
 });
+it('carries a scoped dark chat surface and color scheme into the portal without design-system tokens', () => {
+  const v = setup();
+  const trigger = v.getAllByRole('button')[0];
+  trigger.style.colorScheme = 'dark';
+  trigger.style.setProperty('--tp-chat-surface', 'rgb(28, 28, 28)');
+  trigger.style.setProperty('--tp-chat-text', 'rgb(245, 245, 245)');
+  fireEvent.click(trigger);
+  const card = v.getByRole('dialog');
+  expect(card.style.background).toBe('rgb(28, 28, 28)');
+  expect(card.style.colorScheme).toBe('dark');
+});

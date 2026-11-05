@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -32,7 +33,7 @@ body {
   margin: 0;
 }
 .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
   margin-bottom: 0.4rem !important;
 }
@@ -49,11 +50,11 @@ body {
   max-height: none;
 }
 [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 [role='status'] {
   font-size: 0.85rem;
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
 @media (max-width: 32rem) {
   .subagents-demo {
@@ -72,13 +73,13 @@ body {
 .tool-observation {
   padding: 1rem;
   margin-block: 0.75rem;
-  border: 1px solid var(--ds-border-default, #cbd5e1);
+  border: 1px solid var(--ds-border-default, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 0.75rem;
   min-width: 0;
 }
 
 .child-observations {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 12px;
   padding: 1rem;
   margin: 1rem 0;
@@ -89,7 +90,7 @@ body {
   font-weight: 600;
 }
 .child-observations section {
-  border-top: 1px solid #cbd5e1;
+  border-top: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   margin-top: 1rem;
   padding-top: 0.5rem;
   min-width: 0;
@@ -101,7 +102,7 @@ body {
 }
 .child-observation-status {
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--ds-text-secondary, light-dark(#475569, #b5b5b5));
 }
 .tool-observation h3 {
   font-size: 0.95rem;

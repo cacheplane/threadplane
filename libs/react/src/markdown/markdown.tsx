@@ -29,8 +29,10 @@ export function Markdown({
     throw new TypeError('Duplicate citation IDs in Markdown.');
   return (
     <div
+      dir="auto"
+      className="tp-markdown"
       style={{
-        color: 'var(--ds-text-primary, #142435)',
+        color: 'var(--tp-chat-text, var(--ds-text-primary, CanvasText))',
         fontFamily: 'inherit',
         whiteSpace: 'pre-wrap',
         overflowWrap: 'anywhere',
@@ -102,23 +104,52 @@ function NodeView({
       );
     case 'list-item':
       return (
-        <li>
+        <li className={node.task ? 'tp-markdown__task' : undefined}>
           {node.task && (
-            <input
-              type="checkbox"
-              checked={node.task.checked}
-              disabled
-              aria-label={
-                node.task.checked ? 'Completed task' : 'Incomplete task'
-              }
-            />
+            <span className="tp-markdown__task-check">
+              <input
+                className="tp-markdown__task-input"
+                type="checkbox"
+                checked={node.task.checked}
+                disabled
+                aria-label={
+                  node.task.checked ? 'Completed task' : 'Incomplete task'
+                }
+              />
+              <span
+                className="tp-markdown__task-box"
+                data-checked={node.task.checked}
+                aria-hidden="true"
+              >
+                {node.task.checked && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    focusable="false"
+                  >
+                    <path
+                      d="m2 6 2.5 2.5L10 3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </span>
           )}
           {children}
         </li>
       );
     case 'code-block':
       return (
-        <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+        <pre
+          dir="ltr"
+          style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+        >
           <code>{node.text}</code>
         </pre>
       );
@@ -158,36 +189,43 @@ function NodeView({
       return <br />;
     case 'table':
       return (
-        <table>
-          <thead>
-            {node.children
-              .filter((row) => row.isHeader)
-              .map((row) => (
-                <NodeView
-                  key={`${row.type}:${row.id}`}
-                  node={row}
-                  citations={citations}
-                  sources={sources}
-                  citationPreview={citationPreview}
-                  insideAnchor={insideAnchor}
-                />
-              ))}
-          </thead>
-          <tbody>
-            {node.children
-              .filter((row) => !row.isHeader)
-              .map((row) => (
-                <NodeView
-                  key={`${row.type}:${row.id}`}
-                  node={row}
-                  citations={citations}
-                  sources={sources}
-                  citationPreview={citationPreview}
-                  insideAnchor={insideAnchor}
-                />
-              ))}
-          </tbody>
-        </table>
+        <div
+          className="tp-markdown__table-scroll"
+          role="group"
+          aria-label="Table"
+          tabIndex={0}
+        >
+          <table>
+            <thead>
+              {node.children
+                .filter((row) => row.isHeader)
+                .map((row) => (
+                  <NodeView
+                    key={`${row.type}:${row.id}`}
+                    node={row}
+                    citations={citations}
+                    sources={sources}
+                      citationPreview={citationPreview}
+                    insideAnchor={insideAnchor}
+                  />
+                ))}
+            </thead>
+            <tbody>
+              {node.children
+                .filter((row) => !row.isHeader)
+                .map((row) => (
+                  <NodeView
+                    key={`${row.type}:${row.id}`}
+                    node={row}
+                    citations={citations}
+                    sources={sources}
+                      citationPreview={citationPreview}
+                    insideAnchor={insideAnchor}
+                  />
+                ))}
+            </tbody>
+          </table>
+        </div>
       );
     case 'table-row':
       return <tr>{children}</tr>;

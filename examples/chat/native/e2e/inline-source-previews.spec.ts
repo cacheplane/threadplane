@@ -23,7 +23,7 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
             {
               id: 'answer',
               type: 'ai',
-              content: 'Answer [^safe] and [^blocked].',
+              content: 'إجابة [^safe] و [^blocked].',
               additional_kwargs: {
                 citations: [
                   {
@@ -141,6 +141,92 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
     await close.click();
     await expect(trigger).toBeFocused();
     await expect(dialog).toHaveCount(0);
+    await preserved();
+    const scopedTheme = await trigger.evaluate((button) => {
+      const scope = button.closest('article');
+      if (!scope) throw new Error('Expected message scope');
+      const original = {
+        className: scope.className,
+        style: scope.getAttribute('style'),
+      };
+      const reset = document.createElement('style');
+      reset.id = 'inline-preview-theme-proof';
+      const properties = Array.from(
+        getComputedStyle(document.documentElement)
+      ).filter((name) => name.startsWith('--ds-'));
+      reset.textContent = `:root { ${properties
+        .map((name) => `${name}: initial !important;`)
+        .join(' ')} }`;
+      document.head.append(reset);
+      scope.classList.add('tp-chat');
+      scope.style.colorScheme = 'dark';
+      scope.style.setProperty(
+        '--tp-chat-text',
+        'light-dark(rgb(28, 28, 28), rgb(245, 245, 245))'
+      );
+      scope.style.setProperty(
+        '--tp-chat-surface',
+        'light-dark(rgb(255, 255, 255), rgb(28, 28, 28))'
+      );
+      return original;
+    });
+    await trigger.click();
+    await expect(dialog).toHaveCSS('color', 'rgb(245, 245, 245)');
+    await expect(dialog).toHaveCSS('background-color', 'rgb(28, 28, 28)');
+    await expect(dialog).toHaveCSS('color-scheme', 'dark');
+    expect(
+      await trigger.evaluate((node) =>
+        getComputedStyle(node).getPropertyValue('--ds-surface').trim()
+      )
+    ).toBe('');
+    for (const control of [close, link]) {
+      await expect(control).toHaveCSS('color-scheme', 'dark');
+      const contrast = await control.evaluate((node) => {
+        const computed = getComputedStyle(node);
+        const rgb = computed.color
+          .match(/[\d.]+/g)
+          ?.slice(0, 3)
+          .map(Number);
+        if (!rgb) return 0;
+        const luminance = (values: number[]) =>
+          values
+            .map((value) => {
+              const c = value / 255;
+              return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+            })
+            .reduce(
+              (sum, value, index) =>
+                sum + value * [0.2126, 0.7152, 0.0722][index],
+              0
+            );
+        const background = computed.backgroundColor
+          .match(/[\d.]+/g)
+          ?.map(Number);
+        const effective =
+          background && (background.length < 4 || background[3] !== 0)
+            ? background.slice(0, 3)
+            : [28, 28, 28];
+        const foregroundLuminance = luminance(rgb);
+        const backgroundLuminance = luminance(effective);
+        return (
+          (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+          (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+        );
+      });
+      expect(contrast).toBeGreaterThanOrEqual(4.5);
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('inline-preview-scoped-dark.png'),
+    });
+    await close.click();
+    await trigger.evaluate((button, original) => {
+      const scope = button.closest('article');
+      if (!scope) throw new Error('Expected message scope');
+      scope.className = original.className;
+      if (original.style === null) scope.removeAttribute('style');
+      else scope.setAttribute('style', original.style);
+      document.getElementById('inline-preview-theme-proof')?.remove();
+    }, scopedTheme);
     await preserved();
     await draft.focus();
     await trigger.hover();
