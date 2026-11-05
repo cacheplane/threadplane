@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   within,
+  waitFor,
 } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
@@ -321,7 +322,54 @@ it('links tabs and supports scoped keyboard focus and user-close restoration', (
     v.getByRole('button', { name: 'Open debug panel' })
   );
 });
-it('outside pointer respects composed paths, independent roots and outside focus', () => {
+it.each([false, true])(
+  'activates an outside action before dismissal (stopped propagation: %s)',
+  async (stopPropagation) => {
+    const action = vi.fn();
+    const v = render(
+      <>
+        <button
+          type="button"
+          onClick={(event) => {
+            if (stopPropagation) event.stopPropagation();
+            action(v.queryByRole('region', { name: 'Chat debug' }) !== null);
+          }}
+        >
+          Outside action
+        </button>
+        <ChatDebug {...base} />
+      </>
+    );
+    const outside = v.getByRole('button', { name: 'Outside action' });
+    fireEvent.pointerDown(outside);
+    fireEvent.click(outside);
+    expect(action).toHaveBeenCalledOnce();
+    expect(action).toHaveBeenCalledWith(true);
+    await waitFor(() =>
+      expect(v.queryByRole('region', { name: 'Chat debug' })).toBeNull()
+    );
+  }
+);
+
+it('does not persist a deferred outside dismissal after the owning view unmounts', async () => {
+  const saved = JSON.stringify({ open: true, dock: 'right', tab: 'state' });
+  localStorage.setItem('dismissal-owner', saved);
+  const v = render(
+    <>
+      <button type="button" onClick={() => v.unmount()}>
+        Leave view
+      </button>
+      <ChatDebug {...base} storageKey="dismissal-owner" />
+    </>
+  );
+  await act(async () => {
+    fireEvent.click(v.getByRole('button', { name: 'Leave view' }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(localStorage.getItem('dismissal-owner')).toBe(saved);
+});
+
+it('outside pointer respects composed paths, independent roots and outside focus', async () => {
   const v = render(
     <>
       <ChatDebug {...base} />
@@ -331,11 +379,17 @@ it('outside pointer respects composed paths, independent roots and outside focus
   );
   const regions = v.getAllByRole('region', { name: 'Chat debug' });
   fireEvent.pointerDown(within(regions[1]).getByRole('tab', { name: 'State' }));
-  expect(v.getAllByRole('region', { name: 'Chat debug' })).toHaveLength(1);
+  fireEvent.click(within(regions[1]).getByRole('tab', { name: 'State' }));
+  await waitFor(() =>
+    expect(v.getAllByRole('region', { name: 'Chat debug' })).toHaveLength(1)
+  );
   const outside = v.getByRole('button', { name: 'Outside' });
   outside.focus();
   fireEvent.pointerDown(outside);
-  expect(v.queryByRole('region', { name: 'Chat debug' })).toBeNull();
+  fireEvent.click(outside);
+  await waitFor(() =>
+    expect(v.queryByRole('region', { name: 'Chat debug' })).toBeNull()
+  );
   expect(document.activeElement).toBe(outside);
   fireEvent.keyDown(outside, { key: 'Escape' });
 });

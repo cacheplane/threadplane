@@ -14,9 +14,10 @@ export function ToolObservation({
 }: ToolObservationProps) {
   return (
     <section
+      className="tp-tool-observation"
       aria-label={label}
       style={{
-        color: 'var(--ds-text-primary, #142435)',
+        color: 'var(--tp-chat-text, var(--ds-text-primary, CanvasText))',
         fontFamily: 'inherit',
         overflowWrap: 'anywhere',
       }}

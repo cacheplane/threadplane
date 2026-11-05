@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -44,7 +45,7 @@ body {
   margin-block: 0.5rem;
 }
 .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
 }
 .skills-demo button,
@@ -85,14 +86,14 @@ body {
   gap: 1rem;
 }
 .skill-panels > section {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 0.75rem;
   padding: 1rem;
   max-height: 22rem;
   overflow: auto;
 }
 .skill-panels article {
-  border-top: 1px solid #cbd5e1;
+  border-top: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   padding-block: 0.5rem;
 }
 .skill-panels pre,
@@ -105,17 +106,17 @@ body {
 .tool-observation {
   padding: 0.75rem;
   margin-block: 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 0.75rem;
 }
 .skills-demo summary {
   cursor: pointer;
 }
 .skills-demo [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 .skills-demo [role='status'] {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.9rem;
 }
 @media (max-width: 42rem) {

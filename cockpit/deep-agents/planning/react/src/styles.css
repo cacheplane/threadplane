@@ -1,8 +1,8 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #24312e;
-  background: #f4f5f0;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
   font-synthesis: none;
 }
 * {
@@ -17,10 +17,10 @@ textarea {
 }
 button {
   cursor: pointer;
-  border: 1px solid #bdcbc2;
+  border: 1px solid var(--ds-border, light-dark(#bdcbc2, #666666));
   border-radius: 8px;
-  background: #fff;
-  color: #234735;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
+  color: var(--ds-accent, light-dark(#234735, #a7d8bc));
   padding: 0.65rem 0.9rem;
 }
 button:disabled {
@@ -29,8 +29,8 @@ button:disabled {
 }
 button:focus-visible,
 summary:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #468667;
+textarea:focus-visible:where(:not(.tp-chat-input__textarea)) {
+  outline: 3px solid var(--ds-accent, light-dark(#468667, #a7d8bc));
   outline-offset: 3px;
 }
 .planning-demo {
@@ -53,16 +53,16 @@ h1 {
 }
 .eyebrow {
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.12em;
   margin: 0;
-  color: #456753;
+  color: var(--ds-text-secondary, light-dark(#456753, #b5b5b5));
 }
 .introduction {
   max-width: 700px;
   line-height: 1.6;
-  color: #596861;
+  color: var(--ds-text-secondary, light-dark(#596861, #b5b5b5));
   margin: 6px 0 30px;
 }
 .planning-layout {
@@ -73,8 +73,8 @@ h1 {
 }
 .conversation-panel {
   min-width: 0;
-  background: #fff;
-  border: 1px solid #d8dfd5;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
+  border: 1px solid var(--ds-border, light-dark(#d8dfd5, #666666));
   border-radius: 16px;
   padding: 24px;
 }
@@ -86,22 +86,22 @@ h1 {
 }
 .seed-prompts button {
   font-size: 0.84rem;
-  background: #f4f7f2;
+  background: var(--ds-surface-tinted, light-dark(#f4f7f2, #282828));
 }
 .conversation-empty {
   min-height: 210px;
   padding: 38px 12px;
   text-align: center;
-  color: #667269;
+  color: var(--ds-text-secondary, light-dark(#667269, #b5b5b5));
 }
 .conversation-empty > span {
   font-size: 2rem;
-  color: #44825c;
+  color: var(--ds-accent, light-dark(#44825c, #a7d8bc));
 }
 .conversation-empty h2 {
   font-size: 1.15rem;
   font-weight: 550;
-  color: #354a3e;
+  color: var(--ds-text-secondary, light-dark(#354a3e, #b5b5b5));
 }
 .conversation-empty p {
   font-size: 0.9rem;
@@ -121,7 +121,7 @@ pre {
 }
 .tp-chat-message--tool {
   padding: 10px 12px;
-  background: #f4f5f0;
+  background: var(--ds-surface-tinted, light-dark(#f4f5f0, #282828));
   font-size: 0.82rem;
   border-radius: 8px;
 }
@@ -136,8 +136,8 @@ summary {
 }
 .plan-panel {
   min-width: 0;
-  background: #edf2e8;
-  border: 1px solid #d1dbc9;
+  background: var(--ds-surface-tinted, light-dark(#edf2e8, #203420));
+  border: 1px solid var(--ds-border, light-dark(#d1dbc9, #666666));
   border-radius: 16px;
   padding: 26px;
 }
@@ -148,7 +148,7 @@ summary {
   font-weight: 600;
 }
 .plan-authority {
-  color: #566a58;
+  color: var(--ds-text-secondary, light-dark(#566a58, #b5b5b5));
   font-size: 0.79rem;
   line-height: 1.5;
 }
@@ -163,14 +163,14 @@ progress {
   border: none;
   border-radius: 8px;
   overflow: hidden;
-  background: #d6dfd0;
-  accent-color: #42805b;
+  background: var(--ds-surface-tinted, light-dark(#d6dfd0, #282828));
+  accent-color: var(--ds-accent, light-dark(#42805b, #a7d8bc));
 }
 progress::-webkit-progress-bar {
-  background: #d6dfd0;
+  background: var(--ds-surface-tinted, light-dark(#d6dfd0, #282828));
 }
 progress::-webkit-progress-value {
-  background: #42805b;
+  background: var(--ds-accent, light-dark(#42805b, #a7d8bc));
 }
 .plan-items {
   padding: 0;
@@ -181,7 +181,7 @@ progress::-webkit-progress-value {
   display: flex;
   gap: 12px;
   padding: 14px 0;
-  border-bottom: 1px solid #d5dece;
+  border-bottom: 1px solid var(--ds-border, light-dark(#d5dece, #666666));
   min-width: 0;
 }
 .plan-items li > div {
@@ -199,29 +199,29 @@ progress::-webkit-progress-value {
   height: 25px;
   display: grid;
   place-items: center;
-  border: 1px solid #a9b9a2;
+  border: 1px solid var(--ds-border, light-dark(#a9b9a2, #666666));
   border-radius: 50%;
-  font-size: 0.72rem;
-  color: #547153;
+  font-size: 0.75rem;
+  color: var(--ds-text-secondary, light-dark(#547153, #b5b5b5));
 }
 [data-plan-status='completed'] .plan-marker {
-  background: #3f7450;
-  color: white;
-  border-color: #3f7450;
+  background: var(--ds-accent, #3f7450);
+  color: var(--ds-text-inverted, white);
+  border-color: var(--ds-border, light-dark(#3f7450, #a7d8bc));
 }
 .plan-item-status {
-  font-size: 0.72rem;
-  color: #5c7059;
+  font-size: 0.75rem;
+  color: var(--ds-text-secondary, light-dark(#5c7059, #b5b5b5));
 }
 .plan-empty {
   font-size: 0.92rem;
-  color: #65755f;
+  color: var(--ds-text-secondary, light-dark(#65755f, #b5b5b5));
   line-height: 1.7;
   padding: 30px 0;
 }
 .plan-explanation {
   font-size: 0.75rem;
-  color: #64745e;
+  color: var(--ds-text-secondary, light-dark(#64745e, #b5b5b5));
   line-height: 1.6;
   margin: 20px 0 0;
 }
@@ -233,14 +233,14 @@ progress::-webkit-progress-value {
 .request-error {
   font-size: 0.82rem;
   line-height: 1.6;
-  color: #7d4c24;
-  background: #fff5de;
+  color: var(--ds-accent, light-dark(#7d4c24, #ffcb8a));
+  background: var(--ds-surface-tinted, light-dark(#fff5de, #352a16));
   border-radius: 8px;
   padding: 12px;
 }
 .response-status {
   font-size: 0.78rem;
-  color: #627067;
+  color: var(--ds-text-secondary, light-dark(#627067, #b5b5b5));
   margin-bottom: 0;
 }
 @media (max-width: 720px) {
