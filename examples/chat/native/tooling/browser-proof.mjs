@@ -779,6 +779,13 @@ export async function runProductionProofs(browser, retained) {
             name: 'Sources',
             exact: true,
           });
+          const disclosure = sources.getByRole('button', {
+            name: 'Sources (4)',
+            exact: true,
+          });
+          if ((await disclosure.getAttribute('aria-expanded')) === 'false')
+            await disclosure.click();
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
           await expect(sources.getByRole('listitem')).toHaveCount(4);
           const inline = page.getByRole('button', {
             name: 'Citation 7: <b>Supplied source</b>',
@@ -812,7 +819,7 @@ export async function runProductionProofs(browser, retained) {
           ).toHaveText('[^__proto__]');
           await expect(page.locator('a a')).toHaveCount(0);
           await expect(sources.getByRole('link')).toHaveCount(0);
-          await expect(sources.getByRole('button')).toHaveCount(4);
+          await expect(sources.getByRole('list').getByRole('button')).toHaveCount(4);
           await expect(
             sources.getByRole('button', {
               name: 'Preview source 2: Blocked source',
@@ -1168,6 +1175,14 @@ export async function runProductionProofs(browser, retained) {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
         await submit(page, '  Exact text\nSecond line.  ');
+        if (retained.framework === 'react') {
+          const disclosure = page
+            .getByRole('region', { name: 'Sources', exact: true })
+            .getByRole('button', { name: 'Sources (4)', exact: true });
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+          await disclosure.click();
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+        }
         const sourceItem =
           retained.framework === 'react'
             ? await page
@@ -1217,6 +1232,13 @@ export async function runProductionProofs(browser, retained) {
               name: 'Preview source 7: Corrected source',
               exact: true,
             });
+          assert.equal(
+            await correctedPreview.evaluate(
+              (node, original) => node.closest('li') === original,
+              sourceItem
+            ),
+            true
+          );
           await expect(correctedPreview).toHaveText('[7] Corrected source');
           await correctedPreview.click();
           const correctedDialog = page.getByRole('dialog', {

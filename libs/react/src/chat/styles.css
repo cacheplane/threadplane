@@ -1361,6 +1361,7 @@
   cursor: default;
 }
 
+.tp-citations__toggle,
 .tp-citation-preview__trigger,
 .tp-citation-preview__close {
   box-sizing: border-box;
@@ -1377,6 +1378,10 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   cursor: pointer;
+}
+.tp-citations__toggle:hover:not(:disabled) {
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  border-color: var(--tp-chat-border, var(--ds-border, GrayText));
 }
 .tp-citation-preview__dialog {
   box-sizing: border-box;
@@ -1410,9 +1415,13 @@
 .tp-citation-preview__dialog a {
   color: var(--tp-chat-accent, var(--ds-accent, LinkText));
 }
+.tp-citations__toggle:focus-visible,
 .tp-citation-preview__trigger:focus-visible,
 .tp-citation-preview__close:focus-visible,
 .tp-citation-preview__dialog a:focus-visible {
   outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
   outline-offset: 3px;
+}
+.tp-citations__toggle:focus-visible {
+  outline-offset: -3px;
 }

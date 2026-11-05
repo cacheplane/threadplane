@@ -1,16 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "17b5b416a4413b1a54f926726e0335c3c7d6b318",
+  "baselineHead": "3cdf28acd61f917fb4f94f2c700d56757a10296f",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/tool-observation.tsx",
-      "libs/react/src/debug/chat-debug.tsx",
-      "libs/react/src/markdown/inline-preview.tsx",
-      "libs/react/src/markdown/markdown.tsx"
+      "libs/react/src/chat/citations.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -858,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "8533985bd6a15b2c99bb5de59f47a15e9013e2b2475cffc48b60ddc6bbd913bc"
+      "sha256": "c05642c6a9656472e90de46881ad8aa7361958b3299c75b0d13930eddc50935c"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -876,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "91b26219da3f1dbd5066caf5b0ab4368767f051f77264af30edea34556ccf410"
+      "sha256": "07532d9136116ecde7e2f9b1848cde4096d0b2fb9afc050af191c3fa9229fce2"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10601,7 +10596,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "Citations",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Citations({ citations, label = 'Sources', className, preview, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <ul className=\"tp-citations__list\">\n        {citations.map((citation) => {\n            if (preview === true)\n                return (<li key={citation.id} className=\"tp-citations__item\">\n                <CitationPreview citation={citation}/>\n              </li>);\n            const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n            const href = citation.url === undefined\n                ? undefined\n                : markdownUrl(citation.url, 'link');\n            return (<li key={citation.id} className=\"tp-citations__item\">\n              <span className=\"tp-citations__index\">[{citation.index}] </span>\n              {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n                  {title}\n                </a>)}\n              {citation.sourceType !== undefined && (<span className=\"tp-citations__type\">\n                  {citation.sourceType}\n                </span>)}\n              {citation.snippet !== undefined && (<p className=\"tp-citations__snippet\">{citation.snippet}</p>)}\n            </li>);\n        })}\n      </ul>\n    </section>);\n}"
+          "signature": "export function Citations({ citations, label = 'Sources', className, preview, collapsible, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    if (collapsible === true)\n        return (<Disclosure citations={citations} label={label} className={className} preview={preview}/>);\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <SourceList citations={citations} preview={preview}/>\n    </section>);\n}"
         }
       ]
     },
@@ -10615,7 +10610,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "CitationsProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n}"
+          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n    readonly collapsible?: boolean;\n}"
         }
       ]
     },
@@ -15559,7 +15554,7 @@
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "a15bc80f0c9e1d845175c948308c850ab69cfb17493966cf1a1ac691d9088caf"
+      "sha256": "701d1f978f03321b888e422252c5e53df83e13b8eca5421f0b7dc16ee218694f"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
