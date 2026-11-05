@@ -1,3 +1,34 @@
+## 0.3.5 (2026-11-04)
+
+### ✨ Highlights
+
+- **langgraph:** indexed exact-ID reconciliation removes triangular searches in full history snapshots.
+- **langgraph:** unchanged empty tool-call and subagent state no longer repeatedly invalidates historical consumers during text streaming. Nonempty updates and thread resets remain observable.
+- **chat:** task controls, keyboard behavior, speaker labels and bidirectional text improve ([#1435](https://github.com/cacheplane/threadplane/pull/1435)).
+
+### 🚀 Features
+
+- **docs:** generate SDK API reference for Angular and React ([#1418](https://github.com/cacheplane/threadplane/pull/1418))
+- **growth:** LinkedIn engagement leads pipeline ([#1426](https://github.com/cacheplane/threadplane/pull/1426))
+- **marketing:** voice lint, [BRIAN:] markers, and missed-slot hold ([#1422](https://github.com/cacheplane/threadplane/pull/1422))
+- **react:** dogfood project overflow menus ([#1419](https://github.com/cacheplane/threadplane/pull/1419))
+- **react:** add controlled welcome suggestions ([#1427](https://github.com/cacheplane/threadplane/pull/1427))
+- **react:** resolve inline message citations ([#1433](https://github.com/cacheplane/threadplane/pull/1433))
+- **react:** add controlled follow-up suggestions ([#1434](https://github.com/cacheplane/threadplane/pull/1434))
+- **website:** align brand typography and spacing grid ([#1421](https://github.com/cacheplane/threadplane/pull/1421))
+
+### 🩹 Fixes
+
+- **ci:** pin the actual shared deployment image ([#1428](https://github.com/cacheplane/threadplane/pull/1428))
+- **deploy:** validate the current shared image repository ([#1424](https://github.com/cacheplane/threadplane/pull/1424))
+- **docs:** resolve source TSDoc and API declaration links ([#1423](https://github.com/cacheplane/threadplane/pull/1423))
+- **website:** align API docs and prevent nested card links ([#1429](https://github.com/cacheplane/threadplane/pull/1429))
+
+### 🔥 Performance
+
+- **langgraph:** index exact IDs in history snapshots ([#1431](https://github.com/cacheplane/threadplane/pull/1431))
+- **langgraph:** avoid redundant empty derived-state publications ([#1437](https://github.com/cacheplane/threadplane/pull/1437))
+
 ## 0.3.4 (2026-10-31)
 
 ### ✨ Highlights
