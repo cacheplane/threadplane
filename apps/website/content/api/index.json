@@ -2031,7 +2031,7 @@
       "canonicalReference": "@threadplane/chat!ChatComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates."
+      "summary": "Composes an agent conversation with message input, streaming content, tool\nviews, and customizable activity templates. Its internal default message\nlist renders built-in rows directly, without registered category templates;\ngeneric lists used directly retain their message-template registration API."
     },
     {
       "name": "ChatConfirmDialogComponent",
@@ -2191,7 +2191,7 @@
       "canonicalReference": "@threadplane/chat!ChatMessageListComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders agent messages with registered category templates, or optionally projects caller-owned message rows."
+      "summary": "Renders agent messages using the custom template registered for each message category."
     },
     {
       "name": "ChatMessageRole",

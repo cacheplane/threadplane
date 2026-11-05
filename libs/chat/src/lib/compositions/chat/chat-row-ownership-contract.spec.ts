@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { describe, expect, it, vi } from 'vitest';
 import { ChatComponent } from './chat.component';
+import { ChatDefaultMessageListComponent } from './chat-default-message-list.component';
 import { ChatActivityTemplateDirective } from './chat-activity-template.directive';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
@@ -30,6 +31,15 @@ class ActivityHost { readonly agent = makeAgent(); }
 class ToolHost { readonly agent = makeAgent(); }
 
 describe('composed row ownership contracts', () => {
+  it('observes actual default AI tool configuration reads through the live renderer', () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    fixture.componentRef.setInput('agent', makeAgent());
+    const exclusions = vi.spyOn(fixture.componentInstance, 'excludedToolNames');
+    const templates = vi.spyOn(fixture.componentInstance, 'toolCallTemplates');
+    fixture.detectChanges();
+    expect(exclusions).toHaveBeenCalled();
+    expect(templates).toHaveBeenCalled();
+  });
   it.each([ActivityHost, ToolHost])('preserves custom descendant declaration injection for %s', async Host => {
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
@@ -110,8 +120,12 @@ describe('composed row ownership contracts', () => {
     fixture.componentRef.setInput('agent', makeAgent());
     fixture.detectChanges();
     const list = fixture.debugElement.query(By.directive(ChatMessageListComponent)).componentInstance as ChatMessageListComponent;
-    expect(list.projectedMessages()).toBe(true);
+    const specialized = fixture.debugElement.query(By.directive(ChatDefaultMessageListComponent));
+    expect(list).toBe(specialized.componentInstance);
+    expect(list).toBeInstanceOf(ChatMessageListComponent);
+    expect(specialized.injector.get(ChatMessageListComponent)).toBe(list);
     expect(list.messageTemplates()).toHaveLength(0);
+    expect(list.findTemplate('ai')).toBeUndefined();
     expect(list.messages()).toBe(fixture.componentInstance.agent().messages());
     expect(fixture.nativeElement.querySelectorAll('chat-message-list')).toHaveLength(1);
   });

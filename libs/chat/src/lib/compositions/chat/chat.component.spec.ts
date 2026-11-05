@@ -591,14 +591,13 @@ describe('ChatComponent — json-render surface store binding (composition isola
     state: { totalRevenue: '$9.9M' },
   });
 
-  /** Extract the `[store]` binding expression from the `<chat-generative-ui>`
-   * element in the composition template (e.g. `store` or `resolvedStore`). */
+  /** Extract the actual store callback delegated by the row template. */
   function extractSurfaceStoreBinding(src: string): string {
     const start = src.indexOf('<chat-generative-ui');
     expect(start).toBeGreaterThan(-1);
     const element = src.slice(start, src.indexOf('/>', start));
-    const match = /\[store\]="([A-Za-z_$][\w$]*)\(\)"/.exec(element);
-    if (!match) throw new Error('no [store]="fn()" binding found on <chat-generative-ui>');
+    const match = /\[store\]="rows\.([A-Za-z_$][\w$]*)\(\)"/.exec(element);
+    if (!match) throw new Error('no [store]="rows.fn()" binding found on <chat-generative-ui>');
     return match[1];
   }
 
@@ -608,7 +607,13 @@ describe('ChatComponent — json-render surface store binding (composition isola
     const url = await import('node:url');
     const here = path.dirname(url.fileURLToPath(import.meta.url));
     const src = fs.readFileSync(path.join(here, 'chat.component.ts'), 'utf8');
-    const bindingFn = extractSurfaceStoreBinding(src);
+    const start = src.indexOf('<chat-message-list chatDefaultMessages');
+    expect(start).toBeGreaterThan(-1);
+    const listElement = src.slice(start, src.indexOf('/>', start));
+    const rendererBinding = /\[renderer\]="([A-Za-z_$][\w$]*)"/.exec(listElement);
+    if (!rendererBinding) throw new Error('no actual default-row renderer binding found');
+    const rowSrc = fs.readFileSync(path.join(here, 'chat-default-message-list.component.ts'), 'utf8');
+    const bindingFn = extractSurfaceStoreBinding(rowSrc);
 
     TestBed.configureTestingModule({ imports: [ChatGenerativeUiComponent] });
     const injector = TestBed.inject(Injector);
@@ -639,7 +644,8 @@ describe('ChatComponent — json-render surface store binding (composition isola
       // below must come from the binding choice, not from a missing store.
       expect(comp.resolvedStore()).toBeTruthy();
       // Evaluate the template's actual binding expression for the surfaces.
-      surfaceStore = (comp as unknown as Record<string, () => StateStore | undefined>)[bindingFn]();
+      const renderer = (comp as unknown as Record<string, Record<string, () => StateStore | undefined>>)[rendererBinding[1]];
+      surfaceStore = renderer[bindingFn]();
     });
 
     function mountSurface(spec: Spec): string {

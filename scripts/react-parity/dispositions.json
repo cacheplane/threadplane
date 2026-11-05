@@ -1631,6 +1631,15 @@
       "reason": "Native component. Arguments/result/status/error rendering; safe JSON and local disclosure."
     },
     {
+      "id": "component:libs/chat/src/lib/compositions/chat/chat-default-message-list.component.ts#ChatDefaultMessageListComponent",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Private Angular OnPush owner for built-in Chat rows. The public generic list and independently planned React message-list retain their own contracts; this introduces no public renderer API or reusable React port."
+    },
+    {
       "id": "component:libs/chat/src/lib/compositions/chat/chat.component.ts#ChatComponent",
       "taskIds": [
         "T23"
@@ -9898,6 +9907,15 @@
       ],
       "treatment": "react",
       "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat/chat-default-message-list.component.ts",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Private Angular OnPush owner for built-in Chat rows. The public generic list and independently planned React message-list retain their own contracts; this introduces no public renderer API or reusable React port."
     },
     {
       "id": "source:libs/chat/src/lib/compositions/chat/chat.component.ts",
