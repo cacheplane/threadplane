@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "db88560ba91516f5f8ae5f1bbe944ffd465303ce",
+  "baselineHead": "38e8ee39b670aef8c2f89106420e89616311aa17",
   "sourceState": {
     "modified": [
       "libs/chat/src/lib/markdown/views/markdown-list-item.component.ts",
@@ -853,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "7601ffd8e457ea9c157d072b9db743cb68eaefa17b2de39b3f6491c36c809866"
+      "sha256": "a6214d220cdb95c68bb8f8a1db36342a57c43990198eeb21df7faef96e5b7149"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -871,7 +871,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "427f5afbc697782324121700dfe9be08591902e172812e35c773b23990bff748"
+      "sha256": "e6baef782c6c6c796bf37584edbc2089d3c3a1f0ec39d9e2cb1ded742a216229"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -10559,6 +10559,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#CitationPreview",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "CitationPreview",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citation-preview.tsx",
+          "symbol": "CitationPreview",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function CitationPreview(props: CitationPreviewProps) {\n    return <SourcePreview key={props.citation.id} {...props}/>;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationPreviewProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "CitationPreviewProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citation-preview.tsx",
+          "symbol": "CitationPreviewProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationPreviewProps {\n    readonly citation: Citation;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Citations",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -10568,7 +10596,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "Citations",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Citations({ citations, label = 'Sources', className, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <ul className=\"tp-citations__list\">\n        {citations.map((citation) => {\n            const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n            const href = citation.url === undefined\n                ? undefined\n                : markdownUrl(citation.url, 'link');\n            return (<li key={citation.id} className=\"tp-citations__item\">\n              <span className=\"tp-citations__index\">[{citation.index}] </span>\n              {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n                  {title}\n                </a>)}\n              {citation.sourceType !== undefined && (<span className=\"tp-citations__type\">\n                  {citation.sourceType}\n                </span>)}\n              {citation.snippet !== undefined && (<p className=\"tp-citations__snippet\">{citation.snippet}</p>)}\n            </li>);\n        })}\n      </ul>\n    </section>);\n}"
+          "signature": "export function Citations({ citations, label = 'Sources', className, preview, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <ul className=\"tp-citations__list\">\n        {citations.map((citation) => {\n            if (preview === true)\n                return (<li key={citation.id} className=\"tp-citations__item\">\n                <CitationPreview citation={citation}/>\n              </li>);\n            const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n            const href = citation.url === undefined\n                ? undefined\n                : markdownUrl(citation.url, 'link');\n            return (<li key={citation.id} className=\"tp-citations__item\">\n              <span className=\"tp-citations__index\">[{citation.index}] </span>\n              {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n                  {title}\n                </a>)}\n              {citation.sourceType !== undefined && (<span className=\"tp-citations__type\">\n                  {citation.sourceType}\n                </span>)}\n              {citation.snippet !== undefined && (<p className=\"tp-citations__snippet\">{citation.snippet}</p>)}\n            </li>);\n        })}\n      </ul>\n    </section>);\n}"
         }
       ]
     },
@@ -10582,7 +10610,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "CitationsProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n}"
+          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n}"
         }
       ]
     },
@@ -15517,10 +15545,16 @@
       "sha256": "58cd9ac3f578752c60c78781a750ab272e3ec5006976afb2c6228c333462cb71"
     },
     {
+      "id": "source:libs/react/src/chat/citation-preview.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/citation-preview.tsx",
+      "sha256": "165f38c6df678f46e2d7032846e6247ec78c0e134d1fcb0308d3cda39342da5e"
+    },
+    {
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "7aeadad54550d5d300c5607529c66e4e3d98cec1bc2da114a0662806b2aad61d"
+      "sha256": "a15bc80f0c9e1d845175c948308c850ab69cfb17493966cf1a1ac691d9088caf"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
@@ -15538,7 +15572,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "f1ea165398bf8d87358545ceebe312fff052988abb0e699d04fba9ab354af889"
+      "sha256": "55b9026a992b76f1202e9c1f77090cf3384c241301c37e6a380a16a780869d2f"
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",

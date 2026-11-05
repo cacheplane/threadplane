@@ -804,32 +804,57 @@ export async function runProductionProofs(browser, retained) {
             page.getByLabel('Unresolved citation __proto__', { exact: true })
           ).toHaveText('[^__proto__]');
           await expect(page.locator('a a')).toHaveCount(0);
-          await expect(sources.getByRole('link')).toHaveCount(1);
-          await expect(sources.getByRole('link')).toHaveAttribute(
+          await expect(sources.getByRole('link')).toHaveCount(0);
+          await expect(sources.getByRole('button')).toHaveCount(4);
+          await expect(
+            sources.getByRole('button', {
+              name: 'Preview source 2: Blocked source',
+              exact: true,
+            })
+          ).toBeVisible();
+          await expect(sources.locator('img, script, b')).toHaveCount(0);
+          await sources
+            .getByRole('button', {
+              name: 'Preview source 7: <b>Supplied source</b>',
+              exact: true,
+            })
+            .click();
+          const preview = page.getByRole('dialog', {
+            name: 'Source 7',
+            exact: true,
+          });
+          await expect(preview.getByRole('heading')).toHaveText(
+            '<b>Supplied source</b>'
+          );
+          await expect(
+            preview.getByRole('link', { name: 'Open source', exact: true })
+          ).toHaveCount(1);
+          await expect(preview.getByRole('link')).toHaveAttribute(
             'href',
             'https://sources.invalid/article'
           );
-          await expect(sources.getByRole('link')).toHaveText(
-            '<b>Supplied source</b>'
+          await expect(preview.getByRole('link')).toHaveAttribute(
+            'target',
+            '_blank'
           );
-          await expect(sources.getByRole('link')).toHaveAttribute(
+          await expect(preview.getByRole('link')).toHaveAttribute(
             'rel',
             'noopener noreferrer'
           );
-          await expect(
-            sources.getByText('Blocked source', { exact: true })
-          ).toBeVisible();
-          await expect(sources.locator('img, script, b')).toHaveCount(0);
-          await expect(
-            sources.locator('.tp-citations__snippet').first()
-          ).toHaveText(citationSnippet);
+          await expect(preview.locator('img, script, b')).toHaveCount(0);
+          await expect(preview.locator('[data-field="snippet"]')).toHaveText(
+            citationSnippet
+          );
           assert.equal(
-            await sources
-              .locator('.tp-citations__snippet')
-              .first()
+            await preview
+              .locator('[data-field="snippet"]')
               .evaluate((el) => getComputedStyle(el).whiteSpace),
             'pre-wrap'
           );
+          await preview
+            .getByRole('button', { name: 'Close', exact: true })
+            .click();
+          await expect(preview).toHaveCount(0);
           await page.setViewportSize({ width: 375, height: 812 });
           assert.equal(
             await page.evaluate(
@@ -1179,11 +1204,38 @@ export async function runProductionProofs(browser, retained) {
         if (retained.framework === 'react') {
           assert.ok(sourceItem);
           assert.equal(await sourceItem.evaluate((el) => el.isConnected), true);
+          const correctedPreview = page
+            .getByRole('region', { name: 'Sources', exact: true })
+            .getByRole('button', {
+              name: 'Preview source 7: Corrected source',
+              exact: true,
+            });
+          await expect(correctedPreview).toHaveText('[7] Corrected source');
+          await correctedPreview.click();
+          const correctedDialog = page.getByRole('dialog', {
+            name: 'Source 7',
+            exact: true,
+          });
+          await expect(correctedDialog.getByRole('heading')).toHaveText(
+            'Corrected source'
+          );
           await expect(
-            page
-              .getByRole('region', { name: 'Sources', exact: true })
-              .getByRole('link')
-          ).toHaveText('Corrected source');
+            correctedDialog.getByRole('link', {
+              name: 'Open source',
+              exact: true,
+            })
+          ).toHaveAttribute('href', 'https://sources.invalid/corrected');
+          await expect(correctedDialog.getByRole('link')).toHaveAttribute(
+            'target',
+            '_blank'
+          );
+          await expect(correctedDialog.getByRole('link')).toHaveAttribute(
+            'rel',
+            'noopener noreferrer'
+          );
+          await correctedDialog
+            .getByRole('button', { name: 'Close', exact: true })
+            .click();
           await expect(
             page.getByRole('link', {
               name: 'Citation 7: Corrected source (opens in new tab)',

@@ -242,6 +242,10 @@ export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: Reac
 export type SuggestionItemContract = Assert<Equal<import('@threadplane/react/chat').SuggestionItem, { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean }>>;
 export type SuggestionsContract = Assert<Equal<import('@threadplane/react/chat').SuggestionsProps, { readonly suggestions: readonly import('@threadplane/react/chat').SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
 export type SuggestionsParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Suggestions>[0], import('@threadplane/react/chat').SuggestionsProps>>;
+export type CitationPreviewContract = Assert<Equal<import('@threadplane/react/chat').CitationPreviewProps, { readonly citation: import('@threadplane/core').Citation; readonly className?: string }>>;
+export type CitationPreviewParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').CitationPreview>[0], import('@threadplane/react/chat').CitationPreviewProps>>;
+export type CitationsContract = Assert<Equal<import('@threadplane/react/chat').CitationsProps, { readonly citations: readonly import('@threadplane/core').Citation[]; readonly label?: string; readonly className?: string; readonly preview?: boolean }>>;
+export type CitationsParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Citations>[0], import('@threadplane/react/chat').CitationsProps>>;
 export type WelcomeSuggestionContract = Assert<Equal<WelcomeSuggestionProps, { readonly label: string; readonly value: string; readonly onSelect: (value: string) => void; readonly description?: string; readonly icon?: ReactNode; readonly disabled?: boolean; readonly className?: string }>>;
 export type WelcomeParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Welcome>[0], WelcomeProps>>;
 export type WelcomeSuggestionParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').WelcomeSuggestion>[0], WelcomeSuggestionProps>>;
@@ -390,6 +394,7 @@ export function assertSupportedExports(project, entry) {
         'ChatSidenavScrim',
         'ChatInput',
         'Citations',
+        'CitationPreview',
         'ConfirmDialog',
         'HistorySearchPalette',
         'Timeline',

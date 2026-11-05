@@ -98,6 +98,7 @@ function composition(selected, types, runtime) {
       : []),
     ...(!selected.angular ? ['@threadplane/react/src/render/render-spec'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/citations'] : []),
+    ...(!selected.angular ? ['@threadplane/react/src/chat/citation-preview'] : []),
     ...(!selected.angular
       ? ['@threadplane/react/src/chat/text-transcript']
       : []),

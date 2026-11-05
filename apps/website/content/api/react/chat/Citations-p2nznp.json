@@ -58,12 +58,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 13
+        "line": 15
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ citations, label, className, }",
+          "parameterName": "{ citations, label, className, preview, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -87,6 +87,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 13
+    "line": 15
   }
 }

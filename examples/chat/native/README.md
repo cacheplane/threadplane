@@ -48,8 +48,15 @@ updates, unsafe URLs, literal text and narrow-screen wrapping. Inline references
 resolve exact source IDs before Markdown definitions. Safe destinations open in a
 new tab with a source label; unsafe or missing destinations remain numbered text,
 and unresolved references retain their syntax. User rows receive no citation
-metadata. Sources and parser ownership remain with the application; citation
-previews and overlays remain outside this bounded private binding.
+metadata. Sources and parser ownership remain with the application.
+
+Assistant Sources lists opt into explicit source previews. Click, tap, or activate
+a source button to inspect its supplied details in a modal. Close, Escape, or a
+click outside dismisses it; Tab includes the optional safe **Open source** link.
+The preview preserves the composer and draft, performs no backend request, and
+retires on conversation changes, including A-B-A. Literal publication text and
+URLs remain supplied evidence, with no icon or metadata fetch. Hover previews and
+inline-marker overlays remain outside this bounded private feature.
 
 The React view also composes `TextTranscript` in app-authored background activity
 disclosures for supplied child observations. Full namespace tuples identify

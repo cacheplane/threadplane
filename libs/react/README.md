@@ -184,8 +184,27 @@ link and `noopener noreferrer`. Missing or blocked URLs display text. The view
 does not fetch icons, previews or metadata, parse snippets, merge Markdown
 sidecars, infer dates/types, subscribe or dispose anything. Default MessageList
 shows supplied sources after assistant answers; custom row rendering selects its
-own presentation. Styles are opt-in through `/chat/styles.css`. This bounded
-Sources view does not provide the legacy citation overlays or full citation parity.
+own presentation. Styles are opt-in through `/chat/styles.css`.
+
+Set `preview` on `Citations` to replace source titles with explicit source-details
+buttons. The separate `CitationPreview` component accepts a required readonly
+core `citation` and optional `className` for the same trigger and modal:
+
+```tsx
+<Citations citations={message.citations ?? []} preview />;
+```
+
+Click, tap, or activate the trigger with a keyboard to inspect the supplied title,
+snippet, source type, publication text, and URL. Text stays literal; metadata and
+icons are never fetched. Allowed URLs get a separate **Open source** new-tab link
+using the shared URL policy. Missing or blocked URLs remain readable text.
+The modal focuses **Close**, contains Tab navigation including the optional link,
+and dismisses with Close, Escape, or a click outside its bounds. It restores
+focus to the available trigger when it still owns focus. Same-ID metadata updates
+refresh the open preview; changing the citation ID or removing its view retires
+it. Preview state belongs to the mounted view and never issues session commands.
+The default Sources list retains direct links. Hover previews, inline-marker
+overlays, and full citation parity remain open.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`

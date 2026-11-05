@@ -230,6 +230,15 @@ function selectedInputs(p, selected) {
     'Installed message projection runtime required'
   );
   if (framework === 'react') {
+    const preview = 'node_modules/@threadplane/react/src/chat/citation-preview';
+    assert.ok(
+      p.compiler.inputs[preview + '.d.ts'],
+      'Installed CitationPreview declarations required'
+    );
+    assert.ok(
+      p.bundler.inputs[preview + '.js'],
+      'Installed CitationPreview runtime required'
+    );
     const suggestions = 'node_modules/@threadplane/react/src/chat/suggestions';
     assert.ok(
       p.compiler.inputs[suggestions + '.d.ts'],
