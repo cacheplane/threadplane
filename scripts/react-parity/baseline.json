@@ -1,10 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ff5be97a03ad5bcd2df1e8407b017e6ea220d4e6",
+  "baselineHead": "955ca41997563d0415afcf17cafb37167f33cb52",
   "sourceState": {
-    "modified": [
-      "libs/chat/src/lib/styles/chat-message.styles.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -15104,7 +15102,7 @@
       "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
       "kind": "source",
       "path": "libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "sha256": "1de1fdb365951e33191cc641fa40fbe259eceae6cd0aac5daa313c229a5fe3d3"
+      "sha256": "fab84a1da26e2c46b347804fc6925e98de156b994a68d3491d915de3970aab61"
     },
     {
       "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
