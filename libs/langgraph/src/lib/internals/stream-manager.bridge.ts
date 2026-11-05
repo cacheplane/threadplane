@@ -1441,7 +1441,11 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
     const toolCalls = getToolCallsWithResults(
       subjects.messages$.value as unknown as LangGraphMessage[],
     ) as ToolCallWithResult[];
-    subjects.toolCalls$.next(toolCalls);
+    // Empty-to-empty has no derived change. Nonempty results must stay fresh:
+    // the SDK may mutate call arguments and tool results in place.
+    if (toolCalls.length > 0 || subjects.toolCalls$.value.length > 0) {
+      subjects.toolCalls$.next(toolCalls);
+    }
   }
 
   function syncSubagentsFromMessages(messages: BaseMessage[]): void {
@@ -1497,7 +1501,10 @@ export function createStreamManagerBridge<T, ResolvedBag extends BagTemplate = B
   }
 
   function publishSubagents(): void {
-    subjects.subagents$.next(toSubagentRefs(subagentManager.getSubagents()));
+    const subagents = toSubagentRefs(subagentManager.getSubagents());
+    if (subagents.size > 0 || subjects.subagents$.value.size > 0) {
+      subjects.subagents$.next(subagents);
+    }
   }
 
   function storeMessageMetadata(messages: BaseMessage[], event: StreamEvent): void {
