@@ -1,0 +1,607 @@
+---
+title: 'Debugging an Angular Agent UI with AG-UI DevTools'
+description: 'A walkthrough of AG-UI DevTools: every tab, the protocol validator, scripted runs, and practical ways to use it day to day.'
+date: 2026-11-05
+tags: [angular, AG-UI, langgraph, devtools, agentic-ui]
+author: brian
+publishAt: '2026-11-05T17:00:00.000Z'
+---
+
+Learn how to debug an agent UI with AG-UI DevTools, a Chrome DevTools panel for AG-UI and LangGraph event streams.
+
+## Introducing AG-UI DevTools
+
+When an agent run misbehaves, the Network panel shows you an opaque `text/event-stream`.
+And `console.log` only shows you what your app *thinks* happened.
+
+AG-UI DevTools shows you the wire.
+It captures, decodes, and validates every event in a run, and it lays them out in the order they arrived.
+It also understands LangGraph Platform streams.
+
+If you're using Threadplane 0.3.4 or later, it does even more.
+In development, a Threadplane app reports which of its signals each event wrote, which generated components rendered, and it lets the panel script your agent's next run.
+
+## Goals
+
+- Install AG-UI DevTools.
+- Walk through each tab in the panel.
+- Learn what the protocol validator catches.
+- Script an approval interrupt with no model call.
+- Look at a few practical use cases.
+- See how the validator helps if you build your own AG-UI framework.
+- Have fun!
+
+## Install
+
+To get started, add [AG-UI DevTools from the Chrome Web Store](https://chromewebstore.google.com/detail/ag-ui-devtools/bfdacpjjmapclfedhocdbogihggpnkob).
+You'll need Chrome 111 or newer.
+
+Then:
+
+1. Open your app at `http://localhost`.
+2. Open Chrome DevTools.
+3. Select the **AG-UI** panel (it may be behind the `»` overflow if your tab strip is full).
+
+Capture is on for `localhost`, `127.0.0.1`, and `0.0.0.0` right away.
+For any other origin, click **Enable capture** in the panel and reload the page.
+
+I should note that the extension stays out of your data.
+It makes no network requests of its own, it never reads `Authorization` headers or cookies, and the capture lives in memory unless you export it.
+The source is [on GitHub](https://github.com/blove/ag-ui-chrome-extension) if you want to check.
+
+## Timeline
+
+The **Timeline** tab is where you'll spend most of your time.
+At the top is a waterfall of each run, with bars for messages, tool calls, and steps.
+Below that is every event in order, and selecting an event shows its payload on the right.
+
+Here is a screenshot of a two-run capture with a `TOOL_CALL_START` event selected:
+
+![AG-UI DevTools Timeline](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/1.png)
+
+Let's break this down:
+
+- Clicking a bar in the waterfall jumps to its event in the list.
+- The **Filter** box narrows the list by text.
+- **Expand chunks** rebuilds the `*_CHUNK` events into their full start, content, and end events.
+- The **Run** selector in the top right scopes every tab to a single run.
+- For LangGraph Platform streams, the detail pane also lists the AG-UI events the panel derived from each frame.
+
+## Issues
+
+This is the feature I think you'll appreciate the most.
+
+As events arrive, a validator checks them against the AG-UI protocol.
+An event with a problem gets a verdict card in the detail pane, and the toolbar shows an issue count for the current scope.
+Click the count, and the list filters down to just the events with issues.
+
+In this example, a `TEXT_MESSAGE_CONTENT` event references a message that was never opened:
+
+![Protocol issue in the Timeline](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/2.png)
+
+Here are a few of the rules it checks:
+
+- `event-before-run-started` and `event-after-terminal`: events outside the run.
+- `run-never-terminated`: a run that never sent `RUN_FINISHED` or `RUN_ERROR`.
+- `unopened-message-id` and `unopened-tool-call-id`: content for a message or tool call that was never started.
+- `unclosed-message` and `unclosed-tool-call`: a start with no end.
+- `tool-args-not-json`: streamed tool arguments that don't join into valid JSON.
+- `state-patch-failed`: a `STATE_DELTA` that can't be applied.
+- `shape-invalid`: an event that fails the AG-UI schema.
+
+The Network panel can't tell you any of that. 😲
+
+## Runs
+
+The **Runs** tab is a table with one row per run:
+
+![Runs table](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/3.png)
+
+You get the thread, agent, outcome, duration, time to first token (TTFT), event count, and issue count.
+Missing values say so in words, like "not reported" or "still running", rather than showing a misleading zero.
+Click a row to scope the panel to that run and open it in Timeline.
+
+## Messages
+
+The **Messages** tab rebuilds the conversation from the stream:
+
+![Messages tab](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/4.png)
+
+User turns come from the captured request, and assistant messages, reasoning, and tool calls come from the stream, in time order.
+Each tool call gets a verdict on its arguments: streaming, parsed, or failed.
+The **Timeline** buttons jump back to the frames that built each message.
+
+## State
+
+If your agent shares state with the UI, the **State** tab replays it.
+Each run gets a scrubber with one frame per `STATE_SNAPSHOT` or `STATE_DELTA`:
+
+![State tab with a JSON Patch frame](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/5.png)
+
+Each frame shows its JSON Patch operations and the full state document after they're applied.
+So when a value in your UI looks wrong, you can scrub back to the exact delta that set it.
+
+## UI
+
+The **UI** tab is for generative UI.
+It lists every A2UI and json-render surface in the capture as a component tree, and it badges each node as rendered, fallback, unknown type, or not rendered.
+
+Here is a json-render surface from a Threadplane development build, where the model asked for two chart types the app never registered:
+
+![UI tab with the app's render report](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/7.png)
+
+Without a Threadplane app, the panel infers those states from the wire against the A2UI basic catalog.
+With a Threadplane development build, the app reports how each spec actually resolved, so the findings are marked **EXACT**.
+
+I think this one saves a lot of guessing.
+An unknown component type renders nothing, along with everything under it, and before this nothing told you why.
+
+## Signals
+
+The **Signals** tab needs a Threadplane 0.3.4+ development build.
+
+A Threadplane agent keeps its state in signals: `messages`, `status`, `toolCalls`, `interrupt`, and so on.
+After handling each event, the agent reports which signals that event wrote.
+The tab shows those reports as a matrix, with signals as rows and events as columns:
+
+![Signals matrix](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/8.png)
+
+Select an event column, and it finds that event's frame in Timeline.
+So when your spinner never goes away, you can see whether any event ever wrote `status` back to idle.
+
+Note, the report carries signal names and timing only.
+The agent never reads the values it writes, so nothing from the conversation is in it.
+
+You don't need the extension to peek at these, by the way.
+They're plain `CustomEvent`s on `window`:
+
+```ts
+window.addEventListener('threadplane:devtools', (e) => console.log(e.detail));
+```
+
+## Simulate
+
+**Simulate** scripts your agent's next run.
+Your app's real code handles the scripted events (the adapter, any middleware, and your components), and only the network call is replaced.
+That means no model call, no backend, and the exact same run every time.
+
+To get started, turn on **Developer mode** for the site in the panel.
+It's a per-site switch, and while it's on, every tab shows a banner.
+Then pick a template, choose the AG-UI or LangGraph adapter, and click **Arm**:
+
+![Simulate tab with the Interrupt template](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/9.png)
+
+The templates are:
+
+- **Interrupt (approval)**
+- **Subagent handoff**
+- **Malformed event**
+- **Replay a captured run**
+
+The arm list shows each arm as armed, consumed, expired, cancelled, or rejected.
+If no Threadplane hook answers within two seconds, it tells you so.
+
+Simulate needs a Threadplane 0.3.4+ development build, and it only reaches the page's top frame.
+
+The panel isn't doing anything magic here, either.
+It dispatches a `CustomEvent`, and you can do the same from the console.
+Here's an approval interrupt for an AG-UI agent:
+
+```ts
+window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
+  detail: {
+    v: 1,
+    armId: 'refund-approval',
+    adapter: 'ag-ui',
+    runs: [
+      {
+        events: [
+          { type: 'RUN_STARTED', threadId: 't', runId: 'r1' },
+          { type: 'TEXT_MESSAGE_START', messageId: 'ai-1', role: 'assistant' },
+          { type: 'TEXT_MESSAGE_CONTENT', messageId: 'ai-1', delta: 'This needs your approval.' },
+          { type: 'TEXT_MESSAGE_END', messageId: 'ai-1' },
+          {
+            type: 'RUN_FINISHED', threadId: 't', runId: 'r1',
+            outcome: { type: 'interrupt', interrupts: [{ id: 'int-1', reason: 'confirmation', message: 'Approve the $42 refund?' }] },
+          },
+        ],
+      },
+      {
+        events: [
+          { type: 'RUN_STARTED', threadId: 't', runId: 'r2' },
+          { type: 'TEXT_MESSAGE_START', messageId: 'ai-2', role: 'assistant' },
+          { type: 'TEXT_MESSAGE_CONTENT', messageId: 'ai-2', delta: 'Refund issued.' },
+          { type: 'TEXT_MESSAGE_END', messageId: 'ai-2' },
+          { type: 'RUN_FINISHED', threadId: 't', runId: 'r2', outcome: { type: 'success' } },
+        ],
+      },
+    ],
+  },
+}));
+```
+
+Let's review:
+
+- First, the next run your agent starts takes `runs[0]`, which pauses on the interrupt, so your approval UI shows up.
+- Then, when you approve, the resume takes `runs[1]` and finishes the turn.
+- `RUN_STARTED` and `RUN_FINISHED` take the real run's `threadId` and `runId`, so the ids in the script don't need to match anything.
+- Each step is acknowledged with a `threadplane:devtools:ack` event, and a bad arm is rejected with a short reason.
+
+For a LangGraph agent, set `adapter: 'langgraph'` and give each run a `frames` array of `{ event, data }` frames, exactly as the LangGraph SDK yields them.
+
+One more note.
+The page can't tell who dispatched an arm, so any script running on your development page can script your agent's next run.
+The Developer mode switch guards against accidents, not against code that's already in the page.
+
+## Session and Export
+
+The **Session** tab shows what the panel detected (framework, transport, and protocol), the capture status, issue totals, and the export options:
+
+![Session tab with export and redaction](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/10.png)
+
+You can export a capture a few ways:
+
+- **Download capture (.agui.jsonl)**, which you can import back into the panel later.
+- **Copy JSON to clipboard**.
+- **Download TypeScript fixture (.ts)**.
+- **Download Threadplane test (.spec.ts)** for LangGraph Platform captures. It replays the capture through `MockAgentTransport` from `@threadplane/langgraph`, and it passes as generated.
+
+Before you export, you can redact message text, reasoning, tool arguments, tool results, and state values.
+Redacted values become `«redacted: 412 chars»`, so the structure, ordering, sizes, and timings all survive.
+Note, nothing is redacted unless you choose it, and the **Export** button in the toolbar is always unredacted.
+
+## Practical use cases
+
+Here are just a few scenarios where AG-UI DevTools can help in your day-to-day work, with code for each one.
+
+### Testing approval flows without a model
+
+Approval flows are annoying to test by hand.
+You have to coax the model into asking, every time, and each attempt costs a real call.
+
+The good news is that the same `threadplane:devtools:arm` event works from an end-to-end test, as long as the test runs against a development build (like `ng serve`).
+
+Let's say your app shows approvals with `<chat-approval-card>` from `@threadplane/chat`:
+
+```html
+<chat [agent]="agent" />
+<chat-approval-card [agent]="agent" (action)="onApproval($event)" />
+```
+
+```ts
+onApproval(action: ChatApprovalAction): void {
+  void this.agent.submit({ resume: { approved: action === 'approve' } });
+}
+```
+
+Here is a Playwright test that arms two runs, sends a message, and approves the refund, with no model and no backend.
+Create an **e2e/approval.spec.ts** file:
+
+```ts
+import { expect, test, type Page } from '@playwright/test';
+
+const refundRuns = [
+  {
+    events: [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r1' },
+      { type: 'TEXT_MESSAGE_START', messageId: 'ai-1', role: 'assistant' },
+      { type: 'TEXT_MESSAGE_CONTENT', messageId: 'ai-1', delta: 'This needs your approval.' },
+      { type: 'TEXT_MESSAGE_END', messageId: 'ai-1' },
+      {
+        type: 'RUN_FINISHED', threadId: 't', runId: 'r1',
+        outcome: { type: 'interrupt', interrupts: [{ id: 'int-1', reason: 'confirmation', message: 'Approve the $42 refund?' }] },
+      },
+    ],
+  },
+  {
+    events: [
+      { type: 'RUN_STARTED', threadId: 't', runId: 'r2' },
+      { type: 'TEXT_MESSAGE_START', messageId: 'ai-2', role: 'assistant' },
+      { type: 'TEXT_MESSAGE_CONTENT', messageId: 'ai-2', delta: 'Refund issued.' },
+      { type: 'TEXT_MESSAGE_END', messageId: 'ai-2' },
+      { type: 'RUN_FINISHED', threadId: 't', runId: 'r2', outcome: { type: 'success' } },
+    ],
+  },
+];
+
+async function armNextRuns(page: Page, runs: unknown[]): Promise<void> {
+  const state = await page.evaluate((runs) => new Promise<string>((resolve) => {
+    const armId = crypto.randomUUID();
+    window.addEventListener('threadplane:devtools:ack', function onAck(event) {
+      const ack = (event as CustomEvent).detail;
+      if (ack.armId !== armId) return;
+      window.removeEventListener('threadplane:devtools:ack', onAck);
+      resolve(ack.state);
+    });
+    window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
+      detail: { v: 1, armId, adapter: 'ag-ui', runs },
+    }));
+  }), runs);
+  expect(state).toBe('armed');
+}
+
+test('approving a refund finishes the turn', async ({ page }) => {
+  await page.goto('/');
+  const input = page.getByRole('textbox', { name: 'Type a message' });
+  await expect(input).toBeVisible();
+
+  await armNextRuns(page, refundRuns);
+
+  await input.fill('Refund order 42');
+  await page.getByRole('button', { name: 'Send message' }).click();
+
+  await page.getByRole('button', { name: 'Approve' }).click();
+  await expect(page.getByText('Refund issued.')).toBeVisible();
+});
+```
+
+Let's review:
+
+- First, we wait for the chat input, because the agent registers its listener when it's created.
+- Then, `armNextRuns()` dispatches the arm and waits for the `armed` acknowledgement, so a bad script fails the test right away with the reason.
+- The message takes `runs[0]` and pauses on the interrupt, which opens the approval card.
+- Clicking **Approve** calls `submit({ resume })`, which takes `runs[1]` and finishes the turn.
+
+Want to test **Cancel** too?
+Arm the same script again and click **Cancel** instead.
+Every arm is used once, so each test gets the exact same run.
+
+### Finding a stuck spinner
+
+When the UI says it's working forever, start with the Runs tab.
+
+If the run shows `aborted` with a `run-never-terminated` issue, the backend closed the stream without ending the run.
+That's a server fix, and there's an example of exactly that fix in the framework section near the end of this post.
+
+If the run finished cleanly, the problem is on the client, and that's where the signals report helps.
+Paste this into the console of your development build:
+
+```ts
+window.addEventListener('threadplane:devtools', (event) => {
+  const report = (event as CustomEvent).detail;
+  if (report.kind === 'render') return;
+  if (report.wrote.includes('status')) {
+    console.log(report.adapter, report.eventType, report.wrote.join(', '));
+  }
+});
+```
+
+For an AG-UI agent, a healthy run logs something like this:
+
+```text
+ag-ui RUN_STARTED status, isLoading, error, interrupt, customEvents, activities
+ag-ui RUN_FINISHED messages, status, isLoading, interruptSession, interrupt
+```
+
+If you see `RUN_STARTED` and never a `RUN_FINISHED` (or `RUN_ERROR`), your agent never heard that the run ended.
+For a LangGraph agent, look for `run:start` and `run:end` instead.
+
+### Debugging generative UI
+
+When a generated component doesn't show up, open the UI tab.
+An **unknown type** badge means your registry has no entry for that type, and **fallback** means the component's props weren't ready yet.
+
+You can get the same answer from the render report in the console:
+
+```ts
+window.addEventListener('threadplane:devtools', (event) => {
+  const report = (event as CustomEvent).detail;
+  if (report.kind !== 'render') return;
+  console.table(report.elements.filter((element) => element.state !== 'mounted'));
+});
+```
+
+Let's say the model asked for a `GoogleMap` you never registered.
+The report shows the map as `unresolved`, and the pin inside it as `hidden`:
+
+```text
+key   type        state
+map   GoogleMap   unresolved
+pin   Text        hidden
+```
+
+The fix is to add the component to the catalog you pass to `<chat>`:
+
+```ts
+import { withViews } from '@threadplane/render';
+import { GoogleMapComponent } from './google-map.component';
+
+export const catalog = withViews(baseCatalog, { GoogleMap: GoogleMapComponent });
+```
+
+```html
+<chat [agent]="agent" [views]="catalog" />
+```
+
+`withViews()` only adds new keys, so it won't replace anything already in your catalog.
+
+### Sharing a bug report
+
+When you need to report a protocol bug to someone else, export a redacted capture.
+
+In the Session tab, check **Message text** and **Tool arguments**, then click **Download capture (.agui.jsonl)**.
+Each line in the file is one record, and the header says exactly what was redacted:
+
+```text
+{"kind":"header","schemaVersion":1,"tool":"ag-ui-devtools@0.2.0","capturedAt":"2026-11-02T15:04:05.000Z","url":"http://localhost:4200","transport":"sse","redacted":["text","toolArgs"]}
+{"kind":"event","connId":"c1","seq":3,"tMs":63,"event":{"type":"TEXT_MESSAGE_CONTENT","messageId":"m_1","delta":"«redacted: 23 chars»"}}
+{"kind":"event","connId":"c1","seq":7,"tMs":131,"event":{"type":"TOOL_CALL_ARGS","toolCallId":"tc_1","delta":"«redacted: 16 chars»"}}
+```
+
+The event types, ids, ordering, sizes, and timings all survive, and that's what a protocol bug report needs.
+Whoever picks it up clicks **Import** in their own panel and sees every event in order.
+
+Note, tool results are their own redaction group, so check **Tool results** too if they contain anything private.
+
+### Turning a capture into a test
+
+If your agent runs on LangGraph Platform, **Download Threadplane test (.spec.ts)** turns a capture into a Vitest spec.
+It replays each captured connection, frame by frame, through `MockAgentTransport` from `@threadplane/langgraph`, and asserts what the capture shows.
+
+Here is the heart of one, for a run that called a `get_weather` tool:
+
+```ts
+it('replays connection c1 (run r-tool-calls)', async () => {
+  const transport = new MockAgentTransport();
+  TestBed.configureTestingModule({
+    providers: [provideAgent({ apiUrl: '', assistantId: request_1.assistant_id, transport, throttle: false })],
+  });
+  const agent = TestBed.runInInjectionContext(() => injectAgent());
+
+  const submitted = agent.submit({ state: request_1.input });
+  await transport.emit(frames_1.map(toStreamEvent));
+  await transport.close();
+  await submitted.catch(() => undefined);
+
+  expect(transport.streams[0]?.payload).toEqual(request_1.input);
+  expect(agent.status()).toBe('idle');
+  expect(agent.interrupt()).toBeFalsy();
+  expect(lastAssistantText(agent)).toBe('It is sunny in SF.');
+  expect(agent.toolCalls().map((call) => call.name)).toEqual(['get_weather']);
+});
+```
+
+The captured request and frames live at the top of the file, so the test needs no server.
+Change an assertion to the behavior you want, and you've got a regression test for that exact run.
+
+## What about building your own AG-UI framework?
+
+Building your own AG-UI framework isn't the norm.
+Most apps should use an adapter, like `@threadplane/ag-ui` or `@threadplane/langgraph`, and let it handle the protocol details for you.
+
+That said, I think building one is a fun learning exercise, and it's one of the best ways to really learn the protocol.
+If you go down that road, this is where the validator earns its keep.
+
+We did this for [b4.run](https://b4.run), our agent framework built on LangGraph.js.
+Its `@b4run/ag-ui` package turns the runtime's stream into AG-UI events over SSE: text, reasoning, tool calls, subagents, and interrupts.
+Looking back through the pull requests, a lot of the bugs were protocol bugs:
+
+- A run cut off by the recursion limit or an abort left tool calls with no results ([b4run#893](https://github.com/cacheplane/b4run/pull/893)).
+- Reasoning messages weren't always closed at a tool call or an interrupt ([b4run#910](https://github.com/cacheplane/b4run/pull/910)).
+- Streamed tool arguments had to join back into exactly the JSON the model produced ([b4run#781](https://github.com/cacheplane/b4run/pull/781)).
+
+Let's look at an example.
+Here is a simplified AG-UI endpoint in Express.
+`runtime.stream()` and `toAguiEvents()` stand in for your framework's runtime and its event translation:
+
+```ts
+app.post('/agent', async (req, res) => {
+  const { threadId, runId } = req.body;
+  res.setHeader('Content-Type', 'text/event-stream');
+  const send = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+  try {
+    send({ type: 'RUN_STARTED', threadId, runId });
+    for await (const chunk of runtime.stream(req.body)) {
+      for (const event of toAguiEvents(chunk)) send(event);
+    }
+    send({ type: 'RUN_FINISHED', threadId, runId });
+  } catch (err) {
+    console.error(err);
+  } finally {
+    res.end();
+  }
+});
+```
+
+That looks reasonable, right?
+Now let's say the runtime throws in the middle of a `search_flights` tool call.
+The error is logged, the stream closes cleanly, and the client never hears that the run ended.
+
+Here is what the panel reports for that run:
+
+```text
+ERROR    run-never-terminated
+         Connection closed without RUN_FINISHED or RUN_ERROR
+WARNING  unclosed-tool-call
+         Tool call "tc_1" was never closed with TOOL_CALL_END
+```
+
+The Runs tab shows the run as `aborted`, too.
+
+I should note that `verifyEvents()` from `@ag-ui/client` (1.0.1) accepts this exact stream without an error.
+It checks each event as it arrives, so nothing complains about the events that never arrived.
+
+Let's fix it.
+We'll track what's open, close it when something goes wrong, and end the run with `RUN_ERROR`:
+
+```ts
+app.post('/agent', async (req, res) => {
+  const { threadId, runId } = req.body;
+  res.setHeader('Content-Type', 'text/event-stream');
+
+  const openMessages = new Set<string>();
+  const openToolCalls = new Set<string>();
+  const send = (event: { type: string; [key: string]: unknown }) => {
+    if (event.type === 'TEXT_MESSAGE_START') openMessages.add(event['messageId'] as string);
+    if (event.type === 'TEXT_MESSAGE_END') openMessages.delete(event['messageId'] as string);
+    if (event.type === 'TOOL_CALL_START') openToolCalls.add(event['toolCallId'] as string);
+    if (event.type === 'TOOL_CALL_END') openToolCalls.delete(event['toolCallId'] as string);
+    res.write(`data: ${JSON.stringify(event)}\n\n`);
+  };
+
+  try {
+    send({ type: 'RUN_STARTED', threadId, runId });
+    for await (const chunk of runtime.stream(req.body)) {
+      for (const event of toAguiEvents(chunk)) send(event);
+    }
+    send({ type: 'RUN_FINISHED', threadId, runId });
+  } catch (err) {
+    for (const toolCallId of [...openToolCalls]) send({ type: 'TOOL_CALL_END', toolCallId });
+    for (const messageId of [...openMessages]) send({ type: 'TEXT_MESSAGE_END', messageId });
+    send({ type: 'RUN_ERROR', message: err instanceof Error ? err.message : 'Run failed' });
+  } finally {
+    res.end();
+  }
+});
+```
+
+Let's break this down:
+
+- First, `send()` keeps track of every message and tool call that's still open.
+- Then, when the runtime throws, we close whatever is still open.
+- Finally, we end the run with `RUN_ERROR`, so the client knows the run is over (and your spinner stops).
+
+Capture the same failure again, and the run now ends as `error` instead of `aborted`, with no `run-never-terminated` or `unclosed-tool-call`.
+If the runtime threw in the middle of the tool call's arguments, you'll still get a `tool-args-not-json` error on the `TOOL_CALL_END`, and that's accurate: the arguments never finished.
+
+b4.run goes one step further in [b4run#893](https://github.com/cacheplane/b4run/pull/893) and also writes a result for each tool call that was cut off, because model providers reject a history with unanswered tool calls.
+
+The validator catches a couple of other framework mistakes worth knowing about.
+If the streamed arguments don't join into valid JSON, the `TOOL_CALL_END` gets this:
+
+```text
+ERROR    tool-args-not-json
+         Accumulated arguments for tool call "tc_1" are not valid JSON
+```
+
+And if your framework streams state, a JSON Patch that can't be applied is flagged on the `STATE_DELTA` that sent it, like `STATE_DELTA op 1 (add /booking/seat) failed: parent-not-found`.
+The State tab shows you the exact operation, and the state stops advancing at that frame:
+
+![A failed JSON Patch in the State tab](/blog/2026-11-05-debugging-angular-agent-ui-ag-ui-devtools/6.png)
+
+The panel isn't a replacement for a conformance test suite.
+b4.run runs its stream through the official AG-UI client's event verification in its tests, and I'd recommend you do the same.
+But for me, the panel is the fastest way to see *where* a stream went wrong while you're building.
+
+## What does this cost in production?
+
+Nothing.
+
+The Threadplane hooks only exist in Angular development mode.
+A production build removes them from the bundle entirely, and Threadplane's CI checks the built bundle for them.
+In development, the reports are fire-and-forget, so the page can't even tell whether the extension is listening.
+
+If you want them off in development too, set this before your agents are created:
+
+```ts
+window.__THREADPLANE_DEVTOOLS_DISABLED__ = true;
+```
+
+## Conclusion
+
+In conclusion, AG-UI DevTools gives you a real view of your agent's event stream: every event in order, protocol issues named and located, state replayed patch by patch, and generated UI checked node by node.
+With a Threadplane 0.3.4+ development build, you also get the Signals and Simulate tabs.
+
+Give it a try, and let me know what you'd like to see next.
+Issues and ideas are very welcome on the [AG-UI DevTools repo](https://github.com/blove/ag-ui-chrome-extension/issues). 💙
