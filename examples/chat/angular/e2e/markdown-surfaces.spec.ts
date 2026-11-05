@@ -31,6 +31,28 @@ test('bullet list: assistant bubble renders <ul> with three <li>', async ({ page
   await expect(list.locator('li').nth(2)).toContainText('gamma');
 });
 
+test('ordinary list paragraphs share the marker line through Angular wrappers', async ({ page }) => {
+  const bubble = await sendPromptAndWait(page, 'respond with a bullet list');
+  const items = bubble.locator('li:not(.chat-md-list-item--task)');
+  await expect(items.first()).toBeVisible();
+  const geometry = await items.evaluateAll((elements) => elements.map((item) => {
+    const paragraph = item.querySelector(':scope > chat-md-children > chat-md-paragraph:first-child > p');
+    if (!paragraph) throw new Error('Expected a paragraph rendered through Angular list wrappers');
+    const itemBounds = item.getBoundingClientRect();
+    const paragraphBounds = paragraph.getBoundingClientRect();
+    return {
+      paragraphOffset: paragraphBounds.top - itemBounds.top,
+      // A single paragraph must not acquire an empty marker-only line in Firefox.
+      extraHeight: itemBounds.height - paragraphBounds.height,
+    };
+  }));
+  expect(geometry.length).toBeGreaterThan(1);
+  for (const item of geometry) {
+    expect(Math.abs(item.paragraphOffset)).toBeLessThan(1);
+    expect(Math.abs(item.extraHeight)).toBeLessThan(1);
+  }
+});
+
 test('markdown checklist matrix: rich markdown renders with escaped html', async ({ page }) => {
   const bubble = await sendPromptAndWait(page, 'respond with the markdown checklist kitchen sink');
 

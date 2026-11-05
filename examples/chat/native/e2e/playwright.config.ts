@@ -5,6 +5,7 @@ import { join } from 'node:path';
 export default defineConfig({
   testDir: '.',
   testMatch: [
+    'visual-parity.spec.ts',
     'development.spec.ts',
     'conversation.spec.ts',
     'production.spec.ts',

@@ -49,6 +49,9 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md ul ul { list-style: circle outside; }
   chat-streaming-md ul ul ul { list-style: square outside; }
   chat-streaming-md li { margin: var(--tplane-chat-space-1) 0; }
+  /* An inline wrapper around the block paragraph creates a marker-only line
+     in Firefox. Keep the list item's content in one block flow. */
+  chat-streaming-md li > chat-md-children { display: block; }
   chat-streaming-md li::marker { color: var(--tplane-chat-text-muted); }
   chat-streaming-md li > p { margin: 0 0 0.25rem; }
   chat-streaming-md li > ul, chat-streaming-md li > ol { margin: 0.25rem 0 0; }

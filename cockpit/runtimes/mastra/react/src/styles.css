@@ -93,7 +93,7 @@ dd {
 .backend-result h2 {
   margin-top: 0;
 }
-pre {
+pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: 0.9rem;

@@ -24,12 +24,14 @@ export const test = base.extend<
       const work = realpathSync(mkdtempSync(join(tmpdir(), 'native-e2e-worker-')));
       const started = performance.now();
       try {
+        const { selectedFramework } = await import('../tooling/commands.mjs');
+        const framework = selectedFramework(workerInfo.project.metadata.framework);
         const { buildConsumer } = await import('../tooling/consumer.mjs');
         const { captureRetainedBuild, readRetainedBuild } =
           await import('../tooling/retained-build.mjs');
         const built = await buildConsumer({
           root,
-          framework: 'react',
+          framework,
           assistantId: 'assistant',
           output: join(work, 'production'),
           capture: (context) =>
@@ -46,11 +48,13 @@ export const test = base.extend<
     },
     { scope: 'worker', timeout: 300_000 },
   ],
-  retainedConsumer: async ({ preparedConsumer }, use) => {
+  retainedConsumer: async ({ preparedConsumer }, use, testInfo) => {
+    const { selectedFramework } = await import('../tooling/commands.mjs');
+    const framework = selectedFramework(testInfo.project.metadata.framework);
     const { inputFingerprint, buildInputRoots } =
       await import('../tooling/consumer.mjs');
     assert.deepEqual(
-      inputFingerprint(root, buildInputRoots(root, 'react')),
+      inputFingerprint(root, buildInputRoots(root, framework)),
       preparedConsumer.inputs,
       'Native consumer inputs changed after worker preparation'
     );

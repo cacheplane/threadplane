@@ -20,23 +20,23 @@ body {
   gap: 1rem;
   overflow-wrap: anywhere;
 }
-.client-tools-demo header {
+.client-tools-demo > header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-.client-tools-demo header > button {
+.client-tools-demo > header > button {
   flex-shrink: 0;
   max-width: 9rem;
   padding: 0.4rem 0.6rem;
   overflow-wrap: normal;
 }
-.client-tools-demo h1 {
+.client-tools-demo > h1 {
   font-size: 1.5rem;
   margin: 0;
 }
-.client-tools-demo p {
+.client-tools-demo > p {
   margin: 0;
 }
 .client-tools-demo .eyebrow {
@@ -99,7 +99,7 @@ body {
   .client-tools-demo {
     padding: 1rem;
   }
-  .client-tools-demo header {
+  .client-tools-demo > header {
     align-items: flex-start;
   }
 }

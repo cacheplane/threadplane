@@ -1,0 +1,124 @@
+/* Shared example chrome. Chat/render primitives retain their own scoped styles. */
+.tp-example,
+.tp-example__workspace,
+.tp-example__content,
+.tp-example__about {
+  box-sizing: border-box;
+}
+.tp-example.tp-example {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  background: var(--tp-chat-bg, var(--ds-bg, light-dark(#fff, #111)));
+  color: var(--tp-chat-text, light-dark(#1c1c1c, #f5f5f5));
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.tp-example > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  background: var(--tp-chat-surface, light-dark(#fff, #1c1c1c));
+}
+.tp-example > header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.tp-example > header :is(.eyebrow, [class$='__eyebrow'], .a2ui-eyebrow) {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tp-chat-muted, light-dark(#737373, #a0a0a0));
+}
+.tp-example > header button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  background: var(--tp-chat-surface, light-dark(#fff, #1c1c1c));
+}
+.tp-example__workspace {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.tp-example__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  gap: 0;
+}
+.tp-example__about {
+  width: 18rem;
+  flex: none;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  border-inline-start: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  color: var(--tp-chat-muted, light-dark(#737373, #a0a0a0));
+  font-size: 12px;
+}
+.tp-example__about h2 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tp-example__about p { margin: 0; line-height: 1.6; }
+.tp-example .tp-example__content > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example .tp-example__content > .tp-chat-input {
+  flex: none;
+  width: calc(100% - 32px);
+  max-width: var(--tp-chat-reading-width, 48rem);
+  margin-block: 8px;
+}
+.tp-example__content > :is([role='status'], [role='alert']) {
+  flex: none;
+  margin: 0;
+  padding: 0 16px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.tp-example--render .tp-example__content { padding: 16px 24px; gap: 16px; }
+.tp-example--chat .tp-example__content > :is(fieldset, [role='group'], .controls, .input-settings) {
+  flex: none;
+  margin: 8px 16px;
+  max-width: calc(100% - 32px);
+}
+@media (max-width: 767px) {
+  .tp-example__workspace { flex-direction: column; }
+  .tp-example__about {
+    width: 100%;
+    max-height: 20dvh;
+    border-inline-start: 0;
+    border-top: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  }
+}

@@ -425,7 +425,8 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
     await send(page);
     await expect
       .poll(
-        async () => (await stats(request)).current.observed.model.heldActive
+        // The model worker may not exist yet on the first poll.
+        async () => (await stats(request)).current?.observed.model.heldActive ?? 0
       )
       .toBe(1);
     if (action === 'unmount')

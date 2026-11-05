@@ -78,7 +78,7 @@ h2 {
   margin: 0;
   min-width: 0;
 }
-pre {
+pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font: inherit;

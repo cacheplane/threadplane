@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleLayout } from '../../../../shared/react-example';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -127,7 +129,7 @@ function FilesystemOwner({ connection, onReady }: Props) {
     ? 'Response failed.'
     : 'Ready.';
   return (
-    <main className="filesystem-demo">
+    <ExampleLayout className="filesystem-demo">
       <header>
         <div>
           <p className="eyebrow">React · Deep Agents</p>
@@ -253,6 +255,6 @@ function FilesystemOwner({ connection, onReady }: Props) {
           />
         </div>
       </div>
-    </main>
+    </ExampleLayout>
   );
 }
