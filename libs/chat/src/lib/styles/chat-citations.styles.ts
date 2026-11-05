@@ -102,9 +102,9 @@ export const CHAT_CITATION_MARKER_STYLES = `
      normal rule of no break before . , ; : ) — in every engine. */
   .chat-citation-marker {
     display: inline;
-    padding: 2px 5px;
+    padding: 2px var(--tplane-chat-space-1);
     margin: 0 1px;
-    font-size: 11px;
+    font-size: var(--tplane-chat-font-size-xs);
     font-weight: 600;
     line-height: 1;
     text-align: center;
@@ -158,19 +158,19 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
     box-shadow: var(--tplane-chat-shadow-md);
-    padding: 12px 13px;
+    padding: var(--tplane-chat-space-3);
     text-align: left;
     color: var(--tplane-chat-text);
   }
   .chat-citation-preview__head {
     display: flex;
     align-items: center;
-    gap: 7px;
-    margin-bottom: 7px;
+    gap: var(--tplane-chat-space-2);
+    margin-bottom: var(--tplane-chat-space-2);
   }
   .chat-citation-preview__fav {
     width: 16px; height: 16px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     flex: 0 0 auto;
     object-fit: cover;
   }
@@ -185,7 +185,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
   }
   .chat-citation-preview__type {
     margin-left: auto;
-    font-size: 11px;
+    font-size: var(--tplane-chat-font-size-xs);
     flex: 0 0 auto;
   }
   .chat-citation-preview__title {
@@ -210,7 +210,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
     text-decoration: none;
   }
   .chat-citation-preview__open:hover { text-decoration: underline; }
-  .chat-citation-preview__meta { font-size: 11px; color: var(--tplane-chat-text-muted); }
+  .chat-citation-preview__meta { font-size: var(--tplane-chat-font-size-xs); color: var(--tplane-chat-text-muted); }
 `;
 
 /** Sources panel (chat-citations) + detail card (chat-citations-card). */
@@ -223,26 +223,26 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
     border-top: 1px solid var(--tplane-chat-separator);
   }
   .chat-citations__header {
-    display: flex; align-items: center; gap: 9px;
+    display: flex; align-items: center; gap: var(--tplane-chat-space-2);
     width: 100%;
-    padding: 0 0 11px;
+    padding: 0 0 var(--tplane-chat-space-3);
     background: none; border: 0;
     font: inherit; color: inherit;
     cursor: pointer; text-align: left;
   }
-  .chat-citations__heading { font-size: 13px; font-weight: 600; }
+  .chat-citations__heading { font-size: var(--tplane-chat-font-size-sm); font-weight: 600; }
   .chat-citations__count {
-    font-size: 11px; font-weight: 600;
+    font-size: var(--tplane-chat-font-size-xs); font-weight: 600;
     color: var(--tplane-chat-text-muted);
     background: var(--tplane-chat-surface-alt);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 20px;
-    padding: 1px 7px;
+    border-radius: 9999px;
+    padding: 1px var(--tplane-chat-space-2);
   }
   .chat-citations__favstack { display: flex; margin-left: 2px; }
   .chat-citations__fav {
     width: 16px; height: 16px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     margin-left: -5px;
     border: 1.5px solid var(--tplane-chat-surface);
     object-fit: cover;
@@ -254,7 +254,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   }
   .chat-citations__source-icon {
     width: 16px; height: 16px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     margin-left: -5px;
     border-width: 1.5px;
   }
@@ -275,8 +275,8 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations__item { margin: 0; }
 
   .chat-citations-card {
-    display: flex; gap: 10px;
-    padding: 10px 11px;
+    display: flex; gap: var(--tplane-chat-space-2);
+    padding: var(--tplane-chat-space-3);
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
@@ -292,20 +292,20 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations-card__index {
     flex: 0 0 auto;
     width: 18px; height: 18px;
-    border-radius: 5px;
+    border-radius: var(--tplane-chat-radius-sm);
     background: var(--tplane-chat-surface-alt);
     border: 1px solid var(--tplane-chat-separator);
     color: var(--tplane-chat-text-muted);
-    font-size: 11px; font-weight: 600;
+    font-size: var(--tplane-chat-font-size-xs); font-weight: 600;
     display: flex; align-items: center; justify-content: center;
     margin-top: 1px;
   }
   .chat-citations-card__body { min-width: 0; flex: 1; }
   .chat-citations-card__top {
-    display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+    display: flex; align-items: center; gap: var(--tplane-chat-space-2); margin-bottom: var(--tplane-chat-space-1);
   }
   .chat-citations-card__fav {
-    width: 14px; height: 14px; border-radius: 3px; flex: 0 0 auto; object-fit: cover;
+    width: 14px; height: 14px; border-radius: var(--tplane-chat-radius-sm); flex: 0 0 auto; object-fit: cover;
   }
   .chat-citations-card__fav--mono {
     display: flex; align-items: center; justify-content: center;

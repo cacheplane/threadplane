@@ -31,7 +31,7 @@ export const CHAT_MESSAGE_STYLES = `
     position: relative;
     margin-top: 1.5rem;
     color: var(--tplane-chat-text);
-    line-height: 1.55;
+    line-height: var(--tplane-chat-line-height);
     font-size: var(--tplane-chat-font-size);
     max-width: 100%;
   }

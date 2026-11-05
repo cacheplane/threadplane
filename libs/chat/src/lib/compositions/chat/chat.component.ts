@@ -183,8 +183,6 @@ export function isPinned(
     .chat-empty[hidden] { display: none; }
     .chat-empty__title { font-size: 1.125rem; font-weight: 500; color: var(--tplane-chat-text); margin: 0; }
     .chat-empty__sub { margin: 0; font-size: var(--tplane-chat-font-size-sm); }
-    .chat-empty__title { font-size: 1.125rem; font-weight: 500; color: var(--tplane-chat-text); margin: 0; }
-    .chat-empty__sub { margin: 0; font-size: var(--tplane-chat-font-size-sm); }
     .chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-top: var(--tplane-chat-edge-pad); }
     .chat-scroll::-webkit-scrollbar { width: 6px; }
     .chat-scroll::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 10px; }
@@ -206,6 +204,7 @@ export function isPinned(
       padding: 0 var(--tplane-chat-space-6);
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-sm);
+      line-height: var(--tplane-chat-line-height-tight);
     }
     .chat-stopped-notice svg { width: 12px; height: 12px; flex: none; }
     .chat-sr-only {
