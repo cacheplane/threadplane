@@ -1,14 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "fd3a675256808de68428c42aa0d30425fb1e4fee",
+  "baselineHead": "047ccbb856d41ae2eb717fbbd7f66076e61cacb9",
   "sourceState": {
-    "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/citation-preview.tsx",
-      "libs/react/src/chat/citations.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
