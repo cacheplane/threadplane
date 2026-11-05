@@ -1,3 +1,14 @@
+## 0.3.6 (2026-11-05)
+
+### Performance
+
+- **chat:** read the shared transcript once per render instead of repeatedly reading it for every message's previous role and current state. Fresh message projections and mutable message updates remain observable. A real Angular 10,000-message regression fixture reduced transcript reads from 15,007 to 7 for one tail update; native latency and FPS improvements have not yet been established.
+
+### Fixes
+
+- **chat:** align spacing, typography and radii with the token scale ([#1439](https://github.com/cacheplane/threadplane/pull/1439)).
+- **chat:** render approvals inside chat, popup and sidebar transcripts ([#1440](https://github.com/cacheplane/threadplane/pull/1440)).
+
 ## 0.3.5 (2026-11-04)
 
 ### ✨ Highlights
