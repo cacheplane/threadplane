@@ -76,6 +76,23 @@ describe('MarkdownListItemComponent', () => {
     expect(checkbox.checked).toBe(true);
   });
 
+  it('draws a hidden-from-AT check box that follows the checked state, keeping the input as the accessible checkbox', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.node.set(makeItemNode({ checked: false }));
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const box = () => host.querySelector('.chat-md-task-box') as HTMLElement | null;
+    expect(box()?.getAttribute('aria-hidden')).toBe('true');
+    expect(box()?.classList.contains('chat-md-task-box--checked')).toBe(false);
+    expect(box()?.querySelector('svg')).toBeNull();
+    expect(host.querySelector('input[type="checkbox"]')?.classList.contains('chat-md-task-input')).toBe(true);
+
+    fixture.componentInstance.node.set(makeItemNode({ checked: true }));
+    fixture.detectChanges();
+    expect(box()?.classList.contains('chat-md-task-box--checked')).toBe(true);
+    expect(box()?.querySelector('svg')).not.toBeNull();
+  });
+
   it('applies task class when task is defined', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.node.set(makeItemNode({ checked: false }));
