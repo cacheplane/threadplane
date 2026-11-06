@@ -1,17 +1,17 @@
-import { expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { expect, it } from 'vitest';
 import { getWebsiteWorkspacePage } from './workspace-page';
 
 it('resolves Theming Docs Code and Run with authored sources and canonical Python assets', async () => {
   const page = await getWebsiteWorkspacePage({
-    docsPath: '/docs/chat/guides/theming',
+    docsPath: '/docs/react/chat/guides/theming',
     title: 'Theming',
   });
-  expect(page.frontendVariants?.react?.resolution).toMatchObject({
+  expect(page.resolution).toMatchObject({
     kind: 'mapped',
   });
-  const sources = page.frontendVariants?.react?.contentBundle.codeSources ?? {};
+  const sources = page.contentBundle.codeSources ?? {};
   for (const file of [
     'app.tsx',
     'application.ts',
@@ -26,7 +26,7 @@ it('resolves Theming Docs Code and Run with authored sources and canonical Pytho
     'TAG_NOSTREAM'
   );
   expect(
-    page.frontendVariants?.react?.contentBundle.promptFiles[
+    page.contentBundle.promptFiles[
       'cockpit/chat/theming/python/prompts/theming.md'
     ]
   ).toBeTruthy();
@@ -36,7 +36,7 @@ it('resolves Theming Docs Code and Run with authored sources and canonical Pytho
   const guide = readFileSync(
     resolve(
       import.meta.dirname,
-      '../components/docs/ReactChatThemingPreview.tsx'
+      '../../content/docs/react/chat/guides/theming.mdx'
     ),
     'utf8'
   );

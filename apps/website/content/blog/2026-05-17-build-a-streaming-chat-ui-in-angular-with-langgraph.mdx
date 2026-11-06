@@ -248,7 +248,7 @@ A third pattern worth thinking about early: **graceful degradation when streamin
 Some networks strip SSE.
 Some corporate proxies buffer it.
 The chat will fall back to a non-streaming render, but you should know that path exists before a customer finds it.
-The depth of what you can do here is in the [error handling guide](/docs/chat/guides/lifecycle).
+The depth of what you can do here is in the [error handling guide](/docs/angular/chat/guides/lifecycle).
 
 ### 2. Threads and persistence
 
@@ -264,7 +264,7 @@ When the signal changes, the chat re-reads from the new thread automatically (no
 How you scope threads is a product decision: per project, per task, or per session with the agent's memory doing the cross-session work.
 For me, the one thing to avoid is shipping a chat where every refresh starts from zero.
 
-If you're building a multi-thread sidebar, the [`<chat-sidebar>`](/docs/chat/components/chat-sidebar) primitive gives you the layout without locking you into a specific persistence model.
+If you're building a multi-thread sidebar, the [`<chat-sidebar>`](/docs/angular/chat/components/chat-sidebar) primitive gives you the layout without locking you into a specific persistence model.
 
 ### 3. Generative UI fallbacks
 
@@ -282,7 +282,7 @@ This is the seam where a generic chat becomes *your* chat.
 The branded card for your most important tool.
 The custom approval flow for your most sensitive interrupt.
 The product-specific summary block when a subagent finishes a long task.
-The [generative UI guide](/docs/chat/guides/generative-ui) walks through each surface in depth.
+The [generative UI guide](/docs/angular/chat/guides/generative-ui) walks through each surface in depth.
 
 ## Where should you go from here?
 
@@ -291,9 +291,9 @@ It isn't the whole story.
 
 Here are three places I'd look next:
 
-- The [chat quickstart example](/docs/chat/getting-started/quickstart) — a full multi-thread, multi-agent chat shell with real LangGraph graphs behind it.
-- The [persistence guide](/docs/chat/guides/lifecycle) — how to manage threads, runs, and resume state across sessions.
-- The [interrupts guide](/docs/chat/guides/streaming) — how to handle human-in-the-loop pauses without breaking the streaming model.
+- The [chat quickstart example](/docs/angular/chat/getting-started/quickstart) — a full multi-thread, multi-agent chat shell with real LangGraph graphs behind it.
+- The [persistence guide](/docs/angular/chat/guides/lifecycle) — how to manage threads, runs, and resume state across sessions.
+- The [interrupts guide](/docs/angular/chat/guides/streaming) — how to handle human-in-the-loop pauses without breaking the streaming model.
 
 <Callout type="info" title="Building this for an enterprise team?">
 If you're wiring `@threadplane/chat` into a regulated, multi-tenant, or design-system-heavy environment, we have a paid track for that. [Talk to us about the enterprise track →](/contact?source=blog_streaming_pillar&track=enterprise)

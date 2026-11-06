@@ -1,0 +1,240 @@
+---
+description: The four ready-made chat layouts — embedded, popup, sidebar, and the sidenav navigation panel — with when to reach for each and how to drive them.
+---
+
+# Layout Modes
+
+`@threadplane/chat` ships four ready-made layout compositions. Pick the one that best fits how chat lives inside your app.
+
+| Mode | Component | Best for |
+|---|---|---|
+| Embedded | `<chat>` | Chat is the primary purpose of the page |
+| Popup | `<chat-popup>` | Non-intrusive assistant overlay on any page |
+| Sidebar | `<chat-sidebar>` | Copilot panel alongside existing app content |
+| Sidenav | `<chat-sidenav>` | A thread and project navigation rail next to a full-page chat |
+
+## Embedded — `<chat>`
+
+The embedded composition fills its parent container using `height: 100%` and a flex column layout. Reach for it when chat is the main feature of a route.
+
+**When to pick this mode:**
+- Chat is the whole page (e.g., a dedicated `/chat` route)
+- You control the container's dimensions and want the chat to fill them
+- You do not need to show app content alongside the chat simultaneously
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatComponent } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-chat-page',
+  standalone: true,
+  imports: [ChatComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    provideAgent({
+      assistantId: 'chat',
+      threadId: signal(null),
+    }),
+  ],
+  template: `
+    <div style="height: 100vh;">
+      <chat [agent]="chatAgent" />
+    </div>
+  `,
+})
+export class ChatPageComponent {
+  protected readonly chatAgent = injectAgent();
+}
+```
+
+<Callout type="tip" title="Height is required">
+`<chat>` uses `height: 100%`. Give its parent an explicit height or the component will collapse to zero.
+</Callout>
+
+## Popup — `<chat-popup>`
+
+The popup composition renders a circular launcher button fixed to the bottom-right corner of the viewport. Clicking it opens a floating chat window. The window can be dismissed without losing the conversation.
+
+**When to pick this mode:**
+- Chat is a secondary feature on pages that already have a purpose
+- You want minimal disruption to existing layouts
+- Support chat, help bots, or contextual assistants
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatPopupComponent } from '@threadplane/chat';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ChatPopupComponent, RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    provideAgent({
+      assistantId: 'support_agent',
+      threadId: signal(null),
+    }),
+  ],
+  template: `
+    <!-- your existing app content -->
+    <router-outlet />
+
+    <!-- chat launcher + window, position: fixed internally -->
+    <chat-popup [agent]="chatAgent" />
+  `,
+})
+export class AppComponent {
+  protected readonly chatAgent = injectAgent();
+}
+```
+
+Programmatic control is available via template reference or two-way binding:
+
+```html
+<!-- Open from a custom button -->
+<button (click)="popup.openWindow()">Ask AI</button>
+<chat-popup [agent]="chatAgent" #popup />
+
+<!-- Two-way binding -->
+<chat-popup [agent]="chatAgent" [(open)]="chatIsOpen" />
+```
+
+## Sidebar — `<chat-sidebar>`
+
+The sidebar composition renders a slide-in panel anchored to the right edge. It supports two modes: overlay (default) and push-content. In push-content mode, your projected app content is shifted left rather than covered.
+
+**When to pick this mode:**
+- Copilot experience where the user references the app while chatting
+- You want both the chat and the app content visible at the same time
+- Dashboards, editors, or data-heavy pages where context matters
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatSidebarComponent } from '@threadplane/chat';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-shell',
+  standalone: true,
+  imports: [ChatSidebarComponent, RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    provideAgent({
+      assistantId: 'copilot_agent',
+      threadId: signal(null),
+    }),
+  ],
+  template: `
+    <chat-sidebar [agent]="chatAgent" [pushContent]="true">
+      <!-- app content is projected here and shifts when sidebar opens -->
+      <main>
+        <router-outlet />
+      </main>
+    </chat-sidebar>
+  `,
+})
+export class AppShellComponent {
+  protected readonly chatAgent = injectAgent();
+}
+```
+
+Toggle the sidebar from a nav button:
+
+```html
+<nav>
+  <button (click)="sidebar.toggle()">
+    Chat
+  </button>
+</nav>
+
+<chat-sidebar [agent]="chatAgent" #sidebar>
+  <main><router-outlet /></main>
+</chat-sidebar>
+```
+
+## Sidenav — `<chat-sidenav>`
+
+The sidenav composition is the conversation navigation rail: a thread list, an
+optional project list, a search action, and a new-chat action. It is the one
+composition here that does **not** wrap `<chat>`. All of its content slots are
+named and target regions inside the rail, so a `<chat>` placed between the tags
+is silently dropped. Render the chat as a sibling and lay the two out yourself.
+
+**When to pick this mode:**
+- The product is a full-page chat with many saved conversations
+- You want ChatGPT-style thread and project navigation beside the conversation
+- You already have a thread store to feed the list
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
+import type { Thread } from '@threadplane/chat';
+
+const ACTIVE_THREAD = signal<string | null>(null);
+
+@Component({
+  selector: 'app-chat-shell',
+  standalone: true,
+  imports: [ChatSidenavComponent, ChatComponent],
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: ACTIVE_THREAD,
+      onThreadId: (id) => ACTIVE_THREAD.set(id),
+    }),
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host { display: flex; height: 100dvh; }
+    .chat-pane { flex: 1; min-width: 0; }
+  `],
+  template: `
+    <chat-sidenav
+      [agent]="chatAgent"
+      [threads]="threads()"
+      [activeThreadId]="activeThreadId()"
+      (newChat)="activeThreadId.set(null)"
+      (threadSelected)="activeThreadId.set($event)"
+    />
+    <main class="chat-pane">
+      <chat [agent]="chatAgent" />
+    </main>
+  `,
+})
+export class ChatShellComponent {
+  protected readonly chatAgent = injectAgent();
+  protected readonly threads = signal<Thread[]>([]);
+  protected readonly activeThreadId = ACTIVE_THREAD;
+}
+```
+
+Populate `threads` from your backend's thread list. The provider and the sidebar share `ACTIVE_THREAD`, so selection loads that conversation and New chat clears the current one. `onThreadId` updates the selection when the backend creates a new thread. See [Thread Routing](/docs/angular/chat/guides/thread-routing) for connecting this state to the URL.
+
+`[mode]` switches between `'expanded'`, `'collapsed'`, and `'drawer'`, and the
+component emits `(modeChange)` when the user presses Cmd/Ctrl+B. Cmd/Ctrl+K
+emits `(searchOpened)` so you can open your own command palette.
+
+<Callout type="tip" title="The devtools launcher is on by default">
+When `@threadplane/chat/debug` is part of your build and `[agent]` is bound,
+`<chat-sidenav>` renders a Devtools launcher in its footer. `[debug]` already
+defaults to `true`; pass `[debug]="false"` to suppress it.
+</Callout>
+
+## Choosing a Mode
+
+| Question | Answer |
+|---|---|
+| Is chat the whole page? | Use `<chat>` |
+| Should chat be invisible until needed? | Use `<chat-popup>` |
+| Should chat and app content coexist? | Use `<chat-sidebar>` |
+| Should the sidebar push content aside? | Use `<chat-sidebar [pushContent]="true">` |
+| Do users need to browse many saved conversations? | Add `<chat-sidenav>` beside `<chat>` |
+
+All four compositions share the same `--tplane-chat-*` token system, so whichever mode you land on, it will match your brand. Next, head to [Theming](/docs/angular/chat/guides/theming) to customize colors, shapes, and typography across all modes at once.

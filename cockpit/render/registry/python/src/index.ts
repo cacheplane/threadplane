@@ -26,7 +26,7 @@ export const renderRegistryPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Render Registry (Python)',
-  docsPath: '/docs/render/guides/registry',
+  docsPath: '/docs/angular/render/guides/registry',
   promptAssetPaths: ['cockpit/render/registry/python/prompts/registry.md'],
   codeAssetPaths: [
     'cockpit/render/registry/angular/src/app/registry.component.ts',

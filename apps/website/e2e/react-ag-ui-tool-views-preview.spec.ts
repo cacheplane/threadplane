@@ -1,10 +1,11 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React AG-UI tool-views keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/ag-ui/guides/tool-views?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/ag-ui/guides/tool-views');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI tool views preview',
@@ -29,7 +30,7 @@ test('public React AG-UI tool-views keep topic docs, sources, runtime, and histo
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await page
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: /^Run(?:,|$)/ })
@@ -38,17 +39,17 @@ test('public React AG-UI tool-views keep topic docs, sources, runtime, and histo
     'src',
     /(?:localhost:4611|ag-ui\/tool-views\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4611|ag-ui\/tool-views\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -69,7 +70,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   );
   const origin = 'http://127.0.0.1:4611';
   await request.post(origin + '/__reset');
-  await page.goto('/docs/ag-ui/guides/tool-views?frontend=react&mode=run');
+  await page.goto('/docs/react/ag-ui/guides/tool-views?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await frame.getByLabel('Message', { exact: true }).fill('Hold result');
@@ -79,10 +80,8 @@ test('switching away disposes a held server-tool stream and returning stays lazy
     'Getting a weather reading…'
   );
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -92,7 +91,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
     )
     .toBe(false);
   await request.post(origin + '/__release');
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(frame.locator('[data-weather-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');

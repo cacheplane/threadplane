@@ -14,8 +14,8 @@ test.describe('Docs landing page', () => {
     await expect(page.getByText('Chat UI').first()).toBeVisible();
 
     // Step 1 — backend quickstart links
-    await expect(page.locator('main a[href="/docs/langgraph/getting-started/quickstart"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/ag-ui/getting-started/quickstart"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/langgraph/getting-started/quickstart"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/ag-ui/getting-started/quickstart"]').first()).toBeVisible();
 
     // Vendor logo marks on the fork cards
     await expect(page.locator('main img[src="/logos/langgraph.svg"]').first()).toBeVisible();
@@ -27,15 +27,15 @@ test.describe('Docs landing page', () => {
     await expect(page.locator('main button[aria-label="Copy install command"]').first()).toBeVisible();
 
     // Step 2 — generative UI links
-    await expect(page.locator('main a[href="/docs/a2ui/getting-started/introduction"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/render/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/a2ui/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/render/getting-started/introduction"]').first()).toBeVisible();
 
     // Step 3 — chat
-    await expect(page.locator('main a[href="/docs/chat/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/chat/getting-started/introduction"]').first()).toBeVisible();
 
     // Helper links
     await expect(page.locator('main a[href="/docs/choosing-an-adapter"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/render/concepts/json-render-vs-a2ui"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/render/concepts/json-render-vs-a2ui"]').first()).toBeVisible();
 
     // The retired telemetry library must not reappear as a card.
     await expect(page.locator('main a[href^="/docs/telemetry"]')).toHaveCount(0);
@@ -46,7 +46,7 @@ test.describe('Docs landing page', () => {
 });
 
 test.describe('Docs slug page', () => {
-  const route = '/docs/langgraph/getting-started/introduction';
+  const route = '/docs/angular/langgraph/getting-started/introduction';
 
   test('keeps page scroll fixed when focusing the last control-plane nav link', async ({
     page,
@@ -233,14 +233,14 @@ test.describe('Docs slug page', () => {
 
 test.describe('a2ui docs', () => {
   test('quickstart renders with sidebar + article', async ({ page }) => {
-    await page.goto('/docs/a2ui/getting-started/quickstart');
+    await page.goto('/docs/angular/a2ui/getting-started/quickstart');
     await expect(page.locator('aside').first()).toBeVisible();
     await expect(page.locator('article').first()).toBeVisible();
     await expect(page.locator('article h1').first()).toContainText('Quick Start');
   });
 
   test('sidebar lists the new guides', async ({ page }) => {
-    await page.goto('/docs/a2ui/getting-started/quickstart');
+    await page.goto('/docs/angular/a2ui/getting-started/quickstart');
     await expect(page.locator('aside').getByText('Message Protocol').first()).toBeVisible();
     await expect(page.locator('aside').getByText('Data Model').first()).toBeVisible();
     await expect(page.locator('aside').getByText('Validating & Adapting').first()).toBeVisible();
@@ -249,7 +249,7 @@ test.describe('a2ui docs', () => {
 
 test.describe('Docs search', () => {
   test('Cmd+K opens the search modal', async ({ page, browserName }) => {
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'
@@ -262,7 +262,7 @@ test.describe('Docs search', () => {
   });
 
   test('matches docs pages when query omits small connector words', async ({ page, browserName }) => {
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'

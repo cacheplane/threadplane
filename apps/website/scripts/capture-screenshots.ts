@@ -26,7 +26,7 @@ import { pathToFileURL } from 'node:url';
 import { existsSync } from 'node:fs';
 
 export const DEFAULT_WEBSITE_URL =
-  'https://threadplane.ai/docs/langgraph/guides/streaming?mode=run';
+  'https://threadplane.ai/docs/angular/langgraph/guides/streaming?mode=run';
 export const WORKSPACE_READY_SELECTOR =
   '[data-workspace-shell][data-hydrated="true"]';
 export const WORKSPACE_CONTENT_SELECTOR = '[data-workspace-surface]';

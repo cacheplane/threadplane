@@ -34,7 +34,7 @@ const ITEMS: FAQItem[] = [
       <>
         No. The agent emits constrained structured output that is validated against a schema, and
         Angular renders registered components with a per-component fallback.{' '}
-        <a href="/docs/render/concepts/json-render-vs-a2ui">json-render and A2UI</a>
+        <a href="/docs/angular/render/concepts/json-render-vs-a2ui">json-render and A2UI</a>
       </>
     ),
   },

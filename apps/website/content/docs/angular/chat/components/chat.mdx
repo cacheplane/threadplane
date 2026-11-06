@@ -1,0 +1,389 @@
+---
+description: Reference for the chat composition — inputs, outputs, projection slots, message templates, the thread sidebar, generative UI, and auto-scroll behavior.
+---
+
+# ChatComponent
+
+`ChatComponent` is the all-in-one composition that provides a complete, styled chat interface. It combines message rendering, text input, typing indicator, error display, and an optional thread sidebar into a single component.
+
+<Callout type="info" title="No Tailwind required">
+`ChatComponent` ships with its own design tokens and component-scoped styles. No PostCSS config, no Tailwind setup, and no global stylesheet import is needed.
+</Callout>
+
+**Selector:** `chat`
+
+**Import:**
+
+```typescript
+import { ChatComponent } from '@threadplane/chat';
+```
+
+## When to Use It
+
+Use `ChatComponent` when you want a fully functional chat UI with minimal setup. It handles:
+
+- Rendering human, AI, tool, and system messages with appropriate templates
+- Markdown rendering for AI messages
+- Auto-scrolling to new messages and streaming content
+- Typing indicator while the agent is processing
+- Error banner for agent errors
+- Optional thread sidebar for multi-conversation support
+- Enter to send, Shift+Enter for newlines
+
+If you need to customize the message layout, add components between sections, or build a fundamentally different chat layout, use the [primitives](/docs/angular/chat/getting-started/introduction#primitives) directly instead.
+
+## Basic Usage
+
+```typescript
+// app.config.ts
+import { provideAgent } from '@threadplane/langgraph';
+import { signal, type ApplicationConfig } from '@angular/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: signal(null),
+    }),
+  ],
+};
+
+// chat-page.component.ts
+import { Component } from '@angular/core';
+import { injectAgent } from '@threadplane/langgraph';
+import { ChatComponent } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-chat-page',
+  standalone: true,
+  imports: [ChatComponent],
+  template: `
+    <div style="height: 100vh;">
+      <chat [agent]="chatRef" />
+    </div>
+  `,
+})
+export class ChatPageComponent {
+  protected readonly chatRef = injectAgent();
+}
+```
+
+<Callout type="tip" title="Height is required">
+`ChatComponent` uses `height: 100%` with flex layout. Make sure its parent container has an explicit height, otherwise the component will collapse to zero height.
+</Callout>
+
+## API
+
+Every input, output, and projection slot below is declared on `ChatComponent` itself.
+
+### Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `agent` | `Agent` | **Required** | The runtime-neutral agent providing streaming state. `injectAgent()` from `@threadplane/langgraph` returns a compatible `LangGraphAgent`. |
+| `views` | `ViewRegistry \| undefined` | `undefined` | View registry for generative UI and A2UI surfaces. Maps spec type names to Angular components. Created with `views()` from `@threadplane/render`, or `a2uiBasicCatalog()` from `@threadplane/chat`. |
+| `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Client-declared `view` / `ask` / `function` tools the model may call. When set, the composition ships their catalog to the agent, runs `function` tools in the browser, and renders `view` / `ask` tools through the tool-views pipeline. See [Client Tools](/docs/angular/chat/guides/client-tools). |
+| `clientToolExecutionGuard` | `ClientToolExecutionGuard \| undefined` | `undefined` | Opt-in claim-before-execute guard. Takes a `threadId` and a `ClientToolExecutionStore` so a non-idempotent tool is not executed twice across reloads. |
+| `clientToolContinuationPolicy` | `ClientToolContinuationPolicy \| undefined` | `undefined` | Caps automatic client-tool continuations per user turn (`maxTurns`, default 10; `0` for unlimited) and supplies an `onLimit` callback. |
+| `store` | `StateStore \| undefined` | `undefined` | Shared render store for interactive generative-UI specs. Without one, each json-render surface self-seeds from its own spec `state`. |
+| `handlers` | `Record<string, (params: Record<string, unknown>) => unknown \| Promise<unknown>>` | `{}` | Event handlers for generative UI specs and consumer-owned A2UI local actions. Handlers run in Angular injection context — `inject()` is available inside handler functions. |
+| `threads` | `Thread[]` | `[]` | Threads to display in the sidebar. Each thread must have an `id` property. |
+| `activeThreadId` | `string` | `''` | The ID of the currently active thread, used for highlighting in the sidebar. |
+| `welcomeDisabled` | `boolean` | `false` | When `true`, suppresses the welcome screen shown for an empty conversation. |
+| `modelOptions` | `readonly ChatSelectOption[]` | `[]` | When non-empty, renders a `<chat-select>` model picker inside the input pill, wired to the two-way `selectedModel`. Leave empty to project your own `<chat-select chatInputModelSelect>`. |
+| `showModelPicker` | `boolean` | `true` | When `false`, hides the auto-rendered model picker even when `modelOptions` is non-empty. No effect on a consumer-projected `<chat-select>`. |
+| `selectedModel` | `string` (two-way) | `''` | The selected model `value`, bound to the auto-rendered model picker. Use with `[(selectedModel)]`. |
+| `modelPickerPlaceholder` | `string` | `'Choose a model'` | Placeholder shown in the auto-rendered model picker when no option matches. |
+| `genuiToolNames` | `readonly string[]` | `['generate_a2ui_schema', 'generate_json_render_spec', 'render_spec']` | Tool names whose calls produce a rendered surface rather than visible text. Used to filter `<chat-tool-calls>` so an internal dispatcher does not render its arguments as a card. |
+
+### Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `threadSelected` | `string` | Emits when a thread is clicked in the sidebar. Payload is the thread ID. |
+| `renderEvent` | `ChatRenderEvent` | Emits render lifecycle events from generative UI and A2UI surfaces. |
+| `clientToolContinuationLimit` | `ClientToolContinuationLimitEvent` | Emits when the continuation policy stops a client-tool group. Payload carries `maxTurns`, `attemptedTurn`, `toolCallIds`, and `toolNames`. |
+| `regenerate` | `void` | Emits when the user clicks the regenerate button on an assistant message. |
+| `rate` | `{ messageIndex: number; rating: 'up' \| 'down' }` | Emits when the user rates an assistant message. |
+| `messageCopy` | `{ messageIndex: number; content: string }` | Emits when the user copies an assistant message. |
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `clearThread()` | Clears local view state for a new thread: content classifiers, the A2UI surface store, and the `messageCount` / `inputSubmittedAt` lifecycle signals. `componentReady` and `firstMessageSent` stay set. |
+
+### Projection slots
+
+`<chat>` accepts content on seven named slots.
+
+| Selector | Where it lands |
+|---|---|
+| `[chatWelcomeSuggestions]` | Suggestion chips under the welcome composer. Rendered only while the conversation is empty. |
+| `[chatHeader]` | The header row above the message scroller. |
+| `ng-template[chatToolCallTemplate]` | Collected by `<chat>` and passed to each message's inner `<chat-tool-calls>`, so an `<ng-template chatToolCallTemplate="…">` replaces the default card for one tool name. |
+| `ng-template[chatActivityTemplate]` | A per-message activity renderer that replaces the reasoning pill and tool-call region of every assistant message. Takes precedence over `chatToolCallTemplate`. |
+| `ng-template[chatRunActivityTemplate]` | A turn-level run renderer shown after the last message while a run is active and has no assistant message yet. Replaces the typing indicator in that window. |
+| `ng-template[chatInterruptTemplate]` | Rendered at the end of the transcript while `agent.interrupt()` is defined, for approval cards and other human-in-the-loop UI. |
+| `[chatInputModelSelect]` | The model-picker slot in the conversation composer. Used only when the auto-rendered picker is off, that is when `modelOptions` is empty or `showModelPicker` is `false`. |
+
+### Thread Type
+
+```typescript
+type Thread = { id: string; [key: string]: unknown };
+```
+
+## Thread Sidebar
+
+When you pass a non-empty `threads` array, a sidebar appears on the left (hidden on mobile by default):
+
+```typescript
+@Component({
+  template: `
+    <chat
+      [agent]="chatRef"
+      [threads]="threads()"
+      [activeThreadId]="currentThreadId()"
+      (threadSelected)="onThreadSelected($event)"
+    />
+  `,
+})
+export class ChatWithThreadsComponent {
+  protected readonly chatRef = injectAgent();
+
+  threads = signal([
+    { id: 'thread-1' },
+    { id: 'thread-2' },
+    { id: 'thread-3' },
+  ]);
+
+  currentThreadId = signal('thread-1');
+
+  onThreadSelected(threadId: string) {
+    this.currentThreadId.set(threadId);
+    this.chatRef.switchThread(threadId);
+  }
+}
+```
+
+## Message Feedback Outputs
+
+Beyond `threadSelected`, `<chat>` emits three outputs for assistant-message feedback and regeneration. Each fires from the hover controls on an assistant message:
+
+```typescript
+@Component({
+  template: `
+    <chat
+      [agent]="chatRef"
+      (regenerate)="onRegenerate()"
+      (rate)="onRate($event)"
+      (messageCopy)="onCopy($event)"
+    />
+  `,
+})
+export class ChatWithFeedbackComponent {
+  protected readonly chatRef = injectAgent();
+
+  // (regenerate) emits void — the agent already re-ran the last assistant turn.
+  onRegenerate() {
+    console.log('user requested regeneration');
+  }
+
+  // (rate) payload: { messageIndex, rating }
+  onRate(event: { messageIndex: number; rating: 'up' | 'down' }) {
+    console.log(`message ${event.messageIndex} rated ${event.rating}`);
+  }
+
+  // (messageCopy) payload: { messageIndex, content }
+  onCopy(event: { messageIndex: number; content: string }) {
+    console.log(`copied message ${event.messageIndex}`, event.content);
+  }
+}
+```
+
+## Message Templates
+
+`ChatComponent` registers a `chatMessageTemplate` for each of the four message types:
+
+| Type | What it renders |
+|------|-----------------|
+| `human` | Right-aligned filled bubble carrying the message text. |
+| `ai` | Left-aligned, no bubble. Reasoning pill, tool-call cards, tool views, streaming markdown, generative-UI and A2UI surfaces, and the hover feedback controls. |
+| `tool` | Nothing. Tool results surface through the assistant message's tool-call cards and through [`<chat-trace>`](/docs/angular/chat/components/chat-trace). |
+| `system` | Plain left-aligned text with no bubble and no extra chrome. |
+
+## Generative UI
+
+When you pass a `[views]` registry, the component auto-detects JSON specs in AI messages and renders them as Angular components:
+
+```html
+<chat [agent]="chatRef" [views]="myViews" />
+```
+
+```typescript
+import { views } from '@threadplane/chat';
+import { WeatherCardComponent } from './weather-card.component';
+
+const myViews = views({
+  weather_card: WeatherCardComponent,
+});
+```
+
+AI messages containing JSON are parsed character-by-character as tokens stream. Components render incrementally — string props grow visibly as tokens arrive. See the [Generative UI guide](/docs/angular/chat/guides/generative-ui) for full setup.
+
+### Interactive specs and `[store]`
+
+A **`StateStore`** is the shared reactive state that interactive generative-UI specs read from and write to. When a spec uses `$state` / `$bindState` prop expressions — for forms, selections, toggles — those bindings resolve against the store you pass via `[store]`. Read-only specs (a weather card, a chart) do not need one; reach for `[store]` only when a spec is interactive, or when several surfaces must share live values. Create it with `signalStateStore()` from `@threadplane/render`:
+
+```typescript
+import { Component } from '@angular/core';
+import { injectAgent } from '@threadplane/langgraph';
+import { ChatComponent } from '@threadplane/chat';
+import { signalStateStore } from '@threadplane/render';
+
+@Component({
+  selector: 'app-interactive-chat',
+  standalone: true,
+  imports: [ChatComponent],
+  template: `<chat [agent]="chatRef" [views]="myViews" [store]="store" />`,
+})
+export class InteractiveChatComponent {
+  protected readonly chatRef = injectAgent();
+  protected readonly myViews = myViews;
+  protected readonly store = signalStateStore({ selectedItem: null });
+}
+```
+
+`signalStateStore()` is the exported factory; the `StateStore` type itself comes from `@json-render/core`, which Threadplane does not re-export. See [The view registry and the shared store](/docs/angular/chat/guides/generative-ui#the-view-registry-and-the-shared-store) in the Generative UI guide for the full binding model.
+
+## A2UI Rendering
+
+When AI messages contain A2UI content (prefixed with `---a2ui_JSON---`), the component auto-detects A2UI mode. Pass `a2uiBasicCatalog()` to `[views]` to render the built-in catalog:
+
+```typescript
+import { ChatComponent, a2uiBasicCatalog } from '@threadplane/chat';
+
+views = a2uiBasicCatalog();
+```
+
+```html
+<chat [agent]="chatRef" [views]="views" />
+```
+
+The catalog currently maps 18 component types: Text, Image, Icon, Divider, Row, Column, Card, List, Button, TextField, CheckBox, ChoicePicker, DateTimeInput, Slider, Tabs, Modal, Video, and AudioPlayer.
+
+A2UI surfaces support two-way data binding, button actions, template expansion over collections, and validation. See the [A2UI guide](/docs/angular/chat/a2ui/overview) for details.
+
+## Auto-Scroll Behavior
+
+The component tracks message count and loading state to auto-scroll. Every scroll is an instant `scrollTop` assignment — a smooth animation per streamed token would queue overlapping animations and read as jerky.
+
+- **New message**: jumps to the bottom and re-pins the view.
+- **Streaming updates**: jump to the bottom only while the view is pinned, meaning the scroller sits within 150px of the bottom.
+- **User scrolled up**: unpins the view, so streaming no longer moves the scroller. A scroll-to-bottom bubble appears in the footer to re-pin it.
+- **Run activity and interrupt regions**: the regions rendered by `chatRunActivityTemplate` and `chatInterruptTemplate` are followed too. When one appears or changes size while the view is pinned, the scroller jumps to the bottom.
+
+## Message Pattern
+
+`ChatComponent` renders messages using an asymmetric pattern:
+
+- **User messages** — right-aligned filled bubble using `--tplane-chat-primary` background and `--tplane-chat-on-primary` text
+- **Assistant messages** — inline (no bubble), left-aligned, with hover controls (copy, thumbs up/down) that appear on pointer-over
+
+## Styling
+
+Override any CSS custom property on the `chat` element or a parent. See the [Theming guide](/docs/angular/chat/guides/theming) for the full `--tplane-chat-*` token reference.
+
+```css
+/* Example: brand color override */
+chat {
+  --tplane-chat-primary: #2563eb;
+  --tplane-chat-on-primary: #ffffff;
+}
+```
+
+## Included Primitives
+
+Under the hood, `ChatComponent` composes these primitives:
+
+- `ChatMessageListComponent` with `MessageTemplateDirective` for message rendering
+- `ChatInputComponent` for text input (with `submitOnEnter` and a placeholder)
+- `ChatTypingIndicatorComponent` for the animated typing dots
+- `ChatErrorComponent` for error display
+- `ChatThreadListComponent` for the sidebar
+- `ChatStreamingMdComponent`, `ChatReasoningComponent`, `ChatToolCallsComponent`, and `ChatToolViewsComponent` inside the assistant template
+
+Interrupts are not part of this list. `<chat>` renders no interrupt UI of its own. Project a [`chatInterruptTemplate`](/docs/angular/chat/components/chat-interrupt-template) to place it in the transcript, or compose [`<chat-interrupt-panel>`](/docs/angular/chat/components/chat-interrupt-panel) alongside `<chat>`.
+
+## Reasoning
+
+When a model emits reasoning content (gpt-5 / o-series with `reasoning` blocks, Anthropic with `thinking` blocks, or any AG-UI agent emitting `REASONING_MESSAGE_*` events), the adapter populates `Message.reasoning` and `Message.reasoningDurationMs`. The `<chat>` composition automatically renders [`<chat-reasoning>`](/docs/angular/chat/components/chat-reasoning) above the assistant response. No configuration required.
+
+While reasoning is streaming, the pill shows "Thinking…" with a pulse dot and the body auto-expands so the user sees content arrive in real time. Once response text begins, the pill collapses to "Thought for Ns" (e.g. "Thought for 4s").
+
+## Tool-call templates
+
+Project a `<ng-template chatToolCallTemplate="…">` directly into `<chat>` to replace the default card UX for a specific tool name. The composition collects the template and passes it to each message's inner [`<chat-tool-calls>`](/docs/angular/chat/components/chat-tool-calls). Place the template as a direct child of `<chat>`; one nested inside another element is not collected.
+
+```html
+<chat [agent]="agent">
+  <ng-template chatToolCallTemplate="generate_image" let-call let-status="status">
+    <my-image-card
+      [prompt]="call.args.prompt"
+      [imageUrl]="call.result"
+      [status]="status"
+    />
+  </ng-template>
+</chat>
+```
+
+A `chatToolCallTemplate="*"` wildcard catches any unmapped tool name. See [chatToolCallTemplate](/docs/angular/chat/components/chat-tool-call-template) for the directive reference.
+
+## Activity template
+
+To render a message's activity as one unit instead of per tool call, project an `<ng-template chatActivityTemplate>`. It replaces the reasoning pill and the tool-call region of every assistant message and receives the message, its index, its tool calls, its subagents, and the agent. Markdown, tool views, generative UI, and message actions still render.
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls" let-subagents="subagents">
+    <my-turn-activity [message]="message" [steps]="toolCalls" [subagents]="subagents" />
+  </ng-template>
+</chat>
+```
+
+The activity template takes precedence over any projected `chatToolCallTemplate`. See [chatActivityTemplate](/docs/angular/chat/components/chat-activity-template) for the context reference.
+
+## Showing a run before its first message
+
+A run can spend a long time in its first model call before any text or tool call arrives. Until the first assistant message exists, the per-message activity template has nothing to render into, so the transcript shows only the typing indicator. To render the run itself in that window, project an `<ng-template chatRunActivityTemplate>`:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatActivityTemplate let-message let-toolCalls="toolCalls">
+    <my-turn-activity [message]="message" [steps]="toolCalls" />
+  </ng-template>
+  <ng-template chatRunActivityTemplate let-agent>
+    <my-turn-activity [agent]="agent" />
+  </ng-template>
+</chat>
+```
+
+The run template renders after the last message while `agent.isLoading()` is true and the current run, every message after the last user message, has no assistant message. It replaces the typing indicator only in that window. When the first assistant message arrives, the run template stops rendering and the per-message `chatActivityTemplate` takes over, so a host that renders turn-level activity uses the two together and shows one continuous activity. See [chatRunActivityTemplate](/docs/angular/chat/components/chat-run-activity-template) for the context reference.
+
+## Interrupt template
+
+To place approval cards in the conversation instead of beside it, project an `<ng-template chatInterruptTemplate>`. It renders at the end of the transcript, after any run activity, while the agent has a pending interrupt:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+    <my-approval-card
+      [request]="interrupt.value"
+      (decide)="agent.submit({ resume: $event })"
+    />
+  </ng-template>
+</chat>
+```
+
+With no pending interrupt, or no template, nothing renders. See [chatInterruptTemplate](/docs/angular/chat/components/chat-interrupt-template) for the context reference.

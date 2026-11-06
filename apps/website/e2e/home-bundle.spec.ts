@@ -28,7 +28,7 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 const REGISTRY_MARKER = 'LangGraph Durable Execution (Python)';
 
 /** A docs route, which renders the workspace surface and so needs the catalog. */
-const DOCS_ROUTE = '/docs/langgraph/guides/streaming';
+const DOCS_ROUTE = '/docs/angular/langgraph/guides/streaming';
 
 /** Heading and body share Hanken; code, italic and diagram faces load on use. */
 const EXPECTED_PRELOADS = ['Hanken Grotesk normal'];

@@ -1,0 +1,363 @@
+---
+description: How the messages example renders one template per role, plus the runtime-neutral message shape, delivery lifecycle, content, tool calls and citations.
+---
+
+# Message model
+
+`@threadplane/chat` renders a runtime-neutral message model. Adapters translate backend-specific messages into this shape, and components render from that shape alone.
+
+This matters because provider message formats are not stable enough to build product UI against directly. LangGraph, AG-UI, OpenAI, Anthropic, and custom backends all carry different event and content shapes, and the chat layer needs one model. The running example is the smallest thing that shows it whole: a message list with no default templates, so every role in the model is a template you can read.
+
+## A message is one part of a turn
+
+A Portland planning request is one user message. Its answer may contain several assistant messages, tool requests, tool results, and a final summary. Keep message identity separate from array position and from the user turn that produced it.
+
+The adapter normalizes those messages before the UI reads them. Display text, delivery status, tool identity, and citations stay structured so a component can render progress without parsing the assistant's prose. [Follow a conversation](/docs/angular/langgraph/concepts/conversation-turns) places messages inside the larger request and persistence flow.
+
+## What the demo does
+
+The Run tab shows a conversation under the heading "Chat Messages Primitives", with a panel on the right naming the three primitives it uses. The agent behind it is an aviation assistant whose mock dataset covers ten United States airports and four airlines.
+
+Ask it something like which airlines fly out of SFO. Three dots appear while the request is in flight and disappear the moment the first token lands, because the typing indicator watches content rather than a timer. Then ask a follow-up: the previous answer stays exactly as it was while the new one streams, which is the delivery lifecycle described below doing its job.
+
+## How it is built
+
+Three files carry the example: the graph that produces the messages, the provider that points Angular at it, and the component that renders one template per role.
+
+### The graph that produces the messages
+
+The visible node is `generate`. `MessagesState` gives LangGraph a message list the SDK already understands, the model is constructed with `streaming=True`, and the node prepends a system prompt read from the capability's prompt file before it awaits the model. A second node, `generate_title`, runs after it and writes a short thread title back through the LangGraph SDK.
+
+<ExampleCode file="graph.py" region="generate-node" title="graph.py — the generate node" />
+
+Every message the browser renders begins as an entry in that returned list.
+
+### The application configuration
+
+`provideAgent()` registers the agent for the whole application, keyed by a typed ref, and it is the only provider the chat components require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`, which is `c-messages` for this example.
+
+### One template per role
+
+`ChatMessageListComponent` renders nothing by itself. It iterates the agent's messages, maps each message's `role` to a template name, and looks for a projected `<ng-template chatMessageTemplate="...">` with that name. A message whose template is missing renders nothing at all, which is how the demo hides tool results: the `tool` template is deliberately empty. `messageContent()` pulls the visible text out of the content, skipping reasoning and tool-use blocks so that a complex content array never lands in a bubble as raw JSON.
+
+<ExampleCode file="messages.component.ts" region="message-templates" title="messages.component.ts — the four role templates" />
+
+The template context is the message itself as `$implicit`, plus `index`.
+
+<Callout type="info" title="The composition projects these for you">
+`<chat>` provides its own default templates internally. Projecting templates by hand is the price and the point of building from primitives: nothing renders that you did not write.
+</Callout>
+
+### Delivery drives the assistant bubble
+
+The assistant template is the only one that reads `delivery`. `streaming` on `<chat-message>` comes straight from `message.delivery.phase`, and `markdownDocument()` pairs the text with the same delivery so that the streaming markdown renderer can tell an append from a new answer.
+
+<ExampleCode file="messages.component.ts" region="assistant-template" title="messages.component.ts — the assistant template" />
+
+`markdownDocument(content, delivery)` returns `{ generation, phase, content }`, and the renderer treats a change of `generation` as a new document rather than an edit of the old one.
+
+### The input strip
+
+The typing indicator and the input both take the agent and need nothing else. `<chat-input>` calls `agent.submit()` itself, which is what turns a keystroke into a `user` message in the list above, and then emits `submitted` with the same trimmed text.
+
+<ExampleCode file="messages.component.ts" region="input-strip" title="messages.component.ts — the input strip" />
+
+<Callout type="warning" title="Do not submit from (submitted)">
+The output fires after the message has already been sent. A handler that calls `submit()` again posts the user message twice. The demo binds nothing to it; bind `(submitted)` only for side effects such as analytics, never for submission.
+</Callout>
+
+### The component class
+
+`injectAgent()` resolves the same ref the provider registered, typed by the state interface declared beside it, so `agent.value()` is a typed read of the graph state. The two imported helpers are exposed as fields so the inline template can call them.
+
+<ExampleCode file="messages.component.ts" region="component-class" title="messages.component.ts — the component class" />
+
+## The message shape
+
+Everything above renders instances of one interface:
+
+```ts
+interface Message {
+  id: string;
+  delivery: MessageDelivery;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string | ContentBlock[];
+  toolCallId?: string;
+  name?: string;
+  reasoning?: string;
+  reasoningDurationMs?: number;
+  extra?: Record<string, unknown>;
+  citations?: Citation[];
+  toolCallIds?: string[];
+}
+```
+
+The fields are intentionally few. Portable UI state goes in the known fields; runtime-specific data goes in `extra`. The adapter must supply `delivery` for every message.
+
+`toolCallId` and `toolCallIds` point in opposite directions. The singular field is the call a `tool` message answers. The plural field lists the calls emitted by an assistant message, and `<chat-tool-calls>` uses it to scope its rendering to one message instead of falling back to the agent's global list.
+
+## Delivery lifecycle
+
+`Message.delivery` is the adapter's authoritative lifecycle state for one response attempt:
+
+```ts
+type CompleteOutcome = 'success' | 'error' | 'aborted' | 'interrupted' | 'paused';
+
+type MessageDelivery =
+  | { readonly generation: string; readonly phase: 'streaming' }
+  | {
+      readonly generation: string;
+      readonly phase: 'complete';
+      readonly outcome: CompleteOutcome;
+    };
+```
+
+`paused` is an intentional stop awaiting resumable input; `interrupted` means the stream ended unexpectedly. Use the public helpers rather than repeating the object literals:
+
+```ts
+import {
+  completeDelivery,
+  staticDelivery,
+  streamingDelivery,
+} from '@threadplane/chat';
+
+const partial = streamingDelivery('attempt-7');
+const finished = completeDelivery('attempt-7', 'success');
+const historical = staticDelivery('message-42');
+```
+
+Every message produced by one response attempt shares that attempt's `generation`, and it stays stable as the attempt moves from streaming to complete. Streaming content is append-only; once complete, content and delivery are immutable. A retry or a replacement attempt gets a new generation. `staticDelivery(messageId)` is the concise choice for user messages, tool results, and restored history: the LangGraph adapter uses exactly that for any message with no live delivery of its own.
+
+Components consume this field directly. Do not derive a message's phase from agent-wide loading state: concurrent work, interruptions, retries, and restored history all make that inference wrong. The demo's assistant template is the shortest illustration, and `<chat>` goes further, keying its per-message content classifier on `generation` so a regenerated answer starts from a clean parse.
+
+## Roles and template names
+
+Runtime roles are:
+
+| Role | Meaning |
+|---|---|
+| `user` | Human input submitted through the UI or the adapter. |
+| `assistant` | Model output. May carry markdown, reasoning, tool calls, citations, or generated UI payloads. |
+| `tool` | Tool result associated with a tool call. |
+| `system` | System or runtime message shown as context. |
+
+Template names are a separate vocabulary, and the message list translates between them:
+
+| Role | Template name |
+|---|---|
+| `user` | `human` |
+| `assistant` | `ai` |
+| `tool` | `tool` |
+| `system` | `system` |
+
+A fifth template name, `function`, is accepted by the directive for compatibility with older function-call vocabulary, but no role maps to it, so such a template is never selected. Normalize function results into `tool` messages, or carry backend-specific detail in `extra`.
+
+## Content
+
+`content` is either plain text or structured blocks:
+
+```ts
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; url: string; alt?: string }
+  | { type: 'tool_use'; id: string; name: string; args: unknown }
+  | { type: 'tool_result'; toolCallId: string; result: unknown; isError?: boolean };
+```
+
+Plain text is the common case, and it is the only case in the demo: the LangGraph adapter flattens LangChain content arrays down to their visible text before the message reaches a component, keeping the raw payload on `extra`. Adapters that can preserve more shape emit blocks instead.
+
+Custom templates should therefore check the type before assuming they can interpolate `content` directly. `messageContent()` does this for you and accepts the `Message` shape directly, and hand-written code can do the same:
+
+```ts
+function textOf(message: Message): string {
+  return typeof message.content === 'string'
+    ? message.content
+    : message.content
+        .filter((block) => block.type === 'text')
+        .map((block) => block.text)
+        .join('');
+}
+```
+
+The same union types the `message` field of `submit()`, but what reaches the backend is the adapter's decision. The LangGraph adapter builds one human message out of the blocks, taking the text of each `text` block and the JSON of every other block, so a block array is not a route to multi-modal input on that runtime today.
+
+## Markdown
+
+Assistant text is rendered as markdown by the `<chat>` composition. Its markdown renderer also resolves citation references when citations are present.
+
+With primitives, markdown is your decision. The demo makes it by importing `ChatStreamingMdComponent`; `renderMarkdown()` and your own renderer are equally valid choices.
+
+This matters because markdown is presentation policy. A customer support chat, a code assistant, and an audit trail need different rules for links, tables, code blocks, and images.
+
+## Reasoning
+
+Reasoning is separate from visible answer content:
+
+```ts
+message.reasoning;
+message.reasoningDurationMs;
+```
+
+Adapters populate `reasoning` from provider-specific reasoning or thinking blocks, and AG-UI adapters populate it from reasoning events. The surfaced value is always a plain string. Provider-specific encrypted blocks, summaries, and step metadata are absorbed by the adapter rather than leaking into portable UI code.
+
+`<chat>` renders reasoning with `<chat-reasoning>` above the answer, merging a run of consecutive reasoning steps into a single pill and summing their durations. If you build from primitives, as the demo does, reasoning renders nowhere until you place it.
+
+## Tool calls
+
+Tool calls have their own normalized shape, carried on `agent.toolCalls()`:
+
+```ts
+export type ToolCallStatus = 'pending' | 'running' | 'complete' | 'error';
+
+interface ToolCall {
+  id: string;
+  name: string;
+  args: unknown;
+  status: ToolCallStatus;
+  result?: unknown;
+  error?: unknown;
+}
+```
+
+Use `toolCalls()` when rendering cross-message tool status, and `tool` messages when rendering tool output inside the transcript. Pair the two through `toolCallId`.
+
+This matters because tool calls stream. Arguments may be partial while `status` is anything other than `complete`, so treat `args` as unknown until the adapter marks the call complete, or until your tool template can handle partial data.
+
+## Citations
+
+Messages can carry provider-agnostic citations on `message.citations`:
+
+```ts
+interface Citation {
+  id: string;
+  index: number;
+  title?: string;
+  url?: string;
+  snippet?: string;
+  extra?: Record<string, unknown>;
+  sourceType?: string;
+  iconUrl?: string;
+  publishedAt?: string | number | Date;
+}
+```
+
+`id` is matched against `[^id]` markers in the content, and `index` is the 1-based display order, stable per message. `@threadplane/langgraph` exports `extractCitations()` for adapters that need to normalize nonstandard citation payloads.
+
+Citation display derives a type badge from `sourceType`; when it is absent and `url` is present, the source is treated as `web`, and otherwise as `unknown`. `iconUrl` takes precedence over generated source icons and monograms, and the library never fetches a favicon on its own.
+
+`<chat-message>` renders `<chat-citations>` for an assistant message only when it is given the whole message:
+
+```html
+<chat-message [role]="'assistant'" [message]="message" />
+```
+
+The demo passes `role`, the streaming flag read from `delivery`, and a `current` flag computed from the index, but not `message`, so no citation strip appears under its answers.
+
+The resolve path from a `[^id]` marker to a rendered citation runs through `CitationsResolverService`, exported from `@threadplane/chat`. A custom citation renderer provides the service, sets the current message, then calls `lookup(refId)`, which returns a `Signal<ResolvedCitation | null>` matching the marker id against `message.citations` and falling back to inline markdown definitions:
+
+```ts
+import { Component, computed, inject, input } from '@angular/core';
+import { CitationsResolverService } from '@threadplane/chat';
+import type { Message } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-citation-ref',
+  standalone: true,
+  providers: [CitationsResolverService],
+  template: `@if (resolved(); as r) {<sup>[{{ r.citation.index }}]</sup>}`,
+})
+export class CitationRefComponent {
+  private readonly resolver = inject(CitationsResolverService);
+
+  readonly message = input.required<Message>();
+  readonly refId = input.required<string>(); // the `id` from a [^id] marker
+
+  // lookup() returns a Signal; resolved.source is 'message' or 'markdown'.
+  protected readonly resolved = computed(() => {
+    this.resolver.message.set(this.message());
+    return this.resolver.lookup(this.refId())();
+  });
+}
+```
+
+Keep citation data on the message that owns the content. Avoid a separate global citation store unless your product has a cross-message source panel.
+
+## Interrupts
+
+Interrupts are not messages. They are optional agent state:
+
+```ts
+agent.interrupt?.(); // AgentInterrupt | undefined
+```
+
+An interrupt carries an `id`, an opaque runtime-specific `value` the application renders, and `resumable`, which is true when the runtime supports resuming through `submit({ resume })`:
+
+```ts
+await agent.submit({ resume: { approved: true } });
+```
+
+This matters because an interrupt is lifecycle state, not transcript content. Render it as a banner, a dialog, or an approval panel, but keep the canonical state on `agent.interrupt`.
+
+## Subagents
+
+Subagents are also optional agent state:
+
+```ts
+agent.subagents?.(); // Map<string, Subagent>
+```
+
+Each `Subagent` carries the tool-call id that spawned it, an optional name, and signals for status, messages, and state. An adapter that surfaces the child's own tool calls adds a `toolCalls` signal as well; consumers default to an empty list when it is absent.
+
+Use subagents when the backend delegates work to child graphs or specialized workers. Do not encode subagent progress as invented assistant messages when the runtime can expose structured state instead. Structured state lets UI render progress, nested transcripts, and failure states without parsing prose.
+
+## Generated UI in assistant content
+
+Generated UI arrives through ordinary assistant content. `<chat>` classifies that text from its first non-whitespace character:
+
+- json-render when the first character is `{`.
+- A2UI when the text starts with `---a2ui_JSON---`.
+- Markdown otherwise.
+
+Classification stays pending while the content is empty or whitespace, or while a leading `-` is still a prefix of the `---a2ui_JSON---` sentinel. A leading `{` commits to a specification immediately, and any other first character commits to markdown right away. json-render uses a single spec object; A2UI uses a stream of JSONL envelopes that update surfaces, data models, and rendering state.
+
+The message remains an assistant message either way. Generated UI is an interpretation of its content, not a new role. The classifier belongs to the composition, which is why the demo, built from primitives, renders a spec as literal markdown text instead.
+
+## Practical rules
+
+Normalize at the adapter boundary. Components should not inspect raw LangGraph SDK messages or AG-UI events unless they are adapter-specific tools.
+
+Treat `content` as `string | ContentBlock[]`. Do not assume every message can be interpolated directly.
+
+Use the exported type guards when role-specific code helps:
+
+```ts
+import {
+  isUserMessage,
+  isAssistantMessage,
+  isToolMessage,
+  isSystemMessage,
+} from '@threadplane/chat';
+```
+
+Put backend-specific fields in `extra`, and document them in your adapter. Portable UI should survive when `extra` is absent.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="ChatMessageList" href="/docs/angular/chat/components/chat-message-list">
+    The primitive the demo builds on, template by template.
+  </Card>
+  <Card title="Primitives vs compositions" href="/docs/angular/chat/concepts/primitives-vs-compositions">
+    When to project your own templates and when to let `<chat>` do it.
+  </Card>
+  <Card title="Generative UI" href="/docs/angular/chat/guides/generative-ui">
+    What the composition does with assistant content that is not markdown.
+  </Card>
+  <Card title="Writing an adapter" href="/docs/angular/chat/guides/writing-an-adapter">
+    Produce this model from a backend of your own.
+  </Card>
+</CardGroup>

@@ -19,6 +19,7 @@ export interface DocSection {
 }
 
 export interface DocsSearchHit {
+  scope?: 'angular' | 'react' | 'shared';
   href: string;
   title: string;
   heading: string | null;

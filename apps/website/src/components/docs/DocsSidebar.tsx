@@ -23,7 +23,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 import {
-  docsConfig,
+  getFrameworkDocsConfig,
   getLibraryConfig,
   libraryIntroPath,
   specialDocsPages,
@@ -32,8 +32,11 @@ import {
   type LibraryId,
 } from '../../lib/docs-config';
 import { LibraryMark } from './LibraryMark';
+import type { DocsFramework } from '@threadplane/cockpit-registry/docs-routes';
+import { preferredDocsHref } from '../../lib/framework-preference';
 
 export interface DocsNavigationProps {
+  framework?: DocsFramework;
   /** `null` on a library-neutral docs page. */
   activeLibrary: LibraryId | null;
   activeSection: string;
@@ -62,14 +65,17 @@ const LIBRARY_GROUPS: { id: LibraryGroup; label: string }[] = [
 ];
 
 function LibraryDropdown({
+  framework,
   activeLibrary,
   onNavigate,
   resolveHref = href => href,
 }: {
+  framework: DocsFramework;
   activeLibrary: LibraryId | null;
   onNavigate?: () => void;
   resolveHref?: (href: string) => string;
 }) {
+  const libraries = getFrameworkDocsConfig(framework);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -173,7 +179,7 @@ function LibraryDropdown({
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
-            openMenu(event.key === 'ArrowDown' ? 0 : docsConfig.length - 1);
+            openMenu(event.key === 'ArrowDown' ? 0 : libraries.length - 1);
           }
         }}
         aria-haspopup="menu"
@@ -216,7 +222,7 @@ function LibraryDropdown({
               <span className="docs-sidebar-lib-group" aria-hidden="true">
                 {group.label}
               </span>
-              {docsConfig
+              {libraries
                 .filter((library) => library.group === group.id)
                 .map((library) => {
                   const isActive = library.id === activeLibrary;
@@ -226,7 +232,7 @@ function LibraryDropdown({
                       aria-checked={isActive}
                       tabIndex={-1}
                       key={library.id}
-                      href={resolveHref(libraryIntroPath(library.id))}
+                      href={resolveHref(libraryIntroPath(library.id, framework))}
                       data-workspace-navigation-link
                       onClick={() => {
                         closeMenu();
@@ -278,7 +284,6 @@ const SECTION_ICONS: Record<
 
 function SectionGroup({
   section,
-  activeLibrary,
   activeSection,
   activeSlug,
   open,
@@ -287,7 +292,6 @@ function SectionGroup({
   resolveHref = href => href,
 }: {
   section: DocsSection;
-  activeLibrary: LibraryId;
   activeSection: string;
   activeSlug: string;
   open: boolean;
@@ -327,12 +331,13 @@ function SectionGroup({
           className="docs-sidebar-section-links"
         >
           {section.pages.map((page) => {
+            if (!page.href) return null;
             const isActive =
               page.section === activeSection && page.slug === activeSlug;
             return (
               <Link
                 key={`${page.section}/${page.slug}`}
-                href={resolveHref(page.href ?? `/docs/${activeLibrary}/${page.section}/${page.slug}`)}
+                href={resolveHref(page.href)}
                 onClick={onNavigate}
                 data-docs-navlink
                 data-workspace-navigation-link
@@ -351,6 +356,7 @@ function SectionGroup({
 }
 
 export function DocsNavigation({
+  framework = 'angular',
   activeLibrary,
   activeSection,
   activeSlug,
@@ -359,8 +365,9 @@ export function DocsNavigation({
   onNavigate,
   resolveHref = href => href,
 }: DocsNavigationProps) {
-  const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
-  const migrations = getLibraryConfig('chat')?.sections.find(section => section.id === 'migrations');
+  const libraries = getFrameworkDocsConfig(framework);
+  const library = libraries.find(candidate => candidate.id === activeLibrary);
+  const migrations = libraries.find(candidate => candidate.id === 'chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
 
   return (
@@ -369,6 +376,10 @@ export function DocsNavigation({
         aria-label="Featured documentation"
         className="docs-sidebar-top-links"
       >
+        <Link href={resolveHref(preferredDocsHref(framework))} className="docs-sidebar-top-link" onClick={onNavigate}
+          data-docs-navlink data-workspace-navigation-link>
+          Introduction
+        </Link>
         <Link
           href={resolveHref('/docs/api')}
           className="docs-sidebar-top-link"
@@ -394,7 +405,7 @@ export function DocsNavigation({
         ))}
       </nav>
 
-      <LibraryDropdown activeLibrary={activeLibrary} onNavigate={onNavigate} resolveHref={resolveHref} />
+      <LibraryDropdown framework={framework} activeLibrary={activeLibrary} onNavigate={onNavigate} resolveHref={resolveHref} />
 
       {/* No library means no section tree. Narrowing on `activeLibrary` rather
        * than `library` keeps SectionGroup's non-null contract honest. */}
@@ -405,7 +416,6 @@ export function DocsNavigation({
               <SectionGroup
                 key={section.id}
                 section={section}
-                activeLibrary={activeLibrary}
                 activeSection={activeSection}
                 activeSlug={activeSlug}
                 open={expanded[key] ?? true}
@@ -419,7 +429,6 @@ export function DocsNavigation({
       {migrations ? (
         <SectionGroup
           section={migrations}
-          activeLibrary="chat"
           activeSection={activeLibrary === 'chat' ? activeSection : ''}
           activeSlug={activeSlug}
           open={expanded['Learn:migrations'] ?? false}

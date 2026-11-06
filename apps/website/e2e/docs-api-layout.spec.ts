@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const quickstart = '/docs/chat/getting-started/quickstart';
+const quickstart = '/docs/angular/chat/getting-started/quickstart';
 
 for (const width of [320, 390, 768, 1024, 1440, 1920]) {
   test(`API and docs share a reading edge at ${width}px`, async ({ page }) => {
@@ -35,12 +35,12 @@ for (const width of [390, 1440]) {
     const card = page.getByRole('region', { name: 'Docs workspace panel', exact: true })
       .locator('[data-mdx="card"]').filter({ hasText: 'Going to production' });
     await card.scrollIntoViewIfNeeded();
-    await expect(card.getByRole('link', { name: 'Going to production', exact: false })).toHaveAttribute('href', '/docs/chat/getting-started/installation');
-    await expect(card.getByRole('link', { name: 'Installation', exact: true })).toHaveAttribute('href', '/docs/chat/getting-started/installation');
-    await expect(card.getByRole('link', { name: 'Agent deployment', exact: true })).toHaveAttribute('href', '/docs/langgraph/guides/deployment');
+    await expect(card.getByRole('link', { name: 'Going to production', exact: false })).toHaveAttribute('href', '/docs/angular/chat/getting-started/installation');
+    await expect(card.getByRole('link', { name: 'Installation', exact: true })).toHaveAttribute('href', '/docs/angular/chat/getting-started/installation');
+    await expect(card.getByRole('link', { name: 'Agent deployment', exact: true })).toHaveAttribute('href', '/docs/angular/langgraph/guides/deployment');
     expect(errors).toEqual([]);
     await card.getByRole('link', { name: 'Agent deployment', exact: true }).click();
-    await expect(page).toHaveURL(/\/docs\/langgraph\/guides\/deployment$/);
+    await expect(page).toHaveURL(/\/docs\/angular\/langgraph\/guides\/deployment$/);
     await page.goto(quickstart);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     await card.scrollIntoViewIfNeeded();
@@ -48,6 +48,6 @@ for (const width of [390, 1440]) {
     if (!box) throw new Error('Missing production card bounds');
     // Clicking card padding must still follow the primary destination.
     await card.click({ position: { x: box.width - 12, y: box.height - 12 } });
-    await expect(page).toHaveURL(/\/docs\/chat\/getting-started\/installation$/);
+    await expect(page).toHaveURL(/\/docs\/angular\/chat\/getting-started\/installation$/);
   });
 }

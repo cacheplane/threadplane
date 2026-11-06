@@ -1,3 +1,4 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 // These cases own one local producer's request log and held response.
@@ -13,7 +14,7 @@ test('canonical Subagents Run retains attributed specialist text and full native
   );
   const origin = 'http://127.0.0.1:4613';
   await request.post(origin + '/__reset');
-  await page.goto('/docs/ag-ui/guides/subagents?frontend=react&mode=run');
+  await page.goto('/docs/react/ag-ui/guides/subagents?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   for (const mode of ['sequential', 'direct']) {
@@ -54,8 +55,8 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
   const requestsBefore = process.env['BASE_URL']
     ? undefined
     : await (await request.get(origin + '/__requests')).json();
-  await page.goto('/docs/ag-ui/guides/subagents?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/ag-ui/guides/subagents');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI Subagents preview',
@@ -80,7 +81,7 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await page
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: /^Run(?:,|$)/ })
@@ -91,13 +92,13 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
   );
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4613|ag-ui\/subagents\/react)/
@@ -113,7 +114,7 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
     expect(requestsAfter).toHaveLength(requestsBefore.length);
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -134,7 +135,7 @@ test('switching away disposes a held child stream and returning stays lazy', asy
   );
   const origin = 'http://127.0.0.1:4613';
   await request.post(origin + '/__reset');
-  await page.goto('/docs/ag-ui/guides/subagents?frontend=react&mode=run');
+  await page.goto('/docs/react/ag-ui/guides/subagents?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await request.post(origin + '/__hold/child-text');
@@ -162,10 +163,8 @@ test('switching away disposes a held child stream and returning stays lazy', asy
     'Planning with specialists…'
   );
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -175,7 +174,7 @@ test('switching away disposes a held child stream and returning stays lazy', asy
     )
     .toBe(false);
   await request.post(origin + '/__release');
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(frame.locator('[data-parent-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');

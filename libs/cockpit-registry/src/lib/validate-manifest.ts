@@ -1,3 +1,4 @@
+import { parseDocsNarrativePath, docsNarrativeHref } from './docs-routes';
 import type {
   CockpitManifestEntry,
   CockpitManifestIdentity,
@@ -56,9 +57,10 @@ export const validateManifest = (
   }
 
   for (const entry of manifest) {
+    const document = parseDocsNarrativePath(entry.docsPath);
     if (
       entry.docsPath &&
-      !/^\/docs\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/.test(entry.docsPath)
+      (!document || docsNarrativeHref(document) !== entry.docsPath)
     ) {
       errors.push(`Invalid docsPath for ${entry.id}: ${entry.docsPath}`);
     }

@@ -1,7 +1,8 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
-const route = '/docs/render/guides/specs';
+const reactRoute = '/docs/react/render/guides/specs';
 const reactFrame =
   /(?:localhost:4614(?:[/?#]|$)|\/render\/spec-rendering\/react\/?(?:[?#]|$))/;
 const iframe = (page: Page) =>
@@ -36,11 +37,10 @@ test.afterEach(async ({ page }) => {
 });
 
 async function expectFreshRun(page: Page) {
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page).toHaveURL(
     (url) =>
-      url.pathname === route &&
-      url.searchParams.get('frontend') === 'react' &&
+      url.pathname === reactRoute &&
       url.searchParams.get('mode') === 'run'
   );
   await expect(iframe(page)).toHaveAttribute(
@@ -80,8 +80,8 @@ async function renderChangedSample(page: Page) {
 test('React Render Spec keeps local Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(`${route}?frontend=react`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto(`${reactRoute}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React Render Spec preview',
@@ -96,7 +96,7 @@ test('React Render Spec keeps local Docs, Code and Run aligned', async ({
   await expect(page.locator('[data-example-file*="/python/"]')).toHaveCount(0);
   const navigation = page.locator('[data-workspace-desktop-navigation]');
   await navigation.getByRole('button', { name: 'Code', exact: true }).click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=code/);
   await navigation.getByRole('button', { name: /^Run(?:,|$)/ }).click();
   await expectFreshRun(page);
@@ -108,14 +108,14 @@ test('React Render Spec keeps local Docs, Code and Run aligned', async ({
 test('React Render Spec restores fresh playback through frontend history', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
   await renderChangedSample(page);
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=run/);
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
@@ -128,7 +128,7 @@ test('React Render Spec restores fresh playback through frontend history', async
 test('React Render Spec reloads fresh playback after rendering another sample', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
@@ -140,7 +140,7 @@ test('React Render Spec reloads fresh playback after rendering another sample', 
 test('canonical Render Spec Run renders local samples without runtime execution', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
@@ -171,10 +171,10 @@ test('local React Render Spec remains usable on a narrow screen', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   await expectFreshRun(page);
   const example = frame(page);
   await example.getByRole('button', { name: 'Finish', exact: true }).click();

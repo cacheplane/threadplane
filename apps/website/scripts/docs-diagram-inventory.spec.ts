@@ -41,7 +41,7 @@ test('every live authored diagram placement is represented with its source and e
   );
   expect(
     targets.find(
-      (target) => target.path === '/docs/langgraph/getting-started/introduction'
+      (target) => target.path === '/docs/angular/langgraph/getting-started/introduction'
     )?.diagrams.length
   ).toBeGreaterThan(0);
   expect(new Set(targets.map((target) => target.path)).size).toBe(

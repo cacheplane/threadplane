@@ -5,6 +5,7 @@ import type {
   WorkspaceMode,
 } from './manifest.types';
 import { getCockpitFrontends } from './capability-registry';
+import { docsNarrativeHref, parseDocsNarrativePath } from './docs-routes';
 
 /** Serializable capability content owned by the Cockpit registry. */
 export interface RegisteredCapabilityModule {
@@ -40,7 +41,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Streaming (Python)',
-    docsPath: '/docs/langgraph/guides/streaming',
+    docsPath: '/docs/angular/langgraph/guides/streaming',
     promptAssetPaths: [
       'cockpit/langgraph/streaming/python/prompts/streaming.md',
     ],
@@ -63,7 +64,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Persistence (Python)',
-    docsPath: '/docs/langgraph/guides/persistence',
+    docsPath: '/docs/angular/langgraph/guides/persistence',
     promptAssetPaths: [
       'cockpit/langgraph/persistence/python/prompts/persistence.md',
     ],
@@ -86,7 +87,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Interrupts (Python)',
-    docsPath: '/docs/langgraph/guides/interrupts',
+    docsPath: '/docs/angular/langgraph/guides/interrupts',
     promptAssetPaths: [
       'cockpit/langgraph/interrupts/python/prompts/interrupts.md',
     ],
@@ -109,7 +110,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Memory (Python)',
-    docsPath: '/docs/langgraph/guides/memory',
+    docsPath: '/docs/angular/langgraph/guides/memory',
     promptAssetPaths: ['cockpit/langgraph/memory/python/prompts/memory.md'],
     codeAssetPaths: [
       'cockpit/langgraph/memory/angular/src/app/memory.component.ts',
@@ -130,7 +131,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Durable Execution (Python)',
-    docsPath: '/docs/langgraph/guides/durable-execution',
+    docsPath: '/docs/angular/langgraph/guides/durable-execution',
     promptAssetPaths: [
       'cockpit/langgraph/durable-execution/python/prompts/durable-execution.md',
     ],
@@ -155,7 +156,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Subgraphs (Python)',
-    docsPath: '/docs/langgraph/guides/subgraphs',
+    docsPath: '/docs/angular/langgraph/guides/subgraphs',
     promptAssetPaths: [
       'cockpit/langgraph/subgraphs/python/prompts/subgraphs.md',
     ],
@@ -178,7 +179,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Time Travel (Python)',
-    docsPath: '/docs/langgraph/guides/time-travel',
+    docsPath: '/docs/angular/langgraph/guides/time-travel',
     promptAssetPaths: [
       'cockpit/langgraph/time-travel/python/prompts/time-travel.md',
     ],
@@ -201,7 +202,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Deployment Runtime (Python)',
-    docsPath: '/docs/langgraph/guides/deployment',
+    docsPath: '/docs/angular/langgraph/guides/deployment',
     promptAssetPaths: [
       'cockpit/langgraph/deployment-runtime/python/prompts/deployment-runtime.md',
     ],
@@ -226,7 +227,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'LangGraph Client Tools (Python)',
-    docsPath: '/docs/chat/guides/client-tools',
+    docsPath: '/docs/angular/chat/guides/client-tools',
     promptAssetPaths: [
       'cockpit/langgraph/client-tools/python/prompts/client-tools.md',
     ],
@@ -251,7 +252,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI Interrupts (Python)',
-    docsPath: '/docs/ag-ui/guides/interrupts',
+    docsPath: '/docs/angular/ag-ui/guides/interrupts',
     promptAssetPaths: ['cockpit/ag-ui/interrupts/python/prompts/interrupts.md'],
     codeAssetPaths: [
       'cockpit/ag-ui/interrupts/angular/src/app/interrupts.component.ts',
@@ -275,7 +276,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI Streaming (Python)',
-    docsPath: '/docs/ag-ui/reference/event-mapping',
+    docsPath: '/docs/angular/ag-ui/reference/event-mapping',
     promptAssetPaths: ['cockpit/ag-ui/streaming/python/prompts/streaming.md'],
     codeAssetPaths: [
       'cockpit/ag-ui/streaming/angular/src/app/streaming.component.ts',
@@ -299,7 +300,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI Tool Views (Python)',
-    docsPath: '/docs/ag-ui/guides/tool-views',
+    docsPath: '/docs/angular/ag-ui/guides/tool-views',
     promptAssetPaths: ['cockpit/ag-ui/tool-views/python/prompts/tool-views.md'],
     codeAssetPaths: [
       'cockpit/ag-ui/tool-views/angular/src/app/tool-views.component.ts',
@@ -324,7 +325,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI JSON Render (Python)',
-    docsPath: '/docs/ag-ui/guides/json-render',
+    docsPath: '/docs/angular/ag-ui/guides/json-render',
     promptAssetPaths: [
       'cockpit/ag-ui/json-render/python/prompts/json-render.md',
     ],
@@ -350,7 +351,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI Client Tools (Python)',
-    docsPath: '/docs/ag-ui/guides/client-tools',
+    docsPath: '/docs/angular/ag-ui/guides/client-tools',
     promptAssetPaths: [
       'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
     ],
@@ -378,7 +379,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI A2UI (Python)',
-    docsPath: '/docs/a2ui/getting-started/introduction',
+    docsPath: '/docs/angular/a2ui/getting-started/introduction',
     promptAssetPaths: ['cockpit/ag-ui/a2ui/python/prompts/a2ui.md'],
     codeAssetPaths: [
       'cockpit/ag-ui/a2ui/angular/src/app/a2ui.component.ts',
@@ -402,7 +403,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'AG-UI Subagents (Python)',
-    docsPath: '/docs/ag-ui/guides/subagents',
+    docsPath: '/docs/angular/ag-ui/guides/subagents',
     promptAssetPaths: ['cockpit/ag-ui/subagents/python/prompts/subagents.md'],
     codeAssetPaths: [
       'cockpit/ag-ui/subagents/angular/src/app/subagents.component.ts',
@@ -426,7 +427,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Deep Agents Memory (Python)',
-    docsPath: '/docs/deep-agents/capabilities/memory',
+    docsPath: '/docs/angular/deep-agents/capabilities/memory',
     promptAssetPaths: ['cockpit/deep-agents/memory/python/prompts/memory.md'],
     codeAssetPaths: [
       'cockpit/deep-agents/memory/angular/src/app/memory.component.ts',
@@ -450,7 +451,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Deep Agents Planning (Python)',
-    docsPath: '/docs/deep-agents/capabilities/planning',
+    docsPath: '/docs/angular/deep-agents/capabilities/planning',
     promptAssetPaths: [
       'cockpit/deep-agents/planning/python/prompts/planning.md',
     ],
@@ -473,7 +474,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Deep Agents Filesystem (Python)',
-    docsPath: '/docs/deep-agents/capabilities/filesystem',
+    docsPath: '/docs/angular/deep-agents/capabilities/filesystem',
     promptAssetPaths: [
       'cockpit/deep-agents/filesystem/python/prompts/filesystem.md',
     ],
@@ -496,7 +497,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Deep Agents Subagents (Python)',
-    docsPath: '/docs/deep-agents/capabilities/subagents',
+    docsPath: '/docs/angular/deep-agents/capabilities/subagents',
     promptAssetPaths: [
       'cockpit/deep-agents/subagents/python/prompts/subagents.md',
     ],
@@ -519,7 +520,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Deep Agents Skills (Python)',
-    docsPath: '/docs/deep-agents/capabilities/skills',
+    docsPath: '/docs/angular/deep-agents/capabilities/skills',
     promptAssetPaths: ['cockpit/deep-agents/skills/python/prompts/skills.md'],
     codeAssetPaths: [
       'cockpit/deep-agents/skills/angular/src/app/skills.component.ts',
@@ -546,7 +547,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Spec Rendering (Python)',
-    docsPath: '/docs/render/guides/specs',
+    docsPath: '/docs/angular/render/guides/specs',
     promptAssetPaths: [
       'cockpit/render/spec-rendering/python/prompts/spec-rendering.md',
     ],
@@ -569,7 +570,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Element Rendering (Python)',
-    docsPath: '/docs/render/guides/element-rendering',
+    docsPath: '/docs/angular/render/guides/element-rendering',
     promptAssetPaths: [
       'cockpit/render/element-rendering/python/prompts/element-rendering.md',
     ],
@@ -592,7 +593,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render State Management (Python)',
-    docsPath: '/docs/render/guides/state-store',
+    docsPath: '/docs/angular/render/guides/state-store',
     promptAssetPaths: [
       'cockpit/render/state-management/python/prompts/state-management.md',
     ],
@@ -615,7 +616,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Registry (Python)',
-    docsPath: '/docs/render/guides/registry',
+    docsPath: '/docs/angular/render/guides/registry',
     promptAssetPaths: ['cockpit/render/registry/python/prompts/registry.md'],
     codeAssetPaths: [
       'cockpit/render/registry/angular/src/app/registry.component.ts',
@@ -636,7 +637,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Repeat Loops (Python)',
-    docsPath: '/docs/render/guides/repeat-loops',
+    docsPath: '/docs/angular/render/guides/repeat-loops',
     promptAssetPaths: [
       'cockpit/render/repeat-loops/python/prompts/repeat-loops.md',
     ],
@@ -659,7 +660,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Render Computed Functions (Python)',
-    docsPath: '/docs/render/guides/computed-functions',
+    docsPath: '/docs/angular/render/guides/computed-functions',
     promptAssetPaths: [
       'cockpit/render/computed-functions/python/prompts/computed-functions.md',
     ],
@@ -684,7 +685,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Messages (Python)',
-    docsPath: '/docs/chat/concepts/message-model',
+    docsPath: '/docs/angular/chat/concepts/message-model',
     promptAssetPaths: ['cockpit/chat/messages/python/prompts/messages.md'],
     codeAssetPaths: [
       'cockpit/chat/messages/angular/src/app/messages.component.ts',
@@ -705,7 +706,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Input (Python)',
-    docsPath: '/docs/chat/components/chat-input',
+    docsPath: '/docs/angular/chat/components/chat-input',
     promptAssetPaths: ['cockpit/chat/input/python/prompts/input.md'],
     codeAssetPaths: [
       'cockpit/chat/input/angular/src/app/input.component.ts',
@@ -726,7 +727,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Interrupts (Python)',
-    docsPath: '/docs/chat/components/chat-interrupt-panel',
+    docsPath: '/docs/angular/chat/components/chat-interrupt-panel',
     promptAssetPaths: ['cockpit/chat/interrupts/python/prompts/interrupts.md'],
     codeAssetPaths: [
       'cockpit/chat/interrupts/angular/src/app/interrupts.component.ts',
@@ -747,7 +748,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Tool Calls (Python)',
-    docsPath: '/docs/chat/components/chat-tool-calls',
+    docsPath: '/docs/angular/chat/components/chat-tool-calls',
     promptAssetPaths: ['cockpit/chat/tool-calls/python/prompts/tool-calls.md'],
     codeAssetPaths: [
       'cockpit/chat/tool-calls/angular/src/app/tool-calls.component.ts',
@@ -768,7 +769,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Subagents (Python)',
-    docsPath: '/docs/chat/components/chat-subagent-card',
+    docsPath: '/docs/angular/chat/components/chat-subagent-card',
     promptAssetPaths: ['cockpit/chat/subagents/python/prompts/subagents.md'],
     codeAssetPaths: [
       'cockpit/chat/subagents/angular/src/app/subagents.component.ts',
@@ -789,7 +790,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Threads (Python)',
-    docsPath: '/docs/chat/guides/thread-routing',
+    docsPath: '/docs/angular/chat/guides/thread-routing',
     promptAssetPaths: ['cockpit/chat/threads/python/prompts/threads.md'],
     codeAssetPaths: [
       'cockpit/chat/threads/angular/src/app/threads.component.ts',
@@ -810,7 +811,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Timeline (Python)',
-    docsPath: '/docs/chat/components/chat-trace',
+    docsPath: '/docs/angular/chat/components/chat-trace',
     promptAssetPaths: ['cockpit/chat/timeline/python/prompts/timeline.md'],
     codeAssetPaths: [
       'cockpit/chat/timeline/angular/src/app/timeline.component.ts',
@@ -831,7 +832,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Generative UI (Python)',
-    docsPath: '/docs/chat/guides/generative-ui',
+    docsPath: '/docs/angular/chat/guides/generative-ui',
     promptAssetPaths: [
       'cockpit/chat/generative-ui/python/prompts/generative-ui.md',
     ],
@@ -859,7 +860,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Debug (Python)',
-    docsPath: '/docs/chat/components/chat-debug',
+    docsPath: '/docs/angular/chat/components/chat-debug',
     promptAssetPaths: ['cockpit/chat/debug/python/prompts/debug.md'],
     codeAssetPaths: [
       'cockpit/chat/debug/angular/src/app/debug.component.ts',
@@ -880,7 +881,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat Theming (Python)',
-    docsPath: '/docs/chat/guides/theming',
+    docsPath: '/docs/angular/chat/guides/theming',
     promptAssetPaths: ['cockpit/chat/theming/python/prompts/theming.md'],
     codeAssetPaths: [
       'cockpit/chat/theming/angular/src/app/theming.component.ts',
@@ -901,7 +902,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Chat A2UI (Python)',
-    docsPath: '/docs/chat/a2ui/overview',
+    docsPath: '/docs/angular/chat/a2ui/overview',
     promptAssetPaths: ['cockpit/chat/a2ui/python/prompts/a2ui.md'],
     codeAssetPaths: [
       'cockpit/chat/a2ui/angular/src/app/a2ui.component.ts',
@@ -922,7 +923,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Runtimes — Microsoft Agent Framework (Python)',
-    docsPath: '/docs/runtimes/microsoft-agent-framework/overview',
+    docsPath: '/docs/angular/runtimes/microsoft-agent-framework/overview',
     promptAssetPaths: [
       'cockpit/runtimes/microsoft-agent-framework/python/prompts/microsoft-agent-framework.md',
     ],
@@ -949,7 +950,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'python',
     },
     title: 'Runtimes — AWS Strands (Python)',
-    docsPath: '/docs/runtimes/aws-strands/overview',
+    docsPath: '/docs/angular/runtimes/aws-strands/overview',
     promptAssetPaths: [
       'cockpit/runtimes/aws-strands/python/prompts/aws-strands.md',
     ],
@@ -976,7 +977,7 @@ const capabilityModuleData: RegisteredCapabilityModule[] = [
       language: 'angular',
     },
     title: 'Runtimes — Mastra (Angular)',
-    docsPath: '/docs/runtimes/mastra/overview',
+    docsPath: '/docs/angular/runtimes/mastra/overview',
     promptAssetPaths: [
       'cockpit/runtimes/mastra/angular/prompts/mastra-backend.md',
       'cockpit/runtimes/mastra/angular/prompts/mastra.md',
@@ -999,9 +1000,13 @@ const freezeAssetPaths = (paths: readonly string[]): readonly string[] =>
 
 const freezeCapabilityDescriptor = (
   descriptor: RegisteredCapabilityModule
-): RegisteredCapabilityModule =>
-  Object.freeze({
+): RegisteredCapabilityModule => {
+  const document = parseDocsNarrativePath(descriptor.docsPath);
+  return Object.freeze({
     ...descriptor,
+    docsPath: document?.scope === 'framework'
+      ? docsNarrativeHref({ ...document, framework: descriptor.frontend ?? 'angular' })
+      : descriptor.docsPath,
     manifestIdentity: Object.freeze({ ...descriptor.manifestIdentity }),
     promptAssetPaths: freezeAssetPaths(descriptor.promptAssetPaths),
     codeAssetPaths: freezeAssetPaths(descriptor.codeAssetPaths),
@@ -1009,6 +1014,7 @@ const freezeCapabilityDescriptor = (
       ? { backendAssetPaths: freezeAssetPaths(descriptor.backendAssetPaths) }
       : {}),
   });
+};
 
 export const capabilityModules: readonly RegisteredCapabilityModule[] =
   Object.freeze(capabilityModuleData.map(freezeCapabilityDescriptor));

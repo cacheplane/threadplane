@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 /** The LLA family header stays opaque white across routes and scrolling.
  * Keep the custom CTA distinction and scroll-invariance coverage. */
 
-const DOCS_ROUTE = '/docs/langgraph/getting-started/introduction';
+const DOCS_ROUTE = '/docs/angular/langgraph/getting-started/introduction';
 
 interface BarSurface {
   readonly background: string;

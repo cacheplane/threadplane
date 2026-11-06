@@ -23,7 +23,7 @@ export const langgraphSubgraphsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'LangGraph Subgraphs (Angular)',
-  docsPath: '/docs/langgraph/guides/subgraphs',
+  docsPath: '/docs/angular/langgraph/guides/subgraphs',
   promptAssetPaths: [
     'cockpit/langgraph/subgraphs/angular/prompts/subgraphs.md',
   ],

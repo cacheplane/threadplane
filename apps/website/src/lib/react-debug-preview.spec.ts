@@ -1,6 +1,6 @@
+import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { getWebsiteWorkspacePage } from './workspace-page';
 import { createWebsitePlaywrightConfig } from '../../playwright.config';
 
@@ -23,11 +23,11 @@ it('isolates website Debug integration to two owned servers and records its Nx p
 });
 
 it('resolves Debug React Docs Code and Run with only authored frontend and canonical Python sources', async () => {
-  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/chat/components/chat-debug', title: 'ChatDebugComponent' });
-  expect(page.frontendVariants?.react?.resolution).toMatchObject({ kind: 'mapped' });
-  const bundle = page.frontendVariants?.react?.contentBundle;
+  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/react/chat/components/chat-debug', title: 'ChatDebugComponent' });
+  expect(page.resolution).toMatchObject({ kind: 'mapped' });
+  const bundle = page.contentBundle;
   expect(bundle?.runtimeUrl).toMatch(/\/chat\/debug\/react\/?$/);
-  expect(page.frontendVariants?.react?.presentation).toMatchObject({ devPort: 4645, runtimeUrl: 'chat/debug/react' });
+  expect(page.presentation).toMatchObject({ devPort: 4645, runtimeUrl: 'chat/debug/react' });
   const sources = bundle?.codeSources ?? {};
   for (const file of ['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css'])
     expect(sources[`cockpit/chat/debug/react/src/${file}`]).toBeTruthy();
@@ -38,7 +38,7 @@ it('resolves Debug React Docs Code and Run with only authored frontend and canon
 });
 
 it('documents the passive bounded first slice with reader-sized examples and explicit remaining parity', () => {
-  const path = resolve(import.meta.dirname, '../components/docs/ReactChatDebugPreview.tsx');
+  const path = resolve(import.meta.dirname, '../../content/docs/react/chat/components/chat-debug.mdx');
   expect(existsSync(path)).toBe(true);
   if (!existsSync(path)) return;
   const guide = readFileSync(path, 'utf8');

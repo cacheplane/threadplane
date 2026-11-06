@@ -20,6 +20,7 @@ import { DEMOS, demoCtaSuffix } from '../../lib/demos';
 export type NavIcon = ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
 
 export interface NavItem {
+  readonly frameworkEntry?: boolean;
   readonly label: string;
   /** One whole literal — never assembled from interpolated fragments, so the
    *  rendered-copy scan in lib/public-copy.spec.ts can see all of it. */
@@ -105,9 +106,10 @@ const DOCS: NavPanel = {
           ctaId: 'docs_documentation',
         },
         {
-          label: 'Quick start',
+          label: 'Getting started',
+          frameworkEntry: true,
           description: 'An agent on screen in ten minutes',
-          href: '/docs/langgraph/getting-started/quickstart',
+          href: '/docs/angular/getting-started/introduction',
           icon: Rocket,
           ctaId: 'docs_quick_start',
         },
@@ -126,14 +128,14 @@ const DOCS: NavPanel = {
         {
           label: 'Guides',
           description: 'Streaming, persistence, interrupts, memory',
-          href: '/docs/langgraph/guides/streaming',
+          href: '/docs/angular/langgraph/guides/streaming',
           icon: MapIcon,
           ctaId: 'docs_guides',
         },
         {
           label: 'Concepts',
           description: 'The agent contract, signals, and state',
-          href: '/docs/langgraph/concepts/agent-contract',
+          href: '/docs/angular/langgraph/concepts/agent-contract',
           icon: Lightbulb,
           ctaId: 'docs_concepts',
         },

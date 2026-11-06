@@ -41,8 +41,8 @@ export default async function ChatPage() {
               chat-timeline + chat-debug + GenUI surfaces. <span className="marker-highlight">Production-shaped from day one</span>, themable to your design system, or use the headless primitives if you want full control.
             </p>
             <div className="chat-page-hero-buttons">
-              <Button variant="primary" size="lg" href="/docs/chat/getting-started/introduction">Get started</Button>
-              <Button variant="ghost" size="lg" href="/docs/chat/guides/generative-ui?mode=run">
+              <Button variant="primary" size="lg" href="/docs/angular/chat/getting-started/introduction">Get started</Button>
+              <Button variant="ghost" size="lg" href="/docs/angular/chat/guides/generative-ui?mode=run">
                 See it live →
               </Button>
             </div>
@@ -65,7 +65,7 @@ export default async function ChatPage() {
           { claim: 'Devtools beside it, ship-ready', api: 'chat-debug' },
           { claim: 'Thread navigation and history search', api: 'sidenav + palette' },
         ]}
-        cta={{ label: 'See @threadplane/chat docs', href: '/docs/chat/getting-started/introduction' }}
+        cta={{ label: 'See @threadplane/chat docs', href: '/docs/angular/chat/getting-started/introduction' }}
         visual={<MediumSwitcher sectionId="lib-chat" panes={panes} />}
       />
 
@@ -81,7 +81,7 @@ export default async function ChatPage() {
         ]}
         cta={{
           label: 'Headless API',
-          href: '/docs/chat/concepts/primitives-vs-compositions',
+          href: '/docs/angular/chat/concepts/primitives-vs-compositions',
         }}
         visualLeft
         visual={<ChatLandingCodeShowcase />}

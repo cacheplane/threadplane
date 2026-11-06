@@ -7,9 +7,9 @@ import {
 } from '@playwright/test';
 import { renderRuntimeBridgeFrame } from './fixtures/runtime-bridge-frame';
 
-const LANGGRAPH_PATH = '/docs/langgraph/guides/streaming';
-const AG_UI_PATH = '/docs/ag-ui/reference/event-mapping';
-const CHAT_THREADS_PATH = '/docs/chat/guides/thread-routing';
+const LANGGRAPH_PATH = '/docs/angular/langgraph/guides/streaming';
+const AG_UI_PATH = '/docs/angular/ag-ui/reference/event-mapping';
+const CHAT_THREADS_PATH = '/docs/angular/chat/guides/thread-routing';
 const FIXTURE_ORIGIN = 'http://127.0.0.1:4399';
 const FIXTURE_KEY = 'test-key-redact-me';
 const POISON_MARKER = `${FIXTURE_KEY}-poison-body`;

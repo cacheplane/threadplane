@@ -40,21 +40,21 @@ export interface HeroSubheadSegment {
 }
 export const HERO_SUBHEAD_SEGMENTS: readonly HeroSubheadSegment[] = [
   { text: 'Make agent work ' },
-  { text: 'persistent', href: '/docs/langgraph/guides/persistence' },
+  { text: 'persistent', href: '/docs/angular/langgraph/guides/persistence' },
   { text: ', ' },
-  { text: 'durable', href: '/docs/langgraph/guides/persistence#choosing-a-checkpointer' },
+  { text: 'durable', href: '/docs/angular/langgraph/guides/persistence#choosing-a-checkpointer' },
   { text: ', ' },
-  { text: 'visible', href: '/docs/chat/components/chat-tool-calls' },
+  { text: 'visible', href: '/docs/angular/chat/components/chat-tool-calls' },
   { text: ', ' },
-  { text: 'reviewable', href: '/docs/langgraph/guides/interrupts' },
+  { text: 'reviewable', href: '/docs/angular/langgraph/guides/interrupts' },
   { text: ', and ' },
-  { text: 'resumable', href: '/docs/langgraph/guides/persistence#checkpoint-recovery' },
+  { text: 'resumable', href: '/docs/angular/langgraph/guides/persistence#checkpoint-recovery' },
   { text: '.' },
 ];
 
 export const HERO_PRIMARY_LABEL = 'Install Threadplane';
 export const HERO_SECONDARY_LABEL = 'See it running in the docs →';
-export const HERO_SECONDARY_HREF = '/docs/chat/guides/generative-ui?mode=run';
+export const HERO_SECONDARY_HREF = '/docs/angular/chat/guides/generative-ui?mode=run';
 
 /** Kept for layout.tsx default title and the OG image alt. */
 export const PRIMARY_TAGLINE = 'Threadplane — The open-source thread-plane for Angular agents';
@@ -166,7 +166,7 @@ export const STAGE_RAIL: readonly StageRailBeat[] = [
     beat: 'stream',
     label: 'Tools & citations',
     claim: 'Tools & citations',
-    docs: { label: 'Docs', href: '/docs/chat/components/chat-tool-calls' },
+    docs: { label: 'Docs', href: '/docs/angular/chat/components/chat-tool-calls' },
     stillAlt:
       'A backup cleanup review with tool results and linked retention policy citations in the chat.',
   },
@@ -174,7 +174,7 @@ export const STAGE_RAIL: readonly StageRailBeat[] = [
     beat: 'subagents',
     label: 'Subagents',
     claim: 'Subagents',
-    docs: { label: 'Docs', href: '/docs/langgraph/guides/subgraphs' },
+    docs: { label: 'Docs', href: '/docs/angular/langgraph/guides/subgraphs' },
     stillAlt:
       'The cleanup workflow delegates a policy review to a research subagent, with its progress and findings visible in the chat.',
   },
@@ -182,7 +182,7 @@ export const STAGE_RAIL: readonly StageRailBeat[] = [
     beat: 'persist',
     label: 'Threads & branches',
     claim: 'Threads & branches',
-    docs: { label: 'Docs', href: '/docs/langgraph/guides/persistence' },
+    docs: { label: 'Docs', href: '/docs/angular/langgraph/guides/persistence' },
     stillAlt:
       'The saved cleanup thread restored after reload and branched from an earlier checkpoint to revise the backup plan.',
   },
@@ -190,7 +190,7 @@ export const STAGE_RAIL: readonly StageRailBeat[] = [
     beat: 'approve',
     label: 'Interrupts & approval',
     claim: 'Interrupts & approval',
-    docs: { label: 'Docs', href: '/docs/langgraph/guides/interrupts' },
+    docs: { label: 'Docs', href: '/docs/angular/langgraph/guides/interrupts' },
     stillAlt:
       'The cleanup agent paused for human review of the proposed backup deletions, with approval controls and retained backups visible.',
   },
@@ -267,7 +267,7 @@ export const appConfig: ApplicationConfig = {
     provideFakeAgent({ tokens: ['Hello', ' from', ' Threadplane'] }),
   ],
 };`,
-    quickstartHref: '/docs/chat/getting-started/try-without-a-backend',
+    quickstartHref: '/docs/angular/chat/getting-started/try-without-a-backend',
   },
   {
     key: 'langgraph',
@@ -283,7 +283,7 @@ export const appConfig: ApplicationConfig = {
     provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'agent' }),
   ],
 };`,
-    quickstartHref: '/docs/langgraph/getting-started/quickstart',
+    quickstartHref: '/docs/angular/langgraph/getting-started/quickstart',
   },
   {
     key: 'ag_ui',
@@ -299,7 +299,7 @@ export const appConfig: ApplicationConfig = {
     provideAgent({ url: 'http://localhost:8000/agent' }),
   ],
 };`,
-    quickstartHref: '/docs/ag-ui/getting-started/quickstart',
+    quickstartHref: '/docs/angular/ag-ui/getting-started/quickstart',
   },
 ];
 
@@ -338,11 +338,11 @@ export interface PositioningProofPoint {
 
 export const POSITIONING_PROOF_POINTS: readonly PositioningProofPoint[] = [
   { label: 'LangGraph + AG-UI', href: '/docs/choosing-an-adapter' },
-  { label: 'Durable threads', href: '/docs/langgraph/guides/persistence' },
-  { label: 'Interrupts', href: '/docs/langgraph/guides/interrupts' },
-  { label: 'Subagents', href: '/docs/langgraph/guides/subgraphs' },
-  { label: 'Planning + memory', href: '/docs/langgraph/guides/memory' },
-  { label: 'json-render + A2UI', href: '/docs/render/concepts/json-render-vs-a2ui' },
+  { label: 'Durable threads', href: '/docs/angular/langgraph/guides/persistence' },
+  { label: 'Interrupts', href: '/docs/angular/langgraph/guides/interrupts' },
+  { label: 'Subagents', href: '/docs/angular/langgraph/guides/subgraphs' },
+  { label: 'Planning + memory', href: '/docs/angular/langgraph/guides/memory' },
+  { label: 'json-render + A2UI', href: '/docs/angular/render/concepts/json-render-vs-a2ui' },
 ] as const;
 export const SHORT_POSITIONING_DESCRIPTION = HOME_DESCRIPTION;
 export const DEFAULT_META_DESCRIPTION = SHORT_POSITIONING_DESCRIPTION;

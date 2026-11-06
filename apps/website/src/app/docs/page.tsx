@@ -14,7 +14,7 @@ import { DEFAULT_EXAMPLE_RUN_HREF } from '../../lib/docs-index-example';
 export const metadata = createPageMetadata({
   title: 'Documentation — Threadplane',
   description:
-    'Build AI agent UIs in Angular. Library guides, API reference, and production patterns for Threadplane.',
+    'Learn Threadplane for Angular and React. Framework guides, API reference, and working examples.',
   pathname: '/docs',
   type: 'website',
 });
@@ -33,7 +33,7 @@ const BACKENDS: Backend[] = [
     title: 'LangGraph',
     blurb: 'For LangChain & LangGraph backends.',
     install: 'npm i @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
-    href: '/docs/langgraph/getting-started/quickstart',
+    href: '/docs/angular/langgraph/getting-started/quickstart',
     logoSrc: '/logos/langgraph.svg',
     attribution: 'LangChain',
   },
@@ -41,7 +41,7 @@ const BACKENDS: Backend[] = [
     title: 'AG-UI',
     blurb: 'For CrewAI, Mastra, Pydantic AI, Strands, and more.',
     install: 'npm i @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked',
-    href: '/docs/ag-ui/getting-started/quickstart',
+    href: '/docs/angular/ag-ui/getting-started/quickstart',
     logoSrc: '/logos/ag-ui.svg',
     attribution: 'AG-UI',
   },
@@ -60,7 +60,7 @@ const GENERATIVE_UI: GenerativeUi[] = [
     title: 'A2UI',
     blurb:
       'Agent-to-UI protocol — the agent streams and updates surfaces over the conversation.',
-    href: '/docs/a2ui/getting-started/introduction',
+    href: '/docs/angular/a2ui/getting-started/introduction',
     logoSrc: '/logos/providers/google.svg',
     attribution: 'Google',
   },
@@ -68,7 +68,7 @@ const GENERATIVE_UI: GenerativeUi[] = [
     title: 'json-render',
     blurb:
       'Render a fixed JSON spec into your own Angular components. You own the schema.',
-    href: '/docs/render/getting-started/introduction',
+    href: '/docs/angular/render/getting-started/introduction',
     logoSrc: '/logos/surface/vercel.svg',
     attribution: 'Vercel',
   },
@@ -85,7 +85,7 @@ const SUPPORTING: SupportingLib[] = [
   {
     title: 'Middleware',
     blurb: 'JS & Python client-tool routing',
-    href: '/docs/middleware/getting-started/introduction',
+    href: '/docs/shared/middleware/getting-started/introduction',
     glyph: 'middleware',
   },
 ];
@@ -182,10 +182,27 @@ export default function DocsLandingPage() {
         </Container>
       </Section>
 
+      <Section surface="canvas" tight ariaLabelledBy="framework-heading">
+        <Container>
+          <StepLabel id="framework-heading">Choose your framework</StepLabel>
+          <div className="docs-index-grid">
+            <Link href="/docs/angular/getting-started/introduction" className="docs-index-card-link">
+              <Card padding="lg" hoverable accent><h3 className="docs-index-card-title">Angular</h3>
+                <p className="docs-index-card-blurb">Install the published packages and build your first agent interface.</p>
+                <span className="docs-index-cta">Start with Angular →</span></Card>
+            </Link>
+            <Link href="/docs/react/getting-started/introduction" className="docs-index-card-link">
+              <Card padding="lg" hoverable accent><h3 className="docs-index-card-title">React</h3>
+                <p className="docs-index-card-blurb">Explore the React guides and working examples. The React SDK is currently an unpublished development package.</p>
+                <span className="docs-index-cta">Start with React →</span></Card>
+            </Link>
+          </div>
+        </Container>
+      </Section>
       {/* Step 1 — backend */}
       <Section surface="canvas" tight ariaLabelledBy="backend-heading">
         <Container>
-          <StepLabel id="backend-heading" step={1}>Pick your backend</StepLabel>
+          <StepLabel id="backend-heading" step={1}>Angular: pick your backend</StepLabel>
           <div className="docs-index-grid">
             {BACKENDS.map((b) => (
               <Link key={b.href} href={b.href} className="docs-index-card-link">
@@ -213,15 +230,15 @@ export default function DocsLandingPage() {
               Choosing an adapter →
             </Link>
             {' '}Want the drop-in UI first?{' '}
-            <Link href="/docs/chat/getting-started/quickstart" className="docs-index-helper-link">
+            <Link href="/docs/angular/chat/getting-started/quickstart" className="docs-index-helper-link">
               Chat quickstart →
             </Link>
             {' '}Running a non-LangGraph backend?{' '}
-            <Link href="/docs/runtimes/getting-started/introduction" className="docs-index-helper-link">
+            <Link href="/docs/angular/runtimes/getting-started/introduction" className="docs-index-helper-link">
               Agent runtimes →
             </Link>
             {' '}Building on the Deep Agents framework?{' '}
-            <Link href="/docs/deep-agents/getting-started/introduction" className="docs-index-helper-link">
+            <Link href="/docs/angular/deep-agents/getting-started/introduction" className="docs-index-helper-link">
               Deep Agents →
             </Link>
           </p>
@@ -252,7 +269,7 @@ export default function DocsLandingPage() {
           </div>
           <p className="docs-index-helper">
             Which fits my use case?{' '}
-            <Link href="/docs/render/concepts/json-render-vs-a2ui" className="docs-index-helper-link">
+            <Link href="/docs/angular/render/concepts/json-render-vs-a2ui" className="docs-index-helper-link">
               json-render vs A2UI →
             </Link>
           </p>
@@ -264,7 +281,7 @@ export default function DocsLandingPage() {
         <Container>
           <div className="docs-index-divider" />
           <StepLabel id="chat-heading" step={3}>Chat UI</StepLabel>
-          <Link href="/docs/chat/getting-started/introduction" className="docs-index-card-link">
+          <Link href="/docs/angular/chat/getting-started/introduction" className="docs-index-card-link">
             <Card padding="lg" hoverable className="docs-index-fill-height">
               <div className="docs-index-card-header">
                 <GlyphChip size={30}><ChatGlyph /></GlyphChip>

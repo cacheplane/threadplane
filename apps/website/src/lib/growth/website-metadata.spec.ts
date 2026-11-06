@@ -26,19 +26,19 @@ describe('website metadata minimization', () => {
   });
   it('emits only catalogued content IDs and ignores arbitrary paths', () => {
     const catalog = {
-      '/docs/chat/quickstart': {
+      '/docs/angular/chat/quickstart': {
         contentId: 'chat-quickstart',
         topic: 'getting_started' as const,
       },
     };
-    expect(contentForPath('/docs/chat/quickstart', catalog)).toEqual(
-      catalog['/docs/chat/quickstart']
+    expect(contentForPath('/docs/angular/chat/quickstart', catalog)).toEqual(
+      catalog['/docs/angular/chat/quickstart']
     );
     expect(contentForPath('/private/user@example.invalid', catalog)).toBeNull();
     expect(
-      contentForPath('/docs/chat/quickstart?secret=x', catalog)
+      contentForPath('/docs/angular/chat/quickstart?secret=x', catalog)
     ).toBeNull();
-    expect(contentForPath('/docs/chat/quickstart#private', catalog)).toBeNull();
+    expect(contentForPath('/docs/angular/chat/quickstart#private', catalog)).toBeNull();
   });
   it('recognizes install commands without returning copied code or arbitrary package text', () => {
     expect(

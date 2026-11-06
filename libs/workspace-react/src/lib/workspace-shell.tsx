@@ -106,6 +106,7 @@ export interface WorkspaceShellProps {
   readonly mobileDialogLabel?: string;
   readonly mobileTitle?: string;
   readonly renderContextPane?: WorkspaceContextPaneRenderer;
+  readonly renderContextHeader?: WorkspaceContextPaneRenderer;
   readonly onContextAction?: (action: string) => void;
   readonly onMobileModalPresenceChange?: (present: boolean) => void;
 }
@@ -124,6 +125,7 @@ export function WorkspaceShell({
   mobileDialogLabel = 'Workspace control plane',
   mobileTitle = 'Workspace',
   renderContextPane,
+  renderContextHeader,
   onContextAction,
   onMobileModalPresenceChange,
 }: WorkspaceShellProps) {
@@ -229,6 +231,7 @@ export function WorkspaceShell({
       trackNavigation,
       themeControl,
       renderContextPane,
+      renderContextHeader,
     }),
     [
       activeMode,
@@ -255,6 +258,7 @@ export function WorkspaceShell({
       setExpanded,
       themeControl,
       renderContextPane,
+      renderContextHeader,
       trackNavigation,
       contextPaneLabel,
     ]
@@ -433,7 +437,10 @@ export function WorkspaceShell({
                           </span>
                         )}
                         {isLast ? null : (
-                          <span data-workspace-trail-separator aria-hidden="true">
+                          <span
+                            data-workspace-trail-separator
+                            aria-hidden="true"
+                          >
                             /
                           </span>
                         )}

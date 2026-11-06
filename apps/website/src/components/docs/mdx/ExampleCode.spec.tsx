@@ -9,7 +9,7 @@ import { createExampleCode } from './ExampleCode';
 import { mdxCompileOptions } from '../mdx-options';
 
 const context: ExampleCodeContext = {
-  docsPath: '/docs/langgraph/guides/streaming',
+  docsPath: '/docs/angular/langgraph/guides/streaming',
   assetPaths: [
     'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
   ],

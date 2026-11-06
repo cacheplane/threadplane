@@ -1,0 +1,128 @@
+---
+title: Filesystem
+description: How the Deep Agents filesystem example keeps the agent workspace on graph state and pauses writes under /reports/ for human approval
+---
+
+# Filesystem
+
+`create_deep_agent` always installs `FilesystemMiddleware`, so a Deep Agents agent always has `ls`, `read_file`, `write_file`, and `edit_file`. What decides whether a user interface can render that workspace is not the middleware. It is the backend. The running example is a dispatch filing desk that gathers airport data, keeps working notes, and files a report, and this page walks the three files behind its workspace panel and its write approval.
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition beside a workspace panel. The welcome suggestion, "Runway note for KASE", asks the agent to work up a runway suitability note: save the raw lookups to `/notes/kase-data.md`, then write the finished note to `/reports/kase-runway.md`.
+
+The scratch file under `/notes/` appears in the panel the moment the agent writes it. The report does not. A write under `/reports/` pauses the run, and an approval card appears below the tree while the target path is already listed as a dimmed, italic row badged "awaiting approval".
+
+Accept approves the pending action and resumes the run. Ignore rejects that action; the agent may propose another action afterward, so rejection does not guarantee a terminal response or the absence of a file. The card also offers Edit and Respond, which this example leaves unhandled. Selecting any file in the tree shows its contents in the preview underneath.
+
+## How it is built
+
+Three files carry the feature: a Python graph that builds the agent, an application config that registers it, and an Angular component that projects the workspace and maps the approval buttons onto resume payloads. Open the Code tab to read them in place.
+
+### The lookups the notes are made of
+
+The agent needs something to write down. Two ordinary LangChain tools answer field elevation and runway length for a handful of ICAO codes, and the system prompt tells the agent to gather that data before it writes anything.
+
+<ExampleCode file="graph.py" region="lookup-tools" title="graph.py — the lookup tools" />
+
+Nothing about these tools is filesystem specific; they are the source of the content the agent files.
+
+### The backend that makes the workspace renderable
+
+`StateBackend` stores the agent's files on the graph state under `files`, so every write reaches the client as a `values` update. A backend that stores files anywhere else, such as a host directory or a remote store, puts nothing on the state, and a panel bound to `files` stays empty no matter how busy the agent is. `FilesystemPermission` is the second half: a rule over operations and path patterns, and in `interrupt` mode a matching call pauses for human approval instead of executing.
+
+<ExampleCode file="graph.py" region="agent" title="graph.py — the agent" />
+
+`StateBackend` comes from `deepagents.backends` and `FilesystemPermission` from `deepagents.middleware`; no interrupt wiring is needed beyond the rule, because an interrupt-mode rule auto-installs `HumanInTheLoopMiddleware`.
+
+### The agent provider
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory. Pass the values directly:
+
+```typescript
+provideAgent({
+  apiUrl: 'https://your-deployment.langgraph.app',
+  assistantId: 'da-filesystem',
+});
+```
+
+`assistantId` must match the graph name in `langgraph.json`, here `da-filesystem`.
+
+### The pending write, read off the interrupt
+
+A proposed new file is not yet saved, while a proposed replacement may target an existing file. The Angular component reads only the first action request of the first interrupt from the `langGraphInterrupts()` Signal exposed by `injectAgent()`. The payload is `{ action_requests: [{ name, args }], review_configs: [...] }`, and for `write_file` the target path is `args.file_path`.
+
+<ExampleCode file="filesystem.component.ts" region="pending-path" title="filesystem.component.ts — the pending path" />
+
+Reading it lets the tree show the file before it lands, so the reviewer sees where the write is headed while deciding.
+
+### The file map, projected into a tree
+
+`files` is a flat map from absolute path to a file record. This Angular projection displays a string value directly and calls `JSON.stringify` on the whole record for any non-string value; it does not extract the record's `content` field. `agent.value()` returns the live graph state that holds the map. The projection reads that map, adds the pending path as a ghost entry when one is open, and splits each key on its last slash to derive a directory and a name.
+
+<ExampleCode file="filesystem.component.ts" region="files" title="filesystem.component.ts — the file projection" />
+
+Because the panel is a projection of state rather than a replay of `write_file` calls, an edit that rewrites an existing file shows up as one changed file here and as two entries in a tool call log.
+
+A second computed groups the flat list by directory, which is all the structure a tree needs.
+
+<ExampleCode file="filesystem.component.ts" region="tree" title="filesystem.component.ts — grouping by directory" />
+
+### The panel
+
+The sidebar renders the grouped tree, a preview of the selected file, and the interrupt panel. A pending row carries `data-pending`, which dims and italicizes it; the badge is rendered from the same `pending` flag. `<chat-interrupt-panel>` is the same component every other LangGraph interrupt uses. There is no Deep Agents specific approval component, because there is no Deep Agents specific interrupt.
+
+<ExampleCode file="filesystem.component.ts" region="workspace-panel" title="filesystem.component.ts — the workspace panel" />
+
+Keeping the tree and the approval in one sidebar is the point of the layout: the reviewer reads the destination and the decision in the same glance.
+
+### Resuming with a decision
+
+`<chat-interrupt-panel>` emits an `InterruptAction` of `accept`, `edit`, `respond`, or `ignore`, and the component turns the two it handles into resume payloads. `HumanInTheLoopMiddleware` resumes on an object with a `decisions` list, one ordered decision per protected action request, each `{ "type": "approve" }`, `{ "type": "edit" }`, or `{ "type": "reject" }`.
+
+<ExampleCode file="filesystem.component.ts" region="resume" title="filesystem.component.ts — resuming the run" />
+
+The Angular demo always sends exactly one decision. The backend can pause several protected actions in one interrupt, so this frontend does not handle every possible batch. The required decision count is the number of protected `action_requests`, in their original order, rather than every unresolved tool call. Notes and report actions can be scheduled in parallel: a mixed pause can have `files: {}` and three pending tool calls but only one protected report decision.
+
+After either decision, subsequent graph state determines the files shown in the tree. Approval can still encounter a tool error; rejection may be followed by another proposed action. Neither button predicts final file contents or guarantees that a future write cannot occur.
+
+<Callout type="warning" title="The resume payload is an object, not a list">
+The middleware reads `interrupt(request)["decisions"]`, so a bare list or a bare string raises a `TypeError` on the server rather than a validation error the browser can show. The failure appears as a dead run rather than as a rejected submission, so the shape is worth getting right the first time.
+</Callout>
+
+## React preview
+
+Choose React in the Framework selector for a native React workspace with literal UTF-8 and legacy text projection, separate live and checkpoint-confirmed files, and complete ordered Approve or Reject batch decisions. Its Docs, Code and Run modes share the selected frontend; Angular remains the default. React suggestions fill a draft and only Send creates the owned thread.
+
+## Permission rules
+
+A `FilesystemPermission` carries three fields: the `operations` it covers, the `paths` it matches, and the `mode` it applies. Rules are evaluated in declaration order and the first match wins; a call that matches no rule is allowed. Subagents inherit the parent rules unless they declare `permissions` of their own, which replaces the parent set entirely.
+
+The pinned `/reports/**` rule protects report descendants. Exact `/reports` writes and edits are allowed; deletion of `/reports` or `/` is protected because the deletion subtree overlaps the rule.
+
+The three modes are `allow`, which lets the call proceed, `deny`, which returns a permission-denied error to the model, and `interrupt`, which pauses the call for human approval. Path patterns must start with `/` and may not contain `..`.
+
+<Callout type="warning" title="Anchor the permission pattern">
+Give the pattern a literal prefix, as `/reports/**` does. Bulk tools such as `ls`, `glob`, and `grep` decide whether to fire the permission based on whether their search subtree could overlap the anchored prefix. A fully unanchored pattern collapses to the root and fires on every listing, which turns an approval gate into an interruption on each directory read.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Planning" href="/docs/angular/deep-agents/capabilities/planning">
+    The todo list the agent keeps while it files.
+  </Card>
+  <Card title="Skills" href="/docs/angular/deep-agents/capabilities/skills">
+    The same backend machinery, mounted read-only.
+  </Card>
+  <Card title="Interrupts" href="/docs/angular/langgraph/guides/interrupts">
+    The interrupt lifecycle underneath the approval.
+  </Card>
+  <Card title="Chat interrupt panel" href="/docs/angular/chat/components/chat-interrupt-panel">
+    The component that renders the approval.
+  </Card>
+</CardGroup>

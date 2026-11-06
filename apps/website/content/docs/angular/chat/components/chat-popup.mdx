@@ -1,0 +1,150 @@
+---
+description: The ChatPopupComponent launcher and overlay window - inputs, outputs, methods, projection slots, and how to reposition the fixed launcher.
+---
+
+# ChatPopupComponent
+
+`ChatPopupComponent` is a composition that renders a floating launcher button in the bottom-right corner of the screen. Clicking the launcher opens a chat window as an overlay. The window can be toggled open and closed without destroying conversation state.
+
+**Selector:** `chat-popup`
+
+**Import:**
+
+```typescript
+import { ChatPopupComponent } from '@threadplane/chat';
+```
+
+## When to Use It
+
+Use `ChatPopupComponent` when you want an unobtrusive chat entry point that does not occupy permanent screen real estate. The popup stays out of the way until the user chooses to engage, making it ideal for support chat, contextual help, and assistant features embedded in existing applications.
+
+If you need the chat to always be visible, use [`<chat>`](/docs/angular/chat/components/chat) (embedded) instead. If you need a slide-in panel alongside your app content, use [`<chat-sidebar>`](/docs/angular/chat/components/chat-sidebar).
+
+## Basic Usage
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { ChatPopupComponent } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ChatPopupComponent],
+  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <!-- your app content here -->
+    <chat-popup [agent]="chatAgent" />
+  `,
+})
+export class AppComponent {
+  protected readonly chatAgent = injectAgent();
+}
+```
+
+<Callout type="tip" title="Place at the root level">
+`ChatPopupComponent` uses `position: fixed` internally. Place it as a direct child of your root component or app shell so it is not clipped by a parent with `overflow: hidden`.
+</Callout>
+
+## API
+
+### Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `agent` | `Agent` | **Required** | The agent providing streaming state |
+| `views` | `ViewRegistry \| undefined` | `undefined` | A2UI/json-render component registry forwarded to the inner `<chat>` |
+| `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Frontend-declared client tools forwarded to the inner `<chat>` |
+| `modelOptions` | `readonly ChatSelectOption[]` | `[]` | Options for the chat input model picker |
+| `showModelPicker` | `boolean` | `true` | Hides the model picker when `false`, even when `modelOptions` is non-empty |
+| `selectedModel` | `string` (two-way) | `''` | Current selected model value |
+| `open` | `boolean` (two-way) | `false` | Two-way bindable. Controls whether the chat window is open |
+| `shortcut` | `string \| null` | `'k'` | Single key toggled with Cmd/Ctrl. Set to `null` to disable |
+| `closeOnEscape` | `boolean` | `true` | Closes the popup when Escape is pressed |
+
+### Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `openChange` | `boolean` | Emits when the window opens or closes. Use with `[(open)]` for two-way binding |
+| `regenerate` | `void` | Emits when the user clicks the regenerate button on an assistant message |
+| `rate` | `{ messageIndex: number; rating: 'up' \| 'down' }` | Emits when the user rates an assistant message |
+| `messageCopy` | `{ messageIndex: number; content: string }` | Emits when the user copies an assistant message |
+
+### Slots
+
+| Slot | Selector | Description |
+|------|----------|-------------|
+| Header content | `[chatHeader]` | Forwarded to the inner `<chat>` window header bar, which is empty by default |
+| Welcome suggestions | `[chatWelcomeSuggestions]` | Forwarded to the inner `<chat>` welcome-state suggestion area |
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `toggle()` | Toggles the window between open and closed |
+| `openWindow()` | Opens the chat window |
+| `closeWindow()` | Closes the chat window |
+
+## Two-Way Binding
+
+Control the open state from your component:
+
+```typescript
+@Component({
+  template: `
+    <button (click)="popup.openWindow()">Open Chat</button>
+    <chat-popup [(open)]="chatOpen" [agent]="chatAgent" #popup />
+  `,
+  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+})
+export class AppComponent {
+  chatOpen = false;
+  chatAgent = injectAgent();
+}
+```
+
+## Custom Header
+
+Project content into the window header with the `[chatHeader]` slot:
+
+```html
+<chat-popup [agent]="chatAgent">
+  <span chatHeader>Support Chat</span>
+</chat-popup>
+```
+
+## A2UI and Client Tools
+
+`ChatPopupComponent` forwards `views` and `clientTools` to the inner `<chat>` composition. Pass the same registries you would pass to `<chat>` when the popup needs generative UI surfaces or browser-executed tools:
+
+```html
+<chat-popup
+  [agent]="chatAgent"
+  [views]="a2uiViews"
+  [clientTools]="clientTools"
+/>
+```
+
+## Styling
+
+The popup uses the standard `--tplane-chat-*` token system. Two tokens control where the launcher sits, both defaulting to `1rem`:
+
+| Token | Default | Controls |
+|-------|---------|----------|
+| `--tplane-chat-launcher-offset-x` | `1rem` | Distance from the right edge of the viewport |
+| `--tplane-chat-launcher-offset-y` | `1rem` | Distance from the bottom edge of the viewport |
+
+Set them anywhere the popup inherits from, such as `:root`, to clear a bottom bar or a consent banner:
+
+```css
+:root {
+  --tplane-chat-launcher-offset-x: 1.5rem;
+  --tplane-chat-launcher-offset-y: 5rem;
+}
+```
+
+The popup window reads the same horizontal offset, so it stays aligned with the launcher when you move it. Below 640px the window goes full screen and ignores both.
+
+See [Theming](/docs/angular/chat/guides/theming) for the full token reference.

@@ -36,11 +36,11 @@ describe('site positioning copy', () => {
     ]);
     expect(POSITIONING_PROOF_POINTS.map((p) => p.href)).toEqual([
       '/docs/choosing-an-adapter',
-      '/docs/langgraph/guides/persistence',
-      '/docs/langgraph/guides/interrupts',
-      '/docs/langgraph/guides/subgraphs',
-      '/docs/langgraph/guides/memory',
-      '/docs/render/concepts/json-render-vs-a2ui',
+      '/docs/angular/langgraph/guides/persistence',
+      '/docs/angular/langgraph/guides/interrupts',
+      '/docs/angular/langgraph/guides/subgraphs',
+      '/docs/angular/langgraph/guides/memory',
+      '/docs/angular/render/concepts/json-render-vs-a2ui',
     ]);
     expect(DEFAULT_META_DESCRIPTION).toBe(SHORT_POSITIONING_DESCRIPTION);
   });

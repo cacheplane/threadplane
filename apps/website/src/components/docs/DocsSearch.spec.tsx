@@ -8,7 +8,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('../../lib/analytics/client', () => ({ track: vi.fn() }));
 
 const HIT = {
-  href: '/docs/langgraph/guides/persistence#production-checkpointers',
+  href: '/docs/angular/langgraph/guides/persistence#production-checkpointers',
   title: 'Persistence',
   heading: 'Production checkpointers',
   libraryTitle: 'LangGraph',

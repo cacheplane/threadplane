@@ -19,13 +19,13 @@ const GITHUB_EDIT_BASE =
   'https://github.com/cacheplane/threadplane/edit/main/apps/website/content/docs';
 
 interface Props {
-  library: string;
-  section: string;
-  slug: string;
+  /** Canonical narrative path, without /docs/. */
+  documentPath: string;
+  source: string;
   headings: DocHeading[];
 }
 
-export function PageActions({ library, section, slug, headings }: Props) {
+export function PageActions({ documentPath: path, source, headings }: Props) {
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
   const [tooltipDismissed, setTooltipDismissed] = useState(false);
@@ -92,13 +92,12 @@ export function PageActions({ library, section, slug, headings }: Props) {
     if (event.key === 'End') move(items.length - 1);
   };
 
-  const path = `${library}/${section}/${slug}`;
   const pageUrl = `${SITE_ORIGIN}/docs/${path}`;
   const markdownUrl = `/api/markdown/${path}`;
   const chatgptUrl = `https://chatgpt.com/?hints=search&q=${encodeURIComponent(
     `Read this Threadplane docs page and help me apply it to my project: ${pageUrl}`,
   )}`;
-  const githubUrl = `${GITHUB_EDIT_BASE}/${path}.mdx`;
+  const githubUrl = `${GITHUB_EDIT_BASE}/${source}`;
 
   const copyMarkdown = async () => {
     try {

@@ -26,7 +26,7 @@ export const deepAgentsMemoryPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Deep Agents Memory (Python)',
-  docsPath: '/docs/deep-agents/capabilities/memory',
+  docsPath: '/docs/angular/deep-agents/capabilities/memory',
   promptAssetPaths: ['cockpit/deep-agents/memory/python/prompts/memory.md'],
   codeAssetPaths: [
     'cockpit/deep-agents/memory/angular/src/app/memory.component.ts',

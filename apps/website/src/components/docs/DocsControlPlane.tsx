@@ -18,10 +18,18 @@ import {
   useControlPlanePreferences,
 } from '@threadplane/ui-react';
 import { getLibraryConfig, type LibraryId } from '../../lib/docs-config';
+import { usePathname } from 'next/navigation';
+import type { DocsScope } from '../../lib/docs-catalog';
+import { useDocsFramework } from '../../lib/use-docs-framework';
+import { FrameworkSelector, type FrameworkSelectorProps } from './FrameworkSelector';
 import { DocsNavigation } from './DocsSidebar';
 import { ApiNavigation, type ApiNavigationProps } from './api/ApiNavigation';
 
 export interface DocsControlPlaneProps {
+  scope?: DocsScope;
+  documentId?: string;
+  frameworkTargets?: FrameworkSelectorProps['targets'];
+  currentPath?: string;
   /** `null` on a library-neutral docs page, e.g. /docs/choosing-an-adapter. */
   activeLibrary: LibraryId | null;
   activeSection: string;
@@ -49,17 +57,23 @@ export function DocsContextContent({
   activeSection,
   activeSlug,
   apiContext,
+  scope,
+  documentId,
+  frameworkTargets,
   mobile = false,
+  showFrameworkSelector = true,
   onNavigate,
   onSearchHandoff,
   resolveHref,
 }: DocsControlPlaneProps & {
   mobile?: boolean;
+  showFrameworkSelector?: boolean;
   onNavigate?: () => void;
   onSearchHandoff?: () => void;
   resolveHref?: (href: string) => string;
 }) {
   const preferences = useControlPlanePreferences('docs');
+  const framework = useDocsFramework(usePathname());
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
   const openSearch = () => {
     if (!mobile) {
@@ -88,12 +102,15 @@ export function DocsContextContent({
         <kbd className="docs-control-plane-search-kbd" aria-hidden="true">⌘K</kbd>
       </button>
 
+      {showFrameworkSelector && <FrameworkSelector scope={scope} documentId={documentId} targets={frameworkTargets} onNavigate={onNavigate} />}
+
       <ControlPlaneSection
         title={apiContext ? 'API Reference' : 'Learn'}
         open={preferences.expanded.Learn ?? true}
         onOpenChange={(open) => preferences.setExpanded('Learn', open)}
       >
         {apiContext ? <ApiNavigation {...apiContext} onNavigate={onNavigate} resolveHref={resolveHref} /> : <DocsNavigation
+          framework={framework}
           activeLibrary={activeLibrary}
           activeSection={activeSection}
           activeSlug={activeSlug}
@@ -122,9 +139,8 @@ export function DocsContextContent({
 }
 
 export function DocsControlPlane(props: DocsControlPlaneProps) {
-  const currentPath = props.apiContext?.activeHref ?? (props.activeLibrary
-    ? `/docs/${props.activeLibrary}/${props.activeSection}/${props.activeSlug}`
-    : '/docs');
+  const pathname = usePathname();
+  const currentPath = props.apiContext?.activeHref ?? props.currentPath ?? pathname;
   const disabledReason = (mode: 'Run' | 'Code' | 'API') =>
     `${mode} is unavailable because this page has no workspace capability.`;
 

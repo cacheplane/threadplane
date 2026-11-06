@@ -26,7 +26,7 @@ export const langgraphClientToolsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'LangGraph Client Tools (Python)',
-  docsPath: '/docs/chat/guides/client-tools',
+  docsPath: '/docs/angular/chat/guides/client-tools',
   promptAssetPaths: ['cockpit/langgraph/client-tools/python/prompts/client-tools.md'],
   codeAssetPaths: [
     'cockpit/langgraph/client-tools/angular/src/app/client-tools.component.ts',

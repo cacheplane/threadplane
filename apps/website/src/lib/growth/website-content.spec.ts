@@ -7,7 +7,7 @@ import { apiPagePaths, readApiIndex } from '../api-reference';
 it('registers generated API destinations instead of constructing retired MDX paths', () => {
   const catalog = websiteContentCatalog();
   expect(catalog['/docs/api/react/chat']).toBeDefined();
-  expect(catalog['/docs/chat/api/react/chat']).toBeUndefined();
+  expect(catalog['/docs/angular/chat/api/react/chat']).toBeUndefined();
   expect(catalog['/docs/api']).toBeDefined();
 });
 

@@ -96,7 +96,7 @@ describe('SiteFooter', () => {
   it.each([
     '/docs',
     '/docs/choosing-an-adapter',
-    '/docs/langgraph/guides/testing',
+    '/docs/angular/langgraph/guides/testing',
   ])(
     'suppresses it on %s so the docs stay a single sidebar pane',
     (route) => {

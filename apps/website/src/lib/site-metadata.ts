@@ -1,6 +1,7 @@
+import { getNarrativeDocuments } from './docs-catalog';
 import type { Metadata } from 'next';
 import { getAllSolutionSlugs } from './solutions-data';
-import { docsConfig, specialDocsPages } from './docs-config';
+import { specialDocsPages } from './docs-config';
 import { getAllPosts } from './blog';
 import { SITE_ORIGIN } from './site-origin';
 import { apiPagePaths, readApiIndex } from './api-reference';
@@ -182,11 +183,7 @@ export function createPageMetadata({
 export function getSitemapRoutes(): string[] {
   const staticRoutes = ['/', '/langgraph', '/render', '/chat', '/ag-ui', '/pricing', '/solutions', '/pilot-to-prod', '/docs', '/blog', '/about', '/contact', '/privacy'];
   const solutionRoutes = getAllSolutionSlugs().map((slug) => `/solutions/${slug}`);
-  const docsRoutes = docsConfig.flatMap((library) =>
-    library.sections.flatMap((section) =>
-      section.pages.map((page) => ('href' in page && typeof page.href === 'string') ? page.href : `/docs/${library.id}/${page.section}/${page.slug}`),
-    ),
-  );
+  const docsRoutes = getNarrativeDocuments().map(document => document.href);
   const specialDocsRoutes = specialDocsPages.map((page) => page.path);
   const blogRoutes = getAllPosts().map((p) => `/blog/${p.slug}`);
 

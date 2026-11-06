@@ -1,7 +1,9 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
-const route = '/docs/render/guides/state-store';
+const route = '/docs/angular/render/guides/state-store';
+const reactRoute = '/docs/react/render/guides/state-store';
 const reactFrame =
   /(?:localhost:4615(?:[/?#]|$)|\/render\/state-management\/react\/?(?:[?#]|$))/;
 const iframe = (page: Page) =>
@@ -45,11 +47,10 @@ async function expectFreshRun(page: Page) {
     'Run'
   );
   await expect(iframe(page)).toBeVisible();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page).toHaveURL(
     (url) =>
-      url.pathname === route &&
-      url.searchParams.get('frontend') === 'react' &&
+      url.pathname === reactRoute &&
       url.searchParams.get('mode') === 'run'
   );
   await expect(iframe(page)).toHaveAttribute(
@@ -111,8 +112,8 @@ async function renderChangedSample(page: Page) {
 test('React State Management keeps local Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(`${route}?frontend=react`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto(`${reactRoute}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React State Management preview',
@@ -131,7 +132,7 @@ test('React State Management keeps local Docs, Code and Run aligned', async ({
   );
   const navigation = page.locator('[data-workspace-desktop-navigation]');
   await navigation.getByRole('button', { name: 'Code', exact: true }).click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=code/);
   await navigation.getByRole('button', { name: /^Run(?:,|$)/ }).click();
   await expectFreshRun(page);
@@ -143,13 +144,13 @@ test('React State Management keeps local Docs, Code and Run aligned', async ({
 test('React State Management restores fresh playback through frontend history', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
   await renderChangedSample(page);
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await selectFramework(page, 'angular');
+  await expect(page.getByLabel('Framework')).toHaveValue('angular');
   await expect(page).toHaveURL(`${route}?mode=run`);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -163,7 +164,7 @@ test('React State Management restores fresh playback through frontend history', 
 test('React State Management reloads fresh playback after rendering another sample', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
@@ -182,7 +183,7 @@ test('React State Management reloads fresh playback after rendering another samp
 test('canonical State Management Run resolves edited bindings in all samples without execution', async ({
   page,
 }) => {
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
@@ -218,11 +219,11 @@ test('local React State Management remains usable on a narrow screen', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${route}?frontend=react&mode=run`, {
+  await page.goto(`${reactRoute}?mode=run`, {
     waitUntil: 'domcontentloaded',
   });
   await expectFreshRun(page);
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   const frame = page.frameLocator('iframe');
   await frame.getByRole('textbox', { name: 'Name' }).fill('Grace');
   await frame.getByRole('button', { name: 'Finish' }).click();

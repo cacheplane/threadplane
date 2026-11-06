@@ -48,7 +48,7 @@ Your components should read messages, status, tool calls, errors, state, and int
 They should submit user intent through that same interface.
 They shouldn't know whether the backend emitted LangGraph stream chunks, AG-UI events, or something custom.
 
-Threadplane calls this runtime-neutral boundary the [`Agent` contract](/docs/langgraph/concepts/agent-contract).
+Threadplane calls this runtime-neutral boundary the [`Agent` contract](/docs/angular/langgraph/concepts/agent-contract).
 Runtime adapters translate their wire format into Signals and a small action surface that chat components can consume.
 
 This keeps protocol details out of your design system and route-level components.
@@ -76,7 +76,7 @@ The important part is stopping raw event order from becoming the component API.
 
 Let the adapter own accumulation, deduplication, and lifecycle transitions.
 Let the component read the result.
-The [Signals guide](/docs/langgraph/concepts/angular-signals) shows the boundary in practice.
+The [Signals guide](/docs/angular/langgraph/concepts/angular-signals) shows the boundary in practice.
 
 ![LangGraph stream chunks and AG-UI SSE events both enter a runtime adapter that owns accumulation, deduplication and lifecycle transitions, and the adapter publishes one Agent contract of Angular signals - messages, status, toolCalls, state, error and interrupt - that chat components and an approved component registry read, with user intent travelling back through the same contract.](/blog/diagrams/agent-contract-boundary.svg)
 
@@ -101,7 +101,7 @@ Treat each important tool as a small state machine:
 
 Raw JSON arguments usually aren't the right UI.
 Map high-value tools to product-specific Angular components, group repetitive background calls, and keep low-value orchestration noise out of the main reading path.
-Threadplane's [tool-call templates](/docs/chat/components/chat-tool-call-template) let a team replace the default card one tool at a time.
+Threadplane's [tool-call templates](/docs/angular/chat/components/chat-tool-call-template) let a team replace the default card one tool at a time.
 
 Custom tool UI costs more than a generic trace.
 Spend that effort where the result changes a user's decision, where latency is meaningful, or where a failure needs a next step.
@@ -140,7 +140,7 @@ If those concepts collapse into one loading boolean, retry and recovery behavior
 
 Angular routing can make the active thread explicit and shareable.
 The URL can restore the active ID, but only the backend can restore the work behind it.
-The [thread-routing guide](/docs/chat/guides/thread-routing) calls out that dependency, and the [LangGraph persistence guide](/docs/langgraph/guides/persistence) covers checkpoints and thread restoration.
+The [thread-routing guide](/docs/angular/chat/guides/thread-routing) calls out that dependency, and the [LangGraph persistence guide](/docs/angular/langgraph/guides/persistence) covers checkpoints and thread restoration.
 
 This is also where backend differences matter.
 The runtime-neutral `Agent` contract isn't a message database, and the AG-UI adapter doesn't currently provide LangGraph's history and time-travel APIs.
@@ -159,7 +159,7 @@ It also limits what the agent can render.
 An unregistered type can't instantiate an Angular component.
 
 Threadplane supports this with a `ViewRegistry` for json-render and A2UI surfaces.
-You can add, override, or remove components as the product evolves; the [generative UI guide](/docs/chat/guides/generative-ui) and [custom catalog patterns](/docs/chat/guides/custom-catalogs) show how.
+You can add, override, or remove components as the product evolves; the [generative UI guide](/docs/angular/chat/guides/generative-ui) and [custom catalog patterns](/docs/angular/chat/guides/custom-catalogs) show how.
 
 The tradeoff is intentional constraint.
 A small catalog won't express every layout the model imagines, but it'll produce a UI your team can test and support.
@@ -178,13 +178,13 @@ The recovery behavior comes before polishing the happy path.
 - Handle stale threads and unsupported generated components.
 - Decide when to fall back to plain text or a non-agent workflow.
 
-The [`AgentError` model](/docs/chat/guides/error-handling) distinguishes connection, authentication, server, and interrupted failures so the UI can respond differently.
+The [`AgentError` model](/docs/angular/chat/guides/error-handling) distinguishes connection, authentication, server, and interrupted failures so the UI can respond differently.
 User aborts settle gracefully back to idle instead of becoming errors.
 That's more useful than rendering `Something went wrong` for everything.
 
 Testing should follow the same state model.
 Use a contract mock for component behavior, a fake adapter for streaming integration, and fixture replay for the small number of end-to-end paths that need the whole stack.
-The [AG-UI testing guide](/docs/ag-ui/guides/testing) lays out those layers.
+The [AG-UI testing guide](/docs/angular/ag-ui/guides/testing) lays out those layers.
 
 Observe the transitions users feel: run duration, tool failures, interrupt wait time, retries, and thread restore failures.
 Keep event properties operational and out of prompt, completion, tool-input, and tool-output content unless your own policy explicitly requires otherwise.

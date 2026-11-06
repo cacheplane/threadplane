@@ -11,7 +11,7 @@ import {
  * link.
  */
 export const DEFAULT_EXAMPLE_RESOLUTION = resolveDocsWorkspace(
-  '/docs/langgraph/guides/streaming',
+  '/docs/angular/langgraph/guides/streaming',
   'Streaming'
 );
 
