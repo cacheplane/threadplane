@@ -92,7 +92,9 @@ const CHAT_PRIMITIVE_READY_SELECTORS: Record<
 > = {
   'chat/messages': 'chat-message-list',
   'chat/input': 'chat-input',
-  'chat/interrupts': 'chat-interrupt-panel',
+  // Approval panels mount only while an interrupt is pending. The idle demo
+  // is ready when its chat composer mounts; approval flows have separate e2e coverage.
+  'chat/interrupts': 'chat chat-input',
   'chat/debug': 'chat-debug',
 };
 
