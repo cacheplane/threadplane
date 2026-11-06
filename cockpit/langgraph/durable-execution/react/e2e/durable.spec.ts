@@ -175,7 +175,7 @@ test('developer credentials stay in SDK headers on creation, streaming and recon
         type: 'tplane:runtime-check', version: 1, nonce: 'parent-health', capability: 'durable-execution'
       }, event.origin);
       if (event.data.type === 'tplane:runtime-ready' && event.data.nonce === 'parent-health') document.getElementById('state').textContent = 'Ready';
-    });</script><iframe id="pilot" title="React pilot" src="http://127.0.0.1:4605/langgraph/durable-execution/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="React pilot" style="width:100%;height:700px" src="http://127.0.0.1:4605/langgraph/durable-execution/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Uncertain');

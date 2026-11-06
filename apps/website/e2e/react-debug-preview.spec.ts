@@ -126,7 +126,7 @@ test.describe('native Debug Website', () => {
     await expect(iframe).toHaveAttribute('src', frameURL);
     const original = await iframe.elementHandle();
     const frame = page.frameLocator('iframe');
-    const status = frame.locator('main > p[role="status"]:not([aria-label])');
+    const status = frame.locator('.debug-demo__status[role="status"]');
     await expect(status).toHaveText('Ready.');
     const draft = 'Exact unsent aviation draft ✈ café';
     await frame.getByLabel('Message', { exact: true }).fill(draft);

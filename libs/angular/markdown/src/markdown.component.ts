@@ -21,8 +21,8 @@ import {
     MarkdownImageComponent,
   ],
   template: `
-    @for (document of [snapshot().document]; track document.generation) {
-    @if (snapshot().root; as root) {
+    @for (document of [snapshot().document]; track document.generation) { @if
+    (snapshot().root; as root) {
     <ng-container
       [markdownOutlet]="nodesView"
       [markdownContext]="{
@@ -129,7 +129,9 @@ import {
           type="checkbox"
           disabled
           [checked]="task.checked"
-          [attr.aria-label]="task.checked ? 'Completed task' : 'Incomplete task'"
+          [attr.aria-label]="
+            task.checked ? 'Completed task' : 'Incomplete task'
+          "
         />
         }
         <ng-container
@@ -175,8 +177,9 @@ import {
             header
           }"
       /></del>
-      } @case ('inline-code') { <code class="inline-code">{{ node.text }}</code> } @case ('link') {
-      @if (!anchor && url(node.url, 'link'); as destination) {
+      } @case ('inline-code') {
+      <code class="inline-code">{{ node.text }}</code> } @case ('link') { @if
+      (!anchor && url(node.url, 'link'); as destination) {
       <a [href]="destination" [title]="node.title"
         ><ng-container
           [markdownOutlet]="nodesView"
@@ -217,35 +220,42 @@ import {
         [markdownOutlet]="nodesView"
         [markdownContext]="{ $implicit: node.children, root, anchor, header }"
       /><ng-container>{{ ']' + referenceSuffix(node) }}</ng-container
-      >} } @case ('image') { @for (image of [node]; track image.url)
-      { <threadplane-markdown-image [image]="image" /> } } @case ('soft-break')
+      >} } @case ('image') { @for (image of [node]; track image.url) {
+      <threadplane-markdown-image [image]="image" /> } } @case ('soft-break')
       {<ng-container>{{ '\\n' }}</ng-container
       >} @case ('hard-break') { <br />
       } @case ('table') {
-      <table>
-        <thead>
-          <ng-container
-            [markdownOutlet]="nodesView"
-            [markdownContext]="{
-              $implicit: tableRows(node, true),
-              root,
-              anchor,
-              header: true
-            }"
-          />
-        </thead>
-        <tbody>
-          <ng-container
-            [markdownOutlet]="nodesView"
-            [markdownContext]="{
-              $implicit: tableRows(node, false),
-              root,
-              anchor,
-              header: false
-            }"
-          />
-        </tbody>
-      </table>
+      <div
+        class="tp-markdown__table-scroll"
+        role="group"
+        aria-label="Table"
+        tabindex="0"
+      >
+        <table>
+          <thead>
+            <ng-container
+              [markdownOutlet]="nodesView"
+              [markdownContext]="{
+                $implicit: tableRows(node, true),
+                root,
+                anchor,
+                header: true
+              }"
+            />
+          </thead>
+          <tbody>
+            <ng-container
+              [markdownOutlet]="nodesView"
+              [markdownContext]="{
+                $implicit: tableRows(node, false),
+                root,
+                anchor,
+                header: false
+              }"
+            />
+          </tbody>
+        </table>
+      </div>
       } @case ('table-row') {
       <tr>
         <ng-container
@@ -302,6 +312,8 @@ import {
     }
     pre { white-space: pre-wrap; overflow-wrap: anywhere; }
     .inline-code { white-space: pre-wrap; }
+    .tp-markdown__table-scroll { max-width: 100%; overflow-x: auto; }
+    .tp-markdown__table-scroll:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
   `,
 })
 export class MarkdownComponent {

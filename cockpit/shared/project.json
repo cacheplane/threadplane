@@ -1,0 +1,10 @@
+{
+  "name": "react-example-layouts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "cockpit/shared",
+  "projectType": "library",
+  "tags": ["scope:cockpit", "scope:cockpit-examples", "type:lib"],
+  "targets": {
+    "lint": { "executor": "@nx/eslint:lint" }
+  }
+}

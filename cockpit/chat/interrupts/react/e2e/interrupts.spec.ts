@@ -262,7 +262,7 @@ test('authored developer connection routes only to its configured target', async
         type: 'tplane:runtime-check', version: 1, nonce: 'parent-health', capability: 'interrupts'
       }, event.origin);
       if (event.data.type === 'tplane:runtime-ready' && event.data.nonce === 'parent-health') document.getElementById('state').textContent = 'Ready';
-    });</script><iframe id="pilot" title="Chat Interrupts React" src="http://127.0.0.1:4622/chat/interrupts/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="Chat Interrupts React" style="width:100%;height:700px" src="http://127.0.0.1:4622/chat/interrupts/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Book UA123.');

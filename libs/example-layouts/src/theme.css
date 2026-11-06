@@ -31,9 +31,11 @@
   --tplane-chat-muted: var(--ds-text-muted);
   --tplane-chat-separator: var(--ds-border);
 
-  --tplane-chat-primary: var(--ds-chat-purple);
+  /* Match the canonical chat's neutral inverted bubbles. Brand accents remain
+     available independently through the design-system accent token. */
+  --tplane-chat-primary: var(--ds-text-primary);
   --tplane-chat-accent: var(--tplane-chat-primary);
-  --tplane-chat-on-primary: var(--ds-text-inverted);
+  --tplane-chat-on-primary: var(--ds-surface);
   --tplane-chat-destructive: #dc2626;
 
   --tplane-chat-error-bg: color-mix(in srgb, #ef4444 14%, transparent);
@@ -48,13 +50,13 @@
   --tplane-chat-font-size: 1rem;
   --tplane-chat-font-size-sm: 0.875rem;
   --tplane-chat-font-size-xs: 0.75rem;
-  --tplane-chat-line-height: 1.5;
-  --tplane-chat-line-height-tight: 1.25;
+  --tplane-chat-line-height: 1.6;
+  --tplane-chat-line-height-tight: 1.5;
 
-  --tplane-chat-radius-card: var(--ds-radius-md);
-  --tplane-chat-radius-button: var(--ds-radius-sm);
-  --tplane-chat-radius-bubble: var(--ds-radius-lg);
-  --tplane-chat-radius-input: var(--ds-radius-lg);
+  --tplane-chat-radius-card: 8px;
+  --tplane-chat-radius-button: 8px;
+  --tplane-chat-radius-bubble: 15px;
+  --tplane-chat-radius-input: 9999px;
   --tplane-chat-radius-launcher: var(--ds-radius-full);
 
   --tplane-chat-shadow-sm: var(--ds-shadow-sm);

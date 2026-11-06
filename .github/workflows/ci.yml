@@ -659,6 +659,7 @@ jobs:
       - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache
       - run: npx nx test cockpit-ag-ui-a2ui-react --skip-nx-cache
       - run: npx nx lint workspace-react
+      - run: npx nx lint react-example-layouts
       - run: npx nx run-many -t test --projects=cockpit-registry,cockpit-shell,workspace-react --skip-nx-cache
   cockpit-examples-build:
     name: Cockpit — build all examples
@@ -791,6 +792,16 @@ jobs:
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
+      - name: Configure bounded Ubuntu package downloads
+        if: matrix.shard == 1
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Firefox for the Angular list layout regression
+        if: matrix.shard == 1
+        timeout-minutes: 10
+        run: npx playwright install --with-deps firefox
+      - name: Verify Angular list wrappers in Firefox
+        if: matrix.shard == 1
+        run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

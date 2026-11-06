@@ -5,6 +5,8 @@ import { ComputedDemo } from './app';
 import { createPlayback } from './playback';
 import { localSamples } from './specs';
 import './styles.css';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import '../../../../shared/react-example.css';
 
 const element = document.getElementById('root');
 if (!element) throw new Error('Application root is missing');

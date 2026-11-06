@@ -90,7 +90,7 @@ h2 {
   color: var(--ds-text-secondary, light-dark(#52617b, #b5b5b5));
   margin-top: 0;
 }
-pre {
+pre:where(:not(.tp-markdown *)) {
   min-height: 220px;
   max-height: 520px;
   overflow: auto;

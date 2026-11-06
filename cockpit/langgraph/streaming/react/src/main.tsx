@@ -8,6 +8,8 @@ import { StreamingDemo } from './app';
 import { streamingConnection } from './connection';
 import '@threadplane/react/chat/styles.css';
 import './styles.css';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import '../../../../shared/react-example.css';
 
 const element = document.getElementById('root');
 if (!element) throw new Error('Application root is missing');

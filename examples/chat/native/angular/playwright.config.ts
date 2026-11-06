@@ -5,6 +5,7 @@ import { join } from 'node:path';
 export default defineConfig({
   testDir: '..',
   testMatch: [
+    '**/e2e/visual-parity.spec.ts',
     '**/e2e/conversation.spec.ts',
     '**/e2e/production.spec.ts',
     '**/angular/development.spec.ts',

@@ -82,8 +82,8 @@ body {
   justify-content: space-between;
   gap: var(--tp-chat-gap);
 }
-.theming-demo h1,
-.theming-demo p {
+.theming-demo > h1,
+.theming-demo > p {
   margin-block: 0;
 }
 .theming-demo .theming-demo__eyebrow,
@@ -140,7 +140,7 @@ body {
   min-width: 0;
   max-width: 100%;
 }
-.theming-demo pre {
+.theming-demo pre:where(:not(.tp-markdown *)) {
   max-width: 100%;
   overflow-x: auto;
 }

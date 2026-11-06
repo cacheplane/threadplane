@@ -10,6 +10,8 @@ import { DebugDemo } from './app';
 import '@threadplane/react/chat/styles.css';
 import '@threadplane/react/debug/styles.css';
 import './styles.css';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import '../../../../shared/react-example.css';
 const element = document.getElementById('root');
 if (!element) throw Error('Application root is missing.');
 const bridge = installRuntimeBridge(undefined, {

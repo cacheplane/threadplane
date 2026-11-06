@@ -39,7 +39,7 @@ const read = async (request: APIRequestContext, path: string) =>
 const control = async (request: APIRequestContext, path: string) =>
   expect((await request.post(path)).ok()).toBe(true);
 const mainStatus = (page: Page) =>
-  page.locator('main > p[role="status"]:not([aria-label])');
+  page.locator('.debug-demo__status');
 async function send(page: Page, text = 'Explain lift ✈ café') {
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();

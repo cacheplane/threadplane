@@ -342,7 +342,7 @@ test('developer credentials remain SDK headers for creation, stream and status',
         type: 'tplane:runtime-check', version: 1, nonce: 'parent-health', capability: 'time-travel'
       }, event.origin);
       if (event.data.type === 'tplane:runtime-ready' && event.data.nonce === 'parent-health') document.getElementById('state').textContent = 'Ready';
-    });</script><iframe id="pilot" title="React pilot" src="http://127.0.0.1:4607/langgraph/time-travel/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="React pilot" style="width:100%;height:700px" src="http://127.0.0.1:4607/langgraph/time-travel/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('A');

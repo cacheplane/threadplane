@@ -1,9 +1,339 @@
 @import '../../shared/tokens.css';
 @import '../../shared/styles.css';
 
+/* Native Angular composer: scoped globals retain installed CSS provenance. */
+native-composer .composer-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+native-composer .composer-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: 9999px;
+  background: var(--ds-surface);
+}
+native-composer .composer-pill:focus-within {
+  border-color: var(--ds-text-muted);
+}
+native-composer textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  line-height: 24px;
+}
+native-composer textarea:focus-visible {
+  outline: 0;
+}
+native-composer textarea::placeholder {
+  color: var(--ds-text-muted);
+  opacity: 1;
+}
+native-composer .composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+native-composer .composer-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ds-text-primary);
+  color: var(--ds-bg);
+}
+native-composer .composer-actions button:hover:not(:disabled) {
+  background: var(--ds-text-primary);
+  border-color: transparent;
+  transform: scale(1.05);
+}
+native-composer .composer-actions button[type='submit']:disabled {
+  background: var(--ds-text-muted);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+native-composer .composer-actions svg {
+  width: 16px;
+  height: 16px;
+}
+native-composer .composer-actions .composer-stop svg {
+  width: 14px;
+  height: 14px;
+}
+native-composer .composer-help {
+  margin: 6px 0 0;
+  padding-inline: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+}
+@media (forced-colors: active) {
+  native-composer .composer-pill:focus-within {
+    outline: 2px solid Highlight;
+  }
+  native-composer .composer-actions button {
+    border: 1px solid ButtonText;
+  }
+}
+
 native-conversation,
 native-conversation-view,
 native-message,
 native-composer {
   display: block;
+}
+
+native-conversation-view {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+native-composer {
+  flex: 0 0 auto;
+}
+
+/* Scoped presentation for the neutral installed Markdown renderer. */
+.message threadplane-markdown {
+  display: block;
+  color: inherit;
+  white-space: normal;
+  font-size: 1rem;
+  line-height: inherit;
+}
+.message threadplane-markdown :is(p, ul, ol, blockquote, pre) {
+  margin: 0 0 12px;
+}
+.message threadplane-markdown p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: inherit;
+}
+.message threadplane-markdown > :first-child {
+  margin-top: 0;
+}
+.message threadplane-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: normal;
+}
+.message threadplane-markdown h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.message threadplane-markdown h2 {
+  font-size: 1.25rem;
+}
+.message threadplane-markdown h3 {
+  font-size: 1.125rem;
+}
+.message threadplane-markdown h4 {
+  font-size: 1rem;
+}
+.message threadplane-markdown :is(h5, h6) {
+  font-size: 0.875rem;
+  color: var(--ds-text-muted);
+}
+.message threadplane-markdown :is(ul, ol) {
+  padding-inline-start: 24px;
+}
+.message threadplane-markdown li {
+  margin-block: 4px;
+}
+.message threadplane-markdown li::marker {
+  color: var(--ds-text-muted);
+}
+.message threadplane-markdown li > p {
+  margin: 0;
+}
+.message threadplane-markdown li > :is(ul, ol) {
+  margin-block: 4px 0;
+}
+.message threadplane-markdown strong {
+  font-weight: 700;
+}
+.message threadplane-markdown :is(del, s) {
+  color: var(--ds-text-muted);
+}
+.message threadplane-markdown a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+.message threadplane-markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--ds-surface-tinted);
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 0.875em;
+}
+.message threadplane-markdown pre {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--ds-surface-tinted);
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-wrap: normal;
+}
+.message threadplane-markdown pre code {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: inherit;
+}
+.message threadplane-markdown blockquote {
+  padding: 4px 0 4px 12px;
+  border-inline-start: 3px solid var(--ds-border);
+  color: var(--ds-text-muted);
+}
+.message threadplane-markdown blockquote > :last-child {
+  margin-bottom: 0;
+}
+.message threadplane-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--ds-border);
+  margin-block: 16px;
+}
+.message threadplane-markdown table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.message threadplane-markdown .tp-markdown__table-scroll {
+  margin: 0 0 12px;
+}
+.message threadplane-markdown :is(th, td) {
+  padding: 6px 10px;
+  border: 1px solid var(--ds-border);
+  text-align: start;
+  vertical-align: top;
+}
+.message threadplane-markdown th {
+  font-weight: 600;
+  background: var(--ds-surface-tinted);
+}
+.message threadplane-markdown table code {
+  font-size: 12px;
+}
+.message threadplane-markdown li:has(> input[type='checkbox']) {
+  position: relative;
+  list-style: none;
+  margin-inline-start: -20px;
+  padding-inline-start: 22px;
+}
+.message
+  threadplane-markdown
+  li:has(> input[type='checkbox'])
+  > p:first-of-type {
+  margin-bottom: 0;
+}
+.message threadplane-markdown li > input[type='checkbox'] {
+  appearance: none;
+  position: absolute;
+  inset-inline-start: 0;
+  top: 8px;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--ds-text-muted);
+  border-radius: 4px;
+  background: transparent;
+  opacity: 1;
+}
+.message threadplane-markdown li > input[type='checkbox']:checked {
+  background: var(--ds-text-primary);
+  border-color: var(--ds-text-primary);
+}
+.message threadplane-markdown li > input[type='checkbox']:checked::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 7px;
+  margin: 0 0 0 3px;
+  border: solid var(--ds-surface);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+@media (forced-colors: active) {
+  .message threadplane-markdown li > input[type='checkbox'] {
+    appearance: auto;
+  }
+}
+
+/* Formatted user content keeps the bubble's inverted pair; design-system
+   aliases stay untouched so inherited variables cannot form cycles. */
+.message-user {
+  --native-user-bg: var(--ds-text-primary);
+  --native-user-text: var(--ds-surface);
+  --native-user-surface: color-mix(
+    in srgb,
+    var(--native-user-text) 10%,
+    var(--native-user-bg)
+  );
+  --native-user-muted: color-mix(
+    in srgb,
+    var(--native-user-text) 75%,
+    var(--native-user-bg)
+  );
+  --native-user-border: color-mix(
+    in srgb,
+    var(--native-user-text) 20%,
+    var(--native-user-bg)
+  );
+}
+.message-user threadplane-markdown :is(code, pre, th) {
+  background: var(--native-user-surface);
+  color: var(--native-user-text);
+}
+.message-user threadplane-markdown pre code {
+  background: transparent;
+}
+.message-user threadplane-markdown :is(blockquote, del, s, h5, h6) {
+  color: var(--native-user-muted);
+}
+.message-user threadplane-markdown :is(blockquote, td, th, hr) {
+  border-color: var(--native-user-border);
+}
+.message-user threadplane-markdown li::marker {
+  color: var(--native-user-muted);
+}
+.message-user threadplane-markdown li > input[type='checkbox'] {
+  border-color: var(--native-user-muted);
+}
+.message-user threadplane-markdown li > input[type='checkbox']:checked {
+  background: var(--native-user-text);
+  border-color: var(--native-user-text);
+}
+.message-user threadplane-markdown li > input[type='checkbox']:checked::after {
+  border-color: var(--native-user-bg);
 }

@@ -12,6 +12,7 @@ deploy/
 # Preview frontend build handoff artifacts
 /output/website-preview-builds/
 /output/website-preview-downloads/
+/output/playwright/
 
 # Nx
 .nx/cache/
@@ -22,6 +23,7 @@ apps/website/test-results/
 # apps/website/scripts/upload-demo-media.md). Keep these binaries out of git.
 apps/website/public/demo/
 cockpit/**/angular/test-results/
+cockpit/**/react/e2e/test-results/
 /test-results/
 
 # Marketing channel dry-run simulation outputs (ephemeral; see "simulatedAt")

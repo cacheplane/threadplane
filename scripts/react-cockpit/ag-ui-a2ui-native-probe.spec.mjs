@@ -1,12 +1,53 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import ts from 'typescript';
 import test from 'node:test';
 import {
   parseProofArguments,
   runInstalledApplicationProof,
+  compilerInputInventory,
 } from './ag-ui-a2ui-native-probe.mjs';
+test('compiler confinement accepts aliased owned inputs and rejects actual outside inputs and symlink escapes', () => {
+  const work = realpathSync(
+    mkdtempSync(join(tmpdir(), 'a2ui-compiler-confinement-'))
+  );
+  try {
+    const consumer = join(work, 'consumer'),
+      alias = join(work, 'alias');
+    mkdirSync(consumer);
+    symlinkSync(consumer, alias, 'dir');
+    writeFileSync(join(consumer, 'entry.ts'), 'export const owned = 1;\n');
+    writeFileSync(join(work, 'outside.ts'), 'export const outside = 1;\n');
+    symlinkSync(join(work, 'outside.ts'), join(consumer, 'escape.ts'));
+    const program = (path) =>
+      ts.createProgram([path], { noLib: true, noEmit: true, types: [] });
+    const owned = compilerInputInventory(
+      program(join(consumer, 'entry.ts')),
+      alias
+    );
+    assert.equal(owned.length, 1);
+    assert.equal(owned[0].path, join(consumer, 'entry.ts'));
+    for (const path of [join(work, 'outside.ts'), join(consumer, 'escape.ts')])
+      assert.throws(
+        () => compilerInputInventory(program(path), alias),
+        /No workspace compiler inputs/
+      );
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
 const args = [
   '--retain',
   '/private/tmp/proof-retain',
