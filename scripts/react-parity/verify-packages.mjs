@@ -222,6 +222,27 @@ export function assertHeadlessInputs(inputs) {
 }
 
 export function plainExportTypes(specifiers) {
+  const citationDisplay = specifiers.includes('@threadplane/content/messages') ? `
+import type { Citation as DisplayCitation } from '@threadplane/core';
+import type { CitationTypeIcon, CitationTypeMeta, CitationImageVisual, CitationTypeIconVisual, CitationMonogramVisual, CitationSourceVisual } from '@threadplane/content/messages';
+type CitationDisplayEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type CitationDisplayAssert<T extends true> = T;
+export type CitationTypeIconContract = CitationDisplayAssert<CitationDisplayEqual<CitationTypeIcon, 'web' | 'file' | 'app' | 'memory' | 'generic'>>;
+export type CitationTypeMetaContract = CitationDisplayAssert<CitationDisplayEqual<CitationTypeMeta, { readonly type: string; readonly label: string | null; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly isKnown: boolean }>>;
+export type CitationImageVisualContract = CitationDisplayAssert<CitationDisplayEqual<CitationImageVisual, { readonly kind: 'image'; readonly iconUrl: string }>>;
+export type CitationTypeIconVisualContract = CitationDisplayAssert<CitationDisplayEqual<CitationTypeIconVisual, { readonly kind: 'type-icon'; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly label: string | null }>>;
+export type CitationMonogramVisualContract = CitationDisplayAssert<CitationDisplayEqual<CitationMonogramVisual, { readonly kind: 'monogram'; readonly monogram: string; readonly color: string }>>;
+export type CitationSourceVisualContract = CitationDisplayAssert<CitationDisplayEqual<CitationSourceVisual, CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual>>;
+export type DeriveDomainContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').deriveDomain, (url?: string) => string | null>>;
+export type DeriveSourceTypeContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').deriveSourceType, (citation: DisplayCitation) => string>>;
+export type DeriveMonogramContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').deriveMonogram, (citation: DisplayCitation) => string>>;
+export type MonogramHueContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').monogramHue, (seed: string) => number>>;
+export type FormatPublishedContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').formatPublished, (value?: string | number | Date) => string | null>>;
+export type MonogramColorContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').monogramColor, (citation: DisplayCitation) => string>>;
+export type CitationTypeMetaFunctionContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').citationTypeMeta, (citation: DisplayCitation) => CitationTypeMeta>>;
+export type CitationTypeLabelContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').citationTypeLabel, (citation: DisplayCitation) => string | null>>;
+export type CitationSourceVisualFunctionContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').citationSourceVisual, (citation: DisplayCitation) => CitationSourceVisual>>;
+` : '';
   const debug = specifiers.includes('@threadplane/react/debug') ? `
 import type { StateDiffProps, DebugValue } from '@threadplane/react/debug';
 type DebugEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
@@ -237,7 +258,7 @@ type MarkdownAssert<T extends true> = T;
 export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean }>>;
 export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<typeof import('@threadplane/react/markdown').Markdown>[0], import('@threadplane/react/markdown').MarkdownProps>>;
 ` : '';
-  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + markdown;
+  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + markdown + citationDisplay;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
 import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps } from '@threadplane/react/chat';
@@ -421,6 +442,7 @@ export function assertSupportedExports(project, entry) {
       'react/debug': ['ChatDebug', 'StateDiff'],
       'react/markdown': ['Markdown'],
       'react/render': ['RenderSpec'],
+      'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
       'content/json': ['createJson'],
       'content/a2ui': ['createA2uiSurfaces'],
       'content/render-state': ['createRenderState'],
@@ -436,7 +458,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name]))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);

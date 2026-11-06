@@ -28,7 +28,12 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
                 index: 2,
                 title: corrected ? 'Corrected provider' : '<b>Provider</b>',
                 sourceType: corrected ? 'Corrected type' : sourceType,
-                url: corrected ? '/card-corrected' : '/card-provider',
+                url: corrected
+                  ? 'https://docs.example.org/card-corrected'
+                  : 'https://www.example.com/card-provider',
+                publishedAt: corrected
+                  ? '2025-08-20T12:00:00.000Z'
+                  : '2024-04-15T12:00:00.000Z',
                 iconUrl: '/card-icon',
                 snippet: '<script>literal()</script> ' + 'Long'.repeat(80),
               },
@@ -40,7 +45,15 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           index: 5,
           title: 'Blocked source',
           url: 'javascript:alert(1)',
+          publishedAt: 'invalid date',
           iconUrl: 'https://images.invalid/card-icon',
+        },
+        {
+          id: 'blocked-host',
+          index: 6,
+          title: 'Blocked host',
+          url: 'ftp://blocked.invalid/card-unsafe-host',
+          publishedAt: 'invalid date',
         },
       ],
     },
@@ -131,6 +144,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     '/card-corrected',
     '/card-sidecar',
     '/card-icon',
+    '/card-unsafe-host',
   ]);
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -139,12 +153,25 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
       target: backend.origin + '/api',
     });
     const origin = server.url;
+    const [published, correctedPublished] = await page.evaluate(() =>
+      ['2024-04-15T12:00:00.000Z', '2025-08-20T12:00:00.000Z'].map((value) =>
+        new Date(value).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+        })
+      )
+    );
     await page.route('**/*', (route) => {
       const requested = new URL(route.request().url());
       // Source and icon destinations are forbidden even on this server's origin.
       if (
         sourcePaths.has(requested.pathname) ||
-        requested.hostname === 'images.invalid'
+        [
+          'images.invalid',
+          'www.example.com',
+          'docs.example.org',
+          'blocked.invalid',
+        ].includes(requested.hostname)
       ) {
         sourceRequests.push(route.request().url());
         return route.abort();
@@ -180,18 +207,25 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         )
       ).toBe(true);
     };
-    await expect(header).toHaveText('Sources (5)');
+    await expect(header).toHaveText('Sources (6)');
     await expect(header).toHaveAttribute('aria-expanded', 'false');
     await expect(wrappers).toHaveCount(0);
     await header.click();
-    // This fails before app wiring: default preview cards have no custom wrapper.
-    await expect(wrappers).toHaveCount(5);
+    // Preserve the existing custom card composition before checking derived metadata.
+    await expect(wrappers).toHaveCount(6);
     expect(
       await wrappers.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-source-id'))
       )
-    ).toEqual(['sidecar', '__proto__', 'empty', 'absent', 'blocked']);
-    await expect(provider.locator('small')).toHaveText(
+    ).toEqual([
+      'sidecar',
+      '__proto__',
+      'empty',
+      'absent',
+      'blocked',
+      'blocked-host',
+    ]);
+    await expect(provider.locator('.native-source-card__type')).toHaveText(
       `Source type: ${sourceType}`
     );
     await expect(panel.locator('[data-source-id="empty"] small')).toHaveText(
@@ -203,6 +237,28 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(panel.locator('[data-source-id="sidecar"] small')).toHaveCount(
       0
     );
+    await expect(provider.locator('.native-source-card__host')).toHaveText(
+      'Host: example.com'
+    );
+    await expect(provider.locator('.native-source-card__published')).toHaveText(
+      `Published: ${published}`
+    );
+    for (const id of ['sidecar', 'empty', 'absent', 'blocked']) {
+      await expect(
+        panel.locator(`[data-source-id="${id}"] .native-source-card__host`)
+      ).toHaveCount(0);
+      await expect(
+        panel.locator(`[data-source-id="${id}"] .native-source-card__published`)
+      ).toHaveCount(0);
+    }
+    await expect(
+      panel.locator('[data-source-id="blocked-host"] .native-source-card__host')
+    ).toHaveText('Host: blocked.invalid');
+    await expect(
+      panel.locator(
+        '[data-source-id="blocked-host"] .native-source-card__published'
+      )
+    ).toHaveCount(0);
     await expect(panel.locator('img,script,b')).toHaveCount(0);
     await retained(3);
     await trigger.focus();
@@ -217,9 +273,13 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await page.keyboard.press('Enter');
     await expect(close).toBeFocused();
     await expect(dialog).toContainText('<script>literal()</script>');
+    await expect(dialog).toContainText('2024-04-15T12:00:00.000Z');
     await expect(dialog.locator('img,script,b')).toHaveCount(0);
     const link = dialog.getByRole('link', { name: 'Open source', exact: true });
-    await expect(link).toHaveAttribute('href', '/card-provider');
+    await expect(link).toHaveAttribute(
+      'href',
+      'https://www.example.com/card-provider'
+    );
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     await page.keyboard.press('Tab');
@@ -240,6 +300,21 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     const blocked = page.getByRole('dialog', { name: 'Source 5', exact: true });
     await expect(blocked).toContainText('javascript:alert(1)');
     await expect(blocked.getByRole('link')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await panel
+      .getByRole('button', {
+        name: 'Preview source 6: Blocked host',
+        exact: true,
+      })
+      .click();
+    const blockedHost = page.getByRole('dialog', {
+      name: 'Source 6',
+      exact: true,
+    });
+    await expect(blockedHost).toContainText(
+      'ftp://blocked.invalid/card-unsafe-host'
+    );
+    await expect(blockedHost.getByRole('link')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await retained(3);
     const retired = await provider.elementHandle();
@@ -263,7 +338,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(provider).toHaveCSS('color', 'rgb(245, 245, 245)');
     await expect(provider).toHaveCSS('background-color', 'rgb(28, 28, 28)');
     await expect(provider).toHaveCSS('border-color', 'rgb(69, 69, 69)');
-    await expect(provider.locator('small')).toHaveCSS(
+    await expect(provider.locator('.native-source-card__type')).toHaveCSS(
       'color',
       'rgb(245, 245, 245)'
     );
@@ -339,13 +414,23 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           'aria-label',
           'Preview source 2: Corrected provider'
         );
-        await expect(provider.locator('small')).toHaveText(
+        await expect(provider.locator('.native-source-card__type')).toHaveText(
           'Source type: Corrected type'
         );
         await expect(dialog.getByRole('heading')).toHaveText(
           'Corrected provider'
         );
-        await expect(link).toHaveAttribute('href', '/card-corrected');
+        await expect(link).toHaveAttribute(
+          'href',
+          'https://docs.example.org/card-corrected'
+        );
+        await expect(provider.locator('.native-source-card__host')).toHaveText(
+          'Host: docs.example.org'
+        );
+        await expect(
+          provider.locator('.native-source-card__published')
+        ).toHaveText(`Published: ${correctedPublished}`);
+        await expect(dialog).toContainText('2025-08-20T12:00:00.000Z');
         expect(
           await provider.evaluate(
             (node, original) => node === original,
@@ -372,7 +457,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           'aria-label',
           'Preview source 2: Corrected provider'
         );
-        await expect(provider.locator('small')).toHaveText(
+        await expect(provider.locator('.native-source-card__type')).toHaveText(
           'Source type: Corrected type'
         );
         expect(
@@ -392,7 +477,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           (node as HTMLButtonElement).click()
         );
         await expect(dialog).toHaveCount(0);
-        await expect(header).toHaveText('Sources (4)');
+        await expect(header).toHaveText('Sources (5)');
       }
       await step.closed;
       await expect(draft).toBeEnabled();

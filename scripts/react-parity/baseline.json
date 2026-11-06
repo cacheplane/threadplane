@@ -1,8 +1,26 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d6e6eed03b19aac6e35f01ad214914eb7d6aace5",
+  "baselineHead": "7a63b4a303d5545f95768830e9706611a1f8b46d",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/getting-started/changelog.mdx",
+      "apps/website/content/docs/chat/getting-started/installation.mdx",
+      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
+      "apps/website/content/docs/render/getting-started/installation.mdx",
+      "libs/a2ui/package.json",
+      "libs/ag-ui/package.json",
+      "libs/ag-ui/src/lib/package-version.ts",
+      "libs/chat/package.json",
+      "libs/chat/src/lib/package-version.ts",
+      "libs/langgraph/package.json",
+      "libs/langgraph/src/lib/package-version.ts",
+      "libs/render/package.json",
+      "libs/render/src/lib/package-version.ts",
+      "libs/telemetry/package.json",
+      "package-lock.json"
+    ],
     "untracked": []
   },
   "scope": {
@@ -579,7 +597,7 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "7c8c956bf89d2fd0f3485b72020a4e97b204f9b4372b45728d240da5502b7eed"
+      "sha256": "a8b501adcda583d8aabcf180574a3aa43a35281afe0fa787f8a6b2ace3e41e1e"
     },
     {
       "id": "asset:libs/content/package.json",
@@ -849,7 +867,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "332ca700570fe3e68ca07f448f48a1b4eb41d1f0c030a6d8fe848d2d38108273"
+      "sha256": "3c9dccb628d33b313c9f45656a1f4f5da2dc16422ed194f601fe5df1f1a71e4f"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -9195,6 +9213,90 @@
       ]
     },
     {
+      "id": "export:libs/content/src/messages/index.ts#CitationImageVisual",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationImageVisual",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationImageVisual",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationImageVisual {\n    readonly kind: 'image';\n    readonly iconUrl: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationMonogramVisual",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationMonogramVisual",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationMonogramVisual",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationMonogramVisual {\n    readonly kind: 'monogram';\n    readonly monogram: string;\n    readonly color: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationSourceVisual",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationSourceVisual",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationSourceVisual",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type CitationSourceVisual = CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeIcon",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationTypeIcon",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationTypeIcon",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type CitationTypeIcon = 'web' | 'file' | 'app' | 'memory' | 'generic';"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeIconVisual",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationTypeIconVisual",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationTypeIconVisual",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationTypeIconVisual {\n    readonly kind: 'type-icon';\n    readonly icon: CitationTypeIcon;\n    readonly tone: CitationTypeIcon;\n    readonly label: string | null;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeMeta",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "CitationTypeMeta",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "CitationTypeMeta",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationTypeMeta {\n    readonly type: string;\n    readonly label: string | null;\n    readonly icon: CitationTypeIcon;\n    readonly tone: CitationTypeIcon;\n    readonly isKnown: boolean;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/content/src/messages/index.ts#MessageContent",
       "kind": "export",
       "path": "libs/content/src/messages/index.ts",
@@ -9237,6 +9339,48 @@
       ]
     },
     {
+      "id": "export:libs/content/src/messages/index.ts#citationSourceVisual",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "citationSourceVisual",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "citationSourceVisual",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function citationSourceVisual(c: Citation): CitationSourceVisual {\n    const iconUrl = c.iconUrl?.trim();\n    if (iconUrl) {\n        return { kind: 'image', iconUrl };\n    }\n    const meta = citationTypeMeta(c);\n    if (meta.icon !== 'web') {\n        return {\n            kind: 'type-icon',\n            icon: meta.icon,\n            tone: meta.tone,\n            label: meta.label,\n        };\n    }\n    return {\n        kind: 'monogram',\n        monogram: deriveMonogram(c),\n        color: monogramColor(c),\n    };\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#citationTypeLabel",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "citationTypeLabel",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "citationTypeLabel",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function citationTypeLabel(c: Citation): string | null {\n    return citationTypeMeta(c).label;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#citationTypeMeta",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "citationTypeMeta",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "citationTypeMeta",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function citationTypeMeta(c: Citation): CitationTypeMeta {\n    const type = deriveSourceType(c);\n    const canonicalType = type.toLowerCase();\n    if (isKnownType(canonicalType)) {\n        return {\n            type: canonicalType,\n            label: KNOWN_TYPE_LABELS[canonicalType],\n            icon: canonicalType,\n            tone: canonicalType,\n            isKnown: true,\n        };\n    }\n    return {\n        type,\n        label: type === 'unknown' ? null : readableSourceTypeLabel(type),\n        icon: 'generic',\n        tone: 'generic',\n        isKnown: false,\n    };\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/content/src/messages/index.ts#createMessageContent",
       "kind": "export",
       "path": "libs/content/src/messages/index.ts",
@@ -9247,6 +9391,90 @@
           "symbol": "createMessageContent",
           "syntaxKind": "FunctionDeclaration",
           "signature": "export function createMessageContent<TTools extends {\n    [K in keyof TTools]: ToolContract;\n} = Record<string, ToolContract>>(options: MessageContentOptions = {}): MessageContent<TTools> {\n    const factory = options.markdownFactory ?? createMarkdown;\n    const owners = new Map<string, Markdown>();\n    const reasoningOwners = new Map<string, Markdown>();\n    const projectMarkdown = (collection: Map<string, Markdown>, id: string, document: MarkdownDocument): MarkdownSnapshot => {\n        let owner = collection.get(id);\n        if (!owner) {\n            owner = factory(document, { violationPolicy: 'rebuild' });\n            collection.set(id, owner);\n        }\n        else {\n            const accepted = owner.getSnapshot().document;\n            if (accepted.generation !== document.generation ||\n                accepted.phase !== document.phase ||\n                accepted.content !== document.content)\n                owner.update(document);\n        }\n        return owner.getSnapshot();\n    };\n    let rows: readonly MessageRow<TTools>[] = Object.freeze([]);\n    let messages: readonly Message[] | undefined;\n    let toolCalls: readonly ToolCall<TTools>[] | undefined;\n    let disposed = false;\n    return {\n        project(snapshot) {\n            const next = snapshot as {\n                readonly messages: readonly Message[];\n                readonly toolCalls: readonly ToolCall<TTools>[];\n            };\n            const projectedCalls = next.toolCalls;\n            if (disposed ||\n                (next.messages === messages && next.toolCalls === toolCalls))\n                return rows;\n            const present = new Set(next.messages.map((message) => message.id));\n            for (const collection of [owners, reasoningOwners]) {\n                for (const [id, owner] of collection) {\n                    if (present.has(id))\n                        continue;\n                    owner.dispose();\n                    collection.delete(id);\n                }\n            }\n            const previous = new Map(rows.map((row) => [row.id, row]));\n            const projected = next.messages.map((message): MessageRow<TTools> => {\n                const document = {\n                    generation: message.delivery.generation,\n                    phase: message.delivery.phase,\n                    content: message.content,\n                };\n                const markdown = projectMarkdown(owners, message.id, document);\n                let reasoning: MarkdownSnapshot | undefined;\n                if (message.reasoning !== undefined && message.reasoning.length > 0) {\n                    reasoning = projectMarkdown(reasoningOwners, message.id, {\n                        generation: `${message.delivery.generation}:reasoning`,\n                        phase: message.delivery.phase,\n                        content: message.reasoning,\n                    });\n                }\n                else {\n                    reasoningOwners.get(message.id)?.dispose();\n                    reasoningOwners.delete(message.id);\n                }\n                const calls = projectedCalls.filter((call) => message.toolCallIds?.includes(call.id) ||\n                    message.toolCallId === call.id);\n                const old = previous.get(message.id);\n                if (old?.message === message &&\n                    old.markdown === markdown &&\n                    old.reasoning === reasoning &&\n                    old.toolCalls.length === calls.length &&\n                    calls.every((call, index) => call === old.toolCalls[index]))\n                    return old;\n                return Object.freeze({\n                    id: message.id,\n                    role: message.role,\n                    message,\n                    markdown,\n                    ...(reasoning === undefined ? {} : { reasoning }),\n                    toolCalls: Object.freeze(calls),\n                });\n            });\n            if (projected.length !== rows.length ||\n                projected.some((row, index) => row !== rows[index]))\n                rows = Object.freeze(projected);\n            messages = next.messages;\n            toolCalls = next.toolCalls;\n            return rows;\n        },\n        dispose() {\n            if (disposed)\n                return;\n            disposed = true;\n            for (const collection of [owners, reasoningOwners]) {\n                for (const owner of collection.values())\n                    owner.dispose();\n                collection.clear();\n            }\n        },\n    };\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveDomain",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "deriveDomain",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "deriveDomain",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function deriveDomain(url?: string): string | null {\n    if (!url)\n        return null;\n    try {\n        return new URL(url).hostname.replace(/^www\\./, '');\n    }\n    catch {\n        return null;\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveMonogram",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "deriveMonogram",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "deriveMonogram",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function deriveMonogram(c: Citation): string {\n    const seed = deriveDomain(c.url) ?? c.title ?? '';\n    const ch = seed.trim().charAt(0);\n    return ch ? ch.toUpperCase() : '?';\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveSourceType",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "deriveSourceType",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "deriveSourceType",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function deriveSourceType(c: Citation): string {\n    const explicit = c.sourceType?.trim();\n    if (explicit)\n        return explicit;\n    return c.url ? 'web' : 'unknown';\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#formatPublished",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "formatPublished",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "formatPublished",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function formatPublished(value?: string | number | Date): string | null {\n    if (value == null)\n        return null;\n    const d = value instanceof Date ? value : new Date(value);\n    if (Number.isNaN(d.getTime()))\n        return null;\n    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#monogramColor",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "monogramColor",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "monogramColor",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function monogramColor(c: Citation): string {\n    const seed = deriveDomain(c.url) ?? c.title ?? '?';\n    return `hsl(${monogramHue(seed)} 60% 45%)`;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#monogramHue",
+      "kind": "export",
+      "path": "libs/content/src/messages/index.ts",
+      "symbol": "monogramHue",
+      "declarations": [
+        {
+          "path": "libs/content/src/messages/citation-display.ts",
+          "symbol": "monogramHue",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function monogramHue(seed: string): number {\n    let h = 0;\n    for (let i = 0; i < seed.length; i++) {\n        h = (h * 31 + seed.charCodeAt(i)) % 360;\n    }\n    return h;\n}"
         }
       ]
     },
@@ -14797,6 +15025,12 @@
       "sha256": "c80045c4d36f9d3d18f210f5300af7088bcaa77b2ccaceeaea8822d7faf13c86"
     },
     {
+      "id": "source:libs/content/src/messages/citation-display.ts",
+      "kind": "source",
+      "path": "libs/content/src/messages/citation-display.ts",
+      "sha256": "319cac19b8421124d14a64ef8a436d83775ce0919a29a212f309e7b3585884f0"
+    },
+    {
       "id": "source:libs/content/src/messages/create-message-content.ts",
       "kind": "source",
       "path": "libs/content/src/messages/create-message-content.ts",
@@ -14806,7 +15040,7 @@
       "id": "source:libs/content/src/messages/index.ts",
       "kind": "source",
       "path": "libs/content/src/messages/index.ts",
-      "sha256": "1b4e1a12cbed486e134eb53e1bab6cb9eb3af0b9fbc3a2fff9322f91ff2fe59a"
+      "sha256": "c1b7c1af9be8129ed32f3dec71dae8028e5ce144c1a8c99daff706c27651ced4"
     },
     {
       "id": "source:libs/content/src/render-state/create-render-state.ts",
