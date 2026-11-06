@@ -14,6 +14,7 @@ export default defineConfig({
     'source-previews.spec.ts',
     'citation-disclosure.spec.ts',
     'citation-sidecars.spec.ts',
+    'citation-cards.spec.ts',
     'inline-source-previews.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',

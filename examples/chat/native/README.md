@@ -54,8 +54,11 @@ destinations remain literal metadata, and unresolved references retain their
 syntax. Default Markdown rendering keeps direct links. User rows receive no citation
 metadata. Sources and parser ownership remain with the application.
 
-Assistant Sources lists opt into `Citations.collapsible` and explicit source
-previews. Each mounted message starts with a closed Sources header showing its
+Assistant Sources lists opt into `Citations.collapsible` and an app-owned
+`renderCard` callback. The stable callback returns a local source card composed
+from public `CitationPreview` and literal, optional source-type text. Its layout
+and scoped colors belong to the example; it fetches no source metadata or icons.
+Each mounted message starts with a closed Sources header showing its
 source count. Click, tap, Enter, or Space expands or collapses the list; collapsed
 source controls are unmounted. Metadata updates preserve the user's expansion
 choice, while conversation selection, including A-B-A, starts a fresh closed

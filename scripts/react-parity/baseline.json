@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ac539e10863b281d8505e65d6ad2f98b969a6742",
+  "baselineHead": "19426f1d7c95e9b0fa0201f1934161cc6a0739da",
   "sourceState": {
     "modified": [
       "libs/react/README.md",
-      "libs/react/src/chat/citations.tsx",
-      "libs/react/src/markdown/citation-source.ts",
-      "libs/react/src/markdown/inline-citation.tsx"
+      "libs/react/src/chat/citations.tsx"
     ],
     "untracked": []
   },
@@ -854,7 +852,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "c6f91b69d01c9cd51a12ba876ee2b5300b9c4a40ac380504e0e4c5a7b764a691"
+      "sha256": "332ca700570fe3e68ca07f448f48a1b4eb41d1f0c030a6d8fe848d2d38108273"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -10597,7 +10595,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "Citations",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Citations({ citations, snapshot, label = 'Sources', className, preview, collapsible, }: CitationsProps) {\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    if (snapshot !== undefined) {\n        const merged = new Map(citations.map((citation) => [citation.id, citation]));\n        for (const definition of snapshot.root?.citations.values() ?? []) {\n            if (!merged.has(definition.id))\n                merged.set(definition.id, definitionToCitation(definition));\n        }\n        citations = [...merged.values()].sort((a, b) => a.index - b.index);\n    }\n    if (!citations.length)\n        return null;\n    if (collapsible === true)\n        return (<Disclosure citations={citations} label={label} className={className} preview={preview}/>);\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <SourceList citations={citations} preview={preview}/>\n    </section>);\n}"
+          "signature": "export function Citations({ citations, snapshot, label = 'Sources', className, preview, renderCard, collapsible, }: CitationsProps) {\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    if (snapshot !== undefined) {\n        const merged = new Map(citations.map((citation) => [citation.id, citation]));\n        for (const definition of snapshot.root?.citations.values() ?? []) {\n            if (!merged.has(definition.id))\n                merged.set(definition.id, definitionToCitation(definition));\n        }\n        citations = [...merged.values()].sort((a, b) => a.index - b.index);\n    }\n    if (!citations.length)\n        return null;\n    if (collapsible === true)\n        return (<Disclosure citations={citations} label={label} className={className} preview={preview} renderCard={renderCard}/>);\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <SourceList citations={citations} preview={preview} renderCard={renderCard}/>\n    </section>);\n}"
         }
       ]
     },
@@ -10611,7 +10609,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "CitationsProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly snapshot?: MarkdownSnapshot;\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n    readonly collapsible?: boolean;\n}"
+          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly snapshot?: MarkdownSnapshot;\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n    readonly renderCard?: (citation: Citation) => ReactNode;\n    readonly collapsible?: boolean;\n}"
         }
       ]
     },
@@ -15555,7 +15553,7 @@
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "f255938e5bad85db3a4840ae97a04e63d1a03139b45e7ec390f64e71cb212789"
+      "sha256": "bfa785d16bdbc09e43025633114d3866dcf80b3cc3ee79bff4287535bee392a6"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",

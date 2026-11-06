@@ -6,7 +6,7 @@ import {
 } from '@threadplane/content/markdown';
 import { definitionToCitation } from '../markdown/citation-source.js';
 import { CitationPreview } from './citation-preview.js';
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { availableDialogTarget } from './internal/dialog-presentation.js';
 
@@ -18,6 +18,12 @@ export interface CitationsProps {
   readonly label?: string;
   readonly className?: string;
   readonly preview?: boolean;
+  /**
+   * Replace row contents before preview with the latest borrowed Citation.
+   * Null, false and undefined intentionally render no contents or fallback.
+   * Rendering may repeat; return a component to own hooks and local state.
+   */
+  readonly renderCard?: (citation: Citation) => ReactNode;
   /** Literal true enables an initially closed Sources panel with local presentation state. */
   readonly collapsible?: boolean;
 }
@@ -29,6 +35,7 @@ export function Citations({
   label = 'Sources',
   className,
   preview,
+  renderCard,
   collapsible,
 }: CitationsProps) {
   if (
@@ -53,6 +60,7 @@ export function Citations({
         label={label}
         className={className}
         preview={preview}
+        renderCard={renderCard}
       />
     );
   return (
@@ -61,12 +69,22 @@ export function Citations({
       className={['tp-citations', className].filter(Boolean).join(' ')}
     >
       <h4 className="tp-citations__heading">{label}</h4>
-      <SourceList citations={citations} preview={preview} />
+      <SourceList
+        citations={citations}
+        preview={preview}
+        renderCard={renderCard}
+      />
     </section>
   );
 }
 
-function Disclosure({ citations, label, className, preview }: CitationsProps) {
+function Disclosure({
+  citations,
+  label,
+  className,
+  preview,
+  renderCard,
+}: CitationsProps) {
   const id = useId();
   const header = useRef<HTMLButtonElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -163,7 +181,13 @@ function Disclosure({ citations, label, className, preview }: CitationsProps) {
         </button>
       </h4>
       <div ref={body} id={id} hidden={!expanded}>
-        {expanded && <SourceList citations={citations} preview={preview} />}
+        {expanded && (
+          <SourceList
+            citations={citations}
+            preview={preview}
+            renderCard={renderCard}
+          />
+        )}
       </div>
     </section>
   );
@@ -172,10 +196,17 @@ function Disclosure({ citations, label, className, preview }: CitationsProps) {
 function SourceList({
   citations,
   preview,
-}: Pick<CitationsProps, 'citations' | 'preview'>) {
+  renderCard,
+}: Pick<CitationsProps, 'citations' | 'preview' | 'renderCard'>) {
   return (
     <ul className="tp-citations__list">
       {citations.map((citation) => {
+        if (renderCard !== undefined)
+          return (
+            <li key={citation.id} className="tp-citations__item">
+              {renderCard(citation)}
+            </li>
+          );
         if (preview === true)
           return (
             <li key={citation.id} className="tp-citations__item">
