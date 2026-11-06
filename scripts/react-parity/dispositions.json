@@ -1958,7 +1958,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citations.tsx",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts#ChatConfirmDialogComponent",
@@ -5069,7 +5069,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citations.tsx",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatComponent",
@@ -5602,7 +5602,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationMonogramVisual",
@@ -5611,7 +5613,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationSourceVisual",
@@ -5620,7 +5624,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationTypeIcon",
@@ -5629,7 +5635,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationTypeIconVisual",
@@ -5638,7 +5646,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationTypeMeta",
@@ -5647,7 +5657,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#CitationsResolverService",
@@ -6561,7 +6573,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#citationTypeLabel",
@@ -6570,7 +6584,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#citationTypeMeta",
@@ -6579,7 +6595,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#clientToolGuardFailureResult",
@@ -6656,7 +6674,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#deriveJsonSchema",
@@ -6674,7 +6694,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#deriveSourceType",
@@ -6683,7 +6705,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#emitBinding",
@@ -6727,7 +6751,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#getInterrupt",
@@ -6856,7 +6882,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#monogramHue",
@@ -6865,7 +6893,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#normalizeEnvelopeArgs",
@@ -9606,7 +9636,9 @@
         "T26"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
       "id": "source:libs/chat/src/lib/agent/citation.ts",
@@ -10246,7 +10278,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work.",
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work.",
       "target": "libs/react/src/chat/citations.tsx"
     },
     {
@@ -14534,7 +14566,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls for React chat views; no rendering or lifecycle wiring."
+      "reason": "Framework-neutral message-row projection composing owned Markdown snapshots with tool calls, plus pure citation display helpers and readonly descriptors. No view rendering or lifecycle wiring."
     },
     {
       "id": "export:libs/content/src/markdown/index.ts#CitationDefinition",
@@ -15264,7 +15296,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationsProps",
@@ -15273,7 +15305,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
@@ -15282,7 +15314,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Grouping and display utilities remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -16176,6 +16208,181 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private pure connected preview geometry aligns below-start, flips above and clamps to the current viewport with RTL and visual viewport offsets. It does not expose a generic React overlay primitive."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationImageVisual",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationMonogramVisual",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationSourceVisual",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeIcon",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeIconVisual",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#CitationTypeMeta",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#citationSourceVisual",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#citationTypeLabel",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#citationTypeMeta",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveDomain",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveMonogram",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#deriveSourceType",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#formatPublished",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#monogramColor",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#monogramHue",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/content/src/messages/citation-display.ts",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "source:libs/content/src/messages/citation-display.ts",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
     }
   ]
 }

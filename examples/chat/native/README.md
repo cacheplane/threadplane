@@ -58,6 +58,11 @@ Assistant Sources lists opt into `Citations.collapsible` and an app-owned
 `renderCard` callback. The stable callback returns a local source card composed
 from public `CitationPreview` and literal, optional source-type text. Its layout
 and scoped colors belong to the example; it fetches no source metadata or icons.
+The card opts into shared `deriveDomain` and `formatPublished` helpers from
+`@threadplane/content/messages` for optional **Host** and **Published** lines.
+Host extraction does not certify a publisher or safe navigation; the public
+preview still owns link policy. Publication formatting uses the browser locale
+and timezone, while the preview preserves the supplied publication text.
 Each mounted message starts with a closed Sources header showing its
 source count. Click, tap, Enter, or Space expands or collapses the list; collapsed
 source controls are unmounted. Metadata updates preserve the user's expansion

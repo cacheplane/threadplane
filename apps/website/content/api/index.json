@@ -4354,6 +4354,96 @@
       "summary": "Classify a Markdown destination without rewriting the supplied value."
     },
     {
+      "name": "CitationImageVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationImageVisual",
+      "canonicalReference": "@threadplane/content!CitationImageVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered from a provider image URL."
+    },
+    {
+      "name": "CitationMonogramVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationMonogramVisual",
+      "canonicalReference": "@threadplane/content!CitationMonogramVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered as a colored initial."
+    },
+    {
+      "name": "citationSourceVisual",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationSourceVisual",
+      "canonicalReference": "@threadplane/content!citationSourceVisual:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Return a fresh image, type-icon, or monogram descriptor without fetching or approving URLs."
+    },
+    {
+      "name": "CitationSourceVisual",
+      "entrypointId": "content/messages",
+      "kind": "TypeAlias",
+      "href": "/docs/api/content/messages/CitationSourceVisual",
+      "canonicalReference": "@threadplane/content!CitationSourceVisual:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "The image, source-category icon, or monogram selected to identify a citation source."
+    },
+    {
+      "name": "CitationTypeIcon",
+      "entrypointId": "content/messages",
+      "kind": "TypeAlias",
+      "href": "/docs/api/content/messages/CitationTypeIcon",
+      "canonicalReference": "@threadplane/content!CitationTypeIcon:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Supported source categories used for citation icons and visual tones."
+    },
+    {
+      "name": "CitationTypeIconVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationTypeIconVisual",
+      "canonicalReference": "@threadplane/content!CitationTypeIconVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered with a source-category icon and tone."
+    },
+    {
+      "name": "citationTypeLabel",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationTypeLabel",
+      "canonicalReference": "@threadplane/content!citationTypeLabel:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Human label for the source-type badge; null when type is 'unknown'."
+    },
+    {
+      "name": "citationTypeMeta",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationTypeMeta",
+      "canonicalReference": "@threadplane/content!citationTypeMeta:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Derive normalized source-type metadata for badges, icons, and tone tokens."
+    },
+    {
+      "name": "CitationTypeMeta",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationTypeMeta",
+      "canonicalReference": "@threadplane/content!CitationTypeMeta:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Normalized source type, label, icon, tone, and recognition status for citation display."
+    },
+    {
       "name": "createMessageContent",
       "entrypointId": "content/messages",
       "kind": "Function",
@@ -4362,6 +4452,46 @@
       "isDeprecated": false,
       "isTypeOnly": false,
       "summary": "Creates a transcript projector that preserves unchanged row identities and releases parsers for removed messages."
+    },
+    {
+      "name": "deriveDomain",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveDomain",
+      "canonicalReference": "@threadplane/content!deriveDomain:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Extract a hostname with leading `www.` removed; null for missing/invalid URLs, empty for hostless URLs. This does not approve navigation."
+    },
+    {
+      "name": "deriveMonogram",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveMonogram",
+      "canonicalReference": "@threadplane/content!deriveMonogram:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Uppercased first letter of the domain (or title) for the monogram chip."
+    },
+    {
+      "name": "deriveSourceType",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveSourceType",
+      "canonicalReference": "@threadplane/content!deriveSourceType:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Trim explicit sourceType, else infer 'web' from any truthy URL, else 'unknown'; no URL validation."
+    },
+    {
+      "name": "formatPublished",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/formatPublished",
+      "canonicalReference": "@threadplane/content!formatPublished:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Format a publication month/year in the host locale and timezone; null when missing or invalid."
     },
     {
       "name": "MessageContent",
@@ -4392,6 +4522,26 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "One transcript row. Unchanged rows keep their identity across projections."
+    },
+    {
+      "name": "monogramColor",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/monogramColor",
+      "canonicalReference": "@threadplane/content!monogramColor:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Deterministic monogram-chip background color (stable per source)."
+    },
+    {
+      "name": "monogramHue",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/monogramHue",
+      "canonicalReference": "@threadplane/content!monogramHue:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Deterministic hue in [0,360) from a seed string (stable monogram color)."
     },
     {
       "name": "createJson",
