@@ -40,9 +40,11 @@ protocol parsing, readiness and public catalog registration remain outside this
 example.
 
 React assistant rows pass optional readonly per-message citations to `Markdown`
-and compose `Citations` from explicitly supplied message
-metadata. Sources preserve their order, indices and literal title/snippet/type
-text; links use the shared Markdown URL policy. The view does not fetch metadata
+and compose `Citations` from that same accepted Markdown snapshot and supplied
+message metadata. Sources include Markdown-only sidecar definitions, prefer the
+whole provider record for an exact ID, and order the combined list by ascending
+index with stable ties. Literal title/snippet/type text stays readable; links use
+the shared Markdown URL policy. The view does not fetch metadata
 or icons. Installed production checks cover restored sources, same-ID metadata
 updates, unsafe URLs, literal text and narrow-screen wrapping. Inline references
 resolve exact source IDs before Markdown definitions. Assistant rows opt into

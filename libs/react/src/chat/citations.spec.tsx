@@ -3,8 +3,162 @@ import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Citation } from '@threadplane/core';
 import { Citations } from './index';
+import {
+  createMarkdown,
+  type MarkdownSnapshot,
+} from '@threadplane/content/markdown';
 
-afterEach(cleanup);
+const owners: ReturnType<typeof createMarkdown>[] = [];
+const markdown = (content: string) => {
+  const owner = createMarkdown({ generation: 'a', phase: 'complete', content });
+  owners.push(owner);
+  return owner.getSnapshot();
+};
+const sidecars = (
+  citations: readonly Citation[],
+  snapshot?: MarkdownSnapshot,
+  preview = false
+) => (
+  <Citations
+    {...({
+      citations,
+      snapshot,
+      preview,
+      collapsible: true,
+    } as React.ComponentProps<typeof Citations>)}
+  />
+);
+
+afterEach(() => {
+  cleanup();
+  for (const owner of owners.splice(0)) owner.dispose();
+});
+describe('Markdown Sources sidecars', () => {
+  it('opts into stable numeric order and exact whole provider overrides without mutating inputs', () => {
+    const snapshot = markdown(
+      '[^constructor]: Constructor [link](/constructor) tail\n\n[^__proto__]: Hidden [link](/fallback) hidden snippet\n\n[^Case]: Upper\n\n[^case]: Lower\n'
+    );
+    const citations = Object.freeze([
+      Object.freeze({ id: '__proto__', index: 3, url: 'javascript:blocked' }),
+      Object.freeze({ id: 'provider', index: 1, title: 'Provider' }),
+    ]);
+    if (!snapshot.root) throw new Error('Expected accepted Markdown root');
+    const before = [...snapshot.root.citations];
+    const view = render(sidecars(citations));
+    fireEvent.click(view.getByRole('button'));
+    expect(
+      view.getAllByRole('listitem').map((item) => item.textContent)
+    ).toEqual(['[3] javascript:blocked', '[1] Provider']);
+    view.rerender(sidecars(citations, snapshot));
+    expect(view.getByRole('button').textContent).toBe('Sources (5)');
+    expect(
+      view.getAllByRole('listitem').map((item) => item.textContent)
+    ).toEqual([
+      '[1] Provider',
+      '[1] Constructortail',
+      '[3] javascript:blocked',
+      '[3] Upper',
+      '[4] Lower',
+    ]);
+    expect(view.queryByText('hidden snippet')).toBeNull();
+    expect(
+      view.getAllByRole('link').map((link) => link.getAttribute('href'))
+    ).toEqual(['/constructor']);
+    expect([...snapshot.root.citations]).toEqual(before);
+    expect(citations[0]).toEqual({
+      id: '__proto__',
+      index: 3,
+      url: 'javascript:blocked',
+    });
+  });
+  it('uses empty and null roots as an explicit sorting opt-in and rejects duplicate providers closed', () => {
+    const snapshot = markdown('');
+    const view = render(sidecars([], snapshot));
+    expect(view.container.childElementCount).toBe(0);
+    for (const input of [snapshot, { ...snapshot, root: null }]) {
+      view.rerender(
+        sidecars(
+          [
+            { id: 'b', index: 2 },
+            { id: 'a', index: 1 },
+          ],
+          input
+        )
+      );
+      fireEvent.click(view.getByRole('button'));
+      expect(
+        view.getAllByRole('listitem').map((item) => item.textContent)
+      ).toEqual(['[1] Source 1', '[2] Source 2']);
+      fireEvent.click(view.getByRole('button'));
+    }
+    expect(() =>
+      view.rerender(
+        sidecars(
+          [
+            { id: 'a', index: 1 },
+            { id: 'a', index: 2 },
+          ],
+          snapshot
+        )
+      )
+    ).toThrow(/duplicate citation/i);
+  });
+  it('keeps expanded state, keyed rows and an open preview through corrections, and retires removed sources', () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value() {
+        this.setAttribute('open', '');
+      },
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value() {
+        this.removeAttribute('open');
+      },
+    });
+    const owner = createMarkdown(
+      {
+        generation: 'a',
+        phase: 'streaming',
+        content: '[^a]: Original [link](/first) first snippet\n',
+      },
+      { violationPolicy: 'rebuild' }
+    );
+    owners.push(owner);
+    const view = render(sidecars([], owner.getSnapshot(), true));
+    const header = view.getByRole('button', { name: 'Sources (1)' });
+    fireEvent.click(header);
+    const item = view.getByRole('listitem');
+    const trigger = view.getByRole('button', {
+      name: 'Preview source 1: Original',
+    });
+    fireEvent.click(trigger);
+    const card = view.getByRole('dialog');
+    owner.update({
+      generation: 'a',
+      phase: 'streaming',
+      content:
+        '[^a]: Corrected [link](/next) corrected snippet\n\n[^b]: Added\n',
+    });
+    view.rerender(sidecars([], owner.getSnapshot(), true));
+    expect(view.getByRole('button', { name: 'Sources (2)' })).toBe(header);
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(view.getAllByRole('listitem')[0]).toBe(item);
+    expect(view.getByRole('dialog')).toBe(card);
+    expect(card.textContent).toContain('corrected snippet');
+    expect(view.getByRole('link').getAttribute('href')).toBe('/next');
+    owner.update({
+      generation: 'a',
+      phase: 'complete',
+      content: '[^b]: Added\n',
+    });
+    view.rerender(sidecars([], owner.getSnapshot(), true));
+    expect(item.isConnected).toBe(false);
+    expect(card.isConnected).toBe(false);
+    fireEvent.click(trigger);
+    expect(view.queryByRole('dialog')).toBeNull();
+  });
+});
 describe('Citations', () => {
   it('opts into explicit preview buttons only for literal true', () => {
     const citations = [
