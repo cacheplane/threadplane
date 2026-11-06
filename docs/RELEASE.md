@@ -131,6 +131,23 @@ and Growth, then run `telemetry:test-install-pack` and
 The version command's pre-build embeds the old runtime version; a rebuild after
 versioning is required to align collector payloads with the new package manifests.
 
+For the local installed-Angular proof on macOS, use a fresh, short private
+temporary directory. A crowded shared temporary parent can make esbuild spend
+the production build deadline traversing directories. Long temporary paths can
+also exceed Nx's socket-path limit. This changes fixture placement while keeping
+production optimization, the 90-second child deadline, and every assertion:
+
+```bash
+(
+  set -e
+  release_fixture_tmp="$(mktemp -d /private/tmp/tpr.XXXXXX)"
+  TMPDIR="$release_fixture_tmp" npx nx run telemetry:test-development-bundle --skip-nx-cache
+  rmdir "$release_fixture_tmp"
+)
+```
+
+The final command removes only the empty private parent after the proof succeeds.
+
 ### Check the lockfile before committing
 
 Step 1 regenerates `package-lock.json`. On macOS that can drop the Linux

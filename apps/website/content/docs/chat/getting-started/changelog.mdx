@@ -5,8 +5,14 @@ description: Highlight releases of @threadplane/chat since 0.0.19, from client t
 # Changelog
 
 <Callout type="info" title="Highlight releases only">
-This changelog tracks selected highlight releases, not every release. The published package is at `0.3.6`. The entries below cover the notable changes since `0.0.19`.
+This changelog tracks selected highlight releases, not every release. The published package is at `0.3.7`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
+
+## 0.3.7
+
+- Chat adds a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content.
+- Empty message-scoped tool-call groups skip unrelated grouping preparation. In the H1000 Angular regression fixture, 501 empty scopes avoid four configuration reads each during a fresh-wrapper tail update. Nonempty grouping and later live tool calls remain observable; native latency and FPS improvements have not been established.
+- Constrained textarea scrolling, mobile placeholder width, Firefox Markdown list flow, and message speaker positioning improve.
 
 ## 0.3.6
 
