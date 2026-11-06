@@ -92,6 +92,10 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   mkdirSync(core, { recursive: true });
   writeFileSync(join(core, 'package.json'), JSON.stringify({ name: '@threadplane/core', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
   writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; }');
+  const content = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(content, { recursive: true });
+  writeFileSync(join(content, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './markdown': { types: './markdown.d.ts' } } }));
+  writeFileSync(join(content, 'markdown.d.ts'), 'export interface MarkdownSnapshot { readonly root: null | { readonly citations: ReadonlyMap<string, unknown> }; }');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
@@ -120,7 +124,7 @@ export interface SuggestionsProps { readonly suggestions: readonly SuggestionIte
 export declare function Suggestions(props: SuggestionsProps): unknown;
 export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
 export declare function CitationPreview(props: CitationPreviewProps): unknown;
-export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; }
+export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; }
 export declare function Citations(props: CitationsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -181,6 +185,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
     ['CitationPreviewProps', 'citation', "import('@threadplane/core').Citation", false],
     ['CitationPreviewProps', 'className', 'string', true],
     ['CitationsProps', 'citations', "readonly import('@threadplane/core').Citation[]", false],
+    ['CitationsProps', 'snapshot', "import('@threadplane/content/markdown').MarkdownSnapshot", true],
     ['CitationsProps', 'preview', 'boolean', true],
     ['CitationsProps', 'collapsible', 'boolean', true],
     ['CitationsProps', 'label', 'string', true],

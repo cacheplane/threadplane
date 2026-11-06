@@ -1,5 +1,6 @@
 import { Citations, type CitationsProps } from './index.js';
 import type { Citation } from '@threadplane/core';
+import { createMarkdown } from '@threadplane/content/markdown';
 const citations: readonly Citation[] = [{ id: 'a', index: 1, title: 'Source' }];
 const props: CitationsProps = { citations };
 <Citations {...props} label="Evidence" />;
@@ -25,3 +26,20 @@ props.preview = true;
 props.collapsible = true;
 // @ts-expect-error Disclosure state is local and cannot be controlled.
 <Citations citations={citations} expanded />;
+const owner = createMarkdown({
+  generation: 'a',
+  phase: 'complete',
+  content: '',
+});
+const snapshot = owner.getSnapshot();
+<Citations citations={citations} snapshot={snapshot} />;
+<Citations citations={citations} snapshot={undefined} />;
+// @ts-expect-error Snapshot is borrowed and readonly.
+props.snapshot = snapshot;
+// @ts-expect-error A string is not an accepted snapshot.
+<Citations citations={citations} snapshot="markdown" />;
+// @ts-expect-error Owners are not snapshots.
+<Citations citations={citations} snapshot={owner} />;
+// @ts-expect-error Snapshot metadata remains readonly.
+snapshot.root = null;
+owner.dispose();

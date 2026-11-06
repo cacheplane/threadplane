@@ -12,6 +12,7 @@ export default defineConfig({
     'reasoning.spec.ts',
     'source-previews.spec.ts',
     'citation-disclosure.spec.ts',
+    'citation-sidecars.spec.ts',
     'inline-source-previews.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',
