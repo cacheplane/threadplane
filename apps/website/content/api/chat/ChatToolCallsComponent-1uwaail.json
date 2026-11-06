@@ -180,7 +180,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 191
+            "line": 193
           },
           "isStatic": false,
           "isReadonly": true,
@@ -484,7 +484,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 193
+            "line": 195
           },
           "overloadIndex": 1,
           "isStatic": false,
