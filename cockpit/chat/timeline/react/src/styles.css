@@ -145,3 +145,31 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.timeline-demo .tp-example__content { overflow: hidden; }
+.tp-example.timeline-demo .timeline-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.timeline-demo .current-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.timeline-demo .current-panel > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.timeline-demo .current-panel > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.timeline-demo .history-panel { min-height: 0; overflow: auto; }
+@media (max-width: 768px) {
+  .tp-example.timeline-demo .timeline-layout {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
+  }
+}

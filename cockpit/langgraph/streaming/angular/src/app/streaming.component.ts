@@ -29,8 +29,14 @@ const WELCOME_SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout
+      title="LangGraph streaming"
+      description="Watch an answer arrive as the agent writes it."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask about LangGraph…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -46,6 +52,12 @@ const WELCOME_SUGGESTIONS = [
   `,
 })
 export class StreamingComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent(STREAMING_AGENT);
   // Typed read: prove StreamingState flows through DI.
   protected readonly _typedState: StreamingState = this.agent.value();

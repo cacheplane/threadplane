@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Shared browser contract for both example adapters.
+import { expectMessagesShell } from '../../../../shared/chat-shell-contract';
 import { test, expect } from '@playwright/test';
 
 for (const colorScheme of ['light', 'dark'] as const) {
@@ -12,6 +14,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await page.goto('/chat/messages/react/');
       const draft = page.getByLabel('Message', { exact: true });
       await expect(draft).toBeEnabled();
+      await expectMessagesShell(page, width, width === 375 ? 812 : 900);
       await expect(draft).toHaveCSS('font-size', '16px');
       await expect(draft).toHaveCSS('line-height', '24px');
       const pill = page.locator('.tp-chat-input__pill');
@@ -31,7 +34,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: 'Send', exact: true }))
         .toHaveCSS('background-color', composerText);
       await page.getByRole('button', { name: 'Send', exact: true }).click();
-      await expect(page.getByRole('status')).toHaveText('Response saved.');
+      await expect(page.getByRole('status')).toHaveText('Response complete.');
       const user = page.locator('.tp-chat-message--user').last();
       await expect(user).toHaveCSS('font-size', '16px');
       await expect(user).toHaveCSS('padding', '8px 12px');

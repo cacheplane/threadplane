@@ -307,7 +307,10 @@ class DemoCardComponent {
     .list-row__remove:hover { color: #ef4444; }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="Repeat Loops"
+      description="Add, remove and reorder local items. Each row keeps its identity when the list changes. Playback controls keep your edits."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

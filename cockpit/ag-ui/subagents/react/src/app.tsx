@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { projectTextTranscript } from '@threadplane/ag-ui';
@@ -99,7 +99,6 @@ export function SubagentsDemo({
     <ExampleLayout className="streaming-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>AG-UI trip specialists</h1>
         </div>
         <button
@@ -183,22 +182,24 @@ export function SubagentsDemo({
             })}
         </ol>
       </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        label="Message"
-        placeholder="Plan a fictional trip…"
-        value={draft}
-        onValueChange={setDraft}
-        disabled={!snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          return application.getSnapshot().busy;
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          label="Message"
+          placeholder="Plan a fictional trip…"
+          value={draft}
+          onValueChange={setDraft}
+          disabled={!snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            return application.getSnapshot().busy;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

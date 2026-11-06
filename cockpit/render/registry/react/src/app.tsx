@@ -28,7 +28,6 @@ export function RegistryDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>Component Registry</h1>
       </header>
       <p>

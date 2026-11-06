@@ -14,7 +14,7 @@ async function submit(page: Page, text: string) {
 }
 async function send(page: Page, text: string) {
   await submit(page, text);
-  await expect(page.getByRole('status')).toHaveText('Response saved.');
+  await expect(page.getByRole('status')).toHaveText('Response complete.');
 }
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
@@ -113,7 +113,7 @@ test('renders actual graph output inside an unfinished code fence before release
     before.filter((entry) => entry.path.endsWith('/history'))
   ).toHaveLength(0);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response saved.');
+  await expect(page.getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('pre code')).toHaveText(
     'const answer = 42;'
   );
@@ -202,7 +202,7 @@ test('authored developer connection routes only to its configured target', async
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Developer question');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response saved.');
+  await expect(frame.getByRole('status')).toHaveText('Response complete.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(4);
   expect(

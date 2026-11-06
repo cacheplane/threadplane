@@ -157,7 +157,9 @@ export class ChatInputComponent {
       el.style.height = 'auto';
       const next = Math.min(el.scrollHeight, cap);
       el.style.height = `${next}px`;
-      el.style.overflowY = el.scrollHeight > cap ? 'auto' : 'hidden';
+      // A host layout may impose a smaller CSS max-height than the viewport
+      // cap. Compare with the rendered box so those drafts remain scrollable.
+      el.style.overflowY = el.scrollHeight > el.clientHeight ? 'auto' : 'hidden';
       void text;
     });
 
@@ -189,11 +191,17 @@ export class ChatInputComponent {
     const submitted = submitMessage(this.agent(), this.messageText());
     if (submitted !== null) {
       this.submitted.emit(submitted);
-      this.messageText.set('');
-      const el = this.textareaEl()?.nativeElement;
-      if (el) el.value = '';
+      this.clearDraft();
       requestAnimationFrame(() => this.textareaEl()?.nativeElement.focus());
     }
+  }
+
+  /** Clears the local draft after a successful submit or application-owned reset. */
+  clearDraft(): void {
+    this.messageText.set('');
+    this.enterBlockedByRun.set(false);
+    const element = this.textareaEl()?.nativeElement;
+    if (element) element.value = '';
   }
 
   /** Sync the textarea's value into the signal on user input. A direct

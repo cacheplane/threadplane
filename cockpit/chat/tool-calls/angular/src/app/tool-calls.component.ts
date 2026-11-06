@@ -33,8 +33,15 @@ const SUGGESTIONS = [
   ],
   template: `
     <!-- #region layout -->
-    <example-chat-layout sidebarWidth="20rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat tool calls"
+      description="Explore read-only aviation tools with demo data. Inspect the observed arguments and results for each assistant request."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask about a flight, airport, or route…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -96,6 +103,12 @@ const SUGGESTIONS = [
 })
 // #region component
 export class ToolCallsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 
   protected readonly suggestions = SUGGESTIONS;

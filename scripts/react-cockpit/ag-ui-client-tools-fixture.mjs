@@ -18,7 +18,12 @@ export function createAgUiClientToolsFixture({ root = defaultRoot } = {}) {
     const previous = owner;
     owner = undefined;
     if (!previous) return;
-    await previous.close();
+    try { await previous.close(); }
+    catch (error) {
+      const { closure, ownership } = previous.stats();
+      console.error('Canonical fixture close failed', error.message, JSON.stringify({ closure, ownership }));
+      throw error;
+    }
     const receipt = previous.stats();
     assert.ok(Object.values(receipt.closure).every(Boolean));
     receipts.push(receipt);

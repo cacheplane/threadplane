@@ -33,11 +33,37 @@ export function exampleVisualChecks(path: string, name: string) {
                 [b.right - 2, b.top + 2], [b.left + 2, b.bottom - 2], [b.right - 2, b.bottom - 2]]
                 .every(([x, y]) => document.elementFromPoint(x, y) === element);
           })).toBe(true);
+          if (await input.isEnabled()) {
+            await input.fill(Array.from({ length: 40 }, (_, index) => `Draft line ${index + 1}`).join('\n'));
+            await expect.poll(() => input.evaluate((element) => {
+              const b = element.getBoundingClientRect();
+              return b.top >= 0 && b.bottom <= innerHeight &&
+                document.elementFromPoint(b.x + b.width / 2, b.bottom - 2) === element;
+            })).toBe(true);
+            await input.fill('');
+          }
         }
-        for (const composer of await page.locator('.tp-example__content > .tp-chat-input').all()) {
-          const available = await composer.evaluate((element) => element.parentElement?.clientWidth ?? 0);
+        const header = page.locator('.tp-example__conversation > header');
+        await expect(header).toBeVisible();
+        await expect(header.locator('h1')).toHaveCSS('font-size', '14px');
+        const docs = page.getByRole('complementary', { name: 'About this example' });
+        const headerBox = await header.boundingBox();
+        const docsBox = await docs.boundingBox();
+        expect(headerBox?.y).toBe(0);
+        expect(headerBox?.height).toBe(53);
+        for (const status of await page.locator('.tp-example__footer > [role="status"]').all()) {
+          await expect(status).toHaveCSS('font-weight', '400');
+        }
+        if (width === 1280) {
+          expect(docsBox?.y).toBe(0);
+          expect(docsBox?.width).toBe(288);
+        }
+        const composers = page.locator('.tp-example__footer .tp-chat-input');
+        await expect(composers).toHaveCount(await inputs.count());
+        for (const composer of await composers.all()) {
+          const available = await composer.evaluate((element) => element.closest('.tp-example__footer')?.getBoundingClientRect().width ?? 0);
           const pill = await composer.locator('.tp-chat-input__pill').boundingBox();
-          expect(pill?.width).toBe(Math.min(768, available - 32));
+          expect(pill?.width).toBeCloseTo(Math.min(768, available - 32), 1);
         }
         expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
         expect(errors).toEqual([]);

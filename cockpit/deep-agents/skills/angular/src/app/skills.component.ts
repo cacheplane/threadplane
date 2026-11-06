@@ -52,8 +52,15 @@ const SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout sidebarWidth="22rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Deep Agents skills"
+      description="Inspect progressive disclosure of skill metadata, instructions, and reference files. Aviation examples use fixed sample data. Stop cancels local delivery; backend work may continue."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask about aircraft and runway requirements…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -182,6 +189,12 @@ const SUGGESTIONS = [
   ],
 })
 export class SkillsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 
   protected readonly suggestions = SUGGESTIONS;

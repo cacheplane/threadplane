@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ChatInput } from '@threadplane/react/chat';
 import type { A2uiApplication } from './application';
@@ -66,7 +66,6 @@ export function A2uiDemo({
     <ExampleLayout className="a2ui-demo">
       <header>
         <div>
-          <p className="a2ui-eyebrow">Flight preview</p>
           <h1>Plan a flight</h1>
         </div>
         <button
@@ -80,8 +79,8 @@ export function A2uiDemo({
         </button>
       </header>
       <p>
-        Request a flight form, edit your details, and select a demonstration
-        flight. This preview makes no booking or payment.
+        Flight preview: request a flight form, edit your details, and select a
+        demonstration flight. This preview makes no booking or payment.
       </p>
       <button
         className="a2ui-suggestion"
@@ -133,7 +132,6 @@ export function A2uiDemo({
           );
         })}
       </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
       {snapshot.error && snapshot.native && (
         <details className="a2ui-wire">
           <summary>Unconfirmed response details</summary>
@@ -145,31 +143,34 @@ export function A2uiDemo({
           </pre>
         </details>
       )}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        placeholder="Ask for a flight form…"
-        hint="Enter to send. Shift+Enter adds a new line."
-        busy={snapshot.busy}
-        disabled={!snapshot.canSubmit && !snapshot.busy}
-        onStop={
-          snapshot.busy
-            ? () => {
-                void application.stop().catch(() => undefined);
-              }
-            : undefined
-        }
-        onSubmit={(text) => {
-          const state = application.getSnapshot();
-          if (state.busy || !state.canSubmit) return false;
-          // ChatInput clears this admitted draft synchronously, independently of settlement.
-          void application.submit(text).catch(() => undefined);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder="Ask for a flight form…"
+          hint="Enter to send. Shift+Enter adds a new line."
+          busy={snapshot.busy}
+          disabled={!snapshot.canSubmit && !snapshot.busy}
+          onStop={
+            snapshot.busy
+              ? () => {
+                  void application.stop().catch(() => undefined);
+                }
+              : undefined
+          }
+          onSubmit={(text) => {
+            const state = application.getSnapshot();
+            if (state.busy || !state.canSubmit) return false;
+            // ChatInput clears this admitted draft synchronously, independently of settlement.
+            void application.submit(text).catch(() => undefined);
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

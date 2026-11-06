@@ -259,7 +259,10 @@ class DemoCardComponent {
     .json__foot .pct { color: var(--code-muted); font-variant-numeric: tabular-nums; }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="Component Registry"
+      description="Choose how the registry handles Badge elements. The native renderer can display a registered view, omit it, or use an authored fallback."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

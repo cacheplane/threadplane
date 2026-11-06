@@ -37,7 +37,6 @@ export function ElementRenderingDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>Element Rendering</h1>
       </header>
       <p>

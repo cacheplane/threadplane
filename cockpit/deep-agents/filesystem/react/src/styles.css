@@ -113,6 +113,36 @@ h1 {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.filesystem-demo .tp-example__content { overflow: hidden; }
+.tp-example.filesystem-demo .filesystem-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.filesystem-demo .conversation-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.filesystem-demo .conversation-panel > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.filesystem-demo .conversation-panel > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.filesystem-demo .conversation-empty { flex: 1 1 0; min-height: 0; overflow: auto; }
+.tp-example.filesystem-demo .workspace-column { min-height: 0; overflow: auto; }
+@media (max-width: 720px) {
+  .tp-example.filesystem-demo .filesystem-layout {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
+  }
+}
+
 pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

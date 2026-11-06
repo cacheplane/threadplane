@@ -49,7 +49,44 @@ class LeftSidebarHostComponent {}
 })
 class CustomWidthHostComponent {}
 
+@Component({
+  standalone: true,
+  imports: [ExampleChatLayoutComponent],
+  template: `
+    <example-chat-layout title="LangGraph streaming" description="Watch an answer arrive.">
+      <button headerActions type="button">New conversation</button>
+      <div main data-testid="conversation">Conversation</div>
+      <div sidebar data-testid="capability">Capability controls</div>
+    </example-chat-layout>
+  `,
+})
+class ChromeHostComponent {}
+
 describe('ExampleChatLayoutComponent', () => {
+  it('keeps the header and action in the conversation column and docs before capability controls', async () => {
+    await TestBed.configureTestingModule({ imports: [ChromeHostComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(ChromeHostComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const main = el.querySelector('.layout__main');
+    expect(main?.querySelector('header h1')?.textContent).toBe('LangGraph streaming');
+    expect(main?.querySelector('header button')?.textContent).toBe('New conversation');
+    expect(main?.querySelector('[data-testid="conversation"]')).toBeTruthy();
+    const sidebar = el.querySelector('.layout__sidebar');
+    expect(sidebar?.querySelector('h2')?.textContent).toBe('About this example');
+    expect(sidebar?.querySelector('p')?.textContent).toBe('Watch an answer arrive.');
+    expect(sidebar?.querySelector('.layout__about')?.nextElementSibling?.getAttribute('data-testid')).toBe('capability');
+  });
+
+  it('preserves the main-only layout without empty header or docs chrome', async () => {
+    await TestBed.configureTestingModule({ imports: [NoSidebarHostComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(NoSidebarHostComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('header')).toBeNull();
+    expect(el.querySelector('.layout__about')).toBeNull();
+  });
+
   it('should render main and sidebar content', async () => {
     await TestBed.configureTestingModule({
       imports: [TestHostComponent],

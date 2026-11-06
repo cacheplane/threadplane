@@ -2031,7 +2031,7 @@
       "canonicalReference": "@threadplane/chat!ChatComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates."
+      "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.\nProject `[chatInputFooter]` for composer help in both presentations, and\n`[chatFooterStatus]` for application-owned status below the transcript composer."
     },
     {
       "name": "ChatConfirmDialogComponent",

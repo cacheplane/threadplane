@@ -27,7 +27,6 @@ export function SpecDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>Render Spec</h1>
       </header>
       <p>Watch a local JSON sample become a React view as its text arrives.</p>

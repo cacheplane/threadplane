@@ -78,9 +78,13 @@ const WELCOME_SUGGESTIONS = [
     }
   `,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="LangGraph interrupts"
+      description="Review a simulated refund, then approve, edit, or decline it. No real charge is issued."
+    >
       <div main class="flex flex-col h-full">
-        <chat [agent]="agent" class="flex-1 min-w-0">
+      <chat placeholder="Describe a refund request…" [welcomeDisabled]="true" [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion

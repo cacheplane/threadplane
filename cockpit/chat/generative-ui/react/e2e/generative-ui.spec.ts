@@ -27,6 +27,8 @@ async function send(page: Page, text: string) {
 const errors = new WeakMap<Page, string[]>();
 test.beforeEach(async ({ page, request }) => {
   expect((await request.post('/__reset')).status()).toBe(200);
+  // Prepare the real graph before UI assertions, without creating a conversation.
+  expect((await request.post('/__configure', { data: { failAgent: false } })).status()).toBe(200);
   const list: string[] = [];
   errors.set(page, list);
   page.on('pageerror', (e) => list.push(e.message));

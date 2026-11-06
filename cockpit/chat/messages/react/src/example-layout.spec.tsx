@@ -6,6 +6,27 @@ import { ExampleLayout } from '../../../../shared/react-example';
 
 describe('example layout', () => {
   afterEach(cleanup);
+  it('keeps the header and explicit footer in the conversation column beside the docs', () => {
+    render(
+      <ExampleLayout
+        footer={<><textarea aria-label="Message" /><p role="status">Ready.</p></>}
+        about={<><h3>Primitives used</h3><p>Message list and input</p></>}
+      >
+        <header><h1>Messages</h1></header>
+        <p>Ask a question.</p>
+        <ol aria-label="Conversation" />
+      </ExampleLayout>
+    );
+    const header = screen.getByRole('banner');
+    const footer = screen.getByRole('contentinfo');
+    const docs = screen.getByRole('complementary');
+    expect(header.parentElement).toBe(footer.parentElement);
+    expect(header.parentElement?.parentElement).toBe(docs.parentElement);
+    expect(footer.contains(screen.getByRole('textbox'))).toBe(true);
+    expect(footer.contains(screen.getByRole('status'))).toBe(true);
+    expect(docs.textContent).toContain('Ask a question.');
+    expect(docs.textContent).toContain('Primitives used');
+  });
   it('keeps application controls and live announcements outside explanatory content', () => {
     render(
       <ExampleLayout data-theme="dark" aria-label="Messages example">

@@ -127,3 +127,31 @@ body {
     padding: 1rem;
   }
 }
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.skills-demo .tp-example__content { overflow: hidden; }
+.tp-example.skills-demo .skills-workspace {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.skills-demo .skills-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.skills-demo .skills-chat > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.skills-demo .skills-chat > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.skills-demo .skills-sidebar { min-height: 0; overflow: auto; }
+@media (max-width: 672px) {
+  .tp-example.skills-demo .skills-workspace {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
+  }
+}

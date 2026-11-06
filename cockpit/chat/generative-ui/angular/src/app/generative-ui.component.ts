@@ -38,8 +38,13 @@ const WELCOME_SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+    <example-chat-layout
+      title="Chat generative UI"
+      description="Explore airline operations with fixture data. Confirmed dashboards stay in the conversation and refresh together when a new update is saved."
+    >
+      <chat placeholder="Ask about airline operations…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion

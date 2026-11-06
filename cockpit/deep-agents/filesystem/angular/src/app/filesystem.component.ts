@@ -55,8 +55,13 @@ const SUGGESTIONS = [
     ExampleChatLayoutComponent,
   ],
   template: `
-    <example-chat-layout sidebarWidth="22rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="A workspace for the flight ahead."
+      description="Build a runway note using fixed aviation lookup data. Read actual files and review proposed report changes before they run."
+    >
+      <chat placeholder="Ask for a runway note…" [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion

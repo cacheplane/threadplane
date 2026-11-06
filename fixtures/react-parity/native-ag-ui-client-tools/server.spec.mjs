@@ -7,6 +7,7 @@ import {
   createClientToolsServer,
   readProcessInventory,
   ownedGroupMembers,
+  ownedGroupTerminationReady,
 } from './server.mjs';
 
 test(
@@ -104,6 +105,54 @@ test('process inventory is bounded and rejects failed or malformed ps output', (
 test('independent empty group inventory resolves an ambiguous signal-0 probe without signalling', () => {
   assert.deepEqual(ownedGroupMembers([], 100, new Map()), []);
 });
+test('macOS inventory selects the exact process group without scanning unrelated command lines', () => {
+  const rows = readProcessInventory(
+    (command, args, options) => {
+      assert.deepEqual(args, [
+        '-g',
+        '100',
+        '-o',
+        'pid=,ppid=,pgid=,lstart=,args=',
+      ]);
+      assert.equal(options.timeout, 1000);
+      return '100 99 100 Mon Oct 12 18:00:00 2026 python compiled_worker.py\n';
+    },
+    100,
+    'darwin'
+  );
+  assert.equal(rows[0].pgid, 100);
+});
+test('exact macOS group absence accepts only an empty successful inventory exit', () => {
+  const absent = Object.assign(new Error('no rows'), {
+    status: 1,
+    signal: null,
+    stdout: '',
+    stderr: '',
+  });
+  assert.deepEqual(
+    readProcessInventory(
+      () => {
+        throw absent;
+      },
+      100,
+      'darwin'
+    ),
+    []
+  );
+  for (const failure of [
+    { ...absent, stderr: 'ps failed' },
+    { ...absent, signal: 'SIGTERM', code: 'ETIMEDOUT' },
+  ])
+    assert.throws(() =>
+      readProcessInventory(
+        () => {
+          throw failure;
+        },
+        100,
+        'darwin'
+      )
+    );
+});
 test('group ownership rejects PID reuse and unrelated members before signalling', () => {
   const owner = {
     pid: 100,
@@ -124,6 +173,45 @@ test('group ownership rejects PID reuse and unrelated members before signalling'
   );
   assert.throws(
     () => ownedGroupMembers([owner, { ...owner, pid: 101 }], 100, owners),
+    /termination forbidden/
+  );
+});
+test('an exact acquired defunct owner waits for reaping without authorizing a signal', () => {
+  const owner = {
+    pid: 100,
+    pgid: 100,
+    birth: 'original',
+    command: 'uv worker',
+  };
+  const owners = new Map([[100, owner]]);
+  assert.equal(ownedGroupTerminationReady([owner], 100, owners), true);
+  assert.equal(
+    ownedGroupTerminationReady(
+      [{ ...owner, command: '<defunct>' }],
+      100,
+      owners
+    ),
+    false
+  );
+  assert.throws(
+    () => ownedGroupMembers([{ ...owner, command: '<defunct>' }], 100, owners),
+    /termination forbidden/
+  );
+  for (const zombie of [
+    { ...owner, pid: 101, command: '<defunct>' },
+    { ...owner, birth: 'reused', command: '<defunct>' },
+  ])
+    assert.throws(
+      () => ownedGroupTerminationReady([zombie], 100, owners),
+      /termination forbidden/
+    );
+  assert.throws(
+    () =>
+      ownedGroupTerminationReady(
+        [{ ...owner, command: 'unrelated live program' }],
+        100,
+        owners
+      ),
     /termination forbidden/
   );
 });

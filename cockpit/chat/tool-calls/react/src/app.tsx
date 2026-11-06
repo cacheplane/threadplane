@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useCallback, useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -108,7 +108,6 @@ export function ToolCallsDemo({
     <ExampleLayout className="tool-calls-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat tool calls</h1>
         </div>
         <button
@@ -157,28 +156,30 @@ export function ToolCallsDemo({
         renderMessage={renderRow}
         label="Conversation"
       />
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        placeholder="Ask about a flight, airport, or route…"
-        hint="Enter to send. Shift+Enter adds a new line."
-        busy={snapshot.busy}
-        disabled={!snapshot.canSubmit && !snapshot.busy}
-        onStop={
-          snapshot.busy && snapshot.activity !== 'replacing'
-            ? () => void application.stop()
-            : undefined
-        }
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder="Ask about a flight, airport, or route…"
+          hint="Enter to send. Shift+Enter adds a new line."
+          busy={snapshot.busy}
+          disabled={!snapshot.canSubmit && !snapshot.busy}
+          onStop={
+            snapshot.busy && snapshot.activity !== 'replacing'
+              ? () => void application.stop()
+              : undefined
+          }
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

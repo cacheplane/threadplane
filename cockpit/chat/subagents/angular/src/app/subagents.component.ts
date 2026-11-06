@@ -35,8 +35,15 @@ const SUGGESTIONS = [
   ],
   template: `
     <!-- #region template -->
-    <example-chat-layout sidebarWidth="20rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat subagents"
+      description="Explore model-generated planning suggestions from research, booking, and itinerary specialists. These are suggestions only: no live availability or prices, and no actual booking or purchase."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Describe a trip you would like to plan…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -94,6 +101,12 @@ const SUGGESTIONS = [
   `],
 })
 export class SubagentsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   // #region agent
   protected readonly agent = injectAgent();
 

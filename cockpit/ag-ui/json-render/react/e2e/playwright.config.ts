@@ -3,6 +3,8 @@ export default defineConfig({
   testDir: '.',
   workers: 1,
   fullyParallel: false,
+  // Each turn starts the real Python producer before its terminal state arrives.
+  expect: { timeout: 15000 },
   use: { baseURL: 'http://127.0.0.1:4612', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

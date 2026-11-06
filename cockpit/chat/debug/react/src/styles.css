@@ -1,24 +1,9 @@
 body {
   margin: 0;
-  background: var(--ds-bg, #1c1c1c);
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 .tp-chat.debug-demo {
   --debug-demo-panel-width: 30rem;
-  --tp-chat-bg: var(--tp-chat-surface);
-  --tp-chat-surface-alt: color-mix(
-    in srgb,
-    var(--tp-chat-text) 7%,
-    var(--tp-chat-surface)
-  );
-  --tp-chat-text: #e0e0e0;
-  --tp-chat-muted: #a3a3a3;
-  --tp-chat-border: #767676;
-  --tp-chat-surface: #1c1c1c;
-  --tp-chat-accent: #3b82f6;
-  --tp-chat-on-accent: #07111f;
-  --tp-chat-danger: #ff8a80;
-  --tp-chat-gap: 1rem;
-  color-scheme: dark;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;

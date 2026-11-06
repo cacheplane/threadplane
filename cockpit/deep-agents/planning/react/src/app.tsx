@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -129,7 +129,6 @@ function PlanningOwner({ connection, onReady }: Props) {
     <ExampleLayout className="planning-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Deep Agents</p>
           <h1>A plan for the flight ahead.</h1>
         </div>
         <button
@@ -187,45 +186,47 @@ function PlanningOwner({ connection, onReady }: Props) {
             renderMessage={renderRow}
             label="Conversation"
           />
-          {snapshot.error && (
-            <p role="alert" className="request-error">
-              {snapshot.error}
+          <ExampleFooter>
+            {snapshot.error && (
+              <p role="alert" className="request-error">
+                {snapshot.error}
+              </p>
+            )}
+            <ChatInput
+              key={`composer:${snapshot.viewGeneration}`}
+              label="Message"
+              value={draft}
+              onValueChange={(text) => {
+                if (currentView()) setDraft(text);
+              }}
+              placeholder="Ask for a dispatch brief…"
+              hint="Enter to send. Shift+Enter adds a new line."
+              busy={snapshot.busy}
+              disabled={snapshot.busy || !snapshot.canSubmit}
+              onStop={
+                snapshot.busy
+                  ? () => {
+                      if (currentView()) void application.stop();
+                    }
+                  : undefined
+              }
+              onSubmit={(text) => {
+                const current = application.getSnapshot();
+                if (
+                  !currentView() ||
+                  current.busy ||
+                  !current.canSubmit ||
+                  !text.trim()
+                )
+                  return false;
+                void application.submit(text);
+                return currentView() && application.getSnapshot().busy;
+              }}
+            />
+            <p role="status" className="response-status">
+              {status}
             </p>
-          )}
-          <ChatInput
-            key={`composer:${snapshot.viewGeneration}`}
-            label="Message"
-            value={draft}
-            onValueChange={(text) => {
-              if (currentView()) setDraft(text);
-            }}
-            placeholder="Ask for a dispatch brief…"
-            hint="Enter to send. Shift+Enter adds a new line."
-            busy={snapshot.busy}
-            disabled={snapshot.busy || !snapshot.canSubmit}
-            onStop={
-              snapshot.busy
-                ? () => {
-                    if (currentView()) void application.stop();
-                  }
-                : undefined
-            }
-            onSubmit={(text) => {
-              const current = application.getSnapshot();
-              if (
-                !currentView() ||
-                current.busy ||
-                !current.canSubmit ||
-                !text.trim()
-              )
-                return false;
-              void application.submit(text);
-              return currentView() && application.getSnapshot().busy;
-            }}
-          />
-          <p role="status" className="response-status">
-            {status}
-          </p>
+          </ExampleFooter>
         </section>
         <PlanPanel
           observed={snapshot.observedPlan}

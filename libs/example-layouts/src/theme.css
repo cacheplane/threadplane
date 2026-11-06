@@ -15,6 +15,52 @@
 
 @custom-variant dark (&:where([data-theme="dark"] *));
 
+/* Projected actions retain their application-owned behavior. */
+example-chat-layout [headerActions],
+example-split-layout [headerActions] {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--tplane-chat-separator);
+  border-radius: 8px;
+  background: var(--tplane-chat-surface);
+  color: var(--tplane-chat-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 21px;
+  cursor: pointer;
+}
+example-chat-layout [headerActions]:disabled,
+example-split-layout [headerActions]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Match the primitive example footer without adding a second composer inset. */
+example-chat-layout chat [chatFooter].chat-footer-wrap {
+  padding: 8px 0;
+  border-top: 1px solid var(--tplane-chat-separator);
+  background: var(--tplane-chat-surface);
+}
+example-chat-layout .example-submission-status {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(48rem + 32px);
+  margin: 8px auto 0;
+  padding: 0 16px;
+  color: var(--tplane-chat-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+example-chat-layout chat-input .chat-input__textarea {
+  max-height: min(320px, 20dvh);
+}
+example-chat-layout .example-composer-help {
+  margin: 6px 16px 0;
+  color: var(--tplane-chat-text-muted);
+  font-size: 14px;
+  line-height: 22.4px;
+}
+
 /*
  * Namespace bridge: legacy `--tplane-chat-*` variables (used inside the
  * chat library and existing example components) inherit from the

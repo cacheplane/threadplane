@@ -74,9 +74,13 @@ interface PackingList {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="Mastra reservations"
+      description="Review a fictional campsite reservation, then approve or decline it. No real reservation is made."
+    >
       <div main class="mastra-shell">
-        <chat [agent]="agent" class="mastra-chat">
+      <chat placeholder="Ask for a fictional campsite reservation…" [welcomeDisabled]="true" [agent]="agent" class="mastra-chat">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion

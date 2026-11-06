@@ -16,8 +16,13 @@ import { WeatherCardComponent } from './weather-card.component';
   standalone: true,
   imports: [ChatComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [views]="views" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="AG-UI weather cards"
+      description="Ask for a city’s weather. The agent runs a server tool and the page displays its demo reading alongside the conversation."
+    >
+      <chat placeholder="Ask for a city’s weather…" [welcomeDisabled]="true" main [agent]="agent" [views]="views" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
     </example-chat-layout>
   `,
 })

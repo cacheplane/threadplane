@@ -13,9 +13,17 @@ import { injectAgent } from '@threadplane/langgraph';
   standalone: true,
   imports: [ChatComponent, ChatTimelineSliderComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout sidebarWidth="20rem">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat timeline"
+      description="Select a saved checkpoint to preview it. Send always continues the current conversation. Fork from here uses the message in the composer to continue from the selected checkpoint."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
       <!-- #region chat-surface -->
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+      <chat placeholder="Write a message…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <!-- #endregion -->
       <!-- #region timeline-panel -->
       <div sidebar class="panel">
@@ -60,6 +68,12 @@ import { injectAgent } from '@threadplane/langgraph';
   `],
 })
 export class TimelineComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   // #region agent
   protected readonly agent = injectAgent();
   // #endregion

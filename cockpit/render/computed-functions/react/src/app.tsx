@@ -28,7 +28,6 @@ export function ComputedDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>Computed Functions</h1>
       </header>
       <p>

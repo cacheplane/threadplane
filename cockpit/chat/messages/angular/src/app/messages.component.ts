@@ -1,8 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal, viewChild } from '@angular/core';
 import {
   ChatMessageListComponent,
   ChatInputComponent,
-  ChatTypingIndicatorComponent,
   ChatMessageComponent,
   ChatStreamingMdComponent,
   MessageTemplateDirective,
@@ -16,9 +15,9 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
 /**
  * MessagesComponent demonstrates the chat message primitives from @threadplane/chat.
  *
- * Uses ChatMessageListComponent, ChatInputComponent, and ChatTypingIndicatorComponent
- * individually rather than the composed ChatComponent, giving full control
- * over layout and message rendering.
+ * Uses ChatMessageListComponent and ChatInputComponent individually rather
+ * than the composed ChatComponent, with an application-owned response status,
+ * layout, and message rendering.
  *
  * ChatMessageListComponent renders nothing on its own — it discovers
  * projected `<ng-template chatMessageTemplate="...">` blocks via
@@ -32,18 +31,16 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
   imports: [
     ChatMessageListComponent,
     ChatInputComponent,
-    ChatTypingIndicatorComponent,
     ChatMessageComponent,
     ChatStreamingMdComponent,
     MessageTemplateDirective,
     ExampleChatLayoutComponent,
   ],
   template: `
-    <example-chat-layout sidebarWidth="18rem">
+    <example-chat-layout sidebarWidth="18rem" title="Chat messages"
+      description="Ask a question and watch the answer arrive. Continue after the response is saved.">
+      <button headerActions type="button" [disabled]="agent.isLoading()" (click)="newConversation()">New conversation</button>
       <section main class="chat-demo">
-        <header class="demo-header">
-          <h1 class="demo-title">Chat Messages Primitives</h1>
-        </header>
         <div class="message-scroll">
           <!-- #region message-templates -->
           <chat-message-list [agent]="agent">
@@ -72,17 +69,17 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
         </div>
         <div class="input-strip">
           <!-- #region input-strip -->
-          <chat-typing-indicator [agent]="agent" />
-          <chat-input [agent]="agent" />
+          <chat-input [agent]="agent" placeholder="Ask an aviation question…" (submitted)="hasSubmitted.set(true); wasStopped.set(false)" (stopped)="wasStopped.set(true)" />
+          <p class="submission-status" role="status">{{ status() }}</p>
           <!-- #endregion -->
         </div>
       </section>
       <div sidebar class="panel">
-        <h3 class="cap">Primitives Used</h3>
+        <h3 class="cap">Primitives used</h3>
         <ul class="info-list">
-          <li>ChatMessageListComponent</li>
-          <li>ChatInputComponent</li>
-          <li>ChatTypingIndicatorComponent</li>
+          <li>Message list</li>
+          <li>Message input</li>
+          <li>Response status</li>
         </ul>
       </div>
     </example-chat-layout>
@@ -98,20 +95,6 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
       color: var(--tplane-chat-text);
     }
 
-    .demo-header {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--tplane-chat-separator);
-      background: var(--tplane-chat-surface);
-    }
-
-    .demo-title {
-      margin: 0;
-      color: var(--tplane-chat-text);
-      font-size: var(--tplane-chat-font-size-sm);
-      font-weight: 700;
-      line-height: var(--tplane-chat-line-height-tight);
-    }
-
     .message-scroll {
       flex: 1 1 auto;
       min-height: 0;
@@ -120,16 +103,28 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
     }
 
     .input-strip {
+      flex: none;
       padding: 0.5rem 0;
       border-top: 1px solid var(--tplane-chat-separator);
       background: var(--tplane-chat-surface);
+    }
+
+    .submission-status {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: calc(48rem + 32px);
+      margin: 8px auto 0;
+      padding: 0 16px;
+      font-size: 12px;
+      line-height: 18px;
+      color: var(--tplane-chat-text-muted);
     }
 
     .panel {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      padding: 1rem;
+      padding: 0 1rem 1rem;
       background: var(--tplane-chat-bg);
       color: var(--tplane-chat-text);
     }
@@ -160,6 +155,21 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
 export class MessagesComponent {
   // #region component-class
   protected readonly agent = injectAgent(MESSAGES_AGENT);
+  protected readonly hasSubmitted = signal(false);
+  protected readonly wasStopped = signal(false);
+  private readonly composer = viewChild(ChatInputComponent);
+  protected readonly status = computed(() => this.agent.isLoading()
+    ? 'Receiving response…'
+    : this.agent.error() ? 'Response failed. Try again.'
+    : this.wasStopped() ? 'Stopped.'
+    : this.hasSubmitted() ? 'Response complete.' : 'Ready.');
+  protected newConversation(): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    this.composer()?.clearDraft();
+    this.hasSubmitted.set(false);
+    this.wasStopped.set(false);
+  }
   // Typed read: prove MessagesState flows through DI.
   protected readonly _typedState: MessagesState = this.agent.value();
 
