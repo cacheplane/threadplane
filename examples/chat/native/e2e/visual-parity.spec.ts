@@ -205,6 +205,8 @@ for (const width of [375, 1280])
               fontSize: s.fontSize,
               lineHeight: s.lineHeight,
               padding: s.padding,
+              margin: s.margin,
+              borderWidth: s.borderWidth,
               radius: s.borderRadius,
               width: r.width,
               height: r.height,
@@ -344,6 +346,9 @@ for (const width of [375, 1280])
         expect.soft(metrics.paragraph).toMatchObject({
           fontSize: '16px',
           lineHeight: '25.6px',
+          padding: '0px',
+          margin: '0px',
+          borderWidth: '0px',
           width: width === 1280 ? 704 : 311,
         });
         expect.soft(metrics.user).toMatchObject({
@@ -363,10 +368,31 @@ for (const width of [375, 1280])
         expect.soft(metrics.taskAligned).toBe(true);
         expect.soft(metrics.taskBoxOffset).toBe(8);
         if (width === 1280) {
+          const paragraphLineHeight = Number.parseFloat(
+            metrics.paragraph.lineHeight
+          );
+          const paragraphLines = Math.round(
+            metrics.paragraph.height / paragraphLineHeight
+          );
+          expect.soft(paragraphLines).toBeGreaterThan(0);
+          expect
+            .soft(
+              Math.abs(
+                metrics.paragraph.height - paragraphLines * paragraphLineHeight
+              )
+            )
+            .toBeLessThan(1);
+          // The system font can wrap the same 704px paragraph on Linux while
+          // macOS fits one line. Preserve every canonical gap, accounting only
+          // for complete additional text lines before the subsequent blocks.
+          const wrappedParagraphHeight =
+            metrics.paragraph.height - paragraphLineHeight;
           const canonicalOffsets = [
             0, 42, 67.59, 104.59, 171.78, 238.97, 358.14, 415.14,
           ];
-          for (const [index, expected] of canonicalOffsets.entries()) {
+          for (const [index, oneLineOffset] of canonicalOffsets.entries()) {
+            const expected =
+              oneLineOffset + (index >= 2 ? wrappedParagraphHeight : 0);
             expect
               .soft(
                 Math.abs(metrics.blockOffsets[index] - expected),

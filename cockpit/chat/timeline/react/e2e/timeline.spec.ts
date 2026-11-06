@@ -447,7 +447,7 @@ test('developer bridge sends credentials only in headers across checkpoint opera
       if(event.data.type==='tplane:runtime-child-ready')frame.contentWindow.postMessage({type:'tplane:runtime-configure',version:2,nonce:event.data.nonce,generation:1,target:{kind:'langsmith',apiUrl:'http://127.0.0.1:4626/developer-api',apiKey:window.timelineKey||'TEST_TIMELINE_KEY'}},event.origin);
       if(event.data.type==='tplane:runtime-configured')frame.contentWindow.postMessage({type:'tplane:runtime-check',version:1,nonce:'health',capability:'timeline'},event.origin);
       if(event.data.type==='tplane:runtime-ready'&&event.data.nonce==='health')document.getElementById('state').textContent='Ready';
-    });</script><iframe id="pilot" title="Timeline" src="http://127.0.0.1:4626/chat/timeline/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="Timeline" style="width:100%;height:700px" src="http://127.0.0.1:4626/chat/timeline/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Developer A');
