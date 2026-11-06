@@ -1,3 +1,22 @@
+## 0.3.7 (2026-11-06)
+
+### Features
+
+- **chat:** add a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content ([#1447](https://github.com/cacheplane/threadplane/pull/1447)).
+
+### Performance
+
+- **chat:** skip unrelated grouping preparation when a message's scoped tool-call list is empty. In the H1000 Angular regression fixture, 501 empty scopes avoid four configuration reads each during a fresh-wrapper tail update. Nonempty grouping and later live tool calls remain observable; native latency and FPS improvements have not been established ([#1453](https://github.com/cacheplane/threadplane/pull/1453)).
+
+### Fixes
+
+- **chat:** fix constrained textarea scrolling, mobile placeholder width, Firefox Markdown list flow, and message speaker positioning ([#1447](https://github.com/cacheplane/threadplane/pull/1447), [e524ab11d](https://github.com/cacheplane/threadplane/commit/e524ab11d)).
+- **smoke:** pin the verified LangGraph SDK artifact ([#1450](https://github.com/cacheplane/threadplane/pull/1450)).
+
+### Repository React work
+
+- The private React implementation adds inline citation previews, collapsible Sources panels, merged Markdown sidecar sources, and custom citation-card rendering ([#1444](https://github.com/cacheplane/threadplane/pull/1444), [#1446](https://github.com/cacheplane/threadplane/pull/1446), [#1448](https://github.com/cacheplane/threadplane/pull/1448), [#1452](https://github.com/cacheplane/threadplane/pull/1452)). These are repository changes; the six synchronized npm packages remain chat, langgraph, ag-ui, render, a2ui, and telemetry.
+
 ## 0.3.6 (2026-11-05)
 
 ### Performance
