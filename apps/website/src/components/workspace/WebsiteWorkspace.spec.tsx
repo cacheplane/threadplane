@@ -145,6 +145,60 @@ const activeWorkspaceMode = (): string | undefined =>
     .workspaceMode;
 
 describe('WebsiteWorkspace', () => {
+  const frameworkRoute = (framework: 'angular' | 'react') => {
+    const path = `/docs/${framework}/langgraph/guides/streaming`;
+    const resolution = mappedResolution(`streaming:${framework}`, 'streaming', ['Docs', 'Run', 'Code'], path);
+    return <RuntimeTargetProvider><WebsiteWorkspace
+      resolution={resolution} presentation={mappedPresentation(resolution)}
+      contentBundle={emptyContent} navigationTree={[]} routePath={path} framework={framework}
+      docsSlot={<article><h1>{framework} streaming</h1></article>}
+      docsContext={{ activeLibrary: 'langgraph', activeSection: 'guides', activeSlug: 'streaming', scope: framework,
+        documentId: 'langgraph/guides/streaming', frameworkTargets: {
+          angular: { href: '/docs/angular/langgraph/guides/streaming', modes: ['Docs', 'Run', 'Code'], anchors: ['ownership'] },
+          react: { href: '/docs/react/langgraph/guides/streaming', modes: ['Docs', 'Run', 'Code'], anchors: ['ownership'] },
+        } }}
+    /></RuntimeTargetProvider>;
+  };
+
+  it.each(['Docs', 'Code'] as const)('retains intended %s when a cached framework route restores an old Run query', async mode => {
+    const query = mode === 'Docs' ? '' : '?mode=code';
+    window.history.replaceState({}, '', `/docs/angular/langgraph/guides/streaming${query}#ownership`);
+    const view = render(frameworkRoute('angular'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
+    fireEvent.change(screen.getByLabelText('Framework'), { target: { value: 'react' } });
+    expect(mocks.push).toHaveBeenCalledWith(`/docs/react/langgraph/guides/streaming${query}#ownership`);
+
+    // Production's static route cache can restore the query from its first visit.
+    window.history.pushState({}, '', '/docs/react/langgraph/guides/streaming?mode=run#stale');
+    const historyLength = window.history.length;
+    view.rerender(frameworkRoute('react'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
+    expect(window.location.search).toBe(query);
+    expect(window.location.hash).toBe('#ownership');
+    expect(window.history.length).toBe(historyLength);
+    if (mode === 'Docs') expect(screen.getByRole('heading', { name: 'react streaming' })).toBeTruthy();
+
+    // Consuming the intent leaves later browser history authoritative.
+    act(() => {
+      window.history.replaceState({}, '', '/docs/react/langgraph/guides/streaming?mode=run');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
+  });
+
+  it('does not apply a superseded framework intent after browser history navigation', async () => {
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming');
+    const view = render(frameworkRoute('angular'));
+    fireEvent.change(screen.getByLabelText('Framework'), { target: { value: 'react' } });
+    act(() => {
+      window.history.replaceState({}, '', '/docs/react/langgraph/guides/streaming?mode=code');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    view.rerender(frameworkRoute('react'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
+    expect(window.location.search).toBe('?mode=code');
+  });
+
   it.each(['Docs', 'Code', 'Run', 'API'] as const)('keeps %s mode changes on the server-selected React route', async mode => {
     const path = '/docs/react/langgraph/guides/streaming';
     const resolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code', 'API'], path);

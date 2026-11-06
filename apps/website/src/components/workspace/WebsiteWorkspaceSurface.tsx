@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -71,6 +72,11 @@ export interface WebsiteWorkspaceProps {
 interface DiscoveredRouteMode {
   readonly routePath: string;
   readonly mode: string | null;
+}
+
+interface FrameworkNavigationIntent extends DiscoveredRouteMode {
+  readonly sourcePath: string;
+  readonly href: string;
 }
 
 const MODE_ANALYTICS: Record<WorkspaceMode, string> = {
@@ -161,17 +167,46 @@ export function WebsiteWorkspaceSurface({
   const routerRef = useRef(router);
   routerRef.current = router;
   const [frameworkNavigationPending, startFrameworkNavigation] = useTransition();
+  const [frameworkNavigationIntent, setFrameworkNavigationIntent] =
+    useState<FrameworkNavigationIntent | null>(null);
   const navigateFramework = useCallback((href: string) => {
+    const destination = new URL(href, window.location.origin);
+    setFrameworkNavigationIntent({
+      sourcePath: routePath,
+      routePath: destination.pathname,
+      href: `${destination.pathname}${destination.search}${destination.hash}`,
+      mode: readWorkspaceModeQuery(destination.searchParams),
+    });
     startFrameworkNavigation(() => routerRef.current.push(href));
-  }, []);
+  }, [routePath]);
   const [discoveredRouteMode, setDiscoveredRouteMode] =
     useState<DiscoveredRouteMode | null>(null);
   const routeMode =
-    requestedMode !== undefined
+    frameworkNavigationIntent?.routePath === routePath
+      ? frameworkNavigationIntent.mode
+      : requestedMode !== undefined
       ? requestedMode
       : discoveredRouteMode?.routePath === routePath
       ? discoveredRouteMode.mode
       : null;
+
+  useLayoutEffect(() => {
+    const intent = frameworkNavigationIntent;
+    if (!intent) return;
+    if (routePath !== intent.routePath) {
+      if (routePath !== intent.sourcePath) setFrameworkNavigationIntent(null);
+      return;
+    }
+    if (window.location.pathname !== intent.routePath) return;
+    // A cached production route can restore the query from its first visit.
+    // Keep this explicit selection authoritative without adding history or
+    // navigating through that cache again. Later history visits remain free
+    // to restore their own URL once this one-shot intent has been consumed.
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (current !== intent.href) window.history.replaceState(null, '', intent.href);
+    setDiscoveredRouteMode({ routePath, mode: intent.mode });
+    setFrameworkNavigationIntent(null);
+  }, [frameworkNavigationIntent, routePath]);
   const modeHref = useCallback((href: string, preserveFragment = false) => {
     const url = new URL(href, 'https://threadplane.ai');
     if (preserveFragment) url.hash = window.location.hash;
@@ -197,9 +232,13 @@ export function WebsiteWorkspaceSurface({
         mode: readWorkspaceModeQuery(currentUrl.searchParams),
       });
     };
+    const restoreHistoryMode = () => {
+      setFrameworkNavigationIntent(null);
+      discoverCurrentMode();
+    };
     discoverCurrentMode();
-    window.addEventListener('popstate', discoverCurrentMode);
-    return () => window.removeEventListener('popstate', discoverCurrentMode);
+    window.addEventListener('popstate', restoreHistoryMode);
+    return () => window.removeEventListener('popstate', restoreHistoryMode);
   }, [requestedMode, routePath]);
 
   const pushIdentity = useCallback(
@@ -209,6 +248,7 @@ export function WebsiteWorkspaceSurface({
         restoreFocus?: 'mobile-navigation-trigger' | 'workspace-panel';
       }
     ) => {
+      setFrameworkNavigationIntent(null);
       href = modeHref(href);
       if (options?.restoreFocus === 'workspace-panel') {
         const currentDestination = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -230,6 +270,7 @@ export function WebsiteWorkspaceSurface({
 
   const pushMode = useCallback(
     (mode: WorkspaceMode) => {
+      setFrameworkNavigationIntent(null);
       const href = modeHref(
         getCanonicalWebsiteWorkspaceHref(resolution, mode),
         true
@@ -256,6 +297,7 @@ export function WebsiteWorkspaceSurface({
 
   const replaceMode = useCallback(
     (mode: WorkspaceMode) => {
+      setFrameworkNavigationIntent(null);
       const href = modeHref(
         getCanonicalWebsiteWorkspaceHref(resolution, mode),
         true

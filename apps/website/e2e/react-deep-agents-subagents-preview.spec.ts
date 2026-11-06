@@ -256,6 +256,8 @@ test('frontend changes release the old React frame and return to an empty inert 
   await expect(page.getByRole('heading', { name: 'React Deep Agents Subagents preview', exact: true })).toHaveCount(0);
   await expect.poll(() => oldFrame?.evaluate(frame => frame.isConnected)).toBe(false);
   await selectFramework(page, 'react');
+  await hydrated(page, 'docs');
+  await expect(page).toHaveURL(reactRoute);
   await expect(page.getByRole('heading', { name: 'React Deep Agents Subagents preview', exact: true })).toBeVisible();
   await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
   await emptyRun(page);

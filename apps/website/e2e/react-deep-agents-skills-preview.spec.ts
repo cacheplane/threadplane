@@ -299,6 +299,8 @@ test.describe('React Deep Agents Skills', () => {
     ).toHaveCount(0);
     await expect.poll(() => oldFrame?.evaluate((frame) => frame.isConnected)).toBe(false);
     await selectFramework(page, 'react');
+    await hydrated(page, 'docs');
+    await expect(page).toHaveURL(reactRoute);
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
