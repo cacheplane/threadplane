@@ -1,6 +1,8 @@
+import { selectFramework } from './fixtures/framework-controls';
 import { writeFile } from 'node:fs/promises';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
-const route = '/docs/ag-ui/guides/client-tools';
+const route = '/docs/angular/ag-ui/guides/client-tools';
+const reactRoute = '/docs/react/ag-ui/guides/client-tools';
 const origin = 'http://127.0.0.1:4640';
 const names = ['get_weather', 'slow_status_check', 'weather_card', 'weather_snapshot', 'confirm_booking'];
 interface Message { id: string; role: string; content: string; toolCallId?: string; toolCalls?: { id: string }[] }
@@ -56,7 +58,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     }
   });
   test('actual Docs, Code and Run retain native identity, source bytes and five inert presets', async ({ page, request }, info) => {
-    await page.goto(route + '?frontend=react&topicProof=b4');
+    await page.goto(reactRoute + '?topicProof=b4');
     await hydrated(page, 'Docs');
     await expect(page.getByRole('heading', { name: 'React AG-UI client tools preview', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'React AG-UI streaming preview', exact: true })).toHaveCount(0);
@@ -106,7 +108,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await writeFile(info.outputPath('run-dom.json'), JSON.stringify({ conversation: await frame.getByRole('region', { name: 'Conversation', exact: true }).innerText(), reading: await card.innerText() }, null, 2));
   });
   test('terminal result is unsent until the next explicit human and New stays lazy', async ({ page, request }) => {
-    await page.goto(route + '?frontend=react&mode=run');
+    await page.goto(reactRoute + '?mode=run');
     await send(page, 'Use weather_snapshot');
     const frame = page.frameLocator('iframe');
     await expect(frame.getByRole('status')).toHaveText('Command complete.');
@@ -125,7 +127,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     expect(after[2].body.messages).toHaveLength(1);
   });
   test('explicit fictional booking continues once and Stop revokes slow work', async ({ page, request }, info) => {
-    await page.goto(route + '?frontend=react&mode=run');
+    await page.goto(reactRoute + '?mode=run');
     await send(page, 'Use confirm_booking');
     const frame = page.frameLocator('iframe');
     const panel = frame.getByRole('region', { name: 'Fictional booking' });
@@ -146,18 +148,18 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await expect(frame.locator('main')).not.toContainText('"status":"complete"');
   });
   test('history, reload, frontend changes and route navigation dispose controls and retain canonical defaults', async ({ page, request }) => {
-    await page.goto(route + '?frontend=react&mode=run&topicProof=b4');
+    await page.goto(reactRoute + '?mode=run&topicProof=b4');
     await send(page, 'Use confirm_booking');
     const frame = page.frameLocator('iframe');
     await expect(frame.getByRole('status')).toHaveText('Waiting for your fictional booking decision…');
     const oldFrame = await page.locator('iframe').elementHandle();
-    await page.getByLabel('Example UI').selectOption('angular');
-    await expect(page).not.toHaveURL(/frontend=react/);
-    await expect(page).toHaveURL(/topicProof=b4/);
-    expect(await oldFrame?.evaluate(element => element.isConnected)).toBe(false);
+    await selectFramework(page, 'angular');
+    await expect(page).not.toHaveURL(/\/docs\/react\//);
+    await expect(page).not.toHaveURL(/topicProof=/);
+    await expect.poll(() => oldFrame?.evaluate(element => element.isConnected)).toBe(false);
     await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4325\//);
     await page.goBack();
-    await expect(page.getByLabel('Example UI')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveValue('react');
     await expect(frame.getByRole('status')).toHaveText('Ready.');
     await expect(frame.locator('[data-native-message]')).toHaveCount(0);
     await frame.getByLabel('Message', { exact: true }).fill('Unsubmitted draft');
@@ -165,10 +167,10 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await expect(frame.getByRole('status')).toHaveText('Ready.');
     await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
     expect(await records(request)).toHaveLength(1);
-    await page.goto('/docs/ag-ui/guides/tool-views?frontend=react');
+    await page.goto('/docs/react/ag-ui/guides/tool-views');
     await expect(page.getByRole('heading', { name: 'React AG-UI tool views preview', exact: true })).toBeVisible();
     await page.goto(route);
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveValue('angular');
     await expect(page.getByRole('heading', { name: 'React AG-UI client tools preview', exact: true })).toHaveCount(0);
     await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.getByRole('complementary', { name: 'File tree' }).getByRole('button', { name: 'client-tools.component.ts', exact: true })).toBeVisible();

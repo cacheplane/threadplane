@@ -14,7 +14,7 @@ import {
 describe('Website workspace screenshot capture', () => {
   it('defaults to the canonical streaming Run route', () => {
     expect(DEFAULT_WEBSITE_URL).toBe(
-      'https://threadplane.ai/docs/langgraph/guides/streaming?mode=run'
+      'https://threadplane.ai/docs/angular/langgraph/guides/streaming?mode=run'
     );
     expect(parseCaptureArgs([])).toEqual({
       url: DEFAULT_WEBSITE_URL,
@@ -27,10 +27,10 @@ describe('Website workspace screenshot capture', () => {
       parseCaptureArgs([
         '--keep-png',
         '--url',
-        'http://localhost:3000/docs/langgraph/guides/streaming?mode=run',
+        'http://localhost:3000/docs/angular/langgraph/guides/streaming?mode=run',
       ])
     ).toEqual({
-      url: 'http://localhost:3000/docs/langgraph/guides/streaming?mode=run',
+      url: 'http://localhost:3000/docs/angular/langgraph/guides/streaming?mode=run',
       keepPng: true,
     });
   });

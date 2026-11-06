@@ -1,0 +1,498 @@
+---
+description: Approve and cancel AG-UI interrupts with generation-aware controls, native batches, and application-owned persistence and recovery
+---
+
+# Interrupts
+
+Interrupts let an AG-UI agent pause mid-run and hand control to a human. The agent proposes an action, the run freezes, your Angular UI shows an approval card, the person decides, and the agent resumes with that decision. `injectAgent()` from `@threadplane/ag-ui` surfaces the pending interrupt as an Angular Signal, so the approval flow needs no manual event wiring. The running example is a refund authorization, and this guide walks the four files that make it work.
+
+<Callout type="info" title="When to use interrupts">
+Use interrupts when an agent action is irreversible (sending an email, placing an order, issuing a refund), when the agent needs a human decision it cannot make on its own, or when compliance requires explicit approval before execution.
+</Callout>
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition in front of a refund graph served over AG-UI. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: a modal card appears with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons — Cancel, Edit, and Approve.
+
+Two welcome suggestions set it up. "Refund a duplicate charge" asks for $47.50 back to customer `cus_a8x2k`, and "Refund a chargeback" asks for $129.00 with a different justification, so you can watch the same pause fire on two different payloads.
+
+Approve resumes the graph, which issues a stand-in refund and posts the refund ID into the transcript. Cancel resumes it with a rejection, and the graph says so and issues nothing. Edit keeps the card open, reveals an amount field, and resumes with an amount the operator chose rather than the one the agent proposed.
+
+## How it is built
+
+Four files carry the feature: a LangGraph graph that stops in the middle of a run, a FastAPI server that fronts it with the AG-UI protocol, an application config that registers the agent, and a component that maps the card's three buttons onto resume payloads. Open the Code tab to read them in place.
+
+### The state behind the approval card
+
+The graph tracks more than a message list. A Pydantic model describes the fields the agent must extract from the conversation, and the state adds the operator's decision and the resulting refund ID to them.
+
+<ExampleCode file="graph.py" region="state" title="graph.py — state" />
+
+`decision_approved` is the field the router reads after the pause, which is why the state carries it rather than deriving it later.
+
+### Drafting the refund
+
+The first node makes two model calls. One is a structured-output extraction that fills `customer_id`, `amount`, and `reason` — the three values the approval card renders. The other is a streaming call that writes a human acknowledgement into the transcript while the operator reads the card.
+
+<ExampleCode file="graph.py" region="draft" title="graph.py — the draft node" />
+
+Splitting extraction from narration is deliberate: the card needs typed fields, and the transcript needs prose.
+
+### Pausing at interrupt()
+
+`interrupt()` freezes the graph and hands its argument to the transport. The argument is any JSON-serializable value, and it becomes the payload your component renders. When the client resumes, that same call returns the resume value, so the node reads like a straight-line function even though a human answered in the middle of it.
+
+<ExampleCode file="graph.py" region="request-approval" title="graph.py — the interrupt" />
+
+Notice the `kind` field on the payload, which is how the frontend tells this interrupt apart from any other one the graph might raise, and notice that the node treats a resume value that is not a dictionary, or whose `approved` is missing or false, as a rejection.
+
+<Callout type="tip" title="A resumed node re-executes from the top">
+LangGraph resumes by running the interrupting node again, and `interrupt()` returns the resume value instead of pausing a second time. Every line above the `interrupt()` call runs again, including on later retries, so keep that stretch free of side effects. Reading state, as the example does, is safe; charging a card there is not.
+</Callout>
+
+### Routing on the decision
+
+After the pause the graph branches. A conditional edge sends an approved refund to the node that issues it and sends everything else to the end, which is why the rejection message is written by the interrupting node itself.
+
+<ExampleCode file="graph.py" region="graph" title="graph.py — issuing and routing" />
+
+The graph compiles with `MemorySaver()` because `ag-ui-langgraph` reads the thread's graph state through a checkpointer, so a graph served this way needs one; a paused graph is also a stored checkpoint, which is what the resume reads back.
+
+<Callout type="warning" title="MemorySaver is a development choice">
+An in-memory checkpointer loses every paused run when the process restarts. A deployment that must survive a restart needs a durable saver, such as the Postgres checkpointer, behind the same `checkpointer=` argument.
+</Callout>
+
+### Serving the graph over AG-UI
+
+The backend is a FastAPI application. `LangGraphAgent` from the `ag-ui-langgraph` package wraps the compiled graph, and `add_langgraph_fastapi_endpoint` mounts it at a path that speaks the AG-UI event stream.
+
+<ExampleCode file="server.py" />
+
+That wrapper is what turns a LangGraph pause into the AG-UI event described below.
+
+### The agent provider
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
+
+<ExampleCode file="app.config.ts" />
+
+Pass the URL of your AG-UI endpoint directly in your own application, which does not need the factory:
+
+```typescript
+provideAgent({
+  url: 'https://your-backend.example.com/agent',
+});
+```
+
+### The approval card
+
+`<chat-approval-card>` from `@threadplane/chat` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a matching payload arrives it opens a native modal dialog, and when the interrupt resolves it closes again. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
+
+<ExampleCode file="interrupts.component.ts" region="approval-card" title="interrupts.component.ts — the card" />
+
+The card owns the chrome and the buttons; the `#body` template owns the content, and the payload arrives as that template's implicit value.
+
+### Resuming with the decision
+
+The card emits an action rather than resuming by itself, which leaves the resume payload entirely up to the component. Approve and Cancel are terminal, so the card closes and the handler submits the matching decision. Edit is not terminal: it flips a signal, the body template grows an amount field, and the Save button submits the edited value.
+
+<ExampleCode file="interrupts.component.ts" region="resume" title="interrupts.component.ts — resuming the run" />
+
+`submit({ resume })` continues the paused run instead of starting a new one, and whatever you put in `resume` is exactly what `interrupt()` returns on the server.
+
+<Callout type="info" title="Injection context">
+`injectAgent()` must run inside an Angular injection context: a field initializer, as it is here, or a constructor body.
+</Callout>
+
+## The wire format
+
+The example never touches the protocol, but it is worth knowing what crosses it. An interrupt reaches the browser as an AG-UI `CUSTOM` event named `on_interrupt`, carrying the value the graph passed to `interrupt()`:
+
+```json
+{
+  "type": "CUSTOM",
+  "name": "on_interrupt",
+  "value": "{\"kind\":\"refund_approval\",\"amount\":47.5,\"customer_id\":\"cus_a8x2k\",\"reason\":\"Duplicate charge\"}"
+}
+```
+
+The `ag-ui-langgraph` package serializes the payload, so `value` arrives as a JSON string rather than an object. The adapter parses it before exposing the interrupt. This compatibility event begins collecting a pause; the batch becomes ready to answer at a terminal event or clean transport close. State and message changes remain provisional until that boundary.
+
+Resuming travels the other way. For a payload shaped like this one — an application object with no runtime-specific identifiers — `submit({ resume })` sends `forwardedProps.command.resume`, the convention `ag-ui-langgraph` reads to resume the checkpoint.
+
+<Callout type="info" title="The backend does not unwrap anything">
+In the graph node, `interrupt({...})` returns the resume value directly. The wrapper reads `forwarded_props.command.resume` and applies it before the graph continues.
+</Callout>
+
+Other runtimes signal a pause differently: a `RUN_FINISHED` event carrying a native interrupt outcome records the full batch, and its response goes out as the protocol's top-level `resume` array. Native outcomes take precedence over `CUSTOM on_interrupt` in the default `auto` mode, whichever event arrives first. The [event mapping reference](/docs/angular/ag-ui/reference/event-mapping) covers the event surface in full.
+
+## Pending batches and transport selection
+
+`interrupt()` is the runtime-neutral display projection. In `auto` or `protocol`, a native batch projects `{ interrupts, runId }`; explicit `legacy-command` and `mastra-command` profiles project the compatibility interrupt instead. Use `interruptSession()` for the full batch and its lifecycle. The session includes `phase`, `generation`, `interrupts`, and, when present, the compatibility payload, originating `runId`, and saved resume `attempt`.
+
+Render new decision controls only for `pending` sessions without a retained attempt. Submitting a decision claims the batch before dispatch, so a second submission cannot answer it concurrently.
+
+| Phase | Meaning and UI behavior |
+| --- | --- |
+| `collecting` | The adapter is collecting the pause; wait for its committed boundary. |
+| `pending` | Ready for a decision, or for retry of an already retained decision. |
+| `claimed` | A decision owns this batch; disable new decisions. |
+| `resuming` | The resume request was dispatched. |
+| `acknowledged` | `RUN_STARTED` acknowledged the claim and cleared the visible interrupt. |
+| `uncertain` | Dispatch or its outcome is unknown; reconcile before retry. |
+| `recovery-required` | An acknowledged attempt failed or was restored; reconcile. |
+| `none` | No unresolved interrupt session remains. |
+
+Acknowledgement and disappearance of the approval card do not prove backend completion.
+
+For one native interrupt, `submit({ resume: { approved: true } })` wraps the value as a resolved response to that interrupt. For several, supply one response per pending ID:
+
+```typescript
+await agent.submit({
+  resume: [
+    { interruptId: 'approval-1', status: 'resolved', payload: { approved: true } },
+    { interruptId: 'approval-2', status: 'cancelled' },
+  ],
+});
+```
+
+Use IDs from `interruptSession().interrupts`, not the illustrative IDs above. Every pending ID must appear exactly once; missing, duplicate, unknown, conflicting, and expired IDs are rejected. A cancelled entry cannot carry a payload. A single unwrapped value is accepted only for a single interrupt. Resume requests without a pending batch are rejected, and ordinary input cannot abandon a pending approval.
+
+To reject a decision from an old approval control, capture `const generation = agent.interruptSession().generation` when rendering it and pass `agent.submit({ resume: answer }, { interruptGeneration: generation })`. The adapter checks this optional generation before claiming the batch or changing messages and state. Read a fresh generation when rendering the next batch, even if the runtime reuses interrupt IDs.
+
+Set `interruptTransport` in `provideAgent()` or `toAgent()` options when the backend requires a specific format:
+
+| Value | Resume format |
+| --- | --- |
+| `auto` (default) | Native protocol when a native batch exists; otherwise Mastra command for a compatibility payload with `toolCallId`, or the legacy command. |
+| `protocol` | Top-level `resume` entries correlated with native interrupt IDs. |
+| `legacy-command` | `forwardedProps.command.resume`. |
+| `mastra-command` | `forwardedProps.command.resume` plus `command.interruptEvent` containing `toolCallId` and the available `runId`. Requires the compatibility payload's `toolCallId`. |
+
+Choose `mastra-command` explicitly for the current Mastra command backend, including when it emits both native and compatibility events.
+
+### A single decision with rendered-generation protection
+
+This is a complete standalone component for the compatibility refund payload above. Register `provideAgent({ url: '/agent', interruptTransport: 'legacy-command' })` in the application providers and mount the component alongside the chat. The payload guard validates data before displaying it. The computed view captures the generation when Angular renders the controls; its callback retains that generation even if an old control is invoked later.
+
+```typescript
+import { Component, computed, signal } from '@angular/core';
+import { injectAgent } from '@threadplane/ag-ui';
+
+interface RefundApproval {
+  kind: 'refund_approval';
+  amount: number;
+  customer_id: string;
+  reason: string;
+}
+
+function isRefund(value: unknown): value is RefundApproval {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return item['kind'] === 'refund_approval' &&
+    typeof item['amount'] === 'number' && Number.isFinite(item['amount']) &&
+    typeof item['customer_id'] === 'string' &&
+    typeof item['reason'] === 'string';
+}
+
+@Component({
+  selector: 'app-refund-decision',
+  standalone: true,
+  template: `
+    @if (!hydrated()) { <p>Loading saved approval…</p> }
+    @if (error() || agent.error()?.message; as message) {
+      <p role="alert">{{ message }}</p>
+    }
+    @if (busy() || agent.isLoading()) { <p role="status">Working…</p> }
+    @if (hydrated()) {
+      @if (decision(); as view) {
+        <p>{{ view.payload.customer_id }}: {{ view.payload.amount }}</p>
+        <p>{{ view.payload.reason }}</p>
+        <button [disabled]="busy() || agent.isLoading()"
+          (click)="view.answer(true)">Approve</button>
+        <button [disabled]="busy() || agent.isLoading()"
+          (click)="view.answer(false)">Cancel</button>
+      }
+    }
+  `,
+})
+export class RefundDecisionComponent {
+  readonly agent = injectAgent();
+  readonly hydrated = signal(false);
+  readonly busy = signal(false);
+  readonly error = signal('');
+  readonly decision = computed(() => {
+    const snapshot = this.agent.interruptSession();
+    const payload = snapshot.legacy?.value;
+    if (snapshot.phase !== 'pending' || snapshot.attempt || !isRefund(payload)) {
+      return undefined;
+    }
+    const generation = snapshot.generation;
+    return {
+      payload,
+      answer: (approved: boolean) => this.answer(approved, generation),
+    };
+  });
+
+  constructor() { void this.hydrate(); }
+
+  private async hydrate(): Promise<void> {
+    try {
+      await this.agent.ready;
+      this.hydrated.set(true);
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Restoration failed');
+    }
+  }
+
+  private async answer(approved: boolean, generation: number): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    try {
+      await this.agent.submit(
+        { resume: { approved } },
+        { interruptGeneration: generation },
+      );
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Decision failed');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+}
+```
+
+`approved: false` is this application's rejection decision. It is not a protocol-level cancelled entry. An unrecognized payload intentionally produces no refund controls; route other payload kinds to their own renderer.
+
+### Cancelling a native batch
+
+This complete helper requires native interrupts and `interruptTransport: 'protocol'`. Call it while building the rendered view and bind the returned callback to its Cancel button; do not recreate it inside the click handler. Handle its rejected promise and disable the control while submitting, as in the component above.
+
+```typescript
+import type { AgUiAgent } from '@threadplane/ag-ui';
+
+export function cancellationForRenderedBatch(agent: AgUiAgent) {
+  const snapshot = agent.interruptSession();
+  if (snapshot.phase !== 'pending' || snapshot.attempt || snapshot.interrupts.length === 0) {
+    throw new Error('An unclaimed pending native interrupt batch is required');
+  }
+  const resume = snapshot.interrupts.map(({ id }) => ({
+    interruptId: id,
+    status: 'cancelled' as const,
+  }));
+  return () => agent.submit(
+    { resume },
+    { interruptGeneration: snapshot.generation },
+  );
+}
+```
+
+Every observed ID appears exactly once, cancellation carries no payload, and a stale generation is rejected. This protocol cancellation differs from sending the Mastra application's `{ approved: false }` decision through `mastra-command`.
+
+## Failures, retry, and restoration
+
+A failed resume restores the committed protocol messages and state used by subsequent requests. Failed provisional messages may remain visible in the local transcript. Authoritative native snapshots define the committed boundary. A compatibility pause commits only at a terminal event or clean transport close. This client rollback cannot undo work already performed on the server.
+
+When a transport error explicitly carries `requestNotDispatched: true`, the batch returns to `pending` and `retry()` resends the exact saved decision. Submitting a replacement decision is rejected. Set that marker only when the transport can prove the request was not dispatched. A lost connection, abort after dispatch, or failure after acknowledgement can leave the result uncertain; `retry()` then requires authoritative reconciliation and does not resend automatically.
+
+Restoration is opt-in through `replay` or `persistence` in the provider or adapter options. A `replay` source loads the thread's protocol events from a server that kept them and restores a paused run's interrupt batch exactly as the live pause produced it; when it returns no events, or fails, hydration falls back to `persistence`. See [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server). For `persistence`, the application supplies a stable `threadId`, a scoped `namespace`, and a store with `load(key)` and atomic `compareAndSwap(key, expectedRevision, next)` methods. A missing record uses `expectedRevision: null`; a revision conflict blocks further writes. The record retains committed messages and state, the interrupt session, and the saved resume attempt. No browser storage backend is bundled.
+
+Atomic storage claims coordinate clients sharing that store. Preventing duplicate backend side effects also requires server-side idempotency; a retained attempt ID alone cannot establish that guarantee.
+
+Await `agent.ready` before rendering restored approval controls; actions also wait for hydration. An interrupted in-flight claim restores as uncertain, and an acknowledged attempt requires recovery. Configure `persistence.reconcile(record)` to obtain an authoritative backend outcome and call `agent.reconcileInterrupt()` to apply it. The callback returns `unknown`, or `pending`, `acknowledged`, or `completed` with authoritative `committed` and `session` snapshots. An unknown outcome keeps recovery blocked. The adapter does not provide a backend reconciliation endpoint, and stored client state cannot recreate a checkpoint lost by a restarted `MemorySaver` process.
+
+The optional `isInputBlocked` signal disables ordinary chat input during hydration, reconciliation, and unresolved interrupt phases. The built-in composer preserves drafts while blocked; approval controls still submit through the resume path.
+
+### Wiring application-owned persistence
+
+This complete provider helper accepts an application-owned persistence configuration. Use its returned providers in the application config, with the same thread ID and namespace when reopening the thread. The store and reconciler are dependencies you implement; neither is a bundled service.
+
+```typescript
+import { provideAgent } from '@threadplane/ag-ui';
+import type { AgUiInterruptPersistence } from '@threadplane/ag-ui';
+
+export function providersForRestoredThread(
+  threadId: string,
+  persistence: AgUiInterruptPersistence,
+) {
+  return provideAgent({
+    url: '/agent',
+    threadId,
+    persistence,
+  });
+}
+```
+
+### Test-only compare-and-swap store
+
+This complete TypeScript example is non-durable and single-process. Its comparison and replacement run synchronously with no intervening `await`, which makes them atomic only among callers sharing this store instance. It loses all records when the process exits. Production storage must enforce the comparison and write atomically across the clients it coordinates; a `localStorage` read followed by a write does not provide that guarantee across tabs.
+
+```typescript
+import type {
+  AgUiInterruptPersistence,
+  AgUiThreadRecord,
+} from '@threadplane/ag-ui';
+
+export function createTestOnlyStore(): AgUiInterruptPersistence['store'] {
+  const records = new Map<string, AgUiThreadRecord>();
+  return {
+    async load(key) {
+      return structuredClone(records.get(key) ?? null);
+    },
+    async compareAndSwap(key, expectedRevision, next) {
+      const currentRevision = records.get(key)?.revision ?? null;
+      if (currentRevision !== expectedRevision) return false;
+      const nextRevision = expectedRevision === null ? 0 : expectedRevision + 1;
+      if (next.revision !== nextRevision) throw new Error('Invalid next revision');
+      records.set(key, structuredClone(next));
+      return true;
+    },
+  };
+}
+
+export async function demonstrateSingleWinner(): Promise<void> {
+  const store = createTestOnlyStore();
+  const record: AgUiThreadRecord = {
+    version: 1,
+    namespace: 'test-only',
+    threadId: 'thread-1',
+    revision: 0,
+    committed: { state: {}, messages: [] },
+    session: { phase: 'none', generation: 0, interrupts: [] },
+  };
+  const key = JSON.stringify([record.namespace, record.threadId]);
+  const results = await Promise.all([
+    store.compareAndSwap(key, null, record),
+    store.compareAndSwap(key, null, record),
+  ]);
+  if (results.filter(Boolean).length !== 1) throw new Error('Expected one winner');
+  const saved = await store.load(key);
+  if (saved?.revision !== 0) throw new Error('Unexpected saved revision');
+}
+```
+
+The adapter creates the namespace/thread key and increments record revisions. This example demonstrates client storage ownership only; it makes no claim about backend execution occurring exactly once.
+
+### Authoritative reconciliation
+
+The exact result union below comes from the exported persistence callback. This complete type-and-configuration helper leaves the authoritative lookup to your application:
+
+```typescript
+import type {
+  AgUiInterruptPersistence,
+  InterruptSessionSnapshot,
+  ThreadSnapshot,
+} from '@threadplane/ag-ui';
+
+export type ReconciliationResult =
+  | { status: 'unknown' }
+  | {
+      status: 'pending' | 'acknowledged' | 'completed';
+      committed: ThreadSnapshot;
+      session: InterruptSessionSnapshot;
+    };
+
+export function persistenceForApplication(
+  namespace: string,
+  store: AgUiInterruptPersistence['store'],
+  reconcile: NonNullable<AgUiInterruptPersistence['reconcile']>,
+): AgUiInterruptPersistence {
+  return { namespace, store, reconcile };
+}
+```
+
+Your backend's durable execution/checkpoint records must establish the outcome and supply enough information for your application to construct both snapshots. Preserve attempt identity and its captured decision when authoritatively reporting that the same attempt remains pending. Do not manufacture `pending` from a failed fetch or simply return the stored client record as proof. Return `unknown` when the outcome cannot be established; recovery remains blocked. Threadplane supplies no reconciliation HTTP endpoint.
+
+`pending` requires a pending session; `acknowledged` requires an acknowledged session. `completed` requires either `none`, or a newly paused `pending` batch with a greater generation and no retained attempt. A retained resume input survives reconciliation only when the attempt ID, run ID, and generation still match. A completed old action must never be resubmitted to answer a new pause.
+
+### Recovery controls
+
+The standalone component above already awaits `agent.ready` and displays hydration and submission errors. To add explicit reconciliation and retry, place these **component-member fragments** inside that class; they reuse its `agent`, `hydrated`, `busy`, and `error` fields and its `signal` import. Configure persistence with an authoritative reconciler first.
+
+```typescript
+readonly retryAttemptId = signal<string | undefined>(undefined);
+
+async reconcile(): Promise<void> {
+  if (this.busy() || this.agent.isLoading()) return;
+  this.busy.set(true);
+  this.error.set('');
+  this.retryAttemptId.set(undefined);
+  try {
+    await this.agent.reconcileInterrupt();
+    this.hydrated.set(true);
+    const session = this.agent.interruptSession();
+    if (session.phase === 'pending' && session.attempt) {
+      this.retryAttemptId.set(session.attempt.id);
+    }
+  } catch (error) {
+    this.error.set(error instanceof Error ? error.message : 'Recovery failed');
+  } finally {
+    this.busy.set(false);
+  }
+}
+
+async retryRetained(): Promise<void> {
+  if (this.busy() || this.agent.isLoading()) return;
+  const session = this.agent.interruptSession();
+  if (session.phase !== 'pending' || !session.attempt ||
+      session.attempt.id !== this.retryAttemptId()) return;
+  this.busy.set(true);
+  this.error.set('');
+  this.retryAttemptId.set(undefined);
+  try {
+    await this.agent.retry();
+  } catch (error) {
+    this.error.set(error instanceof Error ? error.message : 'Retry failed');
+  } finally {
+    this.busy.set(false);
+  }
+}
+```
+
+Add this **template fragment** to that component's template. Reconciliation updates state and enables a separate retry button only for the retained pending attempt; it never submits a decision itself.
+
+```html
+<button [disabled]="busy() || agent.isLoading()"
+  (click)="reconcile()">Check backend outcome</button>
+@if (retryAttemptId() && agent.interruptSession().phase === 'pending') {
+  <button [disabled]="busy() || agent.isLoading()"
+    (click)="retryRetained()">Retry saved decision</button>
+}
+```
+
+Providers dispose the adapter with their injector. If you create it with `toAgent()` directly, call `agent.dispose()` when finished. Disposal unsubscribes and stops local work; it does not delete or cancel backend checkpoints.
+
+### Migration note
+
+Install `@ag-ui/client` and `@ag-ui/core` at `1.0.1` or later. The adapter declares `^1.0.1` peer dependencies: native interrupt validation now imports the protocol validators from `@ag-ui/core/schemas`, which the 0.0.x line does not ship. The 1.0 client translates streams from older servers itself, so the backend does not have to move at the same time.
+
+Mixed native and compatibility events now select native transport by default regardless of arrival order. Backends requiring a command format must select the matching explicit profile. Replace bare resume calls with a restored or observed pending batch, answer every native ID, and use `retry()` for a retained decision after a proven pre-dispatch failure. Recovery from an uncertain attempt requires application-provided authoritative reconciliation.
+
+## Cross-adapter parity
+
+The basic demo card uses the shared display and decision contract. Its injection import changes when moving to LangGraph:
+
+```diff
+- import { injectAgent } from '@threadplane/ag-ui';
++ import { injectAgent } from '@threadplane/langgraph';
+```
+
+The `interrupt()` signal and `submit({ resume })` are part of the runtime-neutral `Agent` contract, and `<chat-approval-card>` is written against it. Configure the matching provider and preserve the backend's payload contract. The lifecycle-aware examples on this page additionally use AG-UI's `interruptSession()`, `interruptGeneration`, `ready`, and `reconcileInterrupt()` extensions; those are not interchangeable with LangGraph APIs. LangGraph restoration uses server checkpoints, and its retry replays a captured submission rather than an AG-UI persistence claim. The [LangGraph interrupts guide](/docs/angular/langgraph/guides/interrupts) covers its typed payloads, multi-step approvals, and timeout strategies.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Event mapping" href="/docs/angular/ag-ui/reference/event-mapping">
+    Every AG-UI event and the adapter state it updates.
+  </Card>
+  <Card title="Client tools" href="/docs/angular/ag-ui/guides/client-tools">
+    Let the agent call functions that run in the browser.
+  </Card>
+  <Card title="LangGraph interrupts" href="/docs/angular/langgraph/guides/interrupts">
+    Typed payloads, repeated approvals, and timeout strategies.
+  </Card>
+  <Card title="Testing" href="/docs/angular/ag-ui/guides/testing">
+    Script interrupt events deterministically with the fake agent.
+  </Card>
+</CardGroup>

@@ -1,0 +1,214 @@
+---
+description: ChatSelectComponent renders its trigger in the host and portals its menu into a body-level overlay container, so panelClass is the styling seam.
+---
+
+# ChatSelectComponent
+
+`ChatSelectComponent` is a generic single-select dropdown. It renders a ghosted, fully rounded trigger in the host element and portals the menu into a body-level overlay container, so the menu is never clipped by an ancestor `overflow` and never trapped by an ancestor `transform`. It is designed to slot into the chat input pill (via `[chatInputModelSelect]`) as a model picker, but it works anywhere.
+
+**Selector:** `chat-select`
+
+**Import:**
+
+```typescript
+import { ChatSelectComponent, type ChatSelectOption } from '@threadplane/chat';
+```
+
+## Basic Usage
+
+Project into the chat input pill so the select appears in the control row, before the trailing slot and the send button:
+
+```html
+<chat [agent]="agent">
+  <chat-select
+    chatInputModelSelect
+    [options]="models()"
+    [(value)]="selectedModel"
+    placeholder="Choose a model"
+  />
+</chat>
+```
+
+Standalone usage (anywhere):
+
+```html
+<chat-select
+  [options]="opts"
+  [(value)]="selected"
+  placeholder="Pick one"
+/>
+```
+
+## Where the markup lives
+
+The component renders two things, in two different places in the DOM:
+
+- **The trigger** — a `<button class="chat-select__trigger">` inside the `chat-select` host element. It shows the selected option's label (or the placeholder) and a chevron.
+- **The menu** — a `<div class="chat-select__menu" role="listbox">` that is *not* inside the host. While the select is open, the chat connected-overlay primitive creates a pane element, appends it to a single shared `.chat-overlay-container` div on `document.body`, and moves the menu's nodes into it. Closing the select destroys the pane.
+
+The pane always carries the classes `chat-overlay-pane` and `chat-select__overlay`, plus whatever the `panelClass` input adds. The container is `position: fixed; inset: 0; z-index: 1000; pointer-events: none`, and each pane is `position: absolute; pointer-events: auto`.
+
+Two consequences worth internalizing:
+
+- A descendant selector rooted at `chat-select` never reaches the menu. `panelClass` is the only styling seam that does.
+- Tests and page scripts must query the menu through `.chat-overlay-container`, not through the component host.
+
+## API
+
+### Inputs
+
+| Input         | Type                                 | Default      | Description |
+|---------------|--------------------------------------|--------------|-------------|
+| `options`     | `readonly ChatSelectOption[]`        | **Required** | Items to display in the menu. |
+| `value`       | `string` (two-way, `model()`)        | `''`         | The currently selected option's `value`. |
+| `placeholder` | `string`                             | `'Select'`   | Label rendered in the trigger when no option matches `value`. |
+| `disabled`    | `boolean`                            | `false`      | Disables the trigger. Clicks and key presses are ignored. |
+| `menuLabel`   | `string \| undefined`                | `undefined`  | `aria-label` for the listbox. Falls back to `placeholder` when unset. |
+| `panelClass`  | `string \| string[]`                 | `''`         | Extra class or classes added to the portaled overlay pane. This is the only selector that reaches the menu. |
+
+### `ChatSelectOption`
+
+```typescript
+interface ChatSelectOption {
+  value: string;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+}
+```
+
+`description` is optional. When present it renders as a smaller second line under the label, styled with `--tplane-chat-font-size-xs` and `--tplane-chat-text-muted`:
+
+```typescript
+readonly models: ChatSelectOption[] = [
+  { value: 'fast', label: 'Fast', description: 'Lower latency, shorter answers' },
+  { value: 'deep', label: 'Deep', description: 'Slower, better at multi-step reasoning' },
+  { value: 'legacy', label: 'Legacy', disabled: true },
+];
+```
+
+### Outputs
+
+`value` is a signal-based `model<string>('')`, so Angular auto-creates a `valueChange` output (`string`) that emits the new selection. Bind it directly with `(valueChange)`, or use the `[(value)]` two-way shorthand below.
+
+### Two-way binding
+
+Use `[(value)]` to bind a writable signal:
+
+```html
+<chat-select [options]="opts" [(value)]="selected" />
+```
+
+Or bind one-way and listen for changes:
+
+```html
+<chat-select
+  [options]="opts"
+  [value]="selected()"
+  (valueChange)="selected.set($event)"
+/>
+```
+
+## Behavior
+
+### Open and close
+
+- **Open**: click the trigger, or press `Enter`, `Space`, or `↓` while it has focus. The first option receives focus once the pane is attached.
+- **Close**: click an option, press `Esc`, press `Tab` from inside the pane or from the trigger, or press the mouse down anywhere outside both the pane and the trigger.
+
+When the pane is torn down while focus is still inside it, focus returns to whatever was focused before the menu opened — in practice, the trigger.
+
+### Keyboard
+
+| Key            | Behavior                                        |
+|----------------|-------------------------------------------------|
+| `Enter`/`Space`/`↓` on trigger | Opens the menu, focuses the first option |
+| `Esc` on trigger               | Closes the menu when it is open |
+| `↑` / `↓` in menu              | Moves focus to the previous or next non-disabled option, wrapping at the ends |
+| `Enter` / `Space` on option    | Selects, closes, returns focus to the trigger |
+| `Esc` in menu                  | Closes, returns focus to the trigger |
+| `Tab`                          | Closes the menu |
+
+### Disabled options
+
+A `ChatSelectOption` with `disabled: true` is rendered, skipped during keyboard navigation, and not selectable by click.
+
+### Menu position
+
+The overlay is positioned against the trigger, not against the document flow. Four connected positions are tried in order:
+
+1. Above the trigger, right edges aligned (the default — the select usually sits in the chat input pill at the bottom of the screen).
+2. Below the trigger, right edges aligned.
+3. Above the trigger, left edges aligned.
+4. Below the trigger, left edges aligned.
+
+The positioner picks the first position that fits inside the viewport (narrowed by an 8px margin), falling back to the one with the largest visible area and clamping the pane on screen. So a select near the top of the page flips its menu downward on its own — there is no need to wrap it in a positioned container. The pane repositions on window scroll and resize, and whenever a `ResizeObserver` sees the trigger or the pane change size.
+
+## Theming
+
+The trigger lives in the host, so tokens set on or above `chat-select` reach it:
+
+```css
+chat-select {
+  --tplane-chat-text-muted: hsl(0 0% 50%);
+  --tplane-chat-surface-alt: hsl(0 0% 96%);
+}
+```
+
+The menu does not inherit from `chat-select` — it inherits from `body`, because that is where the overlay container sits. The menu reads `--tplane-chat-surface`, `--tplane-chat-separator`, and `--tplane-chat-shadow-lg` for its box, and `--tplane-chat-text`, `--tplane-chat-text-muted`, and `--tplane-chat-surface-alt` for its options. Set those at `:root` for an application-wide change:
+
+```css
+:root {
+  --tplane-chat-surface: hsl(0 0% 100%);
+  --tplane-chat-separator: hsl(0 0% 90%);
+  --tplane-chat-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+```
+
+To restyle one select without touching the rest of the application, put the tokens on a `panelClass` in a global stylesheet — the pane is outside every component's style encapsulation, so the rule must be global:
+
+```html
+<chat-select
+  [options]="models()"
+  [(value)]="selectedModel"
+  panelClass="model-picker-panel"
+/>
+```
+
+```css
+/* styles.css — global, not a component stylesheet */
+.model-picker-panel {
+  --tplane-chat-surface: hsl(240 20% 12%);
+  --tplane-chat-separator: hsl(240 12% 24%);
+  --tplane-chat-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.model-picker-panel .chat-select__menu {
+  min-width: 260px;
+}
+```
+
+<Callout type="warning" title="Descendant selectors do not reach the menu">
+`chat-select .chat-select__menu { ... }` matches nothing at runtime. The menu is appended to `.chat-overlay-container` on `document.body`, so it is not a descendant of the host element that projected it.
+</Callout>
+
+## Public API
+
+```typescript
+import { ChatSelectComponent, type ChatSelectOption } from '@threadplane/chat';
+```
+
+The overlay primitive underneath is exported too, if you need the same portal behavior in a component of your own:
+
+```typescript
+import {
+  ChatConnectedOverlayDirective,
+  ChatOverlayOriginDirective,
+  type ConnectedPosition,
+} from '@threadplane/chat';
+```
+
+## See also
+
+- [ChatInputComponent](/docs/angular/chat/components/chat-input) — the chat input pill that hosts the `[chatInputModelSelect]` slot.
+- [Theming](/docs/angular/chat/guides/theming) — the full `--tplane-chat-*` token set.

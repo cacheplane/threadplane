@@ -35,6 +35,7 @@ export async function ApiReferencePage({
     title,
   });
   const entrypoint = page.entrypoint;
+  const framework = entrypoint?.framework === 'react' ? 'react' : entrypoint?.framework === 'angular' ? 'angular' : undefined;
   const contextTrail = [
     { label: 'Docs', href: '/docs' },
     {
@@ -53,7 +54,7 @@ export async function ApiReferencePage({
   ];
   const docsSlot = (
     <div className="docs-workspace-article">
-      <DocsSearch />
+      <DocsSearch framework={framework} />
       <div className="api-reference-page">
         {symbol && entrypoint ? (
           <ApiSymbolView symbol={symbol} entrypoint={entrypoint} />
@@ -116,9 +117,12 @@ export async function ApiReferencePage({
       <WebsiteWorkspace
         {...workspace}
         routePath={pathname}
+        framework={framework}
         docsSlot={docsSlot}
         contextTrail={contextTrail}
         docsContext={{
+          scope: framework ?? 'shared',
+          currentPath: pathname,
           activeLibrary: null,
           activeSection: 'api',
           activeSlug: segments.at(-1) ?? '',

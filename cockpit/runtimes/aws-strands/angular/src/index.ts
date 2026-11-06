@@ -23,7 +23,7 @@ export const runtimesAwsStrandsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Runtimes — AWS Strands (Angular)',
-  docsPath: '/docs/runtimes/aws-strands/overview',
+  docsPath: '/docs/angular/runtimes/aws-strands/overview',
   promptAssetPaths: [
     'cockpit/runtimes/aws-strands/angular/prompts/aws-strands.md',
   ],

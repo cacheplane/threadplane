@@ -82,18 +82,18 @@ describe('positioning: hero copy', () => {
   it('subhead segments preserve the copy and link each capability to its docs', () => {
     expect(HERO_SUBHEAD_SEGMENTS.map((s) => s.text).join('')).toBe(HERO_SUBHEAD);
     expect(HERO_SUBHEAD_SEGMENTS.filter((s) => s.href)).toEqual([
-      { text: 'persistent', href: '/docs/langgraph/guides/persistence' },
-      { text: 'durable', href: '/docs/langgraph/guides/persistence#choosing-a-checkpointer' },
-      { text: 'visible', href: '/docs/chat/components/chat-tool-calls' },
-      { text: 'reviewable', href: '/docs/langgraph/guides/interrupts' },
-      { text: 'resumable', href: '/docs/langgraph/guides/persistence#checkpoint-recovery' },
+      { text: 'persistent', href: '/docs/angular/langgraph/guides/persistence' },
+      { text: 'durable', href: '/docs/angular/langgraph/guides/persistence#choosing-a-checkpointer' },
+      { text: 'visible', href: '/docs/angular/chat/components/chat-tool-calls' },
+      { text: 'reviewable', href: '/docs/angular/langgraph/guides/interrupts' },
+      { text: 'resumable', href: '/docs/angular/langgraph/guides/persistence#checkpoint-recovery' },
     ]);
   });
 
   it('pins the hero action labels and the secondary destination', () => {
     expect(HERO_PRIMARY_LABEL).toBe('Install Threadplane');
     expect(HERO_SECONDARY_LABEL).toBe('See it running in the docs →');
-    expect(HERO_SECONDARY_HREF).toBe('/docs/chat/guides/generative-ui?mode=run');
+    expect(HERO_SECONDARY_HREF).toBe('/docs/angular/chat/guides/generative-ui?mode=run');
   });
 
   it('trust line license word matches the chat package manifest', () => {
@@ -147,7 +147,7 @@ describe('positioning: install options', () => {
   });
 
   it('pins the fake-agent quickstart href the homepage CTAs link to', () => {
-    expect(INSTALL_OPTIONS[0].quickstartHref).toBe('/docs/chat/getting-started/try-without-a-backend');
+    expect(INSTALL_OPTIONS[0].quickstartHref).toBe('/docs/angular/chat/getting-started/try-without-a-backend');
   });
 
   it('quickstart hrefs point at docs routes', () => {
@@ -156,7 +156,7 @@ describe('positioning: install options', () => {
 
   it('the try-without-a-backend page uses the fake install command verbatim', () => {
     const mdx = fs.readFileSync(
-      path.join(resolveWebsiteDir(), 'content/docs/chat/getting-started/try-without-a-backend.mdx'),
+      path.join(resolveWebsiteDir(), 'content/docs/angular/chat/getting-started/try-without-a-backend.mdx'),
       'utf8',
     );
     expect(mdx).toContain(INSTALL_OPTIONS[0].command);

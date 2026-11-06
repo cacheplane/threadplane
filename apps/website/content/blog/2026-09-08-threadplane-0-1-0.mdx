@@ -45,19 +45,19 @@ Let's look at the complete surface, as of 0.1.0.
 
 | Capability | What ships | Where it is documented |
 |---|---|---|
-| Chat surface | `<chat>` plus fifteen documented components — message list, input, tool calls, tool-call cards and templates, reasoning, trace, subagent cards, sidebar, sidenav, popup, select, debug | [`<chat>`](/docs/chat/components/chat) |
-| Streaming markdown | A streaming node renderer over a twenty-six-node registry, sanitized, with per-instance node overrides | [Markdown](/docs/chat/guides/markdown) |
+| Chat surface | `<chat>` plus fifteen documented components — message list, input, tool calls, tool-call cards and templates, reasoning, trace, subagent cards, sidebar, sidenav, popup, select, debug | [`<chat>`](/docs/angular/chat/components/chat) |
+| Streaming markdown | A streaming node renderer over a twenty-six-node registry, sanitized, with per-instance node overrides | [Markdown](/docs/angular/chat/guides/markdown) |
 | Two runtimes, one contract | `@threadplane/langgraph` and `@threadplane/ag-ui` both produce the same `Agent` interface — six signals, four methods, one event stream | [Choosing an adapter](/docs/choosing-an-adapter) |
-| Durable threads | Persistence, checkpoints, durable execution, and time travel across restarts | [Persistence](/docs/langgraph/guides/persistence) |
-| Human approvals | Interrupts, resume payloads, and the panel primitives to compose a review step | [Interrupts](/docs/langgraph/guides/interrupts) |
-| Client tools | Tools that execute in the browser and hand control back to the graph | [Client tools](/docs/chat/guides/client-tools) |
-| Generative UI | `@threadplane/render` for json-render, `@threadplane/a2ui` for A2UI v0.9, both rendering only components you registered | [json-render vs A2UI](/docs/render/concepts/json-render-vs-a2ui) |
-| Subagents | Child graphs rendered as their own cards, with their own transcripts | [Subgraphs](/docs/langgraph/guides/subgraphs) |
-| Long-horizon agents | The five Deep Agents capabilities — planning, filesystem, subagents, memory, and skills — rendered with no extra adapter | [Deep Agents](/docs/deep-agents/getting-started/introduction) |
-| Errors and retry | `AgentError` classifies every failure as `connection`, `auth`, `server`, `interrupted`, or `aborted`, each carrying a `retryable` flag | [Error handling](/docs/chat/guides/error-handling) |
-| Thread routing | The URL is the source of truth, so a shared link opens the thread it points at | [Thread routing](/docs/chat/guides/thread-routing) |
-| Theming | CSS custom properties, no `!important`, your design system stays yours | [Theming](/docs/chat/guides/theming) |
-| Testing | `provideFakeAgent()`, mock transports, and fixture replay, so your suite runs without a model or an API key | [Try without a backend](/docs/chat/getting-started/try-without-a-backend) |
+| Durable threads | Persistence, checkpoints, durable execution, and time travel across restarts | [Persistence](/docs/angular/langgraph/guides/persistence) |
+| Human approvals | Interrupts, resume payloads, and the panel primitives to compose a review step | [Interrupts](/docs/angular/langgraph/guides/interrupts) |
+| Client tools | Tools that execute in the browser and hand control back to the graph | [Client tools](/docs/angular/chat/guides/client-tools) |
+| Generative UI | `@threadplane/render` for json-render, `@threadplane/a2ui` for A2UI v0.9, both rendering only components you registered | [json-render vs A2UI](/docs/angular/render/concepts/json-render-vs-a2ui) |
+| Subagents | Child graphs rendered as their own cards, with their own transcripts | [Subgraphs](/docs/angular/langgraph/guides/subgraphs) |
+| Long-horizon agents | The five Deep Agents capabilities — planning, filesystem, subagents, memory, and skills — rendered with no extra adapter | [Deep Agents](/docs/angular/deep-agents/getting-started/introduction) |
+| Errors and retry | `AgentError` classifies every failure as `connection`, `auth`, `server`, `interrupted`, or `aborted`, each carrying a `retryable` flag | [Error handling](/docs/angular/chat/guides/error-handling) |
+| Thread routing | The URL is the source of truth, so a shared link opens the thread it points at | [Thread routing](/docs/angular/chat/guides/thread-routing) |
+| Theming | CSS custom properties, no `!important`, your design system stays yours | [Theming](/docs/angular/chat/guides/theming) |
+| Testing | `provideFakeAgent()`, mock transports, and fixture replay, so your suite runs without a model or an API key | [Try without a backend](/docs/angular/chat/getting-started/try-without-a-backend) |
 
 One hundred and twenty-seven documentation pages sit behind that table.
 
@@ -70,7 +70,7 @@ I measured this rather than asserting it, and I wrote up [exactly where the door
 
 Second, AG-UI support is protocol-first, and that's a claim I could test.
 The adapter consumes the AG-UI event vocabulary, not any single runtime's SDK.
-On 2026-08-31 it ran against [AWS Strands, Microsoft Agent Framework, and Mastra](/docs/runtimes/getting-started/introduction): three runtimes in two languages, with no adapter changes for messages, tool calls, or state.
+On 2026-08-31 it ran against [AWS Strands, Microsoft Agent Framework, and Mastra](/docs/angular/runtimes/getting-started/introduction): three runtimes in two languages, with no adapter changes for messages, tool calls, or state.
 Each one has a standalone example and a committed transcript of its wire traffic.
 That one was *fun* to watch work. 😆
 

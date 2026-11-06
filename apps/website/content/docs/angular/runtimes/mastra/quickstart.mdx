@@ -1,0 +1,109 @@
+---
+title: Quickstart
+description: Run the Mastra runtime example locally against the Node AG-UI hosting service on port 5332, with the Angular app on 4332.
+---
+
+# Mastra Quickstart
+
+This runs the example from a clone of the [monorepo](https://github.com/cacheplane/threadplane). The backend is **not** Python: it is the Node service in `deployments/ag-ui-mastra`, listening on port 5332. The Angular dev server is on port 4332.
+
+<Callout type="info" title="Prerequisites">
+Node.js 22 or newer and an OpenAI API key. No Python toolchain is involved in this example.
+</Callout>
+
+<Callout type="warning" title="Two terminals, and the Node service starts by hand">
+`serve-example.ts` auto-starts Python backends only, and this example has none. For Mastra it starts the Angular dev server alone, so the Node AG-UI service is a second terminal that you start yourself.
+</Callout>
+
+<Steps>
+<Step title="Install workspace dependencies">
+
+```bash
+git clone https://github.com/cacheplane/threadplane.git
+cd threadplane
+npm ci
+```
+
+</Step>
+<Step title="Install and start the Node AG-UI service">
+
+The service has its own dependency tree.
+
+```bash
+cd deployments/ag-ui-mastra
+npm ci
+AG_UI_INTERNAL_TOKEN=dev-local-token \
+  OPENAI_API_KEY=sk-... \
+  PORT=5332 node server.mjs
+```
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `AG_UI_INTERNAL_TOKEN` | Yes | Every route except `/ok` requires a matching `X-Internal-Token` header. The service refuses to boot without this. |
+| `OPENAI_API_KEY` | Yes | Resolved by Mastra's model router. `OPENAI_BASE_URL` is honored, which is how the fixture harness replays recorded calls. |
+| `PORT` | Yes, here | Defaults to `8321`. The example's dev proxy targets `5332`, so set it. |
+| `AG_UI_MASTRA_DB_PATH` | No | LibSQL file path. Defaults to `data/mastra.db` beside the service. It must be persistent, because suspended-run snapshots live there. |
+
+<Callout type="warning" title="Do not source the repository root .env">
+Export only the variables you need. A stray `AG_UI_INTERNAL_TOKEN` that disagrees with the dev proxy surfaces as a 401 that reads like an OpenAI authentication failure.
+</Callout>
+
+</Step>
+<Step title="Start the Angular app in a second terminal">
+
+```bash
+npx tsx scripts/examples/serve-example.ts --capability=rt-mastra
+```
+
+Or run the target directly:
+
+```bash
+npx nx run cockpit-runtimes-mastra-angular:serve:cockpit --port 4332
+```
+
+The example's `proxy.conf.mjs` rewrites `/agent` to `http://localhost:5332/agent/mastra` and injects `X-Internal-Token: dev-local-token`. Override that header value with the `AG_UI_INTERNAL_TOKEN` environment variable if you started the service with a different token.
+
+</Step>
+<Step title="Open the app">
+
+Visit `http://localhost:4332`. The service exposes an unauthenticated health check at `http://localhost:5332/ok`; the run endpoint is `http://localhost:5332/agent/mastra`.
+
+</Step>
+<Step title="Exercise every surface">
+
+The app opens with three welcome suggestions, one per surface.
+
+1. **Start a packing list** submits *"Start a packing list titled 'Yosemite Weekend' with a tent (1) and two sleeping bags."* The agent writes the list into Mastra working memory, which reaches the frontend as a `STATE_SNAPSHOT` followed by real JSON-Patch `STATE_DELTA` events, and the side panel fills in as it is written.
+2. **Check trail conditions** submits *"What are the conditions at Yosemite Valley right now?"* and the agent calls the backend tool `check_conditions`, which returns a fixed forecast so the demo behaves the same on every run.
+3. **Reserve the campsite** submits *"Please reserve the North Pines campsite for 2 nights."* `reserve_campsite` calls Mastra's `suspend()` instead of booking anything, and an approval card shows the site, the number of nights, and the total.
+4. Approve or cancel the card for North Pines, two nights, $90. The run resumes from the snapshot persisted in LibSQL. Approve returns a synthetic confirmation; Cancel returns a backend tool result containing `Nothing was booked.` and a consistent assistant reply. This local tool does not contact an external reservation service. Both decisions were verified on 2026-09-09.
+5. For the subagent surface, ask for a forecast — for example *"What is the weather forecast for North Pines this weekend?"* The agent delegates to the `weather_forecaster` child agent rather than answering itself, and the child's answer streams into a subagent card while it is still being written.
+
+</Step>
+</Steps>
+
+## Configure the resume transport
+
+The Angular example config selects the compatibility command transport explicitly. Use the same selection in an Angular application using this compatibility adapter; the [native React reservation preview](/docs/angular/runtimes/mastra/overview?frontend=react) uses top-level native resume with the current opaque pause correlation:
+
+```typescript
+import { provideAgent } from '@threadplane/ag-ui';
+
+provideAgent({ url: '/agent', interruptTransport: 'mastra-command' });
+```
+
+After an approval becomes pending, submit `{ resume: { approved: true } }` or `{ resume: { approved: false } }`. The adapter adds the observed tool-call and run IDs to the command.
+
+## Running the service's own tests
+
+```bash
+cd deployments/ag-ui-mastra
+npm test
+```
+
+These assert the Server-Sent Events grammar of every surface against the captured 2026-08-31 transcripts, and drive the interrupt-to-resume round trip through the real `@ag-ui/client` — the same client the Angular adapter wraps. The model is a scripted mock, so no network and no key are required.
+
+## Next steps
+
+- [How It Connects](/docs/angular/runtimes/mastra/how-it-connects) — the wire conventions this example relies on.
+- [Overview](/docs/angular/runtimes/mastra/overview) — what the integration does and does not support.

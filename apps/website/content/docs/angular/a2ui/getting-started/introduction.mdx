@@ -1,0 +1,200 @@
+---
+description: The protocol layer for A2UI messages, taught through the flight-booking demo whose agent authors every surface and streams it as v0.9 JSONL.
+---
+
+# Introduction
+
+`@threadplane/a2ui` is the protocol layer for A2UI messages. It gives the rest of the framework a shared TypeScript vocabulary for agent-built surfaces, streamed JSONL messages, dynamic values, and outbound action payloads.
+
+It does not render Angular components. It does not register handler functions. It does not decide how an agent should respond to a button click. Those jobs sit in `@threadplane/chat` and `@threadplane/render`.
+
+The running example is a flight booking flow. The agent authors each screen as an A2UI surface, and this page walks the files that produce it.
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition with the A2UI catalog registered on it. Choose the welcome suggestion "Book LAX → JFK" and the agent replies with a booking form rather than with prose: origin and destination pickers already set to those two airports, a departure date, a passenger count, and a fare class.
+
+Fill the form and press "Search flights". The button does not post a chat message; it sends a structured A2UI action back to the agent, which searches the flight fixtures and answers with a second surface listing the matching flights. Selecting one produces a third surface, the booking confirmation, whose "Modify search" button returns to the form with the earlier values already filled in. The model authors both the results list and the confirmation surface at request time, so their exact layout and wording vary from run to run; only the form's shape is prescribed.
+
+The second suggestion, "Book SFO → SEA", runs the same pattern on a different route, which is worth trying because nothing about the form is hardcoded on the client.
+
+## How it is built
+
+Four files carry the feature: a LangGraph graph that authors the surfaces, a FastAPI server that exposes it over AG-UI, an application config that registers the agent, and a component that hands the A2UI catalog to `<chat>`. Open the Code tab to read them in full.
+
+### The component shape the model must satisfy
+
+A2UI v0.9 components are flat. Each entry carries an `id`, a `component` name from the catalog, and its props at the same level of the same object. The example models that as a Pydantic class and nests it inside the structured-output schema, so the model authors the component list under a validator instead of free-typing JSON.
+
+<ExampleCode file="graph.py" region="component-schema" title="graph.py — the component schema" />
+
+The validator is the safety gate: an unknown `component` name renders nothing visible, so the schema rejects it and the model is re-prompted with the error.
+
+### The three parts of a surface
+
+Every surface in this demo is the same triple: an id, an initial data model, and a flat list of components. Three subclasses give each node its own schema name and description. `BookingFormSpec` also validates the intended picker identities and path bindings, and requires each picker to contain its complete canonical option domain. Those domains come from graph constants outside this snippet. Invalid picker data enters the existing structured-output retry and fallback flow.
+
+<ExampleCode file="graph.py" region="surface-spec" title="graph.py — the surface spec" />
+
+The `data_model` is what path bindings such as `{"path": "/origin"}` resolve against.
+
+### Wrapping a surface in v0.9 envelopes
+
+The model authors the components; the code writes the wire format. `_wrap_envelopes` emits the sentinel prefix and then one JSON envelope per line, each stamped `"version": "v0.9"`.
+
+<ExampleCode file="graph.py" region="envelope-wrapping" title="graph.py — the envelope wrapping" />
+
+The demo emits `createSurface`, then `updateComponents`, then `updateDataModel`. The protocol requires only that `createSurface` comes first and that a component with id `root` is defined before anything paints.
+
+<Callout type="info" title="The sentinel is what switches the client into A2UI mode">
+`A2UI_PREFIX` is `---a2ui_JSON---`. The content classifier in `@threadplane/chat` looks for exactly that string at the start of assistant content and routes the rest of the message into the A2UI pipeline instead of the markdown renderer.
+</Callout>
+
+### The node that authors the form
+
+`build_form` runs on the first turn and again on a "Modify search" turn. It recovers any prior submission from the message history, or, on a true first turn, seeds the origin and destination from a phrase such as "I want to fly LAX to JFK", substitutes those values into the system prompt as the form defaults, and asks the model for a `BookingFormSpec`.
+
+<ExampleCode file="graph.py" region="build-form-node" title="graph.py — the build_form node" />
+
+The node returns an ordinary `AIMessage` whose content is the wrapped JSONL, which is why no custom event type is needed to carry a surface.
+
+<Callout type="warning" title="An LLM-authored surface needs a fallback">
+`_emit_with_retry` re-prompts the model with the validation error up to three attempts in total, and `build_form` falls back to a hand-written sentinel form when they all fail. A surface is the whole response here, so a validation failure with no fallback is a blank turn.
+</Callout>
+
+### Routing an action message back into the graph
+
+When the user presses a button, the surface sends an A2UI action message back to the agent as the next user message, and its content is JSON rather than prose. The entry node reads that last message and dispatches on the action name.
+
+<ExampleCode file="graph.py" region="route" title="graph.py — the route node" />
+
+`_is_submit_event` and `_is_flight_select_event` each parse the content and compare `action.name` against `bookingSubmit` and `flightSelect`, so anything that is not one of those two is treated as a fresh request for the form.
+
+### The graph and its checkpointer
+
+The wiring is a fan-out from `route` into the three surface-authoring nodes, each of which ends through background title generation.
+
+<ExampleCode file="graph.py" region="graph-wiring" title="graph.py — graph wiring" />
+
+<Callout type="warning" title="This graph compiles its own checkpointer">
+`ag-ui-langgraph` reads thread state through `graph.aget_state`, so a graph served this way must compile a checkpointer, and the example uses `MemorySaver` for development. That is the opposite of a graph served by `langgraph dev` or LangGraph Platform, where the platform supplies persistence and compiling your own saver is an error.
+</Callout>
+
+### Serving the graph over AG-UI
+
+The server is the standard `ag-ui-langgraph` mount: wrap the compiled graph in a `LangGraphAgent` and attach it to a FastAPI application at a path.
+
+<ExampleCode file="server.py" title="server.py" />
+
+Nothing in this file is specific to A2UI; the surfaces travel as assistant message content over the same event stream as any other reply.
+
+### Registering the AG-UI agent
+
+`provideAgent()` from `@threadplane/ag-ui` needs the URL of that endpoint. The example passes a factory because it resolves the URL at runtime from the host that serves the demo; an application of your own passes `url` directly.
+
+<ExampleCode file="app.config.ts" title="app.config.ts" />
+
+
+### Giving the chat composition a catalog
+
+The client side is one input. `a2uiBasicCatalog()` from `@threadplane/chat` returns a view registry covering all eighteen components of the A2UI basic catalog, and passing it as `[views]` is what lets `<chat>` mount a surface.
+
+<ExampleCode file="a2ui.component.ts" title="a2ui.component.ts" />
+
+No handler wiring appears here: `<chat>` builds the action message from the surface and submits it to the agent for you.
+
+<Callout type="info" title="Where the action context values come from">
+`<a2ui-surface>` keeps a live store of the current data-model values, so the `{"path": "/origin"}` bindings inside the `action.event.context` on the submit button resolve to what the user typed, not to the values the agent seeded. `buildA2uiActionMessage()` stamps the surface id, the source component id, and a timestamp onto the result.
+</Callout>
+
+## How it fits
+
+<A2uiMessageFlow />
+
+## What the package owns
+
+The demo shows the protocol from the agent side. The package is the same protocol expressed as TypeScript, and its public entry point exports five groups of tools:
+
+| Area | Exports |
+|------|---------|
+| Wire types | `A2uiMessage`, `A2uiComponent`, component prop interfaces, envelope types, action message types |
+| Protocol constants | `A2UI_WIRE_VERSION` (`'v0.9'`), `A2UI_MIME_TYPE` (`'application/a2ui+json'`), `A2UI_BASIC_CATALOG_ID` |
+| Stream parsing | `createA2uiMessageParser()` |
+| Data access | `getByPointer()`, `setByPointer()`, `deleteByPointer()` |
+| Dynamic values | `resolveDynamic()`, `A2uiScope`, `isPathRef` / `isFunctionCall` guards |
+
+Use this package when you are building an adapter, validating an agent stream, testing A2UI payloads, or integrating a custom renderer with the same protocol surface that `@threadplane/chat` uses. Rendering the surfaces inside `<chat>`, as the demo does, needs none of it directly.
+
+## Message flow
+
+The parser expects newline-delimited JSON. Each line is checked for one known envelope key:
+
+```text
+createSurface
+updateComponents
+updateDataModel
+deleteSurface
+```
+
+When a line parses and has one of those envelope keys, it is returned as an `A2uiMessage`. Every envelope carries `"version": "v0.9"`; a missing `version` defaults to `v0.9`. Unknown envelope keys — including future v1.0 messages — are ignored. Malformed lines are skipped. Incomplete JSON waits in the internal buffer until a newline arrives.
+
+```ts
+import { createA2uiMessageParser } from '@threadplane/a2ui';
+
+const parser = createA2uiMessageParser();
+
+const messages = parser.push(
+  '{"version":"v0.9","createSurface":{"surfaceId":"checkout","catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"}}\n',
+);
+```
+
+That posture is intentional. Agent streams are partial by nature. The low-level parser favors safe continuation over throwing during render.
+
+## Relationship to chat and render
+
+`@threadplane/chat` detects A2UI content in assistant output, feeds the JSONL stream into `createA2uiMessageParser()`, applies messages to its surface store, and renders those surfaces through the A2UI render components.
+
+`@threadplane/render` owns Angular component resolution, event dispatch, state updates, and handler execution. The A2UI package only describes protocol shapes and helper behavior.
+
+That separation matters when debugging:
+
+- If JSONL chunks are not becoming messages, inspect `@threadplane/a2ui`.
+- If messages are not becoming surfaces, inspect the chat A2UI surface store.
+- If components render incorrectly or handlers do not run, inspect the render/chat integration.
+
+## Safe fallback posture
+
+The parser and resolver are deliberately conservative:
+
+- malformed JSONL lines are skipped;
+- unknown envelope keys are ignored (forward compatibility with future protocol versions);
+- missing data-model paths resolve to `undefined`;
+- unrecognized dynamic-value shapes pass through unchanged;
+- `{ call: ... }` function-call values execute through the standard function registry when one is passed to `resolveDynamic`; without a registry (or for unknown names) they resolve to `undefined`.
+
+This makes the protocol layer suitable for streaming, but it is not a full schema validator. If you accept untrusted agent output, validate the payload at your boundary before wiring it to privileged handlers.
+
+## Install
+
+```bash
+npm install @threadplane/a2ui
+```
+
+The package has no peer dependencies.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="The A2UI message protocol" href="/docs/angular/a2ui/guides/message-protocol">
+    Surfaces, flat components, dynamic values, the four envelopes, and how actions travel back.
+  </Card>
+  <Card title="Working with the data model" href="/docs/angular/a2ui/guides/data-model">
+    Pointer helpers, applying updateDataModel envelopes, and resolving dynamic values in scope.
+  </Card>
+  <Card title="Validating and adapting an A2UI stream" href="/docs/angular/a2ui/guides/adapters-and-validation">
+    Consume a streaming response, narrow values, build test payloads, and write a custom renderer.
+  </Card>
+  <Card title="A2UI Schema" href="/docs/angular/a2ui/reference/schema">
+    Every protocol type, component prop interface, and envelope shape in one reference.
+  </Card>
+</CardGroup>

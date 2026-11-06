@@ -58,6 +58,6 @@ describe('docs index', () => {
     // because that capability's canonical destination is its docs route.
     expect(
       screen.getByRole('link', { name: 'Run' }).getAttribute('href'),
-    ).toBe('/docs/langgraph/guides/streaming?mode=run');
+    ).toBe('/docs/angular/langgraph/guides/streaming?mode=run');
   });
 });

@@ -31,7 +31,7 @@ describe('searchIndexedDocs', () => {
   it('finds a term that appears only in body prose', () => {
     const hits = searchIndexedDocs(DOCS, 'postgres');
     expect(hits).toHaveLength(1);
-    expect(hits[0].href).toBe('/docs/langgraph/guides/persistence#production-checkpointers');
+    expect(hits[0].href).toBe('/docs/angular/langgraph/guides/persistence#production-checkpointers');
     expect(hits[0].heading).toBe('Production checkpointers');
   });
 
@@ -42,7 +42,7 @@ describe('searchIndexedDocs', () => {
 
   it('links to the page top when the match is in the preamble', () => {
     const hits = searchIndexedDocs(DOCS, 'restart');
-    expect(hits[0].href).toBe('/docs/langgraph/guides/persistence');
+    expect(hits[0].href).toBe('/docs/angular/langgraph/guides/persistence');
   });
 
   it('requires every token, matching the instant layer', () => {

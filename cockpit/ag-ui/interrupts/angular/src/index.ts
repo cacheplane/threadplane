@@ -23,7 +23,7 @@ export const agUiInterruptsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'AG-UI Interrupts (Angular)',
-  docsPath: '/docs/ag-ui/guides/interrupts',
+  docsPath: '/docs/angular/ag-ui/guides/interrupts',
   promptAssetPaths: [
     'cockpit/ag-ui/interrupts/angular/prompts/interrupts.md',
   ],

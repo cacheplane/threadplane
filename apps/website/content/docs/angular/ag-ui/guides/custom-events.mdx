@@ -1,0 +1,159 @@
+---
+description: How an AG-UI backend produces CUSTOM events, which delivery paths reach the adapter under ag-ui-langgraph, and how Angular reads the customEvents signal.
+---
+
+# Custom Events
+
+AG-UI `CUSTOM` events let a backend node push arbitrary data to the Angular client while a run is in progress. The adapter accumulates these events into a `customEvents` signal on the `AgUiAgent` returned by `injectAgent()` — reachable directly, no cast required (shown in [Reading Custom Events](#reading-custom-events-in-angular) below).
+
+```ts
+interface CustomStreamEvent {
+  name: string;
+  data: unknown;
+}
+```
+
+`customEvents` is a `Signal<CustomStreamEvent[]>`. The list is reset to `[]` when `RUN_STARTED` arrives, so it only ever contains events from the current run.
+
+<Callout type="info" title="on_interrupt is not in customEvents">
+The special `CUSTOM` event with `name: "on_interrupt"` is handled separately — it populates `agent.interrupt` and does **not** appear in `customEvents`. See the [Interrupts guide](/docs/angular/ag-ui/guides/interrupts).
+</Callout>
+
+## Where Custom Events Come From
+
+Exactly one wire event feeds `customEvents`: an AG-UI `CUSTOM` frame whose `name` is anything other than `on_interrupt`. Every backend path below is judged by whether it produces that frame.
+
+```json
+{
+  "type": "CUSTOM",
+  "name": "analysis_progress",
+  "value": { "step": "scoring", "pct": 42 }
+}
+```
+
+The adapter JSON-parses `value` when it arrives as a string, so consumers always receive the structured object. The event is appended to `customEvents` as `{ name: "analysis_progress", data: { step: "scoring", pct: 42 } }`.
+
+### The working path under ag-ui-langgraph
+
+The `ag-ui-langgraph` bridge consumes the graph through `astream_events`, and it forwards every `on_custom_event` it sees one-for-one as an AG-UI `CUSTOM` frame carrying the same name and payload. LangChain's `adispatch_custom_event` is what puts an `on_custom_event` on that stream, so it is the call a node (or a callback handler running inside one) makes to reach `customEvents`.
+
+The `threadplane-middleware` Python package wraps that call as `emit_custom_event`, which is the recommended way to make it:
+
+```python
+from langchain_core.runnables import RunnableConfig
+from threadplane.middleware.langgraph import emit_custom_event
+
+async def analysis_node(state: State, config: RunnableConfig) -> State:
+    # Emit a partial result as the node runs
+    await emit_custom_event(
+        "analysis_progress", {"step": "scoring", "pct": 42}, config=config
+    )
+
+    # ... do more work ...
+
+    await emit_custom_event(
+        "analysis_progress", {"step": "scoring", "pct": 100}, config=config
+    )
+    return state
+```
+
+The signature is `emit_custom_event(name, value, *, config=None)`. Pass `config` when the node already receives one; omit it and the ambient run context is used. Backends that do not depend on the middleware package can call `adispatch_custom_event` from `langchain_core.callbacks` directly — the helper adds no wire behavior of its own.
+
+The event name becomes `CustomStreamEvent.name` and the payload becomes `CustomStreamEvent.data`. This is the mechanism the [subagents example](/docs/angular/ag-ui/guides/subagents) uses to stream child-agent tokens from a callback handler.
+
+<Callout type="warning" title="get_stream_writer does not survive ag-ui-langgraph">
+Writing to `get_stream_writer()` with `stream_mode='custom'` does **not** produce a `CUSTOM` frame under `ag-ui-langgraph`. The bridge reads `astream_events`, where a stream-writer write surfaces at most as a raw event, so nothing is appended to `customEvents`. Use `emit_custom_event` (or `adispatch_custom_event`) instead. Other AG-UI runtimes that emit `CUSTOM` frames directly are unaffected by this constraint — the adapter only cares that a `CUSTOM` frame arrives.
+</Callout>
+
+### Graph state is a different signal
+
+The other way for an `ag-ui-langgraph` node to push data mid-run is to return it as a top-level graph state field. The bridge auto-emits state as `STATE_SNAPSHOT` and `STATE_DELTA` frames, and the adapter reduces those into `agent.state()` — not into `customEvents`. Reach for state when the client needs the current value of something, and for a `CUSTOM` event when the client needs the individual occurrences. The [Generative UI guide](/docs/angular/ag-ui/guides/json-render) takes the state route for exactly this reason.
+
+## Reading Custom Events in Angular
+
+`injectAgent()` returns an `AgUiAgent`, so the `customEvents` signal is available directly on the injected agent — no cast needed.
+
+### Reactive effect
+
+Use an `effect` to react every time new events arrive:
+
+```typescript
+import { Component, ChangeDetectionStrategy, effect, signal } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/ag-ui';
+
+@Component({
+  standalone: true,
+  imports: [ChatComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <chat [agent]="agent" />
+    @if (progress() !== null) {
+      <progress-bar [value]="progress()" />
+    }
+  `,
+})
+export class AnalysisComponent {
+  protected readonly agent = injectAgent();
+  protected readonly progress = signal<number | null>(null);
+
+  constructor() {
+    effect(() => {
+      const events = this.agent.customEvents();
+      const last = [...events]
+        .reverse()
+        .find((e) => e.name === 'analysis_progress');
+      this.progress.set(
+        last ? (last.data as { pct: number }).pct : null,
+      );
+    });
+  }
+}
+```
+
+### Computed signal
+
+When you only need to derive a value, `computed` is more concise:
+
+```typescript
+import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/ag-ui';
+
+@Component({
+  standalone: true,
+  imports: [ChatComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <chat [agent]="agent" />
+    <event-log [events]="progressEvents()" />
+  `,
+})
+export class AnalysisComponent {
+  protected readonly agent = injectAgent();
+
+  protected readonly progressEvents = computed(() =>
+    this.agent.customEvents().filter(
+      (e) => e.name === 'analysis_progress',
+    ),
+  );
+}
+```
+
+Both patterns are zoneless-safe: Angular's signal graph tracks the `customEvents()` read and re-evaluates the derived value automatically.
+
+<Callout type="info" title="Live a2ui rendering">
+`customEvents` is the mechanism the chat composition uses for progressive a2ui surface updates — partial argument events accumulate here during a tool call and drive live rendering before the call completes. The consuming side is documented in chat's [A2UI overview](/docs/angular/chat/a2ui/overview). If you are building a custom a2ui integration over AG-UI, read `agent.customEvents()` the same way.
+</Callout>
+
+## Relation to Interrupts
+
+`CUSTOM` events named `on_interrupt` follow a separate path: the adapter routes them to `agent.interrupt` (a `Signal<AgentInterrupt | undefined>`) and they never enter `customEvents`. This keeps the two signals purpose-distinct — `interrupt` drives human-in-the-loop approval flows, while `customEvents` carries all other backend-pushed data.
+
+See the [Interrupts guide](/docs/angular/ag-ui/guides/interrupts) for the full interrupt lifecycle including `<chat-approval-card>` and `submit({ resume })`.
+
+## See Also
+
+- [Architecture](/docs/angular/ag-ui/concepts/architecture) — how the adapter reduces protocol events into Angular signals
+- [Event Mapping](/docs/angular/ag-ui/reference/event-mapping) — full table of AG-UI event types and the agent fields they populate
+- [injectAgent()](/docs/api/ag-ui/injectAgent) — the injection function that returns `AgUiAgent`

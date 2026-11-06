@@ -228,8 +228,8 @@ test.describe('homepage stage', () => {
       expect(position.t).toBeGreaterThanOrEqual(position.beat.startMs);
       expect(position.t).toBeLessThan(position.beat.revealMs!);
     }
-    await expect(page.getByRole('link', { name: 'Tools & citations documentation' })).toHaveAttribute('href', '/docs/chat/components/chat-tool-calls');
-    await expect(page.getByRole('link', { name: 'Subagents documentation' })).toHaveAttribute('href', '/docs/langgraph/guides/subgraphs');
+    await expect(page.getByRole('link', { name: 'Tools & citations documentation' })).toHaveAttribute('href', '/docs/angular/chat/components/chat-tool-calls');
+    await expect(page.getByRole('link', { name: 'Subagents documentation' })).toHaveAttribute('href', '/docs/angular/langgraph/guides/subgraphs');
   });
 
   test('the frame answers and the verify state changes between positions', async ({

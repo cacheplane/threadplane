@@ -189,11 +189,11 @@ describe('getCapabilityPresentation', () => {
 
     expect(getCapabilityPresentation(docsEntry)).toMatchObject({
       kind: 'docs-only',
-      docsPath: '/docs/deep-agents/getting-started/introduction',
+      docsPath: '/docs/angular/deep-agents/getting-started/introduction',
     });
     expect(getCapabilityPresentation(capabilityEntry)).toMatchObject({
       kind: 'capability',
-      docsPath: '/docs/langgraph/guides/streaming',
+      docsPath: '/docs/angular/langgraph/guides/streaming',
       promptAssetPaths: [
         'cockpit/langgraph/streaming/python/prompts/streaming.md',
       ],
@@ -252,7 +252,7 @@ describe('getCapabilityPresentation', () => {
 
     expect(presentation).toMatchObject({
       kind: 'capability',
-      docsPath: '/docs/langgraph/guides/durable-execution',
+      docsPath: '/docs/angular/langgraph/guides/durable-execution',
     });
   });
 
@@ -269,7 +269,7 @@ describe('getCapabilityPresentation', () => {
 
     expect(presentation).toMatchObject({
       kind: 'capability',
-      docsPath: '/docs/render/guides/specs',
+      docsPath: '/docs/angular/render/guides/specs',
     });
   });
 
@@ -286,7 +286,7 @@ describe('getCapabilityPresentation', () => {
 
     expect(presentation).toMatchObject({
       kind: 'capability',
-      docsPath: '/docs/chat/concepts/message-model',
+      docsPath: '/docs/angular/chat/concepts/message-model',
     });
   });
 
@@ -406,7 +406,7 @@ describe('library boundary', () => {
 describe('getWorkspacePresentation', () => {
   it('shapes an unmapped Docs resolution as serializable, non-runnable content', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/api/inject-agent',
+      '/docs/angular/langgraph/api/inject-agent',
       'Inject an agent into Angular'
     );
 
@@ -414,7 +414,7 @@ describe('getWorkspacePresentation', () => {
 
     expect(presentation).toEqual({
       kind: 'docs-only',
-      docsPath: '/docs/langgraph/api/inject-agent',
+      docsPath: '/docs/angular/langgraph/api/inject-agent',
       title: 'Inject an agent into Angular',
       runnable: false,
     });
@@ -423,7 +423,7 @@ describe('getWorkspacePresentation', () => {
 
   it('shapes a mapped workspace identity with registry-owned descriptor assets', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/guides/streaming',
+      '/docs/angular/langgraph/guides/streaming',
       'Streaming'
     );
     expect(resolution).not.toBeNull();

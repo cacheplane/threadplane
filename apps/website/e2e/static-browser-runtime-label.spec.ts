@@ -27,7 +27,7 @@ for (const viewport of [
 ]) {
   test(`static React runtime explains browser execution on ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
-    await page.goto('/docs/render/guides/state-store?frontend=react&mode=run', {
+    await page.goto('/docs/react/render/guides/state-store?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
@@ -62,7 +62,7 @@ for (const viewport of [
 }
 
 test('live LangGraph metadata preserves its backend language and shared target', async ({ page }) => {
-  await page.goto('/docs/langgraph/guides/streaming?mode=code', { waitUntil: 'domcontentloaded' });
+  await page.goto('/docs/angular/langgraph/guides/streaming?mode=code', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
   const section = page.locator('[data-runtime-section]:visible');

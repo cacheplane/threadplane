@@ -26,7 +26,7 @@ export const agUiJsonRenderPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'AG-UI JSON Render (Python)',
-  docsPath: '/docs/ag-ui/guides/json-render',
+  docsPath: '/docs/angular/ag-ui/guides/json-render',
   promptAssetPaths: ['cockpit/ag-ui/json-render/python/prompts/json-render.md'],
   codeAssetPaths: [
     'cockpit/ag-ui/json-render/angular/src/app/json-render.component.ts',

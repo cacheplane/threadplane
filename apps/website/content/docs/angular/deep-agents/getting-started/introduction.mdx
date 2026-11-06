@@ -1,0 +1,90 @@
+---
+title: Introduction
+description: Render Deep Agents middleware capabilities in the canonical Angular UI or an experimental native React preview over LangGraph.
+---
+
+# Introduction
+
+[Deep Agents](https://github.com/langchain-ai/deepagents) is LangChain's agent-harness library. It is not a protocol and not a runtime: it is a set of LangGraph middleware that assembles a long-horizon agent out of five capabilities, each of which puts something on the graph that a user interface can render.
+
+| Capability | Middleware | What it puts on the graph |
+|---|---|---|
+| [Planning](/docs/angular/deep-agents/capabilities/planning) | `TodoListMiddleware` (from LangChain) | A `todos` array the agent rewrites as it works. |
+| [Filesystem](/docs/angular/deep-agents/capabilities/filesystem) | `FilesystemMiddleware` | A `files` map, plus write approvals when a permission is set to interrupt. |
+| [Subagents](/docs/angular/deep-agents/capabilities/subagents) | `SubAgentMiddleware` | A `task` tool that dispatches real child graphs. |
+| [Memory](/docs/angular/deep-agents/capabilities/memory) | `MemoryMiddleware` | An agent-authored store file shared across threads under a captured browser scope, with fresh read-time observations. |
+| [Skills](/docs/angular/deep-agents/capabilities/skills) | `SkillsMiddleware` | A skill index loaded from `SKILL.md` frontmatter. |
+
+The five capabilities do not all arrive the same way. `create_deep_agent` always installs `FilesystemMiddleware`, and the subagent `task` tool ships with it by default. Memory and skills are switched on by their `create_deep_agent` arguments (`memory=[...]`, `skills=[...]`). Planning is a LangChain middleware — `langchain.agents.middleware.TodoListMiddleware` — that you pass explicitly in `middleware=[...]`; `create_deep_agent` does not install it on its own.
+
+Every page in this section is written against the real `deepagents` package, version 0.7.11, running as a LangGraph graph. Nothing here is a reimplementation of the framework, and nothing here is a mock of it.
+
+<Callout type="info" title="What this section is not">
+These pages document what a Deep Agents graph exposes and how an Angular application reads it. They are not a substitute for the upstream Deep Agents documentation, and Threadplane does not maintain the framework.
+</Callout>
+
+## The setup story, once
+
+A Deep Agents agent is a LangGraph graph. `create_deep_agent` returns a compiled graph, LangGraph Server serves it like any other, and the browser talks to it over the same protocol. There is no Deep Agents adapter, because none is needed: `@threadplane/langgraph` is the whole client wiring.
+
+The shared protocol and basic provider setup are documented under the LangGraph adapter. Work through the [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart) once. Memory additionally requires its captured browser scope, context transport and authoring gate; use the complete source on the [Memory guide](/docs/angular/deep-agents/capabilities/memory) rather than this basic provider alone.
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/langgraph';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      // the key this graph is registered under in langgraph.json
+      assistantId: 'agent',
+    }),
+  ],
+};
+```
+
+```ts
+import { Component, computed } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-root',
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" />`,
+})
+export class App {
+  protected readonly agent = injectAgent();
+}
+```
+
+Each panel reads the relevant part of the agent handle: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, and `toolCalls()` for read requests and their results. Memory also supplies its validated scope through the provider's transport and guards every author action.
+
+## Three ways a capability reaches the browser
+
+Deep Agents does not publish all five capabilities the same way, and the difference decides how much work a panel is.
+
+**Public state keys stream on their own.** `todos` and `files` are ordinary keys on the graph state. LangGraph streams them in the `values` channel, `@threadplane/langgraph` projects the latest snapshot into `agent.value()`, and a panel is a `computed()` over that. No configuration, no custom events, no server-side shim.
+
+**Tool calls are already structured.** The subagent `task` tool and the filesystem `read_file` tool arrive as normal tool calls. The subagent tracker recognizes `task` by default, so child agents render as cards with no client configuration at all.
+
+**Private schema annotations need a capability-specific contract.** `PrivateStateAttr` excludes annotated keys from declared input and output schemas. The local compiled Skills graph exposes metadata in root values and saved checkpoints; observed deployed API root values omit private Skills keys while checkpoints retain metadata, consistent with output-schema filtering. Optional `skills_load_errors` can appear when errors are produced, and successful loads can omit it. The named custom event includes both keys, with an empty-list error fallback, for Angular's live index. React reads native root values and, when the public stream omits metadata, the confirmed saved checkpoint. The event does not supply React index authority or prove a confirmed read; saved checkpoints remain authoritative, with native messages, tools and ordinary values checked separately. Memory is a separate capability: Skills observations do not establish its `memory_contents` visibility.
+
+## The demos
+
+Each capability page describes a standalone example that runs the real framework against a real model. The examples live in the [repository's deep-agents examples](https://github.com/cacheplane/threadplane/tree/main/cockpit/deep-agents) and run in the [Threadplane docs workspace](/docs/angular/deep-agents/capabilities/planning?mode=run), which shows the Angular source, the Python graph, and the system prompt beside the running demo.
+
+All five share one scenario — an aviation dispatch desk with a handful of airport lookup tools — so the difference between two pages is the capability under test and nothing else.
+
+## Further reading
+
+- [LangGraph adapter introduction](/docs/angular/langgraph/getting-started/introduction) — the adapter every Deep Agents graph binds through.
+- [Chat subagent card](/docs/angular/chat/components/chat-subagent-card) — the component the `task` dispatches render into.
+- [Chat interrupt panel](/docs/angular/chat/components/chat-interrupt-panel) — the component a filesystem write approval renders into.
+- [Persistence](/docs/angular/langgraph/guides/persistence) — checkpoints and the store, which the memory capability depends on.
+
+## Native Memory preview
+
+[Memory React preview](/docs/angular/deep-agents/capabilities/memory?frontend=react) shares the canonical Python graph and prompt while Angular stays the default. It captures a persisted UUIDv4 browser scope, blocks authoring if storage is unavailable or changes, and distinguishes custom live observations from exact confirmed historical checkpoints. Teach and Recall fill drafts without sending; only Send creates an owned thread lazily. New and reload use fresh threads with the same captured scope. This is a logical partition, not authentication. API values filtered by output channels omit private Memory keys while custom and raw checkpoint evidence retain them. Build with `npx nx build cockpit-deep-agents-memory-react` and verify with `npx nx e2e cockpit-deep-agents-memory-react`.

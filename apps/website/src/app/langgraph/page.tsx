@@ -43,7 +43,7 @@ export default async function LangGraphPage() {
               Ship LangGraph agents inside your Angular app. Agent state arrives as signals; threads survive reloads; <span className="marker-highlight">humans stay in the loop</span>.
             </p>
             <div className="langgraph-page-hero-buttons">
-              <Button variant="primary" size="lg" href="/docs/langgraph/getting-started/introduction">Get started</Button>
+              <Button variant="primary" size="lg" href="/docs/angular/langgraph/getting-started/introduction">Get started</Button>
               <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <p className="langgraph-page-adapter-note">
@@ -90,7 +90,7 @@ export default async function LangGraphPage() {
           { claim: 'Human-in-the-loop gates', api: 'interrupt()' },
           { claim: 'Branch, history, time-travel built in', api: 'checkpoints' },
         ]}
-        cta={{ label: 'Read the streaming guide', href: '/docs/langgraph/guides/streaming' }}
+        cta={{ label: 'Read the streaming guide', href: '/docs/angular/langgraph/guides/streaming' }}
         visualLeft
         visual={<LangGraphCodeShowcase />}
       />

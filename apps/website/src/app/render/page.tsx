@@ -43,7 +43,7 @@ export default async function RenderPage() {
               Server-emitted JSON specs render into Angular <span className="marker-highlight">components you already own</span>. Vercel json-render and Google A2UI both supported. Unknown specs degrade gracefully — no surprises.
             </p>
             <div className="render-page-hero-buttons">
-              <Button variant="primary" size="lg" href="/docs/render/getting-started/introduction">Get started</Button>
+              <Button variant="primary" size="lg" href="/docs/angular/render/getting-started/introduction">Get started</Button>
               <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <div className="render-page-hero-pills">
@@ -74,7 +74,7 @@ export default async function RenderPage() {
           { claim: 'Both protocols spoken', api: 'json-render + A2UI' },
           { claim: 'Schema on the server, validation in the client', api: 'validated specs' },
         ]}
-        cta={{ label: 'See @threadplane/render docs', href: '/docs/render/getting-started/introduction' }}
+        cta={{ label: 'See @threadplane/render docs', href: '/docs/angular/render/getting-started/introduction' }}
         visual={<MediumSwitcher sectionId="lib-render" panes={panes} />}
       />
 
@@ -88,7 +88,7 @@ export default async function RenderPage() {
           { claim: 'Renders hold until the surface is real', api: 'readiness gate' },
           { claim: 'Partial renders while streaming', api: 'streaming specs' },
         ]}
-        cta={{ label: 'Fallback patterns', href: '/docs/render/guides/registry' }}
+        cta={{ label: 'Fallback patterns', href: '/docs/angular/render/guides/registry' }}
         visualLeft
         visual={<RenderCodeShowcase />}
       />

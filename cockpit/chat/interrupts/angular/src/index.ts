@@ -23,7 +23,7 @@ export const chatInterruptsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Chat Interrupts (Angular)',
-  docsPath: '/docs/chat/components/chat-interrupt-panel',
+  docsPath: '/docs/angular/chat/components/chat-interrupt-panel',
   promptAssetPaths: ['cockpit/chat/interrupts/python/prompts/interrupts.md'],
   codeAssetPaths: ['cockpit/chat/interrupts/angular/src/app/interrupts.component.ts'],
 };

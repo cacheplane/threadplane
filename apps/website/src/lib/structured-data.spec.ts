@@ -26,7 +26,7 @@ const SAMPLE_POST = {
 const SAMPLE_DOC = {
   title: 'Installation',
   description: 'Install it.',
-  pathname: '/docs/chat/getting-started/installation',
+  pathname: '/docs/angular/chat/getting-started/installation',
 } as const;
 
 /** Every builder's output must survive a JSON round-trip unchanged. */
@@ -154,7 +154,7 @@ describe('techArticleJsonLd', () => {
   it('describes a docs page', () => {
     const data = techArticleJsonLd(SAMPLE_DOC);
     expect(data['@type']).toBe('TechArticle');
-    expect(String(data['url'])).toBe('https://threadplane.ai/docs/chat/getting-started/installation');
+    expect(String(data['url'])).toBe('https://threadplane.ai/docs/angular/chat/getting-started/installation');
   });
 
   it('omits dateModified entirely when none is known', () => {

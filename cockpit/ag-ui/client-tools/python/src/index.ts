@@ -26,7 +26,7 @@ export const agUiClientToolsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'AG-UI Client Tools (Python)',
-  docsPath: '/docs/ag-ui/guides/client-tools',
+  docsPath: '/docs/angular/ag-ui/guides/client-tools',
   promptAssetPaths: [
     'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
   ],

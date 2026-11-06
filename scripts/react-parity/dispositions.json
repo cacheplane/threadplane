@@ -259,7 +259,9 @@
     },
     {
       "id": "asset:libs/ag-ui/tsconfig.runtime-tests.json",
-      "taskIds": ["T36"],
+      "taskIds": [
+        "T36"
+      ],
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
@@ -869,7 +871,11 @@
     },
     {
       "id": "asset:libs/langgraph/src/runtime/README.md",
-      "taskIds": ["T08", "T10", "T36"],
+      "taskIds": [
+        "T08",
+        "T10",
+        "T36"
+      ],
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
@@ -2488,7 +2494,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2497,7 +2503,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2506,7 +2512,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/guides/adapters-and-validation.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/guides/adapters-and-validation.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2515,7 +2521,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/guides/data-model.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/guides/data-model.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2524,7 +2530,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/guides/message-protocol.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/guides/message-protocol.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2533,7 +2539,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/reference/parser-resolver-guards.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/reference/parser-resolver-guards.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2542,7 +2548,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/a2ui/reference/schema.mdx",
+      "id": "doc:apps/website/content/docs/angular/a2ui/reference/schema.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2551,7 +2557,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/concepts/architecture.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/concepts/architecture.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2560,7 +2566,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/getting-started/installation.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/getting-started/installation.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2569,7 +2575,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2578,7 +2584,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2587,7 +2593,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/citations.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/citations.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2596,7 +2602,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/client-tools.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/client-tools.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2605,7 +2611,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/custom-events.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/custom-events.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2614,7 +2620,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/deployment.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/deployment.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2623,7 +2629,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/fake-agent.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/fake-agent.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2632,7 +2638,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/interrupts.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2641,7 +2647,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/json-render.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/json-render.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2650,7 +2656,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/subagents.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2659,7 +2665,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/testing.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/testing.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2668,7 +2674,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/tool-views.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/tool-views.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2677,7 +2683,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/guides/troubleshooting.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/guides/troubleshooting.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2686,7 +2692,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/ag-ui/reference/event-mapping.mdx",
+      "id": "doc:apps/website/content/docs/angular/ag-ui/reference/event-mapping.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2695,7 +2701,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/a2ui/catalog.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/a2ui/catalog.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2704,7 +2710,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/a2ui/overview.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/a2ui/overview.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2713,7 +2719,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/a2ui/surface-component.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/a2ui/surface-component.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2722,7 +2728,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/a2ui/surface-store.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/a2ui/surface-store.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2731,7 +2737,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-debug.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-debug.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2740,7 +2746,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-input.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-input.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2749,7 +2755,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-interrupt-panel.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-interrupt-panel.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2758,7 +2764,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-message-list.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-message-list.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2767,7 +2773,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-popup.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-popup.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2776,7 +2782,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-reasoning.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-reasoning.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2785,7 +2791,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-select.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-select.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2794,7 +2800,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-sidebar.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-sidebar.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2803,7 +2809,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-sidenav.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-sidenav.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2812,7 +2818,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-subagent-card.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-subagent-card.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2821,7 +2827,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-tool-call-card.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-call-card.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2830,7 +2836,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-tool-call-template.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-call-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2839,7 +2845,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-activity-template.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-activity-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2848,7 +2854,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-run-activity-template.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-run-activity-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2857,7 +2863,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-interrupt-template.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-interrupt-template.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2866,7 +2872,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-tool-calls.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2875,7 +2881,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat-trace.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat-trace.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2884,7 +2890,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/components/chat.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/components/chat.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2893,7 +2899,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/concepts/message-model.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/concepts/message-model.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2902,7 +2908,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/concepts/primitives-vs-compositions.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/concepts/primitives-vs-compositions.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2911,7 +2917,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/changelog.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/changelog.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2920,7 +2926,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/coding-agents.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/coding-agents.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2929,7 +2935,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/installation.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/installation.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2938,7 +2944,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2947,7 +2953,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2956,7 +2962,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/getting-started/try-without-a-backend.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/getting-started/try-without-a-backend.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2965,7 +2971,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/client-tools.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/client-tools.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2974,7 +2980,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/custom-catalogs.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/custom-catalogs.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2983,7 +2989,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/error-handling.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/error-handling.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -2992,7 +2998,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/generative-ui.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/generative-ui.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3001,7 +3007,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/layout-modes.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/layout-modes.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3010,7 +3016,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/lifecycle.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/lifecycle.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3019,7 +3025,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/markdown.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/markdown.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3028,7 +3034,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/streaming.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/streaming.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3037,7 +3043,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/theming.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/theming.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3046,7 +3052,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/thread-routing.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/thread-routing.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3055,7 +3061,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/guides/writing-an-adapter.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3064,7 +3070,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/chat/migrations/upgrading.mdx",
+      "id": "doc:apps/website/content/docs/angular/chat/migrations/upgrading.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3082,7 +3088,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/capabilities/filesystem.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/capabilities/filesystem.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3091,7 +3097,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/capabilities/memory.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/capabilities/memory.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3100,7 +3106,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/capabilities/planning.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/capabilities/planning.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3109,7 +3115,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/capabilities/skills.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/capabilities/skills.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3118,7 +3124,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/capabilities/subagents.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/capabilities/subagents.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3127,7 +3133,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/deep-agents/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/deep-agents/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3136,7 +3142,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/agent-architecture.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3145,7 +3151,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/agent-contract.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-contract.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3154,7 +3160,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/angular-signals.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/angular-signals.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3163,7 +3169,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/conversation-turns.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/conversation-turns.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3172,7 +3178,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/langgraph-basics.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/langgraph-basics.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3181,7 +3187,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/concepts/state-management.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/concepts/state-management.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3190,7 +3196,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/getting-started/installation.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/getting-started/installation.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3199,7 +3205,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3208,7 +3214,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3217,7 +3223,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/deployment.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/deployment.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3226,7 +3232,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/durable-execution.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/durable-execution.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3235,7 +3241,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/interrupts.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/interrupts.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3244,7 +3250,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/lifecycle.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/lifecycle.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3253,7 +3259,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/memory.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/memory.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3262,7 +3268,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/persistence.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/persistence.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3271,7 +3277,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/streaming.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3280,7 +3286,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/subgraphs.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/subgraphs.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3289,7 +3295,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/testing.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/testing.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3298,7 +3304,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/langgraph/guides/time-travel.mdx",
+      "id": "doc:apps/website/content/docs/angular/langgraph/guides/time-travel.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3307,7 +3313,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/middleware/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/shared/middleware/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3316,7 +3322,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/middleware/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/shared/middleware/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3325,7 +3331,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/middleware/guides/langgraph-client-tools.mdx",
+      "id": "doc:apps/website/content/docs/shared/middleware/guides/langgraph-client-tools.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3334,7 +3340,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/middleware/guides/python-langgraph.mdx",
+      "id": "doc:apps/website/content/docs/shared/middleware/guides/python-langgraph.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3343,7 +3349,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/computed-functions.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/computed-functions.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3352,7 +3358,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/element-rendering.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/element-rendering.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3361,7 +3367,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/concepts/json-render-vs-a2ui.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/concepts/json-render-vs-a2ui.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3370,7 +3376,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/getting-started/installation.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/getting-started/installation.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3379,7 +3385,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3388,7 +3394,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/getting-started/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3397,7 +3403,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/events.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/events.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3406,7 +3412,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/lifecycle.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/lifecycle.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3415,7 +3421,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/registry.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/registry.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3424,7 +3430,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/repeat-loops.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/repeat-loops.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3433,7 +3439,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/specs.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/specs.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3442,7 +3448,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/render/guides/state-store.mdx",
+      "id": "doc:apps/website/content/docs/angular/render/guides/state-store.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3451,7 +3457,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/aws-strands/how-it-connects.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/aws-strands/how-it-connects.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3460,7 +3466,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/aws-strands/overview.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/aws-strands/overview.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3469,7 +3475,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/aws-strands/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/aws-strands/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3478,7 +3484,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/getting-started/introduction.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3487,7 +3493,7 @@
       "status": "planned"
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/mastra/how-it-connects.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/mastra/how-it-connects.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3497,7 +3503,7 @@
       "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/mastra/overview.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/mastra/overview.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3507,7 +3513,7 @@
       "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/mastra/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/mastra/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3517,7 +3523,7 @@
       "note": "Bounded private native React Mastra reservation preview documented alongside the canonical Angular camping planner. Angular compatibility command transport is distinguished from current opaque native pause and top-level resume; broader parity and public release remain open."
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/how-it-connects.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/microsoft-agent-framework/how-it-connects.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3527,7 +3533,7 @@
       "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/microsoft-agent-framework/overview.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -3537,7 +3543,7 @@
       "note": "Bounded private native React MAF expense preview documented alongside the canonical Angular/provider example. Native current pause correlation, top-level resume and literal backend result confirmation are distinguished from Angular wrapper specialist streaming; broader parity and public release remain open."
     },
     {
-      "id": "doc:apps/website/content/docs/runtimes/microsoft-agent-framework/quickstart.mdx",
+      "id": "doc:apps/website/content/docs/angular/runtimes/microsoft-agent-framework/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -4950,13 +4956,19 @@
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentUsage",
-      "taskIds": ["T03", "T04"],
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
       "treatment": "shared",
       "status": "planned"
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentUsageEntry",
-      "taskIds": ["T03", "T04"],
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
       "treatment": "shared",
       "status": "planned"
     },
@@ -8808,7 +8820,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Dependency-free portable-data capture shared by private runtime ownership and the legacy patch helper; no public export.",
@@ -8825,7 +8840,9 @@
     },
     {
       "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
-      "taskIds": ["T12"],
+      "taskIds": [
+        "T12"
+      ],
       "treatment": "internal",
       "status": "planned",
       "reason": "Adapter-private normalization of AG-UI 1.0 tool-result content parts into neutral ToolCall fields for the legacy reducer; no public export."
@@ -8944,7 +8961,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/activity-messages.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable activity snapshot and delta observation only; excluded from public exports and legacy Angular reachability.",
@@ -8952,7 +8972,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/client-tool-ledger.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private session-lifetime client-tool admission, result retention and exact native echo delivery evidence; excluded from public exports and legacy Angular reachability.",
@@ -8960,7 +8983,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/client-tools.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private typed optional client-tool catalog and immutable local execution projection for native AG-UI sessions; excluded from public exports and legacy Angular reachability.",
@@ -8968,7 +8994,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-http-request.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private physical HTTP request ownership only; excluded from public exports and legacy Angular reachability.",
@@ -8976,7 +9005,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-run.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private domain run authority only; excluded from public exports and legacy Angular reachability.",
@@ -8984,7 +9016,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private application-owned protocol session; excluded from public exports and legacy Angular reachability.",
@@ -8992,7 +9027,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/encrypted-messages.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable opaque encrypted message and tool-call observation only; excluded from public exports and legacy Angular reachability.",
@@ -9000,7 +9038,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/reconcile-transcript.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable AG-UI snapshot reconciliation only; excluded from public exports and legacy Angular reachability.",
@@ -9008,7 +9049,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private selected retained-target attribution guard; excluded from public exports and legacy Angular reachability.",
@@ -9016,7 +9060,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable aggregate and native root terminal observation; excluded from public exports and legacy Angular reachability.",
@@ -9024,7 +9071,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private session-local publication and synchronous reentrant command queue; excluded from public exports and legacy Angular reachability.",
@@ -9032,7 +9082,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/state.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable state snapshot, delta and mutable request ownership; excluded from public exports and legacy Angular reachability.",
@@ -9040,7 +9093,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/subagents.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable native child start and terminal evidence within one root invocation; excluded from public exports and legacy Angular reachability.",
@@ -9048,7 +9104,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/testing/binding-fixture.ts",
-      "taskIds": ["T05", "T06"],
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private browser-safe native binding fixture; actual AG-UI session owns all snapshots and commands. No public export or production framework dependency.",
@@ -9056,7 +9115,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/text-messages.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable text and reasoning message accumulation only; excluded from public exports and legacy Angular reachability.",
@@ -9064,7 +9126,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/tool-messages.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable tool call and result observation only; excluded from public exports and legacy Angular reachability.",
@@ -9072,7 +9137,10 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/transcript.ts",
-      "taskIds": ["T12", "T13"],
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable AG-UI transcript ownership and explicit mutable request projection; excluded from public exports and legacy Angular reachability.",
@@ -9108,7 +9176,9 @@
     },
     {
       "id": "source:libs/ag-ui/vite.runtime.config.mts",
-      "taskIds": ["T36"],
+      "taskIds": [
+        "T36"
+      ],
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
@@ -9625,7 +9695,10 @@
     },
     {
       "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
-      "taskIds": ["T03", "T04"],
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
       "treatment": "shared",
       "status": "planned"
     },
@@ -11867,7 +11940,9 @@
     },
     {
       "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
-      "taskIds": ["T08"],
+      "taskIds": [
+        "T08"
+      ],
       "treatment": "shared",
       "status": "in-progress",
       "note": "Shared SDK routing capture owns root checkpoint identity and string map entries without importing private session or core implementation."
@@ -11908,7 +11983,11 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/citation-projection.ts",
-      "taskIds": ["T08", "T09", "T15"],
+      "taskIds": [
+        "T08",
+        "T09",
+        "T15"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private owned citation metadata projection, verified through both installed native bindings; not a public backend cutover.",
@@ -11916,7 +11995,10 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/reasoning-projection.ts",
-      "taskIds": ["T09", "T15"],
+      "taskIds": [
+        "T09",
+        "T15"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private owned reasoning display-string projection through both installed native bindings; no public backend cutover.",
@@ -11924,7 +12006,10 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-session.ts",
-      "taskIds": ["T09", "T15"],
+      "taskIds": [
+        "T09",
+        "T15"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Shared test-only controlled session fixture for owned citation and reasoning regressions; excluded from production imports and public entry points."
@@ -11942,7 +12027,11 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-authority.ts",
-      "taskIds": ["T04", "T09", "T10"],
+      "taskIds": [
+        "T04",
+        "T09",
+        "T10"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private completed-root execution evidence; excluded from public exports.",
@@ -11961,7 +12050,11 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-state.ts",
-      "taskIds": ["T04", "T09", "T10"],
+      "taskIds": [
+        "T04",
+        "T09",
+        "T10"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private branch owner state; excluded from public exports.",
@@ -11969,7 +12062,11 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/checkpoint-tool-evidence.ts",
-      "taskIds": ["T04", "T09", "T10"],
+      "taskIds": [
+        "T04",
+        "T09",
+        "T10"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private saved-state tool evidence assertion; excluded from public exports.",
@@ -12139,7 +12236,11 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/checkpoint-fixture.ts",
-      "taskIds": ["T09", "T10", "T36"],
+      "taskIds": [
+        "T09",
+        "T10",
+        "T36"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private controlled checkpoint test helper; excluded from public exports and production packages.",
@@ -14393,7 +14494,11 @@
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
-      "taskIds": ["T12", "T14", "T23"],
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private correlated native resume capture, claim and settlement; retains uncertain invoked attempts and does not establish public backend or provider parity."
@@ -15029,7 +15134,9 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ApprovalCard",
-      "taskIds": ["T28"],
+      "taskIds": [
+        "T28"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private inline decision presentation composed by the native React example; actions and body belong to the application.",
@@ -15037,21 +15144,27 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ApprovalCardAction",
-      "taskIds": ["T28"],
+      "taskIds": [
+        "T28"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly explicitly authored actions with unique IDs, labels, callbacks and disabled state."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ApprovalCardProps",
-      "taskIds": ["T28"],
+      "taskIds": [
+        "T28"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly body/action presentation props; application supplies disabled state and handles callback errors."
     },
     {
       "id": "source:libs/react/src/chat/approval-card.tsx",
-      "taskIds": ["T28"],
+      "taskIds": [
+        "T28"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Pure named inline card with native buttons, required body/actions and stable unique heading IDs.",
@@ -15059,87 +15172,156 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageActions",
-      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
       "reason": "Private authored action group with installed native copy dogfood; callbacks and clipboard feedback belong to the app."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageAction",
-      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
       "reason": "Readonly explicit action IDs, string labels, argumentless callbacks and authoritative disabled state."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageActionsProps",
-      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
       "reason": "Readonly authored collection and group presentation props; no inferred backend commands."
     },
     {
       "id": "source:libs/react/src/chat/message-actions.tsx",
-      "taskIds": ["T23"], "treatment": "react", "status": "in-progress",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
       "reason": "Pure native button group with explicit activation and controlled disabled state; no clipboard, timers, session ownership or local rating state."
     },
     {
       "id": "entry:libs/content/src/json/index.ts",
-      "taskIds": ["T02", "T18"], "treatment": "infrastructure", "status": "in-progress",
+      "taskIds": [
+        "T02",
+        "T18"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
       "reason": "Private feature entry for application-owned JSON preparation; the content root remains empty."
     },
     {
       "id": "export:libs/content/src/json/index.ts#Json",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Application-owned JSON observer and explicit document commands; views borrow subscriptions."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonDocument",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Explicit readonly generation, source phase and JSON text."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonError",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Owned immutable syntax diagnostic with structured code and source position."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonNode",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Owned immutable discriminated nodes, generation-local identity and readonly children without parser parent links."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonOptions",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Explicit contract violation policy; no parser, backend or schema inference settings."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonPartialValue",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Deeply readonly partial data with undefined unresolved primitives; no assumed render-spec validity."
     },
     {
       "id": "export:libs/content/src/json/index.ts#JsonSnapshot",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Cached owned root and diagnostics; JSON syntax completion is independent of source delivery phase."
     },
     {
       "id": "export:libs/content/src/json/index.ts#createJson",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Private incremental content factory on published json-stream 0.1.1; classification, rendering and SSR remain separate."
     },
     {
       "id": "source:libs/content/src/json/create-json.ts",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Owned document transitions, suffix-only parsing, accepted diagnostics, observer invalidations, rollback/replay and terminal disposal."
     },
     {
       "id": "source:libs/content/src/json/projection.ts",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Recursive owned JSON graph with safe keys, immutable values and sharing across descendant completion."
     },
     {
       "id": "source:libs/content/src/json/transition.ts",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "JSON document generation/phase/content contract classification before parser work."
     },
     {
       "id": "source:libs/content/src/json/types.ts",
-      "taskIds": ["T18"], "treatment": "shared", "status": "in-progress",
+      "taskIds": [
+        "T18"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
       "reason": "Readonly owned JSON contracts without vendor parser objects or automatic schema typing."
     },
     {
@@ -15318,56 +15500,72 @@
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Explicit opt-in scoped stylesheet using existing chat tokens for the private native Debug first slice; broader devtools parity remains planned."
     },
     {
       "id": "source:libs/react/src/debug/bounded-value.ts",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "shared",
       "status": "in-progress",
       "note": "Bounded display and exact shown-JSON Copy for app-owned inspection data; not a full raw export or hostile Proxy isolation."
     },
     {
       "id": "source:libs/react/src/debug/chat-debug.tsx",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Private passive current/selected state, explicit checkpoint notifications and matched-ready inspected-checkpoint/current comparison. Historical-to-historical diff, Replay/Fork callbacks and full checkpoint tree remain planned."
     },
     {
       "id": "source:libs/react/src/debug/state-diff.ts",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Exact own-key comparison of complete bounded JSON projections; input and output limits refuse incomplete comparisons, arrays change atomically, paths use escaped JSON Pointer."
     },
     {
       "id": "source:libs/react/src/debug/debug-state-diff.tsx",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Private passive StateDiff and readonly props; literal bounded JSON and distinct unavailable notices, no reads, effects, clipboard or execution."
     },
     {
       "id": "source:libs/react/src/debug/index.ts",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Private opt-in secondary entry point; no root export or publication. T29 remains partial."
     },
     {
       "id": "source:libs/react/src/debug/persistence.ts",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "shared",
       "status": "in-progress",
       "note": "Guarded open/dock/tab preferences only; no conversation, state, targets or credentials persisted."
     },
     {
       "id": "source:libs/react/src/debug/types.ts",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
@@ -15700,91 +15898,117 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatPopup",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled non-modal popup shell; application owns visibility and execution. Installed native conversation dogfood covers retained hidden views."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatPopupProps",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly explicit visibility, labels and children; no inferred session commands or disposal."
     },
     {
       "id": "source:libs/react/src/chat/chat-popup.tsx",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded controlled non-modal popup with accepted-transition focus and retained hidden/inert children; full legacy composition parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidebar",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled non-modal full-height sidebar with optional persistent page content and desktop content pushing; application owns visibility and execution. Native dogfood preserves retained views."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidebarProps",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Extends readonly controlled ChatPopup props with optional pageContent and pushContent layout preferences; no session, global edge or disposal ownership."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidebar.tsx",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Full-height ChatPopup composition with persistent page slot and optional desktop content pushing; mobile remains an overlay. Peer edge claims and full composition parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenav",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled children-based navigation; expanded/collapsed normal flow and a non-modal drawer retain mounted content. Application owns responsive modes, selection and commands; full T30 parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavMode",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private expanded/collapsed/drawer presentation union; no implicit responsive behavior."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavProps",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly required mode/open and request callbacks, optional labels/className/children; no inferred session, directory or command ownership."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav.tsx",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded private named navigation shell with persistent hidden/inert children, accepted-transition local focus and scoped Escape. No scrim, global listeners, media query ownership or full Angular composition parity."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrim",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Optional controlled sibling backdrop with semantic keyboard dismissal. Native example composes only for open narrow drawers; no modal or runtime ownership."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavScrimProps",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
-      "taskIds": ["T30"],
+      "taskIds": [
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Separate controlled backdrop button with scoped viewport layering; no focus trap, portal, global listener or session behavior."
@@ -15835,14 +16059,18 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadList",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private semantic controlled selection view and optional new-conversation request with no automatic I/O, sorting or execution ownership. Native directory dogfoods installed component; full lifecycle-action parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadListItem",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly supplied ID and optional plain title for the bounded selection view; lifecycle/project/timestamp row fields and full parity remain open."
@@ -15867,21 +16095,27 @@
     },
     {
       "id": "source:libs/react/src/chat/thread-rename-form.tsx",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled semantic inline rename editor with explicit IME-safe submit/cancel, pending/error presentation and retained input. Native application owns exact-ID persistence, confirmation, stale reads and editor occurrence lifetime; full thread lifecycle parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadRenameForm",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled rename form dogfooded by native full directory actions/context menus; it owns no I/O, session or mutation lifetime. Further lifecycle and full parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadRenameFormProps",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly controlled title and synchronous input/submit/cancel notifications with optional pending/error/label/class. Application owns validation, persistence, retry and focus restoration; no SDK capability enters the view."
@@ -15985,63 +16219,85 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#HistorySearchPalette",
-      "taskIds": ["T29", "T30"],
+      "taskIds": [
+        "T29",
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled loaded-conversation search presentation with native modal focus containment and caller-owned query, results and exact-ID selection. Native dogfood preserves selected session, draft and route without search I/O. Backend-wide search and full parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#HistorySearchPaletteProps",
-      "taskIds": ["T29", "T30"],
+      "taskIds": [
+        "T29",
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly controlled open/query/results and intent callbacks, loading and labels, plus optional same-document return-focus target. Application owns filtering and navigation."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#HistorySearchResult",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly exact unique ID, literal title and optional subtitle in caller-supplied order; no backend schema or query contract."
     },
     {
       "id": "source:libs/react/src/chat/history-search-palette.tsx",
-      "taskIds": ["T29", "T30"],
+      "taskIds": [
+        "T29",
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Controlled SSR-safe modal combobox/listbox presentation with stable active identity, loading guards, keyboard/IME safety and bounded focus restoration. No fetching, filtering or runtime ownership."
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
-      "taskIds": ["T22", "T30"],
+      "taskIds": [
+        "T22",
+        "T30"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Unexported pure owner-document theme/direction and available-focus-target helpers shared by confirmation and search dialogs; their lifecycle and intent semantics remain separate."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Timeline",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private controlled supplied-order checkpoint presentation and original-object whole-row composition, dogfooded as metadata-only inspection of the existing loaded native history page. No fetching, historical state or execution; full timeline parity remains open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#TimelineItem",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly exact unique UI ID, literal label/description and optional disabled state. IDs carry caller-defined UI selection identity, not checkpoint execution authority."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#TimelineProps",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly controlled items, exact selection intent/current ID, labels/class and optional whole-row renderer preserving original items and supplied index. The application owns data and runtime lifetime."
     },
     {
       "id": "source:libs/react/src/chat/timeline.tsx",
-      "taskIds": ["T29"],
+      "taskIds": [
+        "T29"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "SSR-safe ordered list with native selection buttons, controlled current/strict disabled state and custom row bypass. Pure presentation without backend parsing, sorting, effects or commands."
@@ -16058,7 +16314,9 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Suggestions",
-      "taskIds": ["T22"],
+      "taskIds": [
+        "T22"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
@@ -16066,7 +16324,9 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#SuggestionItem",
-      "taskIds": ["T22"],
+      "taskIds": [
+        "T22"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
@@ -16074,7 +16334,9 @@
     },
     {
       "id": "export:libs/react/src/chat/index.ts#SuggestionsProps",
-      "taskIds": ["T22"],
+      "taskIds": [
+        "T22"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
@@ -16082,7 +16344,9 @@
     },
     {
       "id": "source:libs/react/src/chat/suggestions.tsx",
-      "taskIds": ["T22"],
+      "taskIds": [
+        "T22"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/suggestions.tsx",
@@ -16159,7 +16423,9 @@
     },
     {
       "id": "source:libs/react/src/markdown/citation-source.ts",
-      "taskIds": ["T26"],
+      "taskIds": [
+        "T26"
+      ],
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private DOM-free conversion of borrowed Markdown citation definitions into literal core metadata, shared by inline markers and opt-in Sources snapshot merging. No parser owner, fetching, URL-policy change or new public export; broader citation display parity remains open."
@@ -16208,6 +16474,446 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private pure connected preview geometry aligns below-start, flips above and clamps to the current viewport with RTL and visual viewport offsets. It does not expose a generic React overlay primitive."
+    },
+    {
+      "id": "doc:apps/website/content/docs/angular/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/a2ui/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/guides/client-tools.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/guides/interrupts.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/guides/json-render.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/guides/subagents.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/guides/tool-views.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/reference/event-mapping.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/a2ui/overview.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-debug.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-input.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-subagent-card.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/concepts/message-model.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/client-tools.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/generative-ui.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/theming.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/thread-routing.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/memory.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/planning.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/skills.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/subagents.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/durable-execution.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/interrupts.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/memory.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/persistence.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/streaming.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/guides/time-travel.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/computed-functions.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/element-rendering.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/registry.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/repeat-loops.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/specs.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/state-store.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/runtimes/aws-strands/overview.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/runtimes/mastra/overview.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/runtimes/microsoft-agent-framework/overview.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "source:libs/cockpit-registry/src/lib/docs-routes.ts",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
     },
     {
       "id": "export:libs/content/src/messages/index.ts#CitationImageVisual",

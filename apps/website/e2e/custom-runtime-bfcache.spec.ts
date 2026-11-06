@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const LANGGRAPH_PATH = '/docs/langgraph/guides/streaming';
+const LANGGRAPH_PATH = '/docs/angular/langgraph/guides/streaming';
 const FIXTURE_ORIGIN = 'http://127.0.0.1:4399';
 const FIXTURE_KEY = 'test-key-redact-me';
 

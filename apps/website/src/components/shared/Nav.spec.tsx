@@ -7,7 +7,7 @@ import { Nav } from './Nav';
 const { trackCtaClick, trackExternalLinkClick, pathnameRef } = vi.hoisted(() => ({
   trackCtaClick: vi.fn(),
   trackExternalLinkClick: vi.fn(),
-  pathnameRef: { current: '/docs/langgraph/guides/streaming' },
+  pathnameRef: { current: '/docs/angular/langgraph/guides/streaming' },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -25,7 +25,7 @@ describe('Docs mobile navigation', () => {
     window.localStorage.clear();
     trackCtaClick.mockClear();
     trackExternalLinkClick.mockClear();
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
   });
 
   it('mounts the docs control plane, search trigger included, on the library-neutral docs index', () => {
@@ -209,7 +209,7 @@ describe('Docs mobile navigation', () => {
   });
 
   it('opens pre-pushed to the docs tree on a docs route, with no tab strip', () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
     const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' });
@@ -270,8 +270,8 @@ describe('Docs mobile navigation', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Docs' }));
     expect(
-      within(dialog).getByRole('link', { name: /Quick start/ }).getAttribute('href'),
-    ).toBe('/docs/langgraph/getting-started/quickstart');
+      within(dialog).getByRole('link', { name: /Getting started/ }).getAttribute('href'),
+    ).toBe('/docs/angular/getting-started/introduction');
     expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
   });
 
@@ -297,7 +297,7 @@ describe('Docs mobile navigation', () => {
   });
 
   it('Escape closes from the drawer root reached by going back on a docs route', async () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     const trigger = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(trigger);
@@ -313,7 +313,7 @@ describe('Docs mobile navigation', () => {
   });
 
   it('Escape still pops a level pushed from that root on a docs route', async () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     const trigger = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(trigger);
@@ -422,7 +422,7 @@ describe('Docs mobile navigation', () => {
     const destination = within(screen.getByRole('dialog')).getByRole('link', {
       name: 'Persistence',
     });
-    expect(destination.getAttribute('href')).toBe('/docs/langgraph/guides/persistence');
+    expect(destination.getAttribute('href')).toBe('/docs/angular/langgraph/guides/persistence');
     fireEvent.click(destination);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -580,7 +580,7 @@ describe('Docs mobile navigation', () => {
 
     expect(trackCtaClick).toHaveBeenCalledWith({
       surface: 'mobile_nav',
-      destination_url: '/docs/langgraph/guides/streaming',
+      destination_url: '/docs/angular/langgraph/guides/streaming',
       cta_id: 'mobile_nav_docs_page',
       cta_text: 'Streaming',
       library: 'langgraph',

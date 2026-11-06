@@ -1,0 +1,283 @@
+---
+description: How the streaming example wires a LangGraph graph to Angular signals, plus stream modes, status, error handling, and throttling
+---
+
+# Streaming
+
+<DocsDemoVideo demo="streaming" frontend="angular" />
+
+Streaming lets a traveler begin reading an itinerary before the backend finishes the answer. Instead of waiting for one final response body, the browser receives a sequence of Server-Sent Events (SSE). The adapter turns those events into Angular Signals, and the UI renders each meaningful update.
+
+<Callout type="tip" title="Prerequisites">
+Make sure you have completed the Installation guide first.
+</Callout>
+
+## One response, many updates
+
+A user turn starts with an intention such as “Plan a weekend in Portland.” The backend may make several model calls or execute tools while answering it. Streaming describes how the browser observes that work; it does not mean there is one HTTP request per token.
+
+<TurnSequence />
+
+The draft, the answer, and the run status have different lifetimes. Clear the accepted draft when submitting, append or update messages as events arrive, and keep the run busy until its completion is known. A pause for approval or an interrupted connection needs its own UI state. [Follow a conversation](/docs/angular/langgraph/concepts/conversation-turns) introduces those boundaries before tools and persistence enter the picture.
+
+## What the demo does
+
+The Run tab hosts one agent and the prebuilt `<chat>` composition. Send a message and the answer fills in token by token while the typing indicator runs. The composition owns message rendering, the input, and error display, so the demo component is a template plus three fields.
+
+Two welcome suggestions are wired up. "Stream a long answer" asks for a 200-word explanation of LangGraph checkpointing, which is long enough to watch the tokens land one at a time. "How agents pick tools" asks the agent to explain tool selection, and the [chat-tool-calls component guide](/docs/angular/chat/components/chat-tool-calls) covers how those calls are rendered.
+
+## How it is built
+
+Three files carry the visible integration: the graph that streams, the provider that points Angular at it, and the component that renders it. A fourth, small file declares the typed agent ref they share. Open the Code tab to read the three in place.
+
+### The streaming graph
+
+The backend is a single node. `MessagesState` gives the LangGraph SDK a message list it already understands, the model is constructed with `streaming=True`, and the node prepends a system prompt read from the capability's prompt file before it awaits the model. The compiled graph is exported as `graph`, which is the symbol `langgraph.json` points at.
+
+<ExampleCode file="graph.py" />
+
+The node awaits a single `ainvoke` call. `streaming=True` is what lets the model emit tokens through LangGraph's callbacks, and which of those reach the browser is decided by the stream modes the client asks for.
+
+### The agent provider
+
+`provideAgent()` registers the agent once for the whole application, keyed by the typed ref declared in `agent-ref.ts`. The ref itself is one line, typed by a state interface declared beside it:
+
+```typescript
+import { createAgentRef } from '@threadplane/chat';
+
+export interface StreamingState {
+  messages: unknown[];
+}
+
+export const STREAMING_AGENT = createAgentRef<StreamingState>('streaming');
+```
+
+The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them. It is the only provider `<chat>` requires.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory. Pass the two values directly:
+
+```typescript
+provideAgent(STREAMING_AGENT, {
+  apiUrl: 'https://your-deployment.langgraph.app',
+  assistantId: 'streaming',
+}),
+```
+
+`assistantId` must match the graph name in `langgraph.json`.
+
+<Callout type="warning" title="Keep the API key on the server">
+Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deployment that authenticates the browser another way, or proxy the requests through your own server and attach the key there.
+</Callout>
+
+### The chat component
+
+`injectAgent(STREAMING_AGENT)` returns the agent registered above, typed by that ref. The component hands it to `<chat>` and does little else: it renders the two welcome suggestions and forwards the selected one into `submit()`.
+
+<ExampleCode file="streaming.component.ts" />
+
+`submit({ message })` opens the stream, and every signal the composition reads updates as chunks arrive. There is no service layer to write — the agent owns the connection lifecycle, the state, and error recovery.
+
+<Callout type="info" title="Injection context">
+`injectAgent()` must run inside an Angular injection context: a field initializer, as it is here, or a constructor body.
+</Callout>
+
+## Stream status
+
+The `status()` signal reports the current lifecycle state of the SSE connection:
+
+<Steps>
+<Step title="idle">
+No active stream. The resource is ready to accept a new message.
+</Step>
+<Step title="running">
+The run is active. It may be waiting for the first token, generating text, or executing a tool; signal values update as events arrive.
+</Step>
+<Step title="error">
+The connection was interrupted or the agent returned an error. Inspect `error()` for the full details.
+</Step>
+</Steps>
+
+## Stream modes
+
+On the server, `astream()` decides what a run emits, and `astream_events()` adds raw run events. The three modes you will meet most often:
+
+```python
+async def main():
+    # "values" — full state snapshot after each node
+    async for chunk in graph.astream({"messages": [("user", "Hello")]}, stream_mode="values"):
+        print(chunk)
+
+    # "messages" — individual message tokens as they are generated
+    async for chunk in graph.astream({"messages": [("user", "Hello")]}, stream_mode="messages"):
+        print(chunk)
+
+    # "events" — raw run events (on_chain_start, on_llm_stream, etc.)
+    async for event in graph.astream_events({"messages": [("user", "Hello")]}, version="v2"):
+        print(event["event"], event.get("data"))
+```
+
+The client asks for `messages-tuple` to receive the token tuples that `stream_mode="messages"` produces on the server; `messages` is a separate client mode, so the lists below name `messages-tuple`.
+
+You rarely call those directly from an Angular app. By default, `injectAgent()` asks LangGraph Platform for the stream modes it needs to populate its public signals: `values`, `messages-tuple`, `updates`, and `custom`. It also enables `streamSubgraphs` so namespaced subgraph events can reach the client.
+
+Override `streamMode` per run when you need a narrower stream. It is a submit option, not a `provideAgent()` option.
+
+<Tabs>
+<Tab label="values only">
+
+```typescript
+// Receives the full agent state after every node execution.
+// Best when you only need state snapshots.
+const chat = injectAgent(STREAMING_AGENT);
+
+await chat.submit(
+  { message: 'Summarize this thread.' },
+  { streamMode: ['values'] },
+);
+
+// chat.messages() always contains the complete message list
+```
+
+</Tab>
+<Tab label="messages-tuple only">
+
+```typescript
+// Streams individual message tokens as they are generated.
+// Best for token-by-token rendering with lowest perceived latency.
+const chat = injectAgent(STREAMING_AGENT);
+
+await chat.submit(
+  { message: 'Draft a reply.' },
+  { streamMode: ['messages-tuple'] },
+);
+```
+
+</Tab>
+<Tab label="events">
+
+```typescript
+// Emits raw LangGraph run events (on_chain_start, on_llm_stream, etc.).
+// Best for advanced observability or custom progress indicators.
+const chat = injectAgent(STREAMING_AGENT);
+
+await chat.submit(
+  { message: 'Trace this run.' },
+  { streamMode: ['events'] },
+);
+```
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="Choosing a mode">
+Use the default modes for most chat UIs. They keep `messages()`, `state()`, `toolCalls()`, `customEvents()`, and subagent streams populated from the same run. Narrow the mode list only when you know which signals your UI will read.
+</Callout>
+
+## Error handling
+
+If the SSE connection drops or the agent throws, `status()` flips to `'error'` and `error()` is populated. The prebuilt `<chat>` composition renders the failure for you; a hand-built UI reads the same two signals.
+
+<Tabs>
+<Tab label="chat.component.ts">
+
+```typescript
+import { computed } from '@angular/core';
+import { injectAgent } from '@threadplane/langgraph';
+import { STREAMING_AGENT } from './agent-ref';
+
+export class ChatComponent {
+  protected readonly chat = injectAgent(STREAMING_AGENT);
+
+  readonly hasError = computed(() => this.chat.status() === 'error');
+
+  // An interrupted run is retryable only when nothing reached the server.
+  readonly canCheck = computed(
+    () => this.chat.error()?.recovery === 'check' && this.chat.checkStatus !== undefined,
+  );
+
+  retry() {
+    // Clears the error and re-submits the last input on the same thread
+    this.chat.retry();
+  }
+
+  checkStatus() {
+    // Read-only: asks the backend what happened, resubmits nothing
+    this.chat.checkStatus?.();
+  }
+}
+```
+
+</Tab>
+<Tab label="chat.component.html">
+
+```html
+@if (hasError()) {
+  <div class="error-banner">
+    <p>{{ chat.error()?.message }}</p>
+    @if (chat.error()?.detail; as detail) {
+      <p>{{ detail }}</p>
+    }
+    @if (canCheck()) {
+      <button (click)="checkStatus()">Check status</button>
+    } @else if (chat.error()?.retryable) {
+      <button (click)="retry()">Retry</button>
+    }
+  </div>
+}
+```
+
+</Tab>
+</Tabs>
+
+`retry()` clears the error, then re-runs the last submission on the same thread; it is a no-op while a run is already in flight or when there is nothing to retry. `reload()` re-runs the last submission the same way but leaves the error signal alone, which is useful when you want to keep showing the failure state while the retry attempt is in progress. `submit(null)` opens a stream against the current thread state without a new user message and resumes only pending work, such as an interrupted run or a failed run that left tasks pending; otherwise it is a no-op. Pass `submit({ message })` only when you have new input to send.
+
+<Callout type="warning" title="Network errors vs agent errors">
+`error()` returns an `AgentError` whose `kind` distinguishes the failure class — `'connection'`, `'auth'`, `'server'`, `'interrupted'`, or `'aborted'` — whose `status` carries the HTTP status code when the failure came from an HTTP response, whose `retryable` says whether attempting the request again could plausibly succeed, and whose `cause` preserves the original raw error for debugging or telemetry. An `interrupted` error carries `recovery` and `detail` as well. A stream that closed without a terminal event may have left a run that carried on and committed work on the server, so this adapter never marks one retryable. `recovery` is `check` when the transport can read thread history, and `checkStatus()` then re-reads it to settle the turn without resubmitting anything; otherwise it is `none`, and `detail` says the outcome could not be confirmed.
+</Callout>
+
+## Throttle configuration
+
+By default Agent coalesces state-like signal updates every 16 ms. That is close to a 60 fps render cadence and prevents fast SSE streams from triggering hundreds of state renders per second.
+
+```typescript
+// app.config.ts
+provideAgent(STREAMING_AGENT, {
+  apiUrl: '...',
+  assistantId: 'streaming',
+  // Batch incoming chunks and flush at most once every 50 ms
+  throttle: 50,
+});
+```
+
+The value is in milliseconds. Pass `false` or `0` to disable batching and forward state updates immediately. Token message updates are not throttled, so live markdown and typing indicators still receive every token emission.
+
+For me, the 16 ms default is the right starting point — it tracks a 60 fps render and you will rarely feel it. The tradeoff of raising it is straightforward: a larger window costs you a touch of perceived latency on state signals to save renders, so only reach for it when profiling shows state updates are the bottleneck.
+
+| Use case | Recommended throttle |
+|---|---|
+| Token-by-token typing effect | default 16 ms |
+| Standard chat bubble | default 16 ms or 50 ms |
+| Background summarisation | 150 ms |
+
+<Callout type="tip" title="SSE connection behavior">
+Each call to `chat.submit()` opens a new SSE connection. Connections close when the run completes or the injector that owns the provider is destroyed. A component-scoped provider follows that component; an application-root provider remains alive when a consuming component unmounts. Choose the provider scope to match the intended conversation lifetime.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Persistence" href="/docs/angular/langgraph/guides/persistence">
+    Resume conversations across page reloads using thread IDs and checkpointers.
+  </Card>
+  <Card title="Interrupts" href="/docs/angular/langgraph/guides/interrupts">
+    Pause agent execution mid-stream to collect human input before continuing.
+  </Card>
+  <Card title="Testing" href="/docs/angular/langgraph/guides/testing">
+    Unit-test components that use agent with the built-in test harness.
+  </Card>
+  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
+    Full option reference for `injectAgent()` / `provideAgent()`, including all configuration keys.
+  </Card>
+</CardGroup>

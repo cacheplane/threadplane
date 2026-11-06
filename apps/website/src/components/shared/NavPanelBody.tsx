@@ -1,6 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useDocsFramework } from '../../lib/use-docs-framework';
+import { preferredDocsHref } from '../../lib/framework-preference';
 import {
   trackCtaClick,
   trackExternalLinkClick,
@@ -36,6 +39,8 @@ export function NavPanelItem({
   surface: 'nav' | 'mobile_nav';
   onNavigate?: () => void;
 }) {
+  const framework = useDocsFramework(usePathname());
+  const href = item.frameworkEntry ? preferredDocsHref(framework) : item.href;
   const Icon = item.icon;
   const body = (
     <>
@@ -53,7 +58,7 @@ export function NavPanelItem({
     </>
   );
   const onClick = () => {
-    trackNavItem(item, surface);
+    trackNavItem({ ...item, href }, surface);
     onNavigate?.();
   };
 
@@ -71,7 +76,7 @@ export function NavPanelItem({
     );
   }
   return (
-    <Link href={item.href} onClick={onClick} className="nav-panel-item">
+    <Link href={href} onClick={onClick} className="nav-panel-item">
       {body}
     </Link>
   );

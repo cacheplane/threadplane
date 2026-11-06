@@ -23,7 +23,7 @@ export const deepAgentsFilesystemAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Deep Agents Filesystem (Angular)',
-  docsPath: '/docs/deep-agents/capabilities/filesystem',
+  docsPath: '/docs/angular/deep-agents/capabilities/filesystem',
   promptAssetPaths: [
     'cockpit/deep-agents/filesystem/angular/prompts/filesystem.md',
   ],

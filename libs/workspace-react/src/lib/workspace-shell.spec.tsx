@@ -558,7 +558,7 @@ describe('WorkspaceShell header trail', () => {
       requestedMode: 'docs',
       contextTrail: [
         { label: 'Docs', href: '/docs' },
-        { label: 'AG-UI', href: '/docs/ag-ui/getting-started/introduction' },
+        { label: 'AG-UI', href: '/docs/angular/ag-ui/getting-started/introduction' },
         { label: 'Getting Started' },
         { label: 'Introduction' },
       ],
@@ -572,7 +572,7 @@ describe('WorkspaceShell header trail', () => {
     expect(within(nav).getByRole('link', { name: 'Docs' }).getAttribute('href')).toBe('/docs');
     expect(
       within(nav).getByRole('link', { name: 'AG-UI' }).getAttribute('href'),
-    ).toBe('/docs/ag-ui/getting-started/introduction');
+    ).toBe('/docs/angular/ag-ui/getting-started/introduction');
     expect(within(nav).queryByRole('link', { name: 'Getting Started' })).toBeNull();
 
     // The last rung is the current page and is never a link.
@@ -589,7 +589,7 @@ describe('WorkspaceShell header trail', () => {
       requestedMode: 'docs',
       contextTrail: [
         { label: 'Docs', href: '/docs' },
-        { label: 'Introduction', href: '/docs/ag-ui/getting-started/introduction' },
+        { label: 'Introduction', href: '/docs/angular/ag-ui/getting-started/introduction' },
       ],
     });
 
@@ -610,7 +610,7 @@ describe('WorkspaceShell header trail', () => {
         { label: 'Docs', href: '/docs' },
         {
           label: 'AG-UI',
-          href: '/docs/ag-ui/getting-started/introduction',
+          href: '/docs/angular/ag-ui/getting-started/introduction',
           icon: <svg data-testid="library-mark" />,
         },
         { label: 'Introduction' },

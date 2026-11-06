@@ -280,12 +280,12 @@ in the page.
 
 ## Documentation
 
-- [Quickstart](https://threadplane.ai/docs/langgraph/getting-started/quickstart)
+- [Quickstart](https://threadplane.ai/docs/angular/langgraph/getting-started/quickstart)
 - [`injectAgent()` API reference](https://threadplane.ai/docs/api/langgraph/injectAgent)
 - [`provideAgent()` API reference](https://threadplane.ai/docs/api/langgraph/provideAgent)
-- [Human-in-the-loop / interrupts](https://threadplane.ai/docs/langgraph/guides/interrupts)
-- [Thread persistence](https://threadplane.ai/docs/langgraph/guides/persistence)
-- [Testing with `MockAgentTransport`](https://threadplane.ai/docs/langgraph/guides/testing)
+- [Human-in-the-loop / interrupts](https://threadplane.ai/docs/angular/langgraph/guides/interrupts)
+- [Thread persistence](https://threadplane.ai/docs/angular/langgraph/guides/persistence)
+- [Testing with `MockAgentTransport`](https://threadplane.ai/docs/angular/langgraph/guides/testing)
 - [Choosing an adapter (LangGraph vs AG-UI)](https://threadplane.ai/docs/choosing-an-adapter)
 
 ## Installation collection

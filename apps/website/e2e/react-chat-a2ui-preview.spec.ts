@@ -1,9 +1,11 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const route = '/docs/chat/a2ui/overview';
+const route = '/docs/angular/chat/a2ui/overview';
+const reactRoute = '/docs/react/chat/a2ui/overview';
 const reactFrame = /(?:127\.0\.0\.1:4646|localhost:4646|chat\/a2ui\/react)/;
 const observations = new WeakMap<Page, { requests: string[]; errors: string[] }>();
 
@@ -30,8 +32,8 @@ async function hydrated(page: Page, mode: 'Docs' | 'Code' | 'Run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'Run');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -47,9 +49,9 @@ async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
 }
 
 test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ page }, testInfo) => {
-  await page.goto(route + '?frontend=react', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toBeVisible();
   await expect(page.locator('[data-example-file="libs/cockpit-a2ui-react/src/protocol.ts"]')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-docs-desktop.png') });
@@ -84,7 +86,7 @@ test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ pag
   await testInfo.attach('served-native-assets', { path: assetReceipt, contentType: 'application/json' });
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-run-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(await page.frameLocator('iframe').locator('html').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-run-mobile.png') });
@@ -93,20 +95,20 @@ test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ pag
 test('native Chat A2UI retains Angular as the canonical default', async ({ page }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveValue('angular');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
 });
 
 test('native Chat A2UI preserves its mounted frame and unsent draft through modes and history', async ({ page }) => {
-  await page.goto(route + '?frontend=react&mode=run', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute + '?mode=run', { waitUntil: 'domcontentloaded' });
   await emptyRun(page);
   const mountedFrame = await page.locator('iframe').elementHandle();
   await page.frameLocator('iframe').getByLabel('Message', { exact: true }).fill('Unsent A2UI history draft');
   await mode(page, 'Docs');
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await mode(page, 'Code');
   await expect(page).toHaveURL(/mode=code/);
   await page.goBack({ waitUntil: 'domcontentloaded' });

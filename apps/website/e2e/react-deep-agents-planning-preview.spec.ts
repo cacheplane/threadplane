@@ -1,6 +1,8 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
-const route = '/docs/deep-agents/capabilities/planning';
+const route = '/docs/angular/deep-agents/capabilities/planning';
+const reactRoute = '/docs/react/deep-agents/capabilities/planning';
 const reactFrame = /(?:localhost:4628|deep-agents\/planning\/react)/;
 const observations = new WeakMap<
   Page,
@@ -35,7 +37,7 @@ async function hydrated(page: Page, mode: 'docs' | 'code' | 'run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'run');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -51,9 +53,9 @@ async function emptyRun(page: Page, draft = '') {
 test('native Deep Agents Planning keeps canonical Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(route + '?frontend=react', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Planning preview',
@@ -112,7 +114,7 @@ test('native Deep Agents Planning keeps canonical Docs, Code and Run aligned', a
     path: testInfo.outputPath('react-deep-agents-planning-run-desktop.png'),
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -133,26 +135,26 @@ test('the canonical Planning guide keeps Angular as its default frontend', async
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveValue('angular');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Planning preview',
       exact: true,
     })
   ).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Planning preview',
       exact: true,
     })
   ).toBeVisible();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
 });
 test('a direct React run link mounts an empty conversation without creating a thread', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -160,7 +162,7 @@ test('a direct React run link mounts an empty conversation without creating a th
 test('history preserves the mounted React owner and unsent draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -191,7 +193,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
 test('reload clears an unsent React draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -209,7 +211,7 @@ test('reload clears an unsent React draft without runtime requests', async ({
 });
 
 test('the aviation suggestion fills an exact inert draft', async ({ page }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);

@@ -1,0 +1,179 @@
+---
+description: The A2uiSurfaceComponent that renders one A2UI surface - its inputs and outputs, the built-in handler map, and how validation blocks an event action.
+---
+
+# A2uiSurfaceComponent
+
+Angular component that renders a single A2UI surface. It converts the surface's component map and data model into a json-render `Spec`, then delegates rendering to `RenderSpecComponent`.
+
+**Import:**
+
+```typescript
+import { A2uiSurfaceComponent } from '@threadplane/chat';
+```
+
+**Selector:** `a2ui-surface`
+
+## Inputs
+
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| `surface` | `A2uiSurface` | No* | The surface to render (legacy input shape) |
+| `state` | `A2uiSurfaceState` | No* | Chat-side surface state driving progressive rendering. Preferred over `surface`; takes priority when both are set |
+| `catalog` | `A2uiViews \| ViewRegistry` | Yes | Component registry used to resolve A2UI type names to Angular components |
+| `handlers` | `Record<string, (params) => unknown \| Promise<unknown>>` | No | Keyed by A2UI function name. Consulted by the built-in `a2ui:localAction` handler, taking priority over its `openUrl` fallback. The handler map itself is fixed at two keys, so the built-in `a2ui:event` handler cannot be overridden |
+| `surfaceFallback` | `Type<unknown> \| undefined` | No | Replaces the built-in `A2uiDefaultFallbackComponent` shown while no spec is available. Applies to the `state` input path only |
+
+<Callout type="info" title="Provide one of surface or state">
+`surface` and `state` are both optional individually, but the component needs one of them to render. `state` is the preferred progressive-rendering path; `surface` is the legacy shape.
+</Callout>
+
+## Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `events` | `RenderEvent` | Emits render events from the underlying `RenderSpecComponent` -- handler execution, state changes, and lifecycle signals |
+| `action` | `A2uiActionMessage` | Emits an agent-bound action message when an A2UI `event` action fires. Forward it to your agent (e.g. `agent.submit`) as a serialized message to continue the conversation |
+| `validationError` | `A2uiErrorMessage` | Emitted with code `VALIDATION_FAILED` when a check rule on the surface blocks an event action. The action is not emitted |
+
+The `events` output forwards all `RenderEvent` emissions from the render engine. This includes events triggered by the default A2UI handlers (`a2ui:event` and `a2ui:localAction`) as well as any state change or lifecycle events. The `action` output is the agent-bound path: when a surface's `event` action fires, the component builds an `A2uiActionMessage` and emits it here so you can send it back to the agent.
+
+## How It Works
+
+`A2uiSurfaceComponent` bridges the A2UI surface model to the json-render engine in three steps:
+
+**1. Convert surface to Spec (`surfaceToSpec`)**
+
+The internal surface-to-spec conversion walks the flat component map and produces a json-render `Spec`. It uses a component with `id: 'root'` when present; otherwise it uses the first component in the map as the render root. Empty component maps render nothing.
+
+**2. Resolve dynamic values**
+
+Before the spec is emitted, each component prop is evaluated against the surface's data model. A prop can be:
+
+- A bare literal value — passed through as-is
+- A path reference `{ path: '/some/pointer' }` — kept as a live json-render state binding against `dataModel` (so user input writes back through the render state store)
+- A function call `{ call: ... }` — executed through the standard function registry (formatString/formatters/logic); unknown functions omit the prop
+
+**3. Map actions to `on` bindings**
+
+The internal conversion maps each component's A2UI `event` action into a render-spec `on` binding on the corresponding element. Actions map to the `a2ui:event` handler, which builds an `A2uiActionMessage` (with the event's `context` resolved against the data model) for the `(action)` output. `functionCall` actions map to the built-in `a2ui:localAction` handler — consumer handlers take priority, and `openUrl` opens in a new tab with `noopener` as the built-in fallback.
+
+**4. Expand template children**
+
+When a component's `children` field is a template (`{ path, componentId }`), the surface component expands it over the array at the `path` JSON Pointer in the data model. Each array item gets its own cloned element with props resolved in that item's scope — relative paths inside the template resolve per item.
+
+**5. Render via RenderSpecComponent**
+
+The final `Spec` is passed to `RenderSpecComponent` along with the `ViewRegistry` (converted to an Angular registry via `toRenderRegistry`). Rendering is fully reactive — when the surface signal updates, the spec recomputes and only affected elements re-render.
+
+**Theming.** The component host applies the agent-set surface theme from `createSurface.theme`: `primaryColor` becomes the `--a2ui-primary` CSS custom property, which catalog components consume for accents. When the agent sets no theme, your `:root`-level `--a2ui-primary` default wins. If the theme carries `agentDisplayName` and/or `iconUrl`, the component also renders a small identity header above the surface — a 16px round icon and the display name in muted label text. Surfaces without those fields render no header.
+
+## Usage Outside ChatComponent
+
+`A2uiSurfaceComponent` is used internally by `ChatComponent`, but you can also use it directly to embed a surface in any Angular template.
+
+```typescript
+import { Component } from '@angular/core';
+import { A2uiSurfaceComponent, createA2uiSurfaceStore, a2uiBasicCatalog } from '@threadplane/chat';
+import { createA2uiMessageParser } from '@threadplane/a2ui';
+
+@Component({
+  selector: 'app-agent-panel',
+  standalone: true,
+  imports: [A2uiSurfaceComponent],
+  template: `
+    @if (store.surface('dashboard')(); as surface) {
+      <a2ui-surface [surface]="surface" [catalog]="catalog" />
+    }
+  `,
+})
+export class AgentPanelComponent {
+  readonly catalog = a2uiBasicCatalog();
+  readonly store = createA2uiSurfaceStore();
+  private readonly parser = createA2uiMessageParser();
+
+  receiveChunk(chunk: string): void {
+    for (const msg of this.parser.push(chunk)) {
+      this.store.apply(msg);
+    }
+  }
+}
+```
+
+<Callout type="info" title="Root component selection">
+`A2uiSurfaceComponent` prefers a component with `id: 'root'` when one exists. If the surface has components but no `root`, it renders from the first component ID. Empty component maps render nothing.
+</Callout>
+
+### Wiring handlers and actions
+
+The example above renders a surface but ignores interaction. To run client-owned behavior and forward agent-bound events, pass `[handlers]` and bind `(action)` / `(events)`. Consumer handlers run for `a2ui:localAction`; the `(action)` output carries the agent-bound `A2uiActionMessage`. Send that envelope as a JSON message, matching `ChatComponent`. `resume` is for answering a pending graph interrupt; an ordinary surface action does not imply an interrupt.
+
+```typescript
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { A2uiSurfaceComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/langgraph';
+import type { A2uiActionMessage, A2uiSurface } from '@threadplane/chat';
+import type { RenderEvent } from '@threadplane/render';
+
+@Component({
+  selector: 'app-interactive-surface',
+  standalone: true,
+  imports: [A2uiSurfaceComponent],
+  template: `
+    <a2ui-surface
+      [surface]="surface()"
+      [catalog]="catalog"
+      [handlers]="handlers"
+      (action)="sendToAgent($event)"
+      (events)="onEvent($event)"
+    />
+  `,
+})
+export class InteractiveSurfaceComponent {
+  private readonly router = inject(Router);
+  private readonly agent = injectAgent();
+
+  readonly catalog = a2uiBasicCatalog();
+  readonly surface = signal<A2uiSurface | undefined>(undefined);
+
+  // Client-owned local actions (a2ui:localAction).
+  readonly handlers = {
+    openDetails: async (args: Record<string, unknown>) => {
+      await this.router.navigate(['/orders', args['orderId']]);
+    },
+  };
+
+  // Agent-bound action: forward it back to the agent loop.
+  sendToAgent(message: A2uiActionMessage) {
+    void this.agent.submit({ message: JSON.stringify(message) });
+  }
+
+  onEvent(event: RenderEvent) {
+    console.log('render event', event);
+  }
+}
+```
+
+## Internal conversion
+
+`A2uiSurfaceComponent` handles surface-to-spec conversion internally when it receives a legacy `surface` input. That conversion returns no rendered output for an empty component map. Otherwise it produces a complete json-render `Spec`, preferring a `root` component when present and falling back to the first component ID.
+
+The conversion helper is not part of the public `@threadplane/chat` API. Use `A2uiSurfaceComponent` or `createA2uiSurfaceStore()` for supported integration points.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card
+    title="Surface Store"
+    href="/docs/angular/chat/a2ui/surface-store"
+  >
+    Manage surfaces and apply A2UI messages reactively.
+  </Card>
+  <Card
+    title="Component Catalog"
+    href="/docs/angular/chat/a2ui/catalog"
+  >
+    All 18 built-in components and their props.
+  </Card>
+</CardGroup>

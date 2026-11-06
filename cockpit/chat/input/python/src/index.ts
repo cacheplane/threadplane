@@ -26,7 +26,7 @@ export const chatInputPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Chat Input (Python)',
-  docsPath: '/docs/chat/components/chat-input',
+  docsPath: '/docs/angular/chat/components/chat-input',
   promptAssetPaths: ['cockpit/chat/input/python/prompts/input.md'],
   codeAssetPaths: [
     'cockpit/chat/input/angular/src/app/input.component.ts',

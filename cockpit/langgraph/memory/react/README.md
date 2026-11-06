@@ -10,4 +10,4 @@ Build with `npx nx build cockpit-langgraph-memory-react`, test with `npx nx test
 
 The isolated build consumes private local core/content/React and neutral LangGraph candidate packages. Strict installed declarations and emitted modules are checked without Angular or workspace implementation imports. The internal runtime bridge is copied explicitly. No npm publication is implied.
 
-The public page is `/docs/langgraph/guides/memory?frontend=react`; runtime assets use `/langgraph/memory/react/`. Docs, Code and Run select this same frontend. The existing shared backend deployment is reused. Local proof routes and build-proof JSON are excluded from deployment. Developer keys travel only in SDK headers.
+The public page is `/docs/angular/langgraph/guides/memory?frontend=react`; runtime assets use `/langgraph/memory/react/`. Docs, Code and Run select this same frontend. The existing shared backend deployment is reused. Local proof routes and build-proof JSON are excluded from deployment. Developer keys travel only in SDK headers.

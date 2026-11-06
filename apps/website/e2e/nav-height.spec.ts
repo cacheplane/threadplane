@@ -16,7 +16,7 @@ const SURFACES = [
   { name: 'marketing', url: '/', expectedNavH: () => 64 },
   {
     name: 'docs',
-    url: '/docs/langgraph/getting-started/introduction',
+    url: '/docs/angular/langgraph/getting-started/introduction',
     expectedNavH: () => 64,
   },
 ];
@@ -66,7 +66,7 @@ test('the docs nav does not grow with the breakpoint', async ({ page }) => {
   const heights: number[] = [];
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 800 });
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     heights.push(
       await page
         .locator('nav')
@@ -102,7 +102,7 @@ test('keeps the tablet docs column and context drawer flush under the nav', asyn
   await test.step('the docs column starts directly under the nav at a tablet width', async () => {
     // The 15px overshoot showed up here as dead space above the breadcrumb.
     await page.setViewportSize({ width: 900, height: 800 });
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'

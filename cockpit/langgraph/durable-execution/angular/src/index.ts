@@ -23,7 +23,7 @@ export const langgraphDurableExecutionAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'LangGraph Durable Execution (Angular)',
-  docsPath: '/docs/langgraph/guides/durable-execution',
+  docsPath: '/docs/angular/langgraph/guides/durable-execution',
   promptAssetPaths: [
     'cockpit/langgraph/durable-execution/angular/prompts/durable-execution.md',
   ],

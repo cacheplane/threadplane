@@ -1,3 +1,4 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 // Pause and resume cases own one local fixture's request log and held response.
@@ -6,8 +7,8 @@ test.describe.configure({mode:'default'});
 test('public React AG-UI interrupts keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/ag-ui/guides/interrupts?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/ag-ui/guides/interrupts');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI interrupts preview',
@@ -29,7 +30,7 @@ test('public React AG-UI interrupts keep topic docs, sources, runtime, and histo
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await page
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: /^Run(?:,|$)/ })
@@ -38,17 +39,17 @@ test('public React AG-UI interrupts keep topic docs, sources, runtime, and histo
     'src',
     /(?:localhost:4610|ag-ui\/interrupts\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4610|ag-ui\/interrupts\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -64,7 +65,7 @@ for (const phase of ['paused', 'resume']) {
     test.skip(Boolean(process.env['BASE_URL']), 'Local execution lifetime is verified before deployment');
     const origin = 'http://127.0.0.1:4610';
     await request.post(origin + '/__reset');
-    await page.goto('/docs/ag-ui/guides/interrupts?frontend=react&mode=run');
+    await page.goto('/docs/react/ag-ui/guides/interrupts?mode=run');
     const frame = page.frameLocator('iframe');
     await expect(frame.getByRole('region', { name: 'Runtime connection' })).toContainText('Shared runtime');
     await frame.getByLabel('Message', { exact: true }).fill(phase === 'resume' ? 'Resume hold' : 'Fictional refund');
@@ -76,11 +77,11 @@ for (const phase of ['paused', 'resume']) {
       expect((await (await request.get(origin + '/__lifetime')).json()).active).toBe(true);
     }
     const oldFrame = await page.locator('iframe').elementHandle();
-    await page.getByLabel('Example UI').selectOption('angular');
-    expect(await oldFrame?.evaluate(element => element.isConnected)).toBe(false);
+    await selectFramework(page, 'angular');
+    await expect.poll(() => oldFrame?.evaluate(element => element.isConnected)).toBe(false);
     await expect.poll(async () => (await (await request.get(origin + '/__lifetime')).json()).active).toBe(false);
     await request.post(origin + '/__release');
-    await page.getByLabel('Example UI').selectOption('react');
+    await selectFramework(page, 'react');
     await expect(frame.getByRole('status')).toHaveText('Ready.');
     await expect(frame.getByRole('heading', { name: 'Refund approval' })).toHaveCount(0);
     await expect(frame.getByRole('region', { name: 'Conversation', exact: true }).locator('li')).toHaveCount(0);

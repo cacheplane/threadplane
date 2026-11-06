@@ -35,7 +35,7 @@ describe('FinalCTA', () => {
       name: 'See each feature in action →',
     });
     expect(link.getAttribute('href')).toBe(
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     expect(link.getAttribute('target')).toBeNull();
     expect(link.getAttribute('rel')).toBeNull();
@@ -97,14 +97,14 @@ describe('FinalCTA', () => {
         primary={{ label: 'Go', href: '/go' }}
         caption="MIT · no account, no cloud"
         captionLink={{ label: 'Talk to an engineer', href: '/contact' }}
-        captionLinks={[{ label: 'Setup prompt for coding agents', href: '/docs/chat/getting-started/coding-agents' }]}
+        captionLinks={[{ label: 'Setup prompt for coding agents', href: '/docs/angular/chat/getting-started/coding-agents' }]}
       />,
     );
     expect(screen.getByText(/MIT · no account, no cloud/).textContent).toBe(
       'MIT · no account, no cloud · Talk to an engineer · Setup prompt for coding agents',
     );
     expect(screen.getByRole('link', { name: 'Setup prompt for coding agents' }).getAttribute('href')).toBe(
-      '/docs/chat/getting-started/coding-agents',
+      '/docs/angular/chat/getting-started/coding-agents',
     );
   });
 

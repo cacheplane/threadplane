@@ -1,0 +1,187 @@
+---
+description: The A2uiSurfaceStore that accumulates streamed A2UI messages into per-surface state, and its per-component readiness metadata.
+---
+
+# createA2uiSurfaceStore()
+
+Factory function that creates an `A2uiSurfaceStore` — a reactive store that accumulates A2UI messages into a live `Map` of surfaces.
+
+**Import:**
+
+```typescript
+import { createA2uiSurfaceStore } from '@threadplane/chat';
+```
+
+## Signature
+
+```typescript
+function createA2uiSurfaceStore(): A2uiSurfaceStore
+```
+
+**Returns:** `A2uiSurfaceStore` — a stateful store backed by Angular signals. Can be created outside an injection context.
+
+## A2uiSurfaceStore Interface
+
+```typescript
+interface A2uiSurfaceStore {
+  /** Apply an A2UI message, updating surfaces reactively. */
+  apply(message: A2uiMessage): void;
+
+  /** Live-stream entry point: applies a batch of envelopes for a tool call. */
+  applyPartialArgs(toolCallId: string, envelopes: readonly A2uiMessage[]): void;
+
+  /** True if a tool_call_id has produced live envelopes via applyPartialArgs. */
+  isPartialLive(toolCallId: string): boolean;
+
+  /** Signal containing all current surfaces, keyed by surfaceId. */
+  readonly surfaces: Signal<Map<string, A2uiSurface>>;
+
+  /** Returns a computed signal for a single surface by ID. */
+  surface(surfaceId: string): Signal<A2uiSurface | undefined>;
+
+  /** Chat-side projections with per-component readiness. */
+  readonly surfaceStates: Signal<Map<string, A2uiSurfaceState>>;
+  surfaceState(surfaceId: string): Signal<A2uiSurfaceState | undefined>;
+}
+```
+
+### `apply(message)`
+
+Processes one `A2uiMessage` and updates the internal surfaces signal. All four message types are handled:
+
+| Message type | Behavior |
+|--------------|----------|
+| `createSurface` | Records the surface's catalog, theme, and `sendDataModel` flag. For an already-live surface, tolerated as an idempotent refresh of those create-time fields |
+| `updateComponents` | Merges the provided components into the surface's component map by `id` — existing components are replaced, others are kept |
+| `updateDataModel` | Applies the envelope's `value` at its JSON-pointer `path` (see below) |
+| `deleteSurface` | Removes the surface (and any buffered pre-commit state) entirely |
+
+**The commit rule.** A surface becomes visible once its `createSurface` envelope has arrived **and** a component with id `root` has been defined — the v0.9 progressive-rendering condition. Everything received earlier (components, data-model deltas) is buffered and committed together at that point. Afterwards, components merge incrementally by id and data-model updates apply immediately.
+
+### `applyPartialArgs(toolCallId, envelopes)`
+
+The live-streaming entry point. Iterates envelopes and feeds each through `apply()`, recording the `tool_call_id` so the wrapped-content classifier can short-circuit duplicate dispatch when the final AI message arrives. Use `isPartialLive(toolCallId)` to check whether a tool call already streamed envelopes live.
+
+### `surfaces`
+
+A readonly `Signal<Map<string, A2uiSurface>>` containing all committed surfaces. Each map operation produces a new `Map` reference so that Angular's change detection triggers correctly.
+
+### `surface(surfaceId)`
+
+Returns a `computed` signal for a single surface. The signal emits `undefined` until the commit rule is met, and `undefined` again after `deleteSurface` removes it.
+
+```typescript
+const dashboard = store.surface('dashboard');
+// dashboard() is A2uiSurface | undefined
+```
+
+### `surfaceStates` / `surfaceState(surfaceId)`
+
+Each `A2uiSurfaceState` pairs the wire-format `surface` with a `componentViews` map. That map scans legacy `{$.path}` strings for referenced data. A view becomes `ready` once those paths resolve, and the flag is **monotonic** — clearing a path later does not reset it. Components with no such strings become ready immediately.
+
+This metadata does not check v0.9 `{ path: '/value' }` references. The current `A2uiSurfaceComponent` converts `state.surface` to a render specification, maps those references to live state bindings, and lets the render engine evaluate resolved props and any registry schema before mounting a component. Do not use `componentViews.ready` as proof that every v0.9 binding has resolved.
+
+## updateDataModel Semantics
+
+The `updateDataModel` envelope carries an optional JSON-pointer `path` and an optional plain-JSON `value`:
+
+- `value` present — the data at `path` is replaced (or created). When `path` is omitted or `'/'`, the whole model is replaced by `value`.
+- `value` omitted — the key at `path` is deleted. With no `path`, the model resets to `{}`. Deleting an array index sets it to `undefined` and preserves the array's length (the v0.9 rule).
+
+```json
+// Replace the whole model
+{
+  "version": "v0.9",
+  "updateDataModel": {
+    "surfaceId": "s1",
+    "value": { "name": "Alice", "score": 42 }
+  }
+}
+
+// Set a nested value
+{
+  "version": "v0.9",
+  "updateDataModel": {
+    "surfaceId": "s1",
+    "path": "/profile/approved",
+    "value": true
+  }
+}
+
+// Delete a key (no value field)
+{
+  "version": "v0.9",
+  "updateDataModel": {
+    "surfaceId": "s1",
+    "path": "/profile/draft"
+  }
+}
+```
+
+## Usage with createA2uiMessageParser
+
+The surface store is designed to work with `createA2uiMessageParser`, which parses raw JSONL chunks into typed `A2uiMessage` objects.
+
+```typescript
+import { createA2uiSurfaceStore } from '@threadplane/chat';
+import { createA2uiMessageParser } from '@threadplane/a2ui';
+import { effect } from '@angular/core';
+
+const store = createA2uiSurfaceStore();
+const parser = createA2uiMessageParser();
+
+// Feed raw JSONL chunks as they arrive from the stream
+function onChunk(chunk: string): void {
+  const messages = parser.push(chunk);
+  for (const msg of messages) {
+    store.apply(msg);
+  }
+}
+
+// React to surface changes
+effect(() => {
+  const surface = store.surface('dashboard')();
+  if (surface) {
+    console.log('Components:', [...surface.components.keys()]);
+    console.log('Data model:', surface.dataModel);
+  }
+});
+```
+
+<Callout type="info" title="JSONL envelope format">
+The parser expects each line to carry a `version` plus one envelope key: `{"version":"v0.9","createSurface":{...}}`, `{"version":"v0.9","updateComponents":{...}}`, etc. The envelope key determines the message type; its value is the message payload.
+</Callout>
+
+## A2uiSurface Shape
+
+Each surface stored in the map has the following structure:
+
+```typescript
+interface A2uiSurface {
+  surfaceId: string;
+  catalogId: string;
+  theme?: A2uiTheme;
+  sendDataModel?: boolean;
+  components: Map<string, A2uiComponent>;
+  dataModel: Record<string, unknown>;
+}
+```
+
+The `components` map is keyed by component ID. The `dataModel` is a plain object that components reference via JSON Pointer paths in their props. `catalogId`, `theme`, and `sendDataModel` come from the surface's `createSurface` envelope.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card
+    title="Surface Component"
+    href="/docs/angular/chat/a2ui/surface-component"
+  >
+    Render a surface using A2uiSurfaceComponent.
+  </Card>
+  <Card
+    title="Component Catalog"
+    href="/docs/angular/chat/a2ui/catalog"
+  >
+    All 18 built-in components and their props.
+  </Card>
+</CardGroup>

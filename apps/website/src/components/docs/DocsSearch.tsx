@@ -2,13 +2,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { docsConfig, specialDocsPages, type LibraryId } from '../../lib/docs-config';
+import {
+  docsConfig,
+  getLibraryConfig,
+  specialDocsPages,
+  type LibraryId,
+} from '../../lib/docs-config';
 import { analyticsEvents } from '../../lib/analytics/events';
 import { track } from '../../lib/analytics/client';
 import { searchTokens } from '../../lib/docs-search-tokens';
 import type { DocsSearchHit } from '../../lib/docs-search-types';
 
+import apiEntrypoints from '../../../content/api/entrypoints.json';
+import { useDocsFramework } from '../../lib/use-docs-framework';
+import { getNarrativeDocuments, type DocsScope } from '../../lib/docs-catalog';
+
 interface SearchablePage {
+  scope?: DocsScope;
   title: string;
   description?: string;
   href: string;
@@ -19,7 +29,15 @@ interface SearchablePage {
 }
 
 function searchableText(page: SearchablePage): string {
-  return [page.title, page.description, page.slug, page.section, page.libraryTitle].filter(Boolean).join(' ');
+  return [
+    page.title,
+    page.description,
+    page.slug,
+    page.section,
+    page.libraryTitle,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function matchesQuery(page: SearchablePage, query: string): boolean {
@@ -37,14 +55,31 @@ const allSearchablePages: SearchablePage[] = [
     href: page.path,
     libraryTitle: 'Start here',
   })),
+  ...getNarrativeDocuments().map((doc) => ({
+    title: doc.title,
+    description: doc.description,
+    href: doc.href,
+    scope: doc.scope,
+    slug: doc.slug,
+    section: doc.section,
+    library: (doc.library as LibraryId) ?? undefined,
+    libraryTitle:
+      (doc.library
+        ? getLibraryConfig(doc.library)?.title
+        : 'Getting started') ?? 'Docs',
+  })),
   ...docsConfig.flatMap((lib) =>
-    lib.sections.flatMap((s) =>
-      s.pages.map((p) => ({
-        ...p,
-        href: p.href ?? `/docs/${lib.id}/${p.section}/${p.slug}`,
-        library: lib.id,
-        libraryTitle: lib.title,
-      }))
+    lib.sections.flatMap((section) =>
+      section.pages
+        .filter((page) => page.href?.startsWith('/docs/api/'))
+        .map((page) => ({
+          ...page,
+          scope: (apiEntrypoints.find((entry) => entry.id === page.slug)
+            ?.framework ?? 'shared') as DocsScope,
+          href: page.href!,
+          library: lib.id,
+          libraryTitle: lib.title,
+        }))
     )
   ),
 ];
@@ -58,7 +93,10 @@ const allSearchablePages: SearchablePage[] = [
  * out-of-order mark from a future server change must never throw or drop
  * the remainder of the snippet.
  */
-function renderSnippet(snippet: string, marks: [number, number][]): ReactNode[] {
+function renderSnippet(
+  snippet: string,
+  marks: [number, number][]
+): ReactNode[] {
   const parts: ReactNode[] = [];
   let cursor = 0;
   for (const [rawStart, rawEnd] of marks) {
@@ -66,7 +104,8 @@ function renderSnippet(snippet: string, marks: [number, number][]): ReactNode[] 
     const end = Math.max(start, Math.min(rawEnd, snippet.length));
     if (start < cursor) continue;
     if (start > cursor) parts.push(snippet.slice(cursor, start));
-    if (end > start) parts.push(<mark key={start}>{snippet.slice(start, end)}</mark>);
+    if (end > start)
+      parts.push(<mark key={start}>{snippet.slice(start, end)}</mark>);
     cursor = end;
   }
   parts.push(snippet.slice(cursor));
@@ -78,19 +117,39 @@ type NavItem =
   | { kind: 'page'; page: SearchablePage }
   | { kind: 'hit'; hit: DocsSearchHit };
 
-export function DocsSearch({ library }: { library?: LibraryId }) {
+export function DocsSearch({
+  library,
+  framework: selectedFramework,
+}: {
+  library?: LibraryId;
+  framework?: 'angular' | 'react';
+}) {
+  const preference = useDocsFramework();
+  const framework = selectedFramework ?? preference;
+  const [allFrameworks, setAllFrameworks] = useState(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
+  const scopeToggleRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
   const listboxId = 'docs-search-listbox';
   const router = useRouter();
 
-  const results = query.length > 0
-    ? allSearchablePages.filter((p) => matchesQuery(p, query)).slice(0, 8)
-    : allSearchablePages.filter((p) => !library || !p.library || p.library === library).slice(0, 6);
+  const scopedPages = allSearchablePages.filter(
+    (page) =>
+      allFrameworks ||
+      !page.scope ||
+      page.scope === 'shared' ||
+      page.scope === framework
+  );
+  const results =
+    query.length > 0
+      ? scopedPages.filter((p) => matchesQuery(p, query)).slice(0, 8)
+      : scopedPages
+          .filter((p) => !library || !p.library || p.library === library)
+          .slice(0, 6);
 
   const [contentHits, setContentHits] = useState<DocsSearchHit[]>([]);
 
@@ -106,9 +165,14 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      fetch(`/api/docs-search?q=${encodeURIComponent(trimmed)}`, {
-        signal: controller.signal,
-      })
+      fetch(
+        `/api/docs-search?q=${encodeURIComponent(
+          trimmed
+        )}&framework=${framework}&allFrameworks=${allFrameworks}`,
+        {
+          signal: controller.signal,
+        }
+      )
         .then((response) => (response.ok ? response.json() : { results: [] }))
         .then((payload: { results?: DocsSearchHit[] }) => {
           // A newer query's effect already aborted this controller by the
@@ -132,7 +196,7 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, framework, allFrameworks]);
 
   // A deeper link wins over a page-level one the instant layer already
   // listed; an identical page-level hit is dropped.
@@ -192,7 +256,12 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
     track(analyticsEvents.docsSearchResultClick, {
       surface: 'docs',
       destination_url: page.href,
-      library: page.library === 'langgraph' || page.library === 'render' || page.library === 'chat' ? page.library : 'unknown',
+      library:
+        page.library === 'langgraph' ||
+        page.library === 'render' ||
+        page.library === 'chat'
+          ? page.library
+          : 'unknown',
       query_length: query.length,
       result_count: navItems.length,
     });
@@ -218,13 +287,24 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setSelected((s) => Math.min(s + 1, navItems.length - 1)); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); }
-    if (e.key === 'Enter' && navItems[selected]) { activate(navItems[selected]); }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelected((s) => Math.min(s + 1, navItems.length - 1));
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelected((s) => Math.max(s - 1, 0));
+    }
+    if (e.key === 'Enter' && navItems[selected]) {
+      activate(navItems[selected]);
+    }
     // Focus trap: the combobox input is the dialog's only tab stop (options
     // are reached with the arrow keys), so Tab must not escape to the page
     // behind the modal.
-    if (e.key === 'Tab') e.preventDefault();
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      scopeToggleRef.current?.focus();
+    }
   };
 
   if (!open) return null;
@@ -236,7 +316,8 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
         aria-modal="true"
         aria-label="Search documentation"
         onClick={(e) => e.stopPropagation()}
-        className="docs-search-modal">
+        className="docs-search-modal"
+      >
         <div className="docs-search-input-wrap">
           <input
             ref={inputRef}
@@ -248,7 +329,12 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
               if (nextQuery.length === 1) {
                 track(analyticsEvents.docsSearchSubmit, {
                   surface: 'docs',
-                  library: library === 'langgraph' || library === 'render' || library === 'chat' ? library : 'unknown',
+                  library:
+                    library === 'langgraph' ||
+                    library === 'render' ||
+                    library === 'chat'
+                      ? library
+                      : 'unknown',
                 });
               }
             }}
@@ -257,11 +343,37 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
             role="combobox"
             aria-expanded={navItems.length > 0}
             aria-controls={listboxId}
-            aria-activedescendant={navItems[selected] ? `docs-search-opt-${selected}` : undefined}
+            aria-activedescendant={
+              navItems[selected] ? `docs-search-opt-${selected}` : undefined
+            }
             className="docs-search-input"
           />
         </div>
-        <div className="docs-search-results" ref={listRef} id={listboxId} role="listbox" aria-label="Search results">
+        <label className="docs-search-scope">
+          <input
+            ref={scopeToggleRef}
+            type="checkbox"
+            checked={allFrameworks}
+            onChange={(event) => {
+              setAllFrameworks(event.target.checked);
+              setContentHits([]);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Tab') {
+                event.preventDefault();
+                inputRef.current?.focus();
+              }
+            }}
+          />
+          Search all frameworks
+        </label>
+        <div
+          className="docs-search-results"
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-label="Search results"
+        >
           {results.map((page, i) => (
             <button
               key={page.href}
@@ -271,9 +383,21 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
               tabIndex={-1}
               onClick={() => navigate(page)}
               className="w-full text-left docs-search-result"
-              data-selected={i === selected || undefined}>
+              data-selected={i === selected || undefined}
+            >
               <span className="docs-search-result-title">{page.title}</span>
-              <span className="docs-search-result-lib">{page.libraryTitle}</span>
+              <span className="docs-search-result-lib">
+                {page.libraryTitle}
+                {page.scope
+                  ? ` · ${
+                      page.scope === 'react'
+                        ? 'React'
+                        : page.scope === 'angular'
+                        ? 'Angular'
+                        : 'Shared'
+                    }`
+                  : ''}
+              </span>
             </button>
           ))}
           {mergedContentHits.length > 0 && (
@@ -292,9 +416,23 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
                 tabIndex={-1}
                 onClick={() => navigateHit(hit)}
                 className="w-full text-left docs-search-result"
-                data-selected={i === selected || undefined}>
-                <span className="docs-search-result-title">{hit.heading ?? hit.title}</span>
-                <span className="docs-search-result-lib">{hit.libraryTitle} · {hit.title}</span>
+                data-selected={i === selected || undefined}
+              >
+                <span className="docs-search-result-title">
+                  {hit.heading ?? hit.title}
+                </span>
+                <span className="docs-search-result-lib">
+                  {hit.libraryTitle} · {hit.title}
+                  {hit.scope
+                    ? ` · ${
+                        hit.scope === 'react'
+                          ? 'React'
+                          : hit.scope === 'angular'
+                          ? 'Angular'
+                          : 'Shared'
+                      }`
+                    : ''}
+                </span>
                 <span className="docs-search-result-snippet">
                   {renderSnippet(hit.snippet, hit.marks)}
                 </span>
@@ -302,9 +440,7 @@ export function DocsSearch({ library }: { library?: LibraryId }) {
             );
           })}
           {navItems.length === 0 && (
-            <div className="docs-search-empty">
-              No results found
-            </div>
+            <div className="docs-search-empty">No results found</div>
           )}
         </div>
       </div>

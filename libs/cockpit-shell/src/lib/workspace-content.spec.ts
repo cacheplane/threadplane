@@ -336,7 +336,7 @@ describe('getContentBundle', () => {
 
   it('loads workspace-only capabilities from the same registry assets', async () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/deep-agents/capabilities/memory',
+      '/docs/angular/deep-agents/capabilities/memory',
       'Deep Agents Memory'
     );
     expect(resolution).not.toBeNull();

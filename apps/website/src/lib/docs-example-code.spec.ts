@@ -1,7 +1,7 @@
 import { getExampleCodeContext, getWebsiteWorkspacePage } from './workspace-page';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { capabilityModules, getFrontendCapabilityDescriptor } from '@threadplane/cockpit-registry';
+import { capabilityModules, frontendCapabilityModules, getFrontendCapabilityDescriptor } from '@threadplane/cockpit-registry';
 import { describe, expect, it } from 'vitest';
 import {
   fenceFor,
@@ -36,7 +36,7 @@ it('resolves every native Subagents article include from its registered sources 
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
   const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
   const context = contextFor(page);
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsSubagentsPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/subagents.mdx'), 'utf8');
   for (const include of includesIn(article)) {
     expect(resolveExampleFile(include.file, context)).toBe(include.file);
     expect(context.sources[include.file]?.length).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ it('resolves every native Filesystem article include from its registered sources
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
   const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
   const context = contextFor(page);
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx'), 'utf8');
   for (const include of includesIn(article)) {
     expect(resolveExampleFile(include.file, context)).toBe(include.file);
     expect(context.sources[include.file]?.length).toBeGreaterThan(0);
@@ -65,7 +65,7 @@ it('resolves every native Planning article include from its registered sources a
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as never, 'react')!;
   const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
   const context = contextFor(page);
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsPlanningPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/planning.mdx'), 'utf8');
   for (const include of includesIn(article)) {
     expect(resolveExampleFile(include.file, context)).toBe(include.file);
     expect(context.sources[include.file]?.length).toBeGreaterThan(0);
@@ -76,7 +76,7 @@ it('resolves every native Planning article include from its registered sources a
 });
 
 it('uses the actual Filesystem workspace labels and distinguishes unavailable records from invalid maps', () => {
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsFilesystemPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx'), 'utf8');
   const panel = readFileSync(join(WORKSPACE_ROOT, 'cockpit/deep-agents/filesystem/react/src/workspace-panel.tsx'), 'utf8');
   for (const label of ['Live workspace', 'Paused · confirmed workspace', 'Saved workspace', 'Last confirmed workspace']) {
     expect(panel).toContain(label);
@@ -94,7 +94,7 @@ interface MappedPage {
 /** docsPath → union of code assets across every descriptor sharing it. */
 function mappedPages(): MappedPage[] {
   const byPath = new Map<string, Set<string>>();
-  for (const descriptor of capabilityModules) {
+  for (const descriptor of [...capabilityModules, ...frontendCapabilityModules]) {
     const assets = [
       ...descriptor.codeAssetPaths,
       ...(descriptor.backendAssetPaths ?? []),
@@ -202,8 +202,8 @@ describe('docs pages teach through their example', () => {
 
 it('describes the pinned Memory prompt transformation without trimming leading whitespace', () => {
   const files = [
-    'apps/website/content/docs/deep-agents/capabilities/memory.mdx',
-    'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx',
+    'apps/website/content/docs/angular/deep-agents/capabilities/memory.mdx',
+    'apps/website/content/docs/react/deep-agents/capabilities/memory.mdx',
     ...['AGENTS', 'CLAUDE'].flatMap(name => [`apps/website/content/${name}.md.template`, `apps/website/public/${name}.md`]),
   ];
   for (const file of files) {
@@ -221,7 +221,7 @@ it('resolves every Memory article include and both complete shared backend sourc
   for (const descriptor of [canonical, react]) {
     const page = { docsPath: descriptor.docsPath, assetPaths: [...descriptor.codeAssetPaths, ...(descriptor.backendAssetPaths ?? [])] };
     const context = contextFor(page);
-    const article = descriptor === react ? readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsMemoryPreview.tsx'), 'utf8') : mdxFor(canonical.docsPath);
+    const article = descriptor === react ? readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/memory.mdx'), 'utf8') : mdxFor(canonical.docsPath);
     expect(includesIn(article).length).toBeGreaterThan(5);
     for (const include of includesIn(article)) {
       expect(resolveExampleFile(include.file, context)).toBe(include.file);
@@ -239,7 +239,7 @@ it('resolves every native Skills article include and the complete read-only back
   expect(react).toBeDefined();
   const page = { docsPath: react.docsPath, assetPaths: [...react.codeAssetPaths, ...(react.backendAssetPaths ?? [])] };
   const context = contextFor(page);
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactDeepAgentsSkillsPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/deep-agents/capabilities/skills.mdx'), 'utf8');
   expect(includesIn(article)).toHaveLength(8);
   for (const include of includesIn(article)) {
     expect(resolveExampleFile(include.file, context)).toBe(include.file);
@@ -251,8 +251,8 @@ it('resolves every native Skills article include and the complete read-only back
 });
 
 it('loads every bundled Skills Markdown asset as literal code for both frontends', async () => {
-  const model = await getWebsiteWorkspacePage({ docsPath: '/docs/deep-agents/capabilities/skills', title: 'Skills' });
-  const react = model.frontendVariants?.react;
+  const model = await getWebsiteWorkspacePage({ docsPath: '/docs/angular/deep-agents/capabilities/skills', title: 'Skills' });
+  const react = await getWebsiteWorkspacePage({ docsPath: '/docs/react/deep-agents/capabilities/skills', title: 'Skills' });
   expect(react).toBeDefined();
   if (!react) throw new Error('Missing native Skills workspace');
   const markdown = ['skills/runway-analysis/SKILL.md', 'skills/runway-analysis/reference/margins.md', 'skills/weather-brief/SKILL.md'].map(file => `cockpit/deep-agents/skills/python/${file}`);
@@ -275,12 +275,12 @@ it('loads every bundled Skills Markdown asset as literal code for both frontends
 });
 
 it('renders every native AG-UI Client Tools include from exact registered source bytes', async () => {
-  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/client-tools', title: 'Client Tools' });
-  const react = page.frontendVariants?.react;
+  const page = await getWebsiteWorkspacePage({ docsPath: '/docs/angular/ag-ui/guides/client-tools', title: 'Client Tools' });
+  const react = await getWebsiteWorkspacePage({ docsPath: '/docs/react/ag-ui/guides/client-tools', title: 'Client Tools' });
   if (!react) throw new Error('Missing native AG-UI Client Tools variant');
   const context = getExampleCodeContext(react);
   if (!context) throw new Error('Missing native AG-UI Client Tools source context');
-  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/src/components/docs/ReactAgUiClientToolsPreview.tsx'), 'utf8');
+  const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/ag-ui/guides/client-tools.mdx'), 'utf8');
   const includes = includesIn(article);
   expect(includes).toHaveLength(11);
   for (const include of includes) {

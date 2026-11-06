@@ -23,7 +23,7 @@ export const chatA2uiAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Chat A2UI (Angular)',
-  docsPath: '/docs/chat/a2ui/overview',
+  docsPath: '/docs/angular/chat/a2ui/overview',
   promptAssetPaths: ['cockpit/chat/a2ui/python/prompts/a2ui.md'],
   codeAssetPaths: ['cockpit/chat/a2ui/angular/src/app/a2ui.component.ts'],
 };

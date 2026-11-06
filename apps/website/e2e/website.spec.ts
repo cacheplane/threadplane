@@ -11,7 +11,7 @@ const GROWTH_FORM_POLICY_VERSION = 'growth_v1.2026-09-09';
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-const docsRoute = '/docs/langgraph/getting-started/introduction';
+const docsRoute = '/docs/angular/langgraph/getting-started/introduction';
 
 async function expectNoHorizontalOverflow(
   page: import('@playwright/test').Page,
@@ -244,7 +244,7 @@ test('whitepaper signup form posts to /api/whitepaper-signup and renders success
 });
 
 test('docs page renders sidebar and content', async ({ page }) => {
-  await page.goto('/docs/langgraph/getting-started/introduction');
+  await page.goto('/docs/angular/langgraph/getting-started/introduction');
   await expect(page.locator('aside').first()).toBeVisible();
   await expect(page.locator('article')).toBeVisible();
 });
@@ -481,16 +481,16 @@ test('sitemap.xml includes configured docs pages', async ({ request }) => {
 
   const body = await response.text();
   expect(body).toContain('https://threadplane.ai/docs');
-  expect(body).toContain('https://threadplane.ai/docs/langgraph/getting-started/introduction');
-  expect(body).toContain('https://threadplane.ai/docs/chat/a2ui/overview');
+  expect(body).toContain('https://threadplane.ai/docs/angular/langgraph/getting-started/introduction');
+  expect(body).toContain('https://threadplane.ai/docs/angular/chat/a2ui/overview');
 });
 
 test('docs pages render canonical and social metadata', async ({ page }) => {
-  await page.goto('/docs/langgraph/guides/streaming');
+  await page.goto('/docs/angular/langgraph/guides/streaming');
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    'https://threadplane.ai/docs/langgraph/guides/streaming',
+    'https://threadplane.ai/docs/angular/langgraph/guides/streaming',
   );
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     'content',
@@ -498,7 +498,7 @@ test('docs pages render canonical and social metadata', async ({ page }) => {
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     'content',
-    'https://threadplane.ai/docs/langgraph/guides/streaming',
+    'https://threadplane.ai/docs/angular/langgraph/guides/streaming',
   );
   await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
     'content',
@@ -519,10 +519,10 @@ test('marketing pages render canonical and page-specific social URLs', async ({ 
 test.describe('representative docs pages do not create page-level horizontal overflow', () => {
   const routes = [
     '/docs',
-    '/docs/langgraph/getting-started/introduction',
+    '/docs/angular/langgraph/getting-started/introduction',
     '/docs/api/langgraph/injectAgent',
-    '/docs/chat/components/chat-tool-calls',
-    '/docs/chat/a2ui/overview',
+    '/docs/angular/chat/components/chat-tool-calls',
+    '/docs/angular/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',
   ];
   const widths = [320, 375, 768, 1280];
