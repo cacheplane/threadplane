@@ -2438,12 +2438,22 @@ it('requires installed native React readiness immediately after owned render sta
 });
 
 
+it('runs the Angular list wrapper regression in Firefox on the first chat shard', async () => {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'examples-chat-e2e');
+  const install = readNamedStep(job, 'Install Firefox for the Angular list layout regression');
+  const regression = readNamedStep(job, 'Verify Angular list wrappers in Firefox');
+  for (const step of [install, regression]) assert.match(step, /if: matrix\.shard == 1/);
+  assert.match(install, /npx playwright install --with-deps firefox/);
+  assert.match(regression, /npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"/);
+  assert.ok(job.indexOf(install) < job.indexOf(regression));
+});
+
 it('bounds every Playwright dependency install and configures Ubuntu downloads first', async () => {
   for (const file of ['ci.yml', 'aimock-drift.yml']) {
     const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
     const steps = workflow.split(/(?=^      - )/m);
     const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
-    assert.equal(installs.length, file === 'ci.yml' ? 11 : 1, `enumerate actual install callers in ${file}`);
+    assert.equal(installs.length, file === 'ci.yml' ? 12 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
       assert.match(steps[index - 1], /name: Configure bounded Ubuntu package downloads/);

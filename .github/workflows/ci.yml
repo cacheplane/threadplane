@@ -792,6 +792,9 @@ jobs:
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
+      - name: Configure bounded Ubuntu package downloads
+        if: matrix.shard == 1
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Firefox for the Angular list layout regression
         if: matrix.shard == 1
         timeout-minutes: 10

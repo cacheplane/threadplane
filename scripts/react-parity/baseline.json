@@ -1,14 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d36a8a5a9bd271467aa1bcdfb15dcccaeda120d0",
+  "baselineHead": "d268a650763de9013f0f413686e764a7927338a9",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "libs/angular/markdown/src/markdown.component.ts",
-      "libs/chat/src/lib/styles/chat-markdown.styles.ts",
-      "libs/example-layouts/src/theme.css",
-      "libs/react/README.md",
-      "libs/react/src/chat/styles.css"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2182,7 +2177,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "819866a83ea0692eb3ad9328bb6f0419cbdb8dd29dc0b2f8d72eda99bf35c7e1"
+      "sha256": "687724e1e0505355104dc2a3088cf14d9e3c7082e510c59113261df8958d3aba"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
