@@ -31,13 +31,11 @@ export default function PricingPage() {
               We gave away the framework. Forgot to build a cloud to lock you
               into. Honestly, we should have thought this through.
             </p>
-            <a className="pricing-text-link" href="#services">
-              There is one thing you can pay us for{' '}
-              <span aria-hidden="true">↓</span>
-            </a>
           </div>
         </Container>
       </Section>
+
+      <PricingServices />
 
       <Section ariaLabelledBy="pricing-source-heading">
         <Container>
@@ -75,15 +73,9 @@ export default function PricingPage() {
               </li>
             </ul>
           </div>
-          <p className="pricing-hosting-note">
-            Threadplane does not host your agents or conversations. Runtime
-            behavior, durable persistence, retention, and infrastructure costs
-            are determined by the connected backend and providers.
-          </p>
         </Container>
       </Section>
 
-      <PricingServices />
       <PricingProof />
 
       <Section ariaLabelledBy="pricing-comparison-heading">

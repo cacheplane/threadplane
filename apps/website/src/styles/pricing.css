@@ -41,9 +41,6 @@
   color: var(--color-text-muted);
   text-wrap: pretty;
 }
-.pricing-page .pricing-page-hero-inner > .pricing-text-link {
-  margin-top: 24px;
-}
 .pricing-page h2 {
   margin: 0;
   color: var(--color-accent);
@@ -115,7 +112,6 @@
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
-.pricing-page .pricing-hosting-note,
 .pricing-page .pricing-scope-note {
   max-width: 80ch;
   margin: 24px auto 0;
@@ -232,6 +228,36 @@
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
+}
+.pricing-page .pricing-pretable-mark {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+.pricing-page .pricing-grid-sketch {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1.5fr;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0;
+}
+.pricing-page .pricing-grid-sketch span {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #e8eaed;
+}
+.pricing-page .pricing-grid-sketch span:nth-child(-n + 3) {
+  background: #f4f5f6;
+}
+.pricing-page .pricing-grid-sketch i {
+  width: 75%;
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+}
+.pricing-page .pricing-grid-sketch span:nth-child(3n) i {
+  width: 90%;
 }
 .pricing-page .pricing-sketch-sidebar {
   width: 24%;

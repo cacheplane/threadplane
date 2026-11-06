@@ -4,6 +4,20 @@ import { Section } from '../ui/Section';
 
 /** Decorative abstractions, matching the homepage's quiet skeleton illustrations. */
 function ProductSketch({ agent = false }: { agent?: boolean }) {
+  if (!agent) {
+    return (
+      <div
+        className="pricing-product-sketch pricing-grid-sketch"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 12 }, (_, index) => (
+          <span key={index}>
+            <i />
+          </span>
+        ))}
+      </div>
+    );
+  }
   return (
     <div
       className={`pricing-product-sketch ${
@@ -58,19 +72,24 @@ export function PricingProof() {
         <div className="pricing-proof-grid">
           <article
             className="pricing-proof-card"
-            aria-labelledby="pricing-proof-threadplane"
+            aria-labelledby="pricing-proof-pretable"
           >
             <div className="pricing-product-brand">
-              <Image src="/brand/mark.svg" alt="" width={32} height={32} />
-              <h3 id="pricing-proof-threadplane">threadplane</h3>
+              <span className="pricing-pretable-mark" aria-hidden="true" />
+              <h3 id="pricing-proof-pretable">pretable</h3>
             </div>
             <p>
-              The UI side. Threads, approvals, tools, and generative interfaces
-              that make agents usable in your product.
+              The data side. A React data grid built for live updates, streaming
+              AI output, and wrapped text that stays readable as the data moves.
             </p>
             <ProductSketch />
-            <a className="pricing-text-link" href="/docs">
-              Explore Threadplane <span aria-hidden="true">→</span>
+            <a
+              className="pricing-text-link"
+              href="https://pretable.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Explore Pretable <span aria-hidden="true">↗</span>
             </a>
           </article>
           <article

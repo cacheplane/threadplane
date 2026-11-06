@@ -19,8 +19,6 @@ describe('PricingPage', () => {
     expect(screen.getByText(/commercial products, internal tools, and client work/i)).toBeTruthy();
     expect(screen.getByText(/No Threadplane cloud/i)).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Steal our source code.' })).toBeTruthy();
-    expect(screen.getByText(/does not host your agents or conversations/i)).toBeTruthy();
-    expect(screen.getByText(/durable persistence.*connected backend/i)).toBeTruthy();
   });
 
   it('sells three scoped services and links to the team and its products', () => {
@@ -29,6 +27,7 @@ describe('PricingPage', () => {
       expect(screen.getByRole('heading', { level: 3, name })).toBeTruthy();
     }
     expect(screen.getByRole('link', { name: /Explore b4.run/i }).getAttribute('href')).toBe('https://b4.run/');
+    expect(screen.getByRole('link', { name: /Explore Pretable/i }).getAttribute('href')).toBe('https://pretable.ai/');
     expect(screen.getByRole('link', { name: /Meet LiveLoveApp/i }).getAttribute('href')).toBe('https://liveloveapp.com/');
     expect(screen.getByRole('link', { name: 'Discuss assurance' }).getAttribute('href')).toContain('intent=enterprise');
     expect(screen.getByRole('link', { name: 'Plan a launch' }).getAttribute('href')).toContain('intent=enterprise');
