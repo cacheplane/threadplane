@@ -40,11 +40,14 @@ export async function expectExampleShell(page: Page, title: string, width: numbe
   await expect(header.getByRole('heading', { name: title, exact: true })).toBeVisible();
   expect(await header.boundingBox()).toMatchObject({ x: 0, y: 0, width: mainWidth, height: 53 });
   const d = await docs.boundingBox(), f = await footer.boundingBox(), p = await pill.boundingBox();
+  expect(p?.height).toBe(56);
   expect(d?.x).toBe(width < 768 ? 0 : mainWidth);
   expect(d?.width).toBe(width < 768 ? width : 288);
   expect(d?.y).toBeCloseTo(width < 768 ? height * 0.8 : 0, 1);
-  expect(f?.height).toBeCloseTo(footerHeight, 1);
-  expect(f?.y).toBeCloseTo((width < 768 ? height * 0.8 : height) - footerHeight, 1);
+  // Engines round the fractional hint line-height differently; the pill itself
+  // is exact, while the full footer follows the matched-capture 1px tolerance.
+  expect(Math.abs((f?.height ?? 0) - footerHeight)).toBeLessThanOrEqual(1);
+  expect(Math.abs((f?.y ?? 0) - ((width < 768 ? height * 0.8 : height) - footerHeight))).toBeLessThanOrEqual(1);
   expect(p?.width).toBe(Math.min(768, mainWidth - 32));
   const input = page.locator('textarea').first();
   await expect(header.locator('h1')).toHaveCSS('color', await input.evaluate((element) => getComputedStyle(element).color));
@@ -57,4 +60,6 @@ export async function expectExampleShell(page: Page, title: string, width: numbe
   await input.evaluate((element) => { element.scrollTop = element.scrollHeight; });
   expect(await input.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await input.fill('');
+  await expect.poll(async () => (await pill.boundingBox())?.height).toBe(56);
+  await expect.poll(async () => Math.abs(((await footer.boundingBox())?.height ?? 0) - footerHeight)).toBeLessThanOrEqual(1);
 }

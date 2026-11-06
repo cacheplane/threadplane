@@ -1,14 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "19426f1d7c95e9b0fa0201f1934161cc6a0739da",
+  "baselineHead": "6090da8eaf6cbe81863ecdfec7116d3431dd65c9",
   "sourceState": {
     "modified": [
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-      "libs/chat/src/lib/styles/chat-message.styles.ts",
-      "libs/example-layouts/src/lib/example-chat-layout.component.ts",
-      "libs/example-layouts/src/lib/example-split-layout.component.ts",
-      "libs/example-layouts/src/theme.css"
+      "libs/chat/src/lib/styles/chat-input.styles.ts",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -874,7 +870,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "ab9c2afb7d41193ff999a2df59f9c123cdc88a0c618dc6ce2b7290295b436239"
+      "sha256": "614d4581b5db78832013616fb0e0f39e2b3b2dd89f89a2d9a5ba7ce814579cef"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -14225,7 +14221,7 @@
       "id": "source:libs/chat/src/lib/styles/chat-input.styles.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/styles/chat-input.styles.ts",
-      "sha256": "6b2250ffd09d9f56989c17f4c964d773819d10f437fd8d984c2a2cc77ecb1959"
+      "sha256": "e3051ef23c76428d1f18ef6b9265ccf9e9467988d60a6ea28d3d229fc6aa3134"
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-interrupt.styles.ts",
