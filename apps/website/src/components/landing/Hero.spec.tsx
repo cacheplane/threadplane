@@ -6,8 +6,6 @@ import {
   HERO_EYEBROW,
   HERO_H1,
   HERO_SECONDARY_HREF,
-  HERO_SUBHEAD,
-  HERO_SUBHEAD_SEGMENTS,
 } from '../../lib/positioning';
 
 const trackMock = vi.hoisted(() => vi.fn());
@@ -52,19 +50,12 @@ beforeEach(() => {
 });
 
 describe('Hero', () => {
-  it('renders the category eyebrow, H1, subhead and trust line from positioning', async () => {
+  it('keeps the hero focused on the headline and actions', async () => {
     const { Hero } = await import('./Hero');
     render(<Hero />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(HERO_H1);
-    expect(screen.getByText(HERO_EYEBROW)).toBeTruthy();
-    expect(document.querySelector('.hero-subhead')?.textContent).toBe(HERO_SUBHEAD);
-    expect(document.querySelectorAll('.hero-subhead a.marker-highlight')).toHaveLength(5);
-    for (const segment of HERO_SUBHEAD_SEGMENTS.filter((s) => s.href)) {
-      const link = screen.getByRole('link', { name: segment.text, exact: true });
-      expect(link.getAttribute('href')).toBe(segment.href);
-      expect(link.getAttribute('target')).toBe('_blank');
-      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    }
+    expect(screen.queryByText(HERO_EYEBROW)).toBeNull();
+    expect(document.querySelector('.hero-subhead')).toBeNull();
     expect(document.querySelector('.hero-chip-row')).toBeNull();
     expect(screen.queryByText(/six months/)).toBeNull();
     expect(screen.queryByRole('link', { name: /Talk to our engineers/ })).toBeNull();
@@ -91,5 +82,16 @@ describe('Hero', () => {
     const { Hero } = await import('./Hero');
     render(<Hero />);
     expect(screen.getByTestId('hero-demo')).toBeTruthy();
+  });
+
+  it('offers both framework quickstarts without release-status copy', async () => {
+    const { Hero } = await import('./Hero');
+    render(<Hero />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('The open source (and free) threadplane for agents');
+    expect(screen.getByRole('link', { name: 'Angular quickstart' }).getAttribute('href')).toBe('/docs/langgraph/getting-started/quickstart');
+    expect(screen.getByRole('link', { name: 'React quickstart' }).getAttribute('href')).toBe('/docs/react/getting-started/quickstart');
+    expect(screen.queryByText(/coming soon/i)).toBeNull();
+    expect(screen.getByRole('link', { name: 'LangGraph integration' }).getAttribute('href')).toBe('/langgraph');
+    expect(screen.getByRole('link', { name: 'AG-UI integration' }).getAttribute('href')).toBe('/ag-ui');
   });
 });

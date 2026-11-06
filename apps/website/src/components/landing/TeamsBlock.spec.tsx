@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TeamsBlock } from './TeamsBlock';
 import { FIELD_REPORT } from '../../lib/field-report';
+import type { PublicFormPolicy } from '../../lib/growth/form-policy';
 
 vi.mock('../../lib/analytics/client', () => ({
   track: vi.fn(),
@@ -11,13 +12,14 @@ vi.mock('../../lib/analytics/client', () => ({
   trackWhitepaperDownloadClick: vi.fn(),
 }));
 
-const formPolicy = {
-  version: 'test',
+const formPolicy: PublicFormPolicy = {
+  mode: 'growth_v1',
+  version: 'growth_v1.2026-09-09',
   disclosures: { whitepaper: 'Whitepaper disclosure', newsletter: 'Newsletter disclosure', contact: 'Contact disclosure' },
-} as never;
+};
 
 describe('TeamsBlock', () => {
-  it('leads with the ask: eyebrow, heading, then the form', () => {
+  it('leads with the report heading and keeps the form disclosure', () => {
     const { container } = render(<TeamsBlock formPolicy={formPolicy} />);
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading.textContent).toBe('Free preflight briefing for agentic UI');
@@ -31,9 +33,9 @@ describe('TeamsBlock', () => {
     // The section claimed "18 pages" for a 17-page document. Reading it from
     // FIELD_REPORT means the guard against the PDF covers this string too.
     const { container } = render(<TeamsBlock formPolicy={formPolicy} />);
-    const eyebrow = container.querySelector('[data-ui="eyebrow"]');
-    expect(eyebrow?.textContent).toContain(`${FIELD_REPORT.pages} pages`);
-    expect(eyebrow?.textContent).toContain('What breaks between a demo and production');
+    const description = container.querySelector('.home-report-description');
+    expect(description?.textContent).toContain(`${FIELD_REPORT.pages}-page`);
+    expect(description?.textContent).toContain('What breaks between a demo and production');
   });
 
   it('shows the briefing beside the ask', () => {

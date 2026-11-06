@@ -9,7 +9,7 @@ These assets support the homepage ecosystem strip. They are compatibility marks,
 - `providers/anthropic.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/anthropic.svg`.
 - `providers/bedrock.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/bedrock.svg`.
 - `providers/google.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/google.svg`.
-- `ag-ui.svg` is a repository-owned AG-UI monogram.
+- `ag-ui.svg` uses the official compact AG-UI mark from [ag-ui-protocol/ag-ui](https://github.com/ag-ui-protocol/ag-ui/blob/main/docs/favicon.svg), with its SVG title changed to `AG-UI` for accessibility. Original geometry and styling are preserved.
 - `runtimes/mastra.svg` downloaded from `https://github.com/mastra-ai/mastra/blob/main/packages/playground/public/mastra.svg`.
 
 `providers/bedrock.svg` is also reused for the AWS Strands tile.

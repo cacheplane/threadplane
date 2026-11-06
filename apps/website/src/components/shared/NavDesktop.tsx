@@ -39,7 +39,7 @@ function Panel({ panel, id }: { panel: NavPanel; id: string }) {
   );
 }
 
-export function NavDesktop() {
+export function NavDesktop({ starCount = null }: { starCount?: string | null }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const panelPrefix = useId();
   const triggerRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -219,10 +219,11 @@ export function NavDesktop() {
               cta_text: 'GitHub',
             })
           }
-          className="transition-colors nav-link"
-          aria-label="GitHub repository"
+          className="transition-colors nav-link nav-github-link"
+          aria-label={starCount !== null ? `GitHub repository, ${starCount} stars` : 'GitHub repository'}
         >
           <GitHubIcon />
+          {starCount !== null && <span className="nav-github-stars">{starCount}</span>}
         </a>
         <Button
           variant="primary"

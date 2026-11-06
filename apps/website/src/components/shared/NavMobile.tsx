@@ -90,6 +90,7 @@ function CloseIcon() {
 }
 
 export interface NavMobileProps {
+  readonly starCount?: string | null;
   readonly isDocsPage: boolean;
   readonly docsLibrary: LibraryId | null;
   readonly activeSection: string;
@@ -99,6 +100,7 @@ export interface NavMobileProps {
 }
 
 export function NavMobile({
+  starCount = null,
   isDocsPage,
   docsLibrary,
   activeSection,
@@ -384,6 +386,7 @@ export function NavMobile({
                     className="nav-mobile-github-link"
                   >
                     <GitHubIcon /> GitHub
+                    {starCount !== null && <span className="nav-github-stars" aria-label={`${starCount} stars`}>{starCount}</span>}
                   </a>
                   <div className="nav-mobile-cta-wrap">
                     <Button

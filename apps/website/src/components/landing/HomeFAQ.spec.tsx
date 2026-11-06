@@ -9,7 +9,7 @@ describe('HomeFAQ', () => {
     const { container } = render(<HomeFAQ />);
     const questions = [
       'Is Threadplane a backend agent framework?',
-      'Can I use my existing Angular component library and design system?',
+      'Can I use my existing component library and design system?',
       'Does generated UI execute arbitrary code?',
       'Does Threadplane require a hosted service or an account?',
       'Does Threadplane have a runtime I need to deploy?',

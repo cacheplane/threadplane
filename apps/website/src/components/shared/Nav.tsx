@@ -7,7 +7,8 @@ import { LogoMark } from '../ui/LogoMark';
 import { NavDesktop } from './NavDesktop';
 import { NavMobile } from './NavMobile';
 
-export function Nav() {
+export function Nav({ githubStars = null }: { githubStars?: number | null }) {
+  const starCount = githubStars?.toLocaleString('en-US') ?? null;
   const pathname = usePathname();
   const isDocsPage = pathname.startsWith('/docs');
   const pathParts = pathname.split('/').filter(Boolean);
@@ -35,9 +36,10 @@ export function Nav() {
         </Link>
 
         {/* Desktop links */}
-        <NavDesktop />
+        <NavDesktop starCount={starCount} />
 
         <NavMobile
+          starCount={starCount}
           isDocsPage={isDocsPage}
           docsLibrary={docsLibrary}
           activeSection={activeSection}

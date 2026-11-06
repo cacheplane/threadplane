@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import '@threadplane/design-tokens/tokens.css';
 import './global.css';
 import { Nav } from '../components/shared/Nav';
+import { getGitHubStars } from '../lib/github';
 import { SiteFooter } from '../components/shared/SiteFooter';
 import { AnnouncementToast } from '../components/shared/AnnouncementToast';
 import { WebsiteWorkspaceRoot } from '../components/workspace/WebsiteWorkspaceRoot';
@@ -99,12 +100,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const formPolicy = getFormPolicy();
+  const githubStars = await getGitHubStars();
   return (
     <html
       lang="en"
@@ -127,7 +129,7 @@ export default function RootLayout({
         <JsonLd data={rootJsonLd()} />
         <WebsiteSignals catalog={websiteContentCatalog()} />
         <EngagedTimeSignal />
-        <Nav />
+        <Nav githubStars={githubStars} />
         <div id="site-content">
           <main>
             <WebsiteWorkspaceRoot>{children}</WebsiteWorkspaceRoot>

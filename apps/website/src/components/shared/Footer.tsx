@@ -138,7 +138,7 @@ export function Footer({
               <LogoMark size="md" />
             </div>
             <p className="text-sm mb-4 footer-tagline">
-              The Angular UI layer for production agents.
+              The UI layer for production agents.
             </p>
             {showNewsletter ? <NewsletterForm formPolicy={formPolicy} /> : null}
             {/* Social links */}

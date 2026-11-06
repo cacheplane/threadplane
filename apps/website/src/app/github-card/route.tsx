@@ -73,7 +73,7 @@ export async function GET() {
               flexDirection: 'column',
               marginTop: 22,
               fontFamily: 'Archivo Black, sans-serif',
-              fontSize: 62,
+              fontSize: 50,
               lineHeight: 1.04,
               letterSpacing: '-0.02em',
               color: CARD.ink,

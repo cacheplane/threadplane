@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
-import { Eyebrow } from '../ui/Eyebrow';
 import { Button } from '../ui/Button';
+import { AngularMark, ReactMark } from '../ui/FrameworkMarks';
 import { trackCtaClick } from '../../lib/analytics/client';
 import {
-  HERO_EYEBROW,
   HERO_H1_LINES,
   HERO_PRIMARY_LABEL,
   HERO_SECONDARY_HREF,
   HERO_SECONDARY_LABEL,
-  HERO_SUBHEAD_SEGMENTS,
 } from '../../lib/positioning';
 import { HeroDemo } from './HeroDemo';
 import { InstallDialog } from './InstallDialog';
@@ -29,24 +29,14 @@ export function Hero() {
     <Section surface="signal" ariaLabelledBy="hero-heading">
       <Container>
         <div className="hero-stack">
-          <Eyebrow tone="accent" className="hero-eyebrow">{HERO_EYEBROW}</Eyebrow>
           <h1 id="hero-heading" className="hero-heading">
             {HERO_H1_LINES.map((line, i) => (
               <React.Fragment key={line}>
                 {i > 0 ? ' ' : ''}
-                <span className="hero-heading-line">{line}</span>
+                <span className={line === '(and free)' ? 'hero-heading-line hero-heading-aside' : 'hero-heading-line'}>{line}</span>
               </React.Fragment>
             ))}
           </h1>
-          <p className="hero-subhead">
-            {HERO_SUBHEAD_SEGMENTS.map((segment, index) =>
-              segment.href ? (
-                <a className="marker-highlight" href={segment.href} target="_blank" rel="noopener noreferrer" key={index}>{segment.text}</a>
-              ) : (
-                <React.Fragment key={index}>{segment.text}</React.Fragment>
-              ),
-            )}
-          </p>
           <div className="hero-cta-row">
             <Button variant="primary" size="lg" onClick={openInstall}>{HERO_PRIMARY_LABEL}</Button>
             <a
@@ -56,6 +46,24 @@ export function Hero() {
             >
               {HERO_SECONDARY_LABEL}
             </a>
+          </div>
+          <div className="hero-frameworks" role="group" aria-label="Frameworks and agent integrations">
+            <Link className="hero-framework-link" href="/docs/react/getting-started/quickstart" aria-label="React quickstart">
+              <ReactMark />
+              <span>React</span>
+            </Link>
+            <Link className="hero-framework-link" href="/docs/langgraph/getting-started/quickstart" aria-label="Angular quickstart">
+              <AngularMark />
+              <span>Angular</span>
+            </Link>
+            <Link className="hero-framework-link" href="/langgraph" aria-label="LangGraph integration">
+              <Image className="hero-integration-logo" src="/logos/langgraph.svg" width={28} height={28} alt="" aria-hidden="true" />
+              <span>LangGraph</span>
+            </Link>
+            <Link className="hero-framework-link" href="/ag-ui" aria-label="AG-UI integration">
+              <Image className="hero-integration-logo" src="/logos/ag-ui.svg" width={16} height={19} alt="" aria-hidden="true" />
+              <span>AG-UI</span>
+            </Link>
           </div>
           <HeroDemo />
         </div>

@@ -27,30 +27,25 @@ test('landing page renders its composition', async ({ page }) => {
   await page.goto('/');
   await test.step('landing page renders hero headline', async () => {
     await expect(page.locator('#hero-heading')).toBeVisible();
-    // This also carries the guard that the hero names the framework. That guard
-    // used to live on .hero-eyebrow, because the H1 was framework-neutral; the H1
-    // names Angular itself now, so the eyebrow no longer repeats it. Asserting
-    // "Angular" separately here would be green by construction — the literal
-    // above already contains it — so the full-text pin is the whole check.
-    await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for Angular agents.');
+    await expect(page.locator('#hero-heading')).toHaveText('The open source (and free) threadplane for agents');
   });
 
-  await test.step('landing page renders the dark proof band', async () => {
-    await expect(page.locator('#proof-heading')).toBeVisible();
-    await expect(page.locator('#proof[data-surface="dark"]')).toBeVisible();
+  await test.step('landing page replaces the proof band with capabilities', async () => {
+    await expect(page.locator('#capabilities-heading')).toBeVisible();
+    await expect(page.locator('#capabilities article')).toHaveCount(5);
+    await expect(page.locator('#proof')).toHaveCount(0);
   });
 
-  await test.step('landing page renders the spine in order (live-stage spec §3)', async () => {
+  await test.step('landing page renders its editorial sections in order', async () => {
     const ids = [
       'hero-heading',
-      'proof-heading',
+      'capabilities-heading',
       'compatibility-heading',
       'architecture-heading',
-      'no-runtime-heading',
       'open-source-heading',
-      'stage-heading',
       'field-report-heading',
       'faq-heading',
+      'recent-articles-heading',
     ];
     const tops: number[] = [];
     for (const id of ids) {
