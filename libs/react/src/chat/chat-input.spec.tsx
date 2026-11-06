@@ -32,13 +32,13 @@ describe('ChatInput', () => {
     el.focus();
     el.setSelectionRange(el.value.length, el.value.length);
     viewport.height = 200;
-    fireEvent(viewport, new Event('resize'));
+    viewport.dispatchEvent(new Event('resize'));
     await waitFor(() => expect(el.style.height).toBe('80px'));
     await waitFor(() => expect(el.scrollTop).toBe(360));
     el.setSelectionRange(2, 2);
     el.scrollTop = 25;
     viewport.height = 400;
-    fireEvent(viewport, new Event('resize'));
+    viewport.dispatchEvent(new Event('resize'));
     await waitFor(() => expect(el.style.height).toBe('160px'));
     expect(el.scrollTop).toBe(25);
     expect(document.activeElement).toBe(el);
