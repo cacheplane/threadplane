@@ -52,7 +52,7 @@ example-chat-layout .example-submission-status {
   line-height: 18px;
 }
 example-chat-layout chat-input .chat-input__textarea {
-  max-height: min(320px, 20dvh);
+  max-height: min(320px, calc(var(--example-viewport-height, 100dvh) * 0.2));
 }
 example-chat-layout .example-composer-help {
   margin: 6px 16px 0;

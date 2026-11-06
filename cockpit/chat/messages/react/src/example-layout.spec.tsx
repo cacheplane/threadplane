@@ -1,11 +1,41 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React, { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
 import { ExampleLayout } from '../../../../shared/react-example';
 
 describe('example layout', () => {
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+  it('follows keyboard and rotation viewport changes while preserving focus and pinch zoom', () => {
+    const viewport = Object.assign(new EventTarget(), { height: 714, offsetTop: 0, scale: 1 });
+    vi.stubGlobal('visualViewport', viewport);
+    const { unmount } = render(<ExampleLayout footer={<textarea aria-label="Draft" />} />);
+    const host = screen.getByRole('main');
+    const input = screen.getByRole('textbox');
+    input.focus();
+    viewport.height = 377;
+    fireEvent(viewport, new Event('resize'));
+    expect(host.style.getPropertyValue('--example-viewport-height')).toBe('377px');
+    expect(document.activeElement).toBe(input);
+    viewport.offsetTop = 154;
+    fireEvent(viewport, new Event('scroll'));
+    expect(host.style.getPropertyValue('--example-viewport-top')).toBe('154px');
+    viewport.height = 190;
+    fireEvent(viewport, new Event('resize'));
+    expect(host.style.getPropertyValue('--example-viewport-height')).toBe('190px');
+    viewport.scale = 2;
+    viewport.height = 95;
+    fireEvent(viewport, new Event('resize'));
+    expect(host.style.getPropertyValue('--example-viewport-height')).toBe('190px');
+    viewport.scale = 1;
+    viewport.height = 714;
+    fireEvent(viewport, new Event('resize'));
+    expect(host.style.getPropertyValue('--example-viewport-height')).toBe('714px');
+    unmount();
+    viewport.height = 300;
+    fireEvent(viewport, new Event('resize'));
+    expect(host.style.getPropertyValue('--example-viewport-height')).toBe('714px');
+  });
   it('keeps the header and explicit footer in the conversation column beside the docs', () => {
     render(
       <ExampleLayout
