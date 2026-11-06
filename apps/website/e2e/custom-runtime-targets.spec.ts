@@ -426,11 +426,12 @@ test.describe('custom runtime targets', () => {
     const initialFrame = page.locator(
       'iframe[title="Chat Threads live example"]'
     );
+    const sharedFrame = runtimeFrame(page, 'Chat Threads');
     await expect(
-      runtimeFrame(page, 'Chat Threads').getByText(
-        'How can I help?',
-        { exact: true }
-      )
+      sharedFrame.getByRole('heading', { name: 'Chat threads', exact: true })
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      sharedFrame.getByRole('textbox', { name: 'Type a message', exact: true })
     ).toBeVisible({ timeout: 15_000 });
     await initialFrame.evaluate((element) =>
       element.setAttribute('data-shared-generation', 'true')
