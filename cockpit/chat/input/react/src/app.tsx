@@ -77,7 +77,38 @@ export function InputDemo({
     ? 'Start a new conversation to continue.'
     : 'Ready.';
   return (
-    <ExampleLayout className="input-demo">
+    <ExampleLayout
+      className="input-demo"
+      about={
+        <fieldset className="input-settings">
+          <legend>Composer settings</legend>
+          <label className="input-settings__placeholder">
+            Custom placeholder
+            <input
+              type="text"
+              value={placeholder}
+              onChange={(event) => setPlaceholder(event.target.value)}
+            />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={submitOnEnter}
+              onChange={(event) => setSubmitOnEnter(event.target.checked)}
+            />
+            Enter sends a message
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={disabled}
+              onChange={(event) => setDisabled(event.target.checked)}
+            />
+            Disable message input
+          </label>
+        </fieldset>
+      }
+    >
       <header>
         <div>
           <h1>Chat input</h1>
@@ -98,33 +129,7 @@ export function InputDemo({
         Try the keyboard shortcuts and customize your composer. You can draft
         your next message while a response arrives.
       </p>
-      <fieldset className="input-settings">
-        <legend>Composer settings</legend>
-        <label className="input-settings__placeholder">
-          Custom placeholder
-          <input
-            type="text"
-            value={placeholder}
-            onChange={(event) => setPlaceholder(event.target.value)}
-          />
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={submitOnEnter}
-            onChange={(event) => setSubmitOnEnter(event.target.checked)}
-          />
-          Enter sends a message
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={disabled}
-            onChange={(event) => setDisabled(event.target.checked)}
-          />
-          Disable message input
-        </label>
-      </fieldset>
+
       <MessageList
         rows={snapshot.rows}
         renderMessage={renderMessage}

@@ -81,7 +81,27 @@ function ThreadsOwner({ connection, onReady }: Props) {
     ? 'Response saved.'
     : 'Ready.';
   return (
-    <ExampleLayout className="threads-demo">
+    <ExampleLayout
+      className="threads-demo"
+      about={
+        <div className="seed-prompts" aria-label="Example prompts">
+          <button
+            type="button"
+            disabled={snapshot.busy || !snapshot.canSubmit}
+            onClick={() => {
+              const current = application.getSnapshot();
+              if (current.canSubmit && !current.busy)
+                application.setDraft(
+                  snapshot.viewGeneration,
+                  'Explain how saved conversations work in two sentences.'
+                );
+            }}
+          >
+            Try a question
+          </button>
+        </div>
+      }
+    >
       <header>
         <div>
           <h1>Chat threads</h1>
@@ -122,22 +142,6 @@ function ThreadsOwner({ connection, onReady }: Props) {
           className="conversation-panel"
           aria-label="Selected conversation"
         >
-          <div className="seed-prompts" aria-label="Example prompts">
-            <button
-              type="button"
-              disabled={snapshot.busy || !snapshot.canSubmit}
-              onClick={() => {
-                const current = application.getSnapshot();
-                if (current.canSubmit && !current.busy)
-                  application.setDraft(
-                    snapshot.viewGeneration,
-                    'Explain how saved conversations work in two sentences.'
-                  );
-              }}
-            >
-              Try a question
-            </button>
-          </div>
           <MessageList
             rows={snapshot.rows}
             renderMessage={renderMessage}

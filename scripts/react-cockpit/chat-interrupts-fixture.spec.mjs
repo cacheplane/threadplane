@@ -5,6 +5,13 @@ import { once } from 'node:events';
 import { test } from 'node:test';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
 
+test('readiness warms the graph without creating conversations or run evidence', async (t) => {
+  const f = await fixture(t);
+  assert.equal((await f.post('/__ready')).status, 200);
+  assert.deepEqual(await f.json('/__requests'), []);
+  assert.deepEqual(await f.json('/__graph-proof'), []);
+});
+
 async function fixture(t, options) {
   const handle = createChatInterruptsFixture(options);
   const server = createServer(async (request, response) => {

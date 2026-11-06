@@ -8,7 +8,7 @@ import {
   markdownDocument,
   messageContent,
 } from '@threadplane/chat';
-import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
+import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/langgraph';
 
 /**
@@ -31,6 +31,7 @@ import { injectAgent } from '@threadplane/langgraph';
     ChatStreamingMdComponent,
     MessageTemplateDirective,
     ExampleChatLayoutComponent,
+    ExampleTranscriptDirective,
   ],
   template: `
     <example-chat-layout sidebarWidth="18rem"
@@ -40,7 +41,7 @@ import { injectAgent } from '@threadplane/langgraph';
       <button headerActions type="button" [disabled]="agent.isLoading()"
         (click)="newConversation(composer)">New conversation</button>
       <section main class="chat-demo">
-        <div class="message-scroll">
+        <div class="message-scroll" exampleTranscript>
           <chat-message-list [agent]="agent">
             <ng-template chatMessageTemplate="human" let-message>
               <chat-message [role]="'user'">{{ messageContent(message) }}</chat-message>

@@ -50,6 +50,43 @@
       },
       "members": [
         {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Application-owned content after the rows, such as a pending approval, in the same scrollable transcript.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "className",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!MessageListProps#className:member",

@@ -8,7 +8,7 @@ import {
   markdownDocument,
   messageContent,
 } from '@threadplane/chat';
-import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
+import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/langgraph';
 import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
 
@@ -35,13 +35,14 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
     ChatStreamingMdComponent,
     MessageTemplateDirective,
     ExampleChatLayoutComponent,
+    ExampleTranscriptDirective,
   ],
   template: `
     <example-chat-layout sidebarWidth="18rem" title="Chat messages"
       description="Ask a question and watch the answer arrive. Continue after the response is saved.">
       <button headerActions type="button" [disabled]="agent.isLoading()" (click)="newConversation()">New conversation</button>
       <section main class="chat-demo">
-        <div class="message-scroll">
+        <div class="message-scroll" exampleTranscript>
           <!-- #region message-templates -->
           <chat-message-list [agent]="agent">
             <ng-template chatMessageTemplate="human" let-message>

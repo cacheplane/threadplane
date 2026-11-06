@@ -22,6 +22,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;
   readonly label?: string;
   readonly className?: string;
+  /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
+  readonly children?: ReactNode;
 }
 
 const PIN_THRESHOLD = 32;
@@ -78,6 +80,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderMessage,
   label = 'Conversation',
   className,
+  children,
 }: MessageListProps<TRow>) {
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -110,7 +113,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   useIsomorphicLayoutEffect(() => {
     const el = container.current;
     if (el && pinned.current) el.scrollTop = el.scrollHeight;
-  }, [rows]);
+  }, [rows, children]);
   return (
     <div
       ref={container}
@@ -123,6 +126,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
         {rows.map((row) => (
           <Row key={row.id} row={row} renderMessage={renderMessage} />
         ))}
+        {children}
       </div>
     </div>
   );
