@@ -34,3 +34,7 @@ These were downloaded from `https://cdn.simpleicons.org/<slug>/111827` for a com
 - `surface/vercel.svg` from slug `vercel`.
 
 All ecosystem tiles currently have logo marks.
+
+## Product wordmarks
+
+- `b4-wordmark.svg`: existing b4.run wordmark from the LiveLoveApp brand assets (`public/brand/products/b4-wordmark.svg`), used for the pricing page product proof. Rendered in grayscale to match the homepage identity.

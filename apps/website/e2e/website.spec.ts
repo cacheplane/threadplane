@@ -95,28 +95,30 @@ test('every page links the canonical privacy policy from the footer', async ({ p
   ).toBeVisible();
 });
 
-test('pricing page presents three software and support paths', async ({ page }) => {
+test('pricing page separates free software from three scoped services', async ({ page }) => {
   await page.goto('/pricing');
-  const plans = page.locator('.pricing-plan-card');
+  const plans = page.locator('.pricing-service-card');
   await expect(plans).toHaveCount(3);
-  await expect(plans.nth(0).getByRole('heading', { level: 3 })).toHaveText('Community');
-  await expect(plans.nth(1).getByRole('heading', { level: 3 })).toHaveText('Production Assurance');
-  await expect(plans.nth(2).getByRole('heading', { level: 3 })).toHaveText('Enterprise');
-  await expect(plans.nth(0)).toContainText('All packages are MIT-licensed');
-  await expect(page.getByText('No Threadplane cloud').first()).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Made you look!');
+  await expect(plans.nth(0).getByRole('heading', { level: 3 })).toHaveText('Production Assurance');
+  await expect(plans.nth(1).getByRole('heading', { level: 3 })).toHaveText('Pilot-to-Prod');
+  await expect(plans.nth(2).getByRole('heading', { level: 3 })).toHaveText('Agent builds & integrations');
+  await expect(page.locator('.pricing-source')).toContainText('Every package is MIT licensed');
+  await expect(page.getByText('No Threadplane cloud.').first()).toBeVisible();
 });
 
 test('pricing page routes software and support CTAs without checkout', async ({ page }) => {
   await page.goto('/pricing');
 
-  await expect(page.getByRole('link', { name: 'Install from npm' })).toHaveAttribute('href', /npmjs\.com\/package\/@threadplane\/chat/);
+  await expect(page.getByRole('link', { name: 'Take the code' })).toHaveAttribute('href', 'https://github.com/cacheplane/threadplane');
   await expect(page.getByRole('link', { name: 'Discuss assurance' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_production_assurance');
-  await expect(page.getByRole('link', { name: 'Talk to Sales' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Plan a launch' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Explore b4.run' })).toHaveAttribute('href', 'https://b4.run/');
   await expect(page.locator('form[action*="checkout"]')).toHaveCount(0);
 });
 
 test('pricing page is responsive without page-level horizontal overflow', async ({ page }) => {
-  for (const width of [375, 768, 1280]) {
+  for (const width of [320, 375, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/pricing');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -126,7 +128,7 @@ test('pricing page is responsive without page-level horizontal overflow', async 
 
 test('pricing plan buttons lead to the enterprise contact intent', async ({ page }) => {
   await page.goto('/pricing');
-  await expect(page.getByRole('link', { name: 'Talk to Sales' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Build with us' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
   await expect(page.getByRole('link', { name: 'Request a conversation' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_enterprise_band');
   await expect(page.locator('#lead-form')).toHaveCount(0);
 });

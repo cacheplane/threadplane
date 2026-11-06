@@ -51,14 +51,14 @@ test('API mode uses the same article inset as its reading view', async ({ page }
 });
 
 for (const width of [768, 1024, 1440]) {
-  test(`pricing comparison bands line up at ${width}px`, async ({ page }) => {
+  test(`pricing service bands line up at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/pricing');
     await page.evaluate(() => document.fonts.ready);
-    const bands = await page.locator('.pricing-plan-card').evaluateAll(cards => {
+    const bands = await page.locator('.pricing-service-card').evaluateAll(cards => {
       const top = cards[0].getBoundingClientRect().top;
       return cards.filter(card => Math.abs(card.getBoundingClientRect().top - top) < 1).map(card =>
-        ['.pricing-plan-price-block', '.pricing-plan-description', '.pricing-plan-feature-list', '.pricing-plan-action']
+        ['.pricing-service-promise', '.pricing-service-description', 'ul', '.pricing-service-action']
           .map(selector => card.querySelector(selector)?.getBoundingClientRect().top ?? 0)
       );
     });

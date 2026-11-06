@@ -13,6 +13,6 @@ describe('EnterpriseCtaBand', () => {
     render(<EnterpriseCtaBand />);
     const link = screen.getByRole('link', { name: 'Request a conversation' });
     expect(link.getAttribute('href')).toBe('/contact?intent=enterprise&entry=pricing_enterprise_band');
-    expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Choose the support.');
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Good at code.');
   });
 });

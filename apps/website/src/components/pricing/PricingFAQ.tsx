@@ -1,12 +1,11 @@
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
-import { Eyebrow } from '../ui/Eyebrow';
 import { FAQ, type FAQItem } from '../ui/FAQ';
 
 const ITEMS: FAQItem[] = [
   {
     q: 'Does Threadplane have a cloud service?',
-    a: 'No. Threadplane runs inside your Angular application. You operate your application, agent runtime, data stores, hosting, and model-provider accounts.',
+    a: 'No. Threadplane runs inside your application. You operate your application, agent runtime, data stores, hosting, and model-provider accounts.',
   },
   {
     q: 'Does Threadplane store my conversations or agent data?',
@@ -32,14 +31,11 @@ const ITEMS: FAQItem[] = [
 
 export function PricingFAQ() {
   return (
-    <Section surface="white" ariaLabelledBy="pricing-faq-heading">
+    <Section ariaLabelledBy="pricing-faq-heading" className="pricing-questions">
       <Container>
         <div id="faq" className="pricing-faq-header">
-          <div className="pricing-section-rail">
-            <Eyebrow tone="accent" className="pricing-faq-eyebrow">Questions</Eyebrow>
-            <span className="pricing-section-rail-line" aria-hidden="true" />
-          </div>
           <h2 id="pricing-faq-heading" className="pricing-faq-heading">Pricing FAQ.</h2>
+          <p className="pricing-section-body">Yes, really free. Here’s how the rest works.</p>
         </div>
         <div className="pricing-faq-items"><FAQ items={ITEMS} /></div>
       </Container>
