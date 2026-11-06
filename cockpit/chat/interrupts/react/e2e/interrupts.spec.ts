@@ -36,6 +36,8 @@ async function blocked(page: Page) {
 }
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
+  // Wait for the owned Python graph to load before measuring UI transitions.
+  expect((await request.post('/__ready')).ok()).toBe(true);
 });
 test('installed SDK confirms then cancels real saved pauses on one conversation', async ({
   page,

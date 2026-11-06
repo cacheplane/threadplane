@@ -36,6 +36,56 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('follows approval-only changes while pinned and preserves a reader who scrolled up', () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    const rows: readonly never[] = [];
+    const view = render(<MessageList rows={rows} />);
+    const region = view.getByRole('region', { name: 'Conversation' });
+    let top = 0;
+    Object.defineProperties(region, {
+      scrollHeight: { configurable: true, get: () => 900 },
+      clientHeight: { configurable: true, get: () => 100 },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = value;
+        },
+      },
+    });
+    view.rerender(
+      <MessageList rows={rows}>
+        <button>Confirm</button>
+      </MessageList>
+    );
+    expect(top).toBe(900);
+    top = 200;
+    fireEvent.scroll(region);
+    view.rerender(
+      <MessageList rows={rows}>
+        <button>Cancel</button>
+      </MessageList>
+    );
+    expect(top).toBe(200);
+  });
+
+  it('keeps application-owned approval controls inside the observed transcript content', () => {
+    const content = createMessageContent();
+    const rows = content.project(snap([msg('a', 'Review this booking')]));
+    const view = render(
+      <MessageList rows={rows}>
+        <button type="button">Confirm booking</button>
+      </MessageList>
+    );
+    const region = view.getByRole('region', { name: 'Conversation' });
+    const action = view.getByRole('button', { name: 'Confirm booking' });
+    expect(region.firstElementChild?.contains(action)).toBe(true);
+    expect(region.textContent).toContain('Review this booking');
+    view.rerender(<MessageList rows={rows} />);
+    expect(view.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
+    content.dispose();
+  });
+
   it('lets the keyboard focus the named transcript without focusing a message action', () => {
     const content = createMessageContent();
     const view = render(

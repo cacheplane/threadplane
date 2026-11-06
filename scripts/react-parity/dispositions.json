@@ -16383,6 +16383,24 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Private framework-neutral citation display helpers and readonly descriptors preserve legacy derivation semantics without fetching or approving navigation. Native React custom cards opt into host/date display; default source-card visuals and published Angular migration remain separate."
+    },
+    {
+      "id": "component:libs/example-layouts/src/lib/example-transcript.directive.ts#ExampleTranscriptDirective",
+      "taskIds": [
+        "T33"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Private example scroll helper. React MessageList already owns equivalent bottom following and reading-position preservation; no additional public package contract."
+    },
+    {
+      "id": "source:libs/example-layouts/src/lib/example-transcript.directive.ts",
+      "taskIds": [
+        "T33"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Private example scroll helper. React MessageList already owns equivalent bottom following and reading-position preservation; no additional public package contract."
     }
   ]
 }

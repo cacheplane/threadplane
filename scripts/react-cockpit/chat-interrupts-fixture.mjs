@@ -181,6 +181,11 @@ export function createChatInterruptsFixture({
         json(response, {});
         return true;
       }
+      if (pathname === '/__ready') {
+        await operate({ op: 'configure' });
+        json(response, {});
+        return true;
+      }
       if (pathname === '/__requests') {
         json(response, requests);
         return true;

@@ -148,7 +148,7 @@ body {
 .tp-example.threads-demo .conversation-picker { min-height: 0; overflow: auto; }
 @media (max-width: 640px) {
   .tp-example.threads-demo .threads-layout {
-    grid-template-rows: minmax(0, 20dvh) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 12dvh) minmax(0, 1fr);
     gap: 8px;
   }
 }

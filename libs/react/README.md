@@ -360,6 +360,9 @@ stable so unchanged rows stay memoized. Give the list a bounded height and
 overflow scrolling in app CSS; it follows row updates while at the bottom and
 preserves the reader's position when scrolled up. Key it by conversation ID when
 a new selection should start at the bottom. Same-ID updates preserve scroll state.
+Pass application-owned approval controls as `MessageList` children to keep them
+after the rows in that same scrollable transcript. The application still owns
+their decision state and callbacks; the list follows child changes only while pinned.
 Where `ResizeObserver` is available, the list also follows height changes inside
 unchanged rows, including image loads and disclosure expansion, while pinned.
 The same observer follows scroll-region size changes, including a height-only

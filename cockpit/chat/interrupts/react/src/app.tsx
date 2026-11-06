@@ -133,49 +133,54 @@ export function InterruptsDemo({
         rows={snapshot.rows}
         renderMessage={renderMessage}
         label="Conversation"
-      />
-      {decision && (
-        <ApprovalCard
-          title="Approve demo booking"
-          disabled={snapshot.busy}
-          actions={[
-            {
-              id: 'confirm',
-              label: 'Confirm',
-              onSelect: () => decide('confirm'),
-            },
-            { id: 'cancel', label: 'Cancel', onSelect: () => decide('cancel') },
-          ]}
-        >
-          <p>{decision.approval.summary}</p>
-          <dl className="flight-details">
-            <div>
-              <dt>Flight</dt>
-              <dd>{decision.approval.flight.flight_number}</dd>
-            </div>
-            <div>
-              <dt>Airline</dt>
-              <dd>{decision.approval.flight.airline}</dd>
-            </div>
-            <div>
-              <dt>From</dt>
-              <dd>{decision.approval.flight.from}</dd>
-            </div>
-            <div>
-              <dt>To</dt>
-              <dd>{decision.approval.flight.to}</dd>
-            </div>
-            <div>
-              <dt>Departure</dt>
-              <dd>{decision.approval.flight.depart_local}</dd>
-            </div>
-            <div>
-              <dt>Aircraft</dt>
-              <dd>{decision.approval.flight.aircraft}</dd>
-            </div>
-          </dl>
-        </ApprovalCard>
-      )}
+      >
+        {decision && (
+          <ApprovalCard
+            title="Approve demo booking"
+            disabled={snapshot.busy}
+            actions={[
+              {
+                id: 'confirm',
+                label: 'Confirm',
+                onSelect: () => decide('confirm'),
+              },
+              {
+                id: 'cancel',
+                label: 'Cancel',
+                onSelect: () => decide('cancel'),
+              },
+            ]}
+          >
+            <p>{decision.approval.summary}</p>
+            <dl className="flight-details">
+              <div>
+                <dt>Flight</dt>
+                <dd>{decision.approval.flight.flight_number}</dd>
+              </div>
+              <div>
+                <dt>Airline</dt>
+                <dd>{decision.approval.flight.airline}</dd>
+              </div>
+              <div>
+                <dt>From</dt>
+                <dd>{decision.approval.flight.from}</dd>
+              </div>
+              <div>
+                <dt>To</dt>
+                <dd>{decision.approval.flight.to}</dd>
+              </div>
+              <div>
+                <dt>Departure</dt>
+                <dd>{decision.approval.flight.depart_local}</dd>
+              </div>
+              <div>
+                <dt>Aircraft</dt>
+                <dd>{decision.approval.flight.aircraft}</dd>
+              </div>
+            </dl>
+          </ApprovalCard>
+        )}
+      </MessageList>
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput

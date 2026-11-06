@@ -78,12 +78,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 76
+        "line": 78
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ rows, renderMessage, label, className, }",
+          "parameterName": "{ rows, renderMessage, label, className, children, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -120,6 +120,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 76
+    "line": 78
   }
 }

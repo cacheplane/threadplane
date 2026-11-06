@@ -1,25 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7a63b4a303d5545f95768830e9706611a1f8b46d",
+  "baselineHead": "8040d352903799ac6166c2d6c15a81ce4a06568a",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/ag-ui/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/getting-started/changelog.mdx",
-      "apps/website/content/docs/chat/getting-started/installation.mdx",
-      "apps/website/content/docs/chat/guides/writing-an-adapter.mdx",
-      "apps/website/content/docs/langgraph/getting-started/installation.mdx",
-      "apps/website/content/docs/render/getting-started/installation.mdx",
-      "libs/a2ui/package.json",
-      "libs/ag-ui/package.json",
-      "libs/ag-ui/src/lib/package-version.ts",
-      "libs/chat/package.json",
-      "libs/chat/src/lib/package-version.ts",
-      "libs/langgraph/package.json",
-      "libs/langgraph/src/lib/package-version.ts",
-      "libs/render/package.json",
-      "libs/render/src/lib/package-version.ts",
-      "libs/telemetry/package.json",
-      "package-lock.json"
+      "libs/content/README.md",
+      "libs/content/src/messages/citation-display.ts",
+      "libs/content/src/messages/index.ts",
+      "libs/react/README.md"
     ],
     "untracked": []
   },
@@ -867,7 +854,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "3c9dccb628d33b313c9f45656a1f4f5da2dc16422ed194f601fe5df1f1a71e4f"
+      "sha256": "a229cf8c9146a9f92afeac9e8cdfa9ff2991faabeccab61f38fd7b6134ce7ad4"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -2158,6 +2145,16 @@
         "Component"
       ],
       "signature": "@Component({\n    selector: 'example-split-layout',\n    standalone: true,\n    changeDetection: ChangeDetectionStrategy.OnPush,\n    styles: `\n    :host {\n      display: flex;\n      flex-direction: column;\n      height: 100vh;\n      height: 100dvh;\n      background: var(--tplane-chat-bg, #fff);\n      color: var(--tplane-chat-text, #1a1a1a);\n      font-family: var(--tplane-chat-font-family, system-ui, sans-serif);\n    }\n    .split__header {\n      flex-shrink: 0;\n      border-bottom: 1px solid var(--tplane-chat-separator, #e5e5e5);\n    }\n    .split__header:empty { display: none; }\n    .split__main { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }\n    .split__title {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      flex: none;\n      flex-wrap: wrap;\n      gap: 8px 16px;\n      min-height: 53px;\n      box-sizing: border-box;\n      padding: 8px 16px;\n      border-bottom: 1px solid var(--tplane-chat-separator, #e5e5e5);\n      background: var(--tplane-chat-surface, #fff);\n    }\n    .split__title h1 { flex: 1 1 0%; min-width: 0; margin: 0; font-size: 14px; line-height: 21px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n    .split__about { flex: none; padding: 16px; color: var(--tplane-chat-text-muted, #737373); font-size: 12px; line-height: 1.6; }\n    .split__about h2 { margin: 0 0 12px; font-size: 12px; line-height: 18px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }\n    .split__about p { margin: 0; }\n    .split__body {\n      display: flex;\n      flex-direction: column;\n      flex: 1;\n      min-height: 0;\n    }\n    .split__primary {\n      flex: 1;\n      overflow-y: auto;\n      padding: 1rem;\n      min-height: 0;\n    }\n    .split__secondary {\n      width: 100%;\n      flex-shrink: 0;\n      display: flex;\n      flex-direction: column;\n      border-top: 1px solid var(--tplane-chat-separator, #e5e5e5);\n      background: var(--tplane-chat-bg, #fff);\n      min-height: 0;\n      max-height: 20dvh;\n      height: 20dvh;\n      overflow-y: auto;\n    }\n    .split__secondary:empty { display: none; }\n    .split__footer { flex-shrink: 0; }\n    .split__footer:empty { display: none; }\n    @media (min-width: 768px) {\n      .split__body { flex-direction: row; }\n      .split__primary { padding: 1.5rem; min-height: 0; }\n      .split__secondary {\n        width: 18rem;\n        max-height: none;\n        height: auto;\n        border-top: 0;\n        border-left: 1px solid var(--tplane-chat-separator, #e5e5e5);\n      }\n    }\n  `,\n    template: `\n    <div class=\"split__body\">\n      <div class=\"split__main\">\n        @if (title()) {\n          <header class=\"split__title\">\n            <h1>{{ title() }}</h1>\n            <ng-content select=\"[headerActions]\" />\n          </header>\n        }\n        <div class=\"split__header\"><ng-content select=\"[header]\" /></div>\n        <div class=\"split__primary\"><ng-content select=\"[primary]\" /></div>\n        <div class=\"split__footer\"><ng-content select=\"[footer]\" /></div>\n      </div>\n      <div class=\"split__secondary\">\n        @if (description()) {\n          <section class=\"split__about\" aria-label=\"About this example\">\n            <h2>About this example</h2>\n            <p>{{ description() }}</p>\n          </section>\n        }\n        <ng-content select=\"[secondary]\" />\n      </div>\n    </div>\n  `,\n})\nexport class ExampleSplitLayoutComponent {\n    readonly title = input('');\n    readonly description = input('');\n}"
+    },
+    {
+      "id": "component:libs/example-layouts/src/lib/example-transcript.directive.ts#ExampleTranscriptDirective",
+      "kind": "component",
+      "path": "libs/example-layouts/src/lib/example-transcript.directive.ts",
+      "symbol": "ExampleTranscriptDirective",
+      "decorators": [
+        "Directive"
+      ],
+      "signature": "@Directive({\n    selector: '[exampleTranscript]',\n    host: { '(scroll)': 'onScroll()' },\n})\nexport class ExampleTranscriptDirective {\n    private readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;\n    private readonly destroyRef = inject(DestroyRef);\n    private pinned = true;\n    constructor() {\n        afterNextRender(() => {\n            const el = this.element;\n            if (typeof ResizeObserver === 'undefined')\n                return;\n            let active = true;\n            const observer = new ResizeObserver(() => {\n                if (active && this.pinned)\n                    el.scrollTop = el.scrollHeight;\n            });\n            observer.observe(el);\n            if (el.firstElementChild)\n                observer.observe(el.firstElementChild);\n            this.destroyRef.onDestroy(() => {\n                active = false;\n                observer.disconnect();\n            });\n        });\n    }\n    protected onScroll(): void {\n        const el = this.element;\n        this.pinned = el.scrollHeight - el.clientHeight - el.scrollTop <= 32;\n    }\n}"
     },
     {
       "id": "component:libs/render/src/lib/default-fallback.component.ts#DefaultFallbackComponent",
@@ -10960,7 +10957,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current)\n                el.scrollTop = el.scrollHeight;\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows]);\n    return (<div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      <div ref={content}>\n        {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n      </div>\n    </div>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, children, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            pinned.current =\n                el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current)\n                el.scrollTop = el.scrollHeight;\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current)\n            el.scrollTop = el.scrollHeight;\n    }, [rows, children]);\n    return (<div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      <div ref={content}>\n        {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage}/>))}\n        {children}\n      </div>\n    </div>);\n}"
         }
       ]
     },
@@ -10974,7 +10971,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly children?: ReactNode;\n}"
         }
       ]
     },
@@ -15241,6 +15238,12 @@
       "sha256": "ebf38b5641b22d46e7180c661fe4dd35407b3eab4c67d2ea4e075d9269dbaedc"
     },
     {
+      "id": "source:libs/example-layouts/src/lib/example-transcript.directive.ts",
+      "kind": "source",
+      "path": "libs/example-layouts/src/lib/example-transcript.directive.ts",
+      "sha256": "cfd0110566aab41d10bd58373fbbb2c58b80adcc5b6c6595d2b708695042a998"
+    },
+    {
       "id": "source:libs/example-layouts/src/lib/install-embedded-theme.ts",
       "kind": "source",
       "path": "libs/example-layouts/src/lib/install-embedded-theme.ts",
@@ -15250,7 +15253,7 @@
       "id": "source:libs/example-layouts/src/public-api.ts",
       "kind": "source",
       "path": "libs/example-layouts/src/public-api.ts",
-      "sha256": "6ae76a26f8deb94ced5d4fec9ec9a3e340da3157d8133f8f07fef6827e5e45ad"
+      "sha256": "b7109ee5e54dc430c09a0b7e8f7073b5367291417f7ae760368917f46929ed66"
     },
     {
       "id": "source:libs/example-layouts/src/test-setup.ts",
@@ -15838,7 +15841,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "1e8de0cd2fa0e9df2d967604411d8da3e43a3d635e16439b71207cd245493155"
+      "sha256": "0655aac7d45216a4bd76c122378fccc1ca85155c6eb638b3878d9bb053d5aa55"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
