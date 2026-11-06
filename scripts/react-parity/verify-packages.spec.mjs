@@ -124,7 +124,7 @@ export interface SuggestionsProps { readonly suggestions: readonly SuggestionIte
 export declare function Suggestions(props: SuggestionsProps): unknown;
 export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
 export declare function CitationPreview(props: CitationPreviewProps): unknown;
-export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; }
+export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode; }
 export declare function Citations(props: CitationsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -188,6 +188,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
     ['CitationsProps', 'snapshot', "import('@threadplane/content/markdown').MarkdownSnapshot", true],
     ['CitationsProps', 'preview', 'boolean', true],
     ['CitationsProps', 'collapsible', 'boolean', true],
+    ['CitationsProps', 'renderCard', "(citation: import('@threadplane/core').Citation) => import('react').ReactNode", true],
     ['CitationsProps', 'label', 'string', true],
     ['CitationsProps', 'className', 'string', true],
   ]) {
@@ -198,6 +199,13 @@ export declare function Citations(props: CitationsProps): unknown;`;
   }
   for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationPreviewProps', 'CitationsProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
+  const renderCard = "readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode;";
+  for (const after of [
+    renderCard.replace("import('react').ReactNode", 'any'),
+    renderCard.replace("import('react').ReactNode", 'string'),
+    renderCard.replace('Citation)', 'Citation, owner: object)'),
+    renderCard.replace("import('@threadplane/core').Citation", 'unknown'),
+  ]) assert.match(compile(mutateInterface('CitationsProps', renderCard, after)), /false.*true/, `exact custom renderer: ${after}`);
   for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
     assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
   for (const [name, before, after] of [

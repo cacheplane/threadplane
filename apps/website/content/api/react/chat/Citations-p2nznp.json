@@ -58,12 +58,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 26
+        "line": 32
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ citations, snapshot, label, className, preview, collapsible, }",
+          "parameterName": "{ citations, snapshot, label, className, preview, renderCard, collapsible, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -87,6 +87,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 26
+    "line": 32
   }
 }

@@ -788,8 +788,13 @@ export async function runProductionProofs(browser, retained) {
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
           await expect(sources.getByRole('listitem')).toHaveCount(5);
           await expect(sources.getByRole('listitem')).toHaveText([
-            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>Source type: Authored',
           ]);
+          await expect(sources.locator('.native-source-card')).toHaveCount(5);
+          const providerCard = sources.locator('.native-source-card[data-source-id="__proto__"]');
+          await expect(providerCard.locator('.native-source-card__type')).toHaveText('Source type: Authored');
+          await expect(sources.locator('.native-source-card[data-source-id="sidecar"]')).toContainText('[5] Markdown sidecar');
+          await expect(sources.locator('.native-source-card[data-source-id="sidecar"] .native-source-card__type')).toHaveCount(0);
           await sources.getByRole('button', { name: 'Preview source 5: Markdown sidecar', exact: true }).click();
           const sidecar = page.getByRole('dialog', { name: 'Source 5', exact: true });
           await expect(sidecar).toContainText('Sidecar snippet later');
@@ -1249,6 +1254,8 @@ export async function runProductionProofs(browser, retained) {
             true
           );
           await expect(correctedPreview).toHaveText('[7] Corrected source');
+          await expect(correctedPreview.locator('..')).toHaveClass('native-source-card');
+          await expect(correctedPreview.locator('..').locator('.native-source-card__type')).toHaveText('Source type: Authored');
           await correctedPreview.click();
           const correctedDialog = page.getByRole('dialog', {
             name: 'Source 7',

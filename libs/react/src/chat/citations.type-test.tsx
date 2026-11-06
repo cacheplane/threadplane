@@ -3,6 +3,29 @@ import type { Citation } from '@threadplane/core';
 import { createMarkdown } from '@threadplane/content/markdown';
 const citations: readonly Citation[] = [{ id: 'a', index: 1, title: 'Source' }];
 const props: CitationsProps = { citations };
+<Citations
+  citations={citations}
+  renderCard={(citation) => {
+    const borrowed: Citation = citation;
+    // @ts-expect-error Borrowed callback metadata remains readonly.
+    citation.title = 'Changed';
+    return <span>{borrowed.title}</span>;
+  }}
+/>;
+for (const value of [null, false, undefined, 'text', 1, [<span key="a" />]]) {
+  <Citations citations={citations} renderCard={() => value} />;
+}
+// @ts-expect-error Custom card rendering must be a callback.
+<Citations citations={citations} renderCard="card" />;
+// @ts-expect-error Callback accepts citation metadata.
+<Citations citations={citations} renderCard={(citation: string) => citation} />;
+<Citations
+  citations={citations}
+  // @ts-expect-error No owner or commands are supplied as another argument.
+  renderCard={(_citation: Citation, owner: object) => String(owner)}
+/>;
+// @ts-expect-error The custom renderer prop is readonly.
+props.renderCard = () => null;
 <Citations {...props} label="Evidence" />;
 // @ts-expect-error Citation list is readonly.
 props.citations.push({ id: 'b', index: 2 });
