@@ -65,7 +65,7 @@ describe('composed row ownership contracts', () => {
     expect(templates).not.toHaveBeenCalled();
   });
 
-  it('keeps custom activity selection, default-tool laziness and undefined-view host bindings', async () => {
+  it('keeps custom activity selection and default-tool laziness while omitting undefined-view hosts', async () => {
     const fixture = TestBed.createComponent(ActivityHost);
     const chat = fixture.debugElement.query(By.directive(ChatComponent)).componentInstance as ChatComponent;
     const templates = vi.spyOn(chat, 'toolCallTemplates');
@@ -73,9 +73,7 @@ describe('composed row ownership contracts', () => {
     await fixture.whenStable();
     expect(templates).not.toHaveBeenCalled();
     expect(fixture.debugElement.query(By.directive(ChatToolCallsComponent))).toBeNull();
-    const toolViews = fixture.debugElement.query(By.directive(ChatToolViewsComponent)).componentInstance as ChatToolViewsComponent;
-    expect(toolViews.views()).toBeUndefined();
-    expect(toolViews.message()).toBe(fixture.componentInstance.agent.messages()[0]);
+    expect(fixture.debugElement.query(By.directive(ChatToolViewsComponent))).toBeNull();
   });
 
   it('retains unknown-role AI/global-tool fallback and hides tool message rows', async () => {

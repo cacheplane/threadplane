@@ -180,14 +180,16 @@ export interface ChatDefaultRowsRenderer {
         [toolCallTemplates]="rows.toolCallTemplates()"
       />
       }
+      @if (rows.effectiveViews(); as effectiveViews) {
       <chat-tool-views
         [agent]="currentAgent"
         [message]="message"
-        [views]="rows.effectiveViews()"
+        [views]="effectiveViews"
         [store]="rows.resolvedStore()"
         [handlers]="rows.handlers()"
         (events)="rows.onClientToolEvent($event)"
       />
+      }
       @if (classified.markdown(); as md) {
       <chat-streaming-md [document]="rows.markdownDocumentFor(md, message)" />
       } @if (classified.spec(); as spec) {

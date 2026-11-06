@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { getActiveConsumer } from '@angular/core/primitives/signals';
 import { By } from '@angular/platform-browser';
+import { views } from '@threadplane/render';
 import { ChatComponent } from './chat.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
@@ -42,6 +43,9 @@ describe('list-owned history reactive work', () => {
       const agent = mockAgent({ messages, isLoading: true });
       const fixture = TestBed.createComponent(ChatComponent);
       fixture.componentRef.setInput('agent', agent);
+      // Exercise configured views; the separate undefined-registry regression
+      // asserts absence rather than silently accepting vacuous identity loops.
+      fixture.componentRef.setInput('views', views({}));
       const observations: object[] = [];
       const observe = () => {
         const consumer = getActiveConsumer();

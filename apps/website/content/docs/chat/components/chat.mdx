@@ -217,6 +217,8 @@ For category templates you own, compose [`ChatMessageListComponent`](/docs/chat/
 
 **Compatibility:** code inspecting the default composition's resolved list instance now observes `messageTemplates()` as empty, rather than its four previous built-in registrations. `findTemplate('human')`, `findTemplate('ai')`, `findTemplate('tool')`, and `findTemplate('system')` return `undefined` there. This observable change does not remove explicit registrations from a directly owned generic list.
 
+The default composition also omits internal `<chat-tool-views>` hosts when there is no effective view registry. Supplying `[views]` or client-declared component tools creates those hosts; removing the registry removes them again. A defined empty registry still keeps the hosts. Code inspecting internal component or DOM queries can observe this change. Directly composed `ChatToolViewsComponent` behavior is unchanged.
+
 ## Generative UI
 
 When you pass a `[views]` registry, the component auto-detects JSON specs in AI messages and renders them as Angular components:

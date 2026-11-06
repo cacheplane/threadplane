@@ -134,7 +134,7 @@ describe('ChatComponent — chatActivityTemplate', () => {
     expect(host.querySelector('chat-subagent-card')).toBeNull();
     expect(host.querySelectorAll('chat-streaming-md').length).toBe(2);
     expect(host.querySelectorAll('chat-message-actions').length).toBe(2);
-    expect(host.querySelectorAll('chat-tool-views').length).toBe(2);
+    expect(host.querySelectorAll('chat-tool-views').length).toBe(0);
   });
 
   it('takes precedence over a projected chatToolCallTemplate', () => {

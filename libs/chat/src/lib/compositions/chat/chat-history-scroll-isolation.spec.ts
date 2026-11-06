@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { views } from '@threadplane/render';
 import { ChatComponent } from './chat.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
@@ -41,6 +42,9 @@ describe('history row isolation from scroll-owner state', () => {
       const agent = mockAgent({ messages, isLoading: true });
       const fixture = TestBed.createComponent(ChatComponent);
       fixture.componentRef.setInput('agent', agent);
+      // Keep the configured-view branch active so all existing component and
+      // raw-reference preservation assertions remain meaningful.
+      fixture.componentRef.setInput('views', views({}));
       fixture.detectChanges();
       const element = fixture.nativeElement as HTMLElement;
       const scroll = element.querySelector<HTMLElement>('.chat-scroll')!;
