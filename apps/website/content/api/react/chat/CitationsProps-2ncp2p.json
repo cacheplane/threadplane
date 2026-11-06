@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!CitationsProps:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+  "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions.",
   "declarations": [
     {
       "name": "CitationsProps",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+        "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 11
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": false
@@ -106,7 +106,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 13
+            "line": 19
           },
           "isReadonly": true,
           "isOptional": true
@@ -142,7 +142,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 16
+            "line": 22
           },
           "isReadonly": true,
           "isOptional": true
@@ -178,7 +178,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 12
+            "line": 18
           },
           "isReadonly": true,
           "isOptional": true
@@ -214,7 +214,45 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 14
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "snapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#snapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly snapshot?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownSnapshot",
+              "canonicalReference": "@threadplane/react!~MarkdownSnapshot:interface",
+              "href": "/docs/api/content/markdown/MarkdownSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Borrow accepted Markdown definitions to merge and sort Sources by index.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 17
           },
           "isReadonly": true,
           "isOptional": true
@@ -222,12 +260,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 10
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 10
+    "line": 14
   }
 }

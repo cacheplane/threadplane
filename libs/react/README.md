@@ -200,10 +200,29 @@ import { Citations } from '@threadplane/react/chat';
 <Citations citations={message.citations ?? []} />;
 ```
 
+Pass the same accepted Markdown `snapshot` used by the message's `Markdown`
+view to include its sidecar definitions:
+
+```tsx
+<Citations citations={message.citations ?? []} snapshot={snapshot} collapsible preview />;
+```
+
+With `snapshot`, Sources combines provider citations and previously unseen
+Markdown definition IDs, then orders the combined list by ascending index.
+Equal indices retain provider order followed by definition order. An exact
+provider ID wins as a whole record, including absent fields; sidecars never
+fill missing provider metadata or replace a blocked provider URL. IDs are
+case-sensitive. Neither input is mutated. Without `snapshot`, supplied order
+stays unchanged. The caller keeps the snapshot scoped to its message and owns
+parsing and lifetime. Same-ID streaming corrections retain mounted source rows
+and refresh open previews; removing a source retires its preview.
+
 Allowed URLs use the existing content/Markdown link policy, with a native new-tab
 link and `noopener noreferrer`. Missing or blocked URLs display text. The view
-does not fetch icons, previews or metadata, parse snippets, merge Markdown
-sidecars, infer dates/types, subscribe or dispose anything. Default MessageList
+does not fetch icons, previews or metadata, parse snippets,
+infer dates/types, subscribe or dispose anything. Markdown definition text before
+its first top-level link becomes the title, and text after it becomes the snippet,
+shared with inline citation previews. Default MessageList
 shows supplied sources after assistant answers; custom row rendering selects its
 own presentation. Styles are opt-in through `/chat/styles.css`.
 

@@ -401,6 +401,23 @@ describe('Markdown', () => {
       '[^missing]'
     );
   });
+  it('converts literal definition text before and after the first top-level link for inline previews', () => {
+    const view = render(
+      <Markdown
+        citationPreview
+        snapshot={snapshot(
+          'See [^a].\n\n[^a]: **Nested** <b>raw</b> [first](/first) after *emphasis* [second](/second) <https://later.invalid> `code`\n'
+        )}
+      />
+    );
+    fireEvent.click(view.getByRole('button', { name: /Citation 1:/ }));
+    const card = view.getByRole('dialog');
+    expect(card.textContent).toContain(
+      'after emphasis second https://later.invalid code'
+    );
+    expect(view.getByRole('link').getAttribute('href')).toBe('/first');
+    expect(card.querySelector('b')).toBeNull();
+  });
   it('keeps unchanged DOM through equal renders, appends and finish but replaces generations and incompatible kinds', () => {
     const owner = createMarkdown({
       generation: 'a',

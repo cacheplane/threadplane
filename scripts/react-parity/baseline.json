@@ -1,9 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d268a650763de9013f0f413686e764a7927338a9",
+  "baselineHead": "ac539e10863b281d8505e65d6ad2f98b969a6742",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml"
+      "libs/react/README.md",
+      "libs/react/src/chat/citations.tsx",
+      "libs/react/src/markdown/citation-source.ts",
+      "libs/react/src/markdown/inline-citation.tsx"
     ],
     "untracked": []
   },
@@ -851,7 +854,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "70d0351b04041b5e8ce967d2b5d1026275cf86d42077bde2c67e1ff178d311cd"
+      "sha256": "c6f91b69d01c9cd51a12ba876ee2b5300b9c4a40ac380504e0e4c5a7b764a691"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -10594,7 +10597,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "Citations",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Citations({ citations, label = 'Sources', className, preview, collapsible, }: CitationsProps) {\n    if (!citations.length)\n        return null;\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    if (collapsible === true)\n        return (<Disclosure citations={citations} label={label} className={className} preview={preview}/>);\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <SourceList citations={citations} preview={preview}/>\n    </section>);\n}"
+          "signature": "export function Citations({ citations, snapshot, label = 'Sources', className, preview, collapsible, }: CitationsProps) {\n    if (new Set(citations.map((citation) => citation.id)).size !== citations.length)\n        throw new TypeError('Duplicate citation IDs in Sources.');\n    if (snapshot !== undefined) {\n        const merged = new Map(citations.map((citation) => [citation.id, citation]));\n        for (const definition of snapshot.root?.citations.values() ?? []) {\n            if (!merged.has(definition.id))\n                merged.set(definition.id, definitionToCitation(definition));\n        }\n        citations = [...merged.values()].sort((a, b) => a.index - b.index);\n    }\n    if (!citations.length)\n        return null;\n    if (collapsible === true)\n        return (<Disclosure citations={citations} label={label} className={className} preview={preview}/>);\n    return (<section aria-label={label} className={['tp-citations', className].filter(Boolean).join(' ')}>\n      <h4 className=\"tp-citations__heading\">{label}</h4>\n      <SourceList citations={citations} preview={preview}/>\n    </section>);\n}"
         }
       ]
     },
@@ -10608,7 +10611,7 @@
           "path": "libs/react/src/chat/citations.tsx",
           "symbol": "CitationsProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n    readonly collapsible?: boolean;\n}"
+          "signature": "export interface CitationsProps {\n    readonly citations: readonly Citation[];\n    readonly snapshot?: MarkdownSnapshot;\n    readonly label?: string;\n    readonly className?: string;\n    readonly preview?: boolean;\n    readonly collapsible?: boolean;\n}"
         }
       ]
     },
@@ -15552,7 +15555,7 @@
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "701d1f978f03321b888e422252c5e53df83e13b8eca5421f0b7dc16ee218694f"
+      "sha256": "f255938e5bad85db3a4840ae97a04e63d1a03139b45e7ec390f64e71cb212789"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
@@ -15729,6 +15732,12 @@
       "sha256": "41d38aefa80e4fe90ec783dbf5ab6960b473be2eac4b0ce83fb1e281dffe4193"
     },
     {
+      "id": "source:libs/react/src/markdown/citation-source.ts",
+      "kind": "source",
+      "path": "libs/react/src/markdown/citation-source.ts",
+      "sha256": "9e6b78a5b7505cfc603ec3f960832865e026bd653dd47f61bd1009c0269e9539"
+    },
+    {
       "id": "source:libs/react/src/markdown/index.ts",
       "kind": "source",
       "path": "libs/react/src/markdown/index.ts",
@@ -15738,7 +15747,7 @@
       "id": "source:libs/react/src/markdown/inline-citation.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/inline-citation.tsx",
-      "sha256": "e9913f31ea7c8f53087b18d2534bbb052ed946970d3c2c7726260363d04d6c00"
+      "sha256": "e5fbce9ff0d956be029878092af1935c4b70115ce7aad53b1bdcc04842574fe2"
     },
     {
       "id": "source:libs/react/src/markdown/inline-preview.tsx",
