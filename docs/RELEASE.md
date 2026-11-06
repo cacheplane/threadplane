@@ -142,11 +142,17 @@ production optimization, the 90-second child deadline, and every assertion:
   set -e
   release_fixture_tmp="$(mktemp -d /private/tmp/tpr.XXXXXX)"
   TMPDIR="$release_fixture_tmp" npx nx run telemetry:test-development-bundle --skip-nx-cache
-  rmdir "$release_fixture_tmp"
+  if ! rmdir "$release_fixture_tmp"; then
+    printf 'Proof succeeded; retained private temporary directory: %s\n' "$release_fixture_tmp"
+  fi
 )
 ```
 
-The final command removes only the empty private parent after the proof succeeds.
+After the proof succeeds, cleanup removes only an empty private parent. Nx and
+Node may leave expected compiler caches (`nx-native-file-cache-*` and
+`node-compile-cache`); if the parent is nonempty, it is retained and its path is
+printed without failing the successful proof. A failed proof still exits with
+its nonzero status before cleanup.
 
 ### Check the lockfile before committing
 

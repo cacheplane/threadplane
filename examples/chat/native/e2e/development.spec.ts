@@ -355,6 +355,15 @@ test('development: authored refresh, native diagnostics, browser abort and owned
       marker,
       'export const developmentMarker = "owned marker one";\n'
     );
+    // The mirror converges files independently. Prove the new dependency has
+    // arrived before editing its importer, so a reload cannot request an
+    // intermediate document with a missing module and miss the later event.
+    await expect
+      .poll(() => {
+        const copied = join(first.consumer, 'react/src/owned-proof/marker.ts');
+        return existsSync(copied) ? readFileSync(copied, 'utf8') : undefined;
+      })
+      .toBe('export const developmentMarker = "owned marker one";\n');
     writeFileSync(
       app,
       "import { developmentMarker } from './owned-proof/marker';\n" +
