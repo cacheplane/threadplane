@@ -70,7 +70,7 @@ const citationMetadata = (
   { id: '', index: 4, title: '', snippet: '' },
 ];
 const citationReferences =
-  '\n\nSources [^__proto__], [^blocked], [^absent], [^missing].';
+  '\n\nSources [^__proto__], [^blocked], [^absent], [^missing].\n\n[^sidecar]: Markdown sidecar [source](/sidecar) Sidecar snippet [later](/later)\n\n[^__proto__]: Hidden collision [fallback](/never-fallback) Hidden snippet\n';
 const citedValues = (text, title, url) => {
   const event = values(text + citationReferences);
   event.data.messages[0].additional_kwargs = {
@@ -780,13 +780,22 @@ export async function runProductionProofs(browser, retained) {
             exact: true,
           });
           const disclosure = sources.getByRole('button', {
-            name: 'Sources (4)',
+            name: 'Sources (5)',
             exact: true,
           });
           if ((await disclosure.getAttribute('aria-expanded')) === 'false')
             await disclosure.click();
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-          await expect(sources.getByRole('listitem')).toHaveCount(4);
+          await expect(sources.getByRole('listitem')).toHaveCount(5);
+          await expect(sources.getByRole('listitem')).toHaveText([
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+          ]);
+          await sources.getByRole('button', { name: 'Preview source 5: Markdown sidecar', exact: true }).click();
+          const sidecar = page.getByRole('dialog', { name: 'Source 5', exact: true });
+          await expect(sidecar).toContainText('Sidecar snippet later');
+          await expect(sidecar.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute('href', '/sidecar');
+          await sidecar.getByRole('button', { name: 'Close', exact: true }).click();
+          await expect(sources).not.toContainText('Hidden collision');
           const inline = page.getByRole('button', {
             name: 'Citation 7: <b>Supplied source</b>',
             exact: true,
@@ -819,7 +828,7 @@ export async function runProductionProofs(browser, retained) {
           ).toHaveText('[^__proto__]');
           await expect(page.locator('a a')).toHaveCount(0);
           await expect(sources.getByRole('link')).toHaveCount(0);
-          await expect(sources.getByRole('list').getByRole('button')).toHaveCount(4);
+          await expect(sources.getByRole('list').getByRole('button')).toHaveCount(5);
           await expect(
             sources.getByRole('button', {
               name: 'Preview source 2: Blocked source',
@@ -1178,7 +1187,7 @@ export async function runProductionProofs(browser, retained) {
         if (retained.framework === 'react') {
           const disclosure = page
             .getByRole('region', { name: 'Sources', exact: true })
-            .getByRole('button', { name: 'Sources (4)', exact: true });
+            .getByRole('button', { name: 'Sources (5)', exact: true });
           await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
           await disclosure.click();
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
@@ -1188,7 +1197,7 @@ export async function runProductionProofs(browser, retained) {
             ? await page
                 .getByRole('region', { name: 'Sources', exact: true })
                 .getByRole('listitem')
-                .first()
+                .filter({ has: page.getByRole('button', { name: 'Preview source 7: <b>Supplied source</b>', exact: true }) })
                 .elementHandle()
             : undefined;
         await expect(

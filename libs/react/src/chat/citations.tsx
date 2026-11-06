@@ -1,14 +1,20 @@
 'use client';
 import type { Citation } from '@threadplane/core';
-import { markdownUrl } from '@threadplane/content/markdown';
+import {
+  markdownUrl,
+  type MarkdownSnapshot,
+} from '@threadplane/content/markdown';
+import { definitionToCitation } from '../markdown/citation-source.js';
 import { CitationPreview } from './citation-preview.js';
 import { useId, useRef, useState } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { availableDialogTarget } from './internal/dialog-presentation.js';
 
-/** Supplied citation list with unique IDs and an optional source-section label and CSS class. */
+/** Borrowed unique provider citations and optional accepted Markdown source definitions. */
 export interface CitationsProps {
   readonly citations: readonly Citation[];
+  /** Borrow accepted Markdown definitions to merge and sort Sources by index. */
+  readonly snapshot?: MarkdownSnapshot;
   readonly label?: string;
   readonly className?: string;
   readonly preview?: boolean;
@@ -16,19 +22,30 @@ export interface CitationsProps {
   readonly collapsible?: boolean;
 }
 
-/** Present supplied sources; selection, metadata and owner lifetime belong to the app. */
+/** Present sources; accepted metadata and message owner lifetime belong to the app. */
 export function Citations({
   citations,
+  snapshot,
   label = 'Sources',
   className,
   preview,
   collapsible,
 }: CitationsProps) {
-  if (!citations.length) return null;
   if (
     new Set(citations.map((citation) => citation.id)).size !== citations.length
   )
     throw new TypeError('Duplicate citation IDs in Sources.');
+  if (snapshot !== undefined) {
+    const merged = new Map(
+      citations.map((citation) => [citation.id, citation])
+    );
+    for (const definition of snapshot.root?.citations.values() ?? []) {
+      if (!merged.has(definition.id))
+        merged.set(definition.id, definitionToCitation(definition));
+    }
+    citations = [...merged.values()].sort((a, b) => a.index - b.index);
+  }
+  if (!citations.length) return null;
   if (collapsible === true)
     return (
       <Disclosure
