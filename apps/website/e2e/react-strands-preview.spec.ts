@@ -54,7 +54,7 @@ test.describe('native Strands Website', () => {
     test(`Docs Code Run and actual native ${decision} at ${width}`, async ({ page, request }, info) => {
       test.setTimeout(90000);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      const response = await page.goto('/docs/runtimes/aws-strands/overview?frontend=react');
+      const response = await page.goto('/docs/react/runtimes/aws-strands/overview');
       expect(response?.status()).toBe(200);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
       await expect(page.getByRole('heading', { name: 'React AWS Strands meeting preview', exact: true })).toBeVisible();
@@ -141,7 +141,7 @@ test.describe('native Strands Website', () => {
       test.setTimeout(90000);
       expect((await request.post(origin + '/__reset', { data: { scenario: 'missing-terminal' } })).ok()).toBe(true);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      await page.goto('/docs/runtimes/aws-strands/overview?frontend=react');
+      await page.goto('/docs/react/runtimes/aws-strands/overview');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
       await mode(page, 'Run', width);
       const frame = page.frameLocator('iframe');

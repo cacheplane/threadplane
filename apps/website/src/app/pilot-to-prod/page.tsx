@@ -129,7 +129,7 @@ export default function PilotToProdPage() {
           { claim: 'Fallbacks across every agent surface', api: 'readiness + fallback' },
           { claim: 'Load tested, on-call ready', api: 'runbook, yours' },
         ]}
-        cta={{ label: 'Production patterns', href: '/docs/langgraph/guides/deployment' }}
+        cta={{ label: 'Production patterns', href: '/docs/angular/langgraph/guides/deployment' }}
         visual={
           <BrowserFrame url="grafana · agent dashboard" elevation="md">
             <div className="pilot-visual-panel">

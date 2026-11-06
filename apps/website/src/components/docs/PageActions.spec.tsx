@@ -27,9 +27,7 @@ async function renderActions() {
   const { PageActions } = await import('./PageActions');
   render(
     <PageActions
-      library="langgraph"
-      section="guides"
-      slug="streaming"
+      documentPath="angular/langgraph/guides/streaming" source="angular/langgraph/guides/streaming.mdx"
       headings={headings}
     />,
   );
@@ -120,7 +118,7 @@ describe('PageActions', () => {
     await open();
     fireEvent.click(screen.getByRole('menuitem', { name: /copy page as markdown/i }));
     await waitFor(() => expect(writeTextMock).toHaveBeenCalledWith('# Streaming\n\nbody'));
-    expect(fetchMock).toHaveBeenCalledWith('/api/markdown/langgraph/guides/streaming');
+    expect(fetchMock).toHaveBeenCalledWith('/api/markdown/angular/langgraph/guides/streaming');
     expect(trackMock).toHaveBeenCalledWith(
       'docs:copy_code_click',
       expect.objectContaining({ surface: 'docs', cta_id: 'copy_page_markdown' }),
@@ -180,8 +178,8 @@ describe('PageActions', () => {
     await open();
     const chatgpt = screen.getByRole('menuitem', { name: /open in chatgpt/i }) as HTMLAnchorElement;
     expect(chatgpt.getAttribute('href')).toContain('https://chatgpt.com/?hints=search&q=');
-    expect(chatgpt.getAttribute('href')).toContain(encodeURIComponent('https://threadplane.ai/docs/langgraph/guides/streaming'));
+    expect(chatgpt.getAttribute('href')).toContain(encodeURIComponent('https://threadplane.ai/docs/angular/langgraph/guides/streaming'));
     const github = screen.getByRole('menuitem', { name: /edit on github/i }) as HTMLAnchorElement;
-    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/threadplane/edit/main/apps/website/content/docs/langgraph/guides/streaming.mdx');
+    expect(github.getAttribute('href')).toBe('https://github.com/cacheplane/threadplane/edit/main/apps/website/content/docs/angular/langgraph/guides/streaming.mdx');
   });
 });

@@ -28,7 +28,7 @@ The browser ships what it can do, the model calls it, and the browser executes a
 
 <Callout type="info" title="MIT-licensed packages">
   `@threadplane/ag-ui` and `@threadplane/chat` are MIT-licensed for commercial
-  and noncommercial use. The [chat installation guide](/docs/chat/getting-started/installation)
+  and noncommercial use. The [chat installation guide](/docs/angular/chat/getting-started/installation)
   covers setup.
 </Callout>
 
@@ -384,7 +384,7 @@ def count_saved(messages: list) -> int:
     )
 ```
 
-For progress _during_ a run rather than state after it, AG-UI `CUSTOM` events accumulate on `agent.customEvents()` — a LangGraph node emits them with `get_stream_writer()`. The [custom events guide](/docs/ag-ui/guides/custom-events) covers that path.
+For progress _during_ a run rather than state after it, AG-UI `CUSTOM` events accumulate on `agent.customEvents()` — a LangGraph node emits them with `get_stream_writer()`. The [custom events guide](/docs/angular/ag-ui/guides/custom-events) covers that path.
 
 ## What happens when we swap the backend?
 
@@ -405,7 +405,7 @@ Components stay identical because both adapters produce the same runtime-neutral
 And client tools are declared against `@threadplane/chat`, so the registry above moves across untouched.
 
 The cost is a thin translation layer per adapter, and a real compatibility surface: your new backend has to emit the AG-UI events the UI reads.
-The [event mapping reference](/docs/ag-ui/reference/event-mapping) is the checklist when a stream renders as nothing.
+The [event mapping reference](/docs/angular/ag-ui/reference/event-mapping) is the checklist when a stream renders as nothing.
 
 ## What doesn't AG-UI give you?
 

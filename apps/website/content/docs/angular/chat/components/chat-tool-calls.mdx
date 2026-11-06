@@ -1,0 +1,188 @@
+---
+description: How the tool-calls example renders an aviation agent's calls in a sidebar panel, plus grouping, per-tool templates and the component API.
+---
+
+# ChatToolCallsComponent
+
+`ChatToolCallsComponent` renders the tool calls an agent makes. It reads them off the agent, collapses consecutive calls to the same tool into one labeled strip, and renders everything else as a card showing the arguments and the result. The running example is an aviation assistant with three read-only tools, and it mounts the component twice: once inside the conversation through the `<chat>` composition, and once on its own in a sidebar panel.
+
+**Selector:** `chat-tool-calls`
+
+## Show the work behind an answer
+
+A traveler may see several lookups before receiving an itinerary. Each lookup has an identity, a name, arguments, and eventually a result or error. Keep that structured information with the assistant message that requested it so two calls to the same tool remain distinguishable.
+
+`ChatToolCallsComponent` observes and presents calls. The backend or client-tool coordinator executes them. A card becoming visible does not itself run the tool. See [Client tools](/docs/angular/chat/guides/client-tools) when your application needs to implement the requested capability.
+
+## What the demo does
+
+The Run tab shows a conversation on the left and a sidebar headed "Tool Calls" on the right, with an "Available Tools" list below it naming the three aviation tools the agent can call. One welcome suggestion, "Check a flight status", asks for the status of flight UA123.
+
+The agent answers by calling `lookup_flight`, and a card named `lookup_flight` appears in the sidebar. It expands while the call is running and collapses once the result arrives; click it to read the arguments under Inputs and the flight record under Output.
+
+Grouping is easier to see with a second request. Ask the assistant to compare LAX and JFK: the system prompt steers it to call `get_airport_info` twice, and two consecutive calls to the same tool collapse into a single strip reading "Called get_airport_info 2 times". Click the strip to expand it and read both cards.
+
+## How it is built
+
+Three files carry the example: the graph that binds the tools and loops until the model stops calling them, the provider that points Angular at that graph, and the component that places the panel.
+
+### The tools and the model that calls them
+
+`ALL_TOOLS` in the example's tool module holds three LangChain tools: `lookup_flight(flight_number)`, `get_airport_info(airport_code)` and `find_routes(from_code, to_code, date_offset_days)`, each returning a dictionary from a small mock aviation dataset. Binding them to the model is what makes the model able to emit tool calls at all; the agent node then prepends the capability's prompt file and awaits the model.
+
+<ExampleCode file="graph.py" region="bind-tools" title="graph.py — binding the tools" />
+
+The names bound here are the names the component groups by and labels its cards with.
+
+### The agent and tool loop
+
+`should_continue` looks at the last message and routes to the `tools` node whenever it carries tool calls, and the `tools` edge goes straight back to `agent`. That is the loop: the model calls a tool, `ToolNode` runs it, the result returns as a tool message, and the model is invoked again within the same user turn. A model response with no tool calls falls through to the title node instead.
+
+<ExampleCode file="graph.py" region="tool-loop" title="graph.py — the agent and tool loop" />
+
+`compile()` is called with no checkpointer, because this graph is served by the LangGraph API server, which supplies persistence itself.
+
+### The agent provider
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo. Your own application does not need the factory.
+
+<ExampleCode file="app.config.ts" />
+
+Pass the values directly:
+
+```typescript
+provideAgent({
+  apiUrl: 'https://your-deployment.langgraph.app',
+  assistantId: 'c-tool-calls',
+});
+```
+
+`assistantId` must match the graph name in `langgraph.json`.
+
+### The panel in the sidebar
+
+The layout is the `<chat>` composition in the main slot and a panel in the sidebar slot. The sidebar instance takes the agent and nothing else, so it renders `agent.toolCalls()`, which is every call in the thread rather than the calls of one message.
+
+<ExampleCode file="tool-calls.component.ts" region="layout" title="tool-calls.component.ts — the layout" />
+
+The `<chat>` composition mounts the same primitive again under each assistant bubble, passing that message, so the conversation shows a turn's own calls while the sidebar accumulates all of them.
+
+### Submitting the suggestion
+
+The component injects the agent and submits the suggestion text when the chip is clicked. Nothing about tool calls is wired here: the component below only supplies the agent.
+
+<ExampleCode file="tool-calls.component.ts" region="component" title="tool-calls.component.ts — the component class" />
+
+## Import
+
+```typescript
+import { ChatToolCallsComponent } from '@threadplane/chat';
+```
+
+The component is standalone, so add it to a component's `imports` array.
+
+## Inputs
+
+| Input | Type | Default | Description |
+|---|---|---|---|
+| `agent` | `Agent` | **Required** | The agent whose `toolCalls()` signal is rendered. |
+| `message` | `Message \| undefined` | `undefined` | Scopes rendering to one assistant message. Omit it and the whole thread's calls are rendered. |
+| `grouping` | `'auto' \| 'none'` | `'auto'` | With `'auto'`, consecutive calls to the same tool collapse into one strip. With `'none'`, every call renders on its own. |
+| `groupSummary` | `((name: string, count: number) => string) \| undefined` | `undefined` | Replaces the built-in strip label. When left undefined, the default registry below is used. |
+| `excludeToolNames` | `readonly string[]` | `[]` | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript. |
+| `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]` | `[]` | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
+
+The component has no outputs.
+
+## Scoping to one message
+
+With no `message`, the component renders `agent.toolCalls()` unchanged. With an assistant message it renders only that message's calls, resolved in this order:
+
+1. `message.toolCallIds`, when the adapter populated it. The LangGraph adapter fills it from the message's `tool_calls` array.
+2. Otherwise the `tool_use` content blocks on the message, which is how Anthropic-shaped content is linked.
+3. Otherwise nothing: an assistant message with no linkage emitted no calls.
+
+A non-assistant message falls back to the full list, so pass the message only where it is an assistant bubble.
+
+## Grouping
+
+With `grouping` at `'auto'`, the component walks the calls in order and appends a call to the previous group when the names match. Grouping is adjacency-based, so `search_web`, `read_file`, `search_web` produces three groups rather than two.
+
+A group holding more than one call renders as a collapsible strip: a header button carrying the summary label and a chevron, collapsed on first render, expanding to the individual cards when clicked. A group holding a single call renders that card directly, with no strip around it.
+
+`excludeToolNames` is applied before grouping, so an excluded name cannot break a group in two.
+
+## Default group summaries
+
+| Tool name | Label |
+|---|---|
+| `search_*` | Searched N sites |
+| `generate_*` | Generated N items |
+| `read_*` | Read N files |
+| `write_*` | Wrote N files |
+| `list_*` | Listed N items |
+| Anything else | Called {name} N times |
+
+The nouns are singularized at a count of one, which matters when you call the summary yourself; the default strip only appears from two calls up. The aviation tools in the example match none of these prefixes, which is why two airport lookups read "Called get_airport_info 2 times".
+
+Pass `groupSummary` to replace the whole registry for one instance:
+
+```html
+<chat-tool-calls [agent]="agent" [message]="msg" [groupSummary]="summarize" />
+```
+
+```typescript
+const summarize = (name: string, count: number): string =>
+  name === 'lookup_flight' ? `Looked up ${count} flights` : `${name} × ${count}`;
+```
+
+## Per-tool templates
+
+Project an `ng-template` carrying the `chatToolCallTemplate` directive to replace the card for one tool name. A literal `"*"` registers a wildcard used for any name without a template of its own; a name-specific template wins over it.
+
+```html
+<chat-tool-calls [agent]="agent" [message]="msg">
+  <ng-template chatToolCallTemplate="lookup_flight" let-call let-status="status">
+    <my-flight-card [flightNumber]="call.args.flight_number" [status]="status" />
+  </ng-template>
+</chat-tool-calls>
+```
+
+The template context is the `ToolCall` as `$implicit` and its status as `status`. Calls handled by a template never render a strip: each one is rendered through the template, so the density is yours to manage. The directive is covered in full on [chatToolCallTemplate](/docs/angular/chat/components/chat-tool-call-template).
+
+## Calls that spawned a subagent
+
+When the agent exposes a subagent whose `toolCallId` matches a call, that call renders as a `<chat-subagent-card>` instead of a tool-call card, and it never joins a group on either side. Adapters key their subagent map differently, so the match is made on the subagent's `toolCallId` field rather than the map key.
+
+## The card each call renders
+
+Every call the component does not hand to a template or a subagent card is rendered by `ChatToolCallCardComponent`: the tool name, a status pill, an Inputs section holding the arguments, and an Output section that appears only once a result exists. A card whose status is `running` or `error` expands itself; a completed one stays collapsed until it is clicked. See [ChatToolCallCard](/docs/angular/chat/components/chat-tool-call-card) for its own inputs.
+
+## Styling
+
+The host is a block with a 20 pixel bottom margin. The strip reads three custom properties from the chat theme:
+
+| Variable | Applied to |
+|---|---|
+| `--tplane-chat-separator` | Strip border, and the divider above the expanded body |
+| `--tplane-chat-radius-card` | Strip corner radius |
+| `--tplane-chat-text` | Strip header text |
+
+Setting the variables is covered in the [theming guide](/docs/angular/chat/guides/theming).
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="chatToolCallTemplate" href="/docs/angular/chat/components/chat-tool-call-template">
+    Replace the default card for one tool name.
+  </Card>
+  <Card title="ChatToolCallCard" href="/docs/angular/chat/components/chat-tool-call-card">
+    The card the component renders for an ungrouped call.
+  </Card>
+  <Card title="ChatSubagentCard" href="/docs/angular/chat/components/chat-subagent-card">
+    What a call that spawned a subagent renders instead.
+  </Card>
+  <Card title="Theming" href="/docs/angular/chat/guides/theming">
+    Set the custom properties the strip reads.
+  </Card>
+</CardGroup>

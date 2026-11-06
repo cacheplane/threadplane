@@ -1,0 +1,196 @@
+---
+description: How a spec element repeats itself over an array in the state store with repeat, $item and $index, and how the running example holds that array.
+---
+
+# Repeat Loops
+
+A repeat loop lets one spec element stand for a whole list. Instead of naming every row as a child key, the element declares `repeat` with a JSON Pointer into the state store, and the renderer mounts it once per item in the array at that path. The running example shows both halves: a signal-backed store with an `/items` array, controls that add to it and remove from it, and a streamed spec whose single row element repeats over that array.
+
+## What the demo does
+
+The Run tab shows a split surface. The rendered output is on the left, the JSON that produced it streams in on the right, and a transport along the bottom scrubs through the stream or replays it at 1x, 2x, or 4x. The tabs at the top switch between three list-shaped specs — Simple List, Task List, and Sections — and picking one restarts the stream against that spec.
+
+Below the JSON is a List Controls panel over the store. **Add Item** appends a new entry to the `/items` array and the small cross beside each row removes it, and because Simple List binds a repeating element to `/items`, the rendered surface on the left gains or loses a row as you do. The other two specs, Task List and Sections, name their rows as explicit children with literal text, which is the enumerated form a repeat replaces.
+
+<Callout type="info" title="Two shapes, side by side">
+Simple List is the repeat form: one `Text` element with `repeat: { statePath: '/items' }` under a `Heading`, so adding an item adds a rendered row. Task List and Sections are the enumerated form the repeat collapses, so their rows do not move when the array does. The store holds objects, so the repeated element binds `content` to `{ "$item": "label" }` — a field on the current item. Binding to `{ "$item": "" }` would hand the component the whole item instead.
+</Callout>
+
+## How it is built
+
+The example is one Angular file and an application config. Open the Code tab to read them in place.
+
+### The application config
+
+`provideRender()` is called with an empty configuration. The registry and the store travel as inputs on the render surface instead.
+
+<ExampleCode file="app.config.ts" />
+
+### The registry and the array
+
+Three type names are registered, and the store is seeded with the array a repeat would iterate. `signalStateStore()` is backed by an Angular signal, which is what makes later writes reach the rendered surface.
+
+<ExampleCode file="repeat-loops.component.ts" region="registry-and-store" title="repeat-loops.component.ts — the registry and the store" />
+
+`/items` is a JSON Pointer, and it is the exact string the Simple List spec carries as its `repeat.statePath`.
+
+### Reading and writing the array
+
+The store is path-addressable: `get()` takes a pointer and returns the value, `set()` takes a pointer and a value. Both mutations replace the whole array rather than editing it in place.
+
+<ExampleCode file="repeat-loops.component.ts" region="list-state" title="repeat-loops.component.ts — mutating /items" />
+
+Replacement is what the store expects: `set()` compares the current value by reference and ignores a write that hands back the same one.
+
+<Callout type="tip" title="Write immutably">
+`store.set('/items', items)` with the same array instance is a no-op, so an in-place `push()` or `splice()` followed by a `set()` of the same reference notifies nobody. Build a new array, as the example does with a spread and a `filter()`.
+</Callout>
+
+### The render surface
+
+`<render-spec>` receives the streamed spec, the registry, the store, and a `loading` flag driven by the simulator. The store passed here is the same one the controls write to, which is how the repeat element inside the spec resolves its array.
+
+<ExampleCode file="repeat-loops.component.ts" region="render-surface" title="repeat-loops.component.ts — the render surface" />
+
+### The list controls
+
+The controls are ordinary Angular template code around the store, not part of the spec.
+
+<ExampleCode file="repeat-loops.component.ts" region="list-controls" title="repeat-loops.component.ts — the list controls" />
+
+### The agent is not in the render path
+
+The capability also ships a backend, and it is worth being clear about what it does not do. This single-node LangGraph agent answers questions about repeat rendering; it never produces the specs on screen, which the example streams locally.
+
+<ExampleCode file="graph.py" />
+
+## Declaring a repeat
+
+`repeat` sits at the element level, beside `type`, `props` and `children` — never inside `props`. It takes a `statePath` pointing at an array in the state model:
+
+```json
+{
+  "root": "list",
+  "elements": {
+    "list": {
+      "type": "Card",
+      "props": { "title": "Tasks" },
+      "children": ["row"]
+    },
+    "row": {
+      "type": "Text",
+      "props": { "content": { "$item": "title" } },
+      "repeat": { "statePath": "/tasks" }
+    }
+  },
+  "state": {
+    "tasks": [{ "title": "Review pull request" }, { "title": "Deploy" }]
+  }
+}
+```
+
+The element carrying `repeat` is the one that multiplies: `row` mounts once per entry in `/tasks`, and each mount resolves its own props. A value at the path that is not an array yields no items at all, so an absent or still-streaming path renders nothing rather than failing.
+
+## Item expressions
+
+Inside a repeat, prop expressions gain three forms that resolve against the current item rather than the global state model.
+
+| Expression | Resolves to |
+|---|---|
+| `{ "$item": "field" }` | A field on the current item; `""` returns the whole item |
+| `{ "$index": true }` | The zero-based array index |
+| `{ "$bindItem": "field" }` | Two-way binding to a field on the current item, resolved to an absolute state path |
+
+`$state` still works and still reads the global model, so an element can mix per-item values with application-wide ones. `$bindItem` behaves like `$bindState`: the prop receives the resolved value, and the write-back path arrives on the component's `bindings` input as `/tasks/1/field`.
+
+The same `$item` and `$index` forms are available in a `visible` condition, on the repeated element itself and on its **children** alike. Each mount provides its iteration context through a child injector, so a child inherits the repeat scope and its condition resolves against that mount's item:
+
+```json
+{
+  "row": {
+    "type": "Card",
+    "children": ["label"],
+    "repeat": { "statePath": "/tasks" }
+  },
+  "label": {
+    "type": "Text",
+    "props": { "content": { "$item": "title" } },
+    "visible": { "$item": "done", "eq": false }
+  }
+}
+```
+
+A `visible` condition on the element that carries `repeat` is evaluated once per item, in that item's own scope, so a row can hide itself:
+
+```json
+{
+  "row": {
+    "type": "Text",
+    "props": { "content": { "$item": "title" } },
+    "repeat": { "statePath": "/tasks" },
+    "visible": { "$item": "done", "eq": false }
+  }
+}
+```
+
+Only the entries whose condition holds are mounted; the rest leave no markup behind. Filtering the array in the state model before it reaches the repeat path remains an option, and is the better one when the hidden rows should not be in the model at all.
+
+## Per-item readiness
+
+Each mount is gated on its own resolved props, not on the element's. A row whose `$item`-bound props have not arrived yet shows the registry entry's fallback while its ready siblings show the real component, and a registry `schema` is validated once per row against that row's props. The switch from fallback to real component is one-way per row, so a value that later becomes `undefined` never sends a mounted row back to its fallback.
+
+Action params follow the same rule: `{ "$item": … }` inside an `ActionBinding`'s `params` resolves in the scope of the row whose component emitted the event, whether the component fires through the `emit` input or through `injectRenderHost()`.
+
+```json
+{
+  "row": {
+    "type": "Button",
+    "props": { "label": { "$item": "title" } },
+    "repeat": { "statePath": "/tasks" },
+    "on": { "click": { "action": "openTask", "params": { "id": { "$item": "id" } } } }
+  }
+}
+```
+
+Clicking the second row calls `handlers.openTask({ id: /* the second task's id */ })`.
+
+## Item scope in Angular
+
+Each repeated mount gets its own child injector carrying a `RepeatScope`, which a registered component can inject when it needs the raw iteration context rather than resolved props:
+
+```ts
+import { inject } from '@angular/core';
+import { REPEAT_SCOPE } from '@threadplane/render';
+
+const scope = inject(REPEAT_SCOPE, { optional: true });
+scope?.item;     // the current item
+scope?.index;    // zero-based index
+scope?.basePath; // absolute pointer, for example '/tasks/1'
+```
+
+The token is optional because the same component class also mounts outside a repeat, where nothing provides it. `basePath` is `statePath` joined with the index, and it is what `$bindItem` uses to turn a field name into an absolute path.
+
+## Reactivity and identity
+
+The renderer reads the array through the store inside a computed, so a `set()` on the repeat path re-resolves the items and the mounts follow. Items are tracked by array position, which means an insertion at the front shifts every later row onto the preceding item's mount rather than moving the mounts.
+
+<Callout type="info" title="The key field is not read by the Angular renderer">
+`repeat` accepts an optional `key` alongside `statePath` in the spec type. The Angular renderer does not read it: it iterates by index. Treat `key` as advisory metadata for spec producers and tools, and do not depend on it for reconciliation.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="State Store" href="/docs/angular/render/guides/state-store">
+    The store behind a repeat path: reads, writes and subscriptions.
+  </Card>
+  <Card title="Specs" href="/docs/angular/render/guides/specs">
+    The spec format that carries repeat: root, elements, props and children.
+  </Card>
+  <Card title="Component Registry" href="/docs/angular/render/guides/registry">
+    Map element type names to the components a repeat mounts per item.
+  </Card>
+  <Card title="RenderSpecComponent" href="/docs/angular/render/guides/element-rendering">
+    The surface that receives the spec, the registry and the store.
+  </Card>
+</CardGroup>

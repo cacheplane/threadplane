@@ -1,6 +1,8 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
-const route = '/docs/deep-agents/capabilities/skills';
+const route = '/docs/angular/deep-agents/capabilities/skills';
+const reactRoute = '/docs/react/deep-agents/capabilities/skills';
 const reactFrame = /(?:localhost:4631|deep-agents\/skills\/react)/;
 const observations = new WeakMap<
   Page,
@@ -36,7 +38,7 @@ test.describe('React Deep Agents Skills', () => {
   }
   async function emptyRun(page: Page, draft = '') {
     await hydrated(page, 'run');
-    await expect(page.getByLabel('Example UI')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveValue('react');
     await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
     await expect(page.locator('iframe')).toBeVisible();
     await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -61,11 +63,11 @@ test.describe('React Deep Agents Skills', () => {
   test('React Deep Agents Skills keeps canonical Docs, Code and Run aligned', async ({
     page,
   }, testInfo) => {
-    await page.goto(route + '?frontend=react', {
+    await page.goto(reactRoute, {
       waitUntil: 'domcontentloaded',
     });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Example UI')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveValue('react');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
@@ -154,7 +156,7 @@ test.describe('React Deep Agents Skills', () => {
       path: testInfo.outputPath('react-deep-agents-skills-run-desktop.png'),
     });
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.getByLabel('Example UI')).toBeVisible();
+    await expectFrameworkControl(page);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth
@@ -175,26 +177,26 @@ test.describe('React Deep Agents Skills', () => {
   }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveValue('angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
         exact: true,
       })
     ).toHaveCount(0);
-    await page.getByLabel('Example UI').selectOption('react');
+    await selectFramework(page, 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
         exact: true,
       })
     ).toBeVisible();
-    await expect(page).toHaveURL(/frontend=react/);
+    await expect(page).toHaveURL(/\/docs\/react\//);
   });
   test('a direct React run link mounts an empty conversation without creating a thread', async ({
     page,
   }) => {
-    await page.goto(route + '?frontend=react&mode=run', {
+    await page.goto(reactRoute + '?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await emptyRun(page);
@@ -202,7 +204,7 @@ test.describe('React Deep Agents Skills', () => {
   test('history preserves the mounted React owner and unsent draft without runtime requests', async ({
     page,
   }) => {
-    await page.goto(route + '?frontend=react&mode=run', {
+    await page.goto(reactRoute + '?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await emptyRun(page);
@@ -233,7 +235,7 @@ test.describe('React Deep Agents Skills', () => {
   test('reload clears an unsent React draft without runtime requests', async ({
     page,
   }) => {
-    await page.goto(route + '?frontend=react&mode=run', {
+    await page.goto(reactRoute + '?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await emptyRun(page);
@@ -253,7 +255,7 @@ test.describe('React Deep Agents Skills', () => {
   test('the aviation suggestion fills an exact inert draft', async ({
     page,
   }) => {
-    await page.goto(route + '?frontend=react&mode=run', {
+    await page.goto(reactRoute + '?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await emptyRun(page);
@@ -273,7 +275,7 @@ test.describe('React Deep Agents Skills', () => {
   test('frontend changes release the old React frame and return to an empty inert owner', async ({
     page,
   }) => {
-    await page.goto(route + '?frontend=react&mode=run', {
+    await page.goto(reactRoute + '?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await emptyRun(page);
@@ -287,16 +289,16 @@ test.describe('React Deep Agents Skills', () => {
       .getByRole('button', { name: 'Docs', exact: true })
       .click();
     await hydrated(page, 'docs');
-    await page.getByLabel('Example UI').selectOption('angular');
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await selectFramework(page, 'angular');
+    await expect(page.getByLabel('Framework')).toHaveValue('angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
         exact: true,
       })
     ).toHaveCount(0);
-    expect(await oldFrame?.evaluate((frame) => frame.isConnected)).toBe(false);
-    await page.getByLabel('Example UI').selectOption('react');
+    await expect.poll(() => oldFrame?.evaluate((frame) => frame.isConnected)).toBe(false);
+    await selectFramework(page, 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',

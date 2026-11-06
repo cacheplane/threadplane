@@ -11,7 +11,7 @@ describe('middleware matcher', () => {
   it.each([
     '/',
     '/blog/x',
-    '/docs/chat/overview',
+    '/docs/angular/chat/overview',
     '/about',
     // Files written for AI consumers / strongest crawler-intent signals.
     '/llms.txt',

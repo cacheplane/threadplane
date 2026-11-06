@@ -1,0 +1,83 @@
+---
+title: How It Connects
+description: The AG-UI wire conventions measured for AWS Strands: outcome interrupts, top-level resume entries, and snapshot-only state.
+---
+
+# How AWS Strands Connects
+
+This page records the AG-UI wire behavior measured for the Strands bridge on 2026-08-31. It describes what the runtime emitted, not what the protocol permits in general. The captured Server-Sent Events are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) and replayed by the adapter test suite on every run.
+
+## Transport
+
+The example serves a single AG-UI endpoint from FastAPI.
+
+| Route | Method | Notes |
+|---|---|---|
+| `/agent` | `POST` | `RunAgentInput` JSON in, Server-Sent Events out. |
+| `/ok` | `GET` | Health check. No route in the local example is authenticated; the token gate belongs to the shared deployment, not to the FastAPI app. |
+
+In your own application that is an ordinary `provideAgent({ url: '/agent' })`. The example in this repository passes a factory instead, only because it resolves its endpoint at runtime. Nothing about the adapter configuration is Strands-specific either way.
+
+## Interrupts use the outcome convention
+
+Strands signals an interrupt through the protocol-standard run outcome and never through a `CUSTOM` event:
+
+```json
+{
+  "type": "RUN_FINISHED",
+  "outcome": {
+    "type": "interrupt",
+    "interrupts": [{ "interruptId": "...", "value": { } }]
+  }
+}
+```
+
+This is the opposite of the LangGraph bridge, which signals interrupts only through a `CUSTOM` event named `on_interrupt` and never sets an outcome. The adapter retains both conventions in one session; native batches take precedence in `auto` mode regardless of arrival order.
+
+The reducer originally keyed interrupts on `on_interrupt` alone, which meant a Strands run finalized as a success with a dangling approval call and an undefined `interrupt()`. That was an adapter defect, and it is fixed.
+
+## Resume uses top-level entries
+
+Strands reads resume data from the protocol-standard top-level `resume` array, one entry per interrupt, keyed by `interruptId`:
+
+```json
+{
+  "resume": [
+    { "interruptId": "...", "status": "resolved", "payload": { } }
+  ]
+}
+```
+
+Application code does not assemble that. You call the neutral `submit({ resume })`, and the adapter derives the wire shape from how the interrupt arrived. For Mastra, explicitly select `mastra-command`: the decision goes in `forwardedProps.command.resume` alongside the correlation fields in `command.interruptEvent`. The LangGraph bridge uses `forwardedProps.command.resume`.
+
+## State is snapshot-only
+
+The bridge emits `STATE_SNAPSHOT` and never `STATE_DELTA`. State reaches the wire only where a tool opts in with a `ToolBehavior` hook:
+
+```python
+StrandsAgentConfig(
+    tool_behaviors={
+        "check_availability": ToolBehavior(state_from_result=availability_state),
+        "book_meeting": ToolBehavior(state_from_args=booking_state),
+    },
+)
+```
+
+`state_from_result` fires after the tool returns. `state_from_args` fires as the tool call's arguments finish streaming, which is what puts a pending booking into state *before* the interrupt pauses the run.
+
+Because the adapter applies a snapshot as a full replacement, both hooks return the complete state object. A hook that returns a partial object silently drops whatever the other hook had written.
+
+## Subagents stream through a per-tool handler
+
+An in-tree emitter registered as the delegation tool's `ToolBehavior.tool_stream_event_handler` consumes the specialist's re-yielded `stream_async` events as they cross the bridge.
+It emits `SUBAGENT_STARTED`, the specialist's tokens as `TEXT_MESSAGE_*` deltas attributed with `subagentRunId`, and `SUBAGENT_FINISHED`, nested between the delegation tool call's `TOOL_CALL_END` and `TOOL_CALL_RESULT`.
+
+## Native React preview
+
+The bounded React preview uses a native Session with a generic `book_meeting` interrupt. `metadata.reason` contains the topic and slot, with no tool-call id or approval schema. It preserves the opaque pause id and sends the resolved `{ approved }` decision through top-level native resume. Confirmation requires the distinct resumed run, matching normal root terminal, settled continuation, and matching canonical tool result decoded through exactly one JSON layer. The observed schedule snapshot and assistant prose are separate display evidence. Research specialist rendering remains in the canonical Angular example.
+
+## Next steps
+
+- [Overview](/docs/angular/runtimes/aws-strands/overview) — what the integration supports.
+- [Microsoft Agent Framework — How It Connects](/docs/angular/runtimes/microsoft-agent-framework/how-it-connects) — the same outcome convention, a different resume requirement.
+- [Choosing an adapter](/docs/choosing-an-adapter) — the full matrix and its cause analysis.

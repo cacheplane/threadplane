@@ -23,7 +23,7 @@ export const langgraphStreamingAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'LangGraph Streaming (Angular)',
-  docsPath: '/docs/langgraph/guides/streaming',
+  docsPath: '/docs/angular/langgraph/guides/streaming',
   promptAssetPaths: [
     'cockpit/langgraph/streaming/angular/prompts/streaming.md',
   ],

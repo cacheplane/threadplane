@@ -1,0 +1,199 @@
+---
+description: How the subagents example dispatches task calls to real subgraphs, and the Subagent contract the card reads to render each dispatch inline
+---
+
+# ChatSubagentCardComponent
+
+`ChatSubagentCardComponent` renders one delegated subagent as an expandable card: its name, the tool call that spawned it, a status pill, a message count, and — once expanded — the subagent's own transcript. The running example is a trip planner whose orchestrator delegates research, booking, and itinerary work to a child graph, and this page walks the files that make each dispatch show up as a card.
+
+**Selector:** `chat-subagent-card`
+
+**Import:**
+
+```typescript
+import { ChatSubagentCardComponent } from '@threadplane/chat';
+```
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition beside a sidebar that lists the pipeline: orchestrator, then a research subagent, a booking subagent, and an itinerary subagent. One welcome suggestion, "Plan a trip from LAX to JFK", starts the run.
+
+Send it and the orchestrator calls one `task` tool three times, in that order. Each call renders in the transcript as a subagent card rather than as a generic tool-call chip. A card opens while its subagent is running, streams that subagent's answer inside itself, and collapses to a one-line summary when the dispatch completes. The cards stay in the transcript afterwards, so the finished run reads as three collapsed dispatches followed by the orchestrator's own summary of the trip.
+
+## How it is built
+
+A child graph the orchestrator can invoke, a `task` tool that invokes it, one line of adapter configuration that says `task` means delegation, a helper that binds the child stream to its tool call, the orchestrator's own tool-calling loop, and a component that renders the standard `<chat>` composition carry the feature together. Open the Code tab to read them in place.
+
+### The subagent subgraph
+
+Each specialist is the same compiled child graph, parameterized by a `subagent_type` that selects its system prompt. The child keeps its own state schema, so the task description arrives as a field rather than as a chat message.
+
+<ExampleCode file="graph.py" region="subagent-graph" title="graph.py — the child graph" />
+
+Invoking that compiled graph from inside a tool is what makes LangGraph nest its run under a `tools:<id>` namespace, and everything the card shows comes from that namespaced stream.
+
+### The task tool
+
+The tool is an ordinary LangChain tool. It takes the specialist to dispatch and a plain-English description of the work, invokes the child graph, and returns the child's final text to the orchestrator.
+
+<ExampleCode file="graph.py" region="task-tool" title="graph.py — the delegation tool" />
+
+`subagent_type` is a `Literal`, which matters twice: it constrains what the model may dispatch, and it becomes the card's label.
+
+### Binding the child stream to its tool call
+
+Nothing on the wire links the child's `tools:<uuid>` namespace to the parent's `call_*` tool-call id — the uuid is a checkpoint id assigned independently. Inside the tool body both halves are known, so the example emits them together as one custom event.
+
+<ExampleCode file="graph.py" region="announce" title="graph.py — announcing the binding" />
+
+`@threadplane/langgraph` consumes that event as protocol chatter rather than forwarding it as application data, and replays any chunks that streamed before the binding arrived.
+
+<Callout type="info" title="The binding is authoritative, the fallback is a heuristic">
+Without the announcement the adapter falls back to attributing the first unmapped pending or running child, which is correct only while one dispatch is outstanding at a time; with no `description` argument to match on, the ladder lands on its positional rung. Announcing the binding is what makes parallel fan-out safe. The canonical helper is `threadplane.middleware.langgraph.announce_subagent`; the example inlines it because each example stands alone.
+</Callout>
+
+### The orchestrator
+
+The parent is a plain tool-calling loop: a model bound to the single `task` tool, a `ToolNode` that runs it, and a conditional edge back to the model until no tool calls remain.
+
+<ExampleCode file="graph.py" region="orchestrator" title="graph.py — the parent graph" />
+
+The system prompt tells the orchestrator to dispatch research, then booking, then itinerary, which is why the demo produces three cards in a stable order.
+
+### Telling the adapter that task means delegation
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The one subagent-specific line is `subagentToolNames`. The default is already `['task']`, so this example states explicitly what it would otherwise inherit.
+
+The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them; your own application passes `apiUrl` and `assistantId` directly.
+
+<ExampleCode file="app.config.ts" />
+
+A tool call is registered as a subagent only when its name is in `subagentToolNames` and its arguments carry a plausible `subagent_type`; that argument then becomes `Subagent.name`.
+
+### Where the card appears
+
+The component is small on purpose. It renders `<chat>`, a welcome suggestion, and a static sidebar note — and nothing about subagents at all. Subagent cards appear because `<chat-tool-calls>`, inside the `<chat>` composition, cross-references each tool call against `agent.subagents()`: a call that spawned a subagent renders as a standalone `<chat-subagent-card>` instead of a tool-call card, and never groups with adjacent calls.
+
+<ExampleCode file="subagents.component.ts" region="template" title="subagents.component.ts — the template" />
+
+That cross-reference works because the agent the demo provides exposes `subagents()` for `<chat-tool-calls>` to read.
+
+<ExampleCode file="subagents.component.ts" region="agent" title="subagents.component.ts — the agent" />
+
+## Basic usage
+
+Rendering a card directly needs only the subagent:
+
+```html
+<chat-subagent-card [subagent]="subagentRef" />
+```
+
+## API
+
+### Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `subagent` | `Subagent` | **Required** | The subagent to display |
+
+The component exposes no outputs.
+
+## Subagent
+
+The `Subagent` type comes from `@threadplane/chat` and is what every adapter maps its own subagent state onto:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `toolCallId` | `string` | The tool call that spawned this subagent |
+| `name` | `string \| undefined` | Optional human-readable name. The card falls back to the literal `Subagent` when it is absent |
+| `status` | `Signal<'pending' \| 'running' \| 'complete' \| 'error'>` | Current execution status |
+| `messages` | `Signal<Message[]>` | Messages produced by the subagent |
+| `toolCalls` | `Signal<ToolCall[]> \| undefined` | The subagent's own tool calls, referenced by each message's `toolCallIds`. Optional — adapters that do not surface subagent tool calls omit it, and the card defaults to `[]` |
+| `state` | `Signal<Record<string, unknown>>` | Arbitrary subagent state exposed by the runtime |
+
+In the running example `name` is the `subagent_type` argument (`research`, `booking`, `itinerary`), `state` carries the child's state values plus the tool result once it lands, and `toolCalls` is absent, because the LangGraph adapter does not surface a child's own tool calls.
+
+<Callout type="info" title="A dispatch becomes visible when its child stream starts">
+The adapter registers a subagent as `pending` the moment the orchestrator's tool call arrives, and hides `pending` entries from `agent.subagents()`. The entry turns `running` when its child stream is bound, and `complete` (or `error`) when the tool result message lands.
+</Callout>
+
+## What the card renders
+
+### Header
+
+The header is the `<chat-trace>` toggle button. It shows a chevron reflecting the expanded state, the `name` (or the literal `Subagent`), the `toolCallId` in a monospace face, a color-coded status pill, and the message count as "N message(s)".
+
+### Expansion
+
+Expansion is delegated to [`<chat-trace>`](/docs/angular/chat/components/chat-trace): the card expands automatically while the status is `running` or `error`, and otherwise stays collapsed. Clicking the header sets a manual override that wins from then on. Re-entering `running` or `error` from another state clears that override, so a card that is dispatched again opens again.
+
+### Transcript
+
+When expanded, the card renders the subagent's entire message list, not just the latest message. For each message, in order:
+
+- Any `reasoning` text, as a muted italic line
+- The message content, rendered through `<chat-streaming-md>` so it streams as markdown
+- A [`<chat-tool-call-card>`](/docs/angular/chat/components/chat-tool-call-card) for each tool call the message references and the `toolCalls` signal resolves
+
+### Status pill colors
+
+The pill is styled through a `data-status` attribute and CSS selectors. The exported `statusColor()` helper returns the equivalent inline style string and is retained for existing consumers.
+
+| Status | Background | Text color |
+|--------|-----------|------------|
+| `pending` | `--tplane-chat-surface-alt` | `--tplane-chat-text-muted` |
+| `running` | `--tplane-chat-warning-bg` | `--tplane-chat-warning-text` |
+| `complete` | (none) | `--tplane-chat-success-text` |
+| `error` | `--tplane-chat-error-bg` | `--tplane-chat-error-text` |
+
+## Cards outside the transcript
+
+The example needs no explicit markup because the `<chat>` composition places each card inline. To render cards somewhere else — a sidebar tray, for instance — use the `ChatSubagentsComponent` primitive, which iterates the agent's subagents and drops the ones that already reached `complete` or `error`:
+
+```html
+<chat-subagents [agent]="agent">
+  <ng-template let-subagent>
+    <chat-subagent-card [subagent]="subagent" />
+  </ng-template>
+</chat-subagents>
+```
+
+The template is optional. Without one, `<chat-subagents>` renders a `<chat-subagent-card>` for each active subagent itself.
+
+## Styling
+
+The card reads these CSS custom properties:
+
+| Variable | Applied to |
+|----------|-----------|
+| `--tplane-chat-text` | Subagent name |
+| `--tplane-chat-text-muted` | Tool call id, message count, reasoning line, `pending` pill text |
+| `--tplane-chat-font-mono` | Tool call id |
+| `--tplane-chat-separator` | Divider between successive transcript messages |
+| `--tplane-chat-surface-alt` | `pending` pill background |
+| `--tplane-chat-warning-bg` / `--tplane-chat-warning-text` | `running` status pill |
+| `--tplane-chat-success-text` | `complete` status pill |
+| `--tplane-chat-error-bg` / `--tplane-chat-error-text` | `error` status pill |
+
+The card draws no background, border, or radius of its own. The only border anywhere in this pairing is the left rule on the expanded body, drawn by [`<chat-trace>`](/docs/angular/chat/components/chat-trace); any surrounding chrome comes from the host that places the card.
+
+## Accessibility
+
+The header is a real `<button>` and exposes `aria-expanded` reflecting the current state, so the card is operable from the keyboard and announced as a disclosure.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="ChatTrace" href="/docs/angular/chat/components/chat-trace">
+    The disclosure primitive the card is built on, including its auto-expand rules.
+  </Card>
+  <Card title="ChatToolCalls" href="/docs/angular/chat/components/chat-tool-calls">
+    How tool calls group in the transcript, and where a subagent card takes their place.
+  </Card>
+  <Card title="Subgraphs" href="/docs/angular/langgraph/guides/subgraphs">
+    Child graphs mounted as nodes rather than dispatched as tools, and how their streams are classified.
+  </Card>
+  <Card title="Deep Agents subagents" href="/docs/angular/deep-agents/capabilities/subagents">
+    The same card in front of the Deep Agents task tool, where one turn fans out to four specialists.
+  </Card>
+</CardGroup>

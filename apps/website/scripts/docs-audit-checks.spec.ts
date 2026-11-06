@@ -96,15 +96,15 @@ test('central route inventory includes both supported framework readings and all
   expect(
     DOCS_AUDIT_ROUTES.filter((route) => route.video).map((route) => route.path)
   ).toEqual([
-    '/docs/langgraph/concepts/conversation-turns',
-    '/docs/langgraph/guides/streaming',
-    '/docs/langgraph/guides/persistence',
-    '/docs/chat/guides/client-tools',
-    '/docs/render/guides/specs',
-    '/docs/langgraph/guides/streaming?frontend=react',
-    '/docs/langgraph/guides/persistence?frontend=react',
-    '/docs/chat/guides/client-tools?frontend=react',
-    '/docs/render/guides/specs?frontend=react',
+    '/docs/angular/langgraph/concepts/conversation-turns',
+    '/docs/angular/langgraph/guides/streaming',
+    '/docs/angular/langgraph/guides/persistence',
+    '/docs/angular/chat/guides/client-tools',
+    '/docs/angular/render/guides/specs',
+    '/docs/react/langgraph/guides/streaming',
+    '/docs/react/langgraph/guides/persistence',
+    '/docs/react/chat/guides/client-tools',
+    '/docs/react/render/guides/specs',
   ]);
   expect(new Set(DOCS_AUDIT_ROUTES.map((route) => route.path)).size).toBe(
     DOCS_AUDIT_ROUTES.length

@@ -146,7 +146,7 @@ export class App {
 }
 ```
 
-See `cockpit/ag-ui/interrupts` for a complete working example, and the [LangGraph interrupts guide](https://threadplane.ai/docs/langgraph/guides/interrupts) for that adapter's behavior. Both share `interrupt()` and `submit({ resume })`; AG-UI's `interruptSession`, `ready`, `reconcileInterrupt()`, `dispose()`, `persistence` configuration, and `interruptGeneration` submit option are adapter extensions. Browser persistence cannot restore a lost server checkpoint or prove backend completion.
+See `cockpit/ag-ui/interrupts` for a complete working example, and the [LangGraph interrupts guide](https://threadplane.ai/docs/angular/langgraph/guides/interrupts) for that adapter's behavior. Both share `interrupt()` and `submit({ resume })`; AG-UI's `interruptSession`, `ready`, `reconcileInterrupt()`, `dispose()`, `persistence` configuration, and `interruptGeneration` submit option are adapter extensions. Browser persistence cannot restore a lost server checkpoint or prove backend completion.
 
 ### Citations
 
@@ -278,8 +278,8 @@ in the page.
 
 ## Documentation
 
-- [Quickstart](https://threadplane.ai/docs/ag-ui/getting-started/quickstart)
-- [AG-UI adapter guide](https://threadplane.ai/docs/chat/guides/writing-an-adapter)
+- [Quickstart](https://threadplane.ai/docs/angular/ag-ui/getting-started/quickstart)
+- [AG-UI adapter guide](https://threadplane.ai/docs/angular/chat/guides/writing-an-adapter)
 - [AG-UI protocol](https://github.com/ag-ui-protocol/ag-ui)
 - [Choosing an adapter (LangGraph vs AG-UI)](https://threadplane.ai/docs/choosing-an-adapter)
 

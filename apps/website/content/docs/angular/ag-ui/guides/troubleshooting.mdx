@@ -1,0 +1,175 @@
+---
+description: Diagnose AG-UI integration failures — nothing renders, loading never stops, errors stay hidden, state or citations do not arrive, retry does nothing.
+---
+
+# Troubleshooting
+
+Most AG-UI integration issues are event-shape problems. Start by checking what your backend actually emits against the [Event Mapping](/docs/angular/ag-ui/reference/event-mapping).
+
+## Nothing renders
+
+Check the provider first.
+
+```ts
+providers: [
+  provideAgent({ url: '/api/agent' }),
+]
+```
+
+Then make sure the component uses the provided agent:
+
+```ts
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/ag-ui';
+
+@Component({
+  standalone: true,
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" />`,
+})
+export class ChatPage {
+  protected readonly agent = injectAgent();
+}
+```
+
+If you call `injectAgent()`, the agent must have been provided via `provideAgent()` in the same Angular injector tree.
+
+## User messages appear, but no assistant response
+
+`submit()` optimistically appends the user message before calling `source.runAgent()`. If the user message appears and the assistant does not, the UI path is working. The next place to inspect is the AG-UI event stream.
+
+The backend must emit at least:
+
+```ts
+{ type: 'RUN_STARTED' }
+{ type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' }
+{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Hello' }
+{ type: 'TEXT_MESSAGE_END', messageId: 'm1' }
+{ type: 'RUN_FINISHED' }
+```
+
+If `TEXT_MESSAGE_CONTENT` uses a different `messageId` than `TEXT_MESSAGE_START`, the reducer cannot append content to the message.
+
+## Loading never stops
+
+The adapter sets `isLoading` to `true` on `RUN_STARTED`.
+
+It sets `isLoading` back to `false` on:
+
+- `RUN_FINISHED`
+- `RUN_ERROR`
+- `onRunFailed`
+- a pause — a `CUSTOM` `on_interrupt` event, or a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`
+- `stop()`, which aborts the active run
+
+If loading never stops, your backend likely did not emit a terminal event or the AG-UI source did not report a failure.
+
+## Errors are not visible
+
+Protocol errors should come through `RUN_ERROR`.
+
+```ts
+{ type: 'RUN_ERROR', message: 'Model quota exceeded' }
+```
+
+Transport or runtime failures may arrive through the AG-UI subscriber `onRunFailed` callback. The adapter stores that thrown value in `agent.error()` and sets `status` to `error`.
+
+Your UI still needs to render error state. The base chat composition handles common error display, but custom layouts should read:
+
+```ts
+agent.status();
+agent.error();
+```
+
+## Tool call args are empty
+
+`TOOL_CALL_ARGS` appends each event `delta` to the tool call's accumulated argument buffer. When the accumulated buffer is valid JSON, the reducer stores the parsed object as the current args.
+
+This can arrive as one complete payload:
+
+```ts
+{ type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '{"query":"Angular"}' }
+```
+
+Or as fragments:
+
+```ts
+{ type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '{"query":' }
+{ type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '"Angular"}' }
+```
+
+While the buffer is incomplete, the previously parsed args remain in place. If the final buffer still cannot be parsed at `TOOL_CALL_END`, the adapter leaves the last-good parsed args instead of throwing.
+
+## Citations do not show up
+
+Check three things:
+
+1. Citations must live under `state.citations`.
+2. The citation key must match the assistant message id.
+3. A `STATE_SNAPSHOT` or `STATE_DELTA` must arrive after citation data is available.
+
+Example:
+
+```ts
+{
+  type: 'STATE_SNAPSHOT',
+  snapshot: {
+    citations: {
+      m1: [{ title: 'Policy', url: 'https://example.com/policy' }],
+    },
+  },
+}
+```
+
+If your backend sends citations before the message exists, send another state event after the message is created. See [Citations](/docs/angular/ag-ui/guides/citations).
+
+## Stop does not cancel the run
+
+`agent.stop()` calls `source.abortRun()`.
+
+Cancellation depends on the AG-UI source implementation. `HttpAgent` supports abort behavior. A custom `AbstractAgent` subclass needs to implement cancellation itself.
+
+## Regenerate throws
+
+`regenerate(index)` throws when:
+
+- Another run is already loading.
+- The target index is not an assistant message.
+- There is no previous user message to rerun from.
+
+Pass the index of the assistant message you want to replace, not the user message.
+
+## Retry does nothing
+
+`retry()` re-runs the last submitted input. It is a silent no-op in two cases: a run is already in flight, or nothing has been submitted on this agent yet. Neither case throws and neither sets `error`, so a retry button that appears to do nothing usually means one of the two. Check `isLoading()` before calling it, and note that a fresh agent has nothing to retry until the first `submit()`.
+
+## No Retry button after a dropped stream
+
+This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error. The adapter offers Retry only for an ordinary replayable request with no observed event; resume attempts and client-tool continuations do not qualify. Retrying re-sends the captured input without adding a duplicate local message, but the server may have processed the original request before its first response byte was lost. No observed event is not proof of no dispatch or no backend effect.
+
+Read `error()?.recovery`: `retry` permits that captured-input replay, `check` means a read-only interrupt status check is available through `checkStatus()`, and `none` means the outcome cannot be verified. In the last case, show `error()?.detail`. Partial content and approval state are preserved.
+
+## History or time-travel does not work
+
+Checkpoint browsing and time-travel are not implemented by the AG-UI adapter today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
+
+Current scope is messages, status/loading/error, tool calls, state/custom events, reasoning messages, message snapshots, interrupts from `CUSTOM` `on_interrupt` events and from `RUN_FINISHED` interrupt outcomes, subagent progress from `SUBAGENT_*` and `ACTIVITY_*` events, and citations from state.
+
+Use `@threadplane/langgraph` if you need LangGraph Platform thread history APIs, or write a custom adapter against the `@threadplane/chat` `Agent` contract if you need AG-UI plus product-specific behavior.
+
+## Isolate with FakeAgent
+
+When you are unsure whether the issue is UI wiring or backend events, swap in the fake provider:
+
+```ts
+import { provideFakeAgent } from '@threadplane/ag-ui';
+
+providers: [
+  provideFakeAgent({
+    tokens: ['Fake', ' response.'],
+    delayMs: 20,
+  }),
+]
+```
+
+If the UI works with `FakeAgent`, the Angular wiring is fine. Focus on the backend event stream.

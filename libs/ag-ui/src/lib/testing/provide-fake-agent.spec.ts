@@ -62,7 +62,7 @@ describe('provideFakeAgent — script', () => {
     });
   });
 
-  // Mirrors the fence in apps/website/content/docs/ag-ui/guides/testing.mdx.
+  // Mirrors the fence in apps/website/content/docs/angular/ag-ui/guides/testing.mdx.
   it('reduces scripted state and custom events', async () => {
     TestBed.configureTestingModule({
       providers: provideFakeAgent({

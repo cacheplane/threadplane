@@ -85,10 +85,10 @@ const ANGULAR_COMPATIBILITY_FILES = new Set([
   'libs/ag-ui/README.md',
   'libs/render/README.md',
   'libs/telemetry/README.md',
-  'apps/website/content/docs/chat/getting-started/installation.mdx',
-  'apps/website/content/docs/langgraph/getting-started/installation.mdx',
-  'apps/website/content/docs/ag-ui/getting-started/installation.mdx',
-  'apps/website/content/docs/render/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/chat/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/langgraph/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/ag-ui/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/render/getting-started/installation.mdx',
 ]);
 
 const ANGULAR_COMPATIBILITY_PREFIXES = [

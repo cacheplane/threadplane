@@ -1,14 +1,21 @@
+import type { DocsScope } from '../../../lib/docs-catalog';
 import { NextResponse } from 'next/server';
-import { getAllDocSlugs, getDocBySlug } from '../../../lib/docs';
+import { getAllDocSlugs, getDocByPath } from '../../../lib/docs';
 import { getLibraryConfig } from '../../../lib/docs-config';
 import { indexDocSections } from '../../../lib/docs-search-index';
-import { searchIndexedDocs, type IndexedDoc } from '../../../lib/docs-search-query';
+import {
+  searchIndexedDocs,
+  type IndexedDoc,
+} from '../../../lib/docs-search-query';
 import { buildApiSearchIndex } from '../../../lib/api-search-index';
 
 const MIN_QUERY_LENGTH = 2;
 
 export interface DocSlugEntry {
-  library: string;
+  library: string | null;
+  href: string;
+  scope: DocsScope;
+  id: string;
   section: string;
   slug: string;
 }
@@ -20,7 +27,7 @@ interface ResolvableDoc {
 }
 
 function resolveDoc(entry: DocSlugEntry): ResolvableDoc | null {
-  return getDocBySlug(entry.library, entry.section, entry.slug);
+  return getDocByPath(entry.href);
 }
 
 /**
@@ -45,8 +52,16 @@ export function buildIndex(
       if (!doc) return [];
       return [
         {
-          library: entry.library,
-          libraryTitle: getLibraryConfig(entry.library)?.title ?? entry.library,
+          library: entry.library ?? 'docs',
+          href: entry.href,
+          scope: entry.scope,
+          id: entry.id,
+          libraryTitle:
+            (entry.library
+              ? getLibraryConfig(entry.library)?.title
+              : 'Getting started') ??
+            entry.library ??
+            'Docs',
           section: entry.section,
           slug: entry.slug,
           title: doc.title,
@@ -78,7 +93,10 @@ function getIndex(): IndexedDoc[] {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  const query = new URL(request.url).searchParams.get('q')?.trim() ?? '';
+  const params = new URL(request.url).searchParams;
+  const query = params.get('q')?.trim() ?? '';
+  const framework = params.get('framework') === 'react' ? 'react' : 'angular';
+  const allFrameworks = params.get('allFrameworks') === 'true';
 
   if (query.length < MIN_QUERY_LENGTH) {
     return NextResponse.json(
@@ -93,8 +111,31 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
+  const matching = (scope: 'angular' | 'react') =>
+    searchIndexedDocs(
+      getIndex().filter(
+        (doc) => !doc.scope || doc.scope === 'shared' || doc.scope === scope
+      ),
+      query
+    );
+  const primary = matching(framework);
+  // Broader search should expose both frameworks, even when one has many
+  // matching sections. Keep each framework's relevance order and shared hits once.
+  const secondary = allFrameworks
+    ? matching(framework === 'react' ? 'angular' : 'react')
+    : [];
+  const results = allFrameworks
+    ? [
+        ...new Map(
+          primary
+            .flatMap((hit, index) => [hit, secondary[index]].filter(Boolean))
+            .concat(secondary.slice(primary.length))
+            .map((hit) => [hit.href, hit])
+        ).values(),
+      ].slice(0, 8)
+    : primary;
   return NextResponse.json(
-    { results: searchIndexedDocs(getIndex(), query) },
+    { results },
     {
       headers: {
         // The corpus only changes on deploy, so repeated queries are served

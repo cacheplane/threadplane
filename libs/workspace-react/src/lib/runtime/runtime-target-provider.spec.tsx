@@ -68,7 +68,7 @@ const renderProvider = (adapter: RuntimeAdapter = 'langgraph') =>
 
 describe('RuntimeTargetProvider', () => {
   beforeEach(() => {
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming');
     window.localStorage.clear();
     window.sessionStorage.clear();
   });
@@ -147,7 +147,7 @@ describe('RuntimeTargetProvider', () => {
       window.history.pushState(
         {},
         '',
-        `/docs/langgraph/guides/streaming${suffix}`
+        `/docs/angular/langgraph/guides/streaming${suffix}`
       );
       view.rerender(
         <RuntimeTargetProvider>
@@ -159,7 +159,7 @@ describe('RuntimeTargetProvider', () => {
       );
     }
 
-    window.history.pushState({}, '', '/docs/langgraph/guides/persistence');
+    window.history.pushState({}, '', '/docs/angular/langgraph/guides/persistence');
     view.rerender(
       <RuntimeTargetProvider>
         <Probe adapter="langgraph" />
@@ -239,7 +239,7 @@ describe('RuntimeTargetProvider', () => {
     window.history.pushState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=api'
+      '/docs/angular/langgraph/guides/streaming?mode=api'
     );
     window.dispatchEvent(new PopStateEvent('popstate'));
     expect(screen.getByTestId('langgraph-kind').textContent).toBe('langsmith');

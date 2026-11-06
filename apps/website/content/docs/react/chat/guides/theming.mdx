@@ -1,0 +1,64 @@
+---
+title: "Theming"
+description: "Give the same conversation a different visual theme without replacing its session."
+---
+
+# React chat theming preview
+
+Give the same conversation a different visual theme without replacing its session. Colors, typography, and surfaces belong to presentation state, so changing a palette should preserve the draft and answer.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Scope the theme to the conversation root
+
+The example applies one of four classes around the native chat components. Those classes supply CSS tokens while `MessageList`, Markdown, and `ChatInput` continue reading the same owner. Keep the theme selection outside the session creation path; the code below makes a palette change a normal local React update.
+
+~~~tsx
+import { useState, type ReactNode } from 'react';
+
+export function ThemeScope({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState('dark');
+  return <section className={`trip-theme-${theme}`}>
+    <select aria-label="Theme" value={theme} onChange={(event) => setTheme(event.target.value)}>
+      <option value="dark">Dark</option><option value="light">Light</option>
+    </select>
+    {children}
+  </section>;
+}
+~~~
+
+The [conversation walkthrough (Angular guide)](/docs/angular/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
+
+## Four local palettes
+
+Choose **Run** and select **Dark**, **Light**, **Ocean** or **Forest**. The palette changes a class on this chat root. It preserves the same application owner, exact unsent draft, messages and active conversation during streaming and saved-history confirmation. Palette changes make no runtime requests, cancel no work and do not change the document theme. A second chat root can choose independently; reload restores Dark.
+
+The eight React chat CSS tokens are **--tp-chat-text**, **--tp-chat-muted**, **--tp-chat-border**, **--tp-chat-surface**, **--tp-chat-accent**, **--tp-chat-on-accent**, **--tp-chat-danger** and **--tp-chat-gap**. These local presets demonstrate this composed React surface. The Angular guide retains its framework-specific token API.
+
+<ExampleCode file="cockpit/chat/theming/react/src/styles.css" />
+
+Markdown uses its design-system text variable. The demo scopes a --ds-text-primary alias to --tp-chat-text around message and reasoning bodies; this is a demo-local bridge, not a ninth React chat token or a global override.
+
+<ExampleCode file="cockpit/chat/theming/react/src/app.tsx" />
+
+## Ask and continue
+
+Only **Send** creates a confirmed server thread and starts the existing aviation graph. Ask an aviation question, then wait for **Response saved** before following up in the same conversation. Saved history must retain the exact confirmed prefix and current question/answer identities; streamed text alone cannot authorize continuation. Theme selection remains available while the owner is busy.
+
+**New conversation** clears local state and creates nothing until Send. **Stop** revokes active delivery; stopped, failed or uncertain work requires a new conversation without automatic retry or replay. Cleanup failure permanently disables authoring and requires reload. These browser ownership checks do not claim a durable external store or backend cancellation acknowledgment.
+
+<ExampleCode file="cockpit/chat/theming/react/src/application.ts" />
+
+One configured LangGraph target serves thread creation, streaming and saved history. The shared backend reuses c-theming. The title model carries TAG_NOSTREAM, so title generation updates thread metadata without entering the visible answer stream.
+
+<ExampleCode file="cockpit/chat/theming/react/src/connection.ts" />
+<ExampleCode file="cockpit/chat/theming/python/src/graph.py" />
+
+## Build from source
+
+~~~sh
+npx nx build cockpit-chat-theming-react
+npx nx e2e cockpit-chat-theming-react
+~~~
+
+The isolated build consumes installed candidate packages. Local browser tests exercise actual SDK HTTP and SSE from the compiled Python graph with deterministic providers; they do not prove live provider execution. Docs, Code and Run use the same React implementation and preserve the mounted iframe and draft across mode navigation. Angular remains the default, with its own components and tokens.

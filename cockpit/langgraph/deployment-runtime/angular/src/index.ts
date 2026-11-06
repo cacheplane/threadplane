@@ -23,7 +23,7 @@ export const langgraphDeploymentRuntimeAngularModule: CockpitCapabilityModule = 
     language: 'angular',
   },
   title: 'LangGraph Deployment & Runtime (Angular)',
-  docsPath: '/docs/langgraph/guides/deployment',
+  docsPath: '/docs/angular/langgraph/guides/deployment',
   promptAssetPaths: [
     'cockpit/langgraph/deployment-runtime/angular/prompts/deployment-runtime.md',
   ],

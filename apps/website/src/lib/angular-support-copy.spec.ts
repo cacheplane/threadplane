@@ -64,7 +64,7 @@ describe('Angular support copy', () => {
 
   it('teaches adapter authors the complete supported Angular peer range', () => {
     const guide = fs.readFileSync(
-      path.join(resolveWebsiteDir(), 'content', 'docs', 'chat', 'guides', 'writing-an-adapter.mdx'),
+      path.join(resolveWebsiteDir(), 'content', 'docs', 'angular', 'chat', 'guides', 'writing-an-adapter.mdx'),
       'utf8'
     );
 

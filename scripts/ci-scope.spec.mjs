@@ -719,7 +719,7 @@ describe('React migration baseline scope', () => {
     'fixtures/react-parity/consumers/angular/src/main.ts',
     'fixtures/react-parity/consumers/plain/package.json',
     'libs/ui-react/src/button.tsx',
-    'apps/website/content/docs/chat/api/example.mdx',
+    'apps/website/content/docs/angular/chat/api/example.mdx',
     'cockpit/chat/messages/angular/src/index.ts',
     'cockpit/chat/new-topic/angular/project.json',
     'scripts/verify-release-versions.mjs',
@@ -1107,10 +1107,10 @@ describe('isAngularCompatibilityChange', () => {
     'libs/ag-ui/README.md',
     'libs/render/README.md',
     'libs/telemetry/README.md',
-    'apps/website/content/docs/chat/getting-started/installation.mdx',
-    'apps/website/content/docs/langgraph/getting-started/installation.mdx',
-    'apps/website/content/docs/ag-ui/getting-started/installation.mdx',
-    'apps/website/content/docs/render/getting-started/installation.mdx',
+    'apps/website/content/docs/angular/chat/getting-started/installation.mdx',
+    'apps/website/content/docs/angular/langgraph/getting-started/installation.mdx',
+    'apps/website/content/docs/angular/ag-ui/getting-started/installation.mdx',
+    'apps/website/content/docs/angular/render/getting-started/installation.mdx',
   ];
 
   for (const file of exactFiles) {

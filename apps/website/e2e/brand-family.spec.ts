@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 // Tailwind layers can silently replace the site's type and navigation styles.
 test('the brand face survives inside the docs workspace', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/docs/chat/getting-started/quickstart');
+  await page.goto('/docs/angular/chat/getting-started/quickstart');
   const prose = page.locator('.docs-prose').first();
   await expect(prose).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
@@ -41,7 +41,7 @@ test('dark brand sections keep ink labels on yellow primary actions', async ({ p
 for (const width of [375, 1440]) {
   test(`docs and generated API have no decorative left accents at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    for (const path of ['/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
+    for (const path of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
       await page.goto(path);
       await expect(page.locator('.docs-prose, .api-reference-detail').first()).toBeVisible();
       const accents = await page.locator('.docs-workspace-article').evaluate((article) =>

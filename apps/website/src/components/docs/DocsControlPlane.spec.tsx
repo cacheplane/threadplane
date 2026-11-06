@@ -25,19 +25,21 @@ const docsCss = readFileSync(
   'utf8'
 );
 
-const { track } = vi.hoisted(() => ({
+const { track, route } = vi.hoisted(() => ({
   track: vi.fn(),
+  route: { pathname: '/docs/angular/langgraph/guides/streaming' },
 }));
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/docs/langgraph/guides/streaming',
+  usePathname: () => route.pathname,
   useRouter: () => ({ push }),
 }));
 
 vi.mock('../../lib/analytics/client', () => ({ track }));
 
 beforeEach(() => {
+  route.pathname = '/docs/angular/langgraph/guides/streaming';
   window.localStorage.clear();
   push.mockClear();
   track.mockClear();
@@ -52,23 +54,31 @@ describe('DocsControlPlane', () => {
     expect(migrations.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('link', { name: 'Upgrade an existing application' })).toBeNull();
     fireEvent.click(migrations);
-    expect(screen.getByRole('link', { name: 'Upgrade an existing application' }).getAttribute('href')).toBe('/docs/chat/migrations/upgrading');
+    expect(screen.getByRole('link', { name: 'Upgrade an existing application' }).getAttribute('href')).toBe('/docs/angular/chat/migrations/upgrading');
   });
 
   it('preserves the selected frontend in documentation navigation', () => {
+    route.pathname = '/docs/react/langgraph/guides/streaming';
     render(
       <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
-        resolveHref={(href) => `${href}?frontend=react`}
+        scope="react"
       />
     );
     expect(
       screen
         .getByRole('link', { name: 'Persistence', exact: true })
         .getAttribute('href')
-    ).toBe('/docs/langgraph/guides/persistence?frontend=react');
+    ).toBe('/docs/react/langgraph/guides/persistence');
+    expect(screen.queryByRole('link', { name: 'Installation', exact: true })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Migrations' })).toBeNull();
+  });
+
+  it.each([false, true])('offers one framework selector in documentation navigation (mobile=%s)', mobile => {
+    render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" mobile={mobile} />);
+    expect(screen.getAllByRole('combobox', { name: 'Framework' })).toHaveLength(1);
   });
   it('keeps context headings on the shared sentence-case sans contract', () => {
     for (const selector of [
@@ -309,7 +319,7 @@ describe('DocsControlPlane', () => {
     const agUi = screen.getByRole('menuitemradio', { name: /AG-UI/ });
     expect(agUi.tagName).toBe('A');
     expect(agUi.getAttribute('href')).toBe(
-      '/docs/ag-ui/getting-started/introduction'
+      '/docs/angular/ag-ui/getting-started/introduction'
     );
     expect(agUi.getAttribute('aria-checked')).toBe('false');
     expect(
@@ -394,14 +404,14 @@ describe('DocsControlPlane — library-neutral', () => {
         activeLibrary={null}
         activeSection=""
         activeSlug=""
-        runHref="/docs/langgraph/guides/streaming?mode=run"
+        runHref="/docs/angular/langgraph/guides/streaming?mode=run"
       />,
     );
 
     // href turns the rail item into an <a>, so it is a link, not a button.
     expect(
       screen.getByRole('link', { name: 'Run' }).getAttribute('href'),
-    ).toBe('/docs/langgraph/guides/streaming?mode=run');
+    ).toBe('/docs/angular/langgraph/guides/streaming?mode=run');
 
     // The index still has no Code or API view of its own.
     for (const mode of ['Code', 'API'] as const) {

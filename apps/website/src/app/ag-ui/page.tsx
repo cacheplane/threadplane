@@ -44,7 +44,7 @@ export default async function AgUiPage() {
               Build the Angular UI once, on the AG-UI protocol — seven runtimes speak it today, and new ones <span className="marker-highlight">work the day they ship</span>. History and checkpoint behavior stays with your backend.
             </p>
             <div className="ag-ui-page-hero-buttons">
-              <Button variant="primary" size="lg" href="/docs/ag-ui/getting-started/quickstart">Get started</Button>
+              <Button variant="primary" size="lg" href="/docs/angular/ag-ui/getting-started/quickstart">Get started</Button>
               <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
             </div>
             <p className="ag-ui-page-adapter-note">

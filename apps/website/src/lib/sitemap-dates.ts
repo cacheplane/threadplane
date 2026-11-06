@@ -1,3 +1,4 @@
+import { resolveNarrativeDocument } from './docs-catalog';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -69,13 +70,8 @@ export function sourcePathsForRoute(
   const special = specialDocsPages.find((page) => page.path === route);
   if (special) return [path.join('content', 'docs', special.contentPath)];
 
-  if (route.startsWith('/docs/')) {
-    const [, , library, section, slug] = route.split('/');
-    if (library && section && slug) {
-      return [path.join('content', 'docs', library, section, `${slug}.mdx`)];
-    }
-    // Anything else under /docs is a hand-written route, dated like any other.
-  }
+  const document = resolveNarrativeDocument(route);
+  if (document) return [path.join('content', 'docs', document.source)];
 
   if (route.startsWith('/solutions/')) {
     // Programmatic pages: one dynamic route template rendering data from a

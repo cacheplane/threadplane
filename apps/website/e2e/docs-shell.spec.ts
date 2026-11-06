@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const ARTICLE = '/docs/langgraph/getting-started/introduction';
+const ARTICLE = '/docs/angular/langgraph/getting-started/introduction';
 const PAGE_ACTION_LABELS = [
   'On this page',
   'Copy page as Markdown',

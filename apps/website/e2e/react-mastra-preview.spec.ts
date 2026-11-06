@@ -13,7 +13,7 @@ test.describe('native Mastra Website', () => {
     for (const owner of receipt.closed) expect(Object.values(owner.closure).every(Boolean)).toBe(true);
   });
   test('Docs Code and Run select the authored reservation implementation', async ({ page, request }, info) => {
-    await page.goto('/docs/runtimes/mastra/overview?frontend=react');
+    await page.goto('/docs/react/runtimes/mastra/overview');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     await expect(page.getByRole('heading', { name: 'React Mastra reservation preview', exact: true })).toBeVisible();
     await expect(page.locator('[data-example-file="cockpit/runtimes/mastra/react/src/approval-policy.ts"]')).toBeVisible();

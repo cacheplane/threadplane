@@ -52,7 +52,7 @@ test.describe('native MAF Website', () => {
     test(`Docs Code Run and actual native ${decision} at ${width}`, async ({ page, request }, info) => {
       test.setTimeout(90000);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      const response = await page.goto('/docs/runtimes/microsoft-agent-framework/overview?frontend=react');
+      const response = await page.goto('/docs/react/runtimes/microsoft-agent-framework/overview');
       expect(response?.status()).toBe(200);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
       await expect(page.getByRole('heading', { name: 'React Microsoft Agent Framework expense preview', exact: true })).toBeVisible();

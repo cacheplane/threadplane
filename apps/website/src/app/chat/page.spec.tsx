@@ -39,7 +39,7 @@ describe('ChatPage', () => {
 
     const link = screen.getByRole('link', { name: 'See it live →' });
     expect(link.getAttribute('href')).toBe(
-      '/docs/chat/guides/generative-ui?mode=run'
+      '/docs/angular/chat/guides/generative-ui?mode=run'
     );
     expect(link.getAttribute('target')).toBeNull();
     expect(link.getAttribute('rel')).toBeNull();

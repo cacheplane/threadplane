@@ -1,0 +1,203 @@
+---
+description: How the input example wires chat-input to a streaming agent, plus the component inputs, outputs, keyboard handling, projection slots and styling hooks.
+---
+
+# ChatInputComponent
+
+`ChatInputComponent` is the text input primitive for sending messages to an agent. It renders a pill containing a textarea and one button, submits the trimmed text to the agent it is bound to, and swaps the send button for a stop button while a response streams. The running example puts it under a live conversation with a panel that prints the agent status beside it, so every state this page describes is visible while you type.
+
+## What the demo does
+
+The Run tab shows a conversation on the left and an Input State panel on the right. The input sits in a strip under the messages with the placeholder "Try typing here...", and the agent behind it is an aviation assistant whose mock dataset covers ten United States airports and four airlines.
+
+Ask it something like which airlines fly out of SFO, and watch the panel: Stream Status reads `running` and Is Loading reads `true` while the answer streams, and the send button turns into a stop button for as long as that lasts. Press Shift and Enter together to add a second line before sending, which is the other half of the keyboard contract below.
+
+## How it is built
+
+Three files carry the example: the graph that streams the answer, the provider that points Angular at it, and the component that mounts the input. The input itself is one element with an agent and a placeholder.
+
+### The streaming graph
+
+The backend is a two-node graph. `generate` reads the capability's prompt file, prepends it as a system message, and awaits a model constructed with `streaming=True`, which is what keeps the agent loading long enough to watch the button swap. `generate_title` runs after it and writes a short thread title back through the LangGraph SDK.
+
+<ExampleCode file="graph.py" region="streaming-graph" title="graph.py — the streaming graph" />
+
+The compiled graph is exported as `graph`, which is the symbol `langgraph.json` points at.
+
+### The application configuration
+
+`provideAgent()` registers the agent for the whole application, and it is the only provider the chat components require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`, which is `c-input` for this example.
+
+### Mounting the input
+
+`<chat-input>` takes the agent and a placeholder. Nothing else is wired, because the component submits to the agent on its own.
+
+<ExampleCode file="input.component.ts" region="input-strip" title="input.component.ts — the input strip" />
+
+<Callout type="warning" title="Do not re-submit from (submitted)">
+The `submitted` output fires after the message has already been sent to the agent. Calling `submit()` again in that handler posts the user message twice.
+</Callout>
+
+### Reading the state the input reacts to
+
+The demo component mirrors two agent signals into computed fields so the panel can print them. `isLoading` is the one `chat-input` reads on its own, through the agent it is bound to.
+
+<ExampleCode file="input.component.ts" region="agent-state" title="input.component.ts — the agent signals" />
+
+The panel is a definition list over those two fields.
+
+<ExampleCode file="input.component.ts" region="state-panel" title="input.component.ts — the state panel" />
+
+## Import
+
+```typescript
+import { ChatInputComponent, submitMessage } from '@threadplane/chat';
+```
+
+The selector is `chat-input`, and the component is standalone, so add it to a component's `imports` array.
+
+## Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `agent` | `Agent` | **Required** | The agent to submit messages to. Its `isLoading()` signal drives the send and stop buttons. |
+| `submitOnEnter` | `boolean` | `true` | When `true`, pressing Enter submits the message. Shift and Enter together insert a newline. When `false`, Enter always inserts a newline. |
+| `placeholder` | `string` | `''` | Placeholder text shown when the textarea is empty. |
+| `showStopButton` | `boolean` | `true` | When `true`, the send button is replaced by a stop button while the agent is loading. |
+
+## Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `submitted` | `string` | Emits the trimmed message text after the message has been submitted. |
+| `stopped` | `void` | Emits after the stop button is clicked, whether or not the agent aborted anything. |
+
+## Submit flow
+
+Enter and the send button both call the same method:
+
+1. The textarea value is trimmed.
+2. If nothing remains after trimming, the call is a no-op: no submit, no output, and the text is left alone.
+3. `agent.submit({ message: trimmed })` is called.
+4. The `submitted` output emits the trimmed text.
+5. The textarea is cleared, both in the component signal and on the element.
+6. Focus returns to the textarea on the next animation frame.
+
+## The send button and the stop button
+
+Only one button is rendered at a time. While `agent.isLoading()` is `false`, it is the send button, disabled unless the textarea holds at least one non-whitespace character. While `isLoading()` is `true` and `showStopButton` is left at its default, it is the stop button instead.
+
+Clicking stop calls `agent.stop()` and then emits `stopped`. Set `showStopButton` to `false` and the send button stays in place while the response streams, disabled for as long as the agent is loading.
+
+<Callout type="info" title="The textarea stays enabled">
+Loading disables the button, not the field. A user can keep typing the next message while the current response streams; Enter and the button are simply inert until it finishes.
+</Callout>
+
+## Auto-sizing
+
+The textarea starts at one row and grows with its content. An effect measures `scrollHeight` after each change and sets an explicit height, capped at the smaller of forty percent of the viewport height and 320 pixels. Past the cap the textarea scrolls internally.
+
+The cap is recomputed on every change rather than on a resize listener, so a viewport that changes between keystrokes is picked up on the next one.
+
+## Keyboard handling
+
+| Key | `submitOnEnter: true` | `submitOnEnter: false` |
+|-----|----------------------|----------------------|
+| Enter | Submits the message | Inserts a newline |
+| Shift and Enter | Inserts a newline | Inserts a newline |
+
+Input method editors are handled explicitly. While a composition is in progress — Chinese, Japanese and Korean input, dead-key accents, autocorrect popups — Enter is left to the textarea so the candidate is committed instead of submitted. The component tracks this through the `compositionstart` and `compositionend` events and also checks `event.isComposing` and the legacy key code 229.
+
+## submitMessage()
+
+The submit path is exported on its own for programmatic sends:
+
+```typescript
+import { submitMessage } from '@threadplane/chat';
+import type { Agent } from '@threadplane/chat';
+
+function sendGreeting(agent: Agent) {
+  const result = submitMessage(agent, 'Hello!');
+  // result is 'Hello!', or null when the trimmed text was empty
+}
+```
+
+**Signature:**
+
+```typescript
+function submitMessage(agent: Agent, text: string): string | null;
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `agent` | `Agent` | The agent to submit to |
+| `text` | `string` | The message text to send |
+
+It trims the text, returns `null` without calling the agent when nothing remains, and otherwise calls `agent.submit({ message: trimmed })` and returns the trimmed string. The component calls this same function, so a programmatic send behaves exactly like a typed one, minus the clearing and the focus.
+
+## Slots
+
+Six content-projection slots sit around the input pill:
+
+| Slot | Selector | Description |
+|------|----------|-------------|
+| Banner | `[chatInputBanner]` | Above the pill, first. |
+| Attachments | `[chatInputAttachments]` | Above the pill, below the banner. |
+| Leading | `[chatInputLeading]` | Inside the pill, before the textarea. |
+| Model select | `[chatInputModelSelect]` | In the controls row, first. |
+| Trailing | `[chatInputTrailing]` | In the controls row, after the model-select slot and before the button. |
+| Footer | `[chatInputFooter]` | Below the pill. |
+
+The model-select slot is sized for `<chat-select>`, which takes an options array and a two-way value, but it accepts any element:
+
+```html
+<chat-input [agent]="agent">
+  <chat-select chatInputModelSelect [options]="opts" [(value)]="selected" />
+</chat-input>
+```
+
+## Styling
+
+The host renders a container, a pill holding the textarea and the controls row, and one circular button. The component reads these custom properties from the chat theme:
+
+| Variable | Applied to |
+|----------|-----------|
+| `--tplane-chat-edge-pad` | Horizontal padding on the host |
+| `--tplane-chat-max-width` | Maximum width of the container |
+| `--tplane-chat-surface` | Pill background |
+| `--tplane-chat-separator` | Pill border, and the textarea scrollbar thumb |
+| `--tplane-chat-text` | Textarea text, and the send button background |
+| `--tplane-chat-text-muted` | Placeholder, the disabled send button, and the stop button background |
+| `--tplane-chat-bg` | Icon color inside both buttons |
+
+The pill is fully rounded, and the buttons are 36 pixels square. Setting the variables is covered in the theming guide.
+
+## Accessibility
+
+- The textarea carries `aria-label="Type a message"`.
+- The send button carries `aria-label="Send message"`, and is a real `disabled` button when submission is not possible.
+- The stop button carries `aria-label="Stop generating"` and the same text as its `title`.
+- Button icons are marked `aria-hidden="true"`.
+
+The component also exposes a `focusTextarea()` method, so a parent that holds a template reference can move focus into the input, for example after dismissing a panel.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Theming" href="/docs/angular/chat/guides/theming">
+    Set the chat custom properties the input reads.
+  </Card>
+  <Card title="Message model" href="/docs/angular/chat/concepts/message-model">
+    What a submitted message becomes once the agent has it.
+  </Card>
+  <Card title="ChatToolCalls" href="/docs/angular/chat/components/chat-tool-calls">
+    Render the tool calls an answer makes on its way back.
+  </Card>
+  <Card title="ChatTrace" href="/docs/angular/chat/components/chat-trace">
+    Follow a run end to end while it streams.
+  </Card>
+</CardGroup>

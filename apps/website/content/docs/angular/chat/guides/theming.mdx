@@ -1,0 +1,227 @@
+---
+description: How the theming example swaps --tplane-chat-* custom properties at runtime, where the token defaults come from, and how to override them in your app.
+---
+
+# Theming
+
+This default guide describes the Angular components and their `--tplane-chat-*` token API. Choose **React** in Framework for the experimental composed React example: MessageList, Markdown and ChatInput with four local presets and eight `--tp-chat-*` tokens. Its palette changes preserve the draft, stream and saved-history owner; these React tokens do not claim the full Angular CSS API. Both frontends share the aviation graph, whose tagged title model updates metadata without adding title text to the answer stream. React candidates remain private source builds.
+
+`@threadplane/chat` styles every component with CSS custom properties. Colors, radii, fonts, spacing, and z-index layers all come from variables prefixed with `--tplane-chat-`, so matching an existing design system is a matter of setting those variables rather than writing component styles. The running example puts a theme picker beside a live conversation, so every token this page names is one click away from changing in front of you.
+
+## What the demo does
+
+The Run tab shows a conversation on the left and a Theme Picker panel on the right. The panel lists four presets — Dark, Light, Ocean, and Forest — above the eight CSS variables those presets set, and the agent behind the conversation is an aviation assistant whose mock dataset covers ten United States airports and four airlines.
+
+Ask it something like which airlines fly out of SFO, then click through the presets while the answer is on screen. The message bubbles, the input pill, and the panel itself all change together, because the panel is styled from the same variables as the chat components.
+
+## How it is built
+
+Three files carry the example: the graph that answers the question, the provider that points Angular at it, and the component that owns the presets and applies them.
+
+### The conversation graph
+
+The backend is deliberately plain, because the subject of the example is the frontend. `generate` reads the capability's prompt file, prepends it as a system message, and awaits the model; `generate_title` runs after it and writes a short thread title back through the LangGraph SDK.
+
+<ExampleCode file="graph.py" region="theming-graph" title="graph.py — the conversation graph" />
+
+The compiled graph is exported as `graph`, which is the symbol `langgraph.json` points at.
+
+### The application configuration
+
+`provideAgent()` registers the agent for the whole application, and it is the only provider the chat components require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them. There is no theme provider at all: theming is CSS, not configuration.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`, which is `c-theming` for this example.
+
+### The theme presets
+
+A preset is nothing more than a map of custom property names to values. These four override eight of the color tokens and leave every other token at its default, which is the normal shape of a theme: change what the brand cares about, inherit the rest.
+
+<ExampleCode file="theming.component.ts" region="theme-presets" title="theming.component.ts — the four presets" />
+
+### The chat surface and the picker
+
+`<chat>` is bound to the agent and projected into the layout's main slot. The sidebar beside it renders one button per preset and marks the active one, and the component's own styles read `--tplane-chat-surface-alt`, `--tplane-chat-separator`, `--tplane-chat-primary`, and `--tplane-chat-on-primary`, which is why the buttons restyle themselves along with the conversation.
+
+<ExampleCode file="theming.component.ts" region="theme-picker" title="theming.component.ts — the layout and the picker" />
+
+### Applying a preset
+
+`setTheme` writes each entry of the preset onto `document.documentElement` as an inline style. Inline styles beat every stylesheet rule, so a preset applied this way overrides both the library defaults and anything set in your own global CSS.
+
+<ExampleCode file="theming.component.ts" region="apply-theme" title="theming.component.ts — applying a preset at runtime" />
+
+<Callout type="info" title="Runtime switching is optional">
+Setting the properties in a static stylesheet is enough for a fixed theme. The example writes them from TypeScript only because the picker changes them after load.
+</Callout>
+
+## Where the token defaults come from
+
+You do not import a stylesheet to get the defaults. The stylesheet is appended when the chat styles module first evaluates: a single `<style id="tplane-chat-root-tokens">` element goes onto `<head>` with every default token declared on `:root`, and the injection is idempotent and skipped during server-side rendering. The top-level compositions repeat the call from their constructors as a fallback for bundlers that strip the module side effect.
+
+That block is wrapped in `@layer tplane-chat`. Unlayered CSS beats layered CSS in the cascade, so a plain `:root { --tplane-chat-primary: … }` rule in your own stylesheet wins over the library defaults no matter which file the browser loads first, and no matter how specific the library rule is.
+
+## Token reference
+
+### Colors
+
+| Token | Light | Dark | Purpose |
+|---|---|---|---|
+| `--tplane-chat-bg` | `rgb(255, 255, 255)` | `rgb(17, 17, 17)` | Window background |
+| `--tplane-chat-surface` | `rgb(255, 255, 255)` | `rgb(28, 28, 28)` | Cards, the input pill |
+| `--tplane-chat-surface-alt` | `rgb(251, 251, 251)` | `rgb(44, 44, 44)` | Secondary fills, such as the thread sidebar |
+| `--tplane-chat-primary` | `rgb(28, 28, 28)` | `rgb(255, 255, 255)` | User bubble background, primary buttons |
+| `--tplane-chat-on-primary` | `rgb(255, 255, 255)` | `rgb(28, 28, 28)` | Text on those primary surfaces |
+| `--tplane-chat-text` | `rgb(28, 28, 28)` | `rgb(245, 245, 245)` | Assistant text, headings |
+| `--tplane-chat-text-muted` | `rgb(115, 115, 115)` | `rgb(160, 160, 160)` | Labels, placeholders, metadata |
+| `--tplane-chat-separator` | `rgb(229, 229, 229)` | `rgb(45, 45, 45)` | Hairlines and borders |
+| `--tplane-chat-muted` | `rgb(200, 200, 200)` | `rgb(60, 60, 60)` | Quiet borders, such as suggestion chips |
+| `--tplane-chat-error-bg` | `#fef2f2` | `rgb(45, 21, 21)` | Error background |
+| `--tplane-chat-error-border` | `#fecaca` | `#dc2626` | Error border |
+| `--tplane-chat-error-text` | `#dc2626` | `#fca5a5` | Error text |
+| `--tplane-chat-destructive` | `#dc2626` | `#ef4444` | Destructive confirm button |
+| `--tplane-chat-warning-bg` | `#fffbeb` | `rgb(45, 35, 21)` | Warning background |
+| `--tplane-chat-warning-text` | `#b45309` | `#fbbf24` | Warning text |
+| `--tplane-chat-success` | `#16a34a` | `#4ade80` | Success icons and indicators |
+| `--tplane-chat-success-text` | `#15803d` | `#4ade80` | Small success text, such as the `complete` status pill; darker than `--tplane-chat-success` so it meets 4.5:1 contrast |
+
+Three shadow tokens, `--tplane-chat-shadow-sm`, `--tplane-chat-shadow-md`, and `--tplane-chat-shadow-lg`, are declared with the light palette and are not redefined for dark.
+
+### Shape and layout
+
+| Token | Default | Purpose |
+|---|---|---|
+| `--tplane-chat-radius-bubble` | `15px` | User message bubble and suggestion chips |
+| `--tplane-chat-radius-input` | `20px` | Declared for consumers; no chat component reads it today |
+| `--tplane-chat-radius-card` | `8px` | Tool call cards, citations, generative UI surfaces |
+| `--tplane-chat-radius-button` | `8px` | Buttons in panels and lists |
+| `--tplane-chat-radius-sm` | `4px` | Inline code, source icons, task-list checkboxes |
+| `--tplane-chat-radius-launcher` | `9999px` | Circular launcher button |
+| `--tplane-chat-launcher-offset-x` | `1rem` | Distance from the viewport right edge to the `<chat-popup>` launcher and window |
+| `--tplane-chat-launcher-offset-y` | `1rem` | Distance from the viewport bottom edge to the `<chat-popup>` launcher |
+| `--tplane-chat-max-width` | `48rem` | Message column and input width |
+| `--tplane-chat-edge-pad` | `16px` | Horizontal padding at the edges of the conversation |
+| `--tplane-chat-space-1` … `--tplane-chat-space-6`, `--tplane-chat-space-8` | `4px` … `24px`, `32px` | Internal spacing scale |
+| `--tplane-chat-sidenav-width-expanded` | `280px` | Expanded thread navigation width |
+| `--tplane-chat-sidenav-width-collapsed` | `56px` | Collapsed thread navigation width |
+
+### Typography
+
+| Token | Default | Purpose |
+|---|---|---|
+| `--tplane-chat-font-family` | System stack | Font on every chat component host |
+| `--tplane-chat-font-mono` | Monospace stack | Code blocks and token labels |
+| `--tplane-chat-font-size` | `1rem` | Message text |
+| `--tplane-chat-font-size-sm` | `0.875rem` | Controls and secondary text |
+| `--tplane-chat-font-size-xs` | `0.75rem` | Labels and metadata |
+| `--tplane-chat-line-height` | `1.6` | Assistant text |
+| `--tplane-chat-line-height-tight` | `1.5` | User bubble |
+
+Three further families are declared alongside these and follow the same override rule: `--tplane-chat-citation-*` for citation markers and the sources panel, `--tplane-chat-z-*` for the overlay, drawer, and modal layers, and `--a2ui-*` for generative UI surfaces rendered inside the conversation. Four ready-made presets ship as `@threadplane/chat/themes/{default,material}-{light,dark}.css` and set only `--a2ui-*` values; see [the A2UI overview](/docs/angular/chat/a2ui/overview) for what those surfaces render.
+
+## Light and dark mode
+
+Tokens hold their light values by default. Dark values are applied under `@media (prefers-color-scheme: dark)`, and two attribute pairs override that preference:
+
+- `[data-theme="dark"]` or `[data-threadplane-chat-theme="dark"]` forces the dark values.
+- `[data-theme="light"]` or `[data-threadplane-chat-theme="light"]` forces the light values.
+
+Both attribute rules are declared after the media query, so an explicit attribute always wins over the system preference. Set the attribute on `<html>`, on `<body>`, or on any element that wraps the chat components — custom properties inherit, so everything below the attribute picks up the palette.
+
+```html
+<html data-theme="dark">
+```
+
+## Overriding tokens in your own application
+
+Set the variables you care about on `:root` in a global stylesheet. Unlayered rules beat the library defaults, so no `!important` and no import order juggling are needed.
+
+```css
+/* src/styles.css */
+:root {
+  --tplane-chat-primary: #2563eb;
+  --tplane-chat-on-primary: #ffffff;
+  --tplane-chat-radius-bubble: 12px;
+  --tplane-chat-max-width: 56rem;
+}
+```
+
+Scope the same declarations to a wrapper element when only part of the application should use the palette, and the components inside that wrapper inherit it.
+
+```css
+.marketing-chat {
+  --tplane-chat-primary: #0abde3;
+  --tplane-chat-on-primary: #07111f;
+}
+```
+
+## Bridging your design system
+
+If your application already has design tokens, keep those as the source of truth and map them into the chat variables. This gives you one stable control surface without coupling chat internals to your own namespace, and it is exactly what the example applications do in their shared layout stylesheet.
+
+```css
+:root {
+  /* Application-owned design tokens */
+  --ds-canvas: #ffffff;
+  --ds-surface: #f8fafc;
+  --ds-border: #e2e8f0;
+  --ds-text-primary: #0f172a;
+  --ds-text-muted: #64748b;
+  --ds-accent: #2563eb;
+  --ds-font-sans: Inter, system-ui, sans-serif;
+
+  /* Chat-owned public API */
+  --tplane-chat-bg: var(--ds-canvas);
+  --tplane-chat-surface: var(--ds-surface);
+  --tplane-chat-surface-alt: var(--ds-surface);
+  --tplane-chat-separator: var(--ds-border);
+  --tplane-chat-text: var(--ds-text-primary);
+  --tplane-chat-text-muted: var(--ds-text-muted);
+  --tplane-chat-primary: var(--ds-accent);
+  --tplane-chat-font-family: var(--ds-font-sans);
+}
+```
+
+The chat names describe component semantics, such as `primary`, `surface-alt`, `separator`, and `radius-bubble`, while your own tokens stay product-wide and evolve independently.
+
+## Migrating from `--chat-*` tokens
+
+Custom properties written against the earlier `--chat-*` names are inert. Rename them:
+
+| Old token | New token |
+|---|---|
+| `--chat-bg` | `--tplane-chat-bg` |
+| `--chat-text` | `--tplane-chat-text` |
+| `--chat-user-bg` | `--tplane-chat-primary` |
+| `--chat-user-text` | `--tplane-chat-on-primary` |
+| `--chat-radius-message` | `--tplane-chat-radius-bubble` |
+| `--chat-radius-input` | `--tplane-chat-radius-input` |
+| `--chat-radius-card` | `--tplane-chat-radius-card` |
+| `--chat-max-width` | `--tplane-chat-max-width` |
+| `--chat-error-bg` | `--tplane-chat-error-bg` |
+| `--chat-error-text` | `--tplane-chat-error-text` |
+| `--chat-warning-bg` | `--tplane-chat-warning-bg` |
+| `--chat-warning-text` | `--tplane-chat-warning-text` |
+| `--chat-success` | `--tplane-chat-success` |
+
+<Callout type="warning" title="There are no style constants to import">
+`@threadplane/chat` exports no theme or markdown style strings. `CHAT_THEME_STYLES` does not exist, and `CHAT_MARKDOWN_STYLES` is an internal constant that is deliberately not part of the public API. Theming is done through the custom properties above; custom markdown rendering uses `<chat-streaming-md>` or your own host styles around the exported `renderMarkdown()`.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Chat" href="/docs/angular/chat/components/chat">
+    The composition the example mounts, and the slots it projects.
+  </Card>
+  <Card title="ChatInputComponent" href="/docs/angular/chat/components/chat-input">
+    The input pill, and the exact variables it reads.
+  </Card>
+  <Card title="Layout modes" href="/docs/angular/chat/guides/layout-modes">
+    Inline, popup, and sidebar surfaces for the same conversation.
+  </Card>
+  <Card title="A2UI" href="/docs/angular/chat/a2ui/overview">
+    Generative UI surfaces rendered inside the conversation, and the `--a2ui-*` tokens that theme them.
+  </Card>
+</CardGroup>

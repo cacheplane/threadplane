@@ -1,10 +1,11 @@
+import { frameworkControl, selectFramework } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React selection keeps docs, code, runtime and history consistent', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/streaming?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/langgraph/guides/streaming');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', { name: 'React streaming preview', exact: true })
   ).toBeVisible();
@@ -18,7 +19,7 @@ test('public React selection keeps docs, code, runtime and history consistent', 
     .locator('[data-workspace-desktop-navigation]')
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
     'data-workspace-mode',
     'Code'
@@ -33,52 +34,40 @@ test('public React selection keeps docs, code, runtime and history consistent', 
     /(?:localhost:4600|langgraph\/streaming\/react)/
   );
   await expect(page.locator('[data-workspace-docs-only-context]')).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4300|langgraph\/streaming(?:\?|$))/
   );
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4600|langgraph\/streaming\/react)/
   );
   await page.reload();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4600|langgraph\/streaming\/react)/
   );
   await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Docs', exact: true }).click();
   await page.locator('[data-docs-control-plane-context]').getByRole('link', { name: 'Persistence', exact: true }).click();
-  await expect(page).toHaveURL(/persistence\?frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\/langgraph\/guides\/persistence/);
   await expect(page.getByRole('heading', { name: 'React persistence preview', exact: true })).toBeVisible();
 });
 
-test('unsupported React topics show availability without an Angular frame', async ({
-  page,
-}, testInfo) => {
-  await page.goto('/docs/langgraph/guides/testing?frontend=react&mode=run');
-  await expect(
-    page.getByText(/React preview is not available for this topic/)
-  ).toBeVisible();
-  await expect(page.locator('iframe')).toHaveCount(0);
+test('missing counterparts are explicit in mobile framework navigation', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth
-    )
-  ).toBe(true);
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(
-    page.getByText(/React preview is not available for this topic/)
-  ).toHaveCount(0);
-  await page.goto('/docs/langgraph/guides/streaming?frontend=react');
-  await expect(page.getByRole('heading', { name: 'React streaming preview', exact: true })).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath('react-preview-mobile.png') });
+  await page.goto('/docs/angular/langgraph/guides/testing');
+  const control = await frameworkControl(page);
+  await expect(control).toHaveValue('angular');
+  await expect(control.locator('option[value="react"]')).toBeDisabled();
+  await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
+  await expect(page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction' })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('react-unavailable-mobile.png') });
 });
 
 test('the installed React frame streams and releases work when the public selector changes', async ({
@@ -90,7 +79,7 @@ test('the installed React frame streams and releases work when the public select
     'Local fixture stream lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4600/__reset');
-  await page.goto('/docs/langgraph/guides/streaming?frontend=react&mode=run');
+  await page.goto('/docs/react/langgraph/guides/streaming?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('First');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
@@ -98,11 +87,9 @@ test('the installed React frame streams and releases work when the public select
     frame.getByRole('region', { name: 'Conversation' })
   ).toContainText('Live partial');
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -111,7 +98,7 @@ test('the installed React frame streams and releases work when the public select
         ).active
     )
     .toBe(false);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await frame.getByLabel('Message', { exact: true }).fill('Literal');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(

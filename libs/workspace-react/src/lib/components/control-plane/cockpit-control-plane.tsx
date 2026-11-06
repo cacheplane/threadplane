@@ -94,6 +94,7 @@ export interface CockpitControlPlaneProps {
   onNavigate?: () => void;
   onUtilityDismissed?: (utility: Exclude<CockpitUtility, null>) => void;
   renderContextPane?: WorkspaceContextPaneRenderer;
+  renderContextHeader?: WorkspaceContextPaneRenderer;
   onContextAction?: (action: string) => void;
   trackNavigation?: TrackNavigation;
   themeControl?: React.ReactNode;
@@ -138,6 +139,7 @@ export function CockpitControlPlane({
   onNavigate,
   onUtilityDismissed,
   renderContextPane,
+  renderContextHeader,
   onContextAction,
   trackNavigation,
   themeControl,
@@ -351,6 +353,11 @@ export function CockpitControlPlane({
       ) : null}
 
       <ControlPlanePane label={contextPaneLabel}>
+        {renderContextHeader?.({
+          mobile,
+          onNavigate,
+          onAction: onContextAction,
+        })}
         {paneContent}
       </ControlPlanePane>
     </div>

@@ -23,7 +23,7 @@ export const renderStateManagementAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Render State Management (Angular)',
-  docsPath: '/docs/render/guides/state-store',
+  docsPath: '/docs/angular/render/guides/state-store',
   promptAssetPaths: ['cockpit/render/state-management/angular/prompts/state-management.md'],
   codeAssetPaths: ['cockpit/render/state-management/angular/src/app/state-management.component.ts'],
 };

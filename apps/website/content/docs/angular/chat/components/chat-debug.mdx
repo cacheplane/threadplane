@@ -1,0 +1,138 @@
+---
+description: How the debug example mounts the chat-debug panel against a multi-node LangGraph agent, plus the panel inputs, outputs, sidenav integration and bundle gate.
+---
+
+# ChatDebugComponent
+
+For the experimental native React first slice, select **React** in the example UI or open [the React preview](/docs/angular/chat/components/chat-debug?frontend=react). It uses the separate private `@threadplane/react/debug` entry point and explicit stylesheet, with application-owned reads and lifetime management. Current state and selected historical state are separate; historical diff, Replay/Fork and full devtools parity remain planned. The API below documents Angular.
+
+`ChatDebugComponent` is a docked development panel for inspecting an agent. It reads the agent's checkpoint history and current state and renders them in a floating panel, and it ships from a debug-only secondary entry point so applications can keep the implementation out of production bundles unless they opt in. The running example mounts it beside the prebuilt `<chat>` composition, which is how it is meant to be used: the chat produces the runs, the panel inspects them.
+
+**Selector:** `chat-debug`
+
+**Import:**
+
+```typescript
+import { ChatDebugComponent } from '@threadplane/chat/debug';
+```
+
+## What the demo does
+
+The Run tab mounts `<chat>` and `<chat-debug>`, both bound to the same LangGraph agent, inside the shared example layout shell, `<example-chat-layout>`. The panel keeps itself out of the layout — its host renders `display: contents`, and the launcher and the panel are both fixed-position — so all it adds to the page is a small round status pill in the top-right corner above the chat. Click the pill and the docked Chat Devtools panel opens, with a Timeline tab listing the agent's checkpoints and a State tab pretty-printing the agent's current state under a Copy button. Pressing Escape or clicking outside the panel closes it.
+
+Before the first turn the Timeline tab shows its empty state: "No checkpoints yet. Send a message to populate the timeline." Send a message through the composer and it fills, one row per checkpoint the run wrote. The dock buttons in the header move the panel between the left, bottom and right edges, and the choice is persisted, as is the open state and the selected tab.
+
+## How it is built
+
+The example is three files: the graph that produces the checkpoints, the provider that points Angular at it, and the component that mounts the panel. Open the Code tab to read them in place.
+
+### A graph with several nodes per turn
+
+The backend is deliberately multi-step, because one node per turn produces one checkpoint and very little to look at. `generate` answers with the model, `process` measures that answer and records the result, and `summarize` asks the model for a one-sentence summary of the conversation so far. The system prompt read by `generate` frames the assistant as an aviation helper; the graph binds no tools, so every answer comes from the model alone.
+
+<ExampleCode file="graph.py" region="pipeline-nodes" title="graph.py — the three pipeline nodes" />
+
+Each node returns a partial state update, and each of those updates becomes a checkpoint on the thread.
+
+### State the inspector can show
+
+`agent.state()` is the LangGraph values bag with `messages` projected out into the transcript, so a graph that carries nothing but its messages leaves the State tab printing an empty object. This graph widens `MessagesState` with the metrics `process` computes, which is what gives the second tab something to inspect.
+
+<ExampleCode file="graph.py" region="debug-state" title="graph.py — the state the panel inspects" />
+
+### Wiring the nodes into a linear pipeline
+
+The nodes are registered on a `StateGraph` over `DebugState` and chained: `generate` to `process` to `summarize` to `generate_title`, then to the end. `generate_title` is a background node that summarizes the first user message into a thread title; it returns an empty update, so it changes the message list not at all while still adding a step to the run.
+
+<ExampleCode file="graph.py" region="graph-wiring" title="graph.py — the compiled pipeline" />
+
+<Callout type="info" title="No checkpointer is compiled in">
+The last line calls `compile()` with no checkpointer. The checkpoints the Timeline tab reads come from the LangGraph API server, which persists thread state for every graph it serves. `langgraph dev` refuses to load a graph that compiles its own saver, and a deployment ignores one — see [Persistence](/docs/angular/langgraph/guides/persistence).
+</Callout>
+
+### The agent provider
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the chat compositions require. The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application passes the two values directly instead:
+
+```typescript
+provideAgent({
+  apiUrl: 'https://your-deployment.langgraph.app',
+  assistantId: 'debug',
+}),
+```
+
+### Mounting the panel
+
+The component projects `<chat>` and `<chat-debug>` into `<example-chat-layout>` and binds one field on each. `injectAgent()` returns the agent registered above, and it is handed straight to both `[agent]` inputs. Nothing else is bound, so the panel runs on its defaults: docked right, closed on first load, with the floating launcher visible.
+
+<ExampleCode file="debug.component.ts" />
+
+The agent returned by `injectAgent()` exposes a `history()` signal as well as `state()`, which is what makes the Timeline tab appear; an agent without `history()` gets the State tab alone.
+
+## Inputs
+
+| Input | Type | Default | Description |
+| --- | --- | --- | --- |
+| `agent` | `DebugAgent \| DebugAgentWithHistory \| null` | `null` | Agent to inspect. The panel renders nothing while this is `null`; the floating launcher still appears, but opening it shows no content. An agent that also exposes `history()` enables the Timeline tab. |
+| `dock` | `'right' \| 'bottom' \| 'left'` | `'right'` | Initial dock position, used when no persisted position exists. When a sibling `<chat-sidebar>` is on the page and the user has not clicked a dock button this session, an auto-dock effect forces `bottom` on open. |
+| `defaultOpen` | `boolean` | `false` | Initial open state, used when no persisted state exists. |
+| `launcher` | `'floating' \| 'none'` | `'floating'` | Shows the built-in floating launcher, or hides it when another surface opens the panel. |
+| `storageKey` | `string` | `'chat-debug'` | Local storage key prefix for the persisted open, dock and tab state. |
+
+`DebugAgent` is a structural type: signals for `messages`, `status`, `isLoading`, `error`, `toolCalls` and `state`. `DebugAgentWithHistory` adds `history`. The agents returned by `injectAgent()` satisfy the second.
+
+## Outputs
+
+| Output | Type | Description |
+| --- | --- | --- |
+| `replayRequested` | `string` | Emits a checkpoint id when Replay is pressed on a selected checkpoint in the Timeline tab. |
+| `forkRequested` | `string` | Emits a checkpoint id when Fork is pressed on a selected checkpoint in the Timeline tab. |
+| `openChange` | `boolean` | Emits when the panel opens or closes. |
+| `dockChange` | `'right' \| 'bottom' \| 'left'` | Emits when the dock position changes. |
+
+`replayRequested` and `forkRequested` are integration hooks, and the example demonstrates the panel without them. The panel never mutates the agent by itself: selecting a checkpoint reveals a Replay button, a Fork button and a before-and-after diff of that step's state, and the host application decides whether an emitted id opens a replay view, starts a forked thread, or maps to a backend-specific time travel operation.
+
+```html
+<chat-debug
+  [agent]="agent"
+  (replayRequested)="replay($event)"
+  (forkRequested)="fork($event)"
+/>
+```
+
+## Sidenav integration
+
+`ChatSidenavComponent` can own the launcher for applications that already use the sidenav footer. Pass the same agent and leave `[debug]` at its default of `true`:
+
+```html
+<chat-sidenav [agent]="agent" [debug]="true" />
+```
+
+The footer button appears only when an agent is bound and the debug entry point is included in the build. It is labeled "Devtools" in expanded and drawer modes; in collapsed mode it is the status dot alone, and the dot pulses while `agent.status()` is `running`. Pressing it lazily imports `ChatDebugComponent`, mounts it with `launcher="none"` and the storage key `chat-sidenav-debug`, and opens it. The sidenav does not re-expose `replayRequested` or `forkRequested`, so mount `<chat-debug>` yourself when you need those hooks.
+
+## Production bundles
+
+The implementation lives under `@threadplane/chat/debug`; the main `@threadplane/chat` entry point does not export it. Importing it yourself, as the example does, always puts it in the bundle. The sidenav's lazy import is different: it is gated on an internal flag that is true whenever `ngDevMode` is true, and otherwise only when a `THREADPLANE_CHAT_DEBUG` compile-time constant is defined as `true`. The canonical Angular demo defines that constant per build configuration — `false` for `production`, and `true` for a separate `production-debug` configuration.
+
+Keep debug controls of your own outside the panel. The panel intentionally exposes a small fixed surface, so consumers do not expect application-specific controls to appear in it.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Time travel" href="/docs/angular/langgraph/guides/time-travel">
+    What the replay and fork checkpoint hooks plug into, and how to wire them against the agent's history.
+  </Card>
+  <Card title="Persistence" href="/docs/angular/langgraph/guides/persistence">
+    Where the checkpoints come from, and why this graph compiles without a checkpointer.
+  </Card>
+  <Card title="ChatSidenav" href="/docs/angular/chat/components/chat-sidenav">
+    The layout composition that can own the debug launcher.
+  </Card>
+  <Card title="ChatTrace" href="/docs/angular/chat/components/chat-trace">
+    An in-conversation view of graph execution, for surfaces your users see.
+  </Card>
+</CardGroup>

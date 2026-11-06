@@ -26,7 +26,7 @@ export const deepAgentsSubagentsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Deep Agents Subagents (Python)',
-  docsPath: '/docs/deep-agents/capabilities/subagents',
+  docsPath: '/docs/angular/deep-agents/capabilities/subagents',
   promptAssetPaths: ['cockpit/deep-agents/subagents/python/prompts/subagents.md'],
   codeAssetPaths: [
     'cockpit/deep-agents/subagents/angular/src/app/subagents.component.ts',

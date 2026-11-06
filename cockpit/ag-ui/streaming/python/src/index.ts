@@ -26,7 +26,7 @@ export const agUiStreamingPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'AG-UI Streaming (Python)',
-  docsPath: '/docs/ag-ui/reference/event-mapping',
+  docsPath: '/docs/angular/ag-ui/reference/event-mapping',
   promptAssetPaths: ['cockpit/ag-ui/streaming/python/prompts/streaming.md'],
   codeAssetPaths: [
     'cockpit/ag-ui/streaming/angular/src/app/streaming.component.ts',

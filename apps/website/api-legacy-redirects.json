@@ -1,22 +1,22 @@
 [
   {
     "source": "/docs/render/api/render-spec-component",
-    "destination": "/docs/render/guides/element-rendering",
+    "destination": "/docs/angular/render/guides/element-rendering",
     "permanent": true
   },
   {
     "source": "/api/markdown/render/api/render-spec-component",
-    "destination": "/api/markdown/render/guides/element-rendering",
+    "destination": "/api/markdown/angular/render/guides/element-rendering",
     "permanent": true
   },
   {
     "source": "/docs/render/api/provide-render",
-    "destination": "/docs/render/guides/computed-functions",
+    "destination": "/docs/angular/render/guides/computed-functions",
     "permanent": true
   },
   {
     "source": "/api/markdown/render/api/provide-render",
-    "destination": "/api/markdown/render/guides/computed-functions",
+    "destination": "/api/markdown/angular/render/guides/computed-functions",
     "permanent": true
   },
   {

@@ -1,0 +1,276 @@
+---
+description: How the generative UI example authors a dashboard spec as message content, streams the data as state updates, and renders it through a views registry.
+---
+
+# Generative UI
+
+An agent can return an interface rather than describe it. In this example, the model proposes a declarative json-render layout and the backend validates the operation before publishing the complete specification as assistant message content. The `<chat>` composition classifies that content and mounts it through the `views` registry you supply. The running example is an airline operations dashboard.
+
+Angular is the default Framework. Its render surface can update progressively as message content and state events arrive. Select **React** for the experimental native preview, which publishes confirmed layouts and data together only after verifying the exact saved checkpoint and tool evidence. Graph-state publication does not guarantee that browser painting happens atomically.
+
+The detection and rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and store work over the [AG-UI adapter](/docs/angular/ag-ui/guides/json-render), where the backend delivers data differently.
+
+## Turn data into an application view
+
+The trip planner can show an itinerary as a list of components instead of asking the traveler to read a long paragraph. The agent supplies a specification containing component names and data. Your application supplies the matching components and decides which names and values it accepts.
+
+The specification is data, not downloaded JavaScript. Keep local interaction, such as the selected itinerary day, in application state; send an agent request only when the user asks the agent to change the plan. The example below isolates the rendering path so you can see where the specification, registry, and state meet.
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition. Choose "Airline operations dashboard" or write your own request. The model authors a layout from six supported view types: `dashboard_grid`, `container`, `stat_card`, `line_chart`, `bar_chart`, and `data_grid`. A layout may use any valid subset of this catalog; it does not need six elements.
+
+Try "Filter to cancelled flights" after creating a dashboard. A data update executes one query and replaces its validated dashboard slice while keeping the existing layout and its render owner. A request to change the arrangement instead requires a new layout. Interpretive questions execute no dashboard tools and answer from confirmed data. Unsupported requests make no changes.
+
+The model still interprets freeform language, so the selected category and interpretive prose are probabilistic. The backend's independent validation bounds what can execute; it does not guarantee that the model understood every request correctly.
+
+## How it is built
+
+The Code tab includes four backend modules. `graph.py` owns the turn, messages, publication, and response. `dashboard_tools.py` supplies the airline queries. `operations.py` admits bounded operations against the accepted prior layout, and `dashboard_contract.py` validates layouts, data, and bindings. The prompt is a separate asset. The frontend config registers the agent, and its component supplies the view registry and store.
+
+### Choosing a bounded operation
+
+Every turn requires one named `plan_dashboard_operation` decision: `create`, `data_update`, `restructure`, `interpret`, or `unsupported`. The decision itself executes nothing. Independent admission checks the category, tool arguments, prior layout, and bindings before the real tool node runs a single batch.
+
+A data update requires an existing accepted layout and exactly one query. Create and restructure require one `render_spec` call plus only the queries needed for bindings missing from the applicable data, with at most five unique calls in total. Interpret and unsupported decisions have no calls. There is no agent retry loop or iteration cap.
+
+### The tool that authors the layout
+
+`render_spec` returns a flat element dictionary and root id as serialized JSON. The model proposes the layout; the graph controls whether it becomes a published dashboard.
+
+<ExampleCode file="graph.py" region="render-spec-tool" title="graph.py — the render_spec tool" />
+
+### Moving the accepted specification into the message
+
+The graph assesses the entire current tool batch before wrapping a layout or emitting data. Every result must belong to the admitted call and graph-owned action parent, report success, and satisfy the dashboard contract. A layout must match the admitted arguments and resolve its bindings against the candidate data. A failed or malformed result prevents partial dashboard publication, retaining the prior board and genuine raw tool results.
+
+Only an accepted, correlated render result can move into its assistant parent. `wrap_spec_into_ai` preserves message ids, transfers the complete JSON text into the empty parent, and changes that render tool result to `rendered`. Data-only updates leave the prior render pair and owner intact.
+
+<ExampleCode file="graph.py" region="wrap-spec-into-ai" title="graph.py — applying the correlated specification" />
+
+<Callout type="info" title="Message content and persisted ownership">
+The assistant message contains the JSON that the client classifies and renders. The graph also persists an owned layout, its exact render owner, dashboard data, and an internal operation receipt. That receipt records the submitted human message, admitted calls, observed results, validated slices, and outcome; it is completion evidence rather than a separate public receipt API.
+</Callout>
+
+### Sending accepted data as state updates
+
+`emit_state` rechecks the accepted messages and results before recording the dashboard, layout ownership, and operation receipt together in graph state. Only validated slices from an applied batch produce a custom `state_update` event. The newest validated result for a slice defines its value; admission forbids duplicate query names within an executable batch.
+
+<ExampleCode file="graph.py" region="emit-state" title="graph.py — emit_state" />
+
+The event contains JSON Pointer keys such as `/on_time/value` and `/recent_disruptions`, matching the specification's `$state` bindings. The Angular store applies these events as they arrive. React additionally verifies the saved checkpoint and exact tool evidence before publishing a confirmed board.
+
+### Outcomes and graph wiring
+
+The flow is prepare, required decision, admission, bounded execution when needed, whole-batch assessment, wrapping, state publication, response, and best-effort title generation. The graph owns the action, call, result, and answer identities. Its input schema accepts messages; the LangGraph API server supplies persistence, so the graph calls `compile()` without an explicit checkpointer.
+
+<ExampleCode file="graph.py" region="graph-wiring" title="graph.py — graph wiring" />
+
+Action responses are derived from the executed receipt: an applied operation reports the actual layout or stored data, while rejected decisions, unsupported requests, and unfulfilled operations report no dashboard changes. Read-only interpretation uses model prose followed by an explicit no-change footer. Title generation is best effort and does not stream into the action response.
+
+A malformed decision with no executable calls can be saved as an honest no-op and the conversation can continue. A real failed or malformed tool batch does not become a confirmed native turn merely because the backend retained its prior state or recorded an outcome. The React preview fails closed, keeps its prior confirmed board, and requires **New** before further submissions when saved evidence cannot be confirmed.
+
+### Registering the agent
+
+`provideAgent()` from `@threadplane/langgraph` needs the API URL and the assistant id. The example passes a factory because it resolves both at runtime from the host that serves the demo; an application of your own passes the values directly.
+
+<ExampleCode file="app.config.ts" title="app.config.ts" />
+
+
+### The view registry and the shared store
+
+The component supplies the two things the specification needs. `views()` maps each `type` a specification can name to an Angular component, and `signalStateStore({})` is the store the `$state` bindings resolve against.
+
+<ExampleCode file="generative-ui.component.ts" title="generative-ui.component.ts" />
+
+Both travel as inputs on `<chat>`: `[views]` for the registry and `[store]` for the store.
+
+<Callout type="warning" title="Pass an explicit store or the data never lands">
+`<chat>` forwards only an explicit `[store]` to the generative-UI surface. Without one, the surface falls back to a private store seeded from the specification itself, so the `state_update` payloads never reach the bound props and every card stays a skeleton.
+</Callout>
+
+## How a specification reaches the screen
+
+The pieces meet in the browser in a fixed order.
+
+The content classifier in `@threadplane/chat` inspects each assistant message as it streams and decides from the start of the content: a `{` is a json-render specification, the `---a2ui_JSON---` sentinel is A2UI, and anything else is markdown. This backend supplies complete validated JSON through the correlated wrapper, rather than streaming raw model-authored JSON into the render surface.
+
+For general streaming specifications, the content goes through `@cacheplane/partial-json`, and a `ParseTreeStore` materializes a best-effort `Spec` from the parse tree on every chunk, so a signal holds a usable specification long before the JSON closes. The composition mounts that specification as `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/render` using the registry you passed. The surface also receives a `loading` input, true while the agent is still streaming, which a view component can read to draw a placeholder.
+
+The data takes the other path. The LangGraph adapter surfaces a custom event named `state_update` on the agent's event stream, and the composition writes its payload straight into the render store, keys included. Because `emit_state` already emits JSON Pointer keys, a binding of `{ "$state": "/on_time/value" }` resolves the moment the event lands.
+
+<Callout type="info" title="Pointers, not top-level keys">
+This is the one place the LangGraph path differs from AG-UI. An AG-UI agent puts its data in graph state, and the composition maps each top-level key `k` of any adapter's `state()` to the pointer `/k`. Here the graph names the pointers itself in its custom `state_update` event. A nested value such as `/on_time/value` updates the Angular store directly, while the graph also persists that data in its owned `dashboard` field for saved-state confirmation.
+</Callout>
+
+## Writing a view component
+
+Each registered component receives the element's resolved props as Angular inputs, keyed by prop name. The example's `stat_card` shows the shape, including the skeleton it draws before its value exists:
+
+```typescript
+@Component({
+  selector: 'app-stat-card',
+  standalone: true,
+  template: `
+    <div class="stat-card">
+      <div class="stat-card__label">{{ label() }}</div>
+      @if (isSkeleton()) {
+        <div class="skeleton skeleton-value"></div>
+      } @else {
+        <div class="stat-card__value">{{ formattedValue() }}</div>
+      }
+    </div>
+  `,
+})
+export class StatCardComponent {
+  readonly label = input<string>('');
+  readonly value = input<string | number | null>(null);
+  readonly delta = input<string | null>(null);
+
+  readonly isSkeleton = computed(() => this.value() == null);
+
+  readonly formattedValue = computed(() => {
+    const v = this.value();
+    if (v == null) return '';
+    if (typeof v === 'number') return v.toLocaleString();
+    return String(v);
+  });
+}
+```
+
+Give every input a default, including when using the renderer with other backends that stream partial specifications. A prop bound with `$state` is `undefined` until its event arrives, and a prop that is still streaming can be a partial string, so a component that requires its inputs will fail on the first frame.
+
+The specification that drives it is flat. One `root` id and one `elements` map, each element naming a `type`, optional `props`, and optional `children` as an array of ids:
+
+```json
+{
+  "root": "stats_row",
+  "elements": {
+    "stats_row": {
+      "type": "container",
+      "props": { "direction": "row" },
+      "children": ["on_time_card"]
+    },
+    "on_time_card": {
+      "type": "stat_card",
+      "props": {
+        "label": "On-time %",
+        "value": { "$state": "/on_time/value" },
+        "delta": { "$state": "/on_time/delta" }
+      }
+    }
+  }
+}
+```
+
+The general render format, including `$bindState`, `$computed` and visibility conditions, is covered in [Specs and elements](/docs/angular/render/guides/specs).
+
+## Event handlers
+
+An element can also fire actions. A spec's `on` map binds an event name to an action binding, and the named action is looked up in the `[handlers]` map you pass to `<chat>`:
+
+```typescript
+protected readonly handlers = {
+  submitForm: (params: Record<string, unknown>) => {
+    console.log('form submitted', params);
+  },
+};
+```
+
+An element wires it as `"on": { "click": { "action": "submitForm", "params": {} } }`. Handlers may return a value or a `Promise`, which lets an action await a network call before the surface advances. The general render library supports actions and computed expressions. This bounded dashboard demo registers no handlers and rejects action bindings and computed expressions in model-authored layouts. See [Events and actions](/docs/angular/render/guides/events) for the dispatch rules.
+
+## A2UI protocol
+
+For agents that emit A2UI payloads, the same classifier detects content prefixed with `---a2ui_JSON---` and renders it as A2UI surfaces instead. Pass `a2uiBasicCatalog()` from `@threadplane/chat` as the registry when you want those surfaces drawn with the built-in components.
+
+
+## Classifying streamed content
+
+Use one classifier per message and feed full snapshots as they arrive. See [createContentClassifier](/docs/api/chat/createContentClassifier) for the generated signal contract.
+
+```typescript
+import { createContentClassifier } from '@threadplane/chat';
+
+const classifier = createContentClassifier();
+
+// Feed full content snapshots — delta is computed internally
+classifier.update('Hello world');
+classifier.type();      // 'markdown'
+classifier.markdown();  // 'Hello world'
+
+// For JSON content
+const jsonClassifier = createContentClassifier();
+jsonClassifier.update('{"root":"r1","elements":{}}');
+jsonClassifier.type();  // 'json-render'
+jsonClassifier.spec();  // { root: 'r1', elements: {} }
+
+// Always dispose when done
+classifier.dispose();
+```
+
+### A2UI content
+
+When the snapshot starts with the `---a2ui_JSON---` prefix, the classifier switches to A2UI mode and parses the remaining lines as JSONL. Read `type()` (=> `'a2ui'`) and `a2uiSurfaces()` for the parsed surfaces:
+
+```typescript
+const a2uiClassifier = createContentClassifier();
+
+a2uiClassifier.update(
+  '---a2ui_JSON---\n' +
+  '{"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"}}\n' +
+  '{"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Text","text":"Hi"}]}}\n',
+);
+
+a2uiClassifier.type();          // 'a2ui'
+a2uiClassifier.a2uiSurfaces();  // Map<string, A2uiSurface> keyed by surface ID
+
+a2uiClassifier.dispose();
+```
+
+<Callout type="tip" title="Delta processing">
+Pass the **full** message content each time, not just new characters. The classifier tracks `processedLength` internally and only processes the delta.
+</Callout>
+
+
+## Materializing a partial spec
+
+For a raw JSON stream, [createParseTreeStore](/docs/api/chat/createParseTreeStore) bridges the partial parser to a spec signal with per-element accumulation state.
+
+```typescript
+import { createPartialJsonParser } from '@cacheplane/partial-json';
+import { createParseTreeStore } from '@threadplane/chat';
+
+const parser = createPartialJsonParser();
+const store = createParseTreeStore(parser);
+
+store.push('{"root":"r1","elements":{"r1":{"type":"Text"');
+store.spec();  // partial Spec — r1 has type "Text" but no props yet
+
+store.push(',"props":{"label":"Hello"}}}}');
+store.spec();  // complete Spec
+
+// Element tracking
+store.elementStates().get('r1');
+// { hasType: true, hasProps: true, hasChildren: false, streaming: false }
+```
+
+<Callout type="info" title="Structural sharing">
+The `spec` signal uses structural sharing. When a new token updates one element, sibling elements keep the same object reference. Angular's `computed()` with `Object.is` equality skips re-evaluation for unchanged elements.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Streaming" href="/docs/angular/chat/guides/streaming">
+    Content classification, partial JSON parsing, and the rest of the streaming pipeline.
+  </Card>
+  <Card title="Specs and elements" href="/docs/angular/render/guides/specs">
+    The full reference for the spec format, prop expressions, and element types.
+  </Card>
+  <Card title="State store" href="/docs/angular/render/guides/state-store">
+    How JSON Pointer paths resolve, and how components write back to the store.
+  </Card>
+  <Card title="A2UI protocol" href="/docs/angular/chat/a2ui/overview">
+    Render A2UI surfaces with the built-in component catalog.
+  </Card>
+</CardGroup>

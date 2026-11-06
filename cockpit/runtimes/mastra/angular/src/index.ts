@@ -26,7 +26,7 @@ export const runtimesMastraAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Runtimes — Mastra (Angular)',
-  docsPath: '/docs/runtimes/mastra/overview',
+  docsPath: '/docs/angular/runtimes/mastra/overview',
   promptAssetPaths: [
     'cockpit/runtimes/mastra/angular/prompts/mastra-backend.md',
     'cockpit/runtimes/mastra/angular/prompts/mastra.md',
