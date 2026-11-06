@@ -204,14 +204,20 @@ export class ChatWithFeedbackComponent {
 
 ## Message Templates
 
-`ChatComponent` registers a `chatMessageTemplate` for each of the four message types:
+`ChatComponent` renders built-in rows in a private, list-owned OnPush view. Its default list does not register category `MessageTemplateDirective` content children. The visible handling of each message role is:
 
-| Type | What it renders |
-|------|-----------------|
-| `human` | Right-aligned filled bubble carrying the message text. |
-| `ai` | Left-aligned, no bubble. Reasoning pill, tool-call cards, tool views, streaming markdown, generative-UI and A2UI surfaces, and the hover feedback controls. |
+| Message role | What it renders |
+|--------------|-----------------|
+| `user` | Right-aligned filled bubble carrying the message text. |
+| `assistant` | Left-aligned, no bubble. Reasoning pill, tool-call cards, tool views, streaming markdown, generative-UI and A2UI surfaces, and the hover feedback controls. |
 | `tool` | Nothing. Tool results surface through the assistant message's tool-call cards and through [`<chat-trace>`](/docs/chat/components/chat-trace). |
 | `system` | Plain left-aligned text with no bubble and no extra chrome. |
+
+For category templates you own, compose [`ChatMessageListComponent`](/docs/chat/components/chat-message-list) explicitly with `MessageTemplateDirective`. That primitive keeps its existing registration/query API and the `human`, `ai`, `tool`, and `system` category names. Chat's separate `chatActivityTemplate` and `chatToolCallTemplate` extension points remain available.
+
+**Compatibility:** code inspecting the default composition's resolved list instance now observes `messageTemplates()` as empty, rather than its four previous built-in registrations. `findTemplate('human')`, `findTemplate('ai')`, `findTemplate('tool')`, and `findTemplate('system')` return `undefined` there. This observable change does not remove explicit registrations from a directly owned generic list.
+
+The default composition also omits internal `<chat-tool-views>` hosts when there is no effective view registry. Supplying `[views]` or client-declared component tools creates those hosts; removing the registry removes them again. A defined empty registry still keeps the hosts. Code inspecting internal component or DOM queries can observe this change. Directly composed `ChatToolViewsComponent` behavior is unchanged.
 
 ## Generative UI
 
@@ -307,12 +313,12 @@ chat {
 
 Under the hood, `ChatComponent` composes these primitives:
 
-- `ChatMessageListComponent` with `MessageTemplateDirective` for message rendering
+- A private list-owned OnPush renderer that preserves the `chat-message-list` host and list token; `ChatMessageListComponent` and `MessageTemplateDirective` remain available for explicitly composed lists
 - `ChatInputComponent` for text input (with `submitOnEnter` and a placeholder)
 - `ChatTypingIndicatorComponent` for the animated typing dots
 - `ChatErrorComponent` for error display
 - `ChatThreadListComponent` for the sidebar
-- `ChatStreamingMdComponent`, `ChatReasoningComponent`, `ChatToolCallsComponent`, and `ChatToolViewsComponent` inside the assistant template
+- `ChatStreamingMdComponent`, `ChatReasoningComponent`, `ChatToolCallsComponent`, and `ChatToolViewsComponent` inside each built-in assistant row
 
 Interrupts are not part of this list. `<chat>` renders no interrupt UI of its own. Project a [`chatInterruptTemplate`](/docs/chat/components/chat-interrupt-template) to place it in the transcript, or compose [`<chat-interrupt-panel>`](/docs/chat/components/chat-interrupt-panel) alongside `<chat>`.
 

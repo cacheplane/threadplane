@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatComponent:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.",
+  "summary": "Composes an agent conversation with message input, streaming content, tool\nviews, and customizable activity templates. Its internal default message\nlist renders built-in rows directly, without registered category templates;\ngeneric lists used directly retain their message-template registration API.",
   "declarations": [
     {
       "name": "ChatComponent",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.",
+        "summary": "Composes an agent conversation with message input, streaming content, tool\nviews, and customizable activity templates. Its internal default message\nlist renders built-in rows directly, without registered category templates;\ngeneric lists used directly retain their message-template registration API.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 871
+            "line": 780
           },
           "overloadIndex": 1,
           "parameters": []
@@ -97,7 +97,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 460
+            "line": 340
           },
           "isStatic": false,
           "isReadonly": true,
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 582
+            "line": 462
           },
           "isStatic": false,
           "isReadonly": true,
@@ -209,7 +209,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 447
+            "line": 327
           },
           "isStatic": false,
           "isReadonly": true,
@@ -279,7 +279,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1433
+            "line": 1342
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -338,7 +338,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1469
+            "line": 1378
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -380,7 +380,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1310
+            "line": 1219
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -441,7 +441,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 505
+            "line": 385
           },
           "isStatic": false,
           "isReadonly": true,
@@ -497,7 +497,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 495
+            "line": 375
           },
           "isStatic": false,
           "isReadonly": true,
@@ -553,7 +553,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 494
+            "line": 374
           },
           "isStatic": false,
           "isReadonly": true,
@@ -627,7 +627,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 456
+            "line": 336
           },
           "isStatic": false,
           "isReadonly": true,
@@ -673,7 +673,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 569
+            "line": 449
           },
           "isStatic": false,
           "isReadonly": true,
@@ -719,7 +719,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 489
+            "line": 369
           },
           "isStatic": false,
           "isReadonly": true,
@@ -792,7 +792,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 458
+            "line": 338
           },
           "isStatic": false,
           "isReadonly": true,
@@ -848,7 +848,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 607
+            "line": 487
           },
           "isStatic": false,
           "isReadonly": true,
@@ -891,7 +891,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 574
+            "line": 454
           },
           "isStatic": false,
           "isReadonly": true,
@@ -937,7 +937,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 511
+            "line": 391
           },
           "isStatic": false,
           "isReadonly": true,
@@ -993,7 +993,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 470
+            "line": 350
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1039,7 +1039,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 480
+            "line": 360
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1086,7 +1086,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1496
+            "line": 1405
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1163,7 +1163,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1501
+            "line": 1410
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1246,7 +1246,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1518
+            "line": 1427
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1321,7 +1321,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1513
+            "line": 1422
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1388,7 +1388,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1506
+            "line": 1415
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1457,7 +1457,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1478
+            "line": 1387
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1530,7 +1530,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1176
+            "line": 1085
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1590,7 +1590,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 509
+            "line": 389
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1636,7 +1636,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 507
+            "line": 387
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1692,7 +1692,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 504
+            "line": 384
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1748,7 +1748,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 557
+            "line": 437
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1803,7 +1803,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 513
+            "line": 393
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1859,7 +1859,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 600
+            "line": 480
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1896,7 +1896,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1214
+            "line": 1123
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1947,7 +1947,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 479
+            "line": 359
           },
           "isStatic": false,
           "isReadonly": true,
@@ -1993,7 +1993,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 478
+            "line": 358
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2039,7 +2039,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 497
+            "line": 377
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2094,7 +2094,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 457
+            "line": 337
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2139,7 +2139,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1296
+            "line": 1205
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -2209,7 +2209,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 459
+            "line": 339
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2255,7 +2255,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 503
+            "line": 383
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2311,7 +2311,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 590
+            "line": 470
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2394,7 +2394,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 448
+            "line": 328
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2440,7 +2440,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 566
+            "line": 446
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2486,7 +2486,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 461
+            "line": 341
           },
           "isStatic": false,
           "isReadonly": true,
@@ -2495,7 +2495,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-        "line": 120
+        "line": 117
       },
       "angular": {
         "selector": "chat",
@@ -2640,6 +2640,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-    "line": 120
+    "line": 117
   }
 }
