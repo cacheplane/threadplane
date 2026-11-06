@@ -1,0 +1,78 @@
+{
+  "name": "formatPublished",
+  "entrypointId": "content/messages",
+  "kind": "Function",
+  "href": "/docs/api/content/messages/formatPublished",
+  "canonicalReference": "@threadplane/content!formatPublished:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Format a publication month/year in the host locale and timezone; null when missing or invalid.",
+  "declarations": [
+    {
+      "name": "formatPublished",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/content!formatPublished:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function formatPublished(value?: "
+        },
+        {
+          "kind": "Content",
+          "text": "string | number | "
+        },
+        {
+          "kind": "Reference",
+          "text": "Date",
+          "canonicalReference": "!Date:interface"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "string | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Format a publication month/year in the host locale and timezone; null when missing or invalid.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/messages/citation-display.ts",
+        "line": 84
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "value",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          },
+          "isOptional": true
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 4,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/messages/citation-display.ts",
+    "line": 84
+  }
+}

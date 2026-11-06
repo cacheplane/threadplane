@@ -58,6 +58,7 @@ const citationMetadata = (
     url,
     snippet: citationSnippet,
     sourceType: 'Authored',
+    publishedAt: '2024-04-15T12:00:00.000Z',
     iconUrl: 'https://images.invalid/icon',
   },
   {
@@ -312,8 +313,15 @@ async function scenario(browser, retained, name, expectations, action) {
         });
     });
     await page.route('**/*', (route) => {
-      if (new URL(route.request().url()).origin === server.url)
-        return route.continue();
+      const requested = new URL(route.request().url());
+      if (
+        ['sources.invalid', 'images.invalid'].includes(requested.hostname) ||
+        ['/sidecar', '/later', '/never-fallback'].includes(requested.pathname)
+      ) {
+        errors.push(`Unexpected source request: ${route.request().url()}`);
+        return route.abort();
+      }
+      if (requested.origin === server.url) return route.continue();
       errors.push(`Unexpected external request: ${route.request().url()}`);
       return route.abort();
     });
@@ -787,12 +795,36 @@ export async function runProductionProofs(browser, retained) {
             await disclosure.click();
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
           await expect(sources.getByRole('listitem')).toHaveCount(5);
+          const publishedLabel = await page.evaluate(() =>
+            new Date('2024-04-15T12:00:00.000Z').toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+            })
+          );
           await expect(sources.getByRole('listitem')).toHaveText([
-            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>Source type: Authored',
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', `[7] <b>Supplied source</b>Source type: AuthoredHost: sources.invalidPublished: ${publishedLabel}`,
           ]);
           await expect(sources.locator('.native-source-card')).toHaveCount(5);
           const providerCard = sources.locator('.native-source-card[data-source-id="__proto__"]');
           await expect(providerCard.locator('.native-source-card__type')).toHaveText('Source type: Authored');
+          await expect(
+            providerCard.locator('.native-source-card__host')
+          ).toHaveText('Host: sources.invalid');
+          await expect(
+            providerCard.locator('.native-source-card__published')
+          ).toHaveText(`Published: ${publishedLabel}`);
+          for (const id of ['blocked', 'absent', 'sidecar']) {
+            await expect(
+              sources.locator(
+                `[data-source-id="${id}"] .native-source-card__host`
+              )
+            ).toHaveCount(0);
+            await expect(
+              sources.locator(
+                `[data-source-id="${id}"] .native-source-card__published`
+              )
+            ).toHaveCount(0);
+          }
           await expect(sources.locator('.native-source-card[data-source-id="sidecar"]')).toContainText('[5] Markdown sidecar');
           await expect(sources.locator('.native-source-card[data-source-id="sidecar"] .native-source-card__type')).toHaveCount(0);
           await sources.getByRole('button', { name: 'Preview source 5: Markdown sidecar', exact: true }).click();
@@ -1256,6 +1288,20 @@ export async function runProductionProofs(browser, retained) {
           await expect(correctedPreview).toHaveText('[7] Corrected source');
           await expect(correctedPreview.locator('..')).toHaveClass('native-source-card');
           await expect(correctedPreview.locator('..').locator('.native-source-card__type')).toHaveText('Source type: Authored');
+          await expect(
+            correctedPreview.locator('..').locator('.native-source-card__host')
+          ).toHaveText('Host: sources.invalid');
+          const correctedPublishedLabel = await page.evaluate(() =>
+            new Date('2024-04-15T12:00:00.000Z').toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+            })
+          );
+          await expect(
+            correctedPreview
+              .locator('..')
+              .locator('.native-source-card__published')
+          ).toHaveText(`Published: ${correctedPublishedLabel}`);
           await correctedPreview.click();
           const correctedDialog = page.getByRole('dialog', {
             name: 'Source 7',

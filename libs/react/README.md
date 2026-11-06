@@ -265,8 +265,11 @@ The library keeps each list item keyed by the exact citation ID. Compatible
 returned components retain state through reordering, same-ID metadata updates,
 and replacement callbacks. Collapsing the list or removing a source unmounts its
 card. The application owns custom markup, links, and actions; compose
-`CitationPreview` to reuse its safe links and modal behavior. Source grouping and
-full citation-display parity remain open.
+`CitationPreview` to reuse its safe links and modal behavior. Shared display
+helpers from `@threadplane/content/messages`, such as `deriveDomain` and
+`formatPublished`, let custom cards opt into host and date presentation. Hostname
+extraction does not approve a link for navigation, and date formatting uses the
+host locale and timezone. Default source-card visuals remain separate parity work.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`

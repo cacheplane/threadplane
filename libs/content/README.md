@@ -184,6 +184,40 @@ disposing the projection releases all owners once and makes later projections
 inert. Previously returned rows remain readable. Keep this owner outside views
 and dispose it at the application transcript lifetime boundary.
 
+The same `/messages` entry exports pure citation display helpers:
+`deriveDomain`, `deriveSourceType`, `deriveMonogram`, `monogramHue`,
+`monogramColor`, `formatPublished`, `citationTypeMeta`, `citationTypeLabel`, and
+`citationSourceVisual`. They borrow readonly core `Citation` metadata and return
+derived display values without fetching, subscribing, or changing the input.
+The six display types describe readonly type metadata and image, type-icon, or
+monogram descriptors; returned records are not promised to be frozen snapshots.
+
+```ts
+import { deriveDomain, formatPublished } from '@threadplane/content/messages';
+
+const host = deriveDomain(citation.url);
+const published = formatPublished(citation.publishedAt);
+// The application chooses whether to display these derived values.
+```
+
+`deriveDomain` strips a leading `www.` from an absolute URL's hostname. Missing,
+malformed, or relative URLs return `null`; valid hostless URLs return `''`.
+This is display extraction, not navigation approval or publisher verification.
+`deriveSourceType` trims a nonempty explicit type, otherwise infers `web` from
+any nonempty URL and `unknown` when absent. Known type matching is case
+insensitive; custom types retain their spelling and get readable labels.
+Provider icon URLs take precedence in visual descriptors, but are never fetched
+or approved for rendering by these helpers. Consumers own URL and image policy.
+
+Monogram colors use a deterministic hue from the domain or title.
+`formatPublished` accepts strings, numeric milliseconds, and standalone `Date`
+values; missing or invalid dates return `null`. Formatting uses the host locale
+and timezone, so callers must account for differences between server and client
+environments. Core citation snapshots continue to accept primitive publication
+values only. Default React views keep supplied text literal; custom cards can
+opt into these helpers. The published Angular adapter retains its existing
+implementation until its package migration.
+
 ```ts
 import { createMarkdown } from '@threadplane/content/markdown';
 

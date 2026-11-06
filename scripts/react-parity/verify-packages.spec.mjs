@@ -5,6 +5,152 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
+test('plain declaration proof checks exact public citation display contracts before React chat', (t) => {
+  const consumer = mkdtempSync(
+    join(tmpdir(), 'threadplane-citation-display-types-')
+  );
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const core = join(consumer, 'node_modules/@threadplane/core');
+  const content = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(core, { recursive: true });
+  mkdirSync(content, { recursive: true });
+  writeFileSync(
+    join(core, 'package.json'),
+    JSON.stringify({
+      name: '@threadplane/core',
+      type: 'module',
+      exports: { '.': { types: './index.d.ts' } },
+    })
+  );
+  writeFileSync(
+    join(core, 'index.d.ts'),
+    'export interface Citation { readonly id: string; readonly index: number; readonly url?: string; }'
+  );
+  writeFileSync(
+    join(content, 'package.json'),
+    JSON.stringify({
+      name: '@threadplane/content',
+      type: 'module',
+      exports: { './messages': { types: './index.d.ts' } },
+    })
+  );
+  const declaration = `import type { Citation } from '@threadplane/core';
+export type CitationTypeIcon = 'web' | 'file' | 'app' | 'memory' | 'generic';
+export interface CitationTypeMeta { readonly type: string; readonly label: string | null; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly isKnown: boolean; }
+export interface CitationImageVisual { readonly kind: 'image'; readonly iconUrl: string; }
+export interface CitationTypeIconVisual { readonly kind: 'type-icon'; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly label: string | null; }
+export interface CitationMonogramVisual { readonly kind: 'monogram'; readonly monogram: string; readonly color: string; }
+export type CitationSourceVisual = CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual;
+export declare function deriveDomain(url?: string): string | null;
+export declare function deriveSourceType(citation: Citation): string;
+export declare function deriveMonogram(citation: Citation): string;
+export declare function monogramHue(seed: string): number;
+export declare function formatPublished(value?: string | number | Date): string | null;
+export declare function monogramColor(citation: Citation): string;
+export declare function citationTypeMeta(citation: Citation): CitationTypeMeta;
+export declare function citationTypeLabel(citation: Citation): string | null;
+export declare function citationSourceVisual(citation: Citation): CitationSourceVisual;`;
+  const source = join(consumer, 'index.ts');
+  const probe = packageVerifier.plainExportTypes([
+    '@threadplane/content/messages',
+  ]);
+  assert.match(probe, /CitationSourceVisualContract/);
+  assert.doesNotMatch(probe, /from 'react'/);
+  writeFileSync(source, probe);
+  const compile = (text) => {
+    writeFileSync(join(content, 'index.d.ts'), text);
+    const program = ts.createProgram([source], {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.NodeNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      strict: true,
+      skipLibCheck: false,
+      noEmit: true,
+      types: [],
+    });
+    return ts
+      .getPreEmitDiagnostics(program)
+      .map((error) => ts.flattenDiagnosticMessageText(error.messageText, '\n'))
+      .join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const [before, after] of [
+    ['readonly type: string;', 'type: string;'],
+    ['readonly iconUrl: string;', 'iconUrl: string;'],
+    ["readonly kind: 'image';", "readonly kind: 'type-icon';"],
+    ['readonly color: string;', 'color: string;'],
+    ['readonly tone: CitationTypeIcon;', 'tone: CitationTypeIcon;'],
+    [
+      'readonly monogram: string;',
+      'readonly monogram: string; readonly extra: string;',
+    ],
+    [
+      'CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual;',
+      'any;',
+    ],
+    ["'web' | 'file' | 'app' | 'memory' | 'generic'", 'any'],
+    ['url?: string', 'url: string'],
+    ['url?: string', 'url?: any'],
+    ['seed: string', 'seed: number'],
+    ['value?: string | number | Date', 'value?: string | number'],
+    [
+      'deriveDomain(url?: string): string | null',
+      'deriveDomain(url?: string): string',
+    ],
+    [
+      'citationTypeLabel(citation: Citation): string | null',
+      'citationTypeLabel(citation: Citation): any',
+    ],
+    [
+      'citationSourceVisual(citation: Citation): CitationSourceVisual',
+      'citationSourceVisual(citation: any): CitationSourceVisual',
+    ],
+  ]) {
+    assert.ok(declaration.includes(before), before);
+    assert.match(
+      compile(declaration.replace(before, after)),
+      /false.*true/,
+      `${before} → ${after}`
+    );
+  }
+});
+
+test('content messages requires exactly its factory and nine pure display functions', () => {
+  const names = [
+    'createMessageContent',
+    'deriveDomain',
+    'deriveSourceType',
+    'deriveMonogram',
+    'monogramHue',
+    'formatPublished',
+    'monogramColor',
+    'citationTypeMeta',
+    'citationTypeLabel',
+    'citationSourceVisual',
+  ];
+  const entry = Object.fromEntries(names.map((name) => [name, () => {}]));
+  assert.doesNotThrow(() =>
+    packageVerifier.assertSupportedExports('content/messages', entry)
+  );
+  for (const name of names) {
+    const missing = { ...entry };
+    delete missing[name];
+    assert.throws(
+      () => packageVerifier.assertSupportedExports('content/messages', missing),
+      /missing supported contract/
+    );
+  }
+  assert.throws(
+    () =>
+      packageVerifier.assertSupportedExports('content/messages', {
+        ...entry,
+        surprise: () => {},
+      }),
+    /unexpected exports/
+  );
+});
+
 test('plain declaration proof checks exact opt-in Markdown preview contract', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-inline-preview-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
