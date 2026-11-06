@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/angular/markdown/src/markdown.component.ts",
-            "line": 308
+            "line": 320
           },
           "isStatic": false,
           "isReadonly": true,

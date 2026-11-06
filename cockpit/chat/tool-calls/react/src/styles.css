@@ -19,17 +19,17 @@ body {
   flex-direction: column;
   gap: 1rem;
 }
-.tool-calls-demo header {
+.tool-calls-demo > header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-.tool-calls-demo h1 {
+.tool-calls-demo > h1 {
   font-size: 1.5rem;
   margin: 0;
 }
-.tool-calls-demo p {
+.tool-calls-demo > p {
   margin: 0;
 }
 .eyebrow {
@@ -47,7 +47,7 @@ body {
 .tool-calls-demo .tp-chat-list {
   flex: 1;
   min-height: 12rem;
-  max-height: 60dvh;
+
 }
 [role='alert'] {
   color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
@@ -60,7 +60,7 @@ body {
   .tool-calls-demo {
     padding: 1rem;
   }
-  .tool-calls-demo header {
+  .tool-calls-demo > header {
     align-items: flex-start;
   }
 }

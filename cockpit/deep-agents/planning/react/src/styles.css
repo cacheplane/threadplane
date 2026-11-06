@@ -108,12 +108,12 @@ h1 {
   line-height: 1.6;
 }
 .tp-chat-message,
-.tp-chat-message pre,
+.tp-chat-message pre:where(:not(.tp-markdown *)),
 .tool-inspection {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-pre {
+pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-width: 100%;

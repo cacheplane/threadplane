@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleLayout } from '../../../../shared/react-example';
 import { useEffect } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -86,7 +88,7 @@ export function DebugDemo({
         ]
       : undefined;
   return (
-    <main className="tp-chat debug-demo">
+    <ExampleLayout className="tp-chat debug-demo">
       <header className="debug-demo__header">
         <div>
           <p>React · Experimental</p>
@@ -156,7 +158,7 @@ export function DebugDemo({
           return true;
         }}
       />
-      <p role="status">{status}</p>
+      <p className="debug-demo__status" role="status">{status}</p>
       <ChatDebug
         contextKey={snapshot.contextKey}
         current={snapshot.current}
@@ -174,6 +176,6 @@ export function DebugDemo({
           return undefined;
         }}
       />
-    </main>
+    </ExampleLayout>
   );
 }

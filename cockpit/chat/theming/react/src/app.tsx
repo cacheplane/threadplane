@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -83,7 +85,7 @@ export function ThemingDemo({
       ? 'Start a new conversation to continue.'
       : 'Ready.';
   return (
-    <main
+    <ExampleLayout
       className={`tp-chat theming-demo theming-demo--${theme}`}
       data-theme={theme}
     >
@@ -176,6 +178,6 @@ export function ThemingDemo({
           ))}
         </ul>
       </details>
-    </main>
+    </ExampleLayout>
   );
 }

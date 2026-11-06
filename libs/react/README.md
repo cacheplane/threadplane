@@ -318,6 +318,8 @@ composer, scrollable tables and native task-checkbox semantics. Override
 `--tp-chat-font-family`, `--tp-chat-font-size-base`, or the
 `--tp-chat-radius-*` properties on the composed part to customize it. An explicit
 `color-scheme` or `--tp-chat-color-scheme` selects the host's light/dark treatment.
+User bubbles use the neutral inverted palette; override `--tp-chat-user-bg` and
+`--tp-chat-user-text` on the composed part to supply a different color pair.
 Custom message renderers retain their own layout and need their own integration.
 
 The composer and authored Markdown use automatic text direction; fenced code

@@ -92,6 +92,7 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
       display: flex;
       flex: 1 1 auto;
       min-width: 0;
+      min-height: 0;
       flex-direction: column;
       background: var(--tplane-chat-bg);
       color: var(--tplane-chat-text);
@@ -119,7 +120,7 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
     }
 
     .input-strip {
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0;
       border-top: 1px solid var(--tplane-chat-separator);
       background: var(--tplane-chat-surface);
     }
