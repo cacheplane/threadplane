@@ -142,7 +142,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 22
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -215,6 +215,57 @@
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
             "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderCard",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#renderCard:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderCard?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(citation: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/react!~Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replace row contents before preview with the latest borrowed Citation.\nNull, false and undefined intentionally render no contents or fallback.\nRendering may repeat; return a component to own hooks and local state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 26
           },
           "isReadonly": true,
           "isOptional": true

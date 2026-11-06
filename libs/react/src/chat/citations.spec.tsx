@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Citation } from '@threadplane/core';
-import { Citations } from './index';
+import { CitationPreview, Citations } from './index';
 import {
   createMarkdown,
   type MarkdownSnapshot,
@@ -32,6 +32,200 @@ const sidecars = (
 afterEach(() => {
   cleanup();
   for (const owner of owners.splice(0)) owner.dispose();
+});
+describe('custom citation cards', () => {
+  const cards = (
+    citations: readonly Citation[],
+    renderCard: (citation: Citation) => ReactNode,
+    extra: Record<string, unknown> = {}
+  ) => (
+    <Citations
+      {...({ citations, renderCard, ...extra } as React.ComponentProps<
+        typeof Citations
+      >)}
+    />
+  );
+
+  it.each([false, true])(
+    'replaces all row contents before preview with exact borrowed metadata (disclosure %s)',
+    (collapsible) => {
+      const citation = Object.freeze({
+        id: '__proto__',
+        index: 7,
+        title: '',
+        sourceType: '<b>literal</b>',
+        iconUrl: '/never-fetch',
+      });
+      const renderCard = vi.fn((value: Citation) => (
+        <strong>{value.sourceType}</strong>
+      ));
+      const view = render(
+        cards([citation], renderCard, { preview: true, collapsible })
+      );
+      if (collapsible) {
+        expect(renderCard).not.toHaveBeenCalled();
+        fireEvent.click(view.getByRole('button'));
+      }
+      expect(renderCard).toHaveBeenCalledWith(citation);
+      expect(renderCard.mock.calls.every(([value]) => value === citation)).toBe(
+        true
+      );
+      expect(view.getByRole('listitem').innerHTML).toBe(
+        '<strong>&lt;b&gt;literal&lt;/b&gt;</strong>'
+      );
+      expect(view.queryByRole('button', { name: /^Preview/ })).toBeNull();
+    }
+  );
+
+  it.each([null, false, undefined])(
+    'keeps an intentionally empty custom result (%s) without default fallback',
+    (result) => {
+      const view = render(
+        cards([{ id: 'a', index: 1, title: 'Default' }], () => result, {
+          preview: true,
+        })
+      );
+      expect(view.getByRole('listitem').childNodes).toHaveLength(0);
+      expect(view.queryByText('Default')).toBeNull();
+    }
+  );
+
+  it('does not call custom renderers for empty, closed or invalid duplicate collections', () => {
+    const renderCard = vi.fn(() => 'custom');
+    const view = render(cards([], renderCard));
+    view.rerender(
+      cards([{ id: 'a', index: 1 }], renderCard, { collapsible: true })
+    );
+    expect(renderCard).not.toHaveBeenCalled();
+    expect(() =>
+      view.rerender(
+        cards(
+          [
+            { id: 'a', index: 1 },
+            { id: 'a', index: 2 },
+          ],
+          renderCard
+        )
+      )
+    ).toThrow(/duplicate citation/i);
+    expect(renderCard).not.toHaveBeenCalled();
+  });
+
+  it('borrows whole provider overrides and merges sidecars in stable index order', () => {
+    const snapshot = markdown('[^__proto__]: Hidden\n\n[^sidecar]: Sidecar\n');
+    const provider = Object.freeze({
+      id: '__proto__',
+      index: 2,
+      title: '',
+      sourceType: '',
+    });
+    const tied = Object.freeze({ id: 'tie', index: 2, title: 'Tied' });
+    const seen: Citation[] = [];
+    const view = render(
+      cards(
+        [provider, tied],
+        (citation) => {
+          seen.push(citation);
+          return (
+            <span>
+              {citation.id}:{citation.title}
+            </span>
+          );
+        },
+        { snapshot }
+      )
+    );
+    expect(
+      view.getAllByRole('listitem').map((item) => item.textContent)
+    ).toEqual(['__proto__:', 'tie:Tied', 'sidecar:Sidecar']);
+    expect(seen[0]).toBe(provider);
+    expect(seen[1]).toBe(tied);
+    expect(seen[0]).not.toHaveProperty('snippet');
+  });
+
+  it('retains compatible child state and exact keyed rows across reorder, correction and new callback identities', () => {
+    function StatefulCard({ citation }: { readonly citation: Citation }) {
+      const [count, setCount] = useState(0);
+      return (
+        <button onClick={() => setCount(count + 1)}>
+          {citation.title}:{count}
+        </button>
+      );
+    }
+    const callback = (citation: Citation) => (
+      <StatefulCard citation={citation} />
+    );
+    const view = render(
+      <StrictMode>
+        {cards(
+          [
+            { id: '', index: 2, title: 'Original' },
+            { id: 'b', index: 1, title: 'Other' },
+          ],
+          callback
+        )}
+      </StrictMode>
+    );
+    const item = view.getAllByRole('listitem')[0];
+    const child = view.getByRole('button', { name: 'Original:0' });
+    fireEvent.click(child);
+    view.rerender(
+      <StrictMode>
+        {cards(
+          [
+            { id: 'b', index: 1, title: 'Other' },
+            { id: '', index: 2, title: 'Corrected' },
+          ],
+          (citation) => (
+            <StatefulCard citation={citation} />
+          )
+        )}
+      </StrictMode>
+    );
+    expect(view.getAllByRole('listitem')[1]).toBe(item);
+    expect(view.getByRole('button', { name: 'Corrected:1' })).toBe(child);
+  });
+
+  it.each(['collapse', 'removal'])(
+    'retires custom views and composed previews on %s',
+    (action) => {
+      Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+        configurable: true,
+        value() {
+          this.setAttribute('open', '');
+        },
+      });
+      Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+        configurable: true,
+        value() {
+          this.removeAttribute('open');
+        },
+      });
+      const retired = vi.fn();
+      function CustomCard({ citation }: { readonly citation: Citation }) {
+        useEffect(() => () => retired(citation.id), [citation.id]);
+        return <CitationPreview citation={citation} />;
+      }
+      const callback = (citation: Citation) => (
+        <CustomCard citation={citation} />
+      );
+      const citation = { id: 'a', index: 1, title: 'Evidence' };
+      const view = render(cards([citation], callback, { collapsible: true }));
+      const header = view.getByRole('button');
+      fireEvent.click(header);
+      const trigger = view.getByRole('button', { name: /^Preview/ });
+      fireEvent.click(trigger);
+      const dialog = view.getByRole('dialog');
+      const item = view.getByRole('listitem');
+      if (action === 'collapse') fireEvent.click(header);
+      else view.rerender(cards([], callback, { collapsible: true }));
+      expect(retired).toHaveBeenCalledWith('a');
+      expect(item.isConnected).toBe(false);
+      expect(dialog.isConnected).toBe(false);
+      fireEvent.click(trigger);
+      expect(view.queryByRole('dialog')).toBeNull();
+    }
+  );
 });
 describe('Markdown Sources sidecars', () => {
   it('opts into stable numeric order and exact whole provider overrides without mutating inputs', () => {

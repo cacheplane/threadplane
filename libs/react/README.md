@@ -244,8 +244,29 @@ focus to the available trigger when it still owns focus. Same-ID metadata update
 refresh the open preview; changing the citation ID or removing its view retires
 it. Preview state belongs to the mounted view and never issues session commands.
 The default Sources list retains direct links. `Markdown.citationPreview` provides
-the separate inline hover/keyboard/touch cards described above. Source grouping,
-custom card rendering, and full citation-display parity remain open.
+the separate inline hover/keyboard/touch cards described above.
+
+Use `renderCard` to customize the contents of each source list item:
+
+```tsx
+<Citations
+  citations={message.citations ?? []}
+  renderCard={(citation) => <CitationPreview citation={citation} />}
+/>;
+```
+
+The callback receives only the latest borrowed readonly `Citation`. It takes
+precedence over `preview`, including when it returns `null`, `false`, or
+`undefined`; there is no fallback for an empty result. Empty lists and closed
+disclosures do not render cards. Treat the callback as rendering code: React may
+call it repeatedly. Put hooks in a component returned by the callback.
+
+The library keeps each list item keyed by the exact citation ID. Compatible
+returned components retain state through reordering, same-ID metadata updates,
+and replacement callbacks. Collapsing the list or removing a source unmounts its
+card. The application owns custom markup, links, and actions; compose
+`CitationPreview` to reuse its safe links and modal behavior. Source grouping and
+full citation-display parity remain open.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`

@@ -29,6 +29,7 @@ import { BackgroundActivity } from './background-activity';
 import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
 import { ObservedStateComparison } from './observed-state-comparison';
 import { CopyAnswer } from './copy-answer';
+import { renderNativeSourceCard } from './source-card';
 import {
   ConversationActions,
   type RenameEditorRequest,
@@ -71,7 +72,7 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       {row.role === 'assistant' && (
         <Citations
           collapsible
-          preview
+          renderCard={renderNativeSourceCard}
           snapshot={row.markdown}
           citations={row.message.citations ?? []}
         />
