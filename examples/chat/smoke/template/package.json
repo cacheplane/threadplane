@@ -27,7 +27,7 @@
     "@cacheplane/partial-markdown": "^0.3.0",
     "@cacheplane/partial-json": "^0.2.0",
     "@langchain/core": "^1.1.33",
-    "@langchain/langgraph-sdk": "^1.7.4",
+    "@langchain/langgraph-sdk": "1.10.0",
     "@ag-ui/client": "^1.0.1",
     "@ag-ui/core": "^1.0.1",
     "@json-render/core": "^0.16.0",
