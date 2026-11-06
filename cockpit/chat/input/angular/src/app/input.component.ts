@@ -33,11 +33,13 @@ import { injectAgent } from '@threadplane/langgraph';
     ExampleChatLayoutComponent,
   ],
   template: `
-    <example-chat-layout sidebarWidth="18rem">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat input"
+      description="Try the keyboard shortcuts and customize your composer. You can draft your next message while a response arrives."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(composer)">New conversation</button>
       <section main class="chat-demo">
-        <header class="demo-header">
-          <h1 class="demo-title">Chat Input Demo</h1>
-        </header>
         <div class="message-scroll">
           <chat-message-list [agent]="agent">
             <ng-template chatMessageTemplate="human" let-message>
@@ -65,7 +67,8 @@ import { injectAgent } from '@threadplane/langgraph';
           <!-- chat-input submits to [agent] itself; (submitted) is a
                notification only — re-submitting it here would double the
                user message. -->
-          <chat-input [agent]="agent" placeholder="Try typing here..." />
+          <chat-input #composer [agent]="agent" placeholder="Ask an aviation question…"><p chatInputFooter class="composer-help">Enter to send. Shift+Enter adds a new line.</p></chat-input>
+          <p role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         </div>
         <!-- #endregion -->
       </section>
@@ -96,23 +99,10 @@ import { injectAgent } from '@threadplane/langgraph';
       display: flex;
       flex: 1 1 auto;
       min-width: 0;
+      min-height: 0;
       flex-direction: column;
       background: var(--tplane-chat-bg);
       color: var(--tplane-chat-text);
-    }
-
-    .demo-header {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--tplane-chat-separator);
-      background: var(--tplane-chat-surface);
-    }
-
-    .demo-title {
-      margin: 0;
-      color: var(--tplane-chat-text);
-      font-size: var(--tplane-chat-font-size-sm);
-      font-weight: 700;
-      line-height: var(--tplane-chat-line-height-tight);
     }
 
     .message-scroll {
@@ -122,8 +112,10 @@ import { injectAgent } from '@threadplane/langgraph';
       background: var(--tplane-chat-bg);
     }
 
+    .composer-help { margin: 6px 16px 0; color: var(--tplane-chat-text-muted); font-size: 14px; line-height: 22.4px; }
+
     .input-strip {
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0;
       border-top: 1px solid var(--tplane-chat-separator);
       background: var(--tplane-chat-surface);
     }
@@ -182,6 +174,12 @@ import { injectAgent } from '@threadplane/langgraph';
   `],
 })
 export class InputComponent {
+  protected newConversation(composer: ChatInputPrimitive): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    composer.clearDraft();
+  }
+
   // #region agent-state
   protected readonly agent = injectAgent();
 

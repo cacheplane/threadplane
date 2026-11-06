@@ -7,44 +7,44 @@ import { injectAgent } from '@threadplane/langgraph';
 // #region theme-presets
 const THEMES: Record<string, Record<string, string>> = {
   dark: {
-    '--tplane-chat-bg': '#171717',
+    '--tplane-chat-bg': '#1c1c1c',
     '--tplane-chat-surface': '#1c1c1c',
-    '--tplane-chat-surface-alt': '#222222',
+    '--tplane-chat-surface-alt': 'color-mix(in srgb, #e0e0e0 7%, #1c1c1c)',
     '--tplane-chat-primary': '#3b82f6',
-    '--tplane-chat-on-primary': '#ffffff',
+    '--tplane-chat-on-primary': '#07111f',
     '--tplane-chat-text': '#e0e0e0',
-    '--tplane-chat-separator': '#333',
-    '--tplane-chat-text-muted': '#777',
+    '--tplane-chat-separator': '#767676',
+    '--tplane-chat-text-muted': '#a3a3a3',
   },
   light: {
     '--tplane-chat-bg': '#ffffff',
     '--tplane-chat-surface': '#ffffff',
-    '--tplane-chat-surface-alt': '#f3f4f6',
+    '--tplane-chat-surface-alt': 'color-mix(in srgb, #1a1a1a 7%, #ffffff)',
     '--tplane-chat-primary': '#2563eb',
     '--tplane-chat-on-primary': '#ffffff',
     '--tplane-chat-text': '#1a1a1a',
-    '--tplane-chat-separator': '#d1d5db',
+    '--tplane-chat-separator': '#858a94',
     '--tplane-chat-text-muted': '#6b7280',
   },
   ocean: {
-    '--tplane-chat-bg': '#0c1426',
+    '--tplane-chat-bg': '#111b31',
     '--tplane-chat-surface': '#111b31',
-    '--tplane-chat-surface-alt': '#152238',
+    '--tplane-chat-surface-alt': 'color-mix(in srgb, #c8d6e5 7%, #111b31)',
     '--tplane-chat-primary': '#0abde3',
     '--tplane-chat-on-primary': '#07111f',
     '--tplane-chat-text': '#c8d6e5',
-    '--tplane-chat-separator': '#1e3a5f',
-    '--tplane-chat-text-muted': '#576574',
+    '--tplane-chat-separator': '#607b9c',
+    '--tplane-chat-text-muted': '#a3b8cf',
   },
   forest: {
-    '--tplane-chat-bg': '#1a2e1a',
+    '--tplane-chat-bg': '#203420',
     '--tplane-chat-surface': '#203420',
-    '--tplane-chat-surface-alt': '#243524',
+    '--tplane-chat-surface-alt': 'color-mix(in srgb, #d4e6d4 7%, #203420)',
     '--tplane-chat-primary': '#4ade80',
     '--tplane-chat-on-primary': '#102410',
     '--tplane-chat-text': '#d4e6d4',
-    '--tplane-chat-separator': '#2d4a2d',
-    '--tplane-chat-text-muted': '#6b8f6b',
+    '--tplane-chat-separator': '#769076',
+    '--tplane-chat-text-muted': '#a7c0a7',
   },
 };
 // #endregion
@@ -60,8 +60,15 @@ const THEMES: Record<string, Record<string, string>> = {
   imports: [ChatComponent, ExampleChatLayoutComponent, TitleCasePipe],
   template: `
     <!-- #region theme-picker -->
-    <example-chat-layout sidebarWidth="18rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat theming"
+      description="Ask an aviation question and watch the answer arrive. Switch palettes at any time; your conversation and draft stay in place. Continue after the response is saved."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask an aviation question…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <div sidebar class="panel">
         <h3 class="cap">Theme Picker</h3>
         <div class="theme-list">
@@ -163,15 +170,26 @@ const THEMES: Record<string, Record<string, string>> = {
 })
 // #region apply-theme
 export class ThemingComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 
   protected readonly themeNames = Object.keys(THEMES);
   protected readonly activeTheme = signal('dark');
 
+  constructor() {
+    this.setTheme(this.activeTheme());
+  }
+
   setTheme(name: string) {
     const theme = THEMES[name];
     if (!theme) return;
     this.activeTheme.set(name);
+    document.documentElement.style.colorScheme = name === 'light' ? 'light' : 'dark';
     Object.entries(theme).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });

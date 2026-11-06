@@ -1855,3 +1855,44 @@ describe('ChatComponent — message direction and speaker names', () => {
     expect((fx.nativeElement as HTMLElement).querySelector('.chat-message__speaker')?.textContent?.trim()).toBe('Assistant:');
   });
 });
+
+@Component({
+  standalone: true,
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" [welcomeDisabled]="welcomeDisabled()" placeholder="Ask about a flight…">
+    <button chatWelcomeSuggestions type="button">Try a question</button>
+    <p chatInputFooter>Enter to send.</p>
+    <p chatFooterStatus role="status">Ready.</p>
+  </chat>`,
+})
+class TranscriptComposerHost {
+  readonly agent = mockAgent();
+  readonly welcomeDisabled = signal(true);
+}
+
+describe('application-owned transcript chrome', () => {
+  for (const welcomeDisabled of [true, false]) it(`clears the local draft with welcomeDisabled=${welcomeDisabled}`, () => {
+    TestBed.configureTestingModule({ imports: [TranscriptComposerHost] });
+    const fixture = TestBed.createComponent(TranscriptComposerHost);
+    fixture.componentInstance.welcomeDisabled.set(welcomeDisabled);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(input.placeholder).toBe('Ask about a flight…');
+    expect(input.closest('chat-input')?.querySelector('[chatInputFooter]')?.textContent).toBe('Enter to send.');
+    input.value = 'Unsent draft';
+    input.dispatchEvent(new Event('input'));
+    const chat = fixture.debugElement.query(By.directive(ChatComponent)).componentInstance as ChatComponent;
+    chat.clearDraft();
+    fixture.detectChanges();
+    expect(input.value).toBe('');
+    expect(fixture.componentInstance.agent.messages()).toEqual([]);
+  });
+  it('retains welcome suggestions in the empty transcript and projects a footer status', () => {
+    TestBed.configureTestingModule({ imports: [TranscriptComposerHost] });
+    const fixture = TestBed.createComponent(TranscriptComposerHost);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.chat-scroll [chatWelcomeSuggestions]')?.textContent).toBe('Try a question');
+    expect(element.querySelector('.chat-footer-wrap [chatFooterStatus]')?.textContent).toBe('Ready.');
+  });
+});

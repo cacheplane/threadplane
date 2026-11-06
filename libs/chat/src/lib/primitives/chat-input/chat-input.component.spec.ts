@@ -108,6 +108,15 @@ describe('ChatInputComponent', () => {
     fixture.detectChanges();
   });
 
+  it('keeps a multiline draft scrollable when the layout applies a smaller height cap', () => {
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    Object.defineProperty(textarea, 'scrollHeight', { configurable: true, get: () => 240 });
+    Object.defineProperty(textarea, 'clientHeight', { configurable: true, get: () => 162 });
+    fixture.componentInstance.messageText.set('A multiline draft constrained by the surrounding layout');
+    fixture.detectChanges();
+    expect(textarea.style.overflowY).toBe('auto');
+  });
+
   it('disables Send and preserves the draft on Enter until the adapter releases input', () => {
     const agent = mockAgent();
     const blocked = signal(true);

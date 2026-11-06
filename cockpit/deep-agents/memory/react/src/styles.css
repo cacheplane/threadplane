@@ -129,3 +129,31 @@ body {
   max-height: 22rem;
   overflow: auto;
 }
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.memory-demo .tp-example__content { overflow: hidden; }
+.tp-example.memory-demo .memory-workspace {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.memory-demo .memory-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.memory-demo .memory-chat > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.memory-demo .memory-chat > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.memory-demo .memory-sidebar { min-height: 0; overflow: auto; }
+@media (max-width: 672px) {
+  .tp-example.memory-demo .memory-workspace {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
+  }
+}

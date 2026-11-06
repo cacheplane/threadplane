@@ -116,7 +116,11 @@ export function isPinned(
   return scrollHeight - scrollTop - clientHeight < tolerance;
 }
 
-/** Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates. */
+/**
+ * Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.
+ * Project `[chatInputFooter]` for composer help in both presentations, and
+ * `[chatFooterStatus]` for application-owned status below the transcript composer.
+ */
 @Component({
   selector: 'chat',
   standalone: true,
@@ -218,9 +222,15 @@ export function isPinned(
     }
   `],
   template: `
+    <ng-template #welcomeSuggestions>
+      <ng-content select="[chatWelcomeSuggestions]" />
+    </ng-template>
+    <ng-template #inputFooter>
+      <ng-content select="[chatInputFooter]" />
+    </ng-template>
     @if (showWelcome()) {
       <chat-welcome (focusin)="welcomeHadFocus = isKeyboardFocus($event)" (focusout)="onWelcomeFocusOut($event)">
-        <chat-input chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message...">
+        <chat-input #composer chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()">
           @if (showModelPicker() && modelOptions().length > 0) {
             <chat-select
               chatInputModelSelect
@@ -229,9 +239,12 @@ export function isPinned(
               [placeholder]="modelPickerPlaceholder()"
             />
           }
+          <ng-container ngProjectAs="[chatInputFooter]">
+            <ng-container [ngTemplateOutlet]="inputFooter" />
+          </ng-container>
         </chat-input>
         <ng-container ngProjectAs="[chatWelcomeSuggestions]">
-          <ng-content select="[chatWelcomeSuggestions]" />
+          <ng-container [ngTemplateOutlet]="welcomeSuggestions" />
         </ng-container>
       </chat-welcome>
     } @else {
@@ -254,6 +267,9 @@ export function isPinned(
                role="region" aria-label="Conversation" tabindex="0">
             @let currentAgent = agent();
             @let currentMessages = currentAgent.messages();
+            @if (currentMessages.length === 0) {
+              <ng-container [ngTemplateOutlet]="welcomeSuggestions" />
+            }
             <chat-message-list [agent]="currentAgent">
               <ng-template chatMessageTemplate="human" let-message let-i="index">
                 <chat-message [role]="'user'" [prevRole]="previousRole(currentMessages, i)">{{ humanContent(message) }}</chat-message>
@@ -419,7 +435,7 @@ export function isPinned(
               />
             }
             <chat-error [agent]="agent()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
-            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message..." (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
+            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
                   chatInputModelSelect
@@ -432,7 +448,11 @@ export function isPinned(
                   <ng-content select="[chatInputModelSelect]" />
                 </ng-container>
               }
+              <ng-container ngProjectAs="[chatInputFooter]">
+                <ng-container [ngTemplateOutlet]="inputFooter" />
+              </ng-container>
             </chat-input>
+            <ng-content select="[chatFooterStatus]" />
           </div>
         </chat-window>
         <!-- Run endings for assistive technology. Streaming text is not
@@ -459,6 +479,8 @@ export class ChatComponent {
   readonly threads = input<Thread[]>([]);
   readonly activeThreadId = input<string>('');
   readonly welcomeDisabled = input<boolean>(false);
+  /** Placeholder shared by welcome and transcript composers. */
+  readonly placeholder = input('Type a message...');
 
   /**
    * High-level model-picker API. When `modelOptions` is non-empty, the chat
@@ -800,6 +822,10 @@ export class ChatComponent {
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
   private readonly composer = viewChild<ChatInputComponent>('composer');
+  /** Clears the local composer after an application-owned conversation reset. */
+  clearDraft(): void {
+    this.composer()?.clearDraft();
+  }
   /**
    * Controls that remove themselves when used — the welcome view on the first
    * send (typed or a suggestion), Retry once the error clears — drop focus to

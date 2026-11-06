@@ -45,9 +45,13 @@ const WELCOME_SUGGESTIONS = [
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="AG-UI approvals"
+      description="Draft a fictional refund, review its amount, and approve, edit or cancel it. No real payment is issued. The conversation continues after each completed decision."
+    >
       <div main class="interrupts-shell">
-        <chat [agent]="agent" class="interrupts-chat">
+      <chat placeholder="Ask a fictional refund request…" [welcomeDisabled]="true" [agent]="agent" class="interrupts-chat">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion

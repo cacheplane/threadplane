@@ -19,12 +19,25 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
   standalone: true,
   imports: [ChatComponent, ChatDebugComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" />
+    <example-chat-layout
+      title="Chat debug"
+      description="Ask an aviation question. Watch the answer, processing result and summary arrive, then inspect the observed saved state."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask an aviation question…" #conversation [welcomeDisabled]="true" main [agent]="agent">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <chat-debug main [agent]="agent" />
     </example-chat-layout>
   `,
 })
 export class DebugPageComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 }

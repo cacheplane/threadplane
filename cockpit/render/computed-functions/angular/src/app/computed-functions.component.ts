@@ -250,7 +250,10 @@ class DemoCardComponent {
     .json__foot .pct { color: var(--code-muted); font-variant-numeric: tabular-nums; }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="Computed Functions"
+      description="Watch three local samples transform text, multiply numbers and format dates. Calculations wait for complete arguments. Dates follow your browser’s locale."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

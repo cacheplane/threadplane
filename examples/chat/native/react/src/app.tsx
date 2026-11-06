@@ -818,7 +818,7 @@ function Conversation({
       >
         <section className="conversation" aria-labelledby="conversation-title">
           <div className="conversation-heading">
-            <p className="eyebrow">React example</p>
+            <p className="eyebrow">Native conversation</p>
             <h1 id="conversation-title">
               {selection.row?.title ?? 'Your conversation'}
             </h1>

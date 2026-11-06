@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -51,7 +51,6 @@ export function InterruptsDemo({
     <ExampleLayout className="streaming-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>AG-UI approvals</h1>
         </div>
         <button
@@ -80,23 +79,25 @@ export function InterruptsDemo({
           disabled={snapshot.busy || !snapshot.canRespond}
         />
       )}
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        label="Message"
-        placeholder="Ask a fictional refund request…"
-        value={draft}
-        onValueChange={setDraft}
-        disabled={!snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          if (!application.getSnapshot().busy) return false;
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          label="Message"
+          placeholder="Ask a fictional refund request…"
+          value={draft}
+          onValueChange={setDraft}
+          disabled={!snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            if (!application.getSnapshot().busy) return false;
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

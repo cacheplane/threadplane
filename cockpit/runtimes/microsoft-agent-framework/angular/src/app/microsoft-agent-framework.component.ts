@@ -56,9 +56,13 @@ interface ExpenseDraft {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="Microsoft Agent Framework expenses"
+      description="Review a fictional expense, then approve or decline it. No real expense is submitted."
+    >
       <div main class="maf-shell">
-        <chat [agent]="agent" class="maf-chat">
+      <chat placeholder="Ask about a fictional expense…" [welcomeDisabled]="true" [agent]="agent" class="maf-chat">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion

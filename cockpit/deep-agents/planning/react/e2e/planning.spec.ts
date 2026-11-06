@@ -29,6 +29,39 @@ async function send(page: Page, text = 'Dispatch brief: KSFO to KASE') {
   await box.press('Enter');
 }
 const plan = (page: Page) => page.getByRole('complementary', { name: 'Plan' });
+for (const width of [375, 1280]) {
+  test(`populated conversation scrolls independently of composer at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 375 ? 812 : 900 });
+    await send(page, Array.from({ length: 80 }, (_, index) =>
+      `Dispatch question ${index + 1}: explain the runway, weather, and terrain considerations for this flight.`
+    ).join('\n\n'));
+    await expect(page.getByText('Response saved.', { exact: true })).toBeVisible();
+    const transcript = page.locator('.conversation-panel > .tp-chat-list');
+    const input = page.getByRole('textbox', { name: 'Message' });
+    await expect.poll(() => transcript.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+    const inputBox = await input.boundingBox();
+    expect(inputBox).not.toBeNull();
+    for (const position of ['start', 'end'] as const) {
+      await transcript.evaluate((element, position) => {
+        element.scrollTop = position === 'start' ? 0 : element.scrollHeight;
+      }, position);
+      await expect.poll(() => input.evaluate(element => {
+        const b = element.getBoundingClientRect();
+        return b.top >= 0 && b.bottom <= innerHeight && b.left >= 0 && b.right <= innerWidth &&
+          [[b.x + b.width / 2, b.y + b.height / 2], [b.left + 2, b.top + 2],
+            [b.right - 2, b.top + 2], [b.left + 2, b.bottom - 2], [b.right - 2, b.bottom - 2]]
+            .every(([x, y]) => document.elementFromPoint(x, y) === element);
+      })).toBe(true);
+      expect((await input.boundingBox())?.y).toBe(inputBox?.y);
+      expect(await page.evaluate(() => scrollY)).toBe(0);
+    }
+    expect(await transcript.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+    await plan(page).getByText('Saved plan', { exact: true }).scrollIntoViewIfNeeded();
+    await expect(plan(page).getByText('Saved plan', { exact: true })).toBeInViewport();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+  });
+}
 test.beforeEach(async ({ page, request }) => {
   await configure(request, {});
   await page.goto(base);

@@ -107,8 +107,14 @@ const WELCOME_SUGGESTIONS = [
     }
   `,
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout
+      title="LangGraph subgraphs"
+      description="A factual question enters a research child graph. A greeting answers directly. The child receives a topic, not the parent conversation."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask a factual question or say hello…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -178,6 +184,12 @@ const WELCOME_SUGGESTIONS = [
   `,
 })
 export class SubgraphsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
   // #region agent

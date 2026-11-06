@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -69,17 +69,19 @@ export function MessagesDemo({
       ? 'Receiving response…'
       : 'Waiting for the first response…'
     : snapshot.outcome === 'success'
-    ? 'Response saved.'
+    ? 'Response complete.'
     : snapshot.outcome === 'aborted'
     ? 'Stopped. Start a new conversation to continue.'
     : !snapshot.canSubmit
     ? 'Start a new conversation to continue.'
     : 'Ready.';
   return (
-    <ExampleLayout className="messages-demo">
+    <ExampleLayout className="messages-demo" about={<>
+      <h3>Primitives used</h3>
+      <ul><li>Message list</li><li>Message input</li><li>Response status</li></ul>
+    </>}>
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat messages</h1>
         </div>
         <button
@@ -99,6 +101,7 @@ export function MessagesDemo({
         renderMessage={renderMessage}
         label="Conversation"
       />
+      <ExampleFooter>
       {snapshot.error && <p role="alert">{snapshot.error}</p>}
       <ChatInput
         key={snapshot.viewGeneration}
@@ -114,6 +117,7 @@ export function MessagesDemo({
         }}
       />
       <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

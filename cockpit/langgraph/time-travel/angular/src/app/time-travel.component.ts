@@ -138,9 +138,14 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
     }
   `,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="LangGraph time travel"
+      description="Load saved checkpoints, select a completed source, then fork with your message. Send continues the conversation shown above."
+    >
       <!-- Chat panel -->
-      <chat main [agent]="agent" class="block flex-1" />
+      <chat placeholder="Write a message to send or fork…" [welcomeDisabled]="true" main [agent]="agent" class="block flex-1">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
 
       <!-- #region timeline -->
       <!-- Checkpoint timeline sidebar -->

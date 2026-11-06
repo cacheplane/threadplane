@@ -124,3 +124,31 @@ body {
     max-height: 55dvh;
   }
 }
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.threads-demo .tp-example__content { overflow: hidden; }
+.tp-example.threads-demo .threads-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.threads-demo .conversation-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.threads-demo .conversation-panel > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.threads-demo .conversation-panel > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.threads-demo .conversation-picker { min-height: 0; overflow: auto; }
+@media (max-width: 640px) {
+  .tp-example.threads-demo .threads-layout {
+    grid-template-rows: minmax(0, 20dvh) minmax(0, 1fr);
+    gap: 8px;
+  }
+}

@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleLayout } from '../../../../shared/react-example';
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ApprovalCard, ChatInput, MessageList } from '@threadplane/react/chat';
@@ -174,7 +174,6 @@ export function InterruptsDemo({
     <ExampleLayout className="interrupts-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>LangGraph interrupts</h1>
         </div>
         <button
@@ -213,20 +212,22 @@ export function InterruptsDemo({
           }
         />
       )}
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={generation}
-        label="Message"
-        placeholder="Describe a refund request…"
-        disabled={resetting || !snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={generation}
+          label="Message"
+          placeholder="Describe a refund request…"
+          disabled={resetting || !snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
     </ExampleLayout>
   );
 }

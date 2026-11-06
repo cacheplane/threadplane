@@ -55,8 +55,16 @@ export const activeThreadIdState = signal<string | null>(null);
   // #endregion
   template: `
     <!-- #region chat-and-sidebar -->
-    <example-chat-layout sidebarPosition="left" sidebarWidth="16rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+    <example-chat-layout sidebarPosition="right" sidebarWidth="18rem"
+      title="Chat threads"
+      description="Switch between conversations created on this page. The list and drafts last while this page stays open; saved history is checked before continuing. Titles are optional."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="!agent.isLoading() &amp;&amp; onNewThread(conversation)">New conversation</button>
+      <chat placeholder="Write a message…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <div sidebar class="panel">
         <div class="panel-header">
           <h3 class="cap">Threads</h3>
@@ -177,11 +185,12 @@ export class ThreadsComponent {
     this.activeThreadId.set(threadId);
   }
 
-  protected async onNewThread(): Promise<void> {
+  protected async onNewThread(conversation?: ChatComponent): Promise<void> {
     const id = await this.threadsSvc.create();
     if (id) {
       this.agent.switchThread(id);
       this.activeThreadId.set(id);
+      conversation?.clearDraft();
     }
   }
   // #endregion

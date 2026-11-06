@@ -56,7 +56,6 @@ export function StateDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>State Management</h1>
       </header>
       <p>

@@ -34,7 +34,6 @@ export function RepeatDemo({
   return (
     <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>Repeat Loops</h1>
       </header>
       <p>

@@ -15,11 +15,24 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
   standalone: true,
   imports: [ChatComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="LangGraph deployment runtime"
+      description="Send a message to the connected LangGraph runtime. Completed replies stay in this conversation until you start a new one."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask a fictional deployment question…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
     </example-chat-layout>
   `,
 })
 export class DeploymentRuntimeComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 }

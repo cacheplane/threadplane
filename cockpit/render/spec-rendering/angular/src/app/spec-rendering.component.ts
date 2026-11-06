@@ -257,7 +257,10 @@ class DemoCardComponent {
     .json__foot .pct { color: var(--code-muted); font-variant-numeric: tabular-nums; }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="Render Spec"
+      description="Watch a local JSON sample become a view as its text arrives."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

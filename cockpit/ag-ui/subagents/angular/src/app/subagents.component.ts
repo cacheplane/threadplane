@@ -23,8 +23,13 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
   standalone: true,
   imports: [ChatComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="AG-UI trip specialists"
+      description="Plan a fictional trip. Research, booking and itinerary specialists share their progress with the main agent."
+    >
+      <chat placeholder="Plan a fictional trip…" [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
     </example-chat-layout>
   `,
 })

@@ -82,12 +82,25 @@ function waitForAbortableDelay(ms: number, signal: AbortSignal): Promise<void> {
   standalone: true,
   imports: [ChatComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="LangGraph client tools"
+      description="Try simulated weather, a slow status check, a weather panel or snapshot, and a fictional booking decision. These browser tools use authored data; no real weather service or booking is contacted."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask for weather or a fictional booking…" #conversation [welcomeDisabled]="true" main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
     </example-chat-layout>
   `,
 })
 export class ClientToolsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   /** Typed agent: state() and value() are ClientToolsState. */
   protected readonly agent = injectAgent(CLIENT_TOOLS_AGENT_REF);
   protected readonly clientTools = clientTools;

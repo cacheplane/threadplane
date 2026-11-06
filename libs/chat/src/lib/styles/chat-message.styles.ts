@@ -1,6 +1,7 @@
 // libs/chat/src/lib/styles/chat-message.styles.ts
 export const CHAT_MESSAGE_STYLES = `
-  :host { display: block; }
+  /* Contain absolute speaker labels for every role inside transcript scrolling. */
+  :host { display: block; position: relative; }
   .chat-message__speaker {
     position: absolute;
     width: 1px;

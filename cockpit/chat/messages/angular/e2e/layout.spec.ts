@@ -1,3 +1,4 @@
+import { expectMessagesShell } from '../../../../shared/chat-shell-contract';
 import { expect, test, type Locator } from '@playwright/test';
 
 async function expectUnobstructed(input: Locator): Promise<void> {
@@ -32,7 +33,12 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 1280, height: 900 
         window.postMessage({ type: 'tplane:theme', theme }, location.origin);
       }, colorScheme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+      await expectMessagesShell(page, viewport.width, viewport.height);
       await expectUnobstructed(input);
+      await input.fill('An unsent draft');
+      await page.getByRole('button', { name: 'New conversation', exact: true }).click();
+      await expect(input).toHaveValue('');
+      await expect(page.locator('.submission-status')).toHaveText('Ready.');
       expect((await page.locator('.chat-input__pill').boundingBox())?.width)
         .toBe(viewport.width === 375 ? 343 : 768);
 
@@ -66,11 +72,12 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 1280, height: 900 
       await expect(input).toBeFocused();
 
       const docs = page.locator('[sidebar]');
-      await docs.getByText('ChatTypingIndicatorComponent', { exact: true }).scrollIntoViewIfNeeded();
-      await expect(docs.getByRole('heading', { name: 'Primitives Used' })).toBeVisible();
-      await expect(docs.getByText('ChatTypingIndicatorComponent', { exact: true })).toBeInViewport();
+      await docs.getByText('Response status', { exact: true }).scrollIntoViewIfNeeded();
+      await expect(docs.getByRole('heading', { name: 'Primitives used' })).toBeVisible();
+      await expect(docs.getByText('Response status', { exact: true })).toBeInViewport();
       await expectUnobstructed(input);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expectMessagesShell(page, viewport.width, viewport.height);
     });
   }
 }

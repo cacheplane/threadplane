@@ -80,7 +80,7 @@ import { ApprovalComponent } from './approval.component';
       </aside>
       <section class="conversation" aria-labelledby="conversation-title">
         <div class="conversation-heading">
-          <p class="eyebrow">Angular example</p>
+          <p class="eyebrow">Native conversation</p>
           <h1 id="conversation-title">
             {{ selection.row?.title ?? 'Your conversation' }}
           </h1>

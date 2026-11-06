@@ -80,8 +80,13 @@ function waitForAbortableDelay(ms: number, signal: AbortSignal): Promise<void> {
   standalone: true,
   imports: [ChatComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="AG-UI client tools"
+      description="Five browser tools demonstrate simulated weather, a cancellable status check and an explicit fictional booking decision."
+    >
+      <chat placeholder="Try an example prompt…" [welcomeDisabled]="true" main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
     </example-chat-layout>
   `,
 })
