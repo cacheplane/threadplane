@@ -176,7 +176,7 @@
 }
 .pricing-page .pricing-service-card li {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   color: var(--color-text-secondary);
   font-size: 15px;
   line-height: 1.5;
@@ -243,7 +243,7 @@
 .pricing-page .pricing-grid-sketch span {
   display: flex;
   align-items: center;
-  padding: 10px;
+  padding: 8px;
   border-bottom: 1px solid #e8eaed;
 }
 .pricing-page .pricing-grid-sketch span:nth-child(-n + 3) {

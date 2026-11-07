@@ -138,7 +138,7 @@ test('reports all stale active documentation in one pass', async (t) => {
     await writeText(
       join(
         fixtureRoot,
-        'apps/website/content/docs/chat/getting-started/installation.mdx'
+        'apps/website/content/docs/angular/chat/getting-started/installation.mdx'
       ),
       'Angular 20 and 21\n^20.0.0 || ^21.0.0\n'
     );
@@ -153,11 +153,11 @@ test('reports all stale active documentation in one pass', async (t) => {
       );
       assert.match(
         error.message,
-        /apps\/website\/content\/docs\/chat\/getting-started\/installation\.mdx must contain "Supported Angular majors: 20, 21, and 22\."\./
+        /apps\/website\/content\/docs\/angular\/chat\/getting-started\/installation\.mdx must contain "Supported Angular majors: 20, 21, and 22\."\./
       );
       assert.match(
         error.message,
-        /apps\/website\/content\/docs\/chat\/getting-started\/installation\.mdx must not retain the stale Angular peer range "\^20\.0\.0 \|\| \^21\.0\.0"\./
+        /apps\/website\/content\/docs\/angular\/chat\/getting-started\/installation\.mdx must not retain the stale Angular peer range "\^20\.0\.0 \|\| \^21\.0\.0"\./
       );
       return true;
     }

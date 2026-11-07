@@ -532,8 +532,8 @@ async function main() {
           );
           await expect(page.locator('article').first()).toBeVisible();
           await page.evaluate(() => document.fonts.ready);
-          if (target.path.includes('frontend=react'))
-            await expect(page.getByLabel('Example UI')).toHaveValue('react');
+          if (target.path.startsWith('/docs/react/'))
+            await expect(page.getByLabel('Framework', { exact: true }).first()).toHaveValue('react');
           const actualKinds = await page
             .locator('figure[data-docs-diagram][data-diagram-kind]')
             .evaluateAll((els) =>
@@ -552,18 +552,31 @@ async function main() {
             await expect(media).toHaveCount(1);
             await expect(media).toHaveAttribute(
               'data-frontend',
-              target.path.includes('frontend=react') ? 'react' : 'angular'
+              target.path.startsWith('/docs/react/') ? 'react' : 'angular'
             );
             await checkMedia(page, media);
           }
           if (width === 1440) {
             const nav = page.locator('[data-workspace-desktop-navigation]');
-            const last = nav.locator('.docs-sidebar-section').last();
-            await expect(last).toContainText('Migrations');
-            await expect(last.getByRole('button').first()).toHaveAttribute(
-              'aria-expanded',
-              'false'
-            );
+            const selectedFramework = await nav
+              .getByLabel('Framework', { exact: true })
+              .inputValue();
+            if (selectedFramework === 'react') {
+              // Shared pages retain the last explicit framework preference.
+              // React navigation contains only authored React/shared variants;
+              // the Angular migration section has no React documents yet.
+              await expect(
+                nav.getByRole('button', { name: 'Migrations', exact: true })
+              ).toHaveCount(0);
+              await expect(nav.locator('.docs-sidebar-section').first()).toBeVisible();
+            } else {
+              const last = nav.locator('.docs-sidebar-section').last();
+              await expect(last).toContainText('Migrations');
+              await expect(last.getByRole('button').first()).toHaveAttribute(
+                'aria-expanded',
+                'false'
+              );
+            }
             if (index === 1) await checkIndependentScroll(page);
           }
           const size = await page.evaluate(() => ({

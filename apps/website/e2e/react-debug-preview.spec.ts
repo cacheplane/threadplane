@@ -1,10 +1,12 @@
+import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const origin = 'http://127.0.0.1:4645';
-const route = '/docs/chat/components/chat-debug';
+const route = '/docs/angular/chat/components/chat-debug';
+const reactRoute = '/docs/react/chat/components/chat-debug';
 const frameURL = /(?:localhost:4645|chat\/debug\/react)/;
 const observations = new WeakMap<Page, { errors: string[]; requests: { method: string; url: string; body: string | null }[] }>();
 const read = async (request: APIRequestContext, path: string) => (await request.get(origin + path)).json();
@@ -17,7 +19,7 @@ async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
   await navigation.getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', name);
   if (width === 390) await expect(navigation).toBeHidden();
-  expect(new URL(page.url()).searchParams.get('frontend')).toBe('react');
+  expect(new URL(page.url()).pathname).toBe(reactRoute);
 }
 
 async function file(page: Page, name: string, width: number) {
@@ -69,10 +71,10 @@ test.describe('native Debug Website', () => {
   for (const width of [1280, 390]) test(`Docs Code Run retains the native Debug owner and exact reads at ${width}`, async ({ page, request }, info) => {
     test.setTimeout(120000);
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-    expect((await page.goto(route + '?frontend=react'))?.status()).toBe(200);
+    expect((await page.goto(reactRoute))?.status()).toBe(200);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
     await expect(page.getByRole('heading', { name: 'React chat debug preview', exact: true })).toBeVisible();
-    await expect(page.getByLabel('Example UI')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveValue('react');
     await page.screenshot({ path: info.outputPath('docs.png') });
     await mode(page, 'Code', width);
     const files = ['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'graph.py', 'debug.md'];
@@ -131,12 +133,12 @@ test.describe('native Debug Website', () => {
     const draft = 'Exact unsent aviation draft ✈ café';
     await frame.getByLabel('Message', { exact: true }).fill(draft);
     for (const name of ['Docs', 'Code', 'Run'] as const) await mode(page, name, width);
-    // Native history navigation retains frontend=react and the same owner.
+    // Native history navigation retains the React route and the same owner.
     await page.goBack();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
     await page.goForward();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Run');
-    expect(new URL(page.url()).searchParams.get('frontend')).toBe('react');
+    expect(new URL(page.url()).pathname).toBe(reactRoute);
     expect(await iframe.evaluate((node, previous) => node === previous, original)).toBe(true);
     await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(draft);
     expect(await read(request, '/__requests')).toEqual([]);
@@ -209,10 +211,10 @@ test.describe('native Debug Website', () => {
   test('keeps Angular canonical and selects native React explicitly without business requests', async ({ page, request }) => {
     await page.goto(route);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveValue('angular');
     await expect(page.getByRole('heading', { name: 'ChatDebugComponent', exact: true })).toBeVisible();
-    await page.getByLabel('Example UI').selectOption('react');
-    await expect(page).toHaveURL(/frontend=react/);
+    await selectFramework(page, 'react');
+    await expect(page).toHaveURL(/\/docs\/react\//);
     await expect(page.getByRole('heading', { name: 'React chat debug preview', exact: true })).toBeVisible();
     expect(await read(request, '/__requests')).toEqual([]);
     expect(observations.get(page)?.requests).toEqual([]);

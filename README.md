@@ -43,7 +43,7 @@ system components you already own.
 `MIT · Angular 20–22 · no account, no cloud`
 
 Experimental native React previews are available through the docs' **Example UI**
-selector. The [AG-UI JSON Render preview](https://threadplane.ai/docs/ag-ui/guides/json-render?frontend=react)
+selector. The [AG-UI JSON Render preview](https://threadplane.ai/docs/react/ag-ui/guides/json-render)
 uses the existing airline agent, six authored read-only views and native shared
 state. These React packages remain private source builds; from a checkout, run
 `npx nx build cockpit-ag-ui-json-render-react` and the matching `npx nx e2e` target.
@@ -114,7 +114,7 @@ export class SupportAgentComponent {
 in a template — no subscriptions, no `async` pipe, no zone.js required. The same
 fake agent is what tests run against: swap the transport, never the component.
 
-Walkthrough: [Try without a backend](https://threadplane.ai/docs/chat/getting-started/try-without-a-backend).
+Walkthrough: [Try without a backend](https://threadplane.ai/docs/angular/chat/getting-started/try-without-a-backend).
 
 ---
 
@@ -148,7 +148,7 @@ Which one to pick: [Choosing an adapter](https://threadplane.ai/docs/choosing-an
   streaming, durable threads, interrupts, subagents, and generative UI.
 - [ag-ui.threadplane.ai](https://ag-ui.threadplane.ai) — the same chat surface
   over an AG-UI backend.
-- [Generative UI, live in the docs](https://threadplane.ai/docs/chat/guides/generative-ui?mode=run).
+- [Generative UI, live in the docs](https://threadplane.ai/docs/angular/chat/guides/generative-ui?mode=run).
 
 ---
 
@@ -243,15 +243,15 @@ hook, projected through the runtime-neutral `Agent` contract.
 
 ## Documentation
 
-- [Try without a backend](https://threadplane.ai/docs/chat/getting-started/try-without-a-backend)
-- [LangGraph quickstart](https://threadplane.ai/docs/langgraph/getting-started/quickstart)
-- [AG-UI quickstart](https://threadplane.ai/docs/ag-ui/getting-started/quickstart)
+- [Try without a backend](https://threadplane.ai/docs/angular/chat/getting-started/try-without-a-backend)
+- [LangGraph quickstart](https://threadplane.ai/docs/angular/langgraph/getting-started/quickstart)
+- [AG-UI quickstart](https://threadplane.ai/docs/angular/ag-ui/getting-started/quickstart)
 - [Choosing an adapter](https://threadplane.ai/docs/choosing-an-adapter)
 - [API Reference](https://threadplane.ai/docs/api)
-- [Chat introduction](https://threadplane.ai/docs/chat/getting-started/introduction)
-- [Human approvals and interrupts](https://threadplane.ai/docs/langgraph/guides/interrupts)
-- [Durable threads](https://threadplane.ai/docs/langgraph/guides/persistence)
-- [Subgraph and subagent streaming](https://threadplane.ai/docs/langgraph/guides/subgraphs)
+- [Chat introduction](https://threadplane.ai/docs/angular/chat/getting-started/introduction)
+- [Human approvals and interrupts](https://threadplane.ai/docs/angular/langgraph/guides/interrupts)
+- [Durable threads](https://threadplane.ai/docs/angular/langgraph/guides/persistence)
+- [Subgraph and subagent streaming](https://threadplane.ai/docs/angular/langgraph/guides/subgraphs)
 
 ### Generated API reference
 

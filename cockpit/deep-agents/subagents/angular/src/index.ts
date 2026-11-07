@@ -23,7 +23,7 @@ export const deepAgentsSubagentsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Deep Agents Subagents (Angular)',
-  docsPath: '/docs/deep-agents/capabilities/subagents',
+  docsPath: '/docs/angular/deep-agents/capabilities/subagents',
   promptAssetPaths: [
     'cockpit/deep-agents/subagents/angular/prompts/subagents.md',
   ],

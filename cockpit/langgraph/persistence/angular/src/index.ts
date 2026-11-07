@@ -23,7 +23,7 @@ export const langgraphPersistenceAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'LangGraph Persistence (Angular)',
-  docsPath: '/docs/langgraph/guides/persistence',
+  docsPath: '/docs/angular/langgraph/guides/persistence',
   promptAssetPaths: [
     'cockpit/langgraph/persistence/angular/prompts/persistence.md',
   ],

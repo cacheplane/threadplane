@@ -36,7 +36,7 @@ interface FinalCTAProps {
 
 const DEFAULT_SECONDARY = {
   label: 'See each feature in action →',
-  href: '/docs/langgraph/guides/streaming?mode=run',
+  href: '/docs/angular/langgraph/guides/streaming?mode=run',
 };
 
 export function FinalCTA({

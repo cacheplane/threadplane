@@ -179,8 +179,8 @@ test.afterEach(async ({ page }, testInfo) => {
 for (const frontend of ['angular', 'react'] as const) {
   const path =
     frontend === 'angular'
-      ? '/docs/langgraph/guides/streaming'
-      : '/docs/deep-agents/capabilities/filesystem';
+      ? '/docs/angular/langgraph/guides/streaming'
+      : '/docs/react/deep-agents/capabilities/filesystem';
   for (const width of [1280, 390]) {
     for (const direct of [false, true]) {
       test(`${frontend} ${width} ${
@@ -188,7 +188,7 @@ for (const frontend of ['angular', 'react'] as const) {
       } preserves native draft and history`, async ({ page }, testInfo) => {
         await page.setViewportSize({ width, height: 844 });
         await page.goto(
-          `${path}?frontend=${frontend}${direct ? '&mode=run' : ''}`
+          `${path}${direct ? '?mode=run' : ''}`
         );
         await expect(shell(page)).toHaveAttribute('data-hydrated', 'true');
         await expect(shell(page)).toHaveAttribute(
@@ -312,8 +312,8 @@ for (const frontend of ['angular', 'react'] as const) {
 }
 
 for (const path of [
-  '/docs/langgraph/getting-started/introduction?mode=run',
-  '/docs/langgraph/guides/streaming?mode=invalid',
+  '/docs/angular/langgraph/getting-started/introduction?mode=run',
+  '/docs/angular/langgraph/guides/streaming?mode=invalid',
 ]) {
   test(`rendered Docs stays eligible at ${path}`, async ({ page }) => {
     await page.goto(path);

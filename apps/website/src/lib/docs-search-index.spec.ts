@@ -147,9 +147,9 @@ describe('indexDocSections edge cases', () => {
   });
 
   it('indexes link text but not link targets', () => {
-    const [section] = indexDocSections('# T\n\nSee [Installation](/docs/langgraph/install) first.\n');
+    const [section] = indexDocSections('# T\n\nSee [Installation](/docs/angular/langgraph/install) first.\n');
     expect(section.text).toContain('Installation');
-    expect(section.text).not.toContain('/docs/langgraph/install');
+    expect(section.text).not.toContain('/docs/angular/langgraph/install');
   });
 
   it('indexes image alt text but not the image target', () => {

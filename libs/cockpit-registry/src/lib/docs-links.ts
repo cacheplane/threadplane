@@ -36,86 +36,86 @@ export const NO_COCKPIT_DOCS_LINK = '';
 export const COCKPIT_DOCS_LINKS: Readonly<Record<string, string>> = {
   // deep-agents
   'deep-agents/getting-started/overview':
-    '/docs/deep-agents/getting-started/introduction',
+    '/docs/angular/deep-agents/getting-started/introduction',
   'deep-agents/core-capabilities/planning':
-    '/docs/deep-agents/capabilities/planning',
+    '/docs/angular/deep-agents/capabilities/planning',
   'deep-agents/core-capabilities/filesystem':
-    '/docs/deep-agents/capabilities/filesystem',
+    '/docs/angular/deep-agents/capabilities/filesystem',
   'deep-agents/core-capabilities/subagents':
-    '/docs/deep-agents/capabilities/subagents',
+    '/docs/angular/deep-agents/capabilities/subagents',
   'deep-agents/core-capabilities/memory':
-    '/docs/deep-agents/capabilities/memory',
+    '/docs/angular/deep-agents/capabilities/memory',
   'deep-agents/core-capabilities/skills':
-    '/docs/deep-agents/capabilities/skills',
+    '/docs/angular/deep-agents/capabilities/skills',
 
   // langgraph
   'langgraph/getting-started/overview':
-    '/docs/langgraph/getting-started/introduction',
+    '/docs/angular/langgraph/getting-started/introduction',
   'langgraph/core-capabilities/persistence':
-    '/docs/langgraph/guides/persistence',
+    '/docs/angular/langgraph/guides/persistence',
   'langgraph/core-capabilities/durable-execution':
-    '/docs/langgraph/guides/durable-execution',
-  'langgraph/core-capabilities/streaming': '/docs/langgraph/guides/streaming',
-  'langgraph/core-capabilities/interrupts': '/docs/langgraph/guides/interrupts',
-  'langgraph/core-capabilities/memory': '/docs/langgraph/guides/memory',
-  'langgraph/core-capabilities/subgraphs': '/docs/langgraph/guides/subgraphs',
+    '/docs/angular/langgraph/guides/durable-execution',
+  'langgraph/core-capabilities/streaming': '/docs/angular/langgraph/guides/streaming',
+  'langgraph/core-capabilities/interrupts': '/docs/angular/langgraph/guides/interrupts',
+  'langgraph/core-capabilities/memory': '/docs/angular/langgraph/guides/memory',
+  'langgraph/core-capabilities/subgraphs': '/docs/angular/langgraph/guides/subgraphs',
   'langgraph/core-capabilities/time-travel':
-    '/docs/langgraph/guides/time-travel',
+    '/docs/angular/langgraph/guides/time-travel',
   'langgraph/core-capabilities/deployment-runtime':
-    '/docs/langgraph/guides/deployment',
+    '/docs/angular/langgraph/guides/deployment',
   // The demo's visible half is the browser-declared tool, which `chat` documents.
-  'langgraph/core-capabilities/client-tools': '/docs/chat/guides/client-tools',
+  'langgraph/core-capabilities/client-tools': '/docs/angular/chat/guides/client-tools',
 
   // AG-UI
-  'ag-ui/getting-started/overview': '/docs/ag-ui/getting-started/introduction',
+  'ag-ui/getting-started/overview': '/docs/angular/ag-ui/getting-started/introduction',
   // AG-UI has no streaming guide; event mapping is where token streaming is specified.
-  'ag-ui/core-capabilities/streaming': '/docs/ag-ui/reference/event-mapping',
-  'ag-ui/core-capabilities/interrupts': '/docs/ag-ui/guides/interrupts',
-  'ag-ui/core-capabilities/tool-views': '/docs/ag-ui/guides/tool-views',
-  'ag-ui/core-capabilities/json-render': '/docs/ag-ui/guides/json-render',
-  'ag-ui/core-capabilities/client-tools': '/docs/ag-ui/guides/client-tools',
-  'ag-ui/core-capabilities/a2ui': '/docs/a2ui/getting-started/introduction',
-  'ag-ui/core-capabilities/subagents': '/docs/ag-ui/guides/subagents',
+  'ag-ui/core-capabilities/streaming': '/docs/angular/ag-ui/reference/event-mapping',
+  'ag-ui/core-capabilities/interrupts': '/docs/angular/ag-ui/guides/interrupts',
+  'ag-ui/core-capabilities/tool-views': '/docs/angular/ag-ui/guides/tool-views',
+  'ag-ui/core-capabilities/json-render': '/docs/angular/ag-ui/guides/json-render',
+  'ag-ui/core-capabilities/client-tools': '/docs/angular/ag-ui/guides/client-tools',
+  'ag-ui/core-capabilities/a2ui': '/docs/angular/a2ui/getting-started/introduction',
+  'ag-ui/core-capabilities/subagents': '/docs/angular/ag-ui/guides/subagents',
 
   // render
   'render/getting-started/overview':
-    '/docs/render/getting-started/introduction',
-  'render/core-capabilities/spec-rendering': '/docs/render/guides/specs',
+    '/docs/angular/render/getting-started/introduction',
+  'render/core-capabilities/spec-rendering': '/docs/angular/render/guides/specs',
   'render/core-capabilities/element-rendering':
-    '/docs/render/guides/element-rendering',
+    '/docs/angular/render/guides/element-rendering',
   'render/core-capabilities/state-management':
-    '/docs/render/guides/state-store',
-  'render/core-capabilities/registry': '/docs/render/guides/registry',
-  'render/core-capabilities/repeat-loops': '/docs/render/guides/repeat-loops',
+    '/docs/angular/render/guides/state-store',
+  'render/core-capabilities/registry': '/docs/angular/render/guides/registry',
+  'render/core-capabilities/repeat-loops': '/docs/angular/render/guides/repeat-loops',
   // `$computed` resolves against the `functions` map registered by provideRender().
   'render/core-capabilities/computed-functions':
-    '/docs/render/guides/computed-functions',
+    '/docs/angular/render/guides/computed-functions',
 
   // chat
-  'chat/getting-started/overview': '/docs/chat/getting-started/introduction',
-  'chat/core-capabilities/messages': '/docs/chat/concepts/message-model',
-  'chat/core-capabilities/input': '/docs/chat/components/chat-input',
+  'chat/getting-started/overview': '/docs/angular/chat/getting-started/introduction',
+  'chat/core-capabilities/messages': '/docs/angular/chat/concepts/message-model',
+  'chat/core-capabilities/input': '/docs/angular/chat/components/chat-input',
   'chat/core-capabilities/interrupts':
-    '/docs/chat/components/chat-interrupt-panel',
-  'chat/core-capabilities/tool-calls': '/docs/chat/components/chat-tool-calls',
+    '/docs/angular/chat/components/chat-interrupt-panel',
+  'chat/core-capabilities/tool-calls': '/docs/angular/chat/components/chat-tool-calls',
   'chat/core-capabilities/subagents':
-    '/docs/chat/components/chat-subagent-card',
-  'chat/core-capabilities/threads': '/docs/chat/guides/thread-routing',
+    '/docs/angular/chat/components/chat-subagent-card',
+  'chat/core-capabilities/threads': '/docs/angular/chat/guides/thread-routing',
   // No chat-timeline page yet; the trace row is the primitive the timeline renders.
-  'chat/core-capabilities/timeline': '/docs/chat/components/chat-trace',
-  'chat/core-capabilities/generative-ui': '/docs/chat/guides/generative-ui',
-  'chat/core-capabilities/debug': '/docs/chat/components/chat-debug',
-  'chat/core-capabilities/theming': '/docs/chat/guides/theming',
-  'chat/core-capabilities/a2ui': '/docs/chat/a2ui/overview',
+  'chat/core-capabilities/timeline': '/docs/angular/chat/components/chat-trace',
+  'chat/core-capabilities/generative-ui': '/docs/angular/chat/guides/generative-ui',
+  'chat/core-capabilities/debug': '/docs/angular/chat/components/chat-debug',
+  'chat/core-capabilities/theming': '/docs/angular/chat/guides/theming',
+  'chat/core-capabilities/a2ui': '/docs/angular/chat/a2ui/overview',
 
   // runtimes
   'runtimes/getting-started/overview':
-    '/docs/runtimes/getting-started/introduction',
+    '/docs/angular/runtimes/getting-started/introduction',
   'runtimes/core-capabilities/microsoft-agent-framework':
-    '/docs/runtimes/microsoft-agent-framework/overview',
+    '/docs/angular/runtimes/microsoft-agent-framework/overview',
   'runtimes/core-capabilities/aws-strands':
-    '/docs/runtimes/aws-strands/overview',
-  'runtimes/core-capabilities/mastra': '/docs/runtimes/mastra/overview',
+    '/docs/angular/runtimes/aws-strands/overview',
+  'runtimes/core-capabilities/mastra': '/docs/angular/runtimes/mastra/overview',
 };
 
 /**

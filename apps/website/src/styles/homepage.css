@@ -33,7 +33,7 @@
   color: var(--color-accent);
   background: #ffe29b;
   border-radius: 5px;
-  padding: 0.15em 0.55em 0.2em;
+  padding: 2px 8px;
 }
 .home-page .home-adapter-detail .home-runtime-logos {
   display: grid;
@@ -44,7 +44,7 @@
 .home-page .home-runtime-logos li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   line-height: 1.4;
 }
 .home-page .home-runtime-logos img {
@@ -238,7 +238,7 @@
 .home-page .home-models li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 15px;
   color: var(--color-text-secondary);
 }
@@ -304,7 +304,7 @@
 .home-page .home-mini-window {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   width: 136px;
   height: 96px;
   border: 1px solid #dcdce0;
@@ -332,7 +332,7 @@
 }
 .home-page .home-mini-server {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   width: 120px;
 }
 .home-page .home-mini-server span {

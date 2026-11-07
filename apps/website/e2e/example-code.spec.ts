@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  * button copies the example source rather than the title or the markers.
  */
 test.describe('ExampleCode on a docs page', () => {
-  const route = '/docs/langgraph/guides/streaming';
+  const route = '/docs/angular/langgraph/guides/streaming';
   const file =
     'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts';
 

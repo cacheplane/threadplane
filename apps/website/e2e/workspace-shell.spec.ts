@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-const streamingDocsPath = '/docs/langgraph/guides/streaming';
-const persistenceDocsPath = '/docs/langgraph/guides/persistence';
-const mappedDocsOnlyPath = '/docs/langgraph/getting-started/introduction';
-const unmappedDocsOnlyPath = '/docs/langgraph/getting-started/installation';
-const durableExecutionDocsPath = '/docs/langgraph/guides/durable-execution';
+const streamingDocsPath = '/docs/angular/langgraph/guides/streaming';
+const persistenceDocsPath = '/docs/angular/langgraph/guides/persistence';
+const mappedDocsOnlyPath = '/docs/angular/langgraph/getting-started/introduction';
+const unmappedDocsOnlyPath = '/docs/angular/langgraph/getting-started/installation';
+const durableExecutionDocsPath = '/docs/angular/langgraph/guides/durable-execution';
 const RUN_RAIL_ITEM = /^Run(?:,|$)/;
 
 declare global {
@@ -402,7 +402,7 @@ test.describe('workspace shell', () => {
     const run = controlPlane.getByRole('link', { name: 'Run', exact: true });
     await expect(run).toHaveAttribute(
       'href',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     // Match the destination document; hydration can also update history.
     const [response] = await Promise.all([
@@ -412,14 +412,14 @@ test.describe('workspace shell', () => {
           response.request().frame() === page.mainFrame() &&
           response.url() ===
             new URL(
-              '/docs/langgraph/guides/streaming?mode=run',
+              '/docs/angular/langgraph/guides/streaming?mode=run',
               page.url()
             ).href
       ),
       run.click(),
     ]);
     expect(response.status()).toBe(200);
-    await expect(page).toHaveURL('/docs/langgraph/guides/streaming?mode=run');
+    await expect(page).toHaveURL('/docs/angular/langgraph/guides/streaming?mode=run');
     await expectMode(page, 'Run');
     await expect(page.locator('iframe')).toBeVisible();
   });

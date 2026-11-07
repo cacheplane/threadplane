@@ -5,7 +5,7 @@ import { getWorkspacePresentation } from './workspace-presentation';
 describe('frontend-specific workspace presentation', () => {
   it('selects the React runtime and code as one variant', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/guides/streaming',
+      '/docs/angular/langgraph/guides/streaming',
       'Streaming'
     );
     expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({
@@ -23,7 +23,7 @@ describe('frontend-specific workspace presentation', () => {
 
   it('selects the supported Persistence React runtime and source', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/guides/persistence',
+      '/docs/angular/langgraph/guides/persistence',
       'Persistence'
     );
     expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({
@@ -38,7 +38,7 @@ describe('frontend-specific workspace presentation', () => {
 
   it('does not lend an Angular runtime to an unsupported React topic', () => {
     const resolution = resolveDocsWorkspace(
-      '/docs/langgraph/guides/testing',
+      '/docs/angular/langgraph/guides/testing',
       'Testing'
     );
     expect(getWorkspacePresentation(resolution, 'react')).toMatchObject({

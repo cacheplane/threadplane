@@ -1,0 +1,157 @@
+---
+title: Overview
+description: How the AWS Strands example books meetings over AG-UI, and why its shared-state support is measured as partial.
+---
+
+# AWS Strands Overview
+
+[AWS Strands](https://strandsagents.com) is an open-source Python agent SDK from AWS. Its AG-UI bridge, `ag-ui-strands`, turns a Strands `Agent` into an AG-UI event stream, which is all `@threadplane/ag-ui` needs in order to bind it to `<chat>`. The running example is a meeting scheduler that looks up open slots, pauses for human approval before it books anything, and delegates research to a specialist, and this page walks the files that make it work. The Angular component it renders is the same UI code the LangGraph-backed examples use; only the provider and the backend behind it differ.
+
+## What the demo does
+
+The Run tab shows the prebuilt `<chat>` composition in front of a Strands agent served over AG-UI, with a side panel titled "Shared state — schedule" to the right of the transcript. Two welcome suggestions set it up: "Book the Q3 roadmap review" asks for a Tuesday meeting with the platform team, and "Book a design critique" runs the same two steps for the web team on Thursday.
+
+The agent calls `check_availability` for the requested weekday, and that day and its open slots appear in the side panel. Then it calls `book_meeting`, the run stops, and a modal card titled "Booking approval required" shows the topic and the chosen slot above two buttons, Cancel and Approve. Approve resumes the run and the agent confirms the booking in one sentence; Cancel resumes it with a rejection and nothing is booked. The Angular presentation uses the agent's confirmation sentence for final status. The wire also carries the canonical booking tool result. The last schedule snapshot may remain pending after a sequential booking, or become final when a later batch availability lookup publishes state; it is an observation, not a required final-state hook.
+
+Delegation is the third thing to try. Type a research request instead, for example "Find a slot for Ada and Grace next week — research their availability first", and the agent calls `research_availability`. That call renders as a subagent card carrying the specialist's own answer, streamed token by token inside the card rather than into the parent bubble.
+
+## React source preview
+
+Select React for a bounded native meeting preview with an editable preset, availability observation, current booking approval, and exact backend result. Angular remains the default and provides the research specialist UI. React uses a native Session and generic interrupt, preserves the opaque pause id, and resumes with a resolved `{ approved }` payload. Confirmation requires the distinct resumed run, matching normal root terminal, and matching canonical tool result decoded through one JSON layer. Assistant prose and the observed schedule cannot confirm the booking.
+
+The calendar is fictional and process-global, not isolated per conversation. New conversation clears local state after cleanup; the next Send creates a fresh thread. It does not reset the calendar. An unconfirmed outcome requires a new conversation. Failed cleanup permanently revokes controls until reload. React is an experimental private source-build candidate, with no public npm availability or full researcher/subagent parity claim.
+
+## How it is built
+
+Five files carry the example: a Python module holding the Strands agent and its tools, a FastAPI server that mounts it, an application config that registers the agent, and a component that renders the state panel and the approval card. Open the Code tab to read them in place. `subagent_emitter.py`, also included in the Code tab, holds the translation from the specialist's stream into the protocol's subagent events.
+
+### An ordinary backend tool
+
+`check_availability` is a plain Strands `@tool`. It executes server-side and never pauses, so on the wire it is a tool call with a result and nothing else. The function under it is the state hook that mirrors the lookup into shared state, registered against the tool further down.
+
+<ExampleCode file="agent.py" region="availability-tool" title="agent.py — availability lookup" />
+
+The hook reads the tool result from `context.result_data` and tolerates the string form, because a result that has round-tripped through JSON arrives as text.
+
+### Pausing for a human decision
+
+`book_meeting` is a context tool: Strands hands it a `ToolContext`, and `tool_context.interrupt(...)` parks the tool mid-execution. The first argument is the name the client sees on the pending interrupt, and `reason` is the payload the approval card renders.
+
+<ExampleCode file="agent.py" region="book-meeting" title="agent.py — the interrupting tool" />
+
+When the human answers, the call returns the decision and the rest of the function runs to completion in the resumed run.
+
+<Callout type="info" title="Two interrupt conventions, one adapter">
+AWS Strands signals an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`, never through the LangGraph bridge's `CUSTOM` event named `on_interrupt`. It reads the decision back from the protocol-standard top-level `resume` array, one `{ interruptId, status, payload }` entry per interrupt. The adapter accepts either signal and sends the shape the runtime reads, so nothing in the component changes when the backend does.
+</Callout>
+
+### Delegating to a specialist
+
+`research_availability` is an async-generator tool. It re-yields every event the specialist emits, keeps the text deltas as it passes them along, and yields the joined text last, because Strands takes the last yielded value as the tool result. Each yielded value crosses the bridge as a `tool_stream_event`, which is the seam the subagent emitter listens on.
+
+<ExampleCode file="agent.py" region="delegation-tool" title="agent.py — the delegation tool" />
+
+The specialist itself is an ordinary Strands `Agent` with its own system prompt and no tools of its own.
+
+<ExampleCode file="agent.py" region="specialist" title="agent.py — the specialist" />
+
+### Registering the per-tool behaviors
+
+Everything that makes this example more than streamed text is registered in one place. `StrandsAgentConfig.tool_behaviors` maps a tool name to a `ToolBehavior`: `state_from_result` for the availability lookup, `state_from_args` for the booking, and `tool_stream_event_handler` for the delegation tool. Registering a stream handler for a tool gives that handler the whole child stream.
+
+<ExampleCode file="agent.py" region="agent-config" title="agent.py — the agent and its tool behaviors" />
+
+The orchestrator binds all three tools and the `StrandsAgent` wrapper is what the server mounts.
+
+### Serving the agent over AG-UI
+
+The backend is a FastAPI application. `add_strands_fastapi_endpoint` from the `ag-ui-strands` package mounts the wrapped agent at a path that speaks the AG-UI event stream.
+
+<ExampleCode file="server.py" title="server.py" />
+
+### Providing the agent
+
+`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo. Your own application does not need the factory.
+
+<ExampleCode file="app.config.ts" title="app.config.ts" />
+
+Pass the URL of your AG-UI endpoint directly:
+
+```typescript
+provideAgent({
+  url: 'https://your-backend.example.com/agent',
+});
+```
+
+### Reading shared state in the component
+
+`injectAgent()` returns the adapter's agent, and `agent.state()` is the Signal the snapshots land on. The component narrows that object into two computed Signals, treating a half-filled entry as absent so the panel does not render an empty row.
+
+<ExampleCode file="aws-strands.component.ts" region="shared-state" title="aws-strands.component.ts — state signals" />
+
+The panel itself is plain Angular template code reading those two Signals, with a placeholder line for the empty case.
+
+### The approval card
+
+`<chat-approval-card>` opens as a modal whenever the agent has a pending interrupt, and the `#body` template names what is being approved. This one renders the topic and the slot.
+
+<ExampleCode file="aws-strands.component.ts" region="approval-card" title="aws-strands.component.ts — the approval card" />
+
+The class supplies that body from the pending interrupt and maps the card's two buttons onto resume payloads. The adapter stores the interrupt outcome as `{ interrupts: [...], runId }`; each Strands entry carries the tool name under `reason` and the tool's own payload under `metadata.reason`.
+
+<ExampleCode file="aws-strands.component.ts" region="approval-wiring" title="aws-strands.component.ts — approval wiring" />
+
+`submit({ resume })` is the only interrupt-specific call in the component, and it is the same call every other AG-UI example makes.
+
+## What the integration demonstrates
+
+| Surface | Status | How |
+|---|---|---|
+| Messages | Supported | Streamed assistant text from a Strands `Agent`. |
+| Tool calls | Supported | `check_availability` executes server-side with no pause. |
+| Shared state | Partial | Snapshot-only, and opt-in per tool. See below. |
+| Interrupts | Supported | `book_meeting` parks in `tool_context.interrupt(...)`. |
+| Subagents | Supported (streaming) | An in-tree emitter rides the bridge's tool-stream handler and forwards the specialist's streamed tokens as `SUBAGENT_*` events. |
+
+## Shared state is partial, and the reason matters
+
+The Strands bridge never emits `STATE_DELTA`. Outbound state exists only where a tool opts in through a per-tool `ToolBehavior` hook, which is why the example registers `state_from_result` on `check_availability` and `state_from_args` on `book_meeting` and gets nothing from `research_availability`.
+
+Because the adapter applies a `STATE_SNAPSHOT` as a full replacement, every hook has to return the **complete** state object. A hook that returns only the keys it changed clobbers its siblings, so the example keeps one module-level object and composes the whole thing on every emission.
+
+<ExampleCode file="agent.py" region="demo-state" title="agent.py — the complete state object" />
+
+The booking hook shows what that costs in practice. It fires on the tool-call arguments, before the interrupt pauses the run, so the approval card can render a pending booking from shared state — and it still has to return both keys, not just the one it touched.
+
+<ExampleCode file="agent.py" region="booking-state" title="agent.py — the state_from_args hook" />
+
+Shared state does work on Strands. It is snapshot-only, it is opt-in per tool, and it puts the burden of assembling the whole object on each hook. That is a real constraint to design around, not a rounding error, which is why the measured matrix records it as partial rather than green.
+
+## How subagents surface
+
+Strands wraps every value an async-generator tool yields as a `tool_stream_event`, and the bridge dispatches those events to a per-tool `ToolBehavior.tool_stream_event_handler`. Natively the bridge forwards only the inner tool-call lifecycle, so a delegated run reaches the browser as one opaque result string with no child text at all.
+
+The handler registered on `research_availability` closes that gap. `subagent_emitter.py` translates the specialist's stream into `SUBAGENT_STARTED`, attributed `TEXT_MESSAGE_*` deltas carrying `subagentRunId`, and `SUBAGENT_FINISHED`, deriving every identifier from the tool call identifier the bridge already put on the wire. The adapter routes those attributed events into a subagent entry instead of the parent transcript, which is why the card streams the specialist's tokens live.
+
+The wire capture behind that matrix cell is committed beside the backend at [`docs/wire-capture-subagents.md`](https://github.com/cacheplane/threadplane/blob/main/cockpit/runtimes/aws-strands/python/docs/wire-capture-subagents.md), before and after the emitter. Multi-agent routes crash the stale published wheel, which is one reason the example pins the bridge to a git reference instead.
+
+## Model access
+
+Strands' native OpenAI provider is used on a plain `OPENAI_API_KEY`. No AWS credentials are involved anywhere in this example, despite the runtime's name. `OPENAI_BASE_URL` is honored when it is set, which is how the end-to-end harness replays recorded model calls against this backend.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="How it connects" href="/docs/angular/runtimes/aws-strands/how-it-connects">
+    The measured AG-UI wire behavior for this runtime.
+  </Card>
+  <Card title="Choosing an adapter" href="/docs/choosing-an-adapter">
+    The same matrix with the cause analysis behind each partial cell.
+  </Card>
+  <Card title="Subagents" href="/docs/angular/ag-ui/guides/subagents">
+    How the adapter attributes a delegated run to the tool call that spawned it.
+  </Card>
+  <Card title="AWS Strands quickstart" href="/docs/angular/runtimes/aws-strands/quickstart">
+    Run this backend locally and point an Angular application at it.
+  </Card>
+</CardGroup>

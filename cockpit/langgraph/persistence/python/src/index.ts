@@ -26,7 +26,7 @@ export const langgraphPersistencePythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'LangGraph Persistence (Python)',
-  docsPath: '/docs/langgraph/guides/persistence',
+  docsPath: '/docs/angular/langgraph/guides/persistence',
   promptAssetPaths: ['cockpit/langgraph/persistence/python/prompts/persistence.md'],
   codeAssetPaths: [
     'cockpit/langgraph/persistence/angular/src/app/persistence.component.ts',

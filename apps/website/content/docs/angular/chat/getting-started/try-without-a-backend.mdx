@@ -1,0 +1,108 @@
+---
+title: Try without a backend
+description: Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real adapter.
+---
+
+# Try without a backend
+
+Render a real `<chat>` in your Angular app with no server, no LLM and no account. `provideFakeAgent()` streams a canned reply in-process through the same components you will ship. When the UI looks right, swap the provider for a real adapter.
+
+<Callout type="info" title="What you need">
+An Angular 20–22 application. Nothing else.
+</Callout>
+
+<Steps>
+<Step title="Install">
+
+```bash
+npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+```
+
+`provideFakeAgent()` ships inside the adapter packages, so install the adapter you expect to use later. The LangChain packages are peers of `@threadplane/langgraph`; `marked` renders assistant markdown.
+
+<Callout type="tip" title="Bundle budget">
+A default Angular application caps the initial bundle at 1 MB, and a chat UI plus the LangGraph SDK exceeds it. Raise `budgets[].maximumError` for the `initial` bundle in `angular.json` if `ng build` reports a budget error.
+</Callout>
+
+</Step>
+<Step title="Provide the fake agent">
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideFakeAgent } from '@threadplane/langgraph';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFakeAgent({ tokens: ['Hello', ' from', ' Threadplane.'] }),
+  ],
+};
+```
+
+`FakeAgentConfig` accepts `tokens`, `reasoningTokens` and `delayMs`. Leave them out and the fake agent streams a default reply.
+
+</Step>
+<Step title="Render the chat">
+
+```ts
+// app.component.ts
+import { Component } from '@angular/core';
+import { injectAgent } from '@threadplane/langgraph';
+import { ChatComponent } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-root',
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" />`,
+})
+export class AppComponent {
+  protected readonly agent = injectAgent();
+}
+```
+
+Run `ng serve`, type anything, and watch the reply stream in.
+
+</Step>
+<Step title="Test it">
+
+```ts
+// app.component.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { provideFakeAgent } from '@threadplane/langgraph';
+import { AppComponent } from './app.component';
+
+it('streams the fake reply', async () => {
+  TestBed.configureTestingModule({
+    imports: [AppComponent],
+    providers: [provideFakeAgent({ tokens: ['Hello', ' from', ' Threadplane.'], delayMs: 0 })],
+  });
+  const fixture = TestBed.createComponent(AppComponent);
+  fixture.detectChanges();
+  const textarea = fixture.nativeElement.querySelector('textarea');
+  textarea.value = 'hi';
+  textarea.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+  fixture.nativeElement.querySelector('button[aria-label="Send message"]').click();
+  await fixture.whenStable();
+  fixture.detectChanges();
+  expect(fixture.nativeElement.textContent).toContain('Hello from Threadplane.');
+});
+```
+
+The `detectChanges()` call after the input event matters: the send button stays disabled until change detection runs, so a click before it does nothing.
+
+</Step>
+</Steps>
+
+## Testing without a model
+
+`provideFakeAgent()` streams canned tokens in-process, and the mock transports script tool calls and interrupts, so component specs stay deterministic and fast. See the [testing guide](/docs/angular/langgraph/guides/testing).
+
+## Connect a real adapter
+
+Replace `provideFakeAgent(...)` with one line and keep every component as it is:
+
+- **LangGraph**: `provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'agent' })` — [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart)
+- **AG-UI**: `provideAgent({ url: 'http://localhost:8000/agent' })` from `@threadplane/ag-ui` — [AG-UI quickstart](/docs/angular/ag-ui/getting-started/quickstart)
+
+Not every backend emits every capability; see [Choosing an adapter](/docs/choosing-an-adapter).

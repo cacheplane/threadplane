@@ -1,0 +1,190 @@
+---
+description: The two levels of @threadplane/chat UI — styled compositions like chat and chat-sidebar, versus headless primitives you assemble yourself — and how to choose.
+---
+
+# Primitives vs Compositions
+
+`@threadplane/chat` gives you two levels of UI.
+
+Use compositions when the default product shape is close to what you need. Use primitives when the layout, interaction model, or rendering policy is part of your application.
+
+This matters because chat UI gets complicated fast. Message streaming, input state, tool calls, reasoning, interrupts, subagents, auto-scroll, markdown, and generative UI all need to agree on the same `Agent`. The fastest path is usually to start with a composition and drop down only where the product needs control.
+
+## Compositions
+
+The main composition is `<chat>`.
+
+```ts
+import { ChatComponent } from '@threadplane/chat';
+```
+
+```html
+<chat [agent]="agent" />
+```
+
+`ChatComponent` composes the common pieces:
+
+- `chat-message-list` for messages.
+- `chat-input` for text entry and stop behavior.
+- Markdown rendering for assistant content.
+- Reasoning display.
+- Tool call cards.
+- Subagent display.
+- A2UI and json-render surfaces when `views` are provided.
+- Optional thread sidebar.
+- Auto-scroll and scroll-to-bottom behavior.
+
+Use `<chat>` when you want the library to own the chat shell.
+
+```html
+<chat
+  [agent]="agent"
+  [views]="views"
+  [handlers]="handlers"
+  [threads]="threads()"
+  [activeThreadId]="activeThreadId()"
+  (threadSelected)="selectThread($event)"
+/>
+```
+
+`<chat-debug>` is also a composition. It is built for development and inspection, not end-user chat layout, and ships from the debug-only secondary entry point.
+
+```ts
+import { ChatDebugComponent } from '@threadplane/chat/debug';
+```
+
+```html
+<chat [agent]="agent" />
+<chat-debug [agent]="agent" />
+```
+
+Use `chat-debug` when you need timeline and state inspection while building. Do not treat it as a customer-facing control surface unless you intentionally design around that.
+
+Three more compositions place chat inside a layout shell:
+
+- `<chat-popup>` — a floating launcher button that opens chat in an overlay. Wraps `<chat>`.
+- `<chat-sidebar>` — a docked rail pinned to the edge of the viewport. Wraps `<chat>`.
+- `<chat-sidenav>` — a collapsible thread and project navigation panel with a built-in footer launcher. It sits beside a chat surface rather than wrapping one, so you still render `<chat>` yourself.
+
+`<chat-popup>` and `<chat-sidebar>` forward a fixed set of inputs to the inner `<chat>`: `agent`, `views`, `clientTools`, `modelOptions`, and `showModelPicker`, plus the two-way `selectedModel`. Anything else on the `<chat>` API — `store`, `handlers`, `threads` — needs `<chat>` directly.
+
+```ts
+import {
+  ChatSidenavComponent,
+  ChatPopupComponent,
+  ChatSidebarComponent,
+} from '@threadplane/chat';
+```
+
+See the [Layout Modes](/docs/angular/chat/guides/layout-modes) guide for when to reach for each. `<chat-sidenav>` renders the built-in footer launcher by default: `[debug]` is already `true`, so pass `[debug]="false"` to suppress it.
+
+## Primitives
+
+Primitives are standalone Angular components and directives. They let you assemble your own shell while keeping the tested chat pieces.
+
+The core primitive set usually starts with `chat-message-list` and `chat-input`:
+
+```ts
+import {
+  ChatMessageListComponent,
+  MessageTemplateDirective,
+  ChatInputComponent,
+} from '@threadplane/chat';
+```
+
+```html
+<section class="support-chat">
+  <header>Support</header>
+
+  <chat-message-list [agent]="agent">
+    <ng-template chatMessageTemplate="human" let-message>
+      <app-user-message [message]="message" />
+    </ng-template>
+
+    <ng-template chatMessageTemplate="ai" let-message>
+      <app-assistant-message [message]="message" />
+    </ng-template>
+
+    <ng-template chatMessageTemplate="tool" let-message>
+      <app-tool-result [message]="message" />
+    </ng-template>
+
+    <ng-template chatMessageTemplate="system" let-message>
+      <app-system-note [message]="message" />
+    </ng-template>
+  </chat-message-list>
+
+  <chat-input [agent]="agent" placeholder="Ask a question" />
+</section>
+```
+
+Use primitives when you need:
+
+- A custom shell, sidebar, header, footer, or mobile layout.
+- Product-specific message rendering.
+- Custom markdown policy.
+- A different input placement or composer.
+- Separate handling for tool calls, citations, interrupts, or subagents.
+- A chat view embedded inside an existing operational screen.
+
+## Choosing The Level
+
+| Need | Use |
+|---|---|
+| A complete chat UI quickly | `<chat>` |
+| Default chat plus projected tool-call templates | `<chat>` |
+| Built-in thread list and auto-scroll | `<chat>` |
+| Development inspection | `<chat-debug>` |
+| Custom message layout | `chat-message-list` |
+| Custom composer around the same agent | `chat-input` |
+| Full product-specific shell | primitives |
+| You are building a design system wrapper | primitives |
+
+The practical tradeoff is ownership. A composition owns more behavior for you. A primitive hands you more control, and more responsibility.
+
+## Template Role Names
+
+Runtime messages use these roles:
+
+```ts
+type Role = 'user' | 'assistant' | 'system' | 'tool';
+```
+
+Message templates use UI names:
+
+```ts
+type MessageTemplateType = 'human' | 'ai' | 'tool' | 'system' | 'function';
+```
+
+The mapping is:
+
+| Message role | `chatMessageTemplate` |
+|---|---|
+| `user` | `human` |
+| `assistant` | `ai` |
+| `tool` | `tool` |
+| `system` | `system` |
+
+`function` exists as a template type for compatibility with older function-message vocabulary. The current runtime-neutral `Role` type does not include `function`, so do not build new adapters around a separate function role. Normalize function output into tool messages or adapter-specific `extra` data.
+
+## Gotchas
+
+Give `<chat>` a parent with height. The composition uses flex layout and `height: 100%`; without a constrained parent, it can collapse.
+
+Do not pass a raw backend client to chat primitives. They need the `Agent` contract from `@threadplane/chat`, not a LangGraph SDK client or AG-UI `AbstractAgent`.
+
+Do not mix two agents in one shell unless you mean it. `chat-message-list`, `chat-input`, tool-call UI, and debug UI should usually point at the same `Agent` instance.
+
+If you use primitives, you own the behaviors the composition normally provides: auto-scroll, empty state, error display, reasoning placement, tool-call placement, subagent placement, and interrupt display.
+
+If you use `<chat>` and project custom pieces, stay inside the supported projection points. For example, project `chatToolCallTemplate` for tool-call rendering and `[chatInputModelSelect]` content for the model picker. If the whole structure needs to move, switch to primitives.
+
+## A Conservative Path
+
+Start with `<chat>` while wiring the runtime.
+
+Move individual surfaces to templates when the product needs customization.
+
+Move to primitives when layout becomes the requirement.
+
+That keeps early integration focused on the agent contract and delays UI ownership until there is a concrete reason to take it on.

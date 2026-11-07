@@ -12,4 +12,4 @@ The isolated build consumes private local core/content/React and neutral LangGra
 
 The local proof server exercises incremental draft SSE, complete root batches, distinct physical run status reads, exact null-input resume commands, held decisions, cancellation, page exit, protected failures, and developer connection headers. Its routes and build-proof JSON are excluded from deployment. The shared target uses `/api`; a developer key is passed only in SDK headers.
 
-The public page is `/docs/langgraph/guides/interrupts?frontend=react`; runtime assets live at `/langgraph/interrupts/react`. Docs, Code, and Run select the same frontend. Streaming remains available as a separate React preview; other topic variants remain pending. Both frontends use the existing shared backend deployment.
+The public page is `/docs/angular/langgraph/guides/interrupts?frontend=react`; runtime assets live at `/langgraph/interrupts/react`. Docs, Code, and Run select the same frontend. Streaming remains available as a separate React preview; other topic variants remain pending. Both frontends use the existing shared backend deployment.

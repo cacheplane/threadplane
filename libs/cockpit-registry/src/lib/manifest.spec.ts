@@ -123,7 +123,7 @@ describe('cockpitManifest', () => {
         getCockpitDocsPath(entry.product, entry.section, entry.topic)
       );
       if (entry.docsPath !== NO_COCKPIT_DOCS_LINK) {
-        expect(entry.docsPath).toMatch(/^\/docs\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/);
+        expect(entry.docsPath).toMatch(/^\/docs\/angular\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/);
       }
       expect(entry.implementationStatus).toBe('implemented');
       expect(entry.docsStatus).toBe('docs-authored');

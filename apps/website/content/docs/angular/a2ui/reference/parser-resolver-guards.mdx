@@ -1,0 +1,186 @@
+---
+description: The runtime API of @threadplane/a2ui - the JSONL parser, resolveDynamic, the pointer helpers, the two guards, and the client-side function registry.
+---
+
+# Parser, Resolver, and Guards
+
+`@threadplane/a2ui` exports the runtime half of the package: a stream parser, a dynamic-value resolver, three pointer helpers, two type guards, and the client-side function registry the resolver dispatches through. The [schema reference](/docs/angular/a2ui/reference/schema) covers the types these helpers operate on.
+
+## createA2uiMessageParser()
+
+```ts
+import { createA2uiMessageParser } from '@threadplane/a2ui';
+
+const parser = createA2uiMessageParser();
+const messages = parser.push(chunk);
+```
+
+`push(chunk)` appends the chunk to an internal buffer and returns every complete message found before the last newline.
+
+Important behavior from source:
+
+- the parser is JSONL-based;
+- a complete message requires a trailing newline;
+- CRLF works because each line is trimmed;
+- empty lines are ignored;
+- malformed lines are skipped silently;
+- unknown top-level envelopes are ignored (forward compatibility with future protocol versions, e.g. v1.0 message kinds);
+- a missing `version` field defaults to `'v0.9'`; a present `version` is preserved;
+- multiple messages can be returned from one chunk.
+
+The recognized envelope keys are `createSurface`, `updateComponents`, `updateDataModel`, and `deleteSurface`, checked in that order — the first one present on a line wins. The parser checks only for a known envelope key and a non-null object value. It does not validate each nested field.
+
+## resolveDynamic()
+
+```ts
+import { resolveDynamic } from '@threadplane/a2ui';
+
+const model = {
+  customer: { name: 'Ada' },
+  count: 2,
+};
+
+resolveDynamic({ path: '/customer/name' }, model); // "Ada"
+resolveDynamic(2, model); // 2
+```
+
+`resolveDynamic(value, model, scope?, registry?)` handles:
+
+| Input shape | Result |
+|-------------|--------|
+| bare literal (string, number, boolean) | returned as-is |
+| `{ path }` | the value at that model path |
+| `{ call }` | executes via the `A2uiFunctionRegistry` passed as the fourth argument (`createA2uiFunctionRegistry()` provides the standard set); `undefined` without a registry or for unknown names |
+| arrays | recursively resolved array values |
+| `null` or `undefined` | returned as-is |
+| unrecognized plain objects | returned as-is |
+
+Resolution order is fixed: `{ call }` function calls are checked **before** `{ path }` references (so a call's `args` never masquerade as a binding), then path refs resolve, then everything else passes through as a bare literal.
+
+Absolute paths start with `/`.
+
+Relative paths resolve against `scope.basePath` when a scope is supplied. Without a scope, a relative path is treated as root-relative by prefixing `/`.
+
+```ts
+resolveDynamic(
+  { path: 'name' },
+  { items: [{ name: 'Ada' }] },
+  { basePath: '/items/0', item: { name: 'Ada' } },
+); // "Ada"
+```
+
+`A2uiScope.item` is part of the public type, but the current resolver only uses `basePath`.
+
+## Pointer helpers
+
+```ts
+import { getByPointer, setByPointer, deleteByPointer } from '@threadplane/a2ui';
+```
+
+The pointer helpers use slash-separated paths:
+
+```ts
+const model = { customer: { name: 'Ada' } };
+
+getByPointer(model, '/customer/name'); // "Ada"
+setByPointer(model, '/customer/name', 'Grace');
+deleteByPointer(model, '/customer/name');
+```
+
+Current behavior is intentionally small:
+
+- empty pointer and `/` point at the root;
+- missing paths read as `undefined`;
+- `setByPointer()` returns a cloned object path rather than mutating the original root, and creates missing intermediate objects;
+- `deleteByPointer()` returns the original model when the parent path does not exist;
+- `deleteByPointer()` with an empty pointer or `/` returns `{}`;
+- `deleteByPointer()` on an **array index** sets it to `undefined` and preserves the array's length (the v0.9 array-delete rule).
+
+These helpers do not implement full RFC 6901 escaping semantics. Avoid keys that require `~0` or `~1` escaping unless you normalize them before they enter A2UI state.
+
+## Guards
+
+The public guards are:
+
+```ts
+isPathRef(value)      // narrows to { path: string }
+isFunctionCall(value) // narrows to { call: string; args?: Record<string, unknown> }
+```
+
+`isPathRef()` verifies the value is an object with a string `path`; `isFunctionCall()` verifies an object with a string `call`. Bare literals need no guard in v0.9 — a value that matches neither guard is a literal (or an unrecognized object that passes through unchanged).
+
+Use them when you need to branch on protocol values without importing internal renderer code.
+
+## Function registry
+
+A `{ call }` dynamic value names a client-side function. `createA2uiFunctionRegistry()` builds the map the resolver looks that name up in.
+
+```ts
+import { createA2uiFunctionRegistry, resolveDynamic } from '@threadplane/a2ui';
+
+const registry = createA2uiFunctionRegistry();
+
+resolveDynamic(
+  { call: 'formatCurrency', args: { value: { path: '/total' }, currency: 'USD' } },
+  { total: 42 },
+  undefined,
+  registry,
+); // "$42.00"
+```
+
+`createA2uiFunctionRegistry(overrides?)` returns an `A2uiFunctionRegistry`, which is a `ReadonlyMap<string, A2uiFunctionImpl>` seeded with the standard functions. Entries in `overrides` are added to the map, replacing a standard function of the same name.
+
+```ts
+import type { A2uiFunctionImpl } from '@threadplane/a2ui';
+
+const shout: A2uiFunctionImpl = (args, ctx) =>
+  String(ctx.resolveArg(args['value']) ?? '').toUpperCase();
+
+const registry = createA2uiFunctionRegistry({ shout });
+```
+
+Every implementation receives the raw `args` object and an `A2uiFunctionContext`:
+
+```ts
+interface A2uiFunctionContext {
+  resolveArg(value: unknown): unknown;
+  locale?: string;
+}
+```
+
+`resolveArg()` resolves one argument against the same model and scope the outer `resolveDynamic()` call was given, so an argument may itself be a `{ path }` binding or a nested `{ call }`. Arguments are **not** pre-resolved: an implementation that ignores `resolveArg` sees the wire value. `locale` is a BCP 47 tag for `Intl`-based formatting; `resolveDynamic()` does not set it, so the standard formatters fall back to the host default locale.
+
+The standard set covers formatting, logic, and validation:
+
+| Function | Args | Returns |
+|---|---|---|
+| `formatString` | `value` (template) | the template with each `${…}` expression interpolated |
+| `formatNumber` | `value`, `decimals?`, `grouping?` | an `Intl.NumberFormat` string |
+| `formatCurrency` | `value`, `currency`, `decimals?`, `grouping?` | an `Intl.NumberFormat` currency string |
+| `formatDate` | `value`, `format` | the date rendered through a Unicode TR35 pattern subset (`yyyy`, `MMMM`, `dd`, `HH`, `mm`, `a`, …) |
+| `pluralize` | `value`, plus a message per plural category (`zero?`, `one`, `other`, …) | the message for the value's `Intl.PluralRules` category |
+| `and` / `or` | `values` (array) | whether every / any resolved element is exactly `true` |
+| `not` | `value` | `true` unless the resolved value is exactly `true` |
+| `required` | `value` | `false` for `null`, `undefined`, an empty string, or an empty array |
+| `regex` | `value`, `pattern` | whether the string matches the pattern |
+| `length` | `value`, `min?`, `max?` | whether the string length falls in range |
+| `numeric` | `value`, `min?`, `max?` | whether the number falls in range |
+| `email` | `value` | whether the string has a `local@domain.tld` shape |
+
+The last five are the validators a check rule's `condition` typically calls — see `checks` in the [schema reference](/docs/angular/a2ui/reference/schema). They return booleans; this package computes them but does nothing with the result.
+
+Inside `formatString`, a `${…}` expression may be a JSON-pointer path (absolute or relative), a nested named-argument call such as `${formatCurrency(value: /total, currency: 'USD')}`, a quoted string, a number, or a boolean. Write `\${` for a literal `${`. Nested calls dispatch through the same registry.
+
+An unknown function name resolves to `undefined` and logs a one-time console warning per name.
+
+## Validation vs handler wiring
+
+This package does not gate action dispatch on check rules and does not map actions to Angular handlers. `@threadplane/chat` does both: its surface component evaluates every check rule against the live data model before an event action dispatches and emits a `VALIDATION_FAILED` error message when one fails. This package does execute client-side function calls, including your own, through the registry you pass to `resolveDynamic()`.
+
+A practical boundary is:
+
+- use `@threadplane/a2ui` to parse and inspect the protocol stream, and to resolve values against a model;
+- use app or server validation to decide whether a message is trusted;
+- use `@threadplane/chat` and `@threadplane/render` to display surfaces and wire interactions.
+
+That split keeps protocol parsing deterministic and keeps privileged behavior in the host application.

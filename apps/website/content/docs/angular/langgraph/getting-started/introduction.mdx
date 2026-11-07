@@ -1,0 +1,363 @@
+---
+description: The end-to-end LangGraph workflow — build a Python graph, run it locally, connect an Angular app with injectAgent(), and deploy to LangGraph Cloud.
+---
+
+# Introduction
+
+> **Picking an adapter?** This guide covers `@threadplane/langgraph`, the LangChain/LangGraph adapter. If your backend speaks the AG-UI protocol (CrewAI, Mastra, Microsoft Agent Framework, and so on), reach for [`@threadplane/ag-ui`](/ag-ui) instead. [Choosing an adapter](/docs/choosing-an-adapter) puts them side by side.
+
+`@threadplane/langgraph` is the Angular adapter layer for production agent UI surfaces: chat, durable threads, interrupts, subagents, planning, memory, and generative UI. You build the whole Angular 20–22 app with Signals, wire it to LangGraph agents, and keep the UI inside Angular templates, dependency injection, and your design system.
+
+<Callout type="info" title="What this guide covers">
+This guide walks you through the complete workflow: build a LangGraph agent in Python, run it locally, connect it to an Angular app with `injectAgent()`, and deploy to production.
+</Callout>
+
+<Callout type="tip" title="See it live">
+The LangGraph demo runs this chat surface against a LangGraph backend — streaming, threads, interrupts, and tool calls included.
+
+<CalloutActions>
+  <CalloutAction href="https://demo.threadplane.ai">Run LangGraph demo</CalloutAction>
+</CalloutActions>
+</Callout>
+
+## How it fits
+
+<StackDiagram
+  highlight="langgraph"
+  caption="The LangGraph adapter implements the Agent contract natively against LangGraph Platform — threads, runs, and checkpoints included."
+/>
+
+## What is `injectAgent()`?
+
+`injectAgent()` is an Angular function that creates a reactive, streaming connection to a LangGraph agent. Configured globally via `provideAgent({...})` at bootstrap, it returns an object whose properties are Angular Signals — meaning your templates update automatically as the agent streams responses, token by token.
+
+```typescript
+// chat.component.ts
+protected readonly chat = injectAgent();
+
+// Every property is a Signal — reactive, synchronous, no subscriptions
+chat.messages();         // Message[]
+chat.status();           // 'idle' | 'running' | 'error'
+chat.isLoading();        // boolean
+chat.error();            // AgentError | undefined
+chat.interrupt();        // AgentInterrupt | undefined
+chat.history();          // AgentCheckpoint[]
+chat.langGraphHistory(); // ThreadState[]
+```
+
+No RxJS. No manual subscriptions. No async pipes. Just Signals that work with Angular's `OnPush` change detection out of the box.
+
+## The Architecture
+
+Watch a full conversation turn flow through the stack — from user input to rendered response:
+
+<ConversationArchitecture />
+
+## Build Your Agent
+
+LangGraph agents are Python programs defined as directed graphs. A minimal chat agent looks like this:
+
+<Tabs>
+<Tab label="agent.py">
+
+```python
+from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
+from langgraph.graph import END, START, MessagesState, StateGraph
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-5-mini")
+
+def call_model(state: MessagesState, config: RunnableConfig) -> dict:
+    """Invoke the LLM with the current message history."""
+    system_prompt = config.get("configurable", {}).get(
+        "system_prompt", "You are a helpful assistant."
+    )
+    messages = [SystemMessage(content=system_prompt)] + state["messages"]
+    response = llm.invoke(messages)
+    return {"messages": [response]}
+
+# Build the graph: START -> call_model -> END
+builder = StateGraph(MessagesState)
+builder.add_node("call_model", call_model)
+builder.add_edge(START, "call_model")
+builder.add_edge("call_model", END)
+
+graph = builder.compile()
+```
+
+</Tab>
+<Tab label="langgraph.json">
+
+```json
+{
+  "dependencies": ["."],
+  "graphs": {
+    "chat": "./src/graph.py:graph"
+  },
+  "env": ".env",
+  "python_version": "3.12"
+}
+```
+
+</Tab>
+</Tabs>
+
+<Callout type="tip" title="How this graph works">
+`MessagesState` manages a list of messages. The `call_model` node takes the current messages, adds a system prompt, and calls the LLM. The graph runs this single node and returns the response. LangGraph handles streaming, checkpointing, and thread management automatically.
+</Callout>
+
+## Run Your Agent Locally
+
+<Steps>
+<Step title="Install the LangGraph CLI">
+
+```bash
+pip install -U "langgraph-cli[inmem]"
+```
+
+</Step>
+<Step title="Set up your environment">
+
+Create a `.env` file with your API keys:
+
+```bash
+OPENAI_API_KEY=sk-...
+LANGSMITH_API_KEY=lsv2_...
+```
+
+</Step>
+<Step title="Start the dev server">
+
+```bash
+cd examples/chat/python
+langgraph dev
+```
+
+Your agent is now running at `http://localhost:2024`. You can test it in LangGraph Studio at `https://smith.langchain.com/studio/`.
+
+</Step>
+</Steps>
+
+## Connect with Angular
+
+Now connect your Angular app to the running agent using `injectAgent()`.
+
+<Steps>
+<Step title="Install the package">
+
+```bash
+npm install @threadplane/langgraph @threadplane/chat @langchain/core @langchain/langgraph-sdk
+```
+
+npm 7 and newer install peer dependencies automatically, so this command also brings in `@threadplane/telemetry` along with the peers `@threadplane/chat` declares: `@threadplane/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, and `marked`.
+
+</Step>
+<Step title="Configure the provider">
+
+```typescript
+// app.config.ts
+import { ApplicationConfig, signal } from '@angular/core';
+import { provideAgent } from '@threadplane/langgraph';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAgent({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: signal(localStorage.getItem('threadId')),
+      onThreadId: (id) => localStorage.setItem('threadId', id),
+    }),
+  ],
+};
+```
+
+</Step>
+<Step title="Build your chat component">
+
+<Tabs>
+<Tab label="chat.component.ts">
+
+```typescript
+// chat.component.ts
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { injectAgent } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [FormsModule],
+  templateUrl: './chat.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ChatComponent {
+  input = signal('');
+
+  protected readonly chat = injectAgent();
+
+  // Derived signals — compose with computed()
+  isStreaming = computed(() => this.chat.isLoading());
+  messageCount = computed(() => this.chat.messages().length);
+
+  send() {
+    const msg = this.input();
+    if (!msg.trim()) return;
+    this.chat.submit({ message: msg });
+    this.input.set('');
+  }
+}
+```
+
+</Tab>
+<Tab label="chat.component.html">
+
+```html
+<!-- chat.component.html -->
+<div class="chat-container">
+  <!-- Message list — updates token-by-token -->
+  @for (msg of chat.messages(); track $index) {
+    <div [class]="'message ' + msg.role">
+      <p>{{ msg.content }}</p>
+    </div>
+  }
+
+  <!-- Streaming indicator -->
+  @if (isStreaming()) {
+    <div class="typing">Agent is thinking...</div>
+  }
+
+  <!-- Error display -->
+  @if (chat.error(); as err) {
+    <div class="error">{{ err.message }}</div>
+  }
+
+  <!-- Input form -->
+  <form (submit)="send(); $event.preventDefault()">
+    <input
+      [ngModel]="input()"
+      (ngModelChange)="input.set($event)"
+      placeholder="Type a message..."
+    />
+    <button type="submit" [disabled]="isStreaming()">
+      Send
+    </button>
+  </form>
+</div>
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step title="Run your Angular app">
+
+```bash
+ng serve
+```
+
+Open `http://localhost:4200` and start chatting with your agent. Messages stream in real-time as the LLM generates them.
+
+</Step>
+</Steps>
+
+## Key Concepts
+
+Everything `injectAgent()` gives you out of the box — click any to learn more:
+
+<FeatureChips />
+
+That same agent also exposes `injectAgent().lifecycle` — eight read-only signals that capture key transitions (first chunk, first interrupt, tool start/complete, errors) for debugging and observability. See [Lifecycle Signals](/docs/angular/langgraph/guides/lifecycle).
+
+## Deploy to Production
+
+When you are ready to go live, deploy your agent to LangGraph Cloud and point your Angular app to the deployment URL.
+
+<Steps>
+<Step title="Push your agent to GitHub">
+
+Your agent code (the Python project with `langgraph.json`) needs to be in a GitHub repository. Make sure your `langgraph.json` references the correct graph entry point.
+
+```bash
+git init && git add . && git commit -m "initial agent"
+gh repo create my-agent --public --source=. --push
+```
+
+</Step>
+<Step title="Deploy via LangSmith">
+
+Go to [LangSmith Deployments](https://smith.langchain.com) and click **+ New Deployment**. Connect your GitHub account, select your repository, and deploy. The first deployment takes about 15 minutes.
+
+You will receive a deployment URL like `https://my-agent-abc123.langsmith.dev`.
+
+</Step>
+<Step title="Update your Angular config">
+
+Point `apiUrl` to your deployment URL and set up environment-based configuration:
+
+```typescript
+// environment.ts
+export const environment = {
+  langgraphUrl: 'http://localhost:2024', // dev
+};
+
+// environment.prod.ts
+export const environment = {
+  langgraphUrl: 'https://my-agent-abc123.langsmith.dev', // prod
+};
+
+// app.config.ts
+provideAgent({
+  apiUrl: environment.langgraphUrl,
+  assistantId: 'chat',
+})
+```
+
+</Step>
+<Step title="Deploy your Angular app">
+
+Deploy your Angular frontend to any hosting platform — Vercel, Netlify, AWS, or your own infrastructure. Since `injectAgent()` is a stateless client, your frontend has no server-side state requirements.
+
+```bash
+ng build --configuration production
+# Deploy dist/ to your hosting platform
+```
+
+</Step>
+</Steps>
+
+<Callout type="tip" title="Stateless architecture">
+Your Angular app is a stateless client. All agent state — threads, checkpoints, memory — lives on LangGraph Platform. This means you can deploy your frontend anywhere (CDN, edge, SSR) without state management concerns. Scale your frontend independently of your agent infrastructure.
+</Callout>
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" href="/docs/angular/langgraph/getting-started/quickstart">
+    Detailed 5-minute walkthrough with a complete chat component
+  </Card>
+  <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
+    Token-by-token updates, stream modes, and status tracking
+  </Card>
+  <Card title="Persistence" href="/docs/angular/langgraph/guides/persistence">
+    Thread persistence across sessions and reactive thread switching
+  </Card>
+  <Card title="Interrupts" href="/docs/angular/langgraph/guides/interrupts">
+    Human-in-the-loop approval and confirmation flows
+  </Card>
+  <Card title="Testing" href="/docs/angular/langgraph/guides/testing">
+    Deterministic testing with MockAgentTransport
+  </Card>
+  <Card title="Lifecycle Signals" href="/docs/angular/langgraph/guides/lifecycle">
+    Read per-agent lifecycle signals for debugging and observability
+  </Card>
+  <Card title="Angular Signals" href="/docs/angular/langgraph/concepts/angular-signals">
+    Deep dive into how Signals power agent
+  </Card>
+  <Card title="LangGraph Basics" href="/docs/angular/langgraph/concepts/langgraph-basics">
+    Graphs, nodes, edges, and state for Angular developers
+  </Card>
+  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
+    Complete `injectAgent()` function reference
+  </Card>
+</CardGroup>

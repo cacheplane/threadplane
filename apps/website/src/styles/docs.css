@@ -2408,3 +2408,9 @@ body:has([data-website-workspace-host]) {
   }
   .docs-page-actions-tooltip { display: none; }
 }
+
+.docs-search-scope {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+}

@@ -9,7 +9,7 @@ import {
 } from './example-code';
 
 const context: ExampleCodeContext = {
-  docsPath: '/docs/langgraph/guides/streaming',
+  docsPath: '/docs/angular/langgraph/guides/streaming',
   assetPaths: [
     'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
     'cockpit/langgraph/streaming/angular/src/app/app.config.ts',
@@ -45,7 +45,7 @@ describe('resolveExampleFile', () => {
       ExampleCodeError
     );
     expect(() => resolveExampleFile('missing.ts', context)).toThrow(
-      /\/docs\/langgraph\/guides\/streaming.*missing\.ts/
+      /\/docs\/angular\/langgraph\/guides\/streaming.*missing\.ts/
     );
   });
 

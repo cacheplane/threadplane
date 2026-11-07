@@ -1,9 +1,11 @@
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const route = '/docs/a2ui/getting-started/introduction';
+const route = '/docs/angular/a2ui/getting-started/introduction';
+const reactRoute = '/docs/react/a2ui/getting-started/introduction';
 const reactFrame = /(?:127\.0\.0\.1:4647|localhost:4647|ag-ui\/a2ui\/react)/;
 const observations = new WeakMap<
   Page,
@@ -53,8 +55,8 @@ async function hydrated(page: Page, mode: 'Docs' | 'Code' | 'Run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'Run');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -84,9 +86,9 @@ async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
 test('native AG-UI A2UI keeps canonical Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(route + '?frontend=react', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveValue('react');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toBeVisible();
@@ -164,7 +166,7 @@ test('native AG-UI A2UI keeps canonical Docs, Code and Run aligned', async ({
     path: testInfo.outputPath('react-ag-ui-a2ui-run-desktop.png'),
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -186,21 +188,21 @@ test('native AG-UI A2UI retains Angular as the canonical default', async ({
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveValue('angular');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toBeVisible();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
 });
 
 test('native AG-UI A2UI preserves its mounted frame and unsent draft through modes and history', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -210,7 +212,7 @@ test('native AG-UI A2UI preserves its mounted frame and unsent draft through mod
     .getByLabel('Message', { exact: true })
     .fill('Unsent A2UI history draft');
   await mode(page, 'Docs');
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
   await mode(page, 'Code');
   await expect(page).toHaveURL(/mode=code/);
   await page.goBack({ waitUntil: 'domcontentloaded' });
@@ -229,7 +231,7 @@ test('native AG-UI A2UI preserves its mounted frame and unsent draft through mod
 test('native AG-UI A2UI accepts the supported AG-UI iframe endpoint without starting work', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);

@@ -1,0 +1,179 @@
+---
+description: How the timeline example mounts the surface that hosts trace rows, plus the chat-trace inputs, slots, expansion rules and styling hooks.
+---
+
+# ChatTraceComponent
+
+`ChatTraceComponent` is the disclosure primitive behind the collapsible rows in a transcript. It renders one toggle button — a chevron, an optional icon, a label and optional metadata — and reveals its projected content only while the row is expanded. Tool-call cards and subagent cards are built on it, so the expansion rules below are the rules those cards inherit. The running example is the timeline demo, which mounts the full `<chat>` composition beside a checkpoint sidebar, and this page walks the files that put that surface on screen.
+
+**Selector:** `chat-trace`
+
+**Import:**
+
+```typescript
+import { ChatTraceComponent } from '@threadplane/chat';
+```
+
+## What the demo does
+
+The Run tab shows a conversation on the left and a Timeline sidebar on the right. The agent is an aviation assistant whose mock dataset covers ten United States airports — LAX, JFK, SFO, ORD, BOS, ATL, DFW, SEA, MIA and DEN — and four airlines. There are no welcome suggestions, so type the first message yourself: ask which airlines fly out of BOS, then follow up with a different origin airport. The prompt keeps every answer to two or three sentences, so each turn is a clean unit of history.
+
+Once a turn finishes, the sidebar lists the checkpoints the adapter loaded for the current thread and counts them as "N checkpoint(s)". Each entry shows the node the run would take next, or the literal `Step N` when there is none, the checkpoint identifier underneath it, and a Replay and a Fork button.
+
+The graph behind this demo binds no tools, so its transcript is plain messages and no trace row appears in it. The section on where trace rows appear says which components put one there.
+
+## How it is built
+
+Three files carry the example: the graph that streams the answers, the provider that points Angular at it, and the component that mounts the two chat components side by side. Open the Code tab to read them in place.
+
+### The conversational graph
+
+The backend is an ordinary two-node graph. `generate` reads the capability's prompt file, prepends it as a system message, and awaits a model constructed with `streaming=True`. `generate_title` runs after it and writes a short thread title back through the LangGraph SDK. Checkpoints are not built here: the API server records one per node as the run advances.
+
+<ExampleCode file="graph.py" region="conversation-graph" title="graph.py — the conversational graph" />
+
+The compiled graph is exported as `graph`, which is the symbol `langgraph.json` points at.
+
+### The agent and the chat configuration
+
+`provideAgent()` registers the agent for the whole application, and it is the only provider the chat compositions require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+
+<ExampleCode file="app.config.ts" />
+
+Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`.
+
+### The chat surface
+
+`<chat>` is the prebuilt composition: message list, streaming markdown, tool calls, input strip. It takes the agent and nothing else here.
+
+<ExampleCode file="timeline.component.ts" region="chat-surface" title="timeline.component.ts — the chat surface" />
+
+Every trace row a run produces is rendered inside this element.
+
+### The timeline sidebar
+
+The sidebar is `<chat-timeline-slider>` under a heading, with a static note beneath it. Its Replay and Fork buttons emit `replayRequested` and `forkRequested` with the checkpoint identifier; this example binds neither, so Fork only marks the entry it was pressed on, and dispatching either back to the runtime is the host application's job.
+
+<ExampleCode file="timeline.component.ts" region="timeline-panel" title="timeline.component.ts — the timeline sidebar" />
+
+The slider requires an `AgentWithHistory`, the sub-contract that adds a `history` signal of `AgentCheckpoint` values to `Agent`.
+
+### One agent, two components
+
+Both components bind to the same injected reference, so the sidebar describes exactly the conversation on the left.
+
+<ExampleCode file="timeline.component.ts" region="agent" title="timeline.component.ts — the agent" />
+
+## Where trace rows appear
+
+`<chat>` never renders `<chat-trace>` directly. Rows reach the transcript through [`<chat-tool-calls>`](/docs/angular/chat/components/chat-tool-calls), which renders each of an assistant message's tool calls as a [`<chat-tool-call-card>`](/docs/angular/chat/components/chat-tool-call-card), or as a [`<chat-subagent-card>`](/docs/angular/chat/components/chat-subagent-card) when the call spawned a subagent. Both cards wrap `<chat-trace>`: the card supplies the label, the status pill and the body, and the trace supplies the button, the chevron and the expansion behavior. When a tool call has a registered `chatToolCallTemplate`, that template replaces the card entirely, so those calls produce no trace row at all.
+
+That is why the demo above shows no rows. Its graph calls no tools, so there are no tool calls to render. The tool-calls and subagent pages each run an example whose graph does call tools, and the rows in those transcripts are this component.
+
+Mounting a row yourself is worthwhile when the thing you want to disclose is not a tool call — a retrieval step, a plan, a validation pass.
+
+## Basic usage
+
+```html
+<chat-trace [state]="state()" [defaultExpanded]="true">
+  <span traceLabel>search_flights</span>
+  <span traceMeta>320ms</span>
+
+  <pre>{{ output() }}</pre>
+</chat-trace>
+```
+
+## API
+
+### Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `state` | `TraceState` | `'pending'` | Execution state of the step. Drives auto-expansion and the running and error styling. `TraceState` is exported from `@threadplane/chat` and is `'pending' \| 'running' \| 'done' \| 'error'` |
+| `defaultExpanded` | `boolean` | `false` | Expansion used while the state is neither `running` nor `error`, and while the reader has not clicked the header |
+
+### Outputs
+
+None. The row owns its expanded state and reports it through the `data-expanded` host attribute.
+
+### Slots
+
+All slots are optional.
+
+| Slot | Selector | Description |
+|------|----------|-------------|
+| Default | (none) | Body of the row. Rendered only while the row is expanded |
+| Icon | `[traceIcon]` | Leading icon, projected into the header before the label |
+| Label | `[traceLabel]` | Header label. There is no fallback: leave it out and the header shows only the chevron and the meta slot |
+| Meta | `[traceMeta]` | Trailing header content, such as a status pill, a duration or a count |
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `toggle()` | Flips the expanded state and sets the manual override, exactly as clicking the header does |
+
+### Host attributes
+
+| Attribute | Value |
+|-----------|-------|
+| `data-state` | The current `state` |
+| `data-expanded` | `"true"` or `"false"` |
+
+Both are the styling hooks: the chevron rotation, the running animation and the error color are all selectors on them.
+
+## Expansion rules
+
+The row is expanded when the state is `running` or `error`. Otherwise it follows `defaultExpanded`.
+
+Clicking the header sets a manual override that wins over both, so a reader can close a running row or open a finished one. The override is cleared when the state re-enters `running` or `error` from a different state, which means a step that starts again opens again. There is no collapse-on-done rule: the row falls back to `defaultExpanded` once the state leaves `running` or `error`, which with the default `false` means an untouched row closes again, while a row left open by a click stays open.
+
+Collapsing removes the body from the DOM rather than hiding it, so a collapsed row costs nothing to keep in a long transcript.
+
+## Driving a row from a tool call
+
+`ToolCall.status` and `TraceState` share three of their four names. `ToolCall` reports `'complete'` where `TraceState` expects `'done'`, so map that one explicitly:
+
+```typescript
+import type { ToolCallStatus, TraceState } from '@threadplane/chat';
+
+function toTraceState(status: ToolCallStatus): TraceState {
+  return status === 'complete' ? 'done' : status;
+}
+```
+
+This is the mapping `<chat-tool-call-card>` performs internally, and the one to repeat when driving a row from `agent.toolCalls()` yourself.
+
+## Styling
+
+The row is deliberately plain: it has no background, border or radius of its own, so it sits inside whatever card or transcript hosts it. It reads these custom properties:
+
+| Variable | Applied to |
+|----------|-----------|
+| `--tplane-chat-font-size-sm` | Row font size |
+| `--tplane-chat-text-muted` | Header text and chevron |
+| `--tplane-chat-error-text` | Header label while the state is `error` |
+| `--tplane-chat-separator` | Left rule beside the expanded body |
+
+The chevron is 12 pixels square and rotates a quarter turn when the row expands. While the state is `running`, the header label pulses through the shared `tplane-chat-pulse` animation. The body is indented under that left rule and scrolls past 250 pixels tall, so a large tool result cannot push the rest of the transcript off screen. Setting the variables is covered in the theming guide.
+
+## Accessibility
+
+The header is a real `<button>` carrying `aria-expanded`, so the row is operable from the keyboard and announced as a disclosure. The chevron is marked `aria-hidden="true"`. Anything the reader needs announced — a status, a duration — belongs in the label or meta slot, which are inside the button.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="ChatToolCalls" href="/docs/angular/chat/components/chat-tool-calls">
+    How an assistant message's tool calls become rows in the transcript.
+  </Card>
+  <Card title="ChatToolCallCard" href="/docs/angular/chat/components/chat-tool-call-card">
+    The card that wraps this primitive around one tool call.
+  </Card>
+  <Card title="ChatSubagentCard" href="/docs/angular/chat/components/chat-subagent-card">
+    The same primitive around a delegated subagent and its transcript.
+  </Card>
+  <Card title="Theming" href="/docs/angular/chat/guides/theming">
+    Set the chat custom properties the row reads.
+  </Card>
+</CardGroup>

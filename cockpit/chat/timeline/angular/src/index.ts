@@ -23,7 +23,7 @@ export const chatTimelineAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Chat Timeline (Angular)',
-  docsPath: '/docs/chat/components/chat-trace',
+  docsPath: '/docs/angular/chat/components/chat-trace',
   promptAssetPaths: ['cockpit/chat/timeline/python/prompts/timeline.md'],
   codeAssetPaths: ['cockpit/chat/timeline/angular/src/app/timeline.component.ts'],
 };

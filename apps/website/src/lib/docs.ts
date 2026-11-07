@@ -1,13 +1,26 @@
 import fs from 'fs';
 import path from 'path';
 import type { Metadata } from 'next';
-import { docsConfig, type DocsPage, getLibraryConfig, getLibraryPages } from './docs-config';
+import { type DocsPage, getLibraryConfig } from './docs-config';
+import {
+  getDocumentVariant,
+  getNarrativeDocuments,
+  resolveNarrativeDocument,
+  type DocsScope,
+  type DocumentVariant,
+} from './docs-catalog';
 import { clampMetaDescription, createPageMetadata } from './site-metadata';
 
-const resolveContentDir = (library: string): string => {
-  const workspacePath = path.join(process.cwd(), 'apps', 'website', 'content', 'docs', library);
+const resolveContentDir = (): string => {
+  const workspacePath = path.join(
+    process.cwd(),
+    'apps',
+    'website',
+    'content',
+    'docs'
+  );
   if (fs.existsSync(workspacePath)) return workspacePath;
-  return path.join(process.cwd(), 'content', 'docs', library);
+  return path.join(process.cwd(), 'content', 'docs');
 };
 
 /** Fallback description for a docs page whose library declares none. */
@@ -15,6 +28,7 @@ export const DEFAULT_DOCS_DESCRIPTION = 'Threadplane documentation';
 
 export interface ResolvedDoc {
   page: DocsPage;
+  document: DocumentVariant;
   /** Raw file contents, frontmatter included — the description is read from it. */
   content: string;
   /** `content` with any frontmatter removed. This is what gets rendered. */
@@ -37,10 +51,13 @@ const FRONTMATTER_BLOCK_PATTERN = /^---\s*\n(?<body>[\s\S]*?)\n---\s*(?:\n|$)/;
  * characters from the capture instead made every description containing a
  * possessive unreadable, so those pages fell back to their first paragraph.
  */
-const FRONTMATTER_DESCRIPTION_PATTERN = /^description:[^\S\n]*(?<description>\S.*?)[^\S\n]*$/m;
+const FRONTMATTER_DESCRIPTION_PATTERN =
+  /^description:[^\S\n]*(?<description>\S.*?)[^\S\n]*$/m;
 
 function unquote(value: string): string {
-  return value.match(/^(?<quote>['"])(?<inner>.*)\k<quote>$/)?.groups?.inner ?? value;
+  return (
+    value.match(/^(?<quote>['"])(?<inner>.*)\k<quote>$/)?.groups?.inner ?? value
+  );
 }
 
 /**
@@ -65,7 +82,8 @@ export function stripFrontmatter(source: string): string {
 export function readFrontmatterDescription(content: string): string | null {
   const body = content.match(FRONTMATTER_BLOCK_PATTERN)?.groups?.body;
   if (!body) return null;
-  const description = body.match(FRONTMATTER_DESCRIPTION_PATTERN)?.groups?.description;
+  const description = body.match(FRONTMATTER_DESCRIPTION_PATTERN)?.groups
+    ?.description;
   return description ? unquote(description) : null;
 }
 
@@ -93,7 +111,10 @@ function normalizeDescription(description: string): string {
 }
 
 function extractFirstParagraph(content: string): string | null {
-  const withoutImports = stripFrontmatter(content).replace(/^import\s.+$/gm, '');
+  const withoutImports = stripFrontmatter(content).replace(
+    /^import\s.+$/gm,
+    ''
+  );
   const paragraphs = withoutImports.split(/\n{2,}/);
 
   for (const paragraph of paragraphs) {
@@ -118,27 +139,51 @@ function getDocDescription(content: string, fallback: string): string {
   // Clamped here (not only in createPageMetadata) so the docs JSON-LD, which
   // reads this value directly, stays byte-identical to the meta description.
   const frontmatterDescription = readFrontmatterDescription(content);
-  if (frontmatterDescription) return clampMetaDescription(normalizeDescription(frontmatterDescription));
+  if (frontmatterDescription)
+    return clampMetaDescription(normalizeDescription(frontmatterDescription));
   return extractFirstParagraph(content) ?? clampMetaDescription(fallback);
 }
 
-export function getDocBySlug(library: string, section: string, slug: string): ResolvedDoc | null {
-  const pages = getLibraryPages(library);
-  const page = pages.find((p) => p.section === section && p.slug === slug);
-  if (!page || page.href) return null;
-
-  const dir = resolveContentDir(library);
-  const filePath = path.join(dir, section, `${slug}.mdx`);
+function readDocument(
+  document: DocumentVariant | undefined
+): ResolvedDoc | null {
+  if (!document) return null;
+  const filePath = path.join(resolveContentDir(), document.source);
   if (!fs.existsSync(filePath)) return null;
 
   const content = fs.readFileSync(filePath, 'utf8');
   const titleMatch = content.match(/^#\s+(.+)$/m);
   return {
-    page,
+    document,
+    page: {
+      title: document.title,
+      section: document.section,
+      slug: document.slug,
+    },
     content,
     body: stripFrontmatter(content),
-    title: titleMatch?.[1] ?? page.title,
+    title: titleMatch?.[1] ?? document.title,
   };
+}
+
+/** Canonical paths select their exact source; legacy paths and missing variants return null. */
+export function getDocByPath(pathname: string): ResolvedDoc | null {
+  return readDocument(resolveNarrativeDocument(pathname));
+}
+
+/** Internal identity lookup, not a public legacy-route compatibility layer. */
+export function getDocBySlug(
+  library: string | null,
+  section: string,
+  slug: string,
+  scope: DocsScope = 'angular'
+): ResolvedDoc | null {
+  return readDocument(
+    getDocumentVariant(
+      [library, section, slug].filter(Boolean).join('/'),
+      scope
+    )
+  );
 }
 
 /**
@@ -150,32 +195,48 @@ export function getDocBySlug(library: string, section: string, slug: string): Re
  * that {@link getDocMetadata} puts in `<meta name="description">`; two surfaces
  * describing the same page differently is a worse signal than either alone.
  */
-export function resolveDocDescription(doc: ResolvedDoc, library: string): string {
-  const lib = getLibraryConfig(library);
-  return getDocDescription(doc.content, lib?.description ?? DEFAULT_DOCS_DESCRIPTION);
+export function resolveDocDescription(
+  doc: ResolvedDoc,
+  library: string | null = doc.document.library
+): string {
+  const lib = library ? getLibraryConfig(library) : undefined;
+  return getDocDescription(
+    doc.content,
+    doc.document.description || lib?.description || DEFAULT_DOCS_DESCRIPTION
+  );
 }
 
 export function getDocMetadata(
-  library: string,
+  library: string | null,
   section: string,
-  slug: string
+  slug: string,
+  scope: DocsScope = 'angular'
 ): ResolvedDocMetadata | null {
-  const doc = getDocBySlug(library, section, slug);
+  const doc = getDocBySlug(library, section, slug, scope);
   if (!doc) return null;
 
-  const lib = getLibraryConfig(library);
+  return metadataForDocument(doc);
+}
+
+export function getDocMetadataByPath(
+  pathname: string
+): ResolvedDocMetadata | null {
+  const doc = getDocByPath(pathname);
+  return doc ? metadataForDocument(doc) : null;
+}
+
+function metadataForDocument(doc: ResolvedDoc): ResolvedDocMetadata {
+  const lib = doc.document.library
+    ? getLibraryConfig(doc.document.library)
+    : undefined;
   const libraryTitle = lib?.title ?? 'Docs';
   const title = `${doc.title} — ${libraryTitle} Docs — Threadplane`;
-  const description = resolveDocDescription(doc, library);
-  const pathname = `/docs/${library}/${section}/${slug}`;
+  const description = resolveDocDescription(doc);
+  const pathname = doc.document.href;
 
   return createPageMetadata({ title, description, pathname });
 }
 
-export function getAllDocSlugs(): { library: string; section: string; slug: string }[] {
-  return docsConfig.flatMap((lib) =>
-    lib.sections.flatMap((s) =>
-      s.pages.filter((p) => !p.href).map((p) => ({ library: lib.id, section: p.section, slug: p.slug }))
-    )
-  );
+export function getAllDocSlugs(scope?: DocsScope): DocumentVariant[] {
+  return getNarrativeDocuments(scope);
 }

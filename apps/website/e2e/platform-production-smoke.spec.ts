@@ -230,7 +230,7 @@ test.describe('Production: unified runtime embedding policy', () => {
       iframeReferrer = request.headers()['referer'];
     });
 
-    await page.goto(`${WEBSITE_URL}/docs/langgraph/guides/streaming?mode=run`);
+    await page.goto(`${WEBSITE_URL}/docs/angular/langgraph/guides/streaming?mode=run`);
     const controls = page.locator('[data-workspace-desktop-navigation]');
     await controls
       .getByRole('button', { name: 'Settings', exact: true })

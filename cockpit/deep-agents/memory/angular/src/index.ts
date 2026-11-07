@@ -23,7 +23,7 @@ export const deepAgentsMemoryAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Deep Agents Memory (Angular)',
-  docsPath: '/docs/deep-agents/capabilities/memory',
+  docsPath: '/docs/angular/deep-agents/capabilities/memory',
   promptAssetPaths: [
     'cockpit/deep-agents/memory/angular/prompts/memory.md',
   ],

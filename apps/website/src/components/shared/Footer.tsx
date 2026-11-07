@@ -2,6 +2,7 @@
 import { Honeypot, readHoneypot } from '../form/Honeypot';
 import { useState } from 'react';
 import Link from 'next/link';
+import { FrameworkDocsLink } from '../docs/FrameworkDocsLink';
 import type { PublicFormPolicy } from '../../lib/growth/form-policy';
 import { FORM_POLICY_REFRESH_MESSAGE } from '../../lib/growth/form-client';
 import { analyticsEvents, type CtaId } from '../../lib/analytics/events';
@@ -177,6 +178,7 @@ export function Footer({
               onClick={() => trackFooterCta('Documentation', '/docs')}>
               Documentation
             </Link>
+            <FrameworkDocsLink className="transition-colors footer-link">Getting started</FrameworkDocsLink>
             <Link href="/docs/api" className="transition-colors footer-link"
               onClick={() => trackFooterCta('API Reference', '/docs/api')}>
               API Reference

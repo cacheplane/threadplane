@@ -19,7 +19,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const deepAgentsRoot = path.join(repoRoot, 'cockpit', 'deep-agents');
 
 // This spec used to also assert a website docs page per topic at
-// content/docs/deep-agents/core-capabilities/<topic>/python/<page>.mdx. That
+// content/docs/angular/deep-agents/core-capabilities/<topic>/python/<page>.mdx. That
 // five-segment shape is the formula #918 removed: as
 // libs/cockpit-registry/src/lib/docs-links.ts records, it "produced a URL that
 // 404s for every product", and no `deep-agents` docs library exists on the

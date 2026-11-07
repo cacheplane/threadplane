@@ -56,7 +56,7 @@ Replacing the model (and only the model) is also what makes it cheap enough to r
 We have 53 fixture files holding 169 entries across 36 apps, 34 workspace capabilities and two example apps, all on the same harness.
 
 This is the outer tier.
-For in-process fakes at the unit level, the [testing guide](/docs/langgraph/guides/testing) covers `provideFakeAgent()`, `mockLangGraphAgent()`, and `MockAgentTransport`, which are a different tool for a different job.
+For in-process fakes at the unit level, the [testing guide](/docs/angular/langgraph/guides/testing) covers `provideFakeAgent()`, `mockLangGraphAgent()`, and `MockAgentTransport`, which are a different tool for a different job.
 
 ## What does a fixture match on?
 
@@ -179,6 +179,6 @@ For us the remaining list is short and specific: mid-stream behavior on fixtures
 Both are answered by pointing what you already trust at the real thing: the tagged specs at the live provider on a schedule, a live browser at anything mid-stream before it ships.
 Widening either net is a fixture opt-in or a spec tag, not a new design.
 
-The [testing guide](/docs/langgraph/guides/testing) has the in-process tier, and [the subgraphs post](/blog/langgraph-subgraphs-when-to-split) has the streaming attribution model this post leans on.
+The [testing guide](/docs/angular/langgraph/guides/testing) has the in-process tier, and [the subgraphs post](/blog/langgraph-subgraphs-when-to-split) has the streaming attribution model this post leans on.
 
 If your agent suite is green today, let me know what you think it can't see.

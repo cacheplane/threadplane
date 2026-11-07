@@ -1,4 +1,5 @@
 export * from './lib/docs-links';
+export * from './lib/docs-routes';
 export * from './lib/content-descriptors';
 export * from './lib/manifest';
 export * from './lib/manifest.types';

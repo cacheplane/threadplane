@@ -162,7 +162,7 @@ export const CARDS: readonly Card[] = [
     width: 176,
     height: 392,
     title: 'People',
-    href: '/docs/chat/getting-started/introduction',
+    href: '/docs/angular/chat/getting-started/introduction',
     icon: { name: 'users', bg: '#fff3e0', fg: '#c2410c' },
     // The column's single node: its block is centred on the card, where its
     // outgoing arrow leaves.
@@ -176,7 +176,7 @@ export const CARDS: readonly Card[] = [
     width: 392,
     height: 392,
     title: 'Threadplane',
-    href: '/docs/chat/getting-started/introduction',
+    href: '/docs/angular/chat/getting-started/introduction',
     tag: 'THE UI LAYER',
     highlight: true,
     rows: [
@@ -184,26 +184,26 @@ export const CARDS: readonly Card[] = [
         kind: 'caps',
         y: 224,
         caps: [
-          { icon: 'chat', label: 'Chat', href: '/docs/chat/components/chat' },
+          { icon: 'chat', label: 'Chat', href: '/docs/angular/chat/components/chat' },
           {
             icon: 'pause',
             label: 'Approvals',
-            href: '/docs/langgraph/guides/interrupts',
+            href: '/docs/angular/langgraph/guides/interrupts',
           },
           {
             icon: 'branch',
             label: 'Threads',
-            href: '/docs/langgraph/guides/persistence',
+            href: '/docs/angular/langgraph/guides/persistence',
           },
           {
             icon: 'sparkles',
             label: 'Generative UI',
-            href: '/docs/chat/guides/generative-ui',
+            href: '/docs/angular/chat/guides/generative-ui',
           },
           {
             icon: 'wrench',
             label: 'Client tools',
-            href: '/docs/chat/guides/client-tools',
+            href: '/docs/angular/chat/guides/client-tools',
           },
         ],
       },
@@ -224,7 +224,7 @@ export const CARDS: readonly Card[] = [
     height: 208,
     title: 'LangGraph',
     title2: 'SDK',
-    href: '/docs/langgraph/getting-started/introduction',
+    href: '/docs/angular/langgraph/getting-started/introduction',
     mark: 'langgraph',
     tag: 'FIRST-CLASS',
     highlight: true,
@@ -249,7 +249,7 @@ export const CARDS: readonly Card[] = [
     height: 144,
     title: 'AG-UI',
     title2: 'protocol',
-    href: '/docs/ag-ui/getting-started/introduction',
+    href: '/docs/angular/ag-ui/getting-started/introduction',
     mark: 'agui',
     rows: [
       { kind: 'items', y: 468, step: 32, items: ['events · tools · state'] },
@@ -262,7 +262,7 @@ export const CARDS: readonly Card[] = [
     width: 224,
     height: 208,
     title: 'LangSmith',
-    href: '/docs/langgraph/guides/deployment',
+    href: '/docs/angular/langgraph/guides/deployment',
     mark: 'langchain',
     rows: [
       {
@@ -280,7 +280,7 @@ export const CARDS: readonly Card[] = [
     width: 224,
     height: 144,
     title: 'AG-UI servers',
-    href: '/docs/runtimes/getting-started/introduction',
+    href: '/docs/angular/runtimes/getting-started/introduction',
     rows: [
       {
         kind: 'marks',

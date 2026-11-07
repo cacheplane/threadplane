@@ -11,6 +11,7 @@ const PAGE = join(
   '..',
   'content',
   'docs',
+  'angular',
   'chat',
   'getting-started',
   'coding-agents.mdx'

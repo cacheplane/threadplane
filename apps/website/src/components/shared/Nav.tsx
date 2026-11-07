@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getLibraryConfig, type LibraryId } from '../../lib/docs-config';
+import { parseDocsNarrativePath } from '@threadplane/cockpit-registry/docs-routes';
 import { LogoMark } from '../ui/LogoMark';
 import { NavDesktop } from './NavDesktop';
 import { NavMobile } from './NavMobile';
@@ -11,10 +12,11 @@ export function Nav({ githubStars = null }: { githubStars?: number | null }) {
   const starCount = githubStars?.toLocaleString('en-US') ?? null;
   const pathname = usePathname();
   const isDocsPage = pathname.startsWith('/docs');
-  const pathParts = pathname.split('/').filter(Boolean);
-  const activeLibrary = isDocsPage && pathParts.length >= 2 ? pathParts[1] : '';
-  const activeSection = isDocsPage && pathParts.length >= 3 ? pathParts[2] : '';
-  const activeSlug = isDocsPage && pathParts.length >= 4 ? pathParts[3] : '';
+  const narrative = parseDocsNarrativePath(pathname);
+  const parts = narrative?.slug ?? [];
+  const activeLibrary = parts.length === 3 ? parts[0] : '';
+  const activeSection = parts.length === 3 ? parts[1] : '';
+  const activeSlug = parts.length === 3 ? parts[2] : '';
   // A docs URL without a library segment (e.g. /docs/choosing-an-adapter) is
   // library-neutral. Defaulting to a library here made the drawer claim the
   // reader was inside LangGraph's docs.

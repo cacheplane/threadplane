@@ -19,7 +19,7 @@ describe('cockpit shell capability contract', () => {
       title: 'Deep Agents Overview',
       summary: 'Entry point for the Deep Agents docs-only surface.',
       officialDocsId: 'deep-agents/getting-started/overview',
-      docsPath: '/docs/deep-agents/overview',
+      docsPath: '/docs/angular/deep-agents/overview',
       entryKind: COCKPIT_SHELL_ENTRY_KINDS.docsOnly,
     };
 
@@ -33,7 +33,7 @@ describe('cockpit shell capability contract', () => {
       title: 'Deep Agents Overview',
       summary: 'Entry point for the Deep Agents docs-only surface.',
       officialDocsId: 'deep-agents/getting-started/overview',
-      docsPath: '/docs/deep-agents/overview',
+      docsPath: '/docs/angular/deep-agents/overview',
     });
     expect('runtimeMetadata' in entry).toBe(false);
     expect('mount' in entry).toBe(false);
@@ -50,7 +50,7 @@ describe('cockpit shell capability contract', () => {
       title: 'Planning',
       summary: 'Entry point for the planning capability.',
       officialDocsId: 'deep-agents/core-capabilities/planning',
-      docsPath: '/docs/deep-agents/planning',
+      docsPath: '/docs/angular/deep-agents/planning',
       entryKind: COCKPIT_SHELL_ENTRY_KINDS.capability,
       runtimeMetadata: {
         runtimeClass: COCKPIT_SHELL_RUNTIME_CLASSES.localService,
@@ -83,7 +83,7 @@ describe('cockpit shell capability contract', () => {
       title: 'LangGraph Overview',
       summary: 'Entry point for the LangGraph docs-only surface.',
       officialDocsId: 'langgraph/getting-started/overview',
-      docsPath: '/docs/langgraph/overview',
+      docsPath: '/docs/angular/langgraph/overview',
       entryKind: COCKPIT_SHELL_ENTRY_KINDS.docsOnly,
     };
 
@@ -97,7 +97,7 @@ describe('cockpit shell capability contract', () => {
       title: 'Streaming',
       summary: 'Entry point for the streaming capability.',
       officialDocsId: 'langgraph/core-capabilities/streaming',
-      docsPath: '/docs/langgraph/streaming',
+      docsPath: '/docs/angular/langgraph/streaming',
       entryKind: COCKPIT_SHELL_ENTRY_KINDS.capability,
       runtimeMetadata: {
         runtimeClass: COCKPIT_SHELL_RUNTIME_CLASSES.browser,

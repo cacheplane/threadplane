@@ -1,6 +1,6 @@
 # React durable execution preview
 
-Native `MessageList`, `ChatInput`, and `useAgent` dogfood the existing three-node Python graph. The public guide is `/docs/langgraph/guides/durable-execution?frontend=react`.
+Native `MessageList`, `ChatInput`, and `useAgent` dogfood the existing three-node Python graph. The public guide is `/docs/angular/langgraph/guides/durable-execution?frontend=react`.
 
 The checkpoint panel reports the most recently completed node. Each final checkpoint binds the original question ID and final answer ID; the owner verifies that unique pair and current successful delivery before displaying only the latest question and final answer. Intermediate drafts retained by the SDK do not become final-answer authority.
 

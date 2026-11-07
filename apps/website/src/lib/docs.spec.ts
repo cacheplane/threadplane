@@ -9,13 +9,13 @@ import {
 import {
   getAllDocSlugs,
   getDocBySlug,
+  getDocByPath,
   getDocMetadata,
   readFrontmatterDescription,
   resolveDocDescription,
   stripFrontmatter,
 } from './docs';
 import {
-  allDocsPages,
   docsConfig,
   libraryIntroPath,
   specialDocsPages,
@@ -23,9 +23,43 @@ import {
 import { readApiIndex, readApiSymbol } from './api-reference';
 import { apiSymbolHref } from './api-reference-model';
 import { getCanonicalUrl, getSitemapRoutes } from './site-metadata';
+import { getNarrativeDocuments } from './docs-catalog';
 
 const internalDocsLinkPattern =
   /(?:href=["']|\]\()(?<href>\/docs\/[^"')#\s]+)/g;
+
+describe('framework narrative loader', () => {
+  it('loads the exact selected body and exposes its catalog source', () => {
+    const angular = getDocByPath('/docs/angular/langgraph/guides/streaming');
+    const react = getDocByPath('/docs/react/langgraph/guides/streaming');
+    expect(angular?.document.scope).toBe('angular');
+    expect(react?.document.scope).toBe('react');
+    expect(react?.title).toBe('React streaming preview');
+    expect(react?.body).toContain('experimental, private source-build packages');
+    expect(react?.body).not.toBe(angular?.body);
+    expect(react?.body).toContain('`useAgent`');
+    expect(react?.body).not.toContain('\\`useAgent\\`');
+  });
+
+  it('does not load retired paths, traversal, or missing framework variants', () => {
+    expect(getDocByPath('/docs/langgraph/guides/streaming')).toBeNull();
+    expect(getDocByPath('/docs/react/langgraph/getting-started/installation')).toBeNull();
+    expect(getDocByPath('/docs/angular/../../package')).toBeNull();
+  });
+
+  it('loads shared sources independently from framework query preferences', () => {
+    const href = '/docs/shared/middleware/getting-started/introduction';
+    expect(getDocByPath(href)?.document.scope).toBe('shared');
+    expect(getDocByPath(`${href}?frontend=react`)).toEqual(getDocByPath(href));
+  });
+
+  it('builds metadata for the same React variant as its article', () => {
+    const metadata = getDocMetadata('langgraph', 'guides', 'streaming', 'react');
+    expect(metadata?.title).toContain('React streaming preview');
+    expect(metadata?.alternates?.canonical).toBe('/docs/react/langgraph/guides/streaming');
+    expect(metadata?.description).toContain('traveler');
+  });
+});
 const mdxLinkPattern =
   /(?:href=["']|\]\()(?<href>[^"')\s]+\.mdx(?:#[^"')\s]+)?)/g;
 
@@ -57,16 +91,8 @@ function walkMdxFiles(dir: string): string[] {
   });
 }
 
-function getConfiguredDocPath({
-  library,
-  section,
-  slug,
-}: {
-  library: string;
-  section: string;
-  slug: string;
-}): string {
-  return path.join(contentRoot, library, section, `${slug}.mdx`);
+function getConfiguredDocPath({ source }: { source: string }): string {
+  return path.join(contentRoot, source);
 }
 
 function getAllConfiguredDocFiles(): Array<{
@@ -74,10 +100,10 @@ function getAllConfiguredDocFiles(): Array<{
   filePath: string;
   content: string;
 }> {
-  const configured = getAllDocSlugs().map(({ library, section, slug }) => {
-    const filePath = getConfiguredDocPath({ library, section, slug });
+  const configured = getAllDocSlugs().map((document) => {
+    const filePath = getConfiguredDocPath(document);
     return {
-      id: `${library}/${section}/${slug}`,
+      id: document.id,
       filePath,
       content: fs.readFileSync(filePath, 'utf8'),
     };
@@ -116,39 +142,40 @@ function findPackageImports(content: string): string[] {
 }
 
 describe('website docs bindings', () => {
-  it('lists all doc slugs from config', () => {
+  it('lists all authored variants from the catalog', () => {
     const slugs = getAllDocSlugs();
-    expect(slugs.length).toBe(allDocsPages.filter(page => !page.href).length);
-    expect(slugs).toContainEqual({
+    expect(slugs).toEqual(getNarrativeDocuments());
+    expect(slugs).toHaveLength(159);
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'langgraph',
       section: 'getting-started',
       slug: 'introduction',
-    });
-    expect(slugs).toContainEqual({
+    }));
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'langgraph',
       section: 'guides',
       slug: 'streaming',
-    });
-    expect(slugs).toContainEqual({
+    }));
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'render',
       section: 'getting-started',
       slug: 'introduction',
-    });
-    expect(slugs).toContainEqual({
+    }));
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'chat',
       section: 'getting-started',
       slug: 'introduction',
-    });
-    expect(slugs).toContainEqual({
+    }));
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'ag-ui',
       section: 'concepts',
       slug: 'architecture',
-    });
-    expect(slugs).toContainEqual({
+    }));
+    expect(slugs).toContainEqual(expect.objectContaining({
       library: 'a2ui',
       section: 'getting-started',
       slug: 'introduction',
-    });
+    }));
   });
 
   it('uses generated import paths for API navigation without authored API pages', () => {
@@ -163,8 +190,8 @@ describe('website docs bindings', () => {
   });
 
   it('loads every configured doc page', () => {
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      expect(getDocBySlug(library, section, slug)).not.toBeNull();
+    for (const { library, section, slug, scope } of getAllDocSlugs()) {
+      expect(getDocBySlug(library, section, slug, scope)).not.toBeNull();
     }
   });
 
@@ -194,11 +221,11 @@ describe('website docs bindings', () => {
     expect(metadata).toMatchObject({
       title: 'Event Mapping — AG-UI Docs — Threadplane',
       alternates: {
-        canonical: '/docs/ag-ui/reference/event-mapping',
+        canonical: '/docs/angular/ag-ui/reference/event-mapping',
       },
       openGraph: {
         title: 'Event Mapping — AG-UI Docs — Threadplane',
-        url: '/docs/ag-ui/reference/event-mapping',
+        url: '/docs/angular/ag-ui/reference/event-mapping',
       },
       twitter: {
         card: 'summary_large_image',
@@ -217,8 +244,8 @@ describe('website docs bindings', () => {
     // mid-word '...' cut.
     const slugs = getAllDocSlugs();
     expect(slugs.length).toBeGreaterThan(100); // sweep must not pass on an empty list
-    for (const { library, section, slug } of slugs) {
-      const description = getDocMetadata(library, section, slug)?.description;
+    for (const { library, section, slug, scope } of slugs) {
+      const description = getDocMetadata(library, section, slug, scope)?.description;
       expect(description, `${library}/${section}/${slug}`).toBeTruthy();
       expect(
         description!.length,
@@ -234,8 +261,8 @@ describe('website docs bindings', () => {
   it('derives mostly unique descriptions from page content', () => {
     const descriptions = getAllDocSlugs()
       .map(
-        ({ library, section, slug }) =>
-          getDocMetadata(library, section, slug)?.description
+        ({ library, section, slug, scope }) =>
+          getDocMetadata(library, section, slug, scope)?.description
       )
       .filter((description): description is string => Boolean(description));
 
@@ -304,9 +331,9 @@ describe('website docs bindings', () => {
   });
 
   it('never leaks frontmatter keys into a derived description', () => {
-    for (const { library, section, slug } of getAllDocSlugs()) {
+    for (const { library, section, slug, scope } of getAllDocSlugs()) {
       const description =
-        getDocMetadata(library, section, slug)?.description ?? '';
+        getDocMetadata(library, section, slug, scope)?.description ?? '';
       expect(description, `/docs/${library}/${section}/${slug}`).not.toMatch(
         /^title:/
       );
@@ -314,8 +341,8 @@ describe('website docs bindings', () => {
   });
 
   it('exposes a render body with no frontmatter for every doc page', () => {
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      const doc = getDocBySlug(library, section, slug);
+    for (const { library, section, slug, scope } of getAllDocSlugs()) {
+      const doc = getDocBySlug(library, section, slug, scope);
 
       expect(
         doc?.body.startsWith('---'),
@@ -341,8 +368,8 @@ describe('website docs bindings', () => {
   it('includes every configured doc page in the sitemap routes', () => {
     const sitemapRoutes = getSitemapRoutes();
 
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      expect(sitemapRoutes).toContain(`/docs/${library}/${section}/${slug}`);
+    for (const { href } of getAllDocSlugs()) {
+      expect(sitemapRoutes).toContain(href);
     }
   });
 
@@ -355,12 +382,14 @@ describe('website docs bindings', () => {
   it('does not contain stale or broken internal docs links', () => {
     const validDocsRoutes = new Set([
       '/docs',
-      ...getSitemapRoutes().filter((route) => route.startsWith('/docs/')),
+      ...getNarrativeDocuments().map(document => document.href),
+      ...specialDocsPages.map(page => page.path),
+      ...getSitemapRoutes().filter((route) => route.startsWith('/docs/api/')),
     ]);
     const brokenLinks: string[] = [];
 
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      const doc = getDocBySlug(library, section, slug);
+    for (const { library, section, slug, scope } of getAllDocSlugs()) {
+      const doc = getDocBySlug(library, section, slug, scope);
       if (!doc) continue;
 
       for (const href of findInternalDocsLinks(doc.content)) {
@@ -404,8 +433,8 @@ describe('website docs bindings', () => {
 
     const invalidImports: string[] = [];
 
-    for (const { library, section, slug } of getAllDocSlugs()) {
-      const doc = getDocBySlug(library, section, slug);
+    for (const { library, section, slug, scope } of getAllDocSlugs('angular')) {
+      const doc = getDocBySlug(library, section, slug, scope);
       if (!doc) continue;
 
       for (const pkg of findPackageImports(doc.content)) {
@@ -426,6 +455,19 @@ describe('website docs bindings', () => {
     expect(isLabeledSourceBuildImport('langgraph/getting-started/quickstart', '@threadplane/react', label)).toBe(false);
     expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/react', '')).toBe(false);
     expect(isLabeledSourceBuildImport('langgraph/concepts/conversation-turns', '@threadplane/content', label)).toBe(false);
+  });
+
+  it('keeps experimental source-build disclosures on every extracted React guide', () => {
+    const react = getAllDocSlugs('react');
+    expect(react).toHaveLength(42);
+    for (const document of react) {
+      const doc = getDocByPath(document.href)!;
+      expect(readFrontmatterDescription(doc.content), document.id).toBe(document.description);
+      expect(doc.body, document.id).toMatch(/experimental/i);
+      expect(doc.body, document.id).toMatch(/private/i);
+      expect(doc.body, document.id).toMatch(/source.build/i);
+      expect(doc.body, document.id).not.toMatch(/npm (?:install|i) @threadplane\/react/);
+    }
   });
 
   it('has generated reference for every documented package surface', () => {
@@ -487,25 +529,9 @@ describe('website docs bindings', () => {
   });
 
   it('publishes a docs page for every capability the registry maps', () => {
-    const configured = new Set(
-      docsConfig.flatMap((library) =>
-        library.sections.flatMap((section) =>
-          section.pages.map(
-            (page) => page.href ?? `/docs/${library.id}/${section.id}/${page.slug}`
-          )
-        )
-      )
-    );
     for (const entry of cockpitManifest) {
       if (entry.docsPath === NO_COCKPIT_DOCS_LINK) continue;
-      expect(configured.has(entry.docsPath), entry.docsPath).toBe(true);
-      // contentRoot already points at apps/website/content/docs, so strip the
-      // leading /docs/ segment before joining.
-      const file = path.join(
-        contentRoot,
-        `${entry.docsPath.replace(/^\/docs\//, '')}.mdx`
-      );
-      expect(fs.existsSync(file), file).toBe(true);
+      expect(getDocByPath(entry.docsPath), entry.docsPath).not.toBeNull();
     }
   });
 });

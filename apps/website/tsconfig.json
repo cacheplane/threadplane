@@ -20,6 +20,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@threadplane/cockpit-registry/docs-routes": ["../../libs/cockpit-registry/src/lib/docs-routes.ts"],
       "@threadplane/cockpit-registry": [
         "../../libs/cockpit-registry/src/index.ts"
       ],

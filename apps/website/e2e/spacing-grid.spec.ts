@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { frameworkControl } from './fixtures/framework-controls';
 
 for (const width of [375, 768, 1024, 1440, 1920]) {
   test(`shared page edges and controls align at ${width}px`, async ({ page }) => {
@@ -18,11 +19,12 @@ for (const width of [375, 768, 1024, 1440, 1920]) {
     expect(Math.abs(edges.footer.left - edges.content.left)).toBeLessThanOrEqual(1);
     expect(Math.abs(edges.footer.right - edges.content.right)).toBeLessThanOrEqual(1);
 
-    await page.goto('/docs/langgraph/guides/streaming');
-    const picker = page.getByRole('combobox', { name: 'Example UI' });
+    await page.goto('/docs/angular/langgraph/guides/streaming');
+    const picker = await frameworkControl(page);
     await expect(picker).toBeVisible();
     await expect(picker).toHaveCSS('height', width < 768 ? '44px' : '36px');
-    await expect(page.locator('.website-workspace-frontend')).toHaveCSS('height', width < 768 ? '64px' : '56px');
+    await expect(page.locator('.website-workspace-frontend')).toHaveCount(0);
+    if (width < 1024) await page.keyboard.press('Escape');
     await expect(page.locator('[data-workspace-surface] > header')).toHaveCSS('height', width < 1024 ? '72px' : '48px');
     if (width >= 1024) {
       const search = page.locator('.docs-control-plane-search-trigger');
@@ -35,7 +37,7 @@ for (const width of [375, 768, 1024, 1440, 1920]) {
 
 test('API mode uses the same article inset as its reading view', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/docs/langgraph/guides/streaming?mode=api');
+  await page.goto('/docs/angular/langgraph/guides/streaming?mode=api');
   const mode = page.getByRole('region', { name: 'API mode', exact: true });
   // API mode is a labelled section, exposed as a region by the browser.
   await expect(mode).toBeVisible();
@@ -95,7 +97,7 @@ test('long generated API names stay inside their article on a phone', async ({ p
   }
 });
 
-for (const route of ['/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
+for (const route of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
   test(`code copy buttons sit inside their code block on ${route}`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(route);
@@ -120,10 +122,10 @@ const ROUTES = [
   '/', '/docs', '/chat', '/langgraph', '/ag-ui', '/render', '/pricing',
   '/solutions', '/solutions/compliance', '/about', '/contact', '/privacy',
   '/pilot-to-prod', '/blog', '/blog/threadplane-0-3-0',
-  '/docs/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent', '/docs/api', '/docs/api/react',
-  '/docs/langgraph/guides/streaming?mode=api',
-  '/docs/langgraph/guides/streaming?mode=code',
-  '/docs/langgraph/guides/streaming?frontend=react',
+  '/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent', '/docs/api', '/docs/api/react',
+  '/docs/angular/langgraph/guides/streaming?mode=api',
+  '/docs/angular/langgraph/guides/streaming?mode=code',
+  '/docs/react/langgraph/guides/streaming',
 ];
 
 for (const width of [320, 375, 768, 1024, 1440, 1920]) {

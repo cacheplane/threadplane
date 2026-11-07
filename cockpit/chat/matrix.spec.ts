@@ -58,7 +58,7 @@ describe('Chat matrix slice', () => {
           module.manifestIdentity.topic
         )
       );
-      expect(module.docsPath).toMatch(/^\/docs\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/);
+      expect(module.docsPath).toMatch(/^\/docs\/angular\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/);
       expect(module.promptAssetPaths.length).toBe(1);
       expect(module.codeAssetPaths.length).toBeGreaterThanOrEqual(1);
     }

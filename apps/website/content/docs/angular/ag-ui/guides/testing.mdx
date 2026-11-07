@@ -1,0 +1,297 @@
+---
+description: Test AG-UI components with provideFakeAgent() and its event script, the neutral mockAgent(), or a hand-written AbstractAgent, and which double fits where.
+---
+
+# Testing
+
+`@threadplane/ag-ui` gives you two test doubles, smallest scope first:
+
+- **`provideFakeAgent()`** — a one-call fake backend that runs the real adapter pipeline and streams canned tokens. No server, no LLM.
+- **`mockAgent()`** (from `@threadplane/chat`) — a writable-signal mock for component/unit tests. It covers the neutral `Agent` surface; a component that reads the AG-UI extensions needs one of the doubles above instead.
+
+See [Choosing an adapter → Testing](/docs/choosing-an-adapter#testing) for when to use each test double.
+
+## Fake backend: `provideFakeAgent()`
+
+`provideFakeAgent({ tokens, reasoningTokens, delayMs })` wires a fake backend into Angular DI in one call. It exercises the **real adapter pipeline** — `injectAgent()`, status transitions, message accumulation — but the wire events are canned, so there is no server and no LLM. Use it for adapter-integration tests, in-browser demos, and offline development.
+
+It drops in exactly where `provideAgent()` would go — the call shape matches the LangGraph adapter:
+
+<Tabs>
+<Tab label="app.config.ts">
+
+```typescript
+import { ApplicationConfig } from '@angular/core';
+import { provideFakeAgent } from '@threadplane/ag-ui';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFakeAgent({ tokens: ['Hello'] }),
+  ],
+};
+```
+
+</Tab>
+<Tab label="chat.component.ts">
+
+```typescript
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/ag-ui';
+
+@Component({
+  selector: 'app-chat',
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" />`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ChatHost {
+  protected readonly agent = injectAgent();
+}
+```
+
+</Tab>
+</Tabs>
+
+The component is byte-identical to production — only the provider changes. `provideFakeAgent()` accepts `AgUiFakeAgentConfig`: the shared `FakeAgentConfig` from `@threadplane/chat/testing` plus the AG-UI-only `script`.
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `tokens` | `string[]` | Emitted as streamed text deltas, in order. |
+| `reasoningTokens` | `string[]` | Emitted before text deltas to exercise reasoning UI. |
+| `delayMs` | `number` | Delay between streamed events. |
+| `script` | `FakeAgentScript` | Raw AG-UI event branches that replace the canned reply. See [Testing tool calls, state, and custom events](#testing-tool-calls-state-and-custom-events). |
+
+For the underlying `FakeAgent` class and its canned event sequence, see [Fake Agent](/docs/angular/ag-ui/guides/fake-agent).
+
+### A runnable spec
+
+Set `delayMs: 0` to collapse the inter-token delay, drive `submit()`, then assert the streamed assistant content shows up on `agent.messages()`. Awaiting `submit()` is what guarantees the run finished — `runAgent()` resolves once the canned stream completes:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { provideFakeAgent, injectAgent } from '@threadplane/ag-ui';
+
+describe('chat via provideFakeAgent', () => {
+  it('streams the canned tokens onto the agent', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideFakeAgent({ tokens: ['Hello'], delayMs: 0 })],
+    });
+
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    await agent.submit({ message: 'hi' });
+
+    const assistant = agent.messages().find((m) => m.role === 'assistant');
+    expect(assistant?.content).toBe('Hello');
+  });
+});
+```
+
+`injectAgent()` needs an injection context, so resolve it through `TestBed.runInInjectionContext()`. The `RUN_FINISHED` event has reduced by the time the awaited `submit()` resolves, so no fake-timer flushing is required.
+
+## Contract mock: `mockAgent()`
+
+For component and unit tests where you do not need a streaming pipeline at all, use the neutral `mockAgent(initial)` from `@threadplane/chat`. It returns an `Agent` whose state surface is exposed as **writable signals** — set state directly and assert your component reacts. Nothing is real.
+
+`mockAgent()` covers the neutral `Agent` surface. A component that reads the AG-UI extensions (`customEvents`, `clientTools`, `subagents`) needs `provideFakeAgent()` or a scripted `AbstractAgent` instead, because `mockAgent()` implements only `Agent`.
+
+```typescript
+import { mockAgent, staticDelivery } from '@threadplane/chat';
+
+const m = mockAgent({ status: 'running' });
+m.messages.set([
+  { id: '1', role: 'assistant', content: 'Hello!', delivery: staticDelivery('1') },
+]);
+
+expect(m.messages()[0].content).toBe('Hello!');
+expect(m.status()).toBe('running');
+```
+
+### Captured actions and optional surfaces
+
+The mock records submissions and counts stops so component tests can assert what the UI requested:
+
+```typescript
+const agent = mockAgent();
+await agent.submit({ message: 'Hello' });
+expect(agent.submitCalls[0].input).toEqual({ message: 'Hello' });
+await agent.stop();
+expect(agent.stopCount).toBe(1);
+```
+
+`regenerate(index)` truncates messages at the index and records a synthetic submission with `input.regenerate.assistantMessageIndex`. `retry()` is a no-op in this mock; use a scripted adapter when the test needs transport retry behavior.
+
+Drive the lifecycle stub through `agent._internal.streamStartedAt.set(Date.now())`; its public `lifecycle.streamStartedAt` view is read-only. Interrupt, subagent, and history signals must be enabled when creating the mock:
+
+```typescript
+const agent = mockAgent({
+  withInterrupt: true,
+  withSubagents: true,
+  history: [],
+});
+
+agent.interrupt?.set({ id: 'approval-1', value: { question: 'Continue?' }, resumable: true });
+agent.subagents?.set(new Map());
+agent.history?.set([]);
+```
+
+These neutral subagent signals do not model AG-UI protocol events or adapter-specific capabilities. See [`MockAgent`](/docs/api/chat/MockAgent) and [`MockAgentOptions`](/docs/api/chat/MockAgentOptions) for their types.
+
+## Testing tool calls, state, and custom events
+
+By default `provideFakeAgent()` produces only `RUN_*`, `REASONING_MESSAGE_*`, and `TEXT_MESSAGE_*` events. To exercise the reducer's headline non-text features — tool-call rendering, shared state, citations, custom events, interrupts — pass a `script` of raw events. It is part of the config `provideFakeAgent()` accepts, so the whole surface stays reachable through DI:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { EventType, type BaseEvent } from '@ag-ui/client';
+import { provideFakeAgent, injectAgent } from '@threadplane/ag-ui';
+
+describe('scripted provideFakeAgent()', () => {
+  it('reduces tool calls, state, and custom events', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideFakeAgent({
+          delayMs: 0,
+          script: [
+            {
+              when: 'initial',
+              events: [
+                {
+                  type: EventType.TOOL_CALL_START,
+                  toolCallId: 'search-1',
+                  toolCallName: 'search',
+                } as BaseEvent,
+                {
+                  type: EventType.TOOL_CALL_ARGS,
+                  toolCallId: 'search-1',
+                  delta: '{"q":"Angular"}',
+                } as BaseEvent,
+                { type: EventType.TOOL_CALL_END, toolCallId: 'search-1' } as BaseEvent,
+                {
+                  type: EventType.STATE_SNAPSHOT,
+                  snapshot: { topic: 'billing' },
+                } as BaseEvent,
+                {
+                  type: EventType.CUSTOM,
+                  name: 'analysis_progress',
+                  value: { pct: 100 },
+                } as BaseEvent,
+              ],
+            },
+          ],
+        }),
+      ],
+    });
+
+    const agent = TestBed.runInInjectionContext(() => injectAgent());
+    await agent.submit({ message: 'find docs' });
+
+    expect(agent.toolCalls()[0]).toMatchObject({ name: 'search', args: { q: 'Angular' } });
+    expect(agent.state()).toMatchObject({ topic: 'billing' });
+    expect(agent.customEvents()).toContainEqual({ name: 'analysis_progress', data: { pct: 100 } });
+  });
+});
+```
+
+A `CUSTOM` event named `on_interrupt` populates `agent.interrupt()` instead of `customEvents()`; see the [Interrupts guide](/docs/angular/ag-ui/guides/interrupts). A second branch keyed `{ toolMessageFor: 'search-1' }` plays on the follow-up run that resolving a client tool starts, so an approve-then-continue turn is scriptable end to end.
+
+A host that folds the protocol stream itself can assert against the same script: subscribe to `agent.rawEvents$` before `submit()` and it emits `RUN_STARTED`, each scripted event, then `RUN_FINISHED`, in order. It completes when the injector is destroyed.
+
+When you need control the script does not give you — per-event timing, mid-stream errors, an observable you drive by hand — script your own `AbstractAgent` and feed it through `toAgent()`. The adapter reduces those events the same way.
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import {
+  AbstractAgent,
+  EventType,
+  type BaseEvent,
+  type RunAgentInput,
+} from '@ag-ui/client';
+import { Observable } from 'rxjs';
+import { toAgent } from '@threadplane/ag-ui';
+
+/** Emits a scripted tool-call + custom-event sequence, no backend. */
+class ScriptedAgent extends AbstractAgent {
+  run(input: RunAgentInput): Observable<BaseEvent> {
+    const events: BaseEvent[] = [
+      { type: EventType.RUN_STARTED, threadId: input.threadId, runId: input.runId } as BaseEvent,
+      { type: EventType.TOOL_CALL_START, toolCallId: 'search-1', toolCallName: 'search' } as BaseEvent,
+      { type: EventType.TOOL_CALL_ARGS, toolCallId: 'search-1', delta: '{"q":"Angular"}' } as BaseEvent,
+      { type: EventType.TOOL_CALL_END, toolCallId: 'search-1' } as BaseEvent,
+      { type: EventType.STATE_SNAPSHOT, snapshot: { topic: 'billing' } } as BaseEvent,
+      { type: EventType.CUSTOM, name: 'analysis_progress', value: { pct: 100 } } as BaseEvent,
+      { type: EventType.RUN_FINISHED, threadId: input.threadId, runId: input.runId } as BaseEvent,
+    ];
+    return new Observable<BaseEvent>((observer) => {
+      for (const event of events) observer.next(event);
+      observer.complete();
+    });
+  }
+}
+
+describe('scripted AG-UI events', () => {
+  it('reduces tool calls, state, and custom events', async () => {
+    const agent = toAgent(new ScriptedAgent());
+    await agent.submit({ message: 'find docs' });
+
+    expect(agent.toolCalls()[0]).toMatchObject({ name: 'search', args: { q: 'Angular' } });
+    expect(agent.state()).toMatchObject({ topic: 'billing' });
+    expect(agent.customEvents()).toContainEqual({ name: 'analysis_progress', data: { pct: 100 } });
+  });
+});
+```
+
+`customEvents()` is the AG-UI-specific signal — `toAgent()` returns an `AgUiAgent`, so it is reachable directly here without a cast, exactly as it is through `injectAgent()`.
+
+## Verify Mastra approval and cancellation with aimock
+
+The Mastra browser suite checks each decision at three points: the outgoing command contains the decision and observed correlation IDs, the backend tool result matches that decision, and the visible assistant reply agrees with the tool result. A disappearing approval card alone is insufficient evidence of completion.
+
+Run the six scenarios from the repository root with deterministic aimock replay:
+
+```sh
+npx nx e2e cockpit-runtimes-mastra-angular
+```
+
+The application uses `provideAgent({ url: '/agent', interruptTransport: 'mastra-command' })`. Approval sends `command.resume: { approved: true }`; cancellation sends `{ approved: false }`. Both carry `command.interruptEvent: { toolCallId, runId }` under `forwardedProps`, using the suspended run's observed identifiers.
+
+Keep these continuation entries separate inside an aimock fixture's `fixtures` array:
+
+```json
+[
+  {
+    "match": {
+      "userMessage": "reserve",
+      "hasToolResult": true,
+      "toolResultContains": "Reserved North Pines"
+    },
+    "response": { "content": "North Pines is reserved for 2 nights — confirmation TP-0288." }
+  },
+  {
+    "match": {
+      "userMessage": "reserve",
+      "hasToolResult": true,
+      "toolResultContains": "Nothing was booked."
+    },
+    "response": { "content": "The reservation for the North Pines campsite was not booked." }
+  }
+]
+```
+
+The initial tool-call fixture must set `hasToolResult: false`. Matching a continuation only by the user prompt and presence of a tool result can replay an approval after cancellation. Match the backend outcome with `toolResultContains` so the two decisions cannot share a reply.
+
+For live-model verification, configure `OPENAI_API_KEY` in the environment and run each decision in a fresh process with a fresh capture directory:
+
+```sh
+# Use new directories for every verification session.
+AIMOCK_MODE=record AIMOCK_RECORD_DIR=/tmp/public-docs-approve-recordings \
+  npx nx e2e cockpit-runtimes-mastra-angular --grep='Approve sends'
+AIMOCK_MODE=record AIMOCK_RECORD_DIR=/tmp/public-docs-cancel-recordings \
+  npx nx e2e cockpit-runtimes-mastra-angular --grep='Cancel sends'
+```
+
+Aimock can reuse newly recorded matches within a process, and generated matchers do not distinguish the two tool-result payloads. Separate processes and unused capture directories prevent the second decision from reusing the first decision's response. Each test run also uses a fresh local database. Confirm new upstream captures for each decision before treating a passing run as live-model evidence; replay alone demonstrates deterministic integration behavior.
+
+The verified scenario is North Pines for two nights, totaling $90. The local tool returns a synthetic confirmation on approval or `Nothing was booked.` on cancellation; it never contacts an external reservation service. Check both the backend result and the visible reply. Live provider wording varies, while replay wording is deterministic. The cancellation continuation was captured from `gpt-4o-mini` through aimock record mode on 2026-09-09.

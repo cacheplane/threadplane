@@ -26,7 +26,7 @@ export const deepAgentsPlanningPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Deep Agents Planning (Python)',
-  docsPath: '/docs/deep-agents/capabilities/planning',
+  docsPath: '/docs/angular/deep-agents/capabilities/planning',
   promptAssetPaths: ['cockpit/deep-agents/planning/python/prompts/planning.md'],
   codeAssetPaths: [
     'cockpit/deep-agents/planning/angular/src/app/planning.component.ts',

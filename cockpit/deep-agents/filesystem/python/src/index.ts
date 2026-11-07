@@ -26,7 +26,7 @@ export const deepAgentsFilesystemPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Deep Agents Filesystem (Python)',
-  docsPath: '/docs/deep-agents/capabilities/filesystem',
+  docsPath: '/docs/angular/deep-agents/capabilities/filesystem',
   promptAssetPaths: ['cockpit/deep-agents/filesystem/python/prompts/filesystem.md'],
   codeAssetPaths: [
     'cockpit/deep-agents/filesystem/angular/src/app/filesystem.component.ts',

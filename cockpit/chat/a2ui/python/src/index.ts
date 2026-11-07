@@ -26,7 +26,7 @@ export const chatA2uiPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Chat A2UI (Python)',
-  docsPath: '/docs/chat/a2ui/overview',
+  docsPath: '/docs/angular/chat/a2ui/overview',
   promptAssetPaths: ['cockpit/chat/a2ui/python/prompts/a2ui.md'],
   codeAssetPaths: [
     'cockpit/chat/a2ui/angular/src/app/a2ui.component.ts',

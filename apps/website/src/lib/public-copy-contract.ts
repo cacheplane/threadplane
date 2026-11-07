@@ -85,8 +85,10 @@ export const NON_INDEXED_PUBLIC_ROUTES: readonly string[] = [
   '/llms.txt',
   '/llms-full.txt',
   '/robots.txt',
-  '/api/markdown/langgraph/getting-started/introduction',
-  '/api/markdown/ag-ui/concepts/architecture',
+  '/api/markdown/angular/langgraph/getting-started/introduction',
+  '/api/markdown/angular/ag-ui/concepts/architecture',
+  '/api/markdown/react/getting-started/introduction',
+  '/api/markdown/shared/middleware/getting-started/introduction',
 ];
 
 /** Every barred pattern, for callers that do not care which list a hit came from. */

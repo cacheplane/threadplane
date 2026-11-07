@@ -26,7 +26,7 @@ export const chatToolCallsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Chat Tool Calls (Python)',
-  docsPath: '/docs/chat/components/chat-tool-calls',
+  docsPath: '/docs/angular/chat/components/chat-tool-calls',
   promptAssetPaths: ['cockpit/chat/tool-calls/python/prompts/tool-calls.md'],
   codeAssetPaths: [
     'cockpit/chat/tool-calls/angular/src/app/tool-calls.component.ts',

@@ -23,7 +23,7 @@ export const deepAgentsSkillsAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Deep Agents Skills (Angular)',
-  docsPath: '/docs/deep-agents/capabilities/skills',
+  docsPath: '/docs/angular/deep-agents/capabilities/skills',
   promptAssetPaths: [
     'cockpit/deep-agents/skills/angular/prompts/skills.md',
   ],

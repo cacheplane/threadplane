@@ -1,10 +1,12 @@
+import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const origin = 'http://127.0.0.1:4644';
-const route = '/docs/chat/guides/theming';
+const route = '/docs/angular/chat/guides/theming';
+const reactRoute = '/docs/react/chat/guides/theming';
 const frameURL = /(?:localhost:4644|chat\/theming\/react)/;
 const observations = new WeakMap<
   Page,
@@ -119,7 +121,7 @@ test.describe('native Theming Website', () => {
     }, info) => {
       test.setTimeout(90000);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      expect((await page.goto(route + '?frontend=react'))?.status()).toBe(200);
+      expect((await page.goto(reactRoute))?.status()).toBe(200);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-hydrated',
         'true',
@@ -322,14 +324,14 @@ test.describe('native Theming Website', () => {
       'true',
       { timeout: 30000 }
     );
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveValue('angular');
     await expect(
       page.getByRole('heading', {
         name: 'React chat theming preview',
         exact: true,
       })
     ).toHaveCount(0);
-    await page.getByLabel('Example UI').selectOption('react');
+    await selectFramework(page, 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React chat theming preview',

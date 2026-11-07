@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
-import { docsConfig, specialDocsPages } from '../src/lib/docs-config';
-import { COCKPIT_DOCS_LINKS } from '@threadplane/cockpit-registry';
+import { specialDocsPages } from '../src/lib/docs-config';
+import { getNarrativeDocuments } from '../src/lib/docs-catalog';
 
 /** Discover rendered component tags, excluding authored examples and comments. */
 export function diagramPlacements(
@@ -78,15 +78,7 @@ export function discoverDiagramRoutes(root: string): DiagramRouteInventory[] {
     .split(',')
     .map((name) => name.trim())
     .filter(Boolean);
-  const configured = new Set(
-    docsConfig.flatMap((library) =>
-      library.sections.flatMap((section) =>
-        section.pages.map(
-          (page) => `/docs/${library.id}/${page.section}/${page.slug}`
-        )
-      )
-    )
-  );
+  const configured = new Set(getNarrativeDocuments().map(document => document.href));
   specialDocsPages.forEach((page) => configured.add(page.path));
   const directory = join(root, 'apps/website/content/docs');
   const walk = (path: string): string[] =>
@@ -110,42 +102,6 @@ export function discoverDiagramRoutes(root: string): DiagramRouteInventory[] {
         `Diagram placement has no published route: ${relativePath}`
       );
     targets.push({ path, source: relative(root, file), diagrams });
-  }
-  const reactDirectory = join(root, 'apps/website/src/components/docs');
-  for (const file of readdirSync(reactDirectory).filter((name) =>
-    /^React.*Preview\.tsx$/.test(name)
-  )) {
-    const narrative = readReactNarrative(
-      readFileSync(join(reactDirectory, file), 'utf8')
-    );
-    const diagrams = diagramPlacements(narrative, names);
-    if (!diagrams.length) continue;
-    const capability =
-      /<ExampleCode\s+file=["']cockpit\/([^/]+)\/([^/]+)\/react\//.exec(
-        narrative
-      );
-    if (!capability)
-      throw new Error(
-        `Cannot resolve React diagram source to a registered capability: ${file}`
-      );
-    const paths = [
-      ...new Set(
-        Object.entries(COCKPIT_DOCS_LINKS)
-          .filter(([key]) => {
-            const [product, , topic] = key.split('/');
-            return product === capability[1] && topic === capability[2];
-          })
-          .map(([, path]) => path)
-          .filter(Boolean)
-      ),
-    ];
-    if (paths.length !== 1 || !configured.has(paths[0]))
-      throw new Error(`Ambiguous or unpublished React diagram route: ${file}`);
-    targets.push({
-      path: `${paths[0]}?frontend=react`,
-      source: relative(root, join(reactDirectory, file)),
-      diagrams,
-    });
   }
   if (
     !targets.length ||

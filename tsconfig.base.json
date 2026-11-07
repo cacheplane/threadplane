@@ -52,6 +52,7 @@
       "@threadplane/cockpit-langgraph-streaming-python": [
         "cockpit/langgraph/streaming/python/src/index.ts"
       ],
+      "@threadplane/cockpit-registry/docs-routes": ["libs/cockpit-registry/src/lib/docs-routes.ts"],
       "@threadplane/cockpit-registry": ["libs/cockpit-registry/src/index.ts"],
       "@threadplane/cockpit-runtime-bridge": [
         "libs/cockpit-runtime-bridge/src/index.ts"

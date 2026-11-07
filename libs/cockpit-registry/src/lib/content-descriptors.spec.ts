@@ -49,7 +49,7 @@ it('keeps native AG-UI A2UI assets frozen, resolvable and free of private proof 
   const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as never,'react')!;
   expect(react.backendAssetPaths).toEqual(canonical.backendAssetPaths);
   expect(react.promptAssetPaths).toEqual(canonical.promptAssetPaths);
-  expect(react.docsPath).toBe('/docs/a2ui/getting-started/introduction');
+  expect(react.docsPath).toBe('/docs/react/a2ui/getting-started/introduction');
   expect(Object.isFrozen(react)).toBe(true); expect(Object.isFrozen(react.codeAssetPaths)).toBe(true);
   for(const path of [...react.codeAssetPaths,...react.backendAssetPaths,...react.promptAssetPaths]) expect(existsSync(new URL('../../../../'+path,import.meta.url))).toBe(true);
   expect(react.codeAssetPaths.some(path=>/fixture|probe|testing|\.spec\./.test(path))).toBe(false);
