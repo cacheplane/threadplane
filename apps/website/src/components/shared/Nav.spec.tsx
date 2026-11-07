@@ -228,7 +228,8 @@ describe('Docs mobile navigation', () => {
 
     expect(within(dialog).queryByRole('button', { name: 'Site' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Search docs' })).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Guides' })).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Back to menu' })).toBeTruthy();
   });
 

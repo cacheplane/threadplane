@@ -10,9 +10,9 @@ test('the brand face survives inside the docs workspace', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
   await expect(prose).toHaveCSS('font-family', /Hanken/);
   await expect(prose).toHaveCSS('font-size', '16px');
-  await expect(prose).toHaveCSS('line-height', '27.2px');
+  await expect(prose).toHaveCSS('line-height', '28px');
   await expect(prose.locator('h1')).toHaveCSS('font-weight', '600');
-  await expect(prose.locator('h1')).toHaveCSS('font-size', '40px');
+  await expect(prose.locator('h1')).toHaveCSS('font-size', '44px');
   await expect(prose.locator('h1')).toHaveCSS('font-family', /Hanken/);
 });
 

@@ -32,6 +32,31 @@ export function ChatPopup({
   const launcher = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useIsomorphicLayoutEffect(() => {
+    const element = root.current;
+    const viewport = element?.ownerDocument.defaultView?.visualViewport;
+    if (!element || !viewport) return;
+    const update = () => {
+      if (viewport.scale !== 1) return;
+      element.style.setProperty(
+        '--tp-chat-viewport-height',
+        `${viewport.height}px`
+      );
+      element.style.setProperty(
+        '--tp-chat-viewport-top',
+        `${viewport.offsetTop}px`
+      );
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, []);
 
   useIsomorphicLayoutEffect(() => {
     if (open === wasOpen.current) return;
@@ -52,6 +77,7 @@ export function ChatPopup({
 
   return (
     <div
+      ref={root}
       className={['tp-chat', 'tp-chat-popup', className]
         .filter(Boolean)
         .join(' ')}

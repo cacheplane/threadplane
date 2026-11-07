@@ -163,9 +163,7 @@ export function NativeComposer({
           hint="Ctrl or ⌘ + Enter to send. Enter adds a line."
           submitOnEnter={false}
           disabled={
-            snapshot.selection.status !== 'ready' ||
-            active ||
-            deletionBlocked(snapshot)
+            snapshot.selection.status !== 'ready' || deletionBlocked(snapshot)
           }
           busy={active || !canSubmit}
           onStop={active ? () => void application.stop() : undefined}

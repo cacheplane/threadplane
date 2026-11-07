@@ -1135,6 +1135,9 @@ body:has([data-website-workspace-host]) {
   cursor: pointer;
   font-weight: 600;
 }
+.docs-sidebar-lib-item-check {
+  display: none;
+}
 .docs-sidebar-lib-trigger-inner {
   display: flex;
   align-items: center;

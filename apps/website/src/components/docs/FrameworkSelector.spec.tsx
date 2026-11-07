@@ -12,6 +12,21 @@ const targets = {
   react: { href: '/docs/react/langgraph/guides/streaming', modes: ['Docs', 'Code'] as const, anchors: ['ownership'] },
 };
 
+function frameworkControl() {
+  return screen.getByLabelText('Framework') as HTMLSelectElement | HTMLButtonElement;
+}
+
+function chooseFramework(value: 'angular' | 'react') {
+  const control = frameworkControl();
+  if (control instanceof HTMLSelectElement) {
+    fireEvent.change(control, { target: { value } });
+  } else {
+    fireEvent.click(control);
+    const option = screen.queryByRole('menuitemradio', { name: value === 'angular' ? /^Angular/ : /^React/ });
+    if (option) fireEvent.click(option);
+  }
+}
+
 beforeEach(() => {
   state.pathname = targets.angular.href;
   state.push.mockReset();
@@ -20,17 +35,29 @@ beforeEach(() => {
 });
 
 describe('FrameworkSelector', () => {
+  it('opens a matching menu and restores focus without switching on Escape', () => {
+    render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
+    const control = screen.getByRole('button', { name: 'Framework' });
+    fireEvent.click(control);
+    expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Angular' }));
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'r' });
+    expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'React' }));
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' });
+    expect(screen.queryByRole('menu', { name: 'Frameworks' })).toBeNull();
+    expect(document.activeElement).toBe(control);
+    expect(state.push).not.toHaveBeenCalled();
+  });
   it('uses the URL over stored preference and persists framework-route visits', () => {
     frameworkPreference.setPreference('react');
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
-    expect((screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement).value).toBe('angular');
+    expect(frameworkControl().getAttribute('data-value')).toBe('angular');
     expect(localStorage.getItem(FRAMEWORK_PREFERENCE_KEY)).toBe('angular');
   });
 
   it('renders a direct React route as React even when Angular is preferred', () => {
     state.pathname = targets.react.href;
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
-    expect((screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement).value).toBe('react');
+    expect(frameworkControl().getAttribute('data-value')).toBe('react');
     expect(localStorage.getItem(FRAMEWORK_PREFERENCE_KEY)).toBe('react');
   });
 
@@ -50,9 +77,10 @@ describe('FrameworkSelector', () => {
       </React.Suspense>;
     }
     render(<Harness />);
-    const control = screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement;
+    const control = frameworkControl() as HTMLSelectElement;
+    fireEvent.click(control);
     await act(async () => {
-      fireEvent.change(control, { target: { value: 'react' } });
+      fireEvent.click(screen.getByRole('menuitemradio', { name: 'React' }));
     });
     expect(control.disabled).toBe(true);
     await act(async () => { release(); await blocked; });
@@ -62,25 +90,25 @@ describe('FrameworkSelector', () => {
   it('honors pending navigation owned outside a remounted selector', () => {
     const navigateTo = vi.fn();
     const view = render(<FrameworkSelector scope="angular" navigationPending navigateTo={navigateTo} documentId="langgraph/guides/streaming" targets={targets} />);
-    const control = screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement;
+    const control = frameworkControl() as HTMLSelectElement;
     expect(control.disabled).toBe(true);
-    fireEvent.change(control, { target: { value: 'react' } });
+    chooseFramework('react');
     expect(navigateTo).not.toHaveBeenCalled();
     view.rerender(<FrameworkSelector scope="angular" navigationPending={false} navigateTo={navigateTo} documentId="langgraph/guides/streaming" targets={targets} />);
-    fireEvent.change(control, { target: { value: 'react' } });
+    chooseFramework('react');
     expect(navigateTo).toHaveBeenCalledWith(targets.react.href);
     expect(state.push).not.toHaveBeenCalled();
   });
 
   it('blocks a second selection until the registered document catches up with the URL', () => {
     const view = render(<FrameworkSelector scope="react" documentId="langgraph/guides/streaming" targets={targets} />);
-    const control = screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement;
+    const control = frameworkControl() as HTMLSelectElement;
     expect(control.disabled).toBe(true);
-    fireEvent.change(control, { target: { value: 'react' } });
+    chooseFramework('react');
     expect(state.push).not.toHaveBeenCalled();
     view.rerender(<FrameworkSelector scope="angular" documentId="langgraph/guides/streaming" targets={targets} />);
     expect(control.disabled).toBe(false);
-    fireEvent.change(control, { target: { value: 'react' } });
+    chooseFramework('react');
     expect(state.push).toHaveBeenCalledWith(targets.react.href);
   });
 
@@ -89,7 +117,7 @@ describe('FrameworkSelector', () => {
     render(<><FrameworkSelector /><FrameworkDocsLink>Get started</FrameworkDocsLink></>);
     const link = screen.getByRole('link', { name: 'Get started' });
     expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/introduction');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Framework' }), { target: { value: 'react' } });
+    chooseFramework('react');
     expect(link.getAttribute('href')).toBe('/docs/react/getting-started/introduction');
     act(() => window.dispatchEvent(new StorageEvent('storage', { key: FRAMEWORK_PREFERENCE_KEY, newValue: 'angular' })));
     expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/introduction');
@@ -99,7 +127,7 @@ describe('FrameworkSelector', () => {
   it('switches the same topic preserving only supported modes and target anchors', () => {
     window.history.replaceState(null, '', `${targets.angular.href}?mode=code&frontend=angular&thread=secret#ownership`);
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Framework' }), { target: { value: 'react' } });
+    chooseFramework('react');
     expect(state.push).toHaveBeenCalledWith(`${targets.react.href}?mode=code#ownership`);
     expect(frameworkPreference.getSnapshot()).toBe('react');
   });
@@ -107,30 +135,34 @@ describe('FrameworkSelector', () => {
   it('drops unavailable modes and missing fragments rather than carrying state to another runtime', () => {
     window.history.replaceState(null, '', `${targets.angular.href}?mode=run#missing`);
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Framework' }), { target: { value: 'react' } });
+    chooseFramework('react');
     expect(state.push).toHaveBeenCalledWith(targets.react.href);
   });
 
   it('shows a missing counterpart as unavailable with a separate introduction link', () => {
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={{ angular: targets.angular }} />);
-    expect((screen.getByRole('option', { name: 'React (unavailable)' }) as HTMLOptionElement).disabled).toBe(true);
+    fireEvent.click(frameworkControl());
+    const unavailable = screen.getByRole('menuitemradio', { name: /React/ });
+    expect(unavailable.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(unavailable);
+    fireEvent.keyDown(unavailable, { key: 'Escape' });
     expect(screen.getByText('This topic is not available for React.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'React introduction' }).getAttribute('href')).toBe('/docs/react/getting-started/introduction');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Framework' }), { target: { value: 'react' } });
+    chooseFramework('react');
     expect(state.push).not.toHaveBeenCalled();
   });
 
   it('does not navigate the current article when another tab changes preference', () => {
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
     act(() => window.dispatchEvent(new StorageEvent('storage', { key: FRAMEWORK_PREFERENCE_KEY, newValue: 'react' })));
-    expect((screen.getByRole('combobox', { name: 'Framework' }) as HTMLSelectElement).value).toBe('angular');
+    expect(frameworkControl().getAttribute('data-value')).toBe('angular');
     expect(state.push).not.toHaveBeenCalled();
   });
 
   it.each(['/docs/shared/middleware/getting-started/introduction', '/docs/api/react/useAgent'])('keeps shared/API route identity while changing guide preference on %s', pathname => {
     state.pathname = pathname;
     render(<FrameworkSelector scope="shared" />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Framework' }), { target: { value: 'react' } });
+    chooseFramework('react');
     expect(frameworkPreference.getSnapshot()).toBe('react');
     expect(state.push).not.toHaveBeenCalled();
     expect(screen.queryByText(/This topic is not available/)).toBeNull();

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   BookOpen,
   Braces,
@@ -62,18 +63,22 @@ export function DocsContextContent({
   frameworkTargets,
   mobile = false,
   showFrameworkSelector = true,
+  frameworkSelector,
   onNavigate,
   onSearchHandoff,
   resolveHref,
 }: DocsControlPlaneProps & {
   mobile?: boolean;
   showFrameworkSelector?: boolean;
+  frameworkSelector?: ReactNode;
   onNavigate?: () => void;
   onSearchHandoff?: () => void;
   resolveHref?: (href: string) => string;
 }) {
   const preferences = useControlPlanePreferences('docs');
-  const framework = useDocsFramework(usePathname());
+  const pathname = usePathname();
+  const framework = useDocsFramework(pathname);
+  const compact = pathname?.startsWith('/docs/angular/') ?? false;
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
   const openSearch = () => {
     if (!mobile) {
@@ -87,8 +92,23 @@ export function DocsContextContent({
     onNavigate?.();
     window.requestAnimationFrame(dispatchSearch);
   };
+  const navigation = apiContext ? (
+    <ApiNavigation {...apiContext} onNavigate={onNavigate} resolveHref={resolveHref} />
+  ) : (
+    <DocsNavigation
+      framework={framework}
+      activeLibrary={activeLibrary}
+      activeSection={activeSection}
+      activeSlug={activeSlug}
+      expanded={preferences.expanded}
+      onExpandedChange={preferences.setExpanded}
+      onNavigate={onNavigate}
+      resolveHref={resolveHref}
+    />
+  );
+
   return (
-    <div data-docs-control-plane-context data-mobile={mobile || undefined}>
+    <div data-docs-control-plane-context data-docs-navigation-compact={compact || undefined} data-mobile={mobile || undefined}>
       <button
         type="button"
         className="docs-control-plane-search-trigger"
@@ -102,26 +122,24 @@ export function DocsContextContent({
         <kbd className="docs-control-plane-search-kbd" aria-hidden="true">⌘K</kbd>
       </button>
 
-      {showFrameworkSelector && <FrameworkSelector scope={scope} documentId={documentId} targets={frameworkTargets} onNavigate={onNavigate} />}
+      {frameworkSelector ?? (showFrameworkSelector && <FrameworkSelector scope={scope} documentId={documentId} targets={frameworkTargets} onNavigate={onNavigate} />)}
 
-      <ControlPlaneSection
-        title={apiContext ? 'API Reference' : 'Learn'}
-        open={preferences.expanded.Learn ?? true}
-        onOpenChange={(open) => preferences.setExpanded('Learn', open)}
-      >
-        {apiContext ? <ApiNavigation {...apiContext} onNavigate={onNavigate} resolveHref={resolveHref} /> : <DocsNavigation
-          framework={framework}
-          activeLibrary={activeLibrary}
-          activeSection={activeSection}
-          activeSlug={activeSlug}
-          expanded={preferences.expanded}
-          onExpandedChange={preferences.setExpanded}
-          onNavigate={onNavigate}
-          resolveHref={resolveHref}
-        />}
-      </ControlPlaneSection>
+      {compact ? navigation : (
+        <ControlPlaneSection
+          title={apiContext ? 'API Reference' : 'Learn'}
+          open={preferences.expanded.Learn ?? true}
+          onOpenChange={(open) => preferences.setExpanded('Learn', open)}
+        >
+          {navigation}
+        </ControlPlaneSection>
+      )}
 
-      {library?.demoUrl ? (
+      {library?.demoUrl ? compact ? (
+        <a className="docs-sidebar-supporting-demo" href={library.demoUrl} target="_blank" rel="noopener noreferrer" onClick={onNavigate}>
+          {library.demoLabel ?? 'Open live demo'}
+          <ExternalLink size={14} aria-hidden="true" />
+        </a>
+      ) : (
         <ControlPlaneSection title="Actions" collapsible={false}>
           <ControlPlaneActionBar label="Docs actions">
             <ControlPlaneIconButton
@@ -159,9 +177,7 @@ export function DocsControlPlane(props: DocsControlPlaneProps) {
             <ControlPlaneRailItem
               label="Run"
               icon={<Play size={18} aria-hidden="true" />}
-              href={props.runHref}
-              disabled={!props.runHref}
-              disabledReason={disabledReason('Run')}
+              href={props.runHref ?? '/docs/examples'}
             />
             <ControlPlaneRailItem
               label="Code"
@@ -172,8 +188,7 @@ export function DocsControlPlane(props: DocsControlPlaneProps) {
             <ControlPlaneRailItem
               label="API"
               icon={<Braces size={18} aria-hidden="true" />}
-              disabled
-              disabledReason={disabledReason('API')}
+              href="/docs/api"
             />
           </>
         }

@@ -114,7 +114,7 @@ test('React Render Spec restores fresh playback through frontend history', async
   await expectFreshRun(page);
   await renderChangedSample(page);
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=run/);
   await expect(page.locator('iframe')).toHaveAttribute(

@@ -46,6 +46,13 @@ beforeEach(() => {
 });
 
 describe('DocsControlPlane', () => {
+  it.each(['angular', 'react'] as const)('marks the %s introduction as the current featured page', framework => {
+    route.pathname = `/docs/${framework}/getting-started/introduction`;
+    render(<DocsContextContent activeLibrary={null} activeSection="getting-started" activeSlug="introduction" scope={framework} />);
+    const introduction = screen.getByRole('link', { name: 'Introduction' });
+    expect(introduction.getAttribute('aria-current')).toBe('page');
+    expect(introduction.hasAttribute('data-active')).toBe(true);
+  });
   it('keeps shared migrations last and collapsed until requested', () => {
     const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
     const sections = container.querySelectorAll('.docs-sidebar-section');
@@ -69,16 +76,16 @@ describe('DocsControlPlane', () => {
     );
     expect(
       screen
-        .getByRole('link', { name: 'Persistence', exact: true })
+        .getByRole('link', { name: 'Persistence' })
         .getAttribute('href')
     ).toBe('/docs/react/langgraph/guides/persistence');
-    expect(screen.queryByRole('link', { name: 'Installation', exact: true })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Installation' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Migrations' })).toBeNull();
   });
 
   it.each([false, true])('offers one framework selector in documentation navigation (mobile=%s)', mobile => {
     render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" mobile={mobile} />);
-    expect(screen.getAllByRole('combobox', { name: 'Framework' })).toHaveLength(1);
+    expect(screen.getAllByLabelText('Framework')).toHaveLength(1);
   });
   it('keeps context headings on the shared sentence-case sans contract', () => {
     for (const selector of [
@@ -145,7 +152,7 @@ describe('DocsControlPlane', () => {
     expect(docsCss).not.toMatch(/\[data-control-plane-environment-/);
   });
 
-  it('keeps standalone docs-only modes disabled without handoff links', () => {
+  it('offers Run and API destinations while Code requires an example', () => {
     render(
       <DocsControlPlane
         activeLibrary={null}
@@ -159,7 +166,9 @@ describe('DocsControlPlane', () => {
     expect(
       screen.getByRole('link', { name: 'Docs' }).getAttribute('aria-current')
     ).toBe('page');
-    for (const mode of ['Run', 'Code', 'API'] as const) {
+    expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe('/docs/examples');
+    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
+    for (const mode of ['Code'] as const) {
       const control = screen.getByRole('button', {
         name: mode,
         description: `${mode} is unavailable because this page has no workspace capability.`,
@@ -375,10 +384,22 @@ describe('DocsControlPlane', () => {
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
+
+  it('opens on the selected library and supports title typeahead', () => {
+    render(<DocsControlPlane activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" />);
+    fireEvent.click(screen.getByRole('button', { name: 'AG-UI' }));
+    const selected = screen.getByRole('menuitemradio', { name: /AG-UI/ });
+    expect(document.activeElement).toBe(selected);
+    fireEvent.keyDown(selected, { key: 'c' });
+    expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Chat' }));
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'AG-UI' }));
+  });
 });
 
 describe('DocsControlPlane — library-neutral', () => {
-  it('keeps every standalone control disabled on the adapter comparison page', () => {
+  it('offers examples and generated APIs from the adapter comparison page', () => {
     render(
       <DocsControlPlane
         activeLibrary={null}
@@ -387,7 +408,9 @@ describe('DocsControlPlane — library-neutral', () => {
       />,
     );
 
-    for (const mode of ['Run', 'Code', 'API'] as const) {
+    expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe('/docs/examples');
+    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
+    for (const mode of ['Code'] as const) {
       const control = screen.getByRole('button', {
         name: mode,
         description: `${mode} is unavailable because this page has no workspace capability.`,
@@ -413,8 +436,8 @@ describe('DocsControlPlane — library-neutral', () => {
       screen.getByRole('link', { name: 'Run' }).getAttribute('href'),
     ).toBe('/docs/angular/langgraph/guides/streaming?mode=run');
 
-    // The index still has no Code or API view of its own.
-    for (const mode of ['Code', 'API'] as const) {
+    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
+    for (const mode of ['Code'] as const) {
       expect(
         screen.getByRole('button', {
           name: mode,
@@ -458,6 +481,59 @@ describe('DocsControlPlane — library-neutral', () => {
 });
 
 describe('DocsContextContent', () => {
+  it('opens only the current Angular section by default', () => {
+    render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
+    expect(screen.getByRole('button', { name: 'Guides' }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Getting Started' }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('link', { name: 'Streaming' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.queryByRole('button', { name: 'Learn' })).toBeNull();
+  });
+
+  it('respects explicit Angular section preferences over the current section', () => {
+    window.localStorage.setItem('threadplane:control-plane:v1', JSON.stringify({
+      version: 1,
+      docs: { expanded: { 'Learn:langgraph:guides': false, 'Learn:langgraph:getting-started': true } },
+    }));
+    render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
+    expect(screen.getByRole('button', { name: 'Guides' }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Getting Started' }).getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('opens the current migrations section without requiring a saved preference', () => {
+    route.pathname = '/docs/angular/chat/migrations/upgrading';
+    render(<DocsContextContent activeLibrary="chat" activeSection="migrations" activeSlug="upgrading" />);
+    expect(screen.getByRole('button', { name: 'Migrations' }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('link', { name: 'Upgrade an existing application' }).getAttribute('aria-current')).toBe('page');
+  });
+
+  it.each([false, true])('places the supplied framework control between search and library without duplication (mobile=%s)', mobile => {
+    const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" mobile={mobile} frameworkSelector={<button data-framework-control>Owned framework selector</button>} />);
+    expect(container.querySelectorAll('[data-framework-control]')).toHaveLength(1);
+    const controls = Array.from(container.querySelectorAll('button'));
+    expect(controls[0].textContent).toContain('Search docs');
+    expect(controls[1].textContent).toBe('Owned framework selector');
+    expect(controls[2].textContent).toBe('LangGraph');
+  });
+
+  it('keeps supporting Angular destinations below sections without a duplicate introduction', () => {
+    const { container } = render(<DocsContextContent activeLibrary="ag-ui" activeSection="getting-started" activeSlug="introduction" />);
+    expect(screen.getAllByRole('link', { name: 'Introduction' })).toHaveLength(1);
+    const supporting = screen.getByRole('navigation', { name: 'More documentation' });
+    expect(within(supporting).getByRole('link', { name: 'API Reference' }).getAttribute('href')).toBe('/docs/api');
+    expect(within(supporting).getByRole('link', { name: 'Choosing an adapter' }).getAttribute('href')).toBe('/docs/choosing-an-adapter');
+    expect((container.querySelector('.docs-sidebar-section')?.compareDocumentPosition(supporting) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Actions' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Open live demo' }).textContent).toBe('Open live demo');
+  });
+
+  it.each(['/docs/react/langgraph/guides/streaming', '/docs/choosing-an-adapter'])('preserves the existing context structure outside Angular routes (%s)', pathname => {
+    route.pathname = pathname;
+    const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Featured documentation' })).toBeTruthy();
+    expect(container.querySelector('[data-docs-navigation-compact]')).toBeNull();
+  });
+
   it('reuses the same sentence-case navigation content for mobile', () => {
     render(
       <DocsContextContent
@@ -471,7 +547,7 @@ describe('DocsContextContent', () => {
     expect(screen.getByRole('button', { name: 'Search docs' })).toBeTruthy();
     // json-render publishes no demoUrl, so Actions has nothing left to hold.
     expect(screen.queryByRole('toolbar', { name: 'Docs actions' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Learn' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Runtime' })).toBeNull();
   });
 

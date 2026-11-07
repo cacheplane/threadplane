@@ -13,6 +13,7 @@ import {
   preferredDocsHref,
 } from '../../lib/framework-preference';
 import { useDocsFramework } from '../../lib/use-docs-framework';
+import { FrameworkDropdown } from './FrameworkDropdown';
 
 export interface FrameworkTarget {
   href: string;
@@ -101,24 +102,36 @@ export function FrameworkSelector({
       >
         Framework
       </label>
-      <select
-        id={id}
-        value={framework}
-        disabled={isSwitching}
-        onChange={(event) => choose(event.target.value as DocsFramework)}
-        className="h-11 md:h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-sm text-[var(--color-text-primary)]"
-      >
-        {(['angular', 'react'] as const).map((candidate) => (
-          <option
-            key={candidate}
-            value={candidate}
-            disabled={unavailable.includes(candidate)}
-          >
-            {candidate === 'angular' ? 'Angular' : 'React'}
-            {unavailable.includes(candidate) ? ' (unavailable)' : ''}
-          </option>
-        ))}
-      </select>
+      {pathname.startsWith('/docs/angular/') ? (
+        <FrameworkDropdown
+          id={id}
+          value={framework}
+          disabled={isSwitching}
+          unavailable={unavailable}
+          onChange={choose}
+        />
+      ) : (
+        <select
+          id={id}
+          data-framework-control
+          data-value={framework}
+          value={framework}
+          disabled={isSwitching}
+          onChange={(event) => choose(event.target.value as DocsFramework)}
+          className="h-11 md:h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-sm text-[var(--color-text-primary)]"
+        >
+          {(['angular', 'react'] as const).map((candidate) => (
+            <option
+              key={candidate}
+              value={candidate}
+              disabled={unavailable.includes(candidate)}
+            >
+              {candidate === 'angular' ? 'Angular' : 'React'}
+              {unavailable.includes(candidate) ? ' (unavailable)' : ''}
+            </option>
+          ))}
+        </select>
+      )}
       {unavailable.map((candidate) => (
         <div
           key={candidate}

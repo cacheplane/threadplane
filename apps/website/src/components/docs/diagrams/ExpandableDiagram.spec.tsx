@@ -42,6 +42,29 @@ afterEach(() => {
 });
 
 describe('diagram expansion', () => {
+  it('keeps the accessible description when a shorter figure title is supplied', () => {
+    const { container } = render(
+      <ExpandableDiagram
+        title="The human approval flow"
+        label="An agent pauses for a human decision and resumes with that decision."
+        kind="flow"
+      >
+        <p>Review the proposed action.</p>
+      </ExpandableDiagram>
+    );
+    expect(container.querySelector('.tp-diagram-figure-title')?.textContent).toBe(
+      'The human approval flow'
+    );
+    expect(screen.getByText('Flow diagram')).toBeTruthy();
+    const trigger = screen.getByRole('button', {
+      name: 'Expand diagram: An agent pauses for a human decision and resumes with that decision.',
+    });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog', {
+      name: 'An agent pauses for a human decision and resumes with that decision.',
+    })).toBeTruthy();
+  });
+
   it('moves a single diagram into the dialog and returns focus when it closes', () => {
     render(
       <ExpandableDiagram

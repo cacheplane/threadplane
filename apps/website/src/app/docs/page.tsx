@@ -6,7 +6,6 @@ import { DocsControlPlane } from '../../components/docs/DocsControlPlane';
 import { DocsSearch } from '../../components/docs/DocsSearch';
 import { DocsSearchFooter } from '../../components/docs/DocsSearchFooter';
 import { createPageMetadata } from '../../lib/site-metadata';
-import { DEFAULT_EXAMPLE_RUN_HREF } from '../../lib/docs-index-example';
 import '../../styles/docs-entry.css';
 
 export const metadata = createPageMetadata({
@@ -79,7 +78,7 @@ export default function DocsLandingPage() {
         activeLibrary={null}
         activeSection=""
         activeSlug=""
-        runHref={DEFAULT_EXAMPLE_RUN_HREF}
+        runHref="/docs/examples"
       />
       <div className="flex-1 min-w-0 docs-shell-body docs-index-body docs-entry-page">
         <Container>

@@ -105,7 +105,7 @@ for (const topic of topics) {
       await page.unrouteAll({ behavior: 'wait' });
 
       await expect(page).toHaveURL(`${topic.path}?mode=run`);
-      await expect(page.getByLabel('Framework')).toHaveValue('angular');
+      await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'

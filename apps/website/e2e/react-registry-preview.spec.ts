@@ -138,7 +138,7 @@ test('React Component Registry restores fresh playback through frontend history'
   await expectFreshRun(page);
   await renderChangedSample(page);
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page).toHaveURL(`${route}?mode=run`);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(

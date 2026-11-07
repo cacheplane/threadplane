@@ -13,6 +13,7 @@ import { ArchFlowDiagram } from './ArchFlowDiagram';
 import { DocsDemoVideo } from './DocsDemoVideo';
 import {
   StackDiagram,
+  HumanApprovalFlow,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,
   RenderHowItFits,
@@ -58,6 +59,7 @@ const mdxComponents = {
   ArchFlowDiagram,
   DocsDemoVideo,
   StackDiagram,
+  HumanApprovalFlow,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,
   RenderHowItFits,

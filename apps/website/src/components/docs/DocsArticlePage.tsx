@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import '../../styles/docs-entry.css';
 import { MdxRenderer } from './MdxRenderer';
-import { DocsSearch } from './DocsSearch';
 import { DocsPageHeader } from './DocsPageHeader';
 import { LibraryMark } from './LibraryMark';
 import { PageActions } from './PageActions';
@@ -63,10 +62,15 @@ export async function DocsArticlePage({ pathname }: { pathname: string }) {
           targetFramework,
           {
             href: target.href,
-            modes:
-              targetResolution.kind === 'mapped'
-                ? targetResolution.identity.availableModes
-                : ['Docs'],
+            modes: Array.from(
+              new Set([
+                'Run',
+                'API',
+                ...(targetResolution.kind === 'mapped'
+                  ? targetResolution.identity.availableModes
+                  : ['Docs']),
+              ])
+            ) as import('@threadplane/cockpit-registry').WorkspaceMode[],
             anchors: extractHeadings(targetDoc.body).map(
               (heading) => heading.id
             ),
@@ -122,10 +126,6 @@ export async function DocsArticlePage({ pathname }: { pathname: string }) {
       data-docs-section={section}
       data-docs-framework={scope}
     >
-      <DocsSearch
-        framework={framework}
-        library={(library as LibraryId) ?? undefined}
-      />
       <div className="flex min-w-0 docs-article-layout">
         <div className="flex-1 min-w-0">
           <div className="px-4 sm:px-6 md:px-12 md:max-w-3xl pt-6">

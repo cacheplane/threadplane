@@ -85,13 +85,13 @@ test('keeps the nav surface and route-specific CTA through scroll and docs navig
         expect(scrolled).toEqual(atTop);
       });
     } else {
-      await test.step('the docs CTA is a text link', async () => {
+      await test.step('the docs CTA matches the shared primary action', async () => {
         const docsCta = page
           .locator('nav')
           .first()
           .getByRole('link', { name: 'Talk to Us' });
-        await expect(docsCta).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-        await expect(docsCta).toHaveCSS('color', 'rgb(21, 37, 62)');
+        await expect(docsCta).toHaveCSS('background-color', 'rgb(21, 37, 62)');
+        await expect(docsCta).toHaveCSS('color', 'rgb(255, 255, 255)');
       });
     }
   }

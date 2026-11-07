@@ -170,7 +170,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await page.goto('/docs/react/ag-ui/guides/tool-views');
     await expect(page.getByRole('heading', { name: 'React AG-UI tool views preview', exact: true })).toBeVisible();
     await page.goto(route);
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(page.getByRole('heading', { name: 'React AG-UI client tools preview', exact: true })).toHaveCount(0);
     await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.getByRole('complementary', { name: 'File tree' }).getByRole('button', { name: 'client-tools.component.ts', exact: true })).toBeVisible();

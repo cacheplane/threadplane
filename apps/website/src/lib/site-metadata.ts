@@ -181,7 +181,7 @@ export function createPageMetadata({
 }
 
 export function getSitemapRoutes(): string[] {
-  const staticRoutes = ['/', '/langgraph', '/render', '/chat', '/ag-ui', '/pricing', '/solutions', '/pilot-to-prod', '/docs', '/blog', '/about', '/contact', '/privacy'];
+  const staticRoutes = ['/', '/langgraph', '/render', '/chat', '/ag-ui', '/pricing', '/solutions', '/pilot-to-prod', '/docs', '/docs/examples', '/blog', '/about', '/contact', '/privacy'];
   const solutionRoutes = getAllSolutionSlugs().map((slug) => `/solutions/${slug}`);
   const docsRoutes = getNarrativeDocuments().map(document => document.href);
   const specialDocsRoutes = specialDocsPages.map((page) => page.path);

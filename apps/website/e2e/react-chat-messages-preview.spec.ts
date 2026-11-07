@@ -99,7 +99,7 @@ test('the canonical message concept keeps Angular as its default frontend', asyn
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', {
       name: 'React chat messages preview',

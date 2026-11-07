@@ -14,6 +14,7 @@ const SLUG = 'render-vs-a2ui';
 export function RenderVsA2ui() {
   return (
     <DiagramFrame
+      title="Two paths to a rendered interface"
       slug={SLUG}
       viewWidth={640}
       viewHeight={204}

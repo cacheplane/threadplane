@@ -19,6 +19,7 @@ const SLUG = 'middleware-how-it-fits';
 export function MiddlewareHowItFits() {
   return (
     <DiagramFrame
+      title="How client tools reach your graph"
       slug={SLUG}
       viewWidth={640}
       viewHeight={276}

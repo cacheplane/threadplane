@@ -12,6 +12,8 @@ import { Maximize2, X } from 'lucide-react';
 
 interface ExpandableDiagramProps {
   label: string;
+  /** Short visible title in the Angular reading layout; label remains the text alternative. */
+  title?: string;
   caption?: string;
   description?: string;
   kind?: 'architecture' | 'sequence' | 'state' | 'flow' | 'erd';
@@ -21,6 +23,7 @@ interface ExpandableDiagramProps {
 /** One diagram instance, moved into the native modal only when requested. */
 export function ExpandableDiagram({
   label,
+  title = label,
   caption,
   description,
   kind,
@@ -73,7 +76,7 @@ export function ExpandableDiagram({
       data-diagram-kind={kind}
     >
       <div className="tp-diagram-toolbar">
-        <span>
+        <span className="tp-diagram-kind">
           {kind
             ? `${
                 kind === 'erd'
@@ -82,6 +85,7 @@ export function ExpandableDiagram({
               } diagram`
             : 'Diagram'}
         </span>
+        <span className="tp-diagram-figure-title">{title}</span>
         <button
           ref={trigger}
           type="button"

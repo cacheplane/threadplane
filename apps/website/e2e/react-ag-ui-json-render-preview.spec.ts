@@ -109,7 +109,7 @@ test('public React AG-UI JSON Render restores its runtime through frontend histo
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',

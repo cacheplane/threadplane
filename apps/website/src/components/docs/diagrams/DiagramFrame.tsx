@@ -12,6 +12,7 @@ interface DiagramFrameProps {
   viewHeight: number;
   /** Accessible one-sentence description of what the diagram shows. */
   label: string;
+  title?: string;
   caption?: string;
   /** Complete reading order and relationships, available without interpreting SVG. */
   description?: string;
@@ -40,6 +41,7 @@ export function DiagramFrame({
   viewWidth,
   viewHeight,
   label,
+  title,
   caption,
   description,
   scale = 'docs',
@@ -74,12 +76,12 @@ export function DiagramFrame({
             />
           </marker>
         </defs>
-        <rect width={viewWidth} height={viewHeight} rx="10" fill={`url(#${slug}-dots)`} />
+        <rect className="tp-diagram-grid" width={viewWidth} height={viewHeight} rx="10" fill={`url(#${slug}-dots)`} />
         {children}
       </svg>
   );
   if (scale === 'docs') {
-    return <ExpandableDiagram label={label} caption={caption} description={description}>{diagram}</ExpandableDiagram>;
+    return <ExpandableDiagram label={label} title={title} caption={caption} description={description}>{diagram}</ExpandableDiagram>;
   }
   return (
     <figure className="tp-diagram-figure" data-scale={scale}>

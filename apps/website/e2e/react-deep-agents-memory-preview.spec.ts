@@ -168,7 +168,7 @@ test.describe('React Deep Agents Memory', () => {
   }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Memory preview',
@@ -283,7 +283,7 @@ test.describe('React Deep Agents Memory', () => {
       .click();
     await hydrated(page, 'docs');
     await selectFramework(page, 'angular');
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Memory preview',

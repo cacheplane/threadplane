@@ -67,13 +67,11 @@ describe('docs index', () => {
     expect(pickerNames).not.toContain('Render');
   });
 
-  it('wires Run to the canonical default example route', () => {
+  it('wires Run to the complete example directory', () => {
     render(<DocsLandingPage />);
 
-    // Registry-derived, not hardcoded: /workspace/langgraph/streaming 404s
-    // because that capability's canonical destination is its docs route.
     expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe(
-      '/docs/angular/langgraph/guides/streaming?mode=run'
+      '/docs/examples'
     );
   });
 });
