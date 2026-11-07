@@ -577,7 +577,7 @@ describe('dispatchLifecycleAppOwnedJob', () => {
       expect.objectContaining({
         jobId: fulfill.id,
         leaseToken: LEASE_TOKEN,
-        subject: 'Your Angular agent chat guide',
+        subject: 'Your agent experience guide',
         text: expect.stringContaining(
           'https://threadplane.ai/whitepapers/chat.pdf'
         ),
@@ -599,17 +599,21 @@ describe('dispatchLifecycleAppOwnedJob', () => {
     );
     expect(sent?.attachments).toEqual([
       {
-        filename: 'angular-chat-guide.pdf',
+        filename: 'threadplane-agent-experiences.pdf',
         path: 'https://threadplane.ai/whitepapers/chat.pdf',
       },
     ]);
   });
 
   it.each([
-    ['overview', 'angular-agent-readiness-guide.pdf', 'whitepaper.pdf'],
-    ['angular', 'angular-streaming-guide.pdf', 'whitepapers/angular.pdf'],
-    ['render', 'angular-genui-guide.pdf', 'whitepapers/render.pdf'],
-    ['chat', 'angular-chat-guide.pdf', 'whitepapers/chat.pdf'],
+    ['overview', 'threadplane-prototype-to-production.pdf', 'whitepaper.pdf'],
+    ['angular', 'threadplane-connecting-agents.pdf', 'whitepapers/angular.pdf'],
+    [
+      'render',
+      'threadplane-generative-interfaces.pdf',
+      'whitepapers/render.pdf',
+    ],
+    ['chat', 'threadplane-agent-experiences.pdf', 'whitepapers/chat.pdf'],
   ] as const)(
     'attaches the requested %s guide to the fulfillment message',
     async (paper, filename, path) => {
@@ -954,7 +958,9 @@ describe('loadLifecycleRuntimeConfiguration', () => {
       })
     ).toMatchObject({ linkedInIngestEnabled: false });
     expect(() =>
-      loadLifecycleRuntimeConfiguration({ GROWTH_LINKEDIN_INGEST_ENABLED: 'TRUE' })
+      loadLifecycleRuntimeConfiguration({
+        GROWTH_LINKEDIN_INGEST_ENABLED: 'TRUE',
+      })
     ).toThrow('GROWTH_LINKEDIN_INGEST_ENABLED must be exactly true or false');
   });
 

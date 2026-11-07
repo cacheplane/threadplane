@@ -573,44 +573,6 @@
   color: var(--color-text-inverted);
 }
 
-/* UI primitive — SectionHeader (centered + rail variants, treatment C). */
-[data-ui="section-header"] .section-header-eyebrow {
-  margin-bottom: 16px;
-}
-[data-ui="section-header"] .section-header-heading {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--text-h2);
-  line-height: var(--text-h2--line-height);
-  letter-spacing: -0.015em;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-[data-ui="section-header"] .section-header-aside {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
-  font-style: italic;
-  color: var(--color-text-muted);
-  margin: 16px 0 0;
-}
-[data-ui="section-header"][data-variant="centered"] {
-  text-align: center;
-}
-[data-ui="section-header"][data-variant="rail"] {
-  text-align: left;
-}
-[data-ui="section-header"][data-variant="rail"] .section-header-eyebrow {
-  border-top: 2px solid var(--color-text-primary);
-  padding-top: 8px;
-  margin-bottom: var(--space-4);
-}
-[data-ui="section-header"][data-variant="rail"] .section-header-heading {
-  font-size: clamp(32px, 3.4vw, 44px);
-  line-height: 1.1;
-  letter-spacing: -0.015em;
-}
-
 [data-ui="modal"] {
   position: fixed;
   inset: 0;

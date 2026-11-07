@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { Compatibility } from './Compatibility';
-import { PROVIDERS } from '../../lib/airport-diagram';
+import { PROVIDERS } from '../../lib/model-providers';
 
 describe('Compatibility', () => {
   it('offers both adapters and framework quickstarts', () => {
