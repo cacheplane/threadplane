@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   DOCUMENT,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   signal,
@@ -198,6 +199,22 @@ export class DemoShell {
   private lastSyncedItinerary = '';
 
   constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const viewport = host.ownerDocument.defaultView?.visualViewport;
+    if (viewport) {
+      const resize = () => {
+        if (viewport.scale !== 1) return;
+        host.style.setProperty('--demo-viewport-height', `${viewport.height}px`);
+        host.style.setProperty('--demo-viewport-top', `${viewport.offsetTop}px`);
+      };
+      resize();
+      viewport.addEventListener('resize', resize);
+      viewport.addEventListener('scroll', resize);
+      inject(DestroyRef).onDestroy(() => {
+        viewport.removeEventListener('resize', resize);
+        viewport.removeEventListener('scroll', resize);
+      });
+    }
     // Reflect the chosen theme onto <html data-theme="..."> so the
     // global stylesheet's scoped --a2ui-* overrides activate. Runs on
     // signal change including initial mount (read from persistence).

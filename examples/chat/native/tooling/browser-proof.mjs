@@ -1256,11 +1256,16 @@ export async function runProductionProofs(browser, retained) {
         await expect(
           page.getByRole('button', { name: 'Send', exact: true })
         ).toBeDisabled();
-        await expect(
-          page.getByRole('textbox', { name: 'Message', exact: true })
-        ).toBeDisabled();
+        const draft = page.getByRole('textbox', { name: 'Message', exact: true });
+        if (retained.framework === 'react') {
+          await expect(draft).toBeEditable();
+          await draft.fill('Keep this local while the response runs.');
+        } else {
+          await expect(draft).toBeDisabled();
+        }
         await page.keyboard.press('Control+Enter');
         await page.keyboard.press('Control+Enter');
+        assert.equal(backend.requests.length, 4);
         await page.getByRole('button', { name: 'Stop', exact: true }).click();
         await physicallyClosed(backend.steps[3]);
         await expect(
@@ -1469,7 +1474,8 @@ export async function runProductionProofs(browser, retained) {
         await expect(approve).toBeDisabled();
         await expect(decline).toBeDisabled();
         await expect(send).toBeDisabled();
-        await expect(draft).toBeDisabled();
+        if (retained.framework === 'react') await expect(draft).toBeEditable();
+        else await expect(draft).toBeDisabled();
         await expect(draft).toHaveValue(text);
         await expect(stop).toBeEnabled();
         await page.keyboard.press('Enter');

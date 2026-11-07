@@ -320,9 +320,7 @@ for (const width of [375, 1280])
           contentType: 'application/json',
         });
         await page.screenshot({
-          path: testInfo.outputPath(
-            `${framework}-${width}-${theme}.png`
-          ),
+          path: testInfo.outputPath(`${framework}-${width}-${theme}.png`),
         });
         expect.soft(metrics.textarea).toMatchObject({
           fontSize: '16px',
@@ -417,11 +415,18 @@ for (const width of [375, 1280])
           )
           .toBe(48);
         await input.fill('A line\n'.repeat(30));
+        const maximumDraftHeight = await page.evaluate(
+          (selected) =>
+            selected === 'react'
+              ? Math.min(320, (visualViewport?.height ?? innerHeight) * 0.2)
+              : 320,
+          framework
+        );
         await expect
           .poll(() =>
             input.evaluate((element) => element.getBoundingClientRect().height)
           )
-          .toBe(320);
+          .toBeCloseTo(maximumDraftHeight, 1);
         await expect
           .poll(() =>
             input.evaluate(
@@ -579,9 +584,7 @@ for (const width of [375, 1280])
             .toBeGreaterThan(0);
         }
         writeFileSync(
-          testInfo.outputPath(
-            `${framework}-${width}-${theme}-secondary.json`
-          ),
+          testInfo.outputPath(`${framework}-${width}-${theme}-secondary.json`),
           JSON.stringify(
             {
               formattedUserPalette: palette,

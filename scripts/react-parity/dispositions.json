@@ -17194,6 +17194,20 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Docs-host navigation resizing with bounded local layout preferences; preserves cockpit and framework navigation without adding an SDK capability."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/shared/fixed-viewport.ts",
+      "taskIds": ["T30"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular fixed-surface visual viewport lifecycle. React ChatPopup owns the equivalent document-scoped geometry for popup and sidebar; no public API."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/shared/surface-focus.ts",
+      "taskIds": ["T30"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular after-render focus transfer for retained popup/sidebar content. React ChatPopup already owns accepted-transition focus and hidden/inert children; no public API."
     }
   ]
 }

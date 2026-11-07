@@ -44,6 +44,59 @@ function createPopupFixture() {
 }
 
 describe('ChatPopupComponent', () => {
+  it('makes closed content inert and returns focused drafts to the launcher on close', () => {
+    const { fixture } = createPopupFixture();
+    const host = fixture.nativeElement as HTMLElement;
+    const panel = host.querySelector<HTMLElement>('.chat-popup__window')!;
+    const close = host.querySelector<HTMLButtonElement>('.chat-popup__close')!;
+    const launcher = host.querySelector<HTMLButtonElement>('.chat-popup__launcher button')!;
+    const draft = document.createElement('textarea');
+    draft.value = 'Keep this draft';
+    panel.append(draft);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    fixture.componentInstance.openWindow();
+    fixture.detectChanges();
+    expect(panel.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(close);
+    draft.focus();
+    fixture.componentInstance.closeWindow();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(launcher);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(draft.value).toBe('Keep this draft');
+  });
+
+  it('tracks keyboard height and Safari pan without resizing during pinch zoom', () => {
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    const viewport = Object.assign(new EventTarget(), { height: 714, offsetTop: 0, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    try {
+      const { fixture } = createPopupFixture();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-height')).toBe('714px');
+      viewport.height = 377;
+      viewport.offsetTop = 206;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-height')).toBe('377px');
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-top')).toBe('206px');
+      viewport.offsetTop = 309;
+      viewport.dispatchEvent(new Event('scroll'));
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-top')).toBe('309px');
+      viewport.scale = 2;
+      viewport.height = 200;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-height')).toBe('377px');
+      fixture.destroy();
+      viewport.scale = 1;
+      viewport.height = 714;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-height')).toBe('377px');
+    } finally {
+      if (previous) Object.defineProperty(window, 'visualViewport', previous);
+      else Reflect.deleteProperty(window, 'visualViewport');
+    }
+  });
+
   it('class is defined and imports resolve', () => {
     expect(ChatPopupComponent).toBeDefined();
     expect(typeof ChatPopupComponent).toBe('function');
