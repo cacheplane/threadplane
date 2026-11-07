@@ -267,6 +267,12 @@ export function isPinned(
                role="region" aria-label="Conversation" tabindex="0">
             @let currentAgent = agent();
             @let currentMessages = currentAgent.messages();
+            @let currentActivityTemplate = activityTemplate();
+            @let currentExcludedToolNames = currentActivityTemplate ? [] : excludedToolNames();
+            @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
+            @let currentViews = effectiveViews();
+            @let currentStore = resolvedStore();
+            @let currentHandlers = handlers();
             @if (currentMessages.length === 0) {
               <ng-container [ngTemplateOutlet]="welcomeSuggestions" />
             }
@@ -288,7 +294,7 @@ export function isPinned(
                   <!-- A projected chatActivityTemplate owns the reasoning +
                        tool-call region for this message. It renders at
                        message level (never inside a clipped trace body). -->
-                  @if (activityTemplate(); as activity) {
+                  @if (currentActivityTemplate; as activity) {
                     <ng-container
                       [ngTemplateOutlet]="activity.templateRef"
                       [ngTemplateOutletContext]="activityContextFor(message, i)"
@@ -316,16 +322,16 @@ export function isPinned(
                     <chat-tool-calls
                       [agent]="currentAgent"
                       [message]="message"
-                      [excludeToolNames]="excludedToolNames()"
-                      [toolCallTemplates]="toolCallTemplates()"
+                      [excludeToolNames]="currentExcludedToolNames"
+                      [toolCallTemplates]="currentToolCallTemplates"
                     />
                   }
                   <chat-tool-views
                     [agent]="currentAgent"
                     [message]="message"
-                    [views]="effectiveViews()"
-                    [store]="resolvedStore()"
-                    [handlers]="handlers()"
+                    [views]="currentViews"
+                    [store]="currentStore"
+                    [handlers]="currentHandlers"
                     (events)="onClientToolEvent($event)"
                   />
                   @if (classified.markdown(); as md) {
@@ -342,8 +348,8 @@ export function isPinned(
                       [spec]="spec"
                       [registry]="renderRegistry()"
                       [store]="store()"
-                      [handlers]="handlers()"
-                      [loading]="agent().isLoading()"
+                      [handlers]="currentHandlers"
+                      [loading]="currentAgent.isLoading()"
                       (events)="onSpecEvent($event, i)"
                     />
                   }
@@ -353,7 +359,7 @@ export function isPinned(
                         [surface]="entry.value"
                         [state]="classified.a2uiSurfaceStates().get(entry.key)"
                         [catalog]="catalog"
-                        [handlers]="handlers()"
+                        [handlers]="currentHandlers"
                         (action)="onA2uiAction($event)"
                         (events)="onA2uiEvent($event, i, entry.key)"
                       />
@@ -368,7 +374,7 @@ export function isPinned(
                     <chat-message-actions
                       chatMessageControls
                       [content]="content"
-                      [disabled]="agent().isLoading() || !!agent().isInputBlocked?.()"
+                      [disabled]="currentAgent.isLoading() || !!currentAgent.isInputBlocked?.()"
                       (regenerate)="onRegenerate(i)"
                       (rate)="onRate(message, $event)"
                       (contentCopied)="onCopy(message, $event)"
