@@ -43,7 +43,7 @@ async function measureDiagram(region: Locator) {
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     };
     const nodeSelector = svg
-      ? '.tp-diagram-node'
+      ? '.tp-diagram-node, .tp-network-node'
       : '.tp-diagram-card, .tp-sequence-event, .tp-human-approval-node';
     const nodeElements = [...canvas.querySelectorAll(nodeSelector)];
     const texts = [
@@ -75,6 +75,15 @@ async function measureDiagram(region: Locator) {
       viewportWidth: innerWidth,
       documentWidth: document.documentElement.scrollWidth,
       canvas: box(canvas),
+      ...(svg?.classList.contains('tp-network-diagram')
+        ? {
+            naturalWidth: Number(svg.getAttribute('width')),
+            articleWidth:
+              element.clientWidth -
+              parseFloat(getComputedStyle(element).paddingLeft) -
+              parseFloat(getComputedStyle(element).paddingRight),
+          }
+        : {}),
       fontsLoaded,
       nodes: nodeElements.map((node, i) => {
         const shape = svg ? node.querySelector('rect') : node;
@@ -573,7 +582,9 @@ async function main() {
               await expect(
                 nav.getByRole('button', { name: 'Migrations', exact: true })
               ).toHaveCount(0);
-              await expect(nav.locator('.docs-sidebar-section').first()).toBeVisible();
+              await expect(
+                nav.locator('.docs-sidebar-section').first()
+              ).toBeVisible();
             } else {
               const last = nav.locator('.docs-sidebar-section').last();
               await expect(last).toContainText('Migrations');

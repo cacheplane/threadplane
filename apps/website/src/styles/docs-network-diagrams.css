@@ -1,0 +1,94 @@
+/* Natural-size instructional SVGs: typography stays readable inside the scroll frame. */
+.tp-network-diagram {
+  width: var(--network-width);
+  min-width: var(--network-width);
+  max-width: var(--network-width);
+  display: block;
+  height: auto;
+  margin-inline: auto;
+  color: var(--color-text-primary);
+}
+.tp-network-diagram text {
+  font-family: var(--font-sans);
+  fill: var(--color-text-primary);
+}
+.tp-network-node rect {
+  fill: #fff;
+  stroke: #d9dde4;
+  stroke-width: 1;
+}
+.tp-network-node[data-accent] rect {
+  fill: #fff4d6;
+  stroke: #d9bc78;
+}
+.tp-network-diagram .tp-network-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.tp-network-diagram .tp-network-detail {
+  font-size: 13px;
+  font-weight: 400;
+  fill: #515c6c;
+}
+.tp-network-group rect {
+  fill: #eef0f4;
+  stroke: #d9dde4;
+  stroke-dasharray: 4 5;
+}
+.tp-network-group text {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #515c6c;
+}
+.tp-network-connection polyline,
+.tp-network-lifeline {
+  fill: none;
+  stroke: #68758a;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.tp-network-connection[data-return] polyline {
+  stroke-dasharray: 5 4;
+}
+.tp-network-connection polygon {
+  fill: #68758a;
+}
+.tp-network-lifeline {
+  stroke: #c0c7d1;
+  stroke-dasharray: 3 5;
+}
+.tp-network-diagram .tp-network-edge-label {
+  font-size: 13px;
+  font-weight: 500;
+  fill: #354259;
+}
+@media (forced-colors: active) {
+  .tp-network-diagram text,
+  .tp-network-diagram .tp-network-detail,
+  .tp-network-diagram .tp-network-edge-label {
+    fill: CanvasText;
+  }
+  .tp-network-node rect,
+  .tp-network-node[data-accent] rect,
+  .tp-network-group rect {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+  .tp-network-node[data-accent] rect {
+    stroke-width: 2;
+  }
+  .tp-network-connection polyline,
+  .tp-network-lifeline {
+    stroke: CanvasText;
+  }
+  .tp-network-connection polygon {
+    fill: CanvasText;
+  }
+}
+@media print {
+  .tp-network-diagram {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
