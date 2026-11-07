@@ -62,24 +62,24 @@ export interface RecipientTemplate {
  */
 const WHITEPAPERS = {
   overview: {
-    subject: 'Your Angular agent readiness guide',
+    subject: 'Your prototype-to-production guide',
     url: 'https://threadplane.ai/whitepaper.pdf',
-    filename: 'angular-agent-readiness-guide.pdf',
+    filename: 'threadplane-prototype-to-production.pdf',
   },
   angular: {
-    subject: 'Your Angular streaming guide',
+    subject: 'Your agent integration guide',
     url: 'https://threadplane.ai/whitepapers/angular.pdf',
-    filename: 'angular-streaming-guide.pdf',
+    filename: 'threadplane-connecting-agents.pdf',
   },
   render: {
-    subject: 'Your Angular generative UI guide',
+    subject: 'Your generative interfaces guide',
     url: 'https://threadplane.ai/whitepapers/render.pdf',
-    filename: 'angular-genui-guide.pdf',
+    filename: 'threadplane-generative-interfaces.pdf',
   },
   chat: {
-    subject: 'Your Angular agent chat guide',
+    subject: 'Your agent experience guide',
     url: 'https://threadplane.ai/whitepapers/chat.pdf',
-    filename: 'angular-chat-guide.pdf',
+    filename: 'threadplane-agent-experiences.pdf',
   },
 } as const;
 

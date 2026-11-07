@@ -16,20 +16,23 @@ export const FIELD_REPORT = {
   /** Printed on the cover. */
   title: 'From Prototype to Production',
   /** The cover's header rule. */
-  kicker: 'Threadplane · Open source · Angular',
+  kicker: 'Threadplane · Open source · Angular + React',
   /** The cover's standfirst, verbatim. */
-  subtitle: 'Production-ready chat, threads, and generative UI for AI agents.',
+  subtitle:
+    'Architecture, evaluation and operations for dependable agent products.',
   /** The cover's date line. */
   year: '2026',
   /** Verified against the file, and asserted against it in the spec. */
-  pages: 17,
+  pages: 12,
   /** The table of contents, in document order. */
   chapters: [
-    'Streaming State Management',
-    'Thread Persistence',
-    'Tool-Call Rendering',
-    'Human Approval Flows',
-    'Generative UI',
-    'Deterministic Testing',
+    'Start with a bounded job',
+    'Put ownership at the architecture boundaries',
+    'Select models with representative evidence',
+    'Treat context as a governed working set',
+    'Execute tools through business contracts',
+    'Recover durable work without inventing certainty',
+    'Release against observable acceptance criteria',
+    'Dated capability and reference notes',
   ],
 } as const;

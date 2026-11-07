@@ -4,14 +4,21 @@ import { Section } from '../ui/Section';
 import { Eyebrow } from '../ui/Eyebrow';
 import { WhitePaperForm, type WhitepaperId } from './WhitePaperForm';
 import { FIELD_REPORT } from '../../lib/field-report';
+import { WHITEPAPERS } from '../../lib/whitepapers';
 
 const ROWS = [
-  { claim: 'Six production-readiness dimensions', tail: `${FIELD_REPORT.pages} pages` },
-  // Was "Error boundaries, fallbacks, observability, deploy" — three phrases
-  // with zero matches in whitepaper.pdf. These are the document's actual
-  // chapters.
-  { claim: 'Streaming, persistence, tool calls, approvals, generative UI, testing', tail: 'the six chapters' },
-  { claim: 'No vendor pitch — what we learned shipping it', tail: 'free' },
+  {
+    claim: 'Architecture, trade-offs and failure recovery',
+    tail: 'practical guidance',
+  },
+  {
+    claim: 'Angular and React implementation examples',
+    tail: 'both frameworks',
+  },
+  {
+    claim: 'Primary-source research and explicit API boundaries',
+    tail: 'free',
+  },
 ];
 
 interface WhitePaperBlockProps {
@@ -24,17 +31,20 @@ export function WhitePaperBlock({
   formPolicy,
   paper = 'overview',
 }: WhitePaperBlockProps) {
+  const publication = WHITEPAPERS[paper];
   return (
     <Section surface="white" id="whitepaper-block" ariaLabelledBy="wp-heading">
       <Container>
         <div className="wp-grid">
           <div>
             <div className="wp-rail">
-              <Eyebrow tone="accent" className="wp-eyebrow">Field report</Eyebrow>
+              <Eyebrow tone="accent" className="wp-eyebrow">
+                Field report
+              </Eyebrow>
               <span className="wp-rail-line" aria-hidden="true" />
             </div>
             <h2 id="wp-heading" className="wp-heading">
-              The last-mile gap in Angular AI.
+              Build agents people can depend on.
             </h2>
             <div className="wp-rows">
               {ROWS.map((r) => (
@@ -58,9 +68,12 @@ export function WhitePaperBlock({
           <div className="wp-cover-wrap" aria-hidden="true">
             <div className="wp-paper">
               <div>
-                <div className="wp-cover-badge">Field report · {FIELD_REPORT.pages} pages</div>
-                <div className="wp-cover-title">From Prototype to Production</div>
-                <div className="wp-cover-desc">Six production-readiness dimensions for Angular AI teams.</div>
+                <div className="wp-cover-badge">
+                  Field report
+                  {paper === 'overview' ? ` · ${FIELD_REPORT.pages} pages` : ''}
+                </div>
+                <div className="wp-cover-title">{publication.title}</div>
+                <div className="wp-cover-desc">{publication.subtitle}</div>
               </div>
               <div className="wp-cover-footer">Threadplane</div>
             </div>

@@ -382,11 +382,6 @@
   line-height: 20px;
 }
 
-/* GitHubStarsPill — components/contact/GitHubStarsPill.tsx */
-.gh-stars-pill-link {
-  text-decoration: none;
-}
-
 /* SolutionDemoBlock — components/solutions/SolutionDemoBlock.tsx */
 .sol-demo-wrap {
   max-width: 820px;

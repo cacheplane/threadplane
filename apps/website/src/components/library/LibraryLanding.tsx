@@ -11,6 +11,7 @@ import {
 } from '../landing/CapabilityIllustration';
 import { LibrarySketch } from './LibrarySketch';
 import type { PublicFormPolicy } from '../../lib/growth/form-policy';
+import { WHITEPAPERS } from '../../lib/whitepapers';
 import '../../styles/libraries.css';
 
 export interface LibraryFeature {
@@ -186,11 +187,11 @@ export function LibraryLanding({
         <Container>
           <div className="library-report">
             <div>
-              <h2 id="wp-heading">A little ground school.</h2>
+              <h2 id="wp-heading">{WHITEPAPERS[paper].title}</h2>
               <p>
-                Our Angular field report walks through six production-readiness
-                dimensions: streaming, persistence, tool calls, approvals,
-                generative UI, and testing.
+                {WHITEPAPERS[paper].subtitle} A field report for senior
+                engineers and technical leaders, with Angular and React
+                examples.
               </p>
             </div>
             <div className="library-report-form">

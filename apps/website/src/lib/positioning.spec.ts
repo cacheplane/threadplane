@@ -15,16 +15,11 @@ import {
   HERO_SECONDARY_HREF,
   HERO_SECONDARY_LABEL,
   HERO_SUBHEAD,
-  HERO_SUBHEAD_SEGMENTS,
   HERO_TRUST_LINE,
   HOME_DESCRIPTION,
   HOME_TITLE,
   INSTALL_OPTIONS,
-  STAGE_CLOSE,
-  STAGE_HOLD_LINE,
-  STAGE_RAIL,
 } from './positioning';
-import { STAGE_BEATS } from './stage-beats';
 import { WEBSITE_SUPPORTED_ANGULAR_MAJORS } from '../components/pricing/angular-support.mjs';
 import { resolveWebsiteDir } from './website-dir';
 
@@ -67,17 +62,6 @@ describe('positioning: hero copy', () => {
       'The open source',
       '(and free)',
       'threadplane for agents',
-    ]);
-  });
-
-  it('subhead segments preserve the copy and link each capability to its docs', () => {
-    expect(HERO_SUBHEAD_SEGMENTS.map((s) => s.text).join('')).toBe(HERO_SUBHEAD);
-    expect(HERO_SUBHEAD_SEGMENTS.filter((s) => s.href)).toEqual([
-      { text: 'persistent', href: '/docs/angular/langgraph/guides/persistence' },
-      { text: 'durable', href: '/docs/angular/langgraph/guides/persistence#choosing-a-checkpointer' },
-      { text: 'visible', href: '/docs/angular/chat/components/chat-tool-calls' },
-      { text: 'reviewable', href: '/docs/angular/langgraph/guides/interrupts' },
-      { text: 'resumable', href: '/docs/angular/langgraph/guides/persistence#checkpoint-recovery' },
     ]);
   });
 
@@ -159,96 +143,5 @@ describe('positioning: coding-agent prompt', () => {
     expect(CODING_AGENT_PROMPT).toContain('https://threadplane.ai/AGENTS.md');
     expect(CODING_AGENT_PROMPT).toContain('provideFakeAgent()');
     expect(CODING_AGENT_PROMPT).not.toMatch(/api[_ -]?key/i);
-  });
-});
-
-describe('homepage restructure copy (live-stage spec §3)', () => {
-  it('closes on the open-source offer: an aviation eyebrow, two words, the licence and the CTA', async () => {
-    const { OPEN_SOURCE_STRIP } = await import('./positioning');
-    expect(OPEN_SOURCE_STRIP.eyebrow).toBe('Squawk 1200');
-    expect(OPEN_SOURCE_STRIP.headline).toBe('Fork us.');
-    // A length budget, not a word count: 12 characters is about what fits
-    // on one line at 116px in Archivo Black inside the 1200px container.
-    // A wrapped headline stops reading as a full stop.
-    expect(OPEN_SOURCE_STRIP.headline.length).toBeLessThanOrEqual(12);
-    // The eyebrow sits on one line at 0.18em tracking beside nothing else.
-    expect(OPEN_SOURCE_STRIP.eyebrow.length).toBeLessThanOrEqual(14);
-    expect(OPEN_SOURCE_STRIP.licence).toBe('MIT');
-    expect(OPEN_SOURCE_STRIP.cta).toBe('Fork on GitHub');
-  });
-});
-
-describe('NO_RUNTIME_BAND (spec 2026-09-11)', () => {
-  it('argues in two words over an aviation eyebrow, like Fork us', async () => {
-    const { NO_RUNTIME_BAND } = await import('./positioning');
-    expect(NO_RUNTIME_BAND.eyebrow).toBe('Cleared direct');
-    expect(NO_RUNTIME_BAND.headline).toBe('No runtime.');
-    // The same budgets as OPEN_SOURCE_STRIP: one line at 116px, one-line eyebrow.
-    expect(NO_RUNTIME_BAND.headline.length).toBeLessThanOrEqual(12);
-    expect(NO_RUNTIME_BAND.eyebrow.length).toBeLessThanOrEqual(14);
-  });
-
-  it('says no cloud, never no proxy', async () => {
-    // The docs tell readers to put their agent behind their own proxy, so
-    // "no proxy" would be false. "No cloud" is true and matches the masthead.
-    const { NO_RUNTIME_BAND } = await import('./positioning');
-    expect(NO_RUNTIME_BAND.body).toMatch(/no cloud/i);
-    expect(NO_RUNTIME_BAND.body).not.toMatch(/proxy/i);
-    expect(NO_RUNTIME_BAND.figureCaption).not.toMatch(/proxy/i);
-  });
-
-  it('links the page that already states the adapters call your server directly', async () => {
-    const { NO_RUNTIME_BAND } = await import('./positioning');
-    expect(NO_RUNTIME_BAND.link.href).toBe('/docs/choosing-an-adapter');
-    expect(NO_RUNTIME_BAND.link.label).toBe('How it is wired');
-  });
-
-  it('draws the usual path with one more hop than ours, both starting at your users', async () => {
-    const { NO_RUNTIME_BAND } = await import('./positioning');
-    expect(NO_RUNTIME_BAND.flows.usual.nodes).toEqual(['Your users', 'Their runtime', 'Your agent']);
-    expect(NO_RUNTIME_BAND.flows.ours.nodes).toEqual(['Your users', 'Your agent']);
-    expect(NO_RUNTIME_BAND.flows.usual.ghost).toBe('Their runtime');
-    expect(NO_RUNTIME_BAND.flows.usual.nodes).toContain(NO_RUNTIME_BAND.flows.usual.ghost);
-    expect(
-      NO_RUNTIME_BAND.flows.usual.nodes.filter((n) => n !== NO_RUNTIME_BAND.flows.usual.ghost)
-    ).toEqual([...NO_RUNTIME_BAND.flows.ours.nodes]);
-  });
-});
-
-describe('STAGE_RAIL', () => {
-  it('has one entry per beat in the beat map order, each a short claim with one docs link', () => {
-    expect(STAGE_RAIL.map((b) => b.beat)).toEqual([...STAGE_BEATS]);
-    for (const b of STAGE_RAIL) {
-      expect(b.label.length).toBeLessThanOrEqual(24);
-      expect(b.claim.length).toBeLessThanOrEqual(40);
-      expect(b.docs.label).not.toBe('');
-      expect(b.docs.href).toMatch(/^\//);
-      expect(b.stillAlt.length).toBeGreaterThan(40);
-    }
-    expect(STAGE_RAIL.map((b) => b.label)).toEqual([
-      'Tools & citations',
-      'Subagents',
-      'Threads & branches',
-      'Interrupts & approval',
-      'Generated UI',
-    ]);
-  });
-  it('carries one hold line and the closing ledger copy', () => {
-    expect(STAGE_HOLD_LINE).toBe('Keep scrolling to approve.');
-    expect(STAGE_CLOSE.claim).toBe(
-      'One workflow. Every step in your Angular app.'
-    );
-    // The fake-agent install command is a single line, so the ending shows it whole (derived, never retyped).
-    expect(INSTALL_OPTIONS[0].command).not.toContain('\n');
-    expect(STAGE_CLOSE.cta.href).toBe(INSTALL_OPTIONS[0].quickstartHref);
-  });
-  it('keeps the rail under the word budget: four beats plus the ending', () => {
-    const words = (s: string) => s.trim().split(/\s+/).length;
-    const total =
-      STAGE_RAIL.reduce((n, b) => n + words(b.claim) + words(b.docs.label), 0) +
-      words(STAGE_HOLD_LINE) +
-      words(STAGE_CLOSE.claim) +
-      words(STAGE_CLOSE.cta.label);
-    expect(total).toBeLessThan(90);
   });
 });

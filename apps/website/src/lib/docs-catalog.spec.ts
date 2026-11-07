@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { capabilityModules, frontendCapabilityModules } from '@threadplane/cockpit-registry';
 import entrypoints from '../../content/api/entrypoints.json';
+import { specialDocsPages } from './docs-config';
 import {
   documentCatalog,
   getDocumentVariant,
@@ -15,6 +16,22 @@ import {
 const contentRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../content/docs');
 
 describe('explicit narrative document catalog', () => {
+  it('routes every authored MDX file through the catalog or a special docs page', () => {
+    const authored = fs.readdirSync(contentRoot, { recursive: true })
+      .map(String)
+      .filter(file => file.endsWith('.mdx'))
+      .map(file => file.split(path.sep).join('/'))
+      .sort();
+    const routed = [
+      ...getNarrativeDocuments().map(doc => doc.source),
+      ...specialDocsPages.map(page => page.contentPath),
+    ].sort();
+
+    // The forward check below catches missing files; this inverse check also
+    // catches articles left on disk after their navigation/route is removed.
+    expect(authored).toEqual(routed);
+  });
+
   it('keeps logical identities and canonical variant destinations unique', () => {
     expect(documentCatalog).toHaveLength(118);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
