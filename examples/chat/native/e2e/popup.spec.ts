@@ -372,6 +372,12 @@ async function verifyPanel(
     expect(backend.requests).toHaveLength(4);
     for (const width of [390, 600]) {
       await page.setViewportSize({ width, height: 844 });
+      await expect
+        .poll(async () => {
+          const rect = await panel.boundingBox();
+          return rect ? rect.y + rect.height : Infinity;
+        })
+        .toBeLessThanOrEqual(844);
       const rect = await panel.boundingBox();
       assert.ok(rect);
       expect(rect.x).toBeGreaterThanOrEqual(0);

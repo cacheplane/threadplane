@@ -791,8 +791,27 @@ export async function runProductionProofs(browser, retained) {
             name: 'Sources (5)',
             exact: true,
           });
-          if ((await disclosure.getAttribute('aria-expanded')) === 'false')
+          await expect(disclosure).toHaveAccessibleName('Sources (5)');
+          const headerMarkers = disclosure.locator('.tp-citations__marker');
+          const headerChevron = disclosure.locator('.tp-citations__chevron');
+          await expect(headerMarkers).toHaveCount(3);
+          await expect(headerMarkers.nth(0)).toHaveText('?');
+          await expect(headerMarkers.nth(1)).toHaveClass(/--generic/);
+          await expect(headerMarkers.nth(2)).toHaveClass(/--generic/);
+          await expect(
+            disclosure.locator('.tp-citations__markers')
+          ).toHaveAttribute('aria-hidden', 'true');
+          await expect(headerChevron).toHaveAttribute('aria-hidden', 'true');
+          await expect(headerChevron).toHaveAttribute('focusable', 'false');
+          await expect(disclosure.locator('img,image,a')).toHaveCount(0);
+          if ((await disclosure.getAttribute('aria-expanded')) === 'false') {
+            await expect(headerChevron).toHaveCSS('transform', 'none');
             await disclosure.click();
+          }
+          await expect(headerChevron).toHaveCSS(
+            'transform',
+            'matrix(-1, 0, 0, -1, 0, 0)'
+          );
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
           await expect(sources.getByRole('listitem')).toHaveCount(5);
           const publishedLabel = await page.evaluate(() =>

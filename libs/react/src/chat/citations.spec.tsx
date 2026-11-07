@@ -259,7 +259,9 @@ describe('Markdown Sources sidecars', () => {
         )
     ).toEqual(['Web', null]);
     view.rerender(sidecars(citations, snapshot));
-    expect(view.getByRole('button').textContent).toBe('Sources (5)');
+    expect(
+      view.getByRole('button', { name: 'Sources (5)' })
+    ).toBeTruthy();
     expect(rowContent()).toEqual([
       '[1] Provider',
       '[1] Constructortail',
@@ -494,6 +496,105 @@ describe('Citations', () => {
 });
 
 describe('collapsible Citations', () => {
+  it('previews only the first three resolved sources with decorative local markers and chevron', () => {
+    const sources: readonly Citation[] = Object.freeze([
+      {
+        id: '__proto__',
+        index: 8,
+        title: 'Alpha',
+        url: 'https://alpha.test',
+        iconUrl: 'https://images.invalid/a.png',
+      },
+      { id: 'Case', index: 2, sourceType: 'file' },
+      { id: 'case', index: 1, sourceType: 'memory' },
+      { id: 'last', index: 0, sourceType: 'app' },
+    ]);
+    const view = render(
+      <Citations citations={sources} collapsible label="<b>Evidence</b>" />
+    );
+    const header = view.getByRole('button', {
+      name: '<b>Evidence</b> (4)',
+    });
+    const stack = header.querySelector('.tp-citations__markers');
+    expect(stack?.getAttribute('aria-hidden')).toBe('true');
+    const markers = () => [...header.querySelectorAll('.tp-citations__marker')];
+    expect(markers()).toHaveLength(3);
+    expect(markers()[0].textContent).toBe('A');
+    expect(markers()[1].classList.contains('tp-citations__marker--file')).toBe(
+      true
+    );
+    expect(
+      markers()[2].classList.contains('tp-citations__marker--memory')
+    ).toBe(true);
+    const [alpha, upper, lower] = markers();
+    const chevron = header.querySelector('.tp-citations__chevron');
+    expect(chevron?.getAttribute('aria-hidden')).toBe('true');
+    expect(chevron?.getAttribute('focusable')).toBe('false');
+    expect(header.querySelectorAll('img,image,b,a')).toHaveLength(0);
+    expect(view.queryByRole('listitem')).toBeNull();
+    view.rerender(
+      <Citations
+        citations={[
+          { ...sources[2], sourceType: 'app' },
+          { ...sources[0], url: 'https://beta.test' },
+          sources[1],
+        ]}
+        collapsible
+        label="<b>Evidence</b>"
+      />
+    );
+    expect(
+      view.getByRole('button', { name: '<b>Evidence</b> (3)' })
+    ).toBe(header);
+    expect(markers()).toEqual([lower, alpha, upper]);
+    expect(lower.classList.contains('tp-citations__marker--app')).toBe(true);
+    expect(alpha.textContent).toBe('B');
+    view.rerender(
+      <Citations
+        citations={[sources[1], sources[2]]}
+        collapsible
+        label="<b>Evidence</b>"
+      />
+    );
+    expect(markers()).toEqual([upper, lower]);
+    expect(alpha.isConnected).toBe(false);
+    fireEvent.click(header);
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(header.querySelector('.tp-citations__chevron')).toBe(chevron);
+    fireEvent.click(header);
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+  });
+  it('uses the existing snapshot merge order and whole provider record for header markers', () => {
+    const snapshot = markdown(
+      '[^same]: Sidecar [source](https://fallback.test)\n\n[^other]: Other [source](https://other.test)\n'
+    );
+    const view = render(
+      <Citations
+        citations={[
+          { id: 'same', index: 2 },
+          { id: 'first', index: 0, url: 'https://first.test' },
+        ]}
+        snapshot={snapshot}
+        collapsible
+      />
+    );
+    const header = view.getByRole('button', {
+      name: 'Sources (3)',
+    });
+    const markers = header.querySelectorAll('.tp-citations__marker');
+    expect(markers).toHaveLength(3);
+    expect(markers[0].textContent).toBe('F');
+    expect(markers[1].classList.contains('tp-citations__marker--generic')).toBe(
+      true
+    );
+    expect(markers[2].textContent).toBe('O');
+    view.rerender(
+      <Citations citations={[{ id: 'same', index: 2 }]} snapshot={snapshot} />
+    );
+    expect(view.getByRole('heading').textContent).toBe('Sources');
+    expect(view.container.querySelector('.tp-citations__markers')).toBeNull();
+    expect(view.container.querySelector('.tp-citations__chevron')).toBeNull();
+  });
   const citations = [{ id: 'a', index: 7, title: 'Evidence', url: '/raw' }];
   // Runtime probes also exercise invalid JavaScript flags before the declaration exists.
   const panel = (extra: Record<string, unknown> = {}) => (

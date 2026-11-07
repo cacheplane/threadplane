@@ -679,9 +679,11 @@
   inline-size: 1.5rem;
   block-size: 1.5rem;
 }
+.tp-citations__marker--web,
 .tp-citation-card__visual--web {
   color: white;
 }
+.tp-citations__marker--file,
 .tp-citation-card__visual--file,
 .tp-citation-card__badge--file {
   color: var(
@@ -689,6 +691,7 @@
     var(--tp-chat-text, var(--ds-text-primary, CanvasText))
   );
 }
+.tp-citations__marker--app,
 .tp-citation-card__visual--app,
 .tp-citation-card__badge--app {
   color: var(
@@ -696,6 +699,7 @@
     var(--tp-chat-text, var(--ds-text-primary, CanvasText))
   );
 }
+.tp-citations__marker--memory,
 .tp-citation-card__visual--memory,
 .tp-citation-card__badge--memory {
   color: var(
@@ -703,6 +707,7 @@
     var(--tp-chat-text, var(--ds-text-primary, CanvasText))
   );
 }
+.tp-citations__marker--generic,
 .tp-citation-card__visual--generic,
 .tp-citation-card__badge--generic,
 .tp-citation-card__badge--web {
@@ -1632,4 +1637,53 @@
 }
 .tp-citations__toggle:focus-visible {
   outline-offset: -3px;
+}
+
+/* The disclosure uses the resolved source order and local decorative markers. */
+.tp-citations__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.tp-citations__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.tp-citations__markers {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+.tp-citations__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 0.25rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  font-size: 10px;
+  font-weight: 600;
+}
+.tp-citations__marker + .tp-citations__marker {
+  margin-inline-start: -4px;
+}
+.tp-citations__marker svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+.tp-citations__chevron {
+  flex: 0 0 16px;
+  inline-size: 16px;
+  block-size: 16px;
+}
+.tp-citations__toggle[aria-expanded='true'] .tp-citations__chevron {
+  transform: rotate(180deg);
+}
+@media (forced-colors: active) {
+  .tp-citations__marker--web,
+  .tp-citation-card__visual--web {
+    color: CanvasText;
+  }
 }
