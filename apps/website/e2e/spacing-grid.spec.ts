@@ -120,7 +120,7 @@ for (const route of ['/docs/angular/chat/getting-started/quickstart', '/docs/api
 // fluid column can start at a fractional pixel without violating its spacing.
 const ROUTES = [
   '/', '/docs', '/chat', '/langgraph', '/ag-ui', '/render', '/pricing',
-  '/solutions', '/solutions/compliance', '/about', '/contact', '/privacy',
+  '/solutions', '/solutions/compliance', '/solutions/analytics', '/solutions/customer-support', '/about', '/contact', '/privacy',
   '/pilot-to-prod', '/blog', '/blog/threadplane-0-3-0',
   '/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent', '/docs/api', '/docs/api/react',
   '/docs/angular/langgraph/guides/streaming?mode=api',
