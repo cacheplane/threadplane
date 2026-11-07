@@ -3,7 +3,7 @@ import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
 import { ReactMark, AngularMark } from '../ui/FrameworkMarks';
 import { AdapterGuideLink } from './AdapterGuideLink';
-import { PROVIDERS } from '../../lib/airport-diagram';
+import { PROVIDERS } from '../../lib/model-providers';
 
 const runtimes = [
   { name: 'CrewAI', src: '/logos/runtimes/crewai.svg' },

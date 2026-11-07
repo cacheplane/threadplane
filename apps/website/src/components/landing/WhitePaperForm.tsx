@@ -11,16 +11,27 @@ import {
   type WhitepaperId,
 } from '../../lib/analytics/events';
 import { trackWhitepaperDownloadClick } from '../../lib/analytics/client';
-import { Field, FormStatus, SubmitButton, TextInput, emailError, useGrowthForm } from '../form';
+import {
+  Field,
+  FormStatus,
+  SubmitButton,
+  TextInput,
+  emailError,
+  useGrowthForm,
+} from '../form';
+import { WHITEPAPERS } from '../../lib/whitepapers';
 
 export type { WhitepaperId };
 
-export const PDF_PATHS: Record<WhitepaperId, { href: string; download: string }> = {
-  overview: { href: '/whitepaper.pdf', download: 'angular-agent-readiness-guide.pdf' },
-  angular: { href: '/whitepapers/angular.pdf', download: 'angular-streaming-guide.pdf' },
-  render: { href: '/whitepapers/render.pdf', download: 'angular-genui-guide.pdf' },
-  chat: { href: '/whitepapers/chat.pdf', download: 'angular-chat-guide.pdf' },
-};
+export const PDF_PATHS = Object.fromEntries(
+  Object.entries(WHITEPAPERS).map(([id, paper]) => [
+    id,
+    {
+      href: `/${paper.pdf}`,
+      download: paper.download,
+    },
+  ])
+) as Record<WhitepaperId, { href: string; download: string }>;
 
 interface WhitePaperFormProps {
   paper: WhitepaperId;
@@ -43,7 +54,11 @@ export function WhitePaperForm({
   const pdf = PDF_PATHS[paper];
   const [email, setEmail] = useState('');
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
-  const form = useGrowthForm<{ website_url: string; email: string; paper: WhitepaperId }>({
+  const form = useGrowthForm<{
+    website_url: string;
+    email: string;
+    paper: WhitepaperId;
+  }>({
     route: '/api/whitepaper-signup',
     formPolicy,
     events: {
@@ -80,20 +95,37 @@ export function WhitePaperForm({
       document.getElementById(inputId)?.focus();
       return;
     }
-    void form.submit({ website_url: readHoneypot(e.currentTarget), email: email.trim(), paper });
+    void form.submit({
+      website_url: readHoneypot(e.currentTarget),
+      email: email.trim(),
+      paper,
+    });
   };
 
   if (form.status === 'sent') {
     return (
-      <FormStatus tone="success" title="Check your inbox." detail="The guide is on its way, and the PDF is here too.">
+      <FormStatus
+        tone="success"
+        title="Check your inbox."
+        detail="The guide is on its way, and the PDF is here too."
+      >
         {directLink('Download the PDF directly')}
       </FormStatus>
     );
   }
   if (form.status === 'stale') {
     return (
-      <FormStatus tone="stale" title="This page is out of date." detail={FORM_POLICY_REFRESH_MESSAGE}>
-        <Button type="button" variant="primary" size="lg" onClick={() => window.location.reload()}>
+      <FormStatus
+        tone="stale"
+        title="This page is out of date."
+        detail={FORM_POLICY_REFRESH_MESSAGE}
+      >
+        <Button
+          type="button"
+          variant="primary"
+          size="lg"
+          onClick={() => window.location.reload()}
+        >
           Refresh page
         </Button>
       </FormStatus>
@@ -117,7 +149,13 @@ export function WhitePaperForm({
             onBlur={() => setEmailMessage(emailError(email))}
             disabled={form.status === 'pending'}
           />
-          <SubmitButton variant="primary" size="lg" pending={form.status === 'pending'} pendingLabel="Sending the guide…" aria-describedby={disclosureId}>
+          <SubmitButton
+            variant="primary"
+            size="lg"
+            pending={form.status === 'pending'}
+            pendingLabel="Sending the guide…"
+            aria-describedby={disclosureId}
+          >
             Get the field report
           </SubmitButton>
         </div>
@@ -126,7 +164,11 @@ export function WhitePaperForm({
         {formPolicy.disclosures.whitepaper}
       </p>
       {form.status === 'failed' ? (
-        <FormStatus tone="failure" title="That did not send." detail="Try again in a moment." />
+        <FormStatus
+          tone="failure"
+          title="That did not send."
+          detail="Try again in a moment."
+        />
       ) : null}
     </form>
   );

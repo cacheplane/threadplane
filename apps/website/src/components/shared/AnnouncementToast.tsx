@@ -37,7 +37,11 @@ export function AnnouncementToast({
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const disclosureId = 'toast-whitepaper-growth-disclosure';
 
-  const form = useGrowthForm<{ website_url: string; email: string; paper: 'overview' }>({
+  const form = useGrowthForm<{
+    website_url: string;
+    email: string;
+    paper: 'overview';
+  }>({
     route: '/api/whitepaper-signup',
     formPolicy,
     events: {
@@ -132,7 +136,11 @@ export function AnnouncementToast({
       document.getElementById('toast-email')?.focus();
       return;
     }
-    void form.submit({ website_url: readHoneypot(e.currentTarget), email: email.trim(), paper: 'overview' });
+    void form.submit({
+      website_url: readHoneypot(e.currentTarget),
+      email: email.trim(),
+      paper: 'overview',
+    });
   };
 
   if (!visible) return null;
@@ -168,8 +176,8 @@ export function AnnouncementToast({
       {step === 'cta' && (
         <>
           <p className="toast-cta-copy">
-            Six production-readiness dimensions for Angular agents. Get the
-            guide.
+            Architecture, evaluation and recovery for agent products, with
+            Angular and React examples. Get the guide.
           </p>
           <div className="toast-button-row">
             <Button
