@@ -268,6 +268,8 @@ export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknow
 export interface SuggestionItem { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean; }
 export interface SuggestionsProps { readonly suggestions: readonly SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function Suggestions(props: SuggestionsProps): unknown;
+export interface CitationCardProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
+export declare function CitationCard(props: CitationCardProps): unknown;
 export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
 export declare function CitationPreview(props: CitationPreviewProps): unknown;
 export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode; }
@@ -307,7 +309,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationPreviewProps', 'CitationsProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -328,6 +330,8 @@ export declare function Citations(props: CitationsProps): unknown;`;
     ['SuggestionsProps', 'disabled', 'boolean', true],
     ['SuggestionsProps', 'label', 'string', true],
     ['SuggestionsProps', 'className', 'string', true],
+    ['CitationCardProps', 'citation', "import('@threadplane/core').Citation", false],
+    ['CitationCardProps', 'className', 'string', true],
     ['CitationPreviewProps', 'citation', "import('@threadplane/core').Citation", false],
     ['CitationPreviewProps', 'className', 'string', true],
     ['CitationsProps', 'citations', "readonly import('@threadplane/core').Citation[]", false],
@@ -343,7 +347,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationPreviewProps', 'CitationsProps'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   const renderCard = "readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode;";
   for (const after of [
@@ -777,13 +781,14 @@ test('React chat requires its real supported export', () => {
   const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.CitationPreview = component;
+  supported.CitationCard = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationPreview']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

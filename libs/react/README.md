@@ -181,7 +181,9 @@ Omitting the opt-in preserves direct links and numbered markers.
 
 `Citations` presents an explicit readonly `Citation[]` from `@threadplane/core`
 as a named Sources section. Empty input renders nothing. It preserves supplied
-order, index, title, snippet and source-type text; IDs must be unique. Optional
+order, index, title and snippet; IDs must be unique. Default rows use `CitationCard`
+for local source icons or monograms, normalized source-type badges, a derived
+hostname, and an optional formatted publication date. Optional
 `label` and `className` customize the section. Same-ID updates preserve mounted
 source items. An absent title falls back to the supplied URL or `Source <index>`;
 intentionally empty fields remain empty.
@@ -220,11 +222,32 @@ and refresh open previews; removing a source retires its preview.
 Allowed URLs use the existing content/Markdown link policy, with a native new-tab
 link and `noopener noreferrer`. Missing or blocked URLs display text. The view
 does not fetch icons, previews or metadata, parse snippets,
-infer dates/types, subscribe or dispose anything. Markdown definition text before
+subscribe or dispose anything. Markdown definition text before
 its first top-level link becomes the title, and text after it becomes the snippet,
 shared with inline citation previews. Default MessageList
 shows supplied sources after assistant answers; custom row rendering selects its
 own presentation. Styles are opt-in through `/chat/styles.css`.
+
+`CitationCard` also accepts a required readonly core `citation` and optional
+`className` for custom compositions. Its source marker is decorative: known
+non-web categories use local SVG icons; web sources use a deterministic monogram.
+Provider `iconUrl` values are ignored in favor of that local fallback, so rendering
+never requests an icon or source URL. Custom source-type labels and snippets stay
+text. Snippets display one line with ellipsis while retaining their complete text
+in the DOM and explicit preview. Local SVG source markers and title links follow
+the card foreground by default, including scoped themes. Missing and invalid dates
+are omitted; valid dates use the host locale and
+timezone. Hostname derivation does not approve navigation: blocked URLs can still
+have a displayed hostname, with no title link.
+
+```tsx
+import { CitationCard, CitationPreview } from '@threadplane/react/chat';
+
+<div>
+  <CitationCard citation={citation} />
+  <CitationPreview citation={citation} />
+</div>;
+```
 
 Set `preview` on `Citations` to replace source titles with explicit source-details
 buttons. The separate `CitationPreview` component accepts a required readonly
@@ -269,7 +292,8 @@ card. The application owns custom markup, links, and actions; compose
 helpers from `@threadplane/content/messages`, such as `deriveDomain` and
 `formatPublished`, let custom cards opt into host and date presentation. Hostname
 extraction does not approve a link for navigation, and date formatting uses the
-host locale and timezone. Default source-card visuals remain separate parity work.
+host locale and timezone. Compose `CitationCard` to reuse the default local visuals
+without changing the literal metadata shown by `CitationPreview`.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`

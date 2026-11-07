@@ -1,0 +1,117 @@
+{
+  "name": "CitationCardProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/CitationCardProps",
+  "canonicalReference": "@threadplane/react!CitationCardProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Borrowed source metadata and an optional card class.",
+  "declarations": [
+    {
+      "name": "CitationCardProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!CitationCardProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CitationCardProps "
+        }
+      ],
+      "docs": {
+        "summary": "Borrowed source metadata and an optional card class.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "citation",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationCardProps#citation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citation: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/react!~Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citation-card.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationCardProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citation-card.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/citation-card.tsx",
+        "line": 12
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/citation-card.tsx",
+    "line": 12
+  }
+}

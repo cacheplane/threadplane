@@ -239,15 +239,28 @@ describe('Markdown Sources sidecars', () => {
     if (!snapshot.root) throw new Error('Expected accepted Markdown root');
     const before = [...snapshot.root.citations];
     const view = render(sidecars(citations));
+    const rowContent = () =>
+      view
+        .getAllByRole('listitem')
+        .map(
+          (item) =>
+            `${item.querySelector('.tp-citation-card__heading')?.textContent}${
+              item.querySelector('.tp-citations__snippet')?.textContent ?? ''
+            }`
+        );
     fireEvent.click(view.getByRole('button'));
+    expect(rowContent()).toEqual(['[3] javascript:blocked', '[1] Provider']);
     expect(
-      view.getAllByRole('listitem').map((item) => item.textContent)
-    ).toEqual(['[3] javascript:blocked', '[1] Provider']);
+      view
+        .getAllByRole('listitem')
+        .map(
+          (item) =>
+            item.querySelector('.tp-citations__type')?.textContent ?? null
+        )
+    ).toEqual(['Web', null]);
     view.rerender(sidecars(citations, snapshot));
     expect(view.getByRole('button').textContent).toBe('Sources (5)');
-    expect(
-      view.getAllByRole('listitem').map((item) => item.textContent)
-    ).toEqual([
+    expect(rowContent()).toEqual([
       '[1] Provider',
       '[1] Constructortail',
       '[3] javascript:blocked',
@@ -442,7 +455,7 @@ describe('Citations', () => {
     expect(items[7].querySelector('.tp-citations__snippet')?.textContent).toBe(
       ''
     );
-    expect(items[7].querySelector('.tp-citations__type')?.textContent).toBe('');
+    expect(items[7].querySelector('.tp-citations__type')).toBeNull();
     expect(items[8].querySelector('.tp-citations__title')?.textContent).toBe(
       'Source 11'
     );

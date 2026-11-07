@@ -1,0 +1,88 @@
+{
+  "name": "CitationCard",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/CitationCard",
+  "canonicalReference": "@threadplane/react!CitationCard:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Pure source presentation with local decorative visuals and policy-checked navigation.",
+  "declarations": [
+    {
+      "name": "CitationCard",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!CitationCard:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function CitationCard(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationCardProps",
+          "canonicalReference": "@threadplane/react!CitationCardProps:interface",
+          "href": "/docs/api/react/chat/CitationCardProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Pure source presentation with local decorative visuals and policy-checked navigation.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/citation-card.tsx",
+        "line": 27
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ citation, className }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/citation-card.tsx",
+    "line": 27
+  }
+}

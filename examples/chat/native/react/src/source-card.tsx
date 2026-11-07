@@ -1,6 +1,6 @@
 import type { Citation } from '@threadplane/core';
 import { deriveDomain, formatPublished } from '@threadplane/content/messages';
-import { CitationPreview } from '@threadplane/react/chat';
+import { CitationCard, CitationPreview } from '@threadplane/react/chat';
 
 function NativeSourceCard({ citation }: { readonly citation: Citation }) {
   const domain = deriveDomain(citation.url);
@@ -21,6 +21,7 @@ function NativeSourceCard({ citation }: { readonly citation: Citation }) {
         borderRadius: 'var(--tp-chat-radius-card, 0.5rem)',
       }}
     >
+      <CitationCard citation={citation} />
       <CitationPreview citation={citation} />
       {citation.sourceType !== undefined && (
         <small className="native-source-card__type">

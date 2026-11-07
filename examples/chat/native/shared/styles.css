@@ -506,10 +506,10 @@ native-message:has(> .message-assistant) + native-message > .message-user {
   padding-inline-start: 1.25rem;
 }
 .conversation .tp-citations__title,
-.conversation .tp-citations__snippet {
+.conversation .tp-citations__snippet:not(.tp-citation-card__snippet) {
   white-space: pre-wrap;
 }
-.conversation .tp-citations__type {
+.conversation .tp-citations__type:not(.tp-citation-card__badge) {
   margin-inline-start: 0.5rem;
   color: var(--ds-text-secondary);
 }

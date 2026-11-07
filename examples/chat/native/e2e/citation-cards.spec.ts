@@ -25,7 +25,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           : [
               {
                 id: '__proto__',
-                index: 2,
+                index: corrected ? 7 : 2,
                 title: corrected ? 'Corrected provider' : '<b>Provider</b>',
                 sourceType: corrected ? 'Corrected type' : sourceType,
                 url: corrected
@@ -194,9 +194,9 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
       '.native-source-card[data-source-id="__proto__"]'
     );
     const trigger = provider.getByRole('button', {
-      name: /^Preview source 2:/,
+      name: /^Preview source (2|7):/,
     });
-    const dialog = page.getByRole('dialog', { name: 'Source 2', exact: true });
+    const dialog = page.getByRole('dialog');
     const close = dialog.getByRole('button', { name: 'Close', exact: true });
     const retained = async (requests: number) => {
       expect(backend.requests).toHaveLength(requests);
@@ -213,6 +213,72 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await header.click();
     // Preserve the existing custom card composition before checking derived metadata.
     await expect(wrappers).toHaveCount(6);
+    await expect(panel.locator('.tp-citation-card')).toHaveCount(6);
+    const providerCard = provider.locator('.tp-citation-card');
+    await expect(
+      providerCard.locator('.tp-citation-card__visual--generic svg')
+    ).toHaveCount(1);
+    await expect(
+      providerCard.locator('.tp-citation-card__visual')
+    ).toHaveAttribute('aria-hidden', 'true');
+    await expect(providerCard.locator('.tp-citations__index')).toHaveText(
+      '[2]'
+    );
+    await expect(providerCard.locator('.tp-citations__title')).toHaveText(
+      '<b>Provider</b>'
+    );
+    await expect(providerCard.locator('.tp-citations__type')).toHaveText(
+      sourceType
+    );
+    await expect(providerCard.locator('.tp-citation-card__domain')).toHaveText(
+      'example.com'
+    );
+    await expect(
+      providerCard.locator('.tp-citation-card__published')
+    ).toHaveText(published);
+    const cardLink = providerCard.getByRole('link', {
+      name: '<b>Provider</b>',
+      exact: true,
+    });
+    await expect(cardLink).toHaveAttribute(
+      'href',
+      'https://www.example.com/card-provider'
+    );
+    await expect(cardLink).toHaveAttribute('target', '_blank');
+    await expect(cardLink).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(provider.locator('a button, button a')).toHaveCount(0);
+    const sidecarCard = panel.locator(
+      '[data-source-id="sidecar"] .tp-citation-card'
+    );
+    await expect(
+      sidecarCard.locator('.tp-citation-card__visual--web')
+    ).toHaveText('S');
+    await expect(sidecarCard.locator('.tp-citations__type')).toHaveText('Web');
+    await expect(sidecarCard.getByRole('link')).toHaveAttribute(
+      'href',
+      '/card-sidecar'
+    );
+    for (const id of ['empty', 'absent']) {
+      const card = panel.locator(`[data-source-id="${id}"] .tp-citation-card`);
+      await expect(
+        card.locator('.tp-citation-card__visual--generic svg')
+      ).toHaveCount(1);
+      await expect(card.locator('.tp-citations__type')).toHaveCount(0);
+    }
+    for (const id of ['blocked', 'blocked-host']) {
+      const card = panel.locator(`[data-source-id="${id}"] .tp-citation-card`);
+      await expect(card.getByRole('link')).toHaveCount(0);
+      await expect(card.locator('.tp-citations__type')).toHaveText('Web');
+      await expect(card.locator('.tp-citation-card__published')).toHaveCount(0);
+    }
+    await expect(
+      panel.locator('[data-source-id="blocked"] .tp-citation-card__visual--web')
+    ).toHaveText('?');
+    await expect(
+      panel.locator(
+        '[data-source-id="blocked-host"] .tp-citation-card__visual--web'
+      )
+    ).toHaveText('B');
     expect(
       await wrappers.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-source-id'))
@@ -259,7 +325,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         '[data-source-id="blocked-host"] .native-source-card__published'
       )
     ).toHaveCount(0);
-    await expect(panel.locator('img,script,b')).toHaveCount(0);
+    await expect(panel.locator('img,image,script,b')).toHaveCount(0);
     await retained(3);
     await trigger.focus();
     await page.keyboard.press('Control+Enter');
@@ -272,6 +338,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(dialog).toHaveCount(0);
     await page.keyboard.press('Enter');
     await expect(close).toBeFocused();
+    await expect(dialog).toHaveAttribute('aria-label', 'Source 2');
     await expect(dialog).toContainText('<script>literal()</script>');
     await expect(dialog).toContainText('2024-04-15T12:00:00.000Z');
     await expect(dialog.locator('img,script,b')).toHaveCount(0);
@@ -338,6 +405,36 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(provider).toHaveCSS('color', 'rgb(245, 245, 245)');
     await expect(provider).toHaveCSS('background-color', 'rgb(28, 28, 28)');
     await expect(provider).toHaveCSS('border-color', 'rgb(69, 69, 69)');
+    await expect(providerCard).toHaveCSS('color', 'rgb(245, 245, 245)');
+    await expect(providerCard).toHaveCSS('background-color', 'rgb(28, 28, 28)');
+    await expect(providerCard).toHaveCSS('border-color', 'rgb(69, 69, 69)');
+    await expect(providerCard.getByRole('link')).toHaveCSS(
+      'color',
+      'rgb(245, 245, 245)'
+    );
+    await expect(providerCard.locator('.tp-citations__type')).toHaveCSS(
+      'color',
+      'rgb(245, 245, 245)'
+    );
+    await expect(
+      providerCard.locator('.tp-citation-card__visual--generic')
+    ).toHaveCSS('color', 'rgb(245, 245, 245)');
+    const passiveSnippet = providerCard.locator('.tp-citations__snippet');
+    await expect(passiveSnippet).toHaveText(
+      '<script>literal()</script> ' + 'Long'.repeat(80)
+    );
+    await expect(passiveSnippet).toHaveCSS('white-space', 'nowrap');
+    await expect(passiveSnippet).toHaveCSS('text-overflow', 'ellipsis');
+    await expect(passiveSnippet).toHaveCSS('overflow', 'hidden');
+    const snippetGeometry = await passiveSnippet.evaluate((node) => ({
+      height: node.getBoundingClientRect().height,
+      lineHeight: Number.parseFloat(getComputedStyle(node).lineHeight),
+      clipped: node.scrollWidth > node.clientWidth,
+    }));
+    expect(snippetGeometry.height).toBeLessThanOrEqual(
+      snippetGeometry.lineHeight + 1
+    );
+    expect(snippetGeometry.clipped).toBe(true);
     await expect(provider.locator('.native-source-card__type')).toHaveCSS(
       'color',
       'rgb(245, 245, 245)'
@@ -384,7 +481,21 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         expect(
           await card.evaluate((node) => node.scrollWidth <= node.clientWidth)
         ).toBe(true);
+        const visual = card.locator('.tp-citation-card__visual');
+        await expect(visual).toHaveCSS('flex-shrink', '0');
+        await expect(card.locator('.tp-citation-card')).toHaveCSS(
+          'direction',
+          'rtl'
+        );
+        expect(
+          await card
+            .locator('.tp-citation-card')
+            .evaluate((node) => node.scrollWidth <= node.clientWidth)
+        ).toBe(true);
       }
+      await providerCard
+        .locator('.tp-citation-card__heading')
+        .scrollIntoViewIfNeeded();
       await page.screenshot({
         path: testInfo.outputPath(`citation-cards-rtl-${width}.png`),
       });
@@ -395,11 +506,12 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
       .locator('html')
       .evaluate((node) => node.setAttribute('dir', 'ltr'));
     const originalWrapper = await provider.elementHandle();
+    const originalPassiveCard = await providerCard.elementHandle();
     const originalItem = await trigger.evaluateHandle((node) =>
       node.closest('li')
     );
     const originalTrigger = await trigger.elementHandle();
-    assert.ok(originalWrapper && originalTrigger);
+    assert.ok(originalWrapper && originalPassiveCard && originalTrigger);
     for (const index of [1, 2]) {
       await draft.fill(`Request ${index}`);
       await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -412,10 +524,42 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
       if (index === 1) {
         await expect(trigger).toHaveAttribute(
           'aria-label',
-          'Preview source 2: Corrected provider'
+          'Preview source 7: Corrected provider'
         );
         await expect(provider.locator('.native-source-card__type')).toHaveText(
           'Source type: Corrected type'
+        );
+        await expect(providerCard.locator('.tp-citations__title')).toHaveText(
+          'Corrected provider'
+        );
+        await expect(providerCard.locator('.tp-citations__index')).toHaveText(
+          '[7]'
+        );
+        expect(
+          await wrappers.evaluateAll((nodes) =>
+            nodes.map((node) => node.getAttribute('data-source-id'))
+          )
+        ).toEqual([
+          'sidecar',
+          'empty',
+          'absent',
+          'blocked',
+          'blocked-host',
+          '__proto__',
+        ]);
+        await expect(dialog).toHaveAttribute('aria-label', 'Source 7');
+        await expect(providerCard.locator('.tp-citations__type')).toHaveText(
+          'Corrected type'
+        );
+        await expect(
+          providerCard.locator('.tp-citation-card__domain')
+        ).toHaveText('docs.example.org');
+        await expect(
+          providerCard.locator('.tp-citation-card__published')
+        ).toHaveText(correctedPublished);
+        await expect(providerCard.getByRole('link')).toHaveAttribute(
+          'href',
+          'https://docs.example.org/card-corrected'
         );
         await expect(dialog.getByRole('heading')).toHaveText(
           'Corrected provider'
@@ -444,6 +588,18 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           )
         ).toBe(true);
         expect(
+          await providerCard.evaluate(
+            (node, original) => node === original,
+            originalPassiveCard
+          )
+        ).toBe(true);
+        expect(
+          await trigger.evaluate(
+            (node, original) => node === original,
+            originalTrigger
+          )
+        ).toBe(true);
+        expect(
           await open.evaluate(
             (node) => node === document.querySelector('dialog[open]')
           )
@@ -455,7 +611,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         await step.headersSent;
         await expect(trigger).toHaveAttribute(
           'aria-label',
-          'Preview source 2: Corrected provider'
+          'Preview source 7: Corrected provider'
         );
         await expect(provider.locator('.native-source-card__type')).toHaveText(
           'Source type: Corrected type'

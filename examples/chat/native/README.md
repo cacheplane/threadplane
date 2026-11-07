@@ -56,12 +56,15 @@ metadata. Sources and parser ownership remain with the application.
 
 Assistant Sources lists opt into `Citations.collapsible` and an app-owned
 `renderCard` callback. The stable callback returns a local source card composed
-from public `CitationPreview` and literal, optional source-type text. Its layout
+from public `CitationCard`, `CitationPreview`, and literal, optional source-type text.
+The passive card dogfoods default local source icons, web monograms, normalized
+type badges, hostname, publication date, and safe title links alongside the
+existing explicit preview control. Provider icon URLs remain unfetched. Its layout
 and scoped colors belong to the example; it fetches no source metadata or icons.
 The card opts into shared `deriveDomain` and `formatPublished` helpers from
 `@threadplane/content/messages` for optional **Host** and **Published** lines.
 Host extraction does not certify a publisher or safe navigation; the public
-preview still owns link policy. Publication formatting uses the browser locale
+card and preview still apply their shared link policy. Publication formatting uses the browser locale
 and timezone, while the preview preserves the supplied publication text.
 Each mounted message starts with a closed Sources header showing its
 source count. Click, tap, Enter, or Space expands or collapses the list; collapsed
