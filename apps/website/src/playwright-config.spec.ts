@@ -292,7 +292,7 @@ describe('Website Playwright configuration', () => {
     expect(coverage).toContain("page.on('request'");
     expect(coverage).toContain('request.postData()');
     expect(coverage).toContain('navigator.clipboard.readText()');
-    expect(coverage).toContain("name: 'Activity'");
+    expect(coverage).toContain("getByRole('menuitem', { name: /^Activity");
     expect(coverage).toContain("name: 'Copy diagnostics'");
     expect(coverage).toContain('assertSensitiveValuesAbsent');
     expect(coverage).not.toContain('expect(activityText).not.toContain');

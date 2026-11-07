@@ -295,6 +295,16 @@ export function DocsNavigation({
           {compact && activeLibrary ? 'Angular overview' : 'Introduction'}
         </Link>
         <Link
+          href={resolveHref(`/docs/${framework}/getting-started/workbench`)}
+          className="docs-sidebar-top-link"
+          onClick={onNavigate}
+          data-docs-navlink
+          data-workspace-navigation-link
+          aria-current={pathname === `/docs/${framework}/getting-started/workbench` ? 'page' : undefined}
+        >
+          Learning workbench
+        </Link>
+        <Link
           href={resolveHref('/docs/api')}
           className="docs-sidebar-top-link"
           onClick={onNavigate}

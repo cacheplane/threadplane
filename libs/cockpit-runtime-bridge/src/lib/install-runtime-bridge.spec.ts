@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { type InspectionFrame } from './inspection';
 import {
   installRuntimeBridge,
   type RuntimeBridgeEnvironment,
@@ -6,6 +7,18 @@ import {
 
 type MessageListener = (event: MessageEvent<unknown>) => void;
 type UnsafeRuntimeBridge = { markError(code: unknown): void };
+
+const inspectionFrame: InspectionFrame = {
+  sequence: 1,
+  elapsedMs: 0,
+  framework: 'react',
+  messages: [],
+  state: null,
+  busy: false,
+  calls: [],
+  event: { type: 'snapshot', payload: null },
+  limited: false,
+};
 
 function createEnvironment(...arguments_: [referrer?: string | undefined]) {
   const referrer =
@@ -67,6 +80,13 @@ function createEnvironment(...arguments_: [referrer?: string | undefined]) {
 }
 
 describe('installRuntimeBridge', () => {
+  it('does not publish inspection in default mode', () => {
+    const { environment, parentPostMessage } = createEnvironment();
+    const bridge = installRuntimeBridge(environment);
+    bridge.publishInspection(inspectionFrame);
+    expect(parentPostMessage).not.toHaveBeenCalled();
+    bridge.dispose();
+  });
   it('uses the current browser globals when no environment is provided', () => {
     const { environment, dispatchCheck, parentPostMessage } =
       createEnvironment();
@@ -971,6 +991,59 @@ describe('runtime configuration child state machine', () => {
     bridge.dispose();
     configured.reportOperationFailure('unauthorized');
     expect(parentPostMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('publishes detached inspection only while configured to the accepted parent generation', () => {
+    const { configure, environment, parentPostMessage } =
+      createConfigurationEnvironment();
+    const bridge = installRuntimeBridge(environment, {
+      allowedParentOrigins: [parentOrigin],
+    });
+    parentPostMessage.mockClear();
+    bridge.publishInspection(inspectionFrame);
+    expect(parentPostMessage).not.toHaveBeenCalled();
+    configure(12, {
+      kind: 'langsmith',
+      apiUrl: 'https://api.example',
+      apiKey: 'must-not-leak',
+    });
+    parentPostMessage.mockClear();
+    bridge.publishInspection(inspectionFrame);
+    expect(parentPostMessage).toHaveBeenCalledExactlyOnceWith(
+      {
+        type: 'tplane:runtime-inspection',
+        version: 1,
+        nonce: 'fresh-child-nonce',
+        generation: 12,
+        frame: inspectionFrame,
+      },
+      parentOrigin
+    );
+    expect(parentPostMessage.mock.calls[0][0].frame).not.toBe(inspectionFrame);
+    expect(JSON.stringify(parentPostMessage.mock.calls)).not.toContain(
+      'must-not-leak'
+    );
+    bridge.publishInspection({
+      ...inspectionFrame,
+      extra: 'secret',
+    } as InspectionFrame);
+    bridge.dispose();
+    bridge.publishInspection(inspectionFrame);
+    expect(parentPostMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('isolates parent postMessage failures for inspection', () => {
+    const { configure, environment, parentPostMessage } =
+      createConfigurationEnvironment();
+    const bridge = installRuntimeBridge(environment, {
+      allowedParentOrigins: [parentOrigin],
+    });
+    configure(1);
+    parentPostMessage.mockImplementation(() => {
+      throw new Error('closed');
+    });
+    expect(() => bridge.publishInspection(inspectionFrame)).not.toThrow();
+    bridge.dispose();
   });
 
   it('delivers a configured target once and exposes no credential after disposal', async () => {

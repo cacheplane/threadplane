@@ -18,6 +18,24 @@
     }
   },
   {
+    "id": "getting-started/workbench",
+    "title": "Learning workbench",
+    "library": null,
+    "section": "getting-started",
+    "slug": "workbench",
+    "order": 1,
+    "variants": {
+      "angular": {
+        "source": "angular/getting-started/workbench.mdx",
+        "description": "Inspect a streamed trip response, replay application observations, and connect them to the Angular streaming example."
+      },
+      "react": {
+        "source": "react/getting-started/workbench.mdx",
+        "description": "Inspect a streamed trip response, replay application observations, and connect them to the React streaming example."
+      }
+    }
+  },
+  {
     "id": "langgraph/getting-started/introduction",
     "title": "Introduction",
     "library": "langgraph",

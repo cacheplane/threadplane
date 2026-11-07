@@ -485,6 +485,7 @@ export function WebsiteWorkspaceSurface({
         >
           <WorkspaceShell
             navigationLayout={toolbarLayout ? 'toolbar' : 'rail'}
+            resizableNavigation={Boolean(docsContext)}
             rootElement="section"
             navigationTree={navigationTree}
             entry={

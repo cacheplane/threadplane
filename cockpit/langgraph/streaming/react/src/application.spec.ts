@@ -5,6 +5,8 @@ import type {
   CompleteOutcome,
 } from '@threadplane/core';
 import { createStreamingApplication } from './application';
+import { createStreamingInspection } from './inspection';
+import type { InspectionFrame } from './inspection';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -58,6 +60,89 @@ function setup() {
 }
 
 describe('streaming cockpit application admission', () => {
+  it('records real lifecycle snapshots and exactly one delegated submit, then fences reset and disposal', async () => {
+    const first = setup();
+    const frames: InspectionFrame[] = [];
+    const subscribe = vi.spyOn(first.application, 'subscribe');
+    const inspection = createStreamingInspection((frame) => frames.push(frame));
+    inspection.attach(first.application);
+    expect(frames.at(-1)?.state).toEqual({
+      creation: 'idle',
+      busy: false,
+      canSubmit: true,
+      outcome: null,
+      hasFailure: false,
+    });
+    const pending = inspection.submit(first.application, 'Hello');
+    expect(frames.at(-1)?.state?.creation).toBe('pending');
+    expect(frames.at(-1)?.calls).toHaveLength(1);
+    expect(frames.at(-1)?.calls[0].status).toBe('pending');
+    first.creation.resolve('thread');
+    await Promise.resolve();
+    expect(first.session.submit).toHaveBeenCalledTimes(1);
+    first.session.getSnapshot = () => ({
+      status: 'running',
+      toolCalls: [],
+      messages: [
+        {
+          id: 'answer',
+          role: 'assistant',
+          content: 'An actual streamed answer',
+          reasoning: 'private reasoning',
+          delivery: { phase: 'streaming', generation: 'turn' },
+        },
+      ],
+    });
+    vi.mocked(first.session.subscribe).mock.calls[0][0]();
+    expect(frames.at(-1)?.messages).toEqual([
+      { id: 'answer', role: 'assistant', text: 'An actual streamed answer' },
+    ]);
+    expect(JSON.stringify(frames)).not.toContain('private reasoning');
+    first.run.resolve('success');
+    await pending;
+    expect(frames.at(-1)?.calls[0].status).toBe('settled');
+    expect(frames.at(-1)?.state?.outcome).toBe('success');
+    inspection.reset();
+    const second = setup();
+    inspection.attach(second.application);
+    expect(frames.at(-1)?.calls).toEqual([]);
+    const count = frames.length;
+    subscribe.mock.calls[0][0]();
+    await first.application.submit('old conversation');
+    expect(frames).toHaveLength(count);
+    inspection.dispose();
+    await second.application.stop();
+    expect(frames).toHaveLength(count);
+    await first.application.dispose();
+    await second.application.dispose();
+  });
+
+  it('preserves submit rejection and ignores settlement from an old conversation', async () => {
+    const first = setup();
+    const frames: InspectionFrame[] = [];
+    const inspection = createStreamingInspection((frame) => frames.push(frame));
+    const completion = deferred<void>();
+    const application = {
+      ...first.application,
+      submit: vi.fn(() => completion.promise),
+    };
+    inspection.attach(application);
+    const submitted = inspection.submit(application, 'Hello');
+    const failure = new Error('private detail');
+    completion.reject(failure);
+    await expect(submitted).rejects.toBe(failure);
+    expect(application.submit).toHaveBeenCalledExactlyOnceWith('Hello');
+    expect(frames.at(-1)?.calls[0].status).toBe('rejected');
+    expect(JSON.stringify(frames)).not.toContain('private detail');
+    const pending = inspection.submit(first.application, 'late');
+    inspection.reset();
+    const count = frames.length;
+    first.creation.reject(failure);
+    await pending;
+    expect(frames).toHaveLength(count);
+    inspection.dispose();
+    await first.application.dispose();
+  });
   it('creates once lazily and sends only after confirmed creation', async () => {
     const {
       application,

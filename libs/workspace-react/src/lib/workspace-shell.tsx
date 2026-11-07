@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import {
@@ -29,6 +30,10 @@ import { WorkspaceToolbar } from './components/workspace-toolbar';
 import { RunMode } from './components/run-mode/run-mode';
 import { PRODUCT_LABELS } from './navigation-labels';
 import { useWorkspace } from './workspace-provider';
+import {
+  NavigationResizeHandle,
+  useNavigationWidth,
+} from './navigation-resize';
 
 const isTabletViewport = () =>
   typeof window.matchMedia === 'function' &&
@@ -88,6 +93,8 @@ class WorkspacePanelBoundary extends Component<
 export interface WorkspaceShellProps {
   /** Opt-in reading layout; the default retains the cockpit's mode rail. */
   readonly navigationLayout?: 'rail' | 'toolbar';
+  /** Allow hosts to resize desktop navigation in either navigation layout. */
+  readonly resizableNavigation?: boolean;
   readonly rootElement?: 'main' | 'section';
   readonly navigationTree?: NavigationProduct[];
   readonly manifest?: CockpitManifestEntry[];
@@ -116,6 +123,7 @@ export interface WorkspaceShellProps {
 
 export function WorkspaceShell({
   navigationLayout = 'rail',
+  resizableNavigation = false,
   rootElement = 'main',
   navigationTree = [],
   manifest = cockpitManifest,
@@ -134,7 +142,10 @@ export function WorkspaceShell({
   onMobileModalPresenceChange,
 }: WorkspaceShellProps) {
   const toolbarLayout = navigationLayout === 'toolbar';
+  const defaultNavigationWidth = toolbarLayout ? 264 : undefined;
   const RootElement = rootElement;
+  const { width: navigationWidth, update: updateNavigationWidth } =
+    useNavigationWidth(resizableNavigation, defaultNavigationWidth);
   const workspace = useWorkspace();
   const {
     resolution,
@@ -360,6 +371,13 @@ export function WorkspaceShell({
       data-workspace-kind={resolution.kind}
       data-workspace-mode={activeMode}
       data-hydrated={hydrated ? 'true' : 'false'}
+      style={
+        resizableNavigation
+          ? ({
+              '--workspace-navigation-width': `${navigationWidth}px`,
+            } as CSSProperties)
+          : undefined
+      }
     >
       <div
         className="workspace-shell-navigation min-h-0 overflow-hidden"
@@ -377,6 +395,13 @@ export function WorkspaceShell({
           }
           onModeSelected={handlePrimaryModeSelected}
         />
+        {resizableNavigation && (
+          <NavigationResizeHandle
+            width={navigationWidth}
+            defaultWidth={defaultNavigationWidth}
+            onChange={updateNavigationWidth}
+          />
+        )}
       </div>
 
       <MobileNavOverlay

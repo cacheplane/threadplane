@@ -83,6 +83,7 @@ function renderWorkspace(options: {
   rootElement?: 'main' | 'section';
   contextTrail?: readonly WorkspaceCrumb[];
   navigationLayout?: 'rail' | 'toolbar';
+  resizableNavigation?: boolean;
 }) {
   const selectedResolution = options.resolution ?? resolution;
   const selectedPresentation = options.presentation ?? presentation;
@@ -113,6 +114,7 @@ function renderWorkspace(options: {
           rootElement={options.rootElement}
           contextTrail={options.contextTrail}
           navigationLayout={options.navigationLayout}
+          resizableNavigation={options.resizableNavigation}
         />
       </WorkspaceProvider>
     </RuntimeTargetProvider>
@@ -136,6 +138,7 @@ describe('WorkspaceShell persistent panel composition', () => {
       },
       contentBundle: { ...contentBundle, runtimeUrl: null },
       navigationLayout: 'toolbar',
+      resizableNavigation: true,
       requestedMode: 'run',
       runFallbackSlot: <h2>Explore examples</h2>,
       apiSlot: <h2>Generated SDK reference</h2>,
@@ -144,10 +147,16 @@ describe('WorkspaceShell persistent panel composition', () => {
       screen.getByRole('heading', { name: 'Explore examples' })
     ).toBeTruthy();
     expect(document.querySelector('iframe')).toBeNull();
+    const separator = screen.getByRole('separator', { name: 'Resize navigation' });
+    fireEvent.keyDown(separator, { key: 'ArrowRight' });
+    expect(separator.getAttribute('aria-valuenow')).toBe('274');
+    expect(screen.getByRole('heading', { name: 'Explore examples' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'API' }));
     expect(
       screen.getByRole('heading', { name: 'Generated SDK reference' })
     ).toBeTruthy();
+    expect(screen.getByRole('separator', { name: 'Resize navigation' })).toBe(separator);
+    expect(separator.getAttribute('aria-valuenow')).toBe('274');
     expect(screen.queryByText(/No API documentation extracted/)).toBeNull();
   });
 
@@ -193,6 +202,39 @@ describe('WorkspaceShell persistent panel composition', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
     expect(screen.getByText('Guide content')).toBeTruthy();
     expect(container.querySelector('iframe')).toBe(iframe);
+  });
+
+  it.each(['rail', 'toolbar'] as const)('keeps %s navigation resizing opt-in and preserves the mounted runtime while resizing', async (navigationLayout) => {
+    const plain = renderWorkspace({ navigationLayout });
+    expect(
+      screen.queryByRole('separator', { name: 'Resize navigation' })
+    ).toBeNull();
+    plain.unmount();
+    const view = renderWorkspace({ navigationLayout, resizableNavigation: true });
+    const frame = await waitFor(() => {
+      const frame = view.container.querySelector('iframe');
+      expect(frame).toBeTruthy();
+      return frame;
+    });
+    const separator = screen.getByRole('separator', {
+      name: 'Resize navigation',
+    });
+    fireEvent.keyDown(separator, { key: 'ArrowRight' });
+    expect(
+      view.container
+        .querySelector<HTMLElement>('[data-workspace-shell]')
+        ?.style.getPropertyValue('--workspace-navigation-width')
+    ).toBe(navigationLayout === 'toolbar' ? '274px' : '338px');
+    fireEvent.keyDown(separator, { key: 'Home' });
+    expect(
+      view.container
+        .querySelector<HTMLElement>('[data-workspace-shell]')
+        ?.style.getPropertyValue('--workspace-navigation-width')
+    ).toBe(navigationLayout === 'toolbar' ? '264px' : '328px');
+    expect(view.container.querySelector('iframe')).toBe(frame);
+    for (const mode of ['Docs', 'Code', 'API']) {
+      expect(screen.getByRole('button', { name: mode })).toBeTruthy();
+    }
   });
 
   it('keeps one Run iframe node mounted through modes and utility switches', async () => {
@@ -355,7 +397,16 @@ describe('WorkspaceShell persistent panel composition', () => {
       /@media \(min-width: 48rem\) and \(max-width: 63\.999rem\)[\s\S]*grid-template-columns:\s*56px minmax\(0, 1fr\)/
     );
     expect(css).toMatch(
-      /@media \(min-width: 64rem\)[\s\S]*grid-template-columns:\s*328px minmax\(0, 1fr\)/
+      /@media \(min-width: 64rem\)[\s\S]*grid-template-columns:\s*var\(--workspace-navigation-width, 328px\) minmax\(0, 1fr\)/
+    );
+    expect(css).toMatch(
+      /\.workspace-navigation-resize\s*\{[^}]*display:\s*none/
+    );
+    expect(css).toMatch(
+      /@media \(min-width: 64rem\)[\s\S]*\.workspace-navigation-resize\s*\{[^}]*display:\s*flex/
+    );
+    expect(css).toContain(
+      'calc(var(--workspace-navigation-width, 328px) - 56px)'
     );
     expect(css).toContain('.workspace-tablet-context-trigger');
     expect(css).toContain('.workspace-tablet-context-surface');

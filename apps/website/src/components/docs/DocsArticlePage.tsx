@@ -125,6 +125,7 @@ export async function DocsArticlePage({ pathname }: { pathname: string }) {
       }`}
       data-docs-section={section}
       data-docs-framework={scope}
+      data-learning-article={document.id === 'getting-started/workbench' || undefined}
     >
       <div className="flex min-w-0 docs-article-layout">
         <div className="flex-1 min-w-0">
