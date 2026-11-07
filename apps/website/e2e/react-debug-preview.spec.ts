@@ -1,3 +1,4 @@
+import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
@@ -11,14 +12,8 @@ const frameURL = /(?:localhost:4645|chat\/debug\/react)/;
 const observations = new WeakMap<Page, { errors: string[]; requests: { method: string; url: string; body: string | null }[] }>();
 const read = async (request: APIRequestContext, path: string) => (await request.get(origin + path)).json();
 
-async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
-  const navigation = width === 390
-    ? page.getByRole('dialog')
-    : page.locator('[data-workspace-desktop-navigation]');
-  if (width === 390) await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-  await navigation.getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
-  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', name);
-  if (width === 390) await expect(navigation).toBeHidden();
+async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
+  await selectWorkspaceMode(page, name);
   expect(new URL(page.url()).pathname).toBe(reactRoute);
 }
 
@@ -74,9 +69,9 @@ test.describe('native Debug Website', () => {
     expect((await page.goto(reactRoute))?.status()).toBe(200);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
     await expect(page.getByRole('heading', { name: 'React chat debug preview', exact: true })).toBeVisible();
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await page.screenshot({ path: info.outputPath('docs.png') });
-    await mode(page, 'Code', width);
+    await mode(page, 'Code');
     const files = ['app.tsx', 'application.ts', 'authority.ts', 'checkpoint-page.ts', 'inspection-values.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'graph.py', 'debug.md'];
     for (const name of files) {
       if (width === 390) await expect(page.getByRole('tab').filter({ has: page.locator(`[data-tab-close][aria-label="Close ${name}"]`) })).toHaveCount(1);
@@ -123,7 +118,7 @@ test.describe('native Debug Website', () => {
     expect(codeViewport.text.x).toBeLessThan(width);
     expect(codeViewport.text.y).toBeGreaterThanOrEqual(0);
     expect(codeViewport.text.y).toBeLessThan(width === 390 ? 844 : 900);
-    await mode(page, 'Run', width);
+    await mode(page, 'Run');
     const iframe = page.locator('iframe');
     await expect(iframe).toHaveAttribute('src', frameURL);
     const original = await iframe.elementHandle();
@@ -132,7 +127,7 @@ test.describe('native Debug Website', () => {
     await expect(status).toHaveText('Ready.');
     const draft = 'Exact unsent aviation draft ✈ café';
     await frame.getByLabel('Message', { exact: true }).fill(draft);
-    for (const name of ['Docs', 'Code', 'Run'] as const) await mode(page, name, width);
+    for (const name of ['Docs', 'Code', 'Run'] as const) await mode(page, name);
     // Native history navigation retains the React route and the same owner.
     await page.goBack();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
@@ -199,7 +194,7 @@ test.describe('native Debug Website', () => {
     await writeFile(info.outputPath('observed-selection.json'), JSON.stringify({ history, selected, current: capture.state, ledger }, null, 2));
     await page.screenshot({ path: info.outputPath('run-inspection.png') });
     await frame.getByRole('button', { name: 'Close debug panel', exact: true }).click();
-    for (const name of ['Code', 'Docs', 'Run'] as const) await mode(page, name, width);
+    for (const name of ['Code', 'Docs', 'Run'] as const) await mode(page, name);
     expect(await iframe.evaluate((node, previous) => node === previous, original)).toBe(true);
     await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('Retained follow-up draft ✈ café');
     await expect(frame.locator('article')).toHaveCount(4);
@@ -211,7 +206,7 @@ test.describe('native Debug Website', () => {
   test('keeps Angular canonical and selects native React explicitly without business requests', async ({ page, request }) => {
     await page.goto(route);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(page.getByRole('heading', { name: 'ChatDebugComponent', exact: true })).toBeVisible();
     await selectFramework(page, 'react');
     await expect(page).toHaveURL(/\/docs\/react\//);

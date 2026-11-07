@@ -58,7 +58,139 @@ async function submit(frame: FrameLocator, framework: string, message: string) {
     .click();
 }
 
+test('Angular navigation resize persists and expanded workbench uses the full workspace width', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const host = await openWorkbench(page, 'angular');
+  const shell = page.locator('[data-workspace-shell]');
+  const navigation = page.locator('[data-workspace-desktop-navigation]');
+  const resize = page.getByRole('separator', {
+    name: 'Resize navigation',
+    exact: true,
+  });
+  const surface = page.locator('[data-workspace-surface]');
+  const navigationWidth = () =>
+    navigation.evaluate((element) => element.getBoundingClientRect().width);
+  await expect(resize).toHaveAttribute('aria-valuenow', '264');
+  await expect.poll(navigationWidth).toBe(264);
+  await resize.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(resize).toHaveAttribute('aria-valuenow', '274');
+  await expect.poll(navigationWidth).toBe(274);
+  await page.reload();
+  await expect(resize).toHaveAttribute('aria-valuenow', '274');
+  await expect.poll(navigationWidth).toBe(274);
+
+  await host
+    .getByRole('button', { name: 'Expand workbench', exact: true })
+    .click();
+  await expect(host).toHaveAttribute('data-expanded', 'true');
+  await expect(navigation).toBeHidden();
+  await expect
+    .poll(async () => {
+      const frame = await shell.boundingBox();
+      const content = await surface.boundingBox();
+      return frame && content
+        ? { left: content.x - frame.x, width: content.width - frame.width }
+        : null;
+    })
+    .toEqual({ left: 0, width: 0 });
+  const canvas = await host.evaluate((element) => {
+    const article = element.closest('article')!;
+    const style = getComputedStyle(article);
+    return {
+      actual: element.getBoundingClientRect().width,
+      available:
+        article.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+    };
+  });
+  expect(canvas.actual).toBeCloseTo(canvas.available, 1);
+  await host
+    .getByRole('button', { name: 'Restore workbench width', exact: true })
+    .click();
+  await expect(navigation).toBeVisible();
+  await expect.poll(navigationWidth).toBe(274);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(resize).toBeHidden();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  ).toBe(true);
+});
+
 for (const framework of ['react', 'angular'] as const) {
+  test(`${framework}: source inspection preserves the recorded session and supports keyboard return on narrow layouts`, async ({
+    page,
+    browserName,
+  }) => {
+    const host = await openWorkbench(page, framework);
+    const sessions = host.getByRole('group', { name: 'Example session' });
+    await expect(sessions.getByRole('button')).toHaveCount(2);
+    const recorded = sessions.getByRole('button', { name: 'Recorded example' });
+    const source = host.getByRole('button', {
+      name: 'View example source',
+      exact: true,
+    });
+    await host.getByRole('button', { name: 'Next observation' }).click();
+    await source.focus();
+    await page.keyboard.press('Enter');
+    await expect(source).toHaveAttribute('aria-expanded', 'true');
+    await expect(recorded).toHaveAttribute('aria-pressed', 'true');
+    const region = host.getByRole('region', {
+      name: 'Example source',
+      exact: true,
+    });
+    await expect(region).toHaveAttribute(
+      'id',
+      (await source.getAttribute('aria-controls'))!
+    );
+    await expect(region).toBeFocused();
+    // macOS WebKit's default keyboard preference reaches buttons with Option+Tab.
+    await page.keyboard.press(
+      browserName === 'webkit' && process.platform === 'darwin'
+        ? 'Alt+Tab'
+        : 'Tab'
+    );
+    const back = host.getByRole('button', {
+      name: 'Return to recorded example',
+    });
+    await expect(back).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(source).toBeFocused();
+    await expect(source).toHaveAttribute('aria-expanded', 'false');
+    await expect(host.getByRole('slider', { name: 'Observation' })).toHaveValue(
+      '1'
+    );
+    await expect(host.locator('iframe')).toHaveCount(0);
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await source.click();
+      for (const control of [
+        recorded,
+        sessions.getByRole('button', { name: 'Live conversation' }),
+        source,
+        back,
+      ]) {
+        const box = await control.boundingBox();
+        expect(box?.height).toBeGreaterThanOrEqual(44);
+        expect(box?.width).toBeGreaterThanOrEqual(44);
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth
+        )
+      ).toBe(true);
+      await back.click();
+      await expect(
+        host.getByRole('slider', { name: 'Observation' })
+      ).toHaveValue('1');
+    }
+  });
+
   test(`${framework}: real app submit, historical inspection, return to live and new conversation`, async ({
     page,
     request,
@@ -78,12 +210,14 @@ for (const framework of ['react', 'angular'] as const) {
     await request.delete(`http://127.0.0.1:4399/__requests/${caseId}`);
     const host = await openWorkbench(page, framework);
     await expect(
-      host.getByRole('button', { name: 'Live', exact: true })
+      host.getByRole('button', { name: 'Live conversation', exact: true })
     ).toBeVisible({ timeout: 30_000 });
     await expect(host.locator('iframe')).toHaveCount(0);
-    await host.getByRole('button', { name: 'Live', exact: true }).click();
+    await host
+      .getByRole('button', { name: 'Live conversation', exact: true })
+      .click();
     await expect(
-      host.getByRole('button', { name: 'Live', exact: true })
+      host.getByRole('button', { name: 'Live conversation', exact: true })
     ).toHaveAttribute('aria-pressed', 'true');
     if (framework === 'angular') await customTarget(page, caseId);
     const frame = host.frameLocator('iframe');
@@ -93,13 +227,25 @@ for (const framework of ['react', 'angular'] as const) {
       host.getByText('Application call pending', { exact: true })
     ).toBeVisible();
     await expect(
-      host.getByRole('button', { name: 'Replay', exact: true })
+      host.getByRole('button', { name: 'Recorded example', exact: true })
     ).toBeDisabled();
     const iframe = await host.locator('iframe').elementHandle();
-    await host.getByRole('button', { name: 'Source', exact: true }).click();
+    await host
+      .getByRole('button', { name: 'View example source', exact: true })
+      .click();
+    await expect(
+      host.getByRole('button', { name: 'Live conversation', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true');
     await expect(host.getByLabel('Lesson source code')).toBeVisible();
     expect(await iframe?.evaluate((element) => element.isConnected)).toBe(true);
-    await host.getByRole('button', { name: 'Live', exact: true }).click();
+    const returnToSession = host.getByRole('button', {
+      name: 'Return to live conversation',
+    });
+    await expect(returnToSession).toBeEnabled();
+    await returnToSession.click();
+    await expect(
+      host.getByRole('button', { name: 'View example source', exact: true })
+    ).toBeFocused();
     expect(await iframe?.evaluate((element) => element.isConnected)).toBe(true);
     if (framework === 'react')
       await expect(
@@ -114,7 +260,7 @@ for (const framework of ['react', 'angular'] as const) {
     if (framework === 'react')
       await request.post('http://127.0.0.1:4600/__release');
     await expect(
-      host.getByRole('button', { name: 'Replay', exact: true })
+      host.getByRole('button', { name: 'Recorded example', exact: true })
     ).toBeEnabled({ timeout: 15_000 });
     // Incoming observations do not move a historical playhead.
     await expect(host.getByRole('slider', { name: 'Observation' })).toHaveValue(
@@ -177,7 +323,9 @@ for (const framework of ['react', 'angular'] as const) {
     page,
   }) => {
     const host = await openWorkbench(page, framework);
-    await host.getByRole('button', { name: 'Source', exact: true }).click();
+    await host
+      .getByRole('button', { name: 'View example source', exact: true })
+      .click();
     await expect(host.locator('iframe')).toHaveCount(0);
     const highlight = host.locator('[data-highlighted]').first();
     const geometry = await highlight.evaluate((element) => {
@@ -197,7 +345,9 @@ for (const framework of ['react', 'angular'] as const) {
     await files.focus();
     await page.keyboard.press('ArrowRight');
     await expect(files).toHaveAttribute('aria-valuenow', '206');
-    await host.getByRole('button', { name: 'Replay', exact: true }).click();
+    await host
+      .getByRole('button', { name: 'Recorded example', exact: true })
+      .click();
     await host.getByRole('button', { name: 'See it run', exact: true }).click();
     await expect(
       host.getByRole('slider', { name: 'Observation' })
@@ -243,7 +393,7 @@ for (const framework of ['react', 'angular'] as const) {
       })
     ).toHaveAttribute('href', `/docs/${framework}/langgraph/guides/streaming`);
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const mode of ['Source', 'Replay']) {
+    for (const mode of ['View example source', 'Recorded example']) {
       await host.getByRole('button', { name: mode, exact: true }).click();
       expect(
         await page.evaluate(
@@ -260,9 +410,11 @@ test('React stop and failure remain distinct from application call settlement', 
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
   const host = await openWorkbench(page, 'react');
-  await host.getByRole('button', { name: 'Live', exact: true }).click();
+  await host
+    .getByRole('button', { name: 'Live conversation', exact: true })
+    .click();
   await expect(
-    host.getByRole('button', { name: 'Live', exact: true })
+    host.getByRole('button', { name: 'Live conversation', exact: true })
   ).toHaveAttribute('aria-pressed', 'true');
   const frame = host.frameLocator('iframe');
   await submit(frame, 'react', 'First');
@@ -299,9 +451,11 @@ test('framework changes dispose an active React stream and restore opt-in replay
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
   const host = await openWorkbench(page, 'react');
-  await host.getByRole('button', { name: 'Live', exact: true }).click();
+  await host
+    .getByRole('button', { name: 'Live conversation', exact: true })
+    .click();
   await expect(
-    host.getByRole('button', { name: 'Live', exact: true })
+    host.getByRole('button', { name: 'Live conversation', exact: true })
   ).toHaveAttribute('aria-pressed', 'true');
   await submit(host.frameLocator('iframe'), 'react', 'First');
   await expect

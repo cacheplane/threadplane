@@ -3,33 +3,37 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 import RenderPage from './page';
-
 vi.mock('../../lib/analytics/client', () => ({
   track: vi.fn(),
   trackCtaClick: vi.fn(),
   trackExternalLinkClick: vi.fn(),
   trackWhitepaperDownloadClick: vi.fn(),
 }));
-
-// The second FeatureBlock's showcase is an async Server Component (it awaits
-// shiki highlighting via HighlightedCode). react-dom/client cannot render an
-// async component at all outside Next's RSC pipeline ("Only Server
-// Components can be async at the moment") — stand in a sync placeholder so
-// the rest of the page (untouched by this task) can render in this harness.
+// Next renders highlighted code on the server; use a synchronous stand-in in jsdom.
 vi.mock('../../components/landing/render/RenderCodeShowcase', () => ({
   RenderCodeShowcase: () => null,
 }));
 
 describe('RenderPage', () => {
-  it('renders the package kicker, marker sweep, switcher, and dark closer', async () => {
-    const ui = await RenderPage();
-    const { container } = render(ui);
-    expect(screen.getByText('@threadplane/render · generative UI')).toBeTruthy();
-    expect(container.querySelector('.marker-highlight')?.textContent).toBe('components you already own');
-    expect(screen.getAllByRole('tablist').length).toBeGreaterThanOrEqual(1);
-    const cta = [...container.querySelectorAll('[data-ui="section"]')].find((s) =>
-      s.querySelector('.final-cta-inner'),
-    );
-    expect(cta?.getAttribute('data-surface')).toBe('dark');
+  it('keeps framework docs, media controls, and the gated report available', async () => {
+    const { container } = render(await RenderPage());
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(
+      screen.getByRole('link', { name: 'React docs' }).getAttribute('href')
+    ).toBe('/docs/react/render/guides/specs');
+    expect(
+      screen.getByRole('link', { name: 'Angular docs' }).getAttribute('href')
+    ).toBe('/docs/angular/render/getting-started/introduction');
+    expect(
+      screen.getByText(
+        /React guides cover the current source-build integration/
+      )
+    ).toBeTruthy();
+    expect(screen.getAllByRole('tablist')).toHaveLength(1);
+    expect(
+      screen.getByRole('button', { name: 'Get the field report' })
+    ).toBeTruthy();
+    expect(container.querySelector('a[href$=".pdf"]')).toBeNull();
+    expect(container.querySelector('[data-ui="eyebrow"]')).toBeNull();
   });
 });

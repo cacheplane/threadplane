@@ -155,7 +155,7 @@ export function parseGitLog(
  * that overflows its buffer or times out — all of which throw rather than
  * returning partial output).
  */
-function computeGitTimes(): GitTimes | null {
+export function computeGitTimes(cwd = process.cwd()): GitTimes | null {
   try {
     const git = (args: string[], cwd: string): string =>
       execFileSync(
@@ -181,7 +181,7 @@ function computeGitTimes(): GitTimes | null {
         }
       );
 
-    const root = git(['rev-parse', '--show-toplevel'], process.cwd()).trim();
+    const root = git(['rev-parse', '--show-toplevel'], cwd).trim();
     const graftedShas = new Set<string>();
     const shallow =
       git(['rev-parse', '--is-shallow-repository'], root).trim() === 'true';
@@ -209,6 +209,9 @@ function computeGitTimes(): GitTimes | null {
         'log',
         `--format=${GIT_LOG_MARKER}%ct %H`,
         '--name-only',
+        // Include edits made during a merge, while leaving files inherited
+        // unchanged from either parent dated by their original commits.
+        '--diff-merges=combined',
         '--',
         `${prefix}content`,
         `${prefix}src/app`,

@@ -1,5 +1,6 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { test, expect } from '@playwright/test';
-import { frameworkControl } from './fixtures/framework-controls';
+import { chooseFramework } from './fixtures/framework-controls';
 
 const topics = [
   {
@@ -94,18 +95,18 @@ for (const topic of topics) {
     });
 
     try {
-      const navigation = page.locator('[data-workspace-desktop-navigation]');
+      const navigation = documentationModes(page);
       await navigation
         .getByRole('button', { name: 'Code', exact: true })
         .click();
       await navigation.getByRole('button', { name: /^Run(?:,|$)/ }).click();
       await expect(page.locator('iframe')).toBeVisible();
-      await (await frameworkControl(page)).selectOption('angular');
+      await chooseFramework(page, 'angular');
       release();
       await page.unrouteAll({ behavior: 'wait' });
 
       await expect(page).toHaveURL(`${topic.path}?mode=run`);
-      await expect(page.getByLabel('Framework')).toHaveValue('angular');
+      await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'
@@ -122,7 +123,7 @@ for (const topic of topics) {
       await expect(page).toHaveURL(
         `${topic.reactPath}?mode=run${hash}`
       );
-      await expect(page.getByLabel('Framework')).toHaveValue('react');
+      await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'

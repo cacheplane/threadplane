@@ -1,3 +1,4 @@
+import { documentationModes, openWorkspaceTool } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
@@ -55,7 +56,7 @@ async function hydrated(page: Page, mode: 'Docs' | 'Code' | 'Run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'Run');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
@@ -73,8 +74,7 @@ async function emptyRun(page: Page, draft = '') {
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(draft);
 }
 async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', {
       name: name === 'Run' ? /^Run(?:,|$)/ : name,
       exact: name !== 'Run',
@@ -88,7 +88,7 @@ test('native AG-UI A2UI keeps canonical Docs, Code and Run aligned', async ({
 }, testInfo) => {
   await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toBeVisible();
@@ -188,7 +188,7 @@ test('native AG-UI A2UI retains Angular as the canonical default', async ({
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toHaveCount(0);
@@ -235,10 +235,7 @@ test('native AG-UI A2UI accepts the supported AG-UI iframe endpoint without star
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
-  const navigation = page.locator('[data-workspace-desktop-navigation]');
-  await navigation
-    .getByRole('button', { name: 'Settings', exact: true })
-    .click();
+  await openWorkspaceTool(page, 'Settings');
   const settings = page.locator('[data-runtime-target-settings]');
   await expect(settings).toBeVisible();
   await settings.getByRole('radio', { name: 'Custom AG-UI' }).check();

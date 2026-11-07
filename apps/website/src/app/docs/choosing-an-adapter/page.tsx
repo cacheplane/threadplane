@@ -8,6 +8,7 @@ import { DocsTOC } from '../../../components/docs/DocsTOC';
 import { createPageMetadata } from '../../../lib/site-metadata';
 import { extractHeadings } from '../../../lib/extract-headings';
 import { stripFrontmatter } from '../../../lib/docs';
+import '../../../styles/docs-entry.css';
 
 const PAGE_TITLE = 'Choosing an adapter';
 
@@ -20,8 +21,22 @@ export const metadata = createPageMetadata({
 
 function resolveContentFile(): string | null {
   const candidates = [
-    path.join(process.cwd(), 'apps', 'website', 'content', 'docs', 'choosing-an-adapter', 'index.mdx'),
-    path.join(process.cwd(), 'content', 'docs', 'choosing-an-adapter', 'index.mdx'),
+    path.join(
+      process.cwd(),
+      'apps',
+      'website',
+      'content',
+      'docs',
+      'choosing-an-adapter',
+      'index.mdx'
+    ),
+    path.join(
+      process.cwd(),
+      'content',
+      'docs',
+      'choosing-an-adapter',
+      'index.mdx'
+    ),
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
@@ -41,12 +56,8 @@ export default function ChoosingAnAdapterPage() {
       <DocsSearch />
       {/* This page is deliberately library-neutral: it is the page that helps
        * you pick one, so the picker opens with nothing selected. */}
-      <DocsControlPlane
-        activeLibrary={null}
-        activeSection=""
-        activeSlug=""
-      />
-      <div className="flex-1 flex min-w-0 docs-shell-body">
+      <DocsControlPlane activeLibrary={null} activeSection="" activeSlug="" />
+      <div className="flex-1 flex min-w-0 docs-shell-body docs-entry-reading">
         <div className="flex-1 min-w-0">
           <article
             aria-label={PAGE_TITLE}
@@ -56,9 +67,9 @@ export default function ChoosingAnAdapterPage() {
           </article>
         </div>
         {/* This page carries as many headings as any library page, so it gets
-          * the same rail. It stays library-neutral, so it takes no breadcrumb
-          * or page header — both are keyed to a library it deliberately
-          * has not picked. */}
+         * the same rail. It stays library-neutral, so it takes no breadcrumb
+         * or page header — both are keyed to a library it deliberately
+         * has not picked. */}
         <DocsTOC headings={headings} />
       </div>
     </div>

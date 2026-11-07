@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
 import { test, expect } from '@playwright/test';
 
@@ -22,7 +23,7 @@ test.describe('native Mastra Website', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath('docs-mobile.png') });
     await page.setViewportSize({ width: 1280, height: 900 });
-    const navigation = page.locator('[data-workspace-desktop-navigation]');
+    const navigation = documentationModes(page);
     await navigation.getByRole('button', { name: 'Code', exact: true }).click();
     const tree = page.getByRole('complementary', { name: 'File tree' });
     for (const file of ['app.tsx', 'application.ts', 'approval-policy.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'agents.mjs', 'server.mjs', 'mastra.md', 'mastra-backend.md']) await expect(tree.getByRole('button', { name: file, exact: true })).toBeVisible();

@@ -1,0 +1,146 @@
+.docs-examples {
+  max-width: 1120px;
+  margin-inline: 0;
+  padding: var(--site-page-top) var(--site-gutter) 64px;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+.docs-examples h1 {
+  font-size: clamp(32px, 3vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+.docs-examples header > p {
+  max-width: 54ch;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+.docs-examples-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 36px;
+}
+.docs-examples-filters label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+}
+.docs-examples-filters input,
+.docs-examples-filters select {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+}
+.docs-examples-count {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 24px 0 16px;
+}
+.docs-examples-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.docs-example-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  background: #f6f7f9;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.docs-example-card:hover {
+  background: #fff9e9;
+  border-color: #e9dbb5;
+}
+.docs-example-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.docs-example-meta svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.docs-example-meta > span {
+  margin-left: auto;
+}
+.docs-example-card h2 {
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  margin: 4px 0 0;
+}
+.docs-example-card > p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 0 8px;
+  color: var(--color-text-secondary);
+}
+.docs-example-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  font-size: 14px;
+  font-weight: 600;
+}
+.docs-examples-empty {
+  background: #f6f7f9;
+  padding: 32px;
+  border-radius: 20px;
+}
+.docs-examples-empty button {
+  min-height: 44px;
+  margin-top: 16px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.docs-examples :is(a, input, select, button):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+@media (max-width: 640px) {
+  .docs-examples {
+    padding-top: 32px;
+  }
+  .docs-examples-filters,
+  .docs-examples-grid {
+    grid-template-columns: 1fr;
+  }
+  .docs-example-card {
+    padding: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-example-card {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .docs-example-card {
+    border-color: ButtonText;
+  }
+}

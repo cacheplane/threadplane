@@ -57,7 +57,7 @@ export default async function OpenGraphImage() {
               flexDirection: 'column',
               marginTop: 22,
               fontFamily: 'Archivo Black, sans-serif',
-              fontSize: 60,
+              fontSize: 46,
               lineHeight: 1.04,
               letterSpacing: '-0.02em',
               color: CARD.ink,

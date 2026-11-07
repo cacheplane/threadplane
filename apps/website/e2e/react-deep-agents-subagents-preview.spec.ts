@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
@@ -37,7 +38,7 @@ async function hydrated(page: Page, mode: 'docs' | 'code' | 'run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'run');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -58,7 +59,7 @@ test('native Deep Agents Subagents keeps canonical Docs, Code and Run aligned', 
 }, testInfo) => {
   await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Subagents preview',
@@ -80,8 +81,7 @@ test('native Deep Agents Subagents keeps canonical Docs, Code and Run aligned', 
     path: testInfo.outputPath('react-deep-agents-subagents-docs-mobile.png'),
   });
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
@@ -117,8 +117,7 @@ test('native Deep Agents Subagents keeps canonical Docs, Code and Run aligned', 
   await graph.click();
   await expect(page.getByRole('tabpanel')).toContainText('create_deep_agent');
   await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await emptyRun(page);
@@ -149,7 +148,7 @@ test('the canonical Subagents guide keeps Angular as its default frontend', asyn
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Subagents preview',
@@ -189,8 +188,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
     page.frameLocator('iframe').getByLabel('Message', { exact: true })
   ).toHaveValue('Unsent history draft');
   const before = [...(observations.get(page)?.requests ?? [])];
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
@@ -249,17 +247,17 @@ test('frontend changes release the old React frame and return to an empty inert 
   await emptyRun(page);
   const oldFrame = await page.locator('iframe').elementHandle();
   await page.frameLocator('iframe').getByLabel('Message', { exact: true }).fill('Old frontend draft');
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Docs', exact: true }).click();
+  await documentationModes(page).getByRole('button', { name: 'Docs', exact: true }).click();
   await hydrated(page, 'docs');
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page.getByRole('heading', { name: 'React Deep Agents Subagents preview', exact: true })).toHaveCount(0);
   await expect.poll(() => oldFrame?.evaluate(frame => frame.isConnected)).toBe(false);
   await selectFramework(page, 'react');
   await hydrated(page, 'docs');
   await expect(page).toHaveURL(reactRoute);
   await expect(page.getByRole('heading', { name: 'React Deep Agents Subagents preview', exact: true })).toBeVisible();
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
+  await documentationModes(page).getByRole('button', { name: /^Run(?:,|$)/ }).click();
   await emptyRun(page);
   expect(await page.locator('iframe').evaluate((frame, original) => frame === original, oldFrame)).toBe(false);
 });

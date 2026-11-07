@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Section } from '../ui/Section';
 import { Container } from '../ui/Container';
-import { Eyebrow } from '../ui/Eyebrow';
 import { PostCard } from '../blog/PostCard';
 import { getRecentPosts } from '../../lib/blog';
 
@@ -15,16 +14,13 @@ export function RecentArticles() {
   if (posts.length === 0) return null;
 
   return (
-    <Section surface="canvas" ariaLabelledBy="recent-articles-heading">
+    <Section id="articles" ariaLabelledBy="recent-articles-heading" className="home-section home-articles">
       <Container>
-        <div className="recent-articles-rail">
-          <Eyebrow tone="accent" className="recent-articles-eyebrow">
-            Blog
-          </Eyebrow>
-          <span className="recent-articles-rail-line" aria-hidden="true" />
+        <div className="home-section-heading">
           <h2 id="recent-articles-heading" className="recent-articles-heading">
-            Recent articles
+            Notes from the flight deck.
           </h2>
+          <p>Ideas, patterns, and lessons from building agent interfaces.</p>
         </div>
 
         <div className="recent-articles-grid">
@@ -34,8 +30,8 @@ export function RecentArticles() {
         </div>
 
         <div className="recent-articles-footer">
-          <Link href="/blog" className="recent-articles-link">
-            View all articles →
+          <Link href="/blog" className="home-text-link">
+            View all articles <span aria-hidden="true">›</span>
           </Link>
         </div>
       </Container>

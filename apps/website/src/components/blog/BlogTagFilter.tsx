@@ -10,14 +10,19 @@ interface BlogTagFilterProps {
 export function BlogTagFilter({ activeTag, tags }: BlogTagFilterProps) {
   const sorted = [...tags].sort((a, b) => a.localeCompare(b));
   return (
-    <div className="blog-tag-filter">
+    <nav className="blog-tag-filter" aria-label="Filter articles by topic">
       {/* "All" pill */}
       {activeTag ? (
         <Link href="/blog" className="blog-tag-pill">
           All
         </Link>
       ) : (
-        <span className="blog-tag-pill" data-active data-static aria-current="page">
+        <span
+          className="blog-tag-pill"
+          data-active
+          data-static
+          aria-current="page"
+        >
           All
         </span>
       )}
@@ -25,7 +30,9 @@ export function BlogTagFilter({ activeTag, tags }: BlogTagFilterProps) {
       {sorted.map((tag) => {
         const isActive = tag === activeTag;
         // Clicking the active tag toggles back to /blog.
-        const href = isActive ? '/blog' : `/blog?tag=${encodeURIComponent(tag)}`;
+        const href = isActive
+          ? '/blog'
+          : `/blog?tag=${encodeURIComponent(tag)}`;
         return isActive ? (
           <Link
             key={tag}
@@ -42,6 +49,6 @@ export function BlogTagFilter({ activeTag, tags }: BlogTagFilterProps) {
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

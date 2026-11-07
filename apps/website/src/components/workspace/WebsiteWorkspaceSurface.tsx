@@ -43,7 +43,9 @@ import {
 } from '../docs/DocsControlPlane';
 import { WORKSPACE_PANEL_FOCUS_INTENT } from './workspace-panel-focus';
 import { FrameworkSelector } from '../docs/FrameworkSelector';
+import { DocsSearch } from '../docs/DocsSearch';
 import type { DocsFramework } from '@threadplane/cockpit-registry';
+import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
 
 /*
  * The docs workspace surface: the shell, its mode/navigation/runtime wiring and
@@ -63,6 +65,9 @@ export interface WebsiteWorkspaceProps {
   /** Test/alternate-host override. Website routes normally read this in-browser. */
   readonly requestedMode?: string | null;
   readonly docsSlot?: ReactNode;
+  readonly runFallbackSlot?: ReactNode;
+  readonly apiSlot?: ReactNode;
+  readonly defaultMode?: WorkspaceMode;
   readonly framework?: DocsFramework;
   readonly docsContext?: DocsControlPlaneProps;
   /** Docs routes supply their own trail; workspace routes keep the derived one. */
@@ -159,26 +164,38 @@ export function WebsiteWorkspaceSurface({
   routePath,
   requestedMode,
   docsSlot,
+  runFallbackSlot,
+  apiSlot,
+  defaultMode = 'Docs',
   framework = 'angular',
   docsContext,
   contextTrail,
 }: WebsiteWorkspaceProps) {
+  const readingLayout = isFrameworkDocsRoute(routePath);
+  const toolbarLayout =
+    readingLayout ||
+    routePath.startsWith('/docs/api') ||
+    routePath === '/docs/examples';
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
-  const [frameworkNavigationPending, startFrameworkNavigation] = useTransition();
+  const [frameworkNavigationPending, startFrameworkNavigation] =
+    useTransition();
   const [frameworkNavigationIntent, setFrameworkNavigationIntent] =
     useState<FrameworkNavigationIntent | null>(null);
-  const navigateFramework = useCallback((href: string) => {
-    const destination = new URL(href, window.location.origin);
-    setFrameworkNavigationIntent({
-      sourcePath: routePath,
-      routePath: destination.pathname,
-      href: `${destination.pathname}${destination.search}${destination.hash}`,
-      mode: readWorkspaceModeQuery(destination.searchParams),
-    });
-    startFrameworkNavigation(() => routerRef.current.push(href));
-  }, [routePath]);
+  const navigateFramework = useCallback(
+    (href: string) => {
+      const destination = new URL(href, window.location.origin);
+      setFrameworkNavigationIntent({
+        sourcePath: routePath,
+        routePath: destination.pathname,
+        href: `${destination.pathname}${destination.search}${destination.hash}`,
+        mode: readWorkspaceModeQuery(destination.searchParams),
+      });
+      startFrameworkNavigation(() => routerRef.current.push(href));
+    },
+    [routePath]
+  );
   const [discoveredRouteMode, setDiscoveredRouteMode] =
     useState<DiscoveredRouteMode | null>(null);
   const routeMode =
@@ -203,7 +220,8 @@ export function WebsiteWorkspaceSurface({
     // navigating through that cache again. Later history visits remain free
     // to restore their own URL once this one-shot intent has been consumed.
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (current !== intent.href) window.history.replaceState(null, '', intent.href);
+    if (current !== intent.href)
+      window.history.replaceState(null, '', intent.href);
     setDiscoveredRouteMode({ routePath, mode: intent.mode });
     setFrameworkNavigationIntent(null);
   }, [frameworkNavigationIntent, routePath]);
@@ -212,6 +230,17 @@ export function WebsiteWorkspaceSurface({
     if (preserveFragment) url.hash = window.location.hash;
     return `${url.pathname}${url.search}${url.hash}`;
   }, []);
+
+  const canonicalModeHref = useCallback(
+    (mode: WorkspaceMode) => {
+      if (defaultMode === 'Docs')
+        return getCanonicalWebsiteWorkspaceHref(resolution, mode);
+      return mode === defaultMode
+        ? routePath
+        : `${routePath}?mode=${mode.toLowerCase()}`;
+    },
+    [resolution, defaultMode, routePath]
+  );
 
   const synchronizeRouteMode = useCallback(
     (mode: string | null) => {
@@ -271,10 +300,7 @@ export function WebsiteWorkspaceSurface({
   const pushMode = useCallback(
     (mode: WorkspaceMode) => {
       setFrameworkNavigationIntent(null);
-      const href = modeHref(
-        getCanonicalWebsiteWorkspaceHref(resolution, mode),
-        true
-      );
+      const href = modeHref(canonicalModeHref(mode), true);
       synchronizeRouteMode(
         readWorkspaceModeQuery(
           new URL(href, window.location.origin).searchParams
@@ -292,25 +318,21 @@ export function WebsiteWorkspaceSurface({
       }
       routerRef.current.push(href);
     },
-    [resolution, synchronizeRouteMode, modeHref, requestedMode]
+    [canonicalModeHref, synchronizeRouteMode, modeHref, requestedMode]
   );
 
   const replaceMode = useCallback(
     (mode: WorkspaceMode) => {
       setFrameworkNavigationIntent(null);
-      const href = modeHref(
-        getCanonicalWebsiteWorkspaceHref(resolution, mode),
-        true
-      );
+      const href = modeHref(canonicalModeHref(mode), true);
       synchronizeRouteMode(
         readWorkspaceModeQuery(
           new URL(href, window.location.origin).searchParams
         )
       );
       if (
-        mode === 'Docs' &&
         new URL(href, window.location.origin).pathname ===
-          window.location.pathname
+        window.location.pathname
       ) {
         // This corrects the current view's query without navigating through a
         // cached static route that can retain the original invalid query.
@@ -319,7 +341,7 @@ export function WebsiteWorkspaceSurface({
       }
       routerRef.current.replace(href);
     },
-    [resolution, synchronizeRouteMode, modeHref]
+    [canonicalModeHref, synchronizeRouteMode, modeHref]
   );
 
   const renderContextPane = useCallback<WorkspaceContextPaneRenderer>(
@@ -329,13 +351,25 @@ export function WebsiteWorkspaceSurface({
         <DocsContextContent
           {...docsContext}
           showFrameworkSelector={false}
+          frameworkSelector={
+            toolbarLayout ? (
+              <FrameworkSelector
+                scope={docsContext.scope}
+                documentId={docsContext.documentId}
+                targets={docsContext.frameworkTargets}
+                navigationPending={frameworkNavigationPending}
+                navigateTo={navigateFramework}
+                onNavigate={onNavigate}
+              />
+            ) : undefined
+          }
           mobile={Boolean(onAction)}
           onNavigate={onNavigate}
           onSearchHandoff={onAction ? () => onAction('search-docs') : undefined}
         />
       );
     },
-    [docsContext]
+    [docsContext, toolbarLayout, frameworkNavigationPending, navigateFramework]
   );
 
   const renderContextHeader = useCallback<WorkspaceContextPaneRenderer>(
@@ -408,11 +442,28 @@ export function WebsiteWorkspaceSurface({
       return;
     }
     document.getElementById(id)?.scrollIntoView({ block: 'start' });
-  }, [framework, routePath]);
+  }, [framework, routePath, routeMode]);
 
   return (
     <ThemeProvider theme="light">
-      <div className="website-workspace-host" data-website-workspace-host="" data-workspace-framework={framework} data-workspace-route={routePath}>
+      {docsContext ? (
+        <DocsSearch
+          key={routePath}
+          framework={
+            docsContext.scope === 'angular' || docsContext.scope === 'react'
+              ? docsContext.scope
+              : undefined
+          }
+          library={docsContext.activeLibrary ?? undefined}
+        />
+      ) : null}
+      <div
+        className="website-workspace-host"
+        data-website-workspace-host=""
+        data-docs-reading={readingLayout || undefined}
+        data-workspace-framework={framework}
+        data-workspace-route={routePath}
+      >
         <WorkspaceProvider
           key={framework}
           resolution={resolution}
@@ -421,6 +472,9 @@ export function WebsiteWorkspaceSurface({
           routePath={routePath}
           requestedMode={routeMode}
           docsSlot={docsSlot}
+          runFallbackSlot={runFallbackSlot}
+          apiSlot={apiSlot}
+          defaultMode={defaultMode}
           pushIdentity={pushIdentity}
           pushMode={pushMode}
           replaceMode={replaceMode}
@@ -433,6 +487,7 @@ export function WebsiteWorkspaceSurface({
           trackRuntimeTransition={trackRuntimeTransition}
         >
           <WorkspaceShell
+            navigationLayout={toolbarLayout ? 'toolbar' : 'rail'}
             resizableNavigation={Boolean(docsContext)}
             rootElement="section"
             navigationTree={navigationTree}
@@ -445,14 +500,20 @@ export function WebsiteWorkspaceSurface({
                     .find((entry) => entry.id === resolution.identity.id)
                 : undefined
             }
-            contextTrail={contextTrail}
+            contextTrail={
+              readingLayout
+                ? contextTrail?.slice(2, -1)
+                : contextTrail
+            }
             ariaLabel="Documentation workspace"
             modeNavigationLabel="Documentation modes"
             contextPaneLabel="Documentation context"
             mobileDialogLabel="Documentation control plane"
             mobileTitle="Documentation"
             renderContextPane={docsContext ? renderContextPane : undefined}
-            renderContextHeader={docsContext ? renderContextHeader : undefined}
+            renderContextHeader={
+              docsContext && !toolbarLayout ? renderContextHeader : undefined
+            }
             onContextAction={handleContextAction}
             onMobileModalPresenceChange={handleMobileModalPresenceChange}
           />

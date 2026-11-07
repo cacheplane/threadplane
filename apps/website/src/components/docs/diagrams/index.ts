@@ -1,10 +1,13 @@
 export { DiagramFrame } from './DiagramFrame';
+export { HumanApprovalFlow } from './HumanApprovalFlow';
 export { DiagramNode } from './DiagramNode';
 export { DiagramEdge } from './DiagramEdge';
 export { DiagramPill } from './DiagramPill';
 export { ConversationArchitecture, TurnSequence, RunState, ToolFlow, PersistenceModel } from './ConversationDiagrams';
 export { StackDiagram, type StackHighlight } from './StackDiagram';
 export { AgUiArchitecturePipeline } from './AgUiArchitecturePipeline';
+export { AgUiInterruptSequence } from './AgUiInterruptSequence';
+export { AgUiSubagentFlow } from './AgUiSubagentFlow';
 export { A2uiMessageFlow } from './A2uiMessageFlow';
 export { RenderHowItFits } from './RenderHowItFits';
 export { RenderVsA2ui } from './RenderVsA2ui';

@@ -3,27 +3,14 @@ import { WEBSITE_SUPPORTED_ANGULAR_MAJORS } from '../components/pricing/angular-
 import type { StageBeat } from './stage-beats';
 
 export const HERO_EYEBROW = 'LangGraph & AG-UI';
-export const HERO_H1 = 'The open-source thread-plane for Angular agents.';
+export const HERO_H1 = 'The open source (and free) threadplane for agents';
 /**
- * The H1 broken where it is meant to break: three lines, one thought each.
- * HERO_H1 stays the single source of truth — positioning.spec.ts asserts the
- * lines join back to it with single spaces, so the rendered heading, the
- * <title> and the social card cannot drift apart.
- *
- * The split is load-bearing for two generated images: opengraph-image.tsx and
- * github-card/route.tsx stack these as fixed lines at 60px and 62px. Measured
- * in Archivo Black at 60px with -0.02em tracking: 538 / 513 / 507px against a
- * ~536px column. "The open-source" is the widest and already shipped before
- * "Angular" was added, so the worst case did not move. Below 767px landing.css
- * flows the spans inline and drops the H1 to 36px, so the browser breaks the
- * sentence to the column instead — three lines, 116.63px. Both halves are
- * required: left as blocks at the shared token's 48px clamp floor, each span
- * takes a line and then wraps again.
+ * Shared phrase breaks for the homepage and fixed social-card frames.
  */
 export const HERO_H1_LINES: readonly string[] = [
-  'The open-source',
-  'thread-plane for',
-  'Angular agents.',
+  'The open source',
+  '(and free)',
+  'threadplane for agents',
 ];
 export const HERO_SUBHEAD =
   'Make agent work persistent, durable, visible, reviewable, and resumable.';
@@ -57,13 +44,13 @@ export const HERO_SECONDARY_LABEL = 'See it running in the docs →';
 export const HERO_SECONDARY_HREF = '/docs/angular/chat/guides/generative-ui?mode=run';
 
 /** Kept for layout.tsx default title and the OG image alt. */
-export const PRIMARY_TAGLINE = 'Threadplane — The open-source thread-plane for Angular agents';
+export const PRIMARY_TAGLINE = 'Threadplane — The open-source threadplane for agents';
 export const HOME_TITLE = PRIMARY_TAGLINE;
 export const HOME_DESCRIPTION =
-  'The open-source thread-plane for agents: chat, durable threads, persistence, human approvals, and generative UI for Angular, on LangGraph and AG-UI.';
+  'The open-source UI layer for agents: chat, durable threads, human approvals, and generative UI. Connect your app to LangGraph and AG-UI.';
 /** Longer form used by layout.tsx OG/Twitter defaults and the About page. */
 export const LONG_SUBHEAD =
-  'Threadplane is the open-source thread-plane for agents: signal-native chat, durable threads, persistence, human approvals, tool progress, subagents, and generative UI for Angular, on LangGraph and AG-UI — without replacing your backend or design system.';
+  'Threadplane is the open-source threadplane for agents: streaming chat, durable threads, persistence, human approvals, tool progress, subagents, and generative UI, on LangGraph and AG-UI — without replacing your backend or design system.';
 
 // ── Trust line (values verified by positioning.spec.ts + angular-support-copy.spec.ts) ──
 export function formatAngularRange(majors: readonly number[]): string {

@@ -133,7 +133,7 @@ describe('Docs mobile navigation', () => {
     ).toBe('/docs/choosing-an-adapter');
   });
 
-  it('keeps Pricing a plain link and retires the Demo dropdown', () => {
+  it('keeps Pricing a plain link and puts both demos in Demos', () => {
     pathnameRef.current = '/';
     render(<Nav />);
     const navigation = screen.getByRole('navigation');
@@ -141,9 +141,9 @@ describe('Docs mobile navigation', () => {
     expect(
       within(navigation).getByRole('link', { name: 'Pricing' }).getAttribute('href'),
     ).toBe('/pricing');
-    expect(within(navigation).queryByRole('button', { name: /^Demo/ })).toBeNull();
-
     fireEvent.click(within(navigation).getByRole('button', { name: 'Docs' }));
+    expect(screen.queryByRole('link', { name: /LangGraph demo/ })).toBeNull();
+    fireEvent.click(within(navigation).getByRole('button', { name: 'Demos' }));
     expect(
       screen.getByRole('link', { name: /LangGraph demo/ }).getAttribute('href'),
     ).toBe('https://demo.threadplane.ai');
@@ -188,12 +188,12 @@ describe('Docs mobile navigation', () => {
     pathnameRef.current = '/';
     render(<Nav />);
     const navigation = screen.getByRole('navigation');
-    fireEvent.click(within(navigation).getByRole('button', { name: 'Docs' }));
+    fireEvent.click(within(navigation).getByRole('button', { name: 'Demos' }));
     fireEvent.click(within(navigation).getByRole('link', { name: /LangGraph demo/ }));
 
     expect(trackExternalLinkClick).toHaveBeenCalledWith('https://demo.threadplane.ai', {
       surface: 'nav',
-      cta_id: 'nav_docs_demo_langgraph',
+      cta_id: 'nav_demos_langgraph',
       cta_text: 'LangGraph demo',
     });
   });
@@ -208,6 +208,18 @@ describe('Docs mobile navigation', () => {
     ).toBe('https://github.com/cacheplane/threadplane');
   });
 
+  it.each([1234, 0])('shows %s GitHub stars in desktop and mobile navigation', (stars) => {
+    pathnameRef.current = '/';
+    render(<Nav githubStars={stars} />);
+    const count = stars.toLocaleString('en-US');
+    const desktopLink = screen.getByRole('link', { name: `GitHub repository, ${count} stars` });
+    expect(within(desktopLink).getByText(count)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' });
+    expect(within(dialog).getByLabelText(`${count} stars`).textContent).toBe(count);
+  });
+
   it('opens pre-pushed to the docs tree on a docs route, with no tab strip', () => {
     pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
@@ -216,7 +228,8 @@ describe('Docs mobile navigation', () => {
 
     expect(within(dialog).queryByRole('button', { name: 'Site' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Search docs' })).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Guides' })).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Back to menu' })).toBeTruthy();
   });
 

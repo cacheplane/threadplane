@@ -92,6 +92,44 @@ test('geometry rejects fallback fonts, overlap, clipped labels, and page overflo
   ).toContain('Nodes overlap: a / b');
 });
 
+test('network geometry rejects unrelated-node label collisions and shrinking', () => {
+  const clean = {
+    viewportWidth: 1440,
+    documentWidth: 1440,
+    fontsLoaded: true,
+    canvas: { x: 0, y: 0, width: 640, height: 300 },
+    naturalWidth: 640,
+    articleWidth: 700,
+    nodes: [{ id: 'a', box: { x: 10, y: 10, width: 180, height: 80 } }],
+    texts: [
+      { text: 'connection', box: { x: 250, y: 100, width: 100, height: 20 } },
+    ],
+  };
+  expect(geometryIssues(clean)).toEqual([]);
+  expect(
+    geometryIssues({
+      ...clean,
+      texts: [
+        { text: 'connection', box: { x: 20, y: 20, width: 100, height: 20 } },
+      ],
+    })
+  ).toContain('Relationship label overlaps node: connection');
+  expect(
+    geometryIssues({ ...clean, canvas: { ...clean.canvas, width: 500 } })
+  ).toContain('Diagram shrunk below natural size');
+  expect(geometryIssues({ ...clean, articleWidth: 600 })).toContain(
+    'Diagram overflows desktop article'
+  );
+  expect(
+    geometryIssues({
+      ...clean,
+      viewportWidth: 320,
+      documentWidth: 320,
+      articleWidth: 280,
+    })
+  ).toEqual([]);
+});
+
 test('central route inventory includes both supported framework readings and all diagram kinds', () => {
   expect(
     DOCS_AUDIT_ROUTES.filter((route) => route.video).map((route) => route.path)

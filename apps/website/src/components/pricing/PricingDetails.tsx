@@ -1,5 +1,4 @@
 import { TIERS, type TierSlug } from '../../../../../pricing/tiers.config';
-import { Eyebrow } from '../ui/Eyebrow';
 
 type ComparisonCells = Record<TierSlug, string>;
 
@@ -66,54 +65,28 @@ const COMPARISON_ROWS: readonly ComparisonRow[] = [
   },
 ];
 
-export function ArchitectureBoundary() {
+function ComparisonValue({ value }: { value: string }) {
+  if (value !== 'Included' && value !== 'Not included') return <>{value}</>;
+  const included = value === 'Included';
   return (
-    <div className="pricing-boundary">
-      <div className="pricing-section-heading-wrap">
-        <div className="pricing-section-rail">
-          <Eyebrow tone="accent" className="pricing-section-kicker">What you are buying</Eyebrow>
-          <span className="pricing-section-rail-line" aria-hidden="true" />
-        </div>
-        <h2 id="pricing-value-heading" className="pricing-section-heading">
-          Open software. Commercial support when you want it.
-        </h2>
-        <p className="pricing-section-body">
-          Every Threadplane package and capability is available under MIT. Paid
-          engagements add expertise, response commitments, and delivery
-          support—not a different build or permission to use the software.
-        </p>
-      </div>
-      <div
-        className="pricing-boundary-flow"
-        aria-label="Threadplane deployment architecture"
-      >
-        <div className="pricing-boundary-block">
-          <span className="pricing-boundary-label">Your product</span>
-          <strong>Your Angular application</strong>
-        </div>
-        <span className="pricing-boundary-arrow" aria-hidden="true">
-          →
-        </span>
-        <div className="pricing-boundary-block" data-accent>
-          <span className="pricing-boundary-label">MIT software</span>
-          <strong>Threadplane UI packages</strong>
-        </div>
-        <span className="pricing-boundary-arrow" aria-hidden="true">
-          →
-        </span>
-        <div className="pricing-boundary-block">
-          <span className="pricing-boundary-label">Customer-operated</span>
-          <strong>
-            Your agent runtime, models, storage, and infrastructure
-          </strong>
-        </div>
-      </div>
-      <p className="pricing-boundary-note">
-        Threadplane does not host your agents or conversations. Runtime
-        behavior, durable persistence, retention, and infrastructure costs are
-        determined by the connected backend and providers.
-      </p>
-    </div>
+    <svg
+      className="pricing-inclusion-icon"
+      data-included={included}
+      role="img"
+      aria-label={value}
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <title>{value}</title>
+      <circle cx="12" cy="12" r="9" />
+      {included ? <path d="m8 12 3 3 5-6" /> : <path d="M8 12h8" />}
+    </svg>
   );
 }
 
@@ -121,16 +94,14 @@ export function PricingComparison() {
   return (
     <div className="pricing-comparison">
       <div className="pricing-section-heading-wrap">
-        <div className="pricing-section-rail">
-          <Eyebrow tone="accent" className="pricing-section-kicker">Full comparison</Eyebrow>
-          <span className="pricing-section-rail-line" aria-hidden="true" />
-        </div>
         <h2 id="pricing-comparison-heading" className="pricing-section-heading">
-          What changes between paths.
+          Choose your ground crew.
         </h2>
         <p className="pricing-section-body">
-          The software is identical on every path — MIT, all of it. What
-          changes is support.
+          The software is identical on every path — MIT, all of it. What changes
+          is support. Community is free; Production Assurance and enterprise
+          engagements are custom-priced. Pilot-to-Prod and agent builds are
+          separately scoped delivery work.
         </p>
       </div>
       <div className="pricing-comparison-scroll">
@@ -143,7 +114,11 @@ export function PricingComparison() {
         >
           <thead role="rowgroup">
             <tr role="row">
-              <th scope="col" role="columnheader" className="pricing-comparison-feature-col">
+              <th
+                scope="col"
+                role="columnheader"
+                className="pricing-comparison-feature-col"
+              >
                 Plan detail
               </th>
               {TIERS.map((tier) => (
@@ -162,7 +137,11 @@ export function PricingComparison() {
           <tbody role="rowgroup">
             {COMPARISON_ROWS.map((row) => (
               <tr key={row.label} role="row">
-                <th scope="row" role="rowheader" className="pricing-comparison-row-heading">
+                <th
+                  scope="row"
+                  role="rowheader"
+                  className="pricing-comparison-row-heading"
+                >
                   {row.label}
                 </th>
                 {TIERS.map((tier) => (
@@ -172,7 +151,7 @@ export function PricingComparison() {
                     data-label={tier.displayName}
                     data-highlight={tier.highlight || undefined}
                   >
-                    {row.cells[tier.slug]}
+                    <ComparisonValue value={row.cells[tier.slug]} />
                   </td>
                 ))}
               </tr>

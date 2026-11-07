@@ -27,7 +27,7 @@ for (const frontend of ['angular', 'react'] as const) {
         'data-hydrated',
         'true'
       );
-      await expect(page.getByLabel('Framework')).toHaveValue(frontend);
+      await expect(page.getByLabel('Framework', { exact: true })).toHaveAttribute('data-value', frontend);
       const path =
         frontend === 'react'
           ? 'cockpit/render/spec-rendering/react/src/playback.ts'

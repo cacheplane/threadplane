@@ -75,13 +75,21 @@ describe('nav-config', () => {
     expect(thin).toEqual([]);
   });
 
-  it('names four triggers, in order', () => {
+  it('gives demos their own top-level dropdown', () => {
     expect(NAV_TRIGGERS.map((trigger) => trigger.label)).toEqual([
       'Libraries',
       'Docs',
+      'Demos',
       'Solutions',
       'Pricing',
     ]);
+    const demos = NAV_TRIGGERS.find((trigger) => trigger.id === 'demos');
+    const docs = NAV_TRIGGERS.find((trigger) => trigger.id === 'docs');
+    expect(demos?.kind === 'panel' && demos.panel.columns.flatMap((column) => column.items).map((item) => item.href)).toEqual([
+      'https://demo.threadplane.ai',
+      'https://ag-ui.threadplane.ai',
+    ]);
+    expect(docs?.kind === 'panel' && docs.panel.columns.flatMap((column) => column.items).some((item) => item.external)).toBe(false);
   });
 
   /**

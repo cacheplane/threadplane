@@ -1054,14 +1054,19 @@ describe('CI workflow', () => {
     assert.ok(job.indexOf(build) < job.indexOf(packages));
     assert.ok(job.indexOf('run-many -t build --projects=$LIBS') < job.indexOf(packages));
   });
-  it('verifies stage scrolling and interaction against the matching local replay build', async () => {
+  it('verifies the redesigned homepage against the existing production build', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const step = readNamedStep(readJobBlock(workflow, 'website-production-checks'), 'Stage scroll verification (scroll-craft harness)');
-    assert.match(step, /NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http:\/\/localhost:4200/);
-    assert.match(step, /nx serve examples-chat-angular --configuration=production --port=4200/);
-    assert.match(step, /nx build website --configuration=production --skip-nx-cache/);
-    assert.match(step, /STAGE_LIVE_FRAME=true BASE_URL=http:\/\/127\.0\.0\.1:4308/);
-    assert.match(step, /scroll-craft\/verify-home\.mjs/);
+    const job = readJobBlock(workflow, 'website-production-checks');
+    const step = readNamedStep(job, 'Homepage layout and interactions (production build)');
+    assert.match(step, /nx serve website --configuration=production --port=4308/);
+    assert.match(step, /BASE_URL=http:\/\/127\.0\.0\.1:4308/);
+    for (const spec of ['home-hero', 'home-capabilities', 'home-airport', 'home-architecture', 'home-no-runtime', 'home-editorial', 'home-stage']) {
+      assert.ok(step.includes(`${spec}.spec.ts`), `production homepage gate must run ${spec}`);
+    }
+    assert.ok(job.indexOf('Public copy boundary (production build)') < job.indexOf(step));
+    assert.doesNotMatch(step, /nx build website|examples-chat-angular|STAGE_LIVE_FRAME|NEXT_PUBLIC_STAGE_DEMO_ORIGIN|scroll-craft|ffmpeg/);
+    assert.match(job, /name: Upload homepage browser report/);
+    assert.match(job, /path: dist\/homepage-report/);
   });
   it('scopes every vercel promote to the team that owns the deployment', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
@@ -2463,5 +2468,4 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
   }
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
-  assert.match(workflow, /sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'/);
 });

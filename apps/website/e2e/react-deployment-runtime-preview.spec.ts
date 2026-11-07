@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
@@ -5,7 +6,7 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
   page,
 }, testInfo) => {
   await page.goto('/docs/react/langgraph/guides/deployment');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React deployment runtime preview',
@@ -23,15 +24,13 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
   await page.screenshot({
     path: testInfo.outputPath('react-deployment-runtime-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(
     '/docs/react/langgraph/guides/deployment?mode=code'
   );
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page).toHaveURL(
@@ -48,7 +47,7 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
   await expect(page).toHaveURL(
     '/docs/react/langgraph/guides/deployment?mode=run'
   );
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
     '/docs/react/langgraph/guides/deployment?mode=run'

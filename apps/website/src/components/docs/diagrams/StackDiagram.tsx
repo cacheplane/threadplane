@@ -22,6 +22,7 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
   const backends = highlight === 'runtimes';
   return (
     <DiagramFrame
+      title="How the Threadplane stack fits together"
       slug={slug}
       viewWidth={640}
       viewHeight={344}

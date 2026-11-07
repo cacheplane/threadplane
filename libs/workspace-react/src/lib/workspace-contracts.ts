@@ -45,6 +45,8 @@ export interface WorkspaceContextValue {
   readonly presentation: WorkspacePresentation;
   readonly contentBundle: ContentBundle;
   readonly docsSlot: ReactNode;
+  readonly runFallbackSlot?: ReactNode;
+  readonly apiSlot?: ReactNode;
   readonly activeMode: WorkspaceMode;
   readonly modeAvailability: WorkspaceModeAvailabilityMap;
   readonly activeUtility: WorkspaceUtility;

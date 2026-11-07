@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 const route = '/docs/angular/deep-agents/capabilities/memory';
@@ -36,7 +37,7 @@ test.describe('React Deep Agents Memory', () => {
   }
   async function emptyRun(page: Page, draft = '') {
     await hydrated(page, 'run');
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
     await expect(page.locator('iframe')).toBeVisible();
     await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -65,7 +66,7 @@ test.describe('React Deep Agents Memory', () => {
       waitUntil: 'domcontentloaded',
     });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Memory preview',
@@ -87,8 +88,7 @@ test.describe('React Deep Agents Memory', () => {
       path: testInfo.outputPath('react-deep-agents-memory-docs-mobile.png'),
     });
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Code', exact: true })
       .click();
     await hydrated(page, 'code');
@@ -131,8 +131,7 @@ test.describe('React Deep Agents Memory', () => {
     await graph.click();
     await expect(page.getByRole('tabpanel')).toContainText('create_deep_agent');
     await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: /^Run(?:,|$)/ })
       .click();
     await emptyRun(page);
@@ -168,7 +167,7 @@ test.describe('React Deep Agents Memory', () => {
   }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Memory preview',
@@ -208,8 +207,7 @@ test.describe('React Deep Agents Memory', () => {
       page.frameLocator('iframe').getByLabel('Message', { exact: true })
     ).toHaveValue('Unsent history draft');
     const before = [...(observations.get(page)?.requests ?? [])];
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Code', exact: true })
       .click();
     await hydrated(page, 'code');
@@ -277,13 +275,12 @@ test.describe('React Deep Agents Memory', () => {
       .frameLocator('iframe')
       .getByLabel('Message', { exact: true })
       .fill('Old frontend draft');
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Docs', exact: true })
       .click();
     await hydrated(page, 'docs');
     await selectFramework(page, 'angular');
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Memory preview',
@@ -300,8 +297,7 @@ test.describe('React Deep Agents Memory', () => {
         exact: true,
       })
     ).toBeVisible();
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: /^Run(?:,|$)/ })
       .click();
     await emptyRun(page);

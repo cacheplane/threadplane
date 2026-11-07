@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Home page — Recent articles', () => {
   test('renders the section header on /', async ({ page }) => {
     await page.goto('/');
-    // Stable id, not copy — copy changes more often than structure.
+    // Keep the section's accessible heading aligned with the homepage copy.
     await expect(page.locator('#recent-articles-heading')).toBeVisible();
-    await expect(page.locator('#recent-articles-heading')).toHaveText(/Recent articles/i);
+    await expect(page.locator('#recent-articles-heading')).toHaveText('Notes from the flight deck.');
   });
 
   test('shows at least one post card linking to /blog/<slug>', async ({ page }) => {

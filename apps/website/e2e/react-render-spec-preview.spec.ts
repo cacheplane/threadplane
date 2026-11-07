@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
@@ -37,7 +38,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function expectFreshRun(page: Page) {
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === reactRoute &&
@@ -81,7 +82,7 @@ test('React Render Spec keeps local Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
   await page.goto(`${reactRoute}`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React Render Spec preview',
@@ -94,7 +95,7 @@ test('React Render Spec keeps local Docs, Code and Run aligned', async ({
     )
   ).toBeVisible();
   await expect(page.locator('[data-example-file*="/python/"]')).toHaveCount(0);
-  const navigation = page.locator('[data-workspace-desktop-navigation]');
+  const navigation = documentationModes(page);
   await navigation.getByRole('button', { name: 'Code', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=code/);
@@ -114,7 +115,7 @@ test('React Render Spec restores fresh playback through frontend history', async
   await expectFreshRun(page);
   await renderChangedSample(page);
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/mode=run/);
   await expect(page.locator('iframe')).toHaveAttribute(

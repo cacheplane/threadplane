@@ -8,10 +8,14 @@ import {
   parseGitLog,
   sourcePathsForRoute,
   getPostsByRoute,
+  computeGitTimes,
 } from './sitemap-dates';
 import { getSitemapRoutes } from './site-metadata';
 import { execFileSync } from 'node:child_process';
 import { resolveWebsiteDir } from './website-dir';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
@@ -20,6 +24,58 @@ const GRAFT = 'c'.repeat(40);
 function header(seconds: number, sha: string): string {
   return `commit-time ${seconds} ${sha}`;
 }
+
+describe('computeGitTimes', () => {
+  it('dates merge-only changes without re-dating files inherited from a parent', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sitemap-dates-'));
+    const git = (args: string[], seconds = 1000000000) =>
+      execFileSync('git', args, {
+        cwd: root,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          GIT_AUTHOR_DATE: `${seconds} +0000`,
+          GIT_COMMITTER_DATE: `${seconds} +0000`,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    const writePage = (name: string) => {
+      const file = path.join(root, 'apps/website/src/app', name, 'page.tsx');
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, name);
+    };
+    try {
+      git(['init', '--initial-branch=main']);
+      git(['config', 'user.name', 'Sitemap Test']);
+      git(['config', 'user.email', 'sitemap@example.test']);
+      git(['config', 'commit.gpgsign', 'false']);
+      writePage('base');
+      git(['add', '.']);
+      git(['commit', '-m', 'Base']);
+      git(['checkout', '-b', 'feature']);
+      writePage('inherited');
+      git(['add', '.']);
+      git(['commit', '-m', 'Feature'], 1000000100);
+      git(['checkout', 'main']);
+      writePage('main');
+      git(['add', '.']);
+      git(['commit', '-m', 'Main'], 1000000200);
+      git(['merge', '--no-commit', '--no-ff', 'feature']);
+      writePage('docs/examples');
+      git(['add', '.']);
+      git(['commit', '-m', 'Merge with examples page'], 1000000300);
+
+      const history = computeGitTimes(root);
+      expect(history?.hasFullHistory).toBe(true);
+      expect(history?.times.get('src/app/docs/examples/page.tsx')).toBe(1000000300);
+      expect(history?.times.get('src/app/inherited/page.tsx')).toBe(1000000100);
+      expect(history?.times.get('src/app/main/page.tsx')).toBe(1000000200);
+      expect(history?.times.get('src/app/base/page.tsx')).toBe(1000000000);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('parseGitLog', () => {
   it('takes the newest commit that touched each path', () => {

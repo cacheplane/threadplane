@@ -144,6 +144,11 @@ const activeWorkspaceMode = (): string | undefined =>
   document.querySelector<HTMLElement>('[data-workspace-shell]')?.dataset
     .workspaceMode;
 
+const chooseReactFramework = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Framework' }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'React' }));
+};
+
 describe('WebsiteWorkspace', () => {
   const frameworkRoute = (framework: 'angular' | 'react') => {
     const path = `/docs/${framework}/langgraph/guides/streaming`;
@@ -165,7 +170,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState({}, '', `/docs/angular/langgraph/guides/streaming${query}#ownership`);
     const view = render(frameworkRoute('angular'));
     await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
-    fireEvent.change(screen.getByLabelText('Framework'), { target: { value: 'react' } });
+    chooseReactFramework();
     expect(mocks.push).toHaveBeenCalledWith(`/docs/react/langgraph/guides/streaming${query}#ownership`);
 
     // Production's static route cache can restore the query from its first visit.
@@ -189,7 +194,7 @@ describe('WebsiteWorkspace', () => {
   it('does not apply a superseded framework intent after browser history navigation', async () => {
     window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming');
     const view = render(frameworkRoute('angular'));
-    fireEvent.change(screen.getByLabelText('Framework'), { target: { value: 'react' } });
+    chooseReactFramework();
     act(() => {
       window.history.replaceState({}, '', '/docs/react/langgraph/guides/streaming?mode=code');
       window.dispatchEvent(new PopStateEvent('popstate'));
@@ -225,7 +230,7 @@ describe('WebsiteWorkspace', () => {
           react: { href: '/docs/react/langgraph/guides/streaming', modes: ['Docs', 'Code'], anchors: [] },
         } } });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
-    fireEvent.change(screen.getByLabelText('Framework'), { target: { value: 'react' } });
+    chooseReactFramework();
     expect(mocks.push).toHaveBeenCalledWith('/docs/react/langgraph/guides/streaming?mode=code');
   });
 
@@ -375,7 +380,7 @@ describe('WebsiteWorkspace', () => {
     ],
     ['unmapped', docsOnlyResolution],
   ] as const)(
-    'renders Website Learn and Search context for %s Docs routes',
+    'renders compact Website navigation and Search for %s Angular Docs routes',
     (_kind, resolution) => {
       renderWorkspace({
         resolution,
@@ -390,7 +395,8 @@ describe('WebsiteWorkspace', () => {
         },
       });
 
-      expect(screen.getByText('Learn')).toBeTruthy();
+      expect(screen.queryByText('Learn')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Guides' })).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Search docs' })).toBeTruthy();
     }
   );

@@ -1,12 +1,21 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "07d9b8905575e67a548058e0030498ec2cf9bb9b",
+  "baselineHead": "d5da6264309d2fd5500746e9649d095942de234f",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/lib/to-agent.ts",
-      "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
-      "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-      "libs/cockpit-a2ui-react/src/views.tsx"
+      ".github/workflows/ci.yml",
+      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
+      "apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "apps/website/content/docs/react/getting-started/workbench.mdx",
+      "libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
+      "libs/workspace-react/src/lib/components/mobile-nav-overlay.tsx",
+      "libs/workspace-react/src/lib/components/workspace-toolbar.tsx",
+      "libs/workspace-react/src/lib/navigation-resize.tsx",
+      "libs/workspace-react/src/lib/workspace-contracts.ts",
+      "libs/workspace-react/src/lib/workspace-provider.tsx",
+      "libs/workspace-react/src/lib/workspace-shell.tsx",
+      "libs/workspace-react/src/styles/workspace.css"
     ],
     "untracked": []
   },
@@ -1052,7 +1061,7 @@
       "id": "asset:libs/workspace-react/src/styles/workspace.css",
       "kind": "asset",
       "path": "libs/workspace-react/src/styles/workspace.css",
-      "sha256": "3774931b44047d48dced6dd40f2f17c9cb9537f32ca3aa2fdc37e3c28caf764f"
+      "sha256": "4f9f58e5437c70ab23a817b7cccc15c0fb3f32c9347c52cbef540b17d3714c3d"
     },
     {
       "id": "asset:libs/workspace-react/tsconfig.json",
@@ -2190,7 +2199,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "687724e1e0505355104dc2a3088cf14d9e3c7082e510c59113261df8958d3aba"
+      "sha256": "0904d33605dd4f4d1fa24ab4c6491480fc7aef18a85e21aa58ec6ee6c0612ef7"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -2382,7 +2391,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "sha256": "fd9e71b21e72e6fcff5a7a7d5562826c402b31fa7acc54a88254dba02fce9025"
+      "sha256": "39a5b10c5049d21cd26fa45ba03b8c2f4d773773648f61fae32b8f26567e458f"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/json-render.mdx",
@@ -2394,7 +2403,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
-      "sha256": "bb7431044c2528160caaf21d60289267d76266b8f8ab2bb11ea6985f149b8c17"
+      "sha256": "2f64da005224dee3fe757e9324817a1701c87971d20912c66f9f2c746845b5af"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/testing.mdx",
@@ -2718,7 +2727,7 @@
       "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "sha256": "78302c1e82db176523aba6336ee6939fa159de1bd9a4ee35c27ec35623b99cf6"
+      "sha256": "aa1c1efa89bc9b386e16b8a6ade2377948900d7e2dd87771bad33c495ae04013"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
@@ -3126,7 +3135,7 @@
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "sha256": "884be77c127a02d908742607cfc894c03abba8442d28b8712f9d36d5eee4504d"
+      "sha256": "275f63c6fcf13c236bbf979126e03993590f74a23d30eeae643042ede7bd1ff2"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",
@@ -16907,7 +16916,7 @@
       "id": "source:libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/control-plane/cockpit-control-plane.tsx",
-      "sha256": "27b5f6d97bfdfbcff901c5c74f2b0356b559adecf21cfbf21fc9d6e8fd1de684"
+      "sha256": "206b0643f0264c050f758af4c01de66847372cb13f4d85c07e4ef9133dcb9b56"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/control-plane/control-plane-overflow-menu.tsx",
@@ -16931,7 +16940,7 @@
       "id": "source:libs/workspace-react/src/lib/components/mobile-nav-overlay.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/mobile-nav-overlay.tsx",
-      "sha256": "93475a450e256fb51024c3413e3f981755edec06a4bba5c374ef38d4df2bbc43"
+      "sha256": "bfa6cca257ae78c43ea2e543ead05ee9f2f448db459412f5efbd0ef9e734de96"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/modes/mode-switcher.tsx",
@@ -16970,6 +16979,12 @@
       "sha256": "dfb203074f309230f745ca61044a3f28fd34c5fd0cb3ee7aa5fb8c031a471190"
     },
     {
+      "id": "source:libs/workspace-react/src/lib/components/workspace-toolbar.tsx",
+      "kind": "source",
+      "path": "libs/workspace-react/src/lib/components/workspace-toolbar.tsx",
+      "sha256": "1e867b5265d01d7d166f2e156b50c9f8bc574076cd69c43a08f91b1108797815"
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/host-services.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/host-services.ts",
@@ -16991,7 +17006,7 @@
       "id": "source:libs/workspace-react/src/lib/navigation-resize.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/navigation-resize.tsx",
-      "sha256": "fa96469e46f0ce8d89cc8f13226bc77523ae41ddf5fde4ae3b4ca149f4665d72"
+      "sha256": "1b217acddafdfe59c5cc8960d2c49170ea6e634b286e54750e4ee6117415c3a7"
     },
     {
       "id": "source:libs/workspace-react/src/lib/runtime-contracts.ts",
@@ -17045,7 +17060,7 @@
       "id": "source:libs/workspace-react/src/lib/workspace-contracts.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-contracts.ts",
-      "sha256": "9339129c87227fc03332c4db0a46055613663b24226f7b8fff138d3413f6fde7"
+      "sha256": "6a28d803648fcf4d3b8b0234438d37c081d0935569e3f688a5ce090f61ed7dbb"
     },
     {
       "id": "source:libs/workspace-react/src/lib/workspace-navigation.ts",
@@ -17057,13 +17072,13 @@
       "id": "source:libs/workspace-react/src/lib/workspace-provider.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-provider.tsx",
-      "sha256": "20d69639854308e34e008b67e51e0eadce3a79b1696b8ef7cdae502bcfb11e8d"
+      "sha256": "66a7cfa741d27a82c0a792b6c71ff8d211442e714d9ada0b3684e3736691e235"
     },
     {
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "sha256": "7a33e4a23d19ab0ebdee4ab0a71d85ebfc2bccb7f4ec4b8f69e22b650058991d"
+      "sha256": "1ef62674c49e38024866c5a6474a2d43a96c119d0e1df7e7bc1594a66f61f965"
     },
     {
       "id": "source:libs/workspace-react/vite.config.mts",

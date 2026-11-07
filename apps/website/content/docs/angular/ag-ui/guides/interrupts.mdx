@@ -6,6 +6,8 @@ description: Approve and cancel AG-UI interrupts with generation-aware controls,
 
 Interrupts let an AG-UI agent pause mid-run and hand control to a human. The agent proposes an action, the run freezes, your Angular UI shows an approval card, the person decides, and the agent resumes with that decision. `injectAgent()` from `@threadplane/ag-ui` surfaces the pending interrupt as an Angular Signal, so the approval flow needs no manual event wiring. The running example is a refund authorization, and this guide walks the four files that make it work.
 
+<HumanApprovalFlow />
+
 <Callout type="info" title="When to use interrupts">
 Use interrupts when an agent action is irreversible (sending an email, placing an order, issuing a refund), when the agent needs a human decision it cannot make on its own, or when compliance requires explicit approval before execution.
 </Callout>
@@ -19,6 +21,8 @@ Two welcome suggestions set it up. "Refund a duplicate charge" asks for $47.50 b
 Approve resumes the graph, which issues a stand-in refund and posts the refund ID into the transcript. Cancel resumes it with a rejection, and the graph says so and issues nothing. Edit keeps the card open, reveals an amount field, and resumes with an amount the operator chose rather than the one the agent proposed.
 
 ## How it is built
+
+<AgUiInterruptSequence />
 
 Four files carry the feature: a LangGraph graph that stops in the middle of a run, a FastAPI server that fronts it with the AG-UI protocol, an application config that registers the agent, and a component that maps the card's three buttons onto resume payloads. Open the Code tab to read them in place.
 

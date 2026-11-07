@@ -14,6 +14,7 @@ const SLUG = 'render-how-it-fits';
 export function RenderHowItFits() {
   return (
     <DiagramFrame
+      title="From a JSON spec to your Angular components"
       slug={SLUG}
       viewWidth={640}
       viewHeight={280}

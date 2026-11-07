@@ -101,11 +101,11 @@ export const SOLUTIONS: SolutionConfig[] = [
     painPoints: [
       {
         title: 'Black-box AI decisions',
-        description: 'Regulators require explainability. Most agent frameworks stream opaque outputs with no tool-call history.',
+        description: 'An answer alone cannot explain a decision. Reviewers need the tool activity, context, and human decisions that led to it.',
       },
       {
         title: 'No human gate before action',
-        description: 'SOX, HIPAA, and GDPR demand human approval before consequential actions. Retrofitting interrupts is a rewrite.',
+        description: 'Sensitive workflows need a clear place for a person to review a proposed action. That decision belongs in the flow, with the context to make it.',
       },
       {
         title: 'Untestable agent behavior',
@@ -131,7 +131,7 @@ export const SOLUTIONS: SolutionConfig[] = [
       },
     ],
     proofPoints: [
-      { metric: 'Every', label: 'Agent action recorded — tool calls, interrupts, and state transitions captured in the thread record' },
+      { metric: 'Recorded', label: 'Tool calls, interrupts, and state transitions captured in the thread record' },
       { metric: 'Evidenced', label: 'Each approval is written into the checkpoint beside the action it gated — the decision and the proposal are one record' },
       { metric: 'Replayable', label: 'Thread persistence preserves the full decision path for review by auditors and your compliance team' },
     ],
@@ -188,7 +188,7 @@ export const SOLUTIONS: SolutionConfig[] = [
     slug: 'analytics',
     eyebrow: 'Analytics & BI',
     title: 'Natural language queries.\nReal-time dashboards.',
-    subtitle: 'Your users ask questions in plain English. The agent queries, visualizes, and streams results — all inside your Angular app.',
+    subtitle: 'Your users ask questions in plain English. The agent queries, visualizes, and streams results — all inside your product.',
     painPoints: [
       {
         title: 'BI tools users won\'t adopt',

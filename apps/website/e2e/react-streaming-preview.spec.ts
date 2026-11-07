@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { frameworkControl, selectFramework } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
@@ -5,7 +6,7 @@ test('public React selection keeps docs, code, runtime and history consistent', 
   page,
 }, testInfo) => {
   await page.goto('/docs/react/langgraph/guides/streaming');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', { name: 'React streaming preview', exact: true })
   ).toBeVisible();
@@ -15,8 +16,7 @@ test('public React selection keeps docs, code, runtime and history consistent', 
       '[data-example-file="cockpit/langgraph/streaming/react/src/app.tsx"]'
     )
   ).toBeVisible();
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(/\/docs\/react\//);
@@ -24,8 +24,7 @@ test('public React selection keeps docs, code, runtime and history consistent', 
     'data-workspace-mode',
     'Code'
   );
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   const frame = page.locator('iframe');
@@ -41,18 +40,18 @@ test('public React selection keeps docs, code, runtime and history consistent', 
     /(?:localhost:4300|langgraph\/streaming(?:\?|$))/
   );
   await page.goBack();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4600|langgraph\/streaming\/react)/
   );
   await page.reload();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4600|langgraph\/streaming\/react)/
   );
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Docs', exact: true }).click();
+  await documentationModes(page).getByRole('button', { name: 'Docs', exact: true }).click();
   await page.locator('[data-docs-control-plane-context]').getByRole('link', { name: 'Persistence', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/react\/langgraph\/guides\/persistence/);
   await expect(page.getByRole('heading', { name: 'React persistence preview', exact: true })).toBeVisible();
@@ -62,8 +61,13 @@ test('missing counterparts are explicit in mobile framework navigation', async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/docs/angular/langgraph/guides/testing');
   const control = await frameworkControl(page);
-  await expect(control).toHaveValue('angular');
-  await expect(control.locator('option[value="react"]')).toBeDisabled();
+  await expect(control).toHaveAttribute('data-value', 'angular');
+  await control.click();
+  await expect(
+    page.getByRole('menu', { name: 'Frameworks', exact: true })
+      .getByRole('menuitemradio', { name: 'React Unavailable for this topic', exact: true })
+  ).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
   await expect(page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction' })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
