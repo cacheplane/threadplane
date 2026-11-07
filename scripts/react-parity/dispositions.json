@@ -17107,6 +17107,13 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Private example scroll helper. React MessageList already owns equivalent bottom following and reading-position preservation; no additional public package contract."
+    },
+    {
+      "id": "source:libs/example-layouts/src/lib/example-viewport.ts",
+      "taskIds": ["T33"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular example shell viewport helper. The internal React ExampleLayout independently follows the same visual viewport for software keyboards; no public package contract."
     }
   ]
 }

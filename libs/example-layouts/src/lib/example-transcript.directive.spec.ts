@@ -35,6 +35,9 @@ it('follows content and viewport growth only while pinned and releases the obser
   fixture.detectChanges();
   await fixture.whenStable();
   const el = fixture.nativeElement.firstElementChild as HTMLElement;
+  expect(el.getAttribute('role')).toBe('region');
+  expect(el.getAttribute('aria-label')).toBe('Conversation');
+  expect(el.getAttribute('tabindex')).toBe('0');
   let top = 0,
     height = 900;
   Object.defineProperties(el, {
@@ -51,6 +54,12 @@ it('follows content and viewport growth only while pinned and releases the obser
   expect(top).toBe(900);
   expect(observe).toHaveBeenCalledWith(el);
   expect(observe).toHaveBeenCalledWith(el.firstElementChild);
+  // WebKit may deliver a programmatic scroll after another streamed chunk
+  // has grown the content. The reader has not moved toward older messages.
+  height = 1100;
+  el.dispatchEvent(new Event('scroll'));
+  notify();
+  expect(top).toBe(1100);
   top = 200;
   el.dispatchEvent(new Event('scroll'));
   height = 1200;

@@ -57,7 +57,7 @@
       "members": [],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-        "line": 21
+        "line": 23
       },
       "overloadIndex": 1,
       "parameters": [
@@ -86,6 +86,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-    "line": 21
+    "line": 23
   }
 }

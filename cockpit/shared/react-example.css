@@ -31,16 +31,19 @@
   color: var(--tp-chat-muted, var(--ds-text-muted, light-dark(#737373, #a0a0a0)));
 }
 .tp-example .tp-example__footer > [role='alert'] { color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80)); }
-.tp-example .tp-example__footer .tp-chat-input__textarea { max-height: min(320px, 20dvh); }
+.tp-example .tp-example__footer .tp-chat-input__textarea { max-height: min(320px, calc(var(--example-viewport-height, 100dvh) * 0.2)); }
 .tp-example__about {
   box-sizing: border-box;
 }
 .tp-example.tp-example {
+  position: fixed;
+  top: var(--example-viewport-top, 0px);
+  left: 0;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: none;
-  height: 100dvh;
+  height: var(--example-viewport-height, 100dvh);
   min-height: 0;
   min-width: 0;
   margin: 0;
@@ -161,8 +164,8 @@
   .tp-example__workspace { flex-direction: column; }
   .tp-example__about {
     width: 100%;
-    height: 20dvh;
-    max-height: 20dvh;
+    height: calc(var(--example-viewport-height, 100dvh) * 0.2);
+    max-height: calc(var(--example-viewport-height, 100dvh) * 0.2);
     border-inline-start: 0;
     border-top: 1px solid var(--tp-chat-border, var(--ds-border, light-dark(#e5e5e5, #2d2d2d)));
   }

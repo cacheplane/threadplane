@@ -1,5 +1,6 @@
 // libs/example-layouts/src/lib/example-split-layout.component.ts
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { installExampleViewport } from './example-viewport';
 
 @Component({
   selector: 'example-split-layout',
@@ -7,10 +8,14 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
+      position: fixed;
+      top: var(--example-viewport-top, 0px);
+      left: 0;
+      width: 100%;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      height: 100dvh;
+      height: var(--example-viewport-height, 100dvh);
       background: var(--tplane-chat-bg, #fff);
       color: var(--tplane-chat-text, #1a1a1a);
       font-family: var(--tplane-chat-font-family, system-ui, sans-serif);
@@ -58,8 +63,8 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
       border-top: 1px solid var(--tplane-chat-separator, #e5e5e5);
       background: var(--tplane-chat-bg, #fff);
       min-height: 0;
-      max-height: 20dvh;
-      height: 20dvh;
+      max-height: calc(var(--example-viewport-height, 100dvh) * 0.2);
+      height: calc(var(--example-viewport-height, 100dvh) * 0.2);
       overflow-y: auto;
     }
     .split__secondary:empty { display: none; }
@@ -103,6 +108,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   `,
 })
 export class ExampleSplitLayoutComponent {
+  constructor() { installExampleViewport(); }
   readonly title = input('');
   readonly description = input('');
 }
