@@ -221,6 +221,13 @@ export const createWebsitePlaywrightConfig = (
                   reuseExistingServer,
                 },
                 {
+                  command: 'npx nx run cockpit-chat-messages-angular:serve:cockpit --port 4501',
+                  cwd: '../..',
+                  url: 'http://localhost:4501',
+                  reuseExistingServer,
+                  timeout: 180_000,
+                },
+                {
                   command: 'npx nx run cockpit-render-computed-functions-angular:serve:cockpit --port 4406',
                   cwd: '../..',
                   url: 'http://localhost:4406',

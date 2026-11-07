@@ -29,6 +29,7 @@ import { MobileNavOverlay } from './components/mobile-nav-overlay';
 import { RunMode } from './components/run-mode/run-mode';
 import { PRODUCT_LABELS } from './navigation-labels';
 import { useWorkspace } from './workspace-provider';
+import { acquireWorkspaceViewport } from './viewport/workspace-viewport';
 import {
   NavigationResizeHandle,
   useNavigationWidth,
@@ -138,6 +139,12 @@ export function WorkspaceShell({
   onMobileModalPresenceChange,
 }: WorkspaceShellProps) {
   const RootElement = rootElement;
+  const rootRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const document = rootRef.current?.ownerDocument;
+    if (document) return acquireWorkspaceViewport(document);
+    return undefined;
+  }, []);
   const { width: navigationWidth, update: updateNavigationWidth } =
     useNavigationWidth(resizableNavigation);
   const workspace = useWorkspace();
@@ -346,6 +353,7 @@ export function WorkspaceShell({
 
   return (
     <RootElement
+      ref={rootRef}
       aria-label={ariaLabel}
       className="workspace-shell h-screen overflow-hidden"
       data-workspace-shell=""

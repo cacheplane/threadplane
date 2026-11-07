@@ -96,9 +96,17 @@ const CONTRACTS: StyleContract[] = [
     selector: '.website-workspace-host',
     why: 'The fixed site nav remains outside the workspace. This wrapper owns the remaining viewport and prevents the page footer from creating a second scroller.',
     requires: {
-      height: /height:\s*100dvh/,
+      height: /height:\s*100%/,
       'padding-top': /padding-top:\s*var\(--nav-h\)/,
       overflow: /overflow:\s*hidden/,
+    },
+  },
+  {
+    file: 'docs.css',
+    selector: 'body:has([data-website-workspace-host]) [data-site-navigation]',
+    why: 'Safari pans fixed chrome in layout-viewport coordinates; the site nav must stay aligned with the resized iframe host.',
+    requires: {
+      top: /top:\s*var\(--workspace-viewport-offset-top,\s*0px\)/,
     },
   },
   {
@@ -107,6 +115,8 @@ const CONTRACTS: StyleContract[] = [
     why: 'The shell fills the remaining height below the fixed site nav and frontend selector, without clipping its panels.',
     requires: {
       height: /height:\s*auto/,
+      position: /position:\s*static/,
+      top: /top:\s*auto/,
       flex: /flex:\s*1/,
       'min-height': /min-height:\s*0/,
     },
@@ -116,7 +126,8 @@ const CONTRACTS: StyleContract[] = [
     selector: '#site-content:has([data-website-workspace-host])',
     why: 'Workspace routes own the viewport beneath the global nav and must not inherit ordinary page/footer scrolling.',
     requires: {
-      height: /height:\s*100dvh/,
+      height: /height:\s*var\(--workspace-viewport-height,\s*100dvh\)/,
+      top: /top:\s*var\(--workspace-viewport-page-top,\s*0px\)/,
       overflow: /overflow:\s*hidden/,
     },
   },
