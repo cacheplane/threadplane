@@ -3,6 +3,8 @@ import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ChatInput, MessageList } from '@threadplane/react/chat';
+import { createStreamingInspection } from './inspection';
+import type { InspectionFrame } from './inspection';
 import {
   createConnectedApplication,
   type streamingConnection,
@@ -11,10 +13,17 @@ import {
 export function StreamingDemo({
   connection,
   onReady,
+  onInspection,
 }: {
   readonly connection: ReturnType<typeof streamingConnection>;
   readonly onReady: () => void;
+  readonly onInspection?: (frame: InspectionFrame) => void;
 }) {
+  const publisher = useRef(onInspection);
+  publisher.current = onInspection;
+  const [inspection] = useState(() =>
+    createStreamingInspection((frame) => publisher.current?.(frame))
+  );
   const [application, setApplication] = useState(() =>
     createConnectedApplication(connection)
   );
@@ -22,6 +31,7 @@ export function StreamingDemo({
   const [generation, setGeneration] = useState(0);
   const live = useRef(true);
   const snapshot = useAgent(application);
+  useEffect(() => inspection.attach(application), [application, inspection]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -34,13 +44,15 @@ export function StreamingDemo({
   useEffect(
     () => () => {
       live.current = false;
+      inspection.dispose();
     },
-    []
+    [inspection]
   );
 
   async function reset() {
     if (snapshot.busy || resetting) return;
     setResetting(true);
+    inspection.reset();
     await application.dispose();
     if (!live.current) return;
     setApplication(createConnectedApplication(connection));
@@ -87,7 +99,7 @@ export function StreamingDemo({
           onStop={snapshot.busy ? () => void application.stop() : undefined}
           onSubmit={(text) => {
             if (!application.getSnapshot().canSubmit) return false;
-            void application.submit(text);
+            void inspection.submit(application, text);
           }}
         />
         <p role="status">{status}</p>

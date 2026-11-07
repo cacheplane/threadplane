@@ -1,4 +1,5 @@
 export { COCKPIT_TELEMETRY_CONFIG } from './lib/tokens';
+export { COCKPIT_INSPECTION_PUBLISHER } from './lib/inspection-publisher';
 export type { CockpitTelemetryConfig } from './lib/tokens';
 export type { CockpitEventName } from './lib/events';
 export { readCockpitConfigFromIframe } from './lib/distinct-id';

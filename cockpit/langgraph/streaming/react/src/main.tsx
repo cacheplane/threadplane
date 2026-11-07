@@ -32,6 +32,7 @@ void bridge
       <StreamingDemo
         connection={streamingConnection(configuration)}
         onReady={() => bridge.markReady()}
+        onInspection={bridge.publishInspection}
       />
     );
   })

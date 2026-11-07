@@ -48,3 +48,12 @@ export * from './lib/components/sidebar/cockpit-sidebar';
 export * from './lib/components/sidebar/language-picker';
 export * from './lib/components/sidebar/navigation-groups';
 export * from './lib/components/ui/tabs';
+
+export {
+  useEmbeddedRuntimeController,
+  type UseEmbeddedRuntimeControllerOptions,
+} from './lib/runtime/use-runtime-controller';
+export {
+  RuntimeTargetSettings,
+  type RuntimeTargetSettingsProps,
+} from './lib/components/control-plane/runtime-target-settings';

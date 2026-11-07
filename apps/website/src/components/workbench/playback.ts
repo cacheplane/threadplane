@@ -1,3 +1,5 @@
+import type { InspectionFrame } from '@threadplane/cockpit-runtime-bridge';
+
 /** Playback owns only a cursor. It cannot submit, fetch, or execute a tool. */
 export interface Playback {
   readonly cursor: number;
@@ -52,6 +54,7 @@ export interface Observation {
     readonly text: string;
   }[];
   readonly state: Json;
+  readonly calls?: InspectionFrame['calls'];
   readonly requests: readonly {
     readonly id: string;
     readonly method: string;

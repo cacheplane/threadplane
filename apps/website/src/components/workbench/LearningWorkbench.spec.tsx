@@ -70,6 +70,81 @@ afterEach(() => {
 });
 
 describe('learning inspector', () => {
+  it('preserves historical reading position when new live observations arrive', () => {
+    const live = {
+      cursor: 1,
+      following: false,
+      onSeek: vi.fn(),
+      onReturn: vi.fn(),
+      conversation: <iframe title="App" />,
+    };
+    const view = render(
+      <LearningWorkbench framework="react" recording={recording} live={live} />
+    );
+    const pane = screen.getByRole('region', {
+      name: 'Recorded conversation messages',
+    });
+    pane.scrollTop = 50;
+    view.rerender(
+      <LearningWorkbench
+        framework="react"
+        recording={{
+          ...recording,
+          frames: recording.frames.map((frame) => ({ ...frame })),
+        }}
+        live={live}
+      />
+    );
+    expect(pane.scrollTop).toBe(50);
+  });
+  it('keeps the live application mounted but inert during historical inspection and labels calls honestly', () => {
+    const onSeek = vi.fn();
+    const onReturn = vi.fn();
+    const live = {
+      cursor: 1,
+      following: false,
+      onSeek,
+      onReturn,
+      conversation: <iframe title="Real application" />,
+    };
+    const observed = {
+      ...recording,
+      frames: recording.frames.map((frame) => ({
+        ...frame,
+        calls: [
+          {
+            id: 'call-1',
+            name: 'submit' as const,
+            input: { message: 'Trip' },
+            status: 'pending' as const,
+          },
+        ],
+      })),
+    };
+    const view = render(
+      <LearningWorkbench framework="react" recording={observed} live={live} />
+    );
+    const iframe = screen.getByTitle('Real application');
+    expect(iframe.parentElement?.hidden).toBe(true);
+    expect(iframe.parentElement?.hasAttribute('inert')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Requests' }));
+    expect(screen.getByText('Application call pending')).toBeTruthy();
+    expect(screen.queryByText(/HTTP 200/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Next observation' }));
+    expect(onSeek).toHaveBeenCalledWith(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Return to live' }));
+    expect(onReturn).toHaveBeenCalledOnce();
+    view.rerender(
+      <LearningWorkbench
+        framework="react"
+        recording={{ ...observed }}
+        live={{ ...live, following: true }}
+      />
+    );
+    expect(screen.getByTitle('Real application')).toBe(iframe);
+    expect(iframe.parentElement?.hidden).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Play recording' })).toBeNull();
+  });
   it('seeks conversation, request status and state together, including backward', () => {
     render(<LearningWorkbench framework="react" recording={recording} />);
     expect(

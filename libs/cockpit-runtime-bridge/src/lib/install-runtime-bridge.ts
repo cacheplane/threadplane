@@ -12,6 +12,11 @@ import {
   isAllowedRuntimeParentOrigin,
   validateRuntimeParentOrigins,
 } from './runtime-parent-origins';
+import {
+  parseInspectionFrame,
+  RUNTIME_INSPECTION_VERSION,
+  type InspectionFrame,
+} from './inspection';
 
 export type RuntimeBridgeEnvironment = {
   window: Pick<Window, 'parent' | 'addEventListener' | 'removeEventListener'>;
@@ -48,6 +53,7 @@ export type RuntimeBridgeConfiguration =
 
 export type InstalledRuntimeBridge = {
   awaitConfiguration(): Promise<RuntimeBridgeConfiguration>;
+  publishInspection(frame: InspectionFrame): void;
   markReady(): void;
   markError(code: 'bootstrap_failed'): void;
   dispose(): void;
@@ -475,6 +481,27 @@ export function installRuntimeBridge(
   };
 
   return {
+    publishInspection(frame) {
+      if (
+        state.phase !== 'active' ||
+        state.configuration.phase !== 'configured'
+      )
+        return;
+      const detached = parseInspectionFrame(frame);
+      if (detached === null) return;
+      const configuration = state.configuration;
+      post(
+        configuration.parent,
+        {
+          type: 'tplane:runtime-inspection',
+          version: RUNTIME_INSPECTION_VERSION,
+          nonce: configuration.nonce,
+          generation: configuration.generation,
+          frame: detached,
+        },
+        configuration.parentOrigin
+      );
+    },
     awaitConfiguration() {
       if (configurationAwaited || state.phase === 'disposed') {
         return Promise.resolve(INCOMPATIBLE_CONFIGURATION_RESULT);

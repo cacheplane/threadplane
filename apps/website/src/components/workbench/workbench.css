@@ -21,6 +21,50 @@
 .tp-learn * {
   box-sizing: border-box;
 }
+.tp-learn [hidden] {
+  display: none !important;
+}
+.tp-learn-live-frame {
+  height: 520px;
+  min-width: 0;
+}
+.tp-learn-live-frame > section,
+.tp-learn-live-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.tp-learn-host .tp-learn {
+  margin-top: 12px;
+}
+.tp-learn-session-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.tp-learn-session-controls button,
+.tp-learn-runtime-note button {
+  border: 1px solid #e6e3da;
+  border-radius: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.tp-learn-session-controls button[aria-pressed='true'] {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #e8cd9c;
+}
+.tp-learn-session-controls button:disabled,
+.tp-learn-runtime-note button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tp-learn-runtime-note {
+  margin: 12px 0;
+  font-size: 12px;
+}
 .tp-learn h3,
 .tp-learn h4,
 .tp-learn p,

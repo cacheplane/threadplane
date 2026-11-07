@@ -29,6 +29,14 @@ The workbench below records a prompt about a supplied Paris itinerary and a stre
 
 This is a real SDK/session capture with deterministic **fixture responses**, not a live model conversation. The shared teaching trace uses the React example’s application owner; selecting a framework changes the video and source links, not the recorded frontend. Replay reads captured observations and sends no requests. The trip response does not demonstrate itinerary edits or client tools.
 
+## Try a live conversation
+
+Choose **Live** to mount the real Angular streaming application. Send a prompt about your trip in that application. The inspector follows its messages and state as they change. **Runtime settings** lets you use the shared development target or your own LangGraph deployment; changing targets starts a fresh live session.
+
+Select an observation or move the timeline to inspect history. The running application stays mounted while the workbench shows a read-only snapshot. **Return to live** reveals the same conversation without submitting again. Use the application’s own controls to stop a response or start a new conversation.
+
+In live mode, **Requests** shows **Application calls**: the observed submit input and whether that invocation is pending, settled, or rejected. Settled means the call returned, not that the model succeeded; read the application’s state for the outcome. HTTP and provider requests are not captured in live mode. Capture stays in this page’s memory and is bounded; the inspector tells you when older observations or long fields are omitted.
+
 ## Read the workbench
 
 1. In **Events**, select the initial application snapshot. **State** shows the application’s `creation`, `busy`, `canSubmit`, and `outcome` fields. Before the initial snapshot, the state is unavailable; it is not an empty object.
@@ -42,6 +50,6 @@ The State panel describes the recorded application owner’s fields. These are e
 
 Open the [Angular streaming source](https://github.com/cacheplane/threadplane/blob/main/cockpit/langgraph/streaming/angular/src/app/streaming.component.ts) and identify where the view reads messages, renders progress, and sends a user action. Compare those responsibilities with the observations you just inspected.
 
-Then follow the [Angular streaming guide](/docs/angular/langgraph/guides/streaming) to run the example and connect it to your backend. The embedded inspector currently supports recording playback; use the runnable example for live requests.
+Then follow the [Angular streaming guide](/docs/angular/langgraph/guides/streaming) to run the example and connect it to your backend. Use the live workbench to connect those actions to their observations, then inspect the example source to follow the implementation.
 
 The same trip notebook will give later lessons a familiar place to explain tools, approvals, and saved conversations.
