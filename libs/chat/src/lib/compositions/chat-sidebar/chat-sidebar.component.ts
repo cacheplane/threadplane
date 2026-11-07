@@ -19,6 +19,8 @@ import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.
 import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-button/chat-launcher-button.component';
 import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
+import { installFixedChatViewport } from '../shared/fixed-viewport';
+import { installChatSurfaceFocus } from '../shared/surface-focus';
 
 /** Hosts an agent chat in a toggleable side panel alongside projected application content. */
 @Component({
@@ -50,8 +52,9 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
     }
     .chat-sidebar__panel {
       position: fixed;
-      top: 0; right: 0;
-      bottom: var(--tplane-chat-debug-claim-bottom, 0);
+      top: var(--tplane-chat-viewport-top, 0px); right: 0;
+      height: max(0px, calc(var(--tplane-chat-viewport-height, 100dvh) - var(--tplane-chat-debug-claim-bottom, 0px)));
+      box-sizing: border-box;
       width: var(--tplane-chat-sidebar-width-drawer, 28rem);
       background: var(--tplane-chat-bg);
       border-left: 1px solid var(--tplane-chat-separator);
@@ -113,7 +116,7 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
     <div class="chat-sidebar__launcher">
       <chat-launcher-button (clicked)="toggle()" />
     </div>
-    <aside class="chat-sidebar__panel" [attr.data-open]="open() ? 'true' : 'false'" role="complementary" [attr.aria-hidden]="open() ? 'false' : 'true'">
+    <aside class="chat-sidebar__panel" [attr.data-open]="open() ? 'true' : 'false'" [attr.inert]="open() ? null : ''" role="complementary" [attr.aria-hidden]="open() ? 'false' : 'true'">
       <div class="chat-sidebar__panel-header">
         <div class="chat-sidebar__panel-title">
           <ng-content select="[chatSidebarPanelTitle]" />
@@ -182,6 +185,8 @@ export class ChatSidebarComponent {
   private readonly document = inject(DOCUMENT);
 
   constructor() {
+    installFixedChatViewport();
+    installChatSurfaceFocus(this.open, '.chat-sidebar__panel', '.chat-sidebar__close', '.chat-sidebar__launcher button');
     // Inject chat lib root CSS custom properties — see ChatComponent
     // for the full rationale. Idempotent + lifecycle-guaranteed.
     ensureChatRootStyles();

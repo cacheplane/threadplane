@@ -17145,6 +17145,20 @@
       "treatment": "internal",
       "status": "complete",
       "reason": "Private Angular example shell viewport helper. The internal React ExampleLayout independently follows the same visual viewport for software keyboards; no public package contract."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/shared/fixed-viewport.ts",
+      "taskIds": ["T30"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular fixed-surface visual viewport lifecycle. React ChatPopup owns the equivalent document-scoped geometry for popup and sidebar; no public API."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/shared/surface-focus.ts",
+      "taskIds": ["T30"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular after-render focus transfer for retained popup/sidebar content. React ChatPopup already owns accepted-transition focus and hidden/inert children; no public API."
     }
   ]
 }

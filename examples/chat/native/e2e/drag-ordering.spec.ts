@@ -248,7 +248,10 @@ test('installed React pinned drag ordering retains a held response and recovers 
     expect(await order()).toEqual(initial);
     await draft.press('Control+Enter');
     await backend.steps[3].received;
-    await expect(draft).toBeDisabled();
+    await expect(draft).toBeEditable();
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     const heldDraft = await draft.inputValue();
     const filter = page.getByRole('searchbox', {
       name: 'Filter loaded conversations by title',
