@@ -126,6 +126,21 @@ test('pricing page is responsive without page-level horizontal overflow', async 
   }
 });
 
+test('pricing buttons visibly respond to hover and comparison icons retain labels', async ({ page }) => {
+  await page.goto('/pricing');
+  for (const name of ['Discuss assurance', 'Take the code', 'Explore Pretable', 'Explore b4.run']) {
+    const button = page.getByRole('link', { name, exact: true });
+    await expect(button).toHaveAttribute('data-ui', 'button');
+    await page.mouse.move(0, 0);
+    const restingColor = await button.evaluate(el => getComputedStyle(el).backgroundColor);
+    await button.hover();
+    await expect.poll(() => button.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(restingColor);
+  }
+  const support = page.getByRole('row', { name: /Private support channel/ });
+  await expect(support.getByRole('img', { name: 'Not included', exact: true })).toHaveCount(1);
+  await expect(support.getByRole('img', { name: 'Included', exact: true })).toHaveCount(2);
+});
+
 test('pricing plan buttons lead to the enterprise contact intent', async ({ page }) => {
   await page.goto('/pricing');
   await expect(page.getByRole('link', { name: 'Build with us' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');

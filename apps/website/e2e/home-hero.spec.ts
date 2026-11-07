@@ -4,7 +4,11 @@ test.describe('homepage hero', () => {
   test('install dialog opens, is keyboard operable, and copies the visible command', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Install Threadplane' }).click();
+    const install = page.getByRole('button', { name: 'Install Threadplane' });
+    const restingColor = await install.evaluate(el => getComputedStyle(el).backgroundColor);
+    await install.hover();
+    await expect.poll(() => install.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(restingColor);
+    await install.click();
     const dialog = page.getByRole('dialog', { name: 'Install Threadplane' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('radio', { name: 'Try without a backend' })).toHaveAttribute('aria-checked', 'true');

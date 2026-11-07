@@ -112,14 +112,6 @@
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
-.pricing-page .pricing-scope-note {
-  max-width: 80ch;
-  margin: 24px auto 0;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  line-height: 1.6;
-}
 .pricing-page .pricing-editorial-heading,
 .pricing-page .pricing-section-heading-wrap {
   text-align: center;
@@ -135,8 +127,15 @@
   line-height: 1.5;
   text-wrap: pretty;
 }
-.pricing-page .pricing-editorial-heading > .pricing-text-link {
-  margin-top: 16px;
+.pricing-page .pricing-proof-card > [data-ui='button'] {
+  align-self: flex-start;
+}
+.pricing-page .pricing-inclusion-icon {
+  display: block;
+  color: var(--color-accent);
+}
+.pricing-page .pricing-inclusion-icon[data-included='false'] {
+  color: var(--color-text-muted);
 }
 .pricing-page .pricing-service-grid {
   display: grid;

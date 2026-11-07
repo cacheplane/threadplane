@@ -12,7 +12,7 @@ import '../../styles/pricing.css';
 export const metadata = createPageMetadata({
   title: 'Pricing — Threadplane',
   description:
-    'Every Threadplane package is MIT-licensed. Hire LiveLoveApp for Production Assurance, Pilot-to-Prod, and agent builds and integrations in your own stack.',
+    'Every Threadplane package is MIT-licensed. Hire our team for Production Assurance, Pilot-to-Prod, and agent builds and integrations in your own stack.',
   pathname: '/pricing',
   type: 'website',
 });

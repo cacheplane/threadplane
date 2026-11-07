@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
+import { Button } from '../ui/Button';
 
 /** Decorative abstractions, matching the homepage's quiet skeleton illustrations. */
 function ProductSketch({ agent = false }: { agent?: boolean }) {
@@ -56,18 +57,9 @@ export function PricingProof() {
         <div className="pricing-editorial-heading">
           <h2 id="pricing-proof-heading">We build this stuff.</h2>
           <p>
-            We’re LiveLoveApp. We build the tools, work through the hard parts,
-            and bring that experience to your product. Our work is right here in
-            the open.
+            We build the tools, work through the hard parts, and bring that
+            experience to your product. Our work is right here in the open.
           </p>
-          <a
-            className="pricing-text-link"
-            href="https://liveloveapp.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Meet LiveLoveApp <span aria-hidden="true">↗</span>
-          </a>
         </div>
         <div className="pricing-proof-grid">
           <article
@@ -83,14 +75,16 @@ export function PricingProof() {
               AI output, and wrapped text that stays readable as the data moves.
             </p>
             <ProductSketch />
-            <a
-              className="pricing-text-link"
+            <Button
+              variant="secondary"
+              size="lg"
               href="https://pretable.ai/"
               target="_blank"
               rel="noopener noreferrer"
+              trailingIcon={<span>↗</span>}
             >
-              Explore Pretable <span aria-hidden="true">↗</span>
-            </a>
+              Explore Pretable
+            </Button>
           </article>
           <article
             className="pricing-proof-card"
@@ -111,14 +105,16 @@ export function PricingProof() {
               tools, planning, memory, and evals.
             </p>
             <ProductSketch agent />
-            <a
-              className="pricing-text-link"
+            <Button
+              variant="secondary"
+              size="lg"
               href="https://b4.run/"
               target="_blank"
               rel="noopener noreferrer"
+              trailingIcon={<span>↗</span>}
             >
-              Explore b4.run <span aria-hidden="true">↗</span>
-            </a>
+              Explore b4.run
+            </Button>
           </article>
         </div>
       </Container>

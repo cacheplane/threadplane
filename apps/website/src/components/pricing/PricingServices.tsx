@@ -61,12 +61,8 @@ const SERVICES: readonly {
 
 export function PricingServices() {
   return (
-    <Section id="services" ariaLabelledBy="pricing-services-heading">
+    <Section id="services" aria-label="Expert services">
       <Container>
-        <div className="pricing-editorial-heading">
-          <h2 id="pricing-services-heading">Free code. Very good people.</h2>
-          <p>The framework is on us. The expertise is what you hire us for.</p>
-        </div>
         <div className="pricing-service-grid">
           {SERVICES.map((service) => {
             const href = `/contact?intent=enterprise&entry=${service.ctaId}`;
@@ -107,10 +103,6 @@ export function PricingServices() {
             );
           })}
         </div>
-        <p className="pricing-scope-note">
-          Every engagement is custom-priced and scoped with you. Support and
-          delivery can be hired separately.
-        </p>
       </Container>
     </Section>
   );

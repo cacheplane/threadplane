@@ -28,7 +28,6 @@ describe('PricingPage', () => {
     }
     expect(screen.getByRole('link', { name: /Explore b4.run/i }).getAttribute('href')).toBe('https://b4.run/');
     expect(screen.getByRole('link', { name: /Explore Pretable/i }).getAttribute('href')).toBe('https://pretable.ai/');
-    expect(screen.getByRole('link', { name: /Meet LiveLoveApp/i }).getAttribute('href')).toBe('https://liveloveapp.com/');
     expect(screen.getByRole('link', { name: 'Discuss assurance' }).getAttribute('href')).toContain('intent=enterprise');
     expect(screen.getByRole('link', { name: 'Plan a launch' }).getAttribute('href')).toContain('intent=enterprise');
     expect(screen.getByRole('link', { name: 'Build with us' }).getAttribute('href')).toContain('intent=enterprise');
