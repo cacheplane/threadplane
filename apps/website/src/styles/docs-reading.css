@@ -1,9 +1,7 @@
-/* Shared framework-article presentation, including portal menus.
- * Embedded runtimes, SDK consumers, and framework-neutral pages are separate.
+/* Shared narrative and API presentation, including portal menus.
+ * Embedded runtimes, SDK consumers, and docs landing pages are separate.
  */
-body:has(
-    [data-website-workspace-host][data-docs-reading]
-  ) {
+body:has([data-website-workspace-host][data-docs-reading]) {
   .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
     background: var(--color-accent);
     color: #fff;
@@ -189,6 +187,44 @@ body:has(
   }
 
   /* Reading components only: Code and Run panels keep their own rendering. */
+  .docs-workspace-article .mdx-steps-list {
+    gap: 28px;
+    margin-block: 24px 32px;
+  }
+  .docs-workspace-article .mdx-step {
+    gap: 16px;
+  }
+  .docs-workspace-article .mdx-step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: #fff4d6;
+    color: var(--color-accent);
+    font: 600 14px/20px var(--font-sans);
+  }
+  .docs-workspace-article .mdx-step-title {
+    font: 600 18px/1.4 var(--font-sans);
+    color: var(--color-accent);
+    margin: 4px 0 12px;
+  }
+  .docs-workspace-article .mdx-step-body {
+    line-height: 1.75;
+  }
+  @media (max-width: 767px) {
+    .docs-workspace-article .mdx-step {
+      gap: 12px;
+    }
+    .docs-workspace-article .mdx-steps-list {
+      gap: 24px;
+    }
+  }
+  @media (forced-colors: active) {
+    .docs-workspace-article .mdx-step-number {
+      border: 1px solid CanvasText;
+      color: CanvasText;
+      background: Canvas;
+    }
+  }
   .docs-workspace-article .docs-prose {
     font-size: 16px;
     line-height: 1.75;

@@ -14,7 +14,7 @@ import {
 } from '../../lib/framework-preference';
 import { useDocsFramework } from '../../lib/use-docs-framework';
 import { FrameworkDropdown } from './FrameworkDropdown';
-import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 
 export interface FrameworkTarget {
   href: string;
@@ -103,7 +103,7 @@ export function FrameworkSelector({
       >
         Framework
       </label>
-      {isFrameworkDocsRoute(pathname) ? (
+      {isDocsReadingRoute(pathname) ? (
         <FrameworkDropdown
           id={id}
           value={framework}

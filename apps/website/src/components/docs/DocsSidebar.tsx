@@ -32,7 +32,7 @@ import { LibraryMark } from './LibraryMark';
 import { useDocsDropdown } from './use-docs-dropdown';
 import type { DocsFramework } from '@threadplane/cockpit-registry/docs-routes';
 import { preferredDocsHref } from '../../lib/framework-preference';
-import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 
 export interface DocsNavigationProps {
   framework?: DocsFramework;
@@ -282,7 +282,7 @@ export function DocsNavigation({
   const library = libraries.find(candidate => candidate.id === activeLibrary);
   const migrations = libraries.find(candidate => candidate.id === 'chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
-  const compact = isFrameworkDocsRoute(pathname);
+  const compact = isDocsReadingRoute(pathname);
 
   const supportingLinks = (
       <nav

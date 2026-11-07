@@ -22,7 +22,7 @@ import { getLibraryConfig, type LibraryId } from '../../lib/docs-config';
 import { usePathname } from 'next/navigation';
 import type { DocsScope } from '../../lib/docs-catalog';
 import { useDocsFramework } from '../../lib/use-docs-framework';
-import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 import { FrameworkSelector, type FrameworkSelectorProps } from './FrameworkSelector';
 import { DocsNavigation } from './DocsSidebar';
 import { ApiNavigation, type ApiNavigationProps } from './api/ApiNavigation';
@@ -79,7 +79,7 @@ export function DocsContextContent({
   const preferences = useControlPlanePreferences('docs');
   const pathname = usePathname();
   const framework = useDocsFramework(pathname);
-  const compact = isFrameworkDocsRoute(pathname);
+  const compact = isDocsReadingRoute(pathname);
   const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
   const openSearch = () => {
     if (!mobile) {
