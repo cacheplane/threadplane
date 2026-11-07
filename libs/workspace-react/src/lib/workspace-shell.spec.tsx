@@ -2,7 +2,13 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   cockpitManifest,
@@ -74,6 +80,8 @@ function renderWorkspace(options: {
   docsSlot?: React.ReactNode;
   rootElement?: 'main' | 'section';
   contextTrail?: readonly WorkspaceCrumb[];
+  container?: HTMLElement;
+  strict?: boolean;
 }) {
   const selectedResolution = options.resolution ?? resolution;
   const selectedPresentation = options.presentation ?? presentation;
@@ -103,7 +111,11 @@ function renderWorkspace(options: {
           contextTrail={options.contextTrail}
         />
       </WorkspaceProvider>
-    </RuntimeTargetProvider>
+    </RuntimeTargetProvider>,
+    {
+      container: options.container,
+      wrapper: options.strict ? React.StrictMode : undefined,
+    }
   );
 }
 
@@ -113,6 +125,180 @@ describe('WorkspaceShell persistent panel composition', () => {
     window.history.replaceState({}, '', '/');
     runModeFault.shouldThrow = false;
     vi.restoreAllMocks();
+  });
+
+  it('keeps the parent viewport geometry current without replacing its cross-origin frame', async () => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: 714,
+      pageTop: 0,
+      offsetTop: 0,
+      scale: 1,
+    });
+    vi.stubGlobal('visualViewport', viewport);
+    const rendered = renderWorkspace({ requestedMode: 'run' });
+    const style = document.documentElement.style;
+    try {
+      await waitFor(() =>
+        expect(rendered.container.querySelector('iframe')).toBeTruthy()
+      );
+      const frame = rendered.container.querySelector('iframe');
+      const src = frame?.getAttribute('src');
+      expect(style.getPropertyValue('--workspace-viewport-height')).toBe(
+        '714px'
+      );
+      Object.assign(viewport, { height: 377, pageTop: 299, offsetTop: 187 });
+      viewport.dispatchEvent(new Event('resize'));
+      expect(style.getPropertyValue('--workspace-viewport-height')).toBe(
+        '377px'
+      );
+      expect(style.getPropertyValue('--workspace-viewport-page-top')).toBe(
+        '299px'
+      );
+      expect(style.getPropertyValue('--workspace-viewport-offset-top')).toBe(
+        '187px'
+      );
+      expect(rendered.container.querySelector('iframe')).toBe(frame);
+      expect(frame?.getAttribute('src')).toBe(src);
+      Object.assign(viewport, { scale: 2, height: 180, pageTop: 400 });
+      viewport.dispatchEvent(new Event('scroll'));
+      expect(style.getPropertyValue('--workspace-viewport-height')).toBe(
+        '377px'
+      );
+      Object.assign(viewport, {
+        scale: 1,
+        height: 714,
+        pageTop: 0,
+        offsetTop: 0,
+      });
+      viewport.dispatchEvent(new Event('resize'));
+      expect(style.getPropertyValue('--workspace-viewport-height')).toBe(
+        '714px'
+      );
+    } finally {
+      rendered.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('shares the viewport subscription across StrictMode roots and restores prior styles after the final release', () => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: 714,
+      pageTop: 0,
+      offsetTop: 0,
+      scale: 1,
+    });
+    vi.stubGlobal('visualViewport', viewport);
+    const add = vi.spyOn(viewport, 'addEventListener');
+    const style = document.documentElement.style;
+    const height = '--workspace-viewport-height';
+    const page = '--workspace-viewport-page-top';
+    const offset = '--workspace-viewport-offset-top';
+    style.setProperty(height, '900px', 'important');
+    style.setProperty(page, '3px');
+    const first = renderWorkspace({ strict: true });
+    const second = renderWorkspace({});
+    try {
+      // StrictMode installs/releases once; simultaneous roots share the next binding.
+      expect(add.mock.calls.filter(([kind]) => kind === 'resize')).toHaveLength(
+        2
+      );
+      first.unmount();
+      Object.assign(viewport, { height: 377, pageTop: 299, offsetTop: 187 });
+      viewport.dispatchEvent(new Event('resize'));
+      expect(style.getPropertyValue(height)).toBe('377px');
+      style.setProperty(offset, '123px', 'important');
+      second.unmount();
+      expect(style.getPropertyValue(height)).toBe('900px');
+      expect(style.getPropertyPriority(height)).toBe('important');
+      expect(style.getPropertyValue(page)).toBe('3px');
+      expect(style.getPropertyValue(offset)).toBe('123px');
+      expect(style.getPropertyPriority(offset)).toBe('important');
+      viewport.height = 200;
+      viewport.dispatchEvent(new Event('resize'));
+      window.dispatchEvent(new Event('scroll'));
+      expect(style.getPropertyValue(height)).toBe('900px');
+    } finally {
+      first.unmount();
+      second.unmount();
+      [height, page, offset].forEach((name) => style.removeProperty(name));
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('uses the shell owning document viewport rather than the global document', () => {
+    vi.stubGlobal(
+      'visualViewport',
+      Object.assign(new EventTarget(), {
+        height: 999,
+        pageTop: 0,
+        offsetTop: 0,
+        scale: 1,
+      })
+    );
+    const owner = document.createElement('iframe');
+    document.body.append(owner);
+    const doc = owner.contentDocument!;
+    const view = owner.contentWindow!;
+    const viewport = Object.assign(new EventTarget(), {
+      height: 500,
+      pageTop: undefined,
+      offsetTop: 20,
+      scale: 1,
+    });
+    Object.defineProperty(view, 'visualViewport', {
+      configurable: true,
+      value: viewport,
+    });
+    Object.defineProperty(view, 'scrollY', { configurable: true, value: 30 });
+    const rendered = renderWorkspace({ container: doc.body });
+    try {
+      expect(
+        doc.documentElement.style.getPropertyValue(
+          '--workspace-viewport-height'
+        )
+      ).toBe('500px');
+      expect(
+        doc.documentElement.style.getPropertyValue(
+          '--workspace-viewport-page-top'
+        )
+      ).toBe('50px');
+      expect(
+        document.documentElement.style.getPropertyValue(
+          '--workspace-viewport-height'
+        )
+      ).toBe('');
+      Object.defineProperty(view, 'scrollY', { configurable: true, value: 60 });
+      view.dispatchEvent(new Event('scroll'));
+      expect(
+        doc.documentElement.style.getPropertyValue(
+          '--workspace-viewport-page-top'
+        )
+      ).toBe('80px');
+    } finally {
+      rendered.unmount();
+      owner.remove();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('leaves the CSS fallback and host styles intact when visualViewport is absent', () => {
+    vi.stubGlobal('visualViewport', undefined);
+    const style = document.documentElement.style;
+    style.setProperty('--workspace-viewport-height', '80vh', 'important');
+    const rendered = renderWorkspace({ strict: true });
+    try {
+      window.dispatchEvent(new Event('scroll'));
+      expect(style.getPropertyValue('--workspace-viewport-height')).toBe(
+        '80vh'
+      );
+      expect(style.getPropertyPriority('--workspace-viewport-height')).toBe(
+        'important'
+      );
+    } finally {
+      rendered.unmount();
+      style.removeProperty('--workspace-viewport-height');
+      vi.unstubAllGlobals();
+    }
   });
 
   it('keeps one Run iframe node mounted through modes and utility switches', async () => {

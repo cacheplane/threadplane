@@ -62,8 +62,14 @@ body:has([data-website-workspace-host]) {
 }
 
 #site-content:has([data-website-workspace-host]) {
-  height: 100dvh;
+  position: relative;
+  top: var(--workspace-viewport-page-top, 0px);
+  height: var(--workspace-viewport-height, 100dvh);
   overflow: hidden;
+}
+
+body:has([data-website-workspace-host]) [data-site-navigation] {
+  top: var(--workspace-viewport-offset-top, 0px);
 }
 
 #site-content:has([data-website-workspace-host]) > main {
@@ -75,7 +81,7 @@ body:has([data-website-workspace-host]) {
 }
 
 .website-workspace-host {
-  height: 100dvh;
+  height: 100%;
   padding-top: var(--nav-h);
   overflow: hidden;
   display: flex;
@@ -108,6 +114,8 @@ body:has([data-website-workspace-host]) {
 }
 
 .website-workspace-host .workspace-shell {
+  position: static;
+  top: auto;
   flex: 1;
   min-height: 0;
   height: auto;

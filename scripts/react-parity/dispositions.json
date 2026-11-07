@@ -13477,6 +13477,16 @@
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
     },
     {
+      "id": "source:libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
+      "taskIds": [
+        "T33",
+        "T34"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Private parent viewport geometry shared by workspace roots; no public embedding API."
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "taskIds": [
         "T33",

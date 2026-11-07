@@ -1,17 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "542f96730aeb94fa67617107fad4913e92e98ead",
+  "baselineHead": "10972ab0a45d982552a58a84f80c74715535d2f2",
   "sourceState": {
     "modified": [
-      "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
-      "libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
-      "libs/chat/src/lib/styles/chat-input.styles.ts",
-      "libs/react/src/chat/chat-popup.tsx",
-      "libs/react/src/chat/styles.css"
+      "apps/website/content/docs/angular/chat/concepts/message-model.mdx",
+      "apps/website/content/docs/react/chat/concepts/message-model.mdx",
+      "libs/workspace-react/src/lib/workspace-shell.tsx",
+      "libs/workspace-react/src/styles/workspace.css"
     ],
     "untracked": [
-      "libs/chat/src/lib/compositions/shared/fixed-viewport.ts",
-      "libs/chat/src/lib/compositions/shared/surface-focus.ts"
+      "libs/workspace-react/src/lib/viewport/workspace-viewport.ts"
     ]
   },
   "scope": {
@@ -1056,7 +1054,7 @@
       "id": "asset:libs/workspace-react/src/styles/workspace.css",
       "kind": "asset",
       "path": "libs/workspace-react/src/styles/workspace.css",
-      "sha256": "e13582704da42f9ab600c0409de451aa96533136ad78d487d973f16b3922d487"
+      "sha256": "7e5c9d4bf0546a19b70100aba11b506883296f107e25b67a93f2f4be3f35bd38"
     },
     {
       "id": "asset:libs/workspace-react/tsconfig.json",
@@ -2560,7 +2558,7 @@
       "id": "doc:apps/website/content/docs/angular/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/chat/concepts/message-model.mdx",
-      "sha256": "22ffbdacb5e87e32882b8f6a3ea4f45bc2f011382e8a359d0628a9628c30049b"
+      "sha256": "6920b50e89637e4112031618a4a42ec07ac75b381b5291eb863c39fe1eec219d"
     },
     {
       "id": "doc:apps/website/content/docs/angular/chat/concepts/primitives-vs-compositions.mdx",
@@ -3058,7 +3056,7 @@
       "id": "doc:apps/website/content/docs/react/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/concepts/message-model.mdx",
-      "sha256": "4d2ba167a30687a241d629c81c176277aeaefd9ba9f0a21618fea4c1a932ee04"
+      "sha256": "a96868be8394abfbfb86675e8759926c519bcd147d3c3425af8dfa17a4b1cbeb"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/client-tools.mdx",
@@ -17010,6 +17008,12 @@
       "sha256": "8befa56de8a9dbb86bfbfcd182fab1a151f2d9b8d009239c8f91f953be9b593e"
     },
     {
+      "id": "source:libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
+      "kind": "source",
+      "path": "libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
+      "sha256": "1fbe4019dda0bececa7ba563dde9f9076474dfc41b463bc7b63de4f02b48ca25"
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/workspace-contracts.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-contracts.ts",
@@ -17031,7 +17035,7 @@
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "sha256": "7ac1d2fc76d40340a1211c8b9c748957496abdbaa6c0b5ab454ff88c8f321f5d"
+      "sha256": "bc1b713700159b0d7b540dbe38746c399f66eada172f75f4e93e41fa447e4ad9"
     },
     {
       "id": "source:libs/workspace-react/vite.config.mts",
