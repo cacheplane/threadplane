@@ -172,7 +172,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await page.goto(route);
     await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(page.getByRole('heading', { name: 'React AG-UI client tools preview', exact: true })).toHaveCount(0);
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Code', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Documentation modes', exact: true }).getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.getByRole('complementary', { name: 'File tree' }).getByRole('button', { name: 'client-tools.component.ts', exact: true })).toBeVisible();
     expect(await records(request)).toHaveLength(1);
   });

@@ -261,16 +261,12 @@ test('docs page renders sidebar and content', async ({ page }) => {
   await expect(page.locator('article')).toBeVisible();
 });
 
-test('docs landing page shows library cards', async ({ page }) => {
+test('docs landing page shows framework, backend, and surface cards', async ({ page }) => {
   await page.goto('/docs');
-  // Assert on card titles, not page text. A bare getByText('Render') passed on
-  // a substring of "json-render"; hasText on the card would match the Chat
-  // card too, whose blurb mentions json-render. Only the title is the card.
+  // Match the card titles exactly, rather than text inside their blurbs.
   const titles = page.locator('.docs-index-card-title');
-  await expect(titles.filter({ hasText: /^LangGraph$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^json-render$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^AG-UI$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^Chat$/ })).toBeVisible();
+  await expect(titles).toHaveText(['Angular', 'React', 'LangGraph', 'AG-UI', 'A2UI', 'json-render']);
+  for (const title of await titles.all()) await expect(title).toBeVisible();
 });
 
 test('docs landing page carries the control plane', async ({ page }) => {
@@ -292,7 +288,9 @@ test('footer has pricing link', async ({ page }) => {
 test('mobile viewport renders nav', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
-  await expect(page.locator('nav')).toBeVisible();
+  const navigation = page.locator('nav[data-site-navigation]');
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole('button', { name: 'Open menu', exact: true })).toBeVisible();
 });
 
 for (const viewport of [
@@ -312,6 +310,20 @@ for (const viewport of [
     );
     await expectNoHorizontalOverflow(page, `Docs at ${viewport.width}px`);
 
+    const modes = page.getByRole('navigation', { name: 'Documentation modes', exact: true });
+    await expect(modes).toBeVisible();
+    await expect(modes.getByRole('button')).toHaveCount(4);
+    for (const mode of ['Docs', 'Run', 'Code', 'API']) {
+      const button = modes.locator(`[data-workspace-toolbar-mode="${mode}"]`);
+      await expect(button).toBeVisible();
+      if (viewport.width < 768) {
+        const bounds = await button.boundingBox();
+        expect(bounds?.width).toBeGreaterThanOrEqual(44);
+        expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      }
+    }
+    await expect(modes.getByRole('button', { name: 'Docs', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
     const desktopControlPlane = page.locator('[data-workspace-desktop-navigation]');
     await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
     if (viewport.width >= 1024) {
@@ -319,14 +331,13 @@ for (const viewport of [
       await expect(
         desktopControlPlane.locator('[data-control-plane-pane]'),
       ).toBeVisible();
-      await expect(
-        desktopControlPlane.getByRole('button', { name: 'Docs', exact: true }),
-      ).toBeVisible();
+      await expect(desktopControlPlane.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(desktopControlPlane.locator('[data-docs-library-trigger]')).toBeVisible();
       await expect(
         desktopControlPlane.getByRole('button', { name: 'Search docs' }),
       ).toBeVisible();
     } else if (viewport.width >= 768) {
-      await expect(desktopControlPlane).toBeVisible();
+      await expect(desktopControlPlane).toBeHidden();
       await expect(
         desktopControlPlane.locator('[data-control-plane-pane]'),
       ).toBeHidden();
@@ -338,6 +349,9 @@ for (const viewport of [
       });
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(dialog.locator('[data-docs-library-trigger]')).toBeVisible();
+      await expectNoHorizontalOverflow(page, `Docs context drawer at ${viewport.width}px`);
       await page.keyboard.press('Escape');
       await expect(dialog).toHaveCount(0);
       await expect(contextTrigger).toBeFocused();
@@ -357,21 +371,23 @@ for (const viewport of [
       });
       await expect(dialog).toBeVisible();
       await expect(page.locator('[data-workspace-surface]')).toHaveAttribute('inert', '');
-      await expect(page.locator('nav.nav-bar')).toHaveAttribute('inert', '');
+      await expect(page.locator('nav[data-site-navigation]')).toHaveAttribute('inert', '');
 
       const close = dialog.getByRole('button', { name: 'Close navigation' });
       const closeBox = await close.boundingBox();
       expect(closeBox?.width).toBeGreaterThanOrEqual(44);
       expect(closeBox?.height).toBeGreaterThanOrEqual(44);
 
-      await expect(
-        dialog.getByRole('button', { name: 'Docs', exact: true }),
-      ).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(dialog.locator('[data-docs-library-trigger]')).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+      await expectNoHorizontalOverflow(page, `Docs navigation drawer at ${viewport.width}px`);
 
       await page.keyboard.press('Escape');
       await expect(dialog).toHaveCount(0);
       await expect(navigationTrigger).toBeFocused();
+      await expect(page.locator('[data-workspace-surface]')).not.toHaveAttribute('inert', '');
+      await expect(page.locator('nav[data-site-navigation]')).not.toHaveAttribute('inert', '');
     }
   });
 }
@@ -388,9 +404,11 @@ test('docs forced colors preserve control boundaries and keyboard focus', async 
   );
 
   const run = page
-    .locator('[data-workspace-desktop-navigation]')
+    .getByRole('navigation', { name: 'Documentation modes', exact: true })
     .getByRole('button', { name: 'Run', exact: true });
+  await expect(run).toBeVisible();
   await run.focus();
+  await expect(run).toBeFocused();
   const styles = await run.evaluate((element) => {
     const style = getComputedStyle(element);
     return {

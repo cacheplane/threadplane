@@ -781,9 +781,12 @@ test.describe('workspace shell', () => {
 
     await run.click();
     await openUtility(page, 'Settings');
-    await expect(page.getByText('Ready', { exact: true })).toBeVisible();
     const runtime = page.getByRole('button', { name: 'Runtime', exact: true });
+    await expect(runtime).toBeVisible();
     await runtime.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(runtime).toBeFocused();
     const runtimeStyles = await runtime.evaluate((element) => {
       const style = getComputedStyle(element);
       return {

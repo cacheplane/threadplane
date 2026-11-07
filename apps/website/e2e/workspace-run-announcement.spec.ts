@@ -12,6 +12,12 @@ test.skip(
 );
 
 async function mode(page: Page, name: 'Docs' | 'Code' | 'API' | 'Run') {
+  const toolbar = page.locator('[data-workspace-toolbar]');
+  if (await toolbar.isVisible()) {
+    await toolbar.locator(`[data-workspace-toolbar-mode="${name}"]`).click();
+    await expect(shell(page)).toHaveAttribute('data-workspace-mode', name);
+    return;
+  }
   const mobile = (page.viewportSize()?.width ?? 1280) < 768;
   if (mobile)
     await page.getByRole('button', { name: 'Open navigation' }).click();
@@ -311,15 +317,20 @@ for (const frontend of ['angular', 'react'] as const) {
   }
 }
 
-for (const path of [
-  '/docs/angular/langgraph/getting-started/introduction?mode=run',
-  '/docs/angular/langgraph/guides/streaming?mode=invalid',
-]) {
-  test(`rendered Docs stays eligible at ${path}`, async ({ page }) => {
+for (const { path, initialMode } of [
+  { path: '/docs/angular/langgraph/getting-started/introduction?mode=run', initialMode: 'Run' },
+  { path: '/docs/angular/langgraph/guides/streaming?mode=invalid', initialMode: 'Docs' },
+] as const) {
+  test(`rendered ${initialMode} preserves announcement eligibility at ${path}`, async ({ page }) => {
     await page.goto(path);
     await expect(shell(page)).toHaveAttribute('data-hydrated', 'true');
-    await expect(shell(page)).toHaveAttribute('data-workspace-mode', 'Docs');
+    await expect(shell(page)).toHaveAttribute('data-workspace-mode', initialMode);
     await eligible(page);
+    if (initialMode === 'Run') {
+      await expect(page.getByRole('heading', { name: 'See it in action.', exact: true })).toBeVisible();
+      await hidden(page);
+      await mode(page, 'Docs');
+    }
     await expect(toast(page)).toBeVisible();
   });
 }

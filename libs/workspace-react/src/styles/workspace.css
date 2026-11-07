@@ -393,6 +393,18 @@
   [data-workspace-navigation-layout='toolbar'] .workspace-mobile-control-plane-panel { max-width: none; }
 }
 @media (forced-colors: active) {
+  [data-workspace-toolbar-mode],
+  [data-workspace-toolbar-tools] > button,
+  [data-workspace-toolbar-tools] [role='menuitem'] {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+  [data-workspace-toolbar-tools] [role='menu'] {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
   [data-workspace-toolbar-mode][aria-pressed='true'] { outline: 2px solid Highlight; outline-offset: -2px; }
   [data-workspace-toolbar] button:focus-visible { outline-color: Highlight; }
 }
