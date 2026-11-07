@@ -14200,7 +14200,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatInputHandle",
@@ -14211,7 +14211,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatInputProps",

@@ -375,6 +375,9 @@ blocks retain left-to-right source order. When a focused Stop button disappears
 after stopping or completing a response, focus returns to its composer. Completion
 does not move focus from another control. The named transcript is keyboard
 focusable so readers can scroll without activating a message action.
+After an accepted clearing submit, the composer returns focus from its Send button
+on the next frame while it still owns focus. Focus moved elsewhere by the user or
+an application callback is preserved, and a replaced composer is never focused.
 The composer also recalculates draft height when its container or viewport
 resizes, retaining the draft and the existing viewport height cap.
 

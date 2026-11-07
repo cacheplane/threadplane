@@ -139,9 +139,29 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const canSend = !busy && !disabled && draft.trim().length > 0;
     const send = () => {
       if (!canSend) return;
+      const input = textarea.current;
+      const form = input?.form;
+      const document = input?.ownerDocument;
+      const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const focused = document?.activeElement;
+      const ownedFocus = input != null && (focused === input || focused === submit);
+      const stillOwnsFocus = () => {
+        const active = document?.activeElement;
+        return active === input || active === submit || (
+          active === document?.body && focused === submit && submit != null &&
+          (!submit.isConnected || submit.disabled)
+        );
+      };
       if (onSubmit(draft) === false) return;
       setDraft('');
-      requestAnimationFrame(() => textarea.current?.focus());
+      // Application callbacks may deliberately hand focus to another control.
+      const retainedFocus = ownedFocus && stillOwnsFocus();
+      requestAnimationFrame(() => {
+        if (
+          retainedFocus && input?.isConnected && form?.isConnected &&
+          textarea.current === input && input.form === form && stillOwnsFocus()
+        ) input.focus();
+      });
     };
     return (
       <form
