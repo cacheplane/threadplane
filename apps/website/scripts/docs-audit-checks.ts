@@ -45,6 +45,16 @@ export const DOCS_AUDIT_ROUTES: readonly {
   { path: '/docs/react/render/guides/specs', video: true },
   { path: '/docs/react/langgraph/guides/interrupts' },
   { path: '/docs/react/ag-ui/guides/client-tools' },
+  { path: '/docs/shared/middleware/getting-started/introduction' },
+  { path: '/docs/shared/middleware/getting-started/quickstart' },
+  { path: '/docs/shared/middleware/guides/langgraph-client-tools' },
+  { path: '/docs/shared/middleware/guides/python-langgraph' },
+  { path: '/docs/api' },
+  { path: '/docs/api/render' },
+  { path: '/docs/api/render/RenderSpecComponent' },
+  { path: '/docs/angular/ag-ui/guides/tool-views' },
+  { path: '/docs/angular/render/guides/events' },
+  { path: '/docs/angular/ag-ui/guides/tool-views?mode=api' },
 ];
 
 /** Suppress telemetry without sending it; all other non-read requests fail the audit. */

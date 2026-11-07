@@ -452,7 +452,7 @@ async function main() {
     }
     const auditedOrigin = origin;
     browser = await chromium.launch();
-    for (const width of [1440, 320]) {
+    for (const width of [1440, 768, 320]) {
       const context = await browser.newContext({
         viewport: { width, height: 720 },
         serviceWorkers: 'block',
@@ -526,6 +526,14 @@ async function main() {
           });
       });
       for (const [index, target] of targets.entries()) {
+        // Tablet drawer coverage for the newly aligned route families and flows.
+        if (
+          width === 768 &&
+          !/^\/docs\/(?:api(?:\/|$)|shared\/)|\/guides\/(?:tool-views|events)(?:\?|$)|\/concepts\/state-management$/.test(
+            target.path
+          )
+        )
+          continue;
         errors.length = 0;
         try {
           events.push({ event: 'navigate', value: `${width} ${target.path}` });
@@ -544,6 +552,57 @@ async function main() {
           );
           await expect(page.locator('article').first()).toBeVisible();
           await page.evaluate(() => document.fonts.ready);
+          await expect(
+            page.locator('[data-website-workspace-host]')
+          ).toHaveAttribute('data-docs-reading', 'true');
+          await expect(
+            page.getByRole('navigation', { name: 'Documentation modes' })
+          ).toBeVisible();
+          const readingHeading = page.locator(
+            '.docs-workspace-article .docs-prose h1'
+          );
+          if (await readingHeading.count())
+            await expect(readingHeading).toHaveCSS(
+              'font-size',
+              width < 768 ? '36px' : '44px'
+            );
+          const apiHeading = page.locator('.api-reference-page h1');
+          if (await apiHeading.count()) {
+            const symbol = await page.locator('.api-reference-detail').count();
+            await expect(apiHeading).toHaveCSS(
+              'font-size',
+              symbol ? '24px' : width < 768 ? '32px' : '44px'
+            );
+          }
+          const steps = page.locator('.docs-workspace-article .mdx-steps-list');
+          if (await steps.count())
+            await expect(steps.first()).toHaveCSS(
+              'gap',
+              width < 768 ? '24px' : '28px'
+            );
+          if (width < 1024 && (await apiHeading.count())) {
+            const symbolLinks = page.locator('.api-reference-symbols li > a');
+            for (const link of await symbolLinks.all())
+              expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(
+                44
+              );
+            if (target.path.startsWith('/docs/api')) {
+              await page
+                .getByRole('button', { name: width < 768 ? 'Open navigation' : 'Open context', exact: true })
+                .click();
+              const apiNav = page.locator('.api-reference-navigation:visible');
+              await expect(apiNav).toBeVisible();
+              for (const link of await apiNav
+                .locator('a:visible, summary:visible')
+                .all())
+                expect(
+                  (await link.boundingBox())?.height
+                ).toBeGreaterThanOrEqual(44);
+              await page
+                .getByRole('button', { name: 'Close navigation', exact: true })
+                .click();
+            }
+          }
           if (target.path.startsWith('/docs/react/'))
             await expect(
               page.locator('[data-framework-control]').first()
@@ -575,7 +634,13 @@ async function main() {
             const selectedFramework = await nav
               .locator('[data-framework-control]')
               .getAttribute('data-value');
-            if (selectedFramework === 'react') {
+            const apiNavigation = nav.locator('.api-reference-navigation');
+            if (await apiNavigation.count()) {
+              await expect(apiNavigation).toBeVisible();
+              await expect(
+                apiNavigation.locator('[aria-current="page"]')
+              ).toHaveCount(1);
+            } else if (selectedFramework === 'react') {
               // Shared pages retain the last explicit framework preference.
               // React navigation contains only authored React/shared variants;
               // the Angular migration section has no React documents yet.

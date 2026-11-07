@@ -535,12 +535,19 @@ describe('DocsContextContent', () => {
     expect(screen.getByRole('link', { name: 'Open live demo' }).textContent).toBe('Open live demo');
   });
 
-  it.each(['/docs/choosing-an-adapter', '/docs/api'])('preserves the existing context structure outside framework articles (%s)', pathname => {
+  it.each(['/docs/choosing-an-adapter', '/docs/examples'])('preserves the existing context structure outside reading pages (%s)', pathname => {
     route.pathname = pathname;
     const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
     expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Featured documentation' })).toBeTruthy();
     expect(container.querySelector('[data-docs-navigation-compact]')).toBeNull();
+  });
+
+  it.each(['/docs/shared/middleware/getting-started/introduction', '/docs/api'])('uses compact navigation for shared and API reading (%s)', pathname => {
+    route.pathname = pathname;
+    const { container } = render(<DocsContextContent activeLibrary="middleware" activeSection="getting-started" activeSlug="introduction" />);
+    expect(screen.queryByRole('button', { name: 'Learn' })).toBeNull();
+    expect(container.querySelector('[data-docs-navigation-compact]')).not.toBeNull();
   });
 
   it('reuses the same sentence-case navigation content for mobile', () => {

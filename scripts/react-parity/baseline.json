@@ -1,10 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "14ea9f3c6992661e8a56796c5ae3047e3b838655",
+  "baselineHead": "802a31cf8b200127c49b80e4a1b6f7aff65453bd",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/ag-ui/guides/subagents.mdx"
+      "apps/website/content/docs/angular/ag-ui/guides/tool-views.mdx",
+      "apps/website/content/docs/angular/langgraph/concepts/state-management.mdx",
+      "apps/website/content/docs/angular/render/guides/events.mdx"
     ],
     "untracked": []
   },
@@ -2404,7 +2405,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/tool-views.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/tool-views.mdx",
-      "sha256": "cded7c6c87726fcdb335bfab509e2ae4b1e2b04343e7edd0e89ae88445269c98"
+      "sha256": "afbff746d2d8de1918db21edff9f0691c716f6889580849caf6502ae17f80429"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/troubleshooting.mdx",
@@ -2752,7 +2753,7 @@
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/state-management.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/langgraph/concepts/state-management.mdx",
-      "sha256": "59c220cceaf6469f9a2da48e6bbb9adbfca7bdd133b3d10aaa7f5a0a8e1647bc"
+      "sha256": "603f2a8dbccd64c20260945597a0e588550cdc8c723bcf3854ad1631c19d3b3c"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/getting-started/installation.mdx",
@@ -2872,7 +2873,7 @@
       "id": "doc:apps/website/content/docs/angular/render/guides/events.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/render/guides/events.mdx",
-      "sha256": "2bce2a8a2725481e4a1ecad6674f917f52fb2d00097c60f0aa88c4087b139563"
+      "sha256": "b31c2e6ad88992129184833077beb924304a5c0ae0f81c55c6c4893651a641e4"
     },
     {
       "id": "doc:apps/website/content/docs/angular/render/guides/lifecycle.mdx",
