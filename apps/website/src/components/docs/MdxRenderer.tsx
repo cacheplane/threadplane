@@ -11,6 +11,7 @@ import { FeatureChips } from './mdx/FeatureChips';
 import { mdxHeadingComponents } from './mdx/headings';
 import { ArchFlowDiagram } from './ArchFlowDiagram';
 import { DocsDemoVideo } from './DocsDemoVideo';
+import { LearningWorkbench } from '../workbench/LearningWorkbench';
 import {
   StackDiagram,
   AgUiArchitecturePipeline,
@@ -57,6 +58,7 @@ const mdxComponents = {
   CodeGroup,
   ArchFlowDiagram,
   DocsDemoVideo,
+  LearningWorkbench,
   StackDiagram,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,

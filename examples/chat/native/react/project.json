@@ -5,6 +5,20 @@
   "sourceRoot": "examples/chat/native/react/src",
   "tags": ["scope:example", "type:app", "framework:react"],
   "targets": {
+    "capture-workbench": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "parallel": false,
+        "commands": [
+          "node node_modules/typescript/bin/tsc -p examples/chat/native/tooling/capture-workbench.tsconfig.json",
+          "TSX_TSCONFIG_PATH=tsconfig.base.json node --import tsx --test examples/chat/native/tooling/capture-workbench.spec.ts",
+          "TSX_TSCONFIG_PATH=tsconfig.base.json node --import tsx examples/chat/native/tooling/capture-workbench.mjs"
+        ]
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "cache": false,

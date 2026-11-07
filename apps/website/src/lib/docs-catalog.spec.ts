@@ -16,10 +16,10 @@ const contentRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../
 
 describe('explicit narrative document catalog', () => {
   it('keeps logical identities and canonical variant destinations unique', () => {
-    expect(documentCatalog).toHaveLength(117);
+    expect(documentCatalog).toHaveLength(118);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
     const variants = getNarrativeDocuments();
-    expect(variants).toHaveLength(159);
+    expect(variants).toHaveLength(161);
     expect(new Set(variants.map(doc => doc.href)).size).toBe(variants.length);
     expect(new Set(variants.map(doc => doc.source)).size).toBe(variants.length);
   });
@@ -75,6 +75,22 @@ describe('explicit narrative document catalog', () => {
         expect(source).toMatch(/private.*source.build/i);
         expect(source).not.toMatch(/npm (?:install|i) @threadplane\/react/);
       }
+    }
+  });
+
+  it('offers the same workbench journey in each framework with honest runnable links', () => {
+    for (const framework of ['angular', 'react'] as const) {
+      const doc = getDocumentVariant('getting-started/workbench', framework)!;
+      expect(doc?.href).toBe(`/docs/${framework}/getting-started/workbench`);
+      expect(doc.lessonId).toBeUndefined();
+      const source = fs.readFileSync(path.join(contentRoot, doc.source), 'utf8');
+      expect(source).toContain(`<LearningWorkbench framework="${framework}"`);
+      expect(source).toContain(`<DocsDemoVideo demo="streaming" frontend="${framework}"`);
+      expect(source.indexOf('<DocsDemoVideo')).toBeLessThan(source.indexOf('<LearningWorkbench'));
+      expect(source).toContain(`/docs/${framework}/langgraph/guides/streaming`);
+      expect(source).toContain('fixture');
+      const introduction = getDocumentVariant('getting-started/introduction', framework)!;
+      expect(fs.readFileSync(path.join(contentRoot, introduction.source), 'utf8')).toContain(doc.href);
     }
   });
 });
