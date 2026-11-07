@@ -36,27 +36,27 @@ describe('renderFulfillmentTemplate', () => {
   it.each([
     [
       'overview',
-      'Your Angular agent readiness guide',
+      'Your prototype-to-production guide',
       'https://threadplane.ai/whitepaper.pdf',
-      'angular-agent-readiness-guide.pdf',
+      'threadplane-prototype-to-production.pdf',
     ],
     [
       'angular',
-      'Your Angular streaming guide',
+      'Your agent integration guide',
       'https://threadplane.ai/whitepapers/angular.pdf',
-      'angular-streaming-guide.pdf',
+      'threadplane-connecting-agents.pdf',
     ],
     [
       'render',
-      'Your Angular generative UI guide',
+      'Your generative interfaces guide',
       'https://threadplane.ai/whitepapers/render.pdf',
-      'angular-genui-guide.pdf',
+      'threadplane-generative-interfaces.pdf',
     ],
     [
       'chat',
-      'Your Angular agent chat guide',
+      'Your agent experience guide',
       'https://threadplane.ai/whitepapers/chat.pdf',
-      'angular-chat-guide.pdf',
+      'threadplane-agent-experiences.pdf',
     ],
   ] as const)(
     'fulfills the exact requested %s resource without broader state',
