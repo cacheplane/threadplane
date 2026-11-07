@@ -1,0 +1,341 @@
+/* Entry pages use the marketing palette without changing workspace geometry. */
+.docs-entry-page {
+  --entry-gap: 80px;
+  --entry-inset: 32px;
+  background: #fff;
+  color: var(--color-accent);
+  padding-bottom: 80px;
+}
+.docs-entry-page > [data-ui='container'] {
+  max-width: 1120px;
+}
+.docs-entry-hero {
+  padding: 80px 0 64px;
+  max-width: 800px;
+}
+.docs-entry-hero h1 {
+  margin: 0;
+  font: 600 clamp(44px, 4.5vw, 64px) / 1.04 var(--font-sans);
+  letter-spacing: -0.04em;
+  color: var(--color-accent);
+  text-wrap: balance;
+}
+.docs-entry-hero > p {
+  max-width: 48ch;
+  margin: 24px 0 0;
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.docs-entry-section + .docs-entry-section {
+  margin-top: var(--entry-gap);
+}
+.docs-entry-page h2 {
+  margin: 0 0 24px;
+  color: var(--color-accent);
+  font: 600 36px/1.15 var(--font-sans);
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.docs-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.docs-entry-card {
+  min-width: 0;
+  padding: var(--entry-inset);
+  border-radius: 28px;
+  background: #f6f7f9;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.docs-entry-frameworks .docs-entry-card {
+  background: #fff4d6;
+}
+.docs-entry-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.docs-entry-card-heading > svg {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  color: #626b79;
+}
+.docs-entry-page :is(.docs-index-card-title, .docs-entry-resources h3) {
+  margin: 0;
+  font: 600 28px/1.2 var(--font-sans);
+  letter-spacing: -0.025em;
+  color: var(--color-accent);
+}
+.docs-entry-card p,
+.docs-entry-chat p,
+.docs-entry-resources p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.docs-entry-logo {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+.docs-entry-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 24px;
+}
+.docs-entry-section-heading h2 {
+  margin: 0;
+}
+.docs-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  align-items: center;
+}
+.docs-entry-page [data-ui='button'] {
+  min-height: 44px;
+  gap: 12px;
+  white-space: normal;
+}
+.docs-entry-install {
+  border-top: 1px solid #e1e4e9;
+  padding-top: 16px;
+}
+.docs-entry-install summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+.docs-entry-command {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 12px;
+}
+.docs-entry-command code {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.docs-entry-command .docs-copy-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+.docs-entry-chat {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  padding: 48px;
+  background: #f6f7f9;
+  border-radius: 28px;
+}
+.docs-entry-chat-links {
+  display: flex;
+  align-items: start;
+  flex-direction: column;
+  gap: 16px;
+}
+.docs-entry-resources a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 24px;
+  padding: 32px;
+  background: #f6f7f9;
+  border-radius: 24px;
+  text-decoration: none;
+}
+.docs-entry-resources a:hover {
+  background: #eeeff2;
+}
+.docs-entry-resources h3 {
+  font-size: 24px;
+}
+.docs-entry-resources p {
+  grid-column: 1;
+}
+.docs-entry-resources a > span {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--color-accent);
+  font-size: 24px;
+}
+.docs-entry-page > [data-ui='section'] {
+  background: #fff;
+  padding: 0;
+  margin-top: var(--entry-gap);
+}
+.docs-entry-page .docs-index-search-inner {
+  max-width: none;
+  border-radius: 28px;
+  padding: 48px 32px;
+  background: #f6f7f9;
+}
+.docs-entry-page .docs-index-search-heading {
+  font-size: 28px;
+}
+.docs-entry-page .docs-index-search-button {
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 8px 24px;
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.docs-entry-page .docs-index-search-button:hover {
+  background: #30415f;
+}
+.docs-entry-page :is(summary, a):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+.docs-entry-note {
+  margin-top: 32px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fff4d6;
+  max-width: 64ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Only getting-started reading slots and the standalone adapter article. */
+.docs-entry-reading {
+  background: #fff;
+}
+.docs-entry-reading .docs-prose {
+  color: var(--color-text-secondary);
+  font-size: 17px;
+  line-height: 1.75;
+}
+.docs-entry-reading .docs-prose h1 {
+  font: 600 clamp(36px, 3.5vw, 52px) / 1.08 var(--font-sans);
+  letter-spacing: -0.035em;
+  color: var(--color-accent);
+  margin-bottom: 32px;
+  text-wrap: balance;
+}
+.docs-entry-reading .docs-prose :is(h2, h3) {
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  letter-spacing: -0.025em;
+}
+.docs-entry-reading .docs-prose h2 {
+  font-size: 30px;
+  margin-top: 48px;
+}
+.docs-entry-reading .docs-prose h3 {
+  font-size: 24px;
+  margin-top: 32px;
+}
+.docs-entry-reading .docs-prose p {
+  line-height: 1.75;
+}
+.docs-entry-reading .mdx-pre-wrap {
+  border-radius: 16px;
+}
+.docs-entry-reading [data-mdx='callout'][data-tone='info'] {
+  border: 0;
+  border-radius: 20px;
+  background: #f6f7f9;
+  box-shadow: none;
+}
+.docs-entry-reading [data-tone='info'] > .mdx-callout-band {
+  padding: 24px 24px 0;
+  border: 0;
+  background: transparent;
+}
+.docs-entry-reading [data-tone='info'] > .mdx-callout-body {
+  padding: 16px 24px 24px;
+  font-size: 16px;
+}
+.docs-entry-reading .docs-prose blockquote {
+  border: 0;
+  border-radius: 16px;
+  padding: 24px;
+  background: #f6f7f9;
+}
+.docs-entry-reading .docs-toc-link[data-active] {
+  background: #fff4d6;
+  border-radius: 8px;
+}
+
+@media (max-width: 1199px) {
+  .docs-entry-chat {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 32px;
+  }
+  .docs-entry-chat-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 767px) {
+  .docs-entry-page {
+    --entry-gap: 64px;
+    --entry-inset: 24px;
+    padding-bottom: 64px;
+  }
+  .docs-entry-hero {
+    padding: 48px 0;
+  }
+  .docs-entry-hero h1 {
+    font-size: 44px;
+  }
+  .docs-entry-hero > p {
+    font-size: 18px;
+  }
+  .docs-entry-page h2 {
+    font-size: 30px;
+  }
+  .docs-entry-grid {
+    grid-template-columns: 1fr;
+  }
+  .docs-entry-card {
+    border-radius: 24px;
+  }
+  .docs-entry-chat {
+    padding: 24px;
+    border-radius: 24px;
+  }
+  .docs-entry-resources a {
+    padding: 24px;
+  }
+  .docs-entry-page .docs-index-search-inner {
+    padding: 32px 24px;
+  }
+  .docs-entry-page .docs-index-search-heading {
+    font-size: 28px;
+  }
+  .docs-entry-reading .docs-prose h2 {
+    font-size: 28px;
+  }
+  .docs-entry-reading .docs-prose h3 {
+    font-size: 22px;
+  }
+}
+@media (max-width: 359px) {
+  .docs-entry-hero h1 {
+    font-size: 40px;
+  }
+}

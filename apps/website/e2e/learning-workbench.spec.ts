@@ -58,6 +58,70 @@ async function submit(frame: FrameLocator, framework: string, message: string) {
     .click();
 }
 
+test('Angular navigation resize persists and expanded workbench uses the full workspace width', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const host = await openWorkbench(page, 'angular');
+  const shell = page.locator('[data-workspace-shell]');
+  const navigation = page.locator('[data-workspace-desktop-navigation]');
+  const resize = page.getByRole('separator', {
+    name: 'Resize navigation',
+    exact: true,
+  });
+  const surface = page.locator('[data-workspace-surface]');
+  const navigationWidth = () =>
+    navigation.evaluate((element) => element.getBoundingClientRect().width);
+  await expect(resize).toHaveAttribute('aria-valuenow', '264');
+  await expect.poll(navigationWidth).toBe(264);
+  await resize.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(resize).toHaveAttribute('aria-valuenow', '274');
+  await expect.poll(navigationWidth).toBe(274);
+  await page.reload();
+  await expect(resize).toHaveAttribute('aria-valuenow', '274');
+  await expect.poll(navigationWidth).toBe(274);
+
+  await host
+    .getByRole('button', { name: 'Expand workbench', exact: true })
+    .click();
+  await expect(host).toHaveAttribute('data-expanded', 'true');
+  await expect(navigation).toBeHidden();
+  await expect
+    .poll(async () => {
+      const frame = await shell.boundingBox();
+      const content = await surface.boundingBox();
+      return frame && content
+        ? { left: content.x - frame.x, width: content.width - frame.width }
+        : null;
+    })
+    .toEqual({ left: 0, width: 0 });
+  const canvas = await host.evaluate((element) => {
+    const article = element.closest('article')!;
+    const style = getComputedStyle(article);
+    return {
+      actual: element.getBoundingClientRect().width,
+      available:
+        article.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+    };
+  });
+  expect(canvas.actual).toBeCloseTo(canvas.available, 1);
+  await host
+    .getByRole('button', { name: 'Restore workbench width', exact: true })
+    .click();
+  await expect(navigation).toBeVisible();
+  await expect.poll(navigationWidth).toBe(274);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(resize).toBeHidden();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  ).toBe(true);
+});
+
 for (const framework of ['react', 'angular'] as const) {
   test(`${framework}: real app submit, historical inspection, return to live and new conversation`, async ({
     page,

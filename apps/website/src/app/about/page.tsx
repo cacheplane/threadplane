@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { Container } from '../../components/ui/Container';
 import { Section } from '../../components/ui/Section';
-import { Eyebrow } from '../../components/ui/Eyebrow';
+import { Button } from '../../components/ui/Button';
+import '../../styles/editorial.css';
 import { JsonLd } from '../../components/shared/JsonLd';
 import { aboutPageJsonLd, REPOSITORY_URL } from '../../lib/structured-data';
 import { getAuthor } from '../../lib/blog-authors';
@@ -31,78 +31,102 @@ export const metadata = createPageMetadata({
 
 export default function AboutPage() {
   return (
-    <>
+    <div className="editorial-page about-page">
       <JsonLd data={aboutPageJsonLd(author)} />
-
-      <Section surface="canvas" ariaLabelledBy="about-heading">
+      <Section ariaLabelledBy="about-heading" className="about-story-section">
         <Container>
-          <div className="about-section-inner">
-            <Eyebrow tone="accent" className="about-eyebrow-spaced">About</Eyebrow>
-            <h1 id="about-heading" className="about-h1">
-              Who writes Threadplane
+          <header className="editorial-hero">
+            <h1 id="about-heading">
+              Behind the
+              <br />
+              threadplane.
             </h1>
-            <p className="about-body">{ABOUT_INTRO}</p>
-
-            <h2 className="about-h2 about-h2-spaced">{ABOUT_HISTORY_HEADING}</h2>
-            {ABOUT_HISTORY.map((paragraph) => (
-              <p key={paragraph} className="about-body">
-                {paragraph}
-              </p>
-            ))}
-
-            <p className="about-body">{ABOUT_PRINCIPLES}</p>
-            <p className="about-body">{ABOUT_PERSONAL}</p>
-
-            <p className="about-body about-body-last">
-              <a
+          </header>
+          <div className="about-story-grid" data-about-biography>
+            <aside className="about-author" aria-label="About the author">
+              <h2>{author.name}</h2>
+              <p>{author.role}</p>
+              <Button
+                variant="secondary"
                 href={`https://github.com/${author.github}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="about-link"
               >
                 github.com/{author.github}
-              </a>
-            </p>
+                <span aria-hidden="true"> ↗</span>
+              </Button>
+            </aside>
+            <div className="about-story">
+              <p className="about-intro">{ABOUT_INTRO}</p>
+              <h2>{ABOUT_HISTORY_HEADING}</h2>
+              {ABOUT_HISTORY.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+              <div className="about-principles">
+                <p>{ABOUT_PRINCIPLES}</p>
+              </div>
+              <p>{ABOUT_PERSONAL}</p>
+            </div>
           </div>
         </Container>
       </Section>
-
-      <Section surface="tinted">
+      <Section aria-label="The project and the people behind it">
         <Container>
-          <div className="about-section-inner">
-            <h2 className="about-h2">What Threadplane is</h2>
-            <p className="about-body">{LONG_SUBHEAD}</p>
-            <p className="about-body about-body-last">
-              The source is public at{' '}
-              <a href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="about-link">
-                github.com/cacheplane/threadplane
-              </a>
-              .
-            </p>
+          <div className="about-product-grid">
+            <div>
+              <h2>
+                A UI layer.
+                <br />
+                Your architecture.
+              </h2>
+              <p>{LONG_SUBHEAD}</p>
+              <Button
+                variant="secondary"
+                href={REPOSITORY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Explore the source<span aria-hidden="true"> ↗</span>
+              </Button>
+            </div>
+            <div>
+              <h2>
+                Free code.
+                <br />
+                Very good people.
+              </h2>
+              <p>
+                Every published Threadplane package is MIT-licensed for
+                commercial and noncommercial use. Production Assurance and
+                enterprise delivery add expert support without changing the
+                software.
+              </p>
+              <Button variant="secondary" href="/pricing">
+                Meet the services<span aria-hidden="true"> ↗</span>
+              </Button>
+            </div>
           </div>
         </Container>
       </Section>
-
-      <Section surface="canvas">
+      <Section ariaLabelledBy="about-contact-heading">
         <Container>
-          <div className="about-section-inner">
-            <h2 className="about-h2">Open software, supported production</h2>
-            <p className="about-body">
-              Every published Threadplane package is MIT-licensed for commercial
-              and noncommercial use. Production Assurance and enterprise delivery
-              add expert support without changing the software. The{' '}
-              <Link href="/pricing" className="about-link">pricing page</Link> has the details.
+          <div className="editorial-closing">
+            <h2 id="about-contact-heading">What are you building?</h2>
+            <p>
+              Bring the product, the prototype, or the part that keeps you up at
+              night. Let’s work out what comes next.
             </p>
-            <p className="about-body about-body-last">
-              Questions about a specific build go to{' '}
-              <Link href="/contact" className="about-link">
-                contact
-              </Link>
-              ; ongoing writing is on the <Link href="/blog" className="about-link">blog</Link>.
-            </p>
+            <div className="editorial-actions">
+              <Button variant="primary" size="lg" href="/contact">
+                Talk to us
+              </Button>
+              <Button variant="secondary" size="lg" href="/blog">
+                Read the latest
+              </Button>
+            </div>
           </div>
         </Container>
       </Section>
-    </>
+    </div>
   );
 }

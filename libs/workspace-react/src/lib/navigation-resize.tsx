@@ -8,14 +8,15 @@ const MIN_WIDTH = 250;
 const MAX_WIDTH = 440;
 const STEP = 10;
 
-function boundedWidth(value: unknown): number {
+function boundedWidth(value: unknown, fallback = DEFAULT_WIDTH): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, value))
-    : DEFAULT_WIDTH;
+    : fallback;
 }
 
-export function useNavigationWidth(enabled: boolean) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+export function useNavigationWidth(enabled: boolean, defaultWidth = DEFAULT_WIDTH) {
+  const resetWidth = boundedWidth(defaultWidth);
+  const [width, setWidth] = useState(resetWidth);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -24,21 +25,22 @@ export function useNavigationWidth(enabled: boolean) {
       try {
         setWidth(
           boundedWidth(
-            JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null')
+            JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null'),
+            resetWidth
           )
         );
       } catch {
-        setWidth(DEFAULT_WIDTH);
+        setWidth(resetWidth);
       }
     }
     return () => {
       mounted.current = false;
     };
-  }, [enabled]);
+  }, [enabled, resetWidth]);
 
   const update = useCallback((value: number, persist = true) => {
     if (!mounted.current) return;
-    const next = boundedWidth(value);
+    const next = boundedWidth(value, resetWidth);
     setWidth(next);
     if (persist) {
       try {
@@ -47,13 +49,14 @@ export function useNavigationWidth(enabled: boolean) {
         // Navigation remains adjustable when browser storage is unavailable.
       }
     }
-  }, []);
+  }, [resetWidth]);
 
   return { width, update };
 }
 
 interface NavigationResizeHandleProps {
   width: number;
+  defaultWidth?: number;
   onChange: (width: number, persist: boolean) => void;
 }
 
@@ -75,8 +78,10 @@ function releaseCapture(drag: NavigationDrag) {
 
 export function NavigationResizeHandle({
   width,
+  defaultWidth = DEFAULT_WIDTH,
   onChange,
 }: NavigationResizeHandleProps) {
+  const resetWidth = boundedWidth(defaultWidth);
   const active = useRef<NavigationDrag | null>(null);
   useEffect(
     () => () => {
@@ -111,13 +116,13 @@ export function NavigationResizeHandle({
         onChange(
           boundedWidth(
             event.key === 'Home'
-              ? DEFAULT_WIDTH
+              ? resetWidth
               : width + (event.key === 'ArrowRight' ? STEP : -STEP)
           ),
           true
         );
       }}
-      onDoubleClick={() => onChange(DEFAULT_WIDTH, true)}
+      onDoubleClick={() => onChange(resetWidth, true)}
       onPointerDown={(event) => {
         if (event.button !== 0 || active.current) return;
         event.preventDefault();

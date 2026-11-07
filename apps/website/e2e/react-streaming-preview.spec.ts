@@ -62,8 +62,13 @@ test('missing counterparts are explicit in mobile framework navigation', async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/docs/angular/langgraph/guides/testing');
   const control = await frameworkControl(page);
-  await expect(control).toHaveValue('angular');
-  await expect(control.locator('option[value="react"]')).toBeDisabled();
+  await expect(control).toHaveAttribute('data-value', 'angular');
+  await control.click();
+  await expect(
+    page.getByRole('menu', { name: 'Frameworks', exact: true })
+      .getByRole('menuitemradio', { name: 'React Unavailable for this topic', exact: true })
+  ).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
   await expect(page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction' })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

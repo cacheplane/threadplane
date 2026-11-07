@@ -49,7 +49,7 @@ test('framework navigation remains reachable in Code and preserves supported mod
   await selectFramework(page, 'angular');
   await expect(page).toHaveURL(`${angular}?mode=code`);
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
-  await expect(await frameworkControl(page)).toHaveValue('angular');
+  await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'angular');
   await selectFramework(page, 'react');
   await expect(page).toHaveURL(`${react}?mode=code`);
 });
@@ -95,7 +95,9 @@ test('missing counterparts stay unavailable with a separate introduction destina
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/docs/angular/langgraph/getting-started/installation');
   const control = await frameworkControl(page);
-  await expect(control.locator('option[value="react"]')).toBeDisabled();
+  await control.click();
+  await expect(page.getByRole('menuitemradio', { name: /React/ })).toBeDisabled();
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
   const introduction = page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction', exact: true });
   await expect(introduction).toHaveAttribute('href', '/docs/react/getting-started/introduction');
@@ -127,13 +129,13 @@ test('storage denial retains explicit framework selection in the current tab', a
 
 test('cross-tab preference changes do not navigate or relabel an open article', async ({ page, context }) => {
   await page.goto(angular);
-  await expect(await frameworkControl(page)).toHaveValue('angular');
+  await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'angular');
   const other = await context.newPage();
   await other.goto(react);
   await expect(await frameworkControl(other)).toHaveValue('react');
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), preferenceKey)).toBe('react');
   await expect(page).toHaveURL(angular);
-  await expect(await frameworkControl(page)).toHaveValue('angular');
+  await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'angular');
   await other.close();
 });
 

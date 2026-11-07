@@ -1,4 +1,5 @@
 export { DiagramFrame } from './DiagramFrame';
+export { HumanApprovalFlow } from './HumanApprovalFlow';
 export { DiagramNode } from './DiagramNode';
 export { DiagramEdge } from './DiagramEdge';
 export { DiagramPill } from './DiagramPill';

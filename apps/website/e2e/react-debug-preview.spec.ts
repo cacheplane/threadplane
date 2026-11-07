@@ -211,7 +211,7 @@ test.describe('native Debug Website', () => {
   test('keeps Angular canonical and selects native React explicitly without business requests', async ({ page, request }) => {
     await page.goto(route);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(page.getByRole('heading', { name: 'ChatDebugComponent', exact: true })).toBeVisible();
     await selectFramework(page, 'react');
     await expect(page).toHaveURL(/\/docs\/react\//);

@@ -10,9 +10,9 @@ test('the brand face survives inside the docs workspace', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
   await expect(prose).toHaveCSS('font-family', /Hanken/);
   await expect(prose).toHaveCSS('font-size', '16px');
-  await expect(prose).toHaveCSS('line-height', '27.2px');
+  await expect(prose).toHaveCSS('line-height', '28px');
   await expect(prose.locator('h1')).toHaveCSS('font-weight', '600');
-  await expect(prose.locator('h1')).toHaveCSS('font-size', '40px');
+  await expect(prose.locator('h1')).toHaveCSS('font-size', '44px');
   await expect(prose.locator('h1')).toHaveCSS('font-family', /Hanken/);
 });
 
@@ -30,12 +30,12 @@ test('custom nav triggers have rounded hover and expanded surfaces', async ({ pa
   await expect(page.locator('.nav-panel')).toHaveCount(0);
 });
 
-test('dark brand sections keep ink labels on yellow primary actions', async ({ page }) => {
+test('signal hero keeps white labels on navy primary actions', async ({ page }) => {
   await page.goto('/');
-  const action = page.locator('[data-surface="dark"] [data-ui="button"][data-variant="primary"]').first();
+  const action = page.locator('[data-surface="signal"] [data-ui="button"][data-variant="primary"]').first();
   await expect(action).toBeVisible();
-  await expect(action).toHaveCSS('background-color', 'rgb(255, 175, 0)');
-  await expect(action).toHaveCSS('color', 'rgb(10, 10, 10)');
+  await expect(action).toHaveCSS('background-color', 'rgb(21, 37, 62)');
+  await expect(action).toHaveCSS('color', 'rgb(255, 255, 255)');
 });
 
 for (const width of [375, 1440]) {

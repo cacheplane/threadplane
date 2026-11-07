@@ -95,7 +95,7 @@ test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ pag
 test('native Chat A2UI retains Angular as the canonical default', async ({ page }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toHaveCount(0);
   await selectFramework(page, 'react');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toBeVisible();

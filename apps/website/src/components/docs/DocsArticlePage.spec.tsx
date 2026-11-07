@@ -41,16 +41,14 @@ describe('canonical documentation articles', () => {
   it.each(['/docs/langgraph/guides/streaming', '/docs/vue/langgraph/guides/streaming', '/docs/react/chat/getting-started/installation'])('404s unavailable identity %s', async pathname => {
     await expect(DocsArticlePage({ pathname })).rejects.toThrow();
   });
-  it('resolves all migrated React articles with their declared source context', async () => {
-    for (const doc of getNarrativeDocuments('react')) {
-      const tree = await DocsArticlePage({ pathname: doc.href });
-      const workspace = find(tree, WebsiteWorkspace);
-      const mdx = find(workspace.props.docsSlot, MdxRenderer);
-      expect(mdx.props.source).toBeTruthy();
-      for (const match of mdx.props.source.matchAll(/<ExampleCode[^>]*\bfile="([^"]+)"/g)) {
-        expect(mdx.props.exampleCode?.assetPaths, doc.href).toContain(match[1]);
-        expect(mdx.props.exampleCode?.sources[match[1]], doc.href).toBeTruthy();
-      }
+  it.each(getNarrativeDocuments('react'))('resolves $href with its declared source context', async doc => {
+    const tree = await DocsArticlePage({ pathname: doc.href });
+    const workspace = find(tree, WebsiteWorkspace);
+    const mdx = find(workspace.props.docsSlot, MdxRenderer);
+    expect(mdx.props.source).toBeTruthy();
+    for (const match of mdx.props.source.matchAll(/<ExampleCode[^>]*\bfile="([^"]+)"/g)) {
+      expect(mdx.props.exampleCode?.assetPaths, doc.href).toContain(match[1]);
+      expect(mdx.props.exampleCode?.sources[match[1]], doc.href).toBeTruthy();
     }
-  }, 30000);
+  });
 });

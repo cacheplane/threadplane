@@ -20,14 +20,17 @@ vi.mock('../../../components/solutions/SolutionDemoBlock', () => ({
 }));
 
 describe('SolutionPage', () => {
-  it('renders navy rails with no per-solution accent theming', async () => {
+  it('uses the shared editorial layout and preserves routes to implementation and services', async () => {
     const slug = getAllSolutionSlugs()[0];
     const ui = await SolutionPage({ params: Promise.resolve({ slug }) });
     const { container } = render(ui);
     expect(container.querySelectorAll('[data-accent-text]')).toHaveLength(0);
     expect(container.querySelectorAll('[style*="--accent"]')).toHaveLength(0);
-    expect(container.querySelectorAll('.sol-page-rail').length).toBeGreaterThanOrEqual(3);
-    expect(container.querySelector('.sol-page-metric')).toBeTruthy();
+    expect(container.querySelector('.solutions-page')).toBeTruthy();
+    expect(container.querySelectorAll('.solutions-capabilities li')).toHaveLength(3);
+    expect(container.querySelectorAll('.solutions-libraries a')).toHaveLength(3);
+    expect(screen.getByRole('link', { name: 'Explore the code' }).getAttribute('href')).toBe('#solution-code-heading');
+    expect(screen.getByRole('link', { name: 'Explore our services' }).getAttribute('href')).toBe('/pricing#services');
     expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
   });
 });

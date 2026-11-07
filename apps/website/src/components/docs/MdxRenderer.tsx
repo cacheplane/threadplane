@@ -14,6 +14,7 @@ import { DocsDemoVideo } from './DocsDemoVideo';
 import { LearningWorkbenchEmbed } from '../workbench/LearningWorkbenchEmbed';
 import {
   StackDiagram,
+  HumanApprovalFlow,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,
   RenderHowItFits,
@@ -60,6 +61,7 @@ const mdxComponents = {
   DocsDemoVideo,
   LearningWorkbench: LearningWorkbenchEmbed,
   StackDiagram,
+  HumanApprovalFlow,
   AgUiArchitecturePipeline,
   A2uiMessageFlow,
   RenderHowItFits,

@@ -9,7 +9,7 @@ These assets support the homepage ecosystem strip. They are compatibility marks,
 - `providers/anthropic.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/anthropic.svg`.
 - `providers/bedrock.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/bedrock.svg`.
 - `providers/google.svg` copied from `~/repos/dawn/apps/web/public/logos/providers/google.svg`.
-- `ag-ui.svg` is a repository-owned AG-UI monogram.
+- `ag-ui.svg` uses the official compact AG-UI mark from [ag-ui-protocol/ag-ui](https://github.com/ag-ui-protocol/ag-ui/blob/main/docs/favicon.svg), with its SVG title changed to `AG-UI` for accessibility. Original geometry and styling are preserved.
 - `runtimes/mastra.svg` downloaded from `https://github.com/mastra-ai/mastra/blob/main/packages/playground/public/mastra.svg`.
 
 `providers/bedrock.svg` is also reused for the AWS Strands tile.
@@ -34,3 +34,7 @@ These were downloaded from `https://cdn.simpleicons.org/<slug>/111827` for a com
 - `surface/vercel.svg` from slug `vercel`.
 
 All ecosystem tiles currently have logo marks.
+
+## Product wordmarks
+
+- `b4-wordmark.svg`: existing b4.run wordmark from the LiveLoveApp brand assets (`public/brand/products/b4-wordmark.svg`), used for the pricing page product proof. Rendered in grayscale to match the homepage identity.

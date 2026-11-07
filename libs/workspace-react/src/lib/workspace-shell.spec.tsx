@@ -2,7 +2,13 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   cockpitManifest,
@@ -72,8 +78,11 @@ function renderWorkspace(options: {
   contentBundle?: ContentBundle;
   requestedMode?: string | null;
   docsSlot?: React.ReactNode;
+  runFallbackSlot?: React.ReactNode;
+  apiSlot?: React.ReactNode;
   rootElement?: 'main' | 'section';
   contextTrail?: readonly WorkspaceCrumb[];
+  navigationLayout?: 'rail' | 'toolbar';
   resizableNavigation?: boolean;
   container?: HTMLElement;
   strict?: boolean;
@@ -94,6 +103,8 @@ function renderWorkspace(options: {
         }
         requestedMode={options.requestedMode ?? 'docs'}
         docsSlot={options.docsSlot}
+        runFallbackSlot={options.runFallbackSlot}
+        apiSlot={options.apiSlot}
         pushIdentity={vi.fn()}
         pushMode={vi.fn()}
         replaceMode={vi.fn()}
@@ -104,6 +115,7 @@ function renderWorkspace(options: {
           manifest={cockpitManifest}
           rootElement={options.rootElement}
           contextTrail={options.contextTrail}
+          navigationLayout={options.navigationLayout}
           resizableNavigation={options.resizableNavigation}
         />
       </WorkspaceProvider>
@@ -116,11 +128,86 @@ function renderWorkspace(options: {
 }
 
 describe('WorkspaceShell persistent panel composition', () => {
+  it('offers an example directory and generated API on a docs-only route', () => {
+    renderWorkspace({
+      resolution: {
+        kind: 'docs-only',
+        docsPath: '/docs/angular/a2ui/start',
+        title: 'Start',
+        unavailableReason: 'no-workspace-capability',
+      },
+      presentation: {
+        kind: 'docs-only',
+        docsPath: '/docs/angular/a2ui/start',
+        title: 'Start',
+        runnable: false,
+      },
+      contentBundle: { ...contentBundle, runtimeUrl: null },
+      navigationLayout: 'toolbar',
+      resizableNavigation: true,
+      requestedMode: 'run',
+      runFallbackSlot: <h2>Explore examples</h2>,
+      apiSlot: <h2>Generated SDK reference</h2>,
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Explore examples' })
+    ).toBeTruthy();
+    expect(document.querySelector('iframe')).toBeNull();
+    const separator = screen.getByRole('separator', { name: 'Resize navigation' });
+    fireEvent.keyDown(separator, { key: 'ArrowRight' });
+    expect(separator.getAttribute('aria-valuenow')).toBe('274');
+    expect(screen.getByRole('heading', { name: 'Explore examples' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'API' }));
+    expect(
+      screen.getByRole('heading', { name: 'Generated SDK reference' })
+    ).toBeTruthy();
+    expect(screen.getByRole('separator', { name: 'Resize navigation' })).toBe(separator);
+    expect(separator.getAttribute('aria-valuenow')).toBe('274');
+    expect(screen.queryByText(/No API documentation extracted/)).toBeNull();
+  });
+
   afterEach(() => {
     window.localStorage.clear();
     window.history.replaceState({}, '', '/');
     runModeFault.shouldThrow = false;
     vi.restoreAllMocks();
+  });
+
+  it('offers modes and utility panels without a rail in the toolbar layout', async () => {
+    const { container } = renderWorkspace({
+      navigationLayout: 'toolbar',
+      docsSlot: <p>Guide content</p>,
+    });
+    expect(container.querySelector('[data-control-plane-rail]')).toBeNull();
+    const iframe = container.querySelector('iframe');
+    fireEvent.click(screen.getByRole('button', { name: 'Code' }));
+    expect(
+      screen.getByRole('region', { name: 'Code workspace panel' })
+    ).toBeTruthy();
+    expect(container.querySelector('iframe')).toBe(iframe);
+    fireEvent.click(screen.getByRole('button', { name: 'Workspace tools' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Settings' }));
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Recheck' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reload runtime' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open runtime' })).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'More runtime actions' })
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'Copy diagnostics' })
+    ).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close Settings' }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Workspace tools' })
+      )
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
+    expect(screen.getByText('Guide content')).toBeTruthy();
+    expect(container.querySelector('iframe')).toBe(iframe);
   });
 
   it('keeps the parent viewport geometry current without replacing its cross-origin frame', async () => {
@@ -297,13 +384,13 @@ describe('WorkspaceShell persistent panel composition', () => {
     }
   });
 
-  it('keeps navigation resizing opt-in and preserves the mounted runtime while resizing', async () => {
-    const plain = renderWorkspace({});
+  it.each(['rail', 'toolbar'] as const)('keeps %s navigation resizing opt-in and preserves the mounted runtime while resizing', async (navigationLayout) => {
+    const plain = renderWorkspace({ navigationLayout });
     expect(
       screen.queryByRole('separator', { name: 'Resize navigation' })
     ).toBeNull();
     plain.unmount();
-    const view = renderWorkspace({ resizableNavigation: true });
+    const view = renderWorkspace({ navigationLayout, resizableNavigation: true });
     const frame = await waitFor(() => {
       const frame = view.container.querySelector('iframe');
       expect(frame).toBeTruthy();
@@ -317,7 +404,13 @@ describe('WorkspaceShell persistent panel composition', () => {
       view.container
         .querySelector<HTMLElement>('[data-workspace-shell]')
         ?.style.getPropertyValue('--workspace-navigation-width')
-    ).toBe('338px');
+    ).toBe(navigationLayout === 'toolbar' ? '274px' : '338px');
+    fireEvent.keyDown(separator, { key: 'Home' });
+    expect(
+      view.container
+        .querySelector<HTMLElement>('[data-workspace-shell]')
+        ?.style.getPropertyValue('--workspace-navigation-width')
+    ).toBe(navigationLayout === 'toolbar' ? '264px' : '328px');
     expect(view.container.querySelector('iframe')).toBe(frame);
     for (const mode of ['Docs', 'Code', 'API']) {
       expect(screen.getByRole('button', { name: mode })).toBeTruthy();
@@ -768,7 +861,9 @@ describe('WorkspaceShell header trail', () => {
 
     // Cockpit passes no trail, so nothing about its header may change.
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-    expect(screen.getByText('LangGraph / Core Capabilities / Streaming')).toBeTruthy();
+    expect(
+      screen.getByText('LangGraph / Core Capabilities / Streaming')
+    ).toBeTruthy();
   });
 
   it('renders a supplied trail as a real breadcrumb', () => {
@@ -776,7 +871,10 @@ describe('WorkspaceShell header trail', () => {
       requestedMode: 'docs',
       contextTrail: [
         { label: 'Docs', href: '/docs' },
-        { label: 'AG-UI', href: '/docs/angular/ag-ui/getting-started/introduction' },
+        {
+          label: 'AG-UI',
+          href: '/docs/angular/ag-ui/getting-started/introduction',
+        },
         { label: 'Getting Started' },
         { label: 'Introduction' },
       ],
@@ -787,11 +885,15 @@ describe('WorkspaceShell header trail', () => {
 
     // Rungs with an href link; rungs without are plain text, because no
     // section index route exists to point the section rung at.
-    expect(within(nav).getByRole('link', { name: 'Docs' }).getAttribute('href')).toBe('/docs');
     expect(
-      within(nav).getByRole('link', { name: 'AG-UI' }).getAttribute('href'),
+      within(nav).getByRole('link', { name: 'Docs' }).getAttribute('href')
+    ).toBe('/docs');
+    expect(
+      within(nav).getByRole('link', { name: 'AG-UI' }).getAttribute('href')
     ).toBe('/docs/angular/ag-ui/getting-started/introduction');
-    expect(within(nav).queryByRole('link', { name: 'Getting Started' })).toBeNull();
+    expect(
+      within(nav).queryByRole('link', { name: 'Getting Started' })
+    ).toBeNull();
 
     // The last rung is the current page and is never a link.
     const current = within(nav).getByText('Introduction');
@@ -799,7 +901,9 @@ describe('WorkspaceShell header trail', () => {
     expect(current.tagName).not.toBe('A');
 
     // The derived label must not also be present — that was the duplication.
-    expect(screen.queryByText('LangGraph / Core Capabilities / Streaming')).toBeNull();
+    expect(
+      screen.queryByText('LangGraph / Core Capabilities / Streaming')
+    ).toBeNull();
   });
 
   it('never links the last rung, even when it carries an href', () => {
@@ -807,18 +911,25 @@ describe('WorkspaceShell header trail', () => {
       requestedMode: 'docs',
       contextTrail: [
         { label: 'Docs', href: '/docs' },
-        { label: 'Introduction', href: '/docs/angular/ag-ui/getting-started/introduction' },
+        {
+          label: 'Introduction',
+          href: '/docs/angular/ag-ui/getting-started/introduction',
+        },
       ],
     });
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     // You are already on this page; linking it is a dead control.
-    expect(within(nav).queryByRole('link', { name: 'Introduction' })).toBeNull();
+    expect(
+      within(nav).queryByRole('link', { name: 'Introduction' })
+    ).toBeNull();
     const current = within(nav).getByText('Introduction');
     expect(current.tagName).not.toBe('A');
     expect(current.getAttribute('aria-current')).toBe('page');
     // The earlier rung still links, so this is not passing because nothing rendered.
-    expect(within(nav).getByRole('link', { name: 'Docs' }).getAttribute('href')).toBe('/docs');
+    expect(
+      within(nav).getByRole('link', { name: 'Docs' }).getAttribute('href')
+    ).toBe('/docs');
   });
 
   it('renders a crumb icon inside that rung, hidden from assistive tech', () => {
@@ -838,7 +949,9 @@ describe('WorkspaceShell header trail', () => {
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const agUiLink = within(nav).getByRole('link', { name: 'AG-UI' });
     const mark = within(agUiLink).getByTestId('library-mark');
-    expect(mark.parentElement?.hasAttribute('data-workspace-trail-icon')).toBe(true);
+    expect(mark.parentElement?.hasAttribute('data-workspace-trail-icon')).toBe(
+      true
+    );
     expect(mark.parentElement?.getAttribute('aria-hidden')).toBe('true');
 
     // A rung with no icon renders no icon wrapper at all.

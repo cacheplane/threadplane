@@ -919,6 +919,17 @@
     .workspace-navigation-resize {
     display: none;
   }
+  .workspace-shell[data-workspace-navigation-layout='toolbar']:has(
+      .tp-learn-host[data-expanded]
+    ) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-shell[data-workspace-navigation-layout='toolbar']:has(
+      .tp-learn-host[data-expanded]
+    )
+    .workspace-shell-navigation {
+    display: none;
+  }
 }
 @media (max-width: 1100px) {
   .tp-learn-teaching {

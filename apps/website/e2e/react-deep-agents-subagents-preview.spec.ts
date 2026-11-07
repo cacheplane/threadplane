@@ -149,7 +149,7 @@ test('the canonical Subagents guide keeps Angular as its default frontend', asyn
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Subagents preview',
@@ -252,7 +252,7 @@ test('frontend changes release the old React frame and return to an empty inert 
   await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Docs', exact: true }).click();
   await hydrated(page, 'docs');
   await selectFramework(page, 'angular');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page.getByRole('heading', { name: 'React Deep Agents Subagents preview', exact: true })).toHaveCount(0);
   await expect.poll(() => oldFrame?.evaluate(frame => frame.isConnected)).toBe(false);
   await selectFramework(page, 'react');

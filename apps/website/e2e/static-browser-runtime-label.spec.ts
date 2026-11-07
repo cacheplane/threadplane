@@ -62,9 +62,13 @@ for (const viewport of [
 }
 
 test('live LangGraph metadata preserves its backend language and shared target', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/docs/angular/langgraph/guides/streaming?mode=code', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
+  await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   const section = page.locator('[data-runtime-section]:visible');
   const toggle = section.getByRole('button', { name: 'Runtime', exact: true });
   if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();

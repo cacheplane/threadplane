@@ -12,6 +12,7 @@ const SLUG = 'agui-pipeline';
 export function AgUiArchitecturePipeline() {
   return (
     <DiagramFrame
+      title="From your Angular component to the agent"
       slug={SLUG}
       viewWidth={640}
       viewHeight={408}

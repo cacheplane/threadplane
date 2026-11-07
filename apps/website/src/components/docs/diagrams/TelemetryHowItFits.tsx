@@ -27,6 +27,7 @@ const SLUG = 'telemetry-how-it-fits';
 export function TelemetryHowItFits() {
   return (
     <DiagramFrame
+      title="Where browser and server events go"
       slug={SLUG}
       viewWidth={640}
       viewHeight={238}

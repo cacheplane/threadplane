@@ -1,17 +1,12 @@
 import { Hero } from '../components/landing/Hero';
-import { Reliability } from '../components/landing/Reliability';
+import { Capabilities } from '../components/landing/Capabilities';
 import { Compatibility } from '../components/landing/Compatibility';
-import { EnterpriseArchitecture } from '../components/landing/EnterpriseArchitecture';
-import { Stage } from '../components/landing/Stage';
+import { HomeArchitecture } from '../components/landing/HomeArchitecture';
+import { HomeOwnership } from '../components/landing/HomeOwnership';
 import { TeamsBlock } from '../components/landing/TeamsBlock';
 import { HomeFAQ } from '../components/landing/HomeFAQ';
-import { OpenSourceStrip } from '../components/landing/OpenSourceStrip';
-import { NoRuntimeBand } from '../components/landing/NoRuntimeBand';
 import { RecentArticles } from '../components/landing/RecentArticles';
-// The homepage must stay statically rendered (no cookies()/headers()/dynamic):
-// the proof lines are read from the demo recording at build time, and the file
-// is traced into the deployment only as a safety net.
-import { STAGE_PROOF } from '../lib/stage-proof';
+import '../styles/homepage.css';
 import {
   createPageMetadata,
   HOME_DESCRIPTION,
@@ -30,30 +25,16 @@ export default function HomePage() {
   const formPolicy = getFormPolicy();
 
   return (
-    <>
+    <div className="home-page">
       <Hero />
-      <Reliability />
+      <Capabilities />
       <Compatibility />
-      <EnterpriseArchitecture />
-
-      {/* No runtime: the diagram above shows Threadplane reaching your agent
-          directly; this band says so in two words. Copy lives in
-          NO_RUNTIME_BAND (positioning.ts). Deliberately dark-on-dark with the
-          band below; each dark section paints its own seam (spec §5). */}
-      <NoRuntimeBand />
-
-      {/* The open-source full stop: a loud dark band with one fork CTA. Copy
-          lives in OPEN_SOURCE_STRIP (positioning.ts). */}
-      <OpenSourceStrip />
-
-      {/* The four capability beats (stream, persist, approve, render): stills
-          by default, the pinned live act on wide, motion-tolerant viewports
-          (live-stage spec §3, §8). Copy lives in STAGE_RAIL (positioning.ts). */}
-      <Stage proof={STAGE_PROOF} />
+      <HomeArchitecture />
+      <HomeOwnership />
 
       <TeamsBlock formPolicy={formPolicy} />
       <HomeFAQ />
       <RecentArticles />
-    </>
+    </div>
   );
 }

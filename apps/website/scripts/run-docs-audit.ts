@@ -32,8 +32,11 @@ const delay = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 async function measureDiagram(region: Locator) {
   const snapshot = await region.evaluate((element) => {
-    const svg = element.querySelector('svg');
-    const canvas = svg ?? element.querySelector('.tp-lesson-diagram');
+    // Inline arrow icons are not the canvas of an HTML diagram.
+    const svg = element.querySelector('svg.tp-diagram-svg');
+    const canvas =
+      svg ??
+      element.querySelector('.tp-lesson-diagram, .tp-human-approval-flow');
     if (!canvas) throw new Error('Diagram canvas missing');
     const box = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -41,13 +44,13 @@ async function measureDiagram(region: Locator) {
     };
     const nodeSelector = svg
       ? '.tp-diagram-node'
-      : '.tp-diagram-card, .tp-sequence-event';
+      : '.tp-diagram-card, .tp-sequence-event, .tp-human-approval-node';
     const nodeElements = [...canvas.querySelectorAll(nodeSelector)];
     const texts = [
       ...canvas.querySelectorAll(
         svg
           ? 'text'
-          : '.tp-diagram-card > strong, .tp-diagram-card > small, .tp-sequence-event > strong, .tp-sequence-event > small, .tp-sequence-route, .tp-state-transitions dt, .tp-state-transitions dd, .tp-erd-relations p'
+          : '.tp-diagram-card > strong, .tp-diagram-card > small, .tp-sequence-event > strong, .tp-sequence-event > small, .tp-sequence-route, .tp-state-transitions dt, .tp-state-transitions dd, .tp-erd-relations p, .tp-human-approval-node > strong, .tp-human-approval-node > small'
       ),
     ];
     const normalized = (value: string) => value.replace(/["']/g, '').trim();
@@ -533,7 +536,9 @@ async function main() {
           await expect(page.locator('article').first()).toBeVisible();
           await page.evaluate(() => document.fonts.ready);
           if (target.path.startsWith('/docs/react/'))
-            await expect(page.getByLabel('Framework', { exact: true }).first()).toHaveValue('react');
+            await expect(
+              page.locator('[data-framework-control]').first()
+            ).toHaveAttribute('data-value', 'react');
           const actualKinds = await page
             .locator('figure[data-docs-diagram][data-diagram-kind]')
             .evaluateAll((els) =>
@@ -559,8 +564,8 @@ async function main() {
           if (width === 1440) {
             const nav = page.locator('[data-workspace-desktop-navigation]');
             const selectedFramework = await nav
-              .getByLabel('Framework', { exact: true })
-              .inputValue();
+              .locator('[data-framework-control]')
+              .getAttribute('data-value');
             if (selectedFramework === 'react') {
               // Shared pages retain the last explicit framework preference.
               // React navigation contains only authored React/shared variants;
@@ -574,7 +579,7 @@ async function main() {
               await expect(last).toContainText('Migrations');
               await expect(last.getByRole('button').first()).toHaveAttribute(
                 'aria-expanded',
-                'false'
+                target.path.includes('/migrations/') ? 'true' : 'false'
               );
             }
             if (index === 1) await checkIndependentScroll(page);

@@ -301,6 +301,22 @@
   border: 1px solid transparent;
   box-shadow: none;
 }
+@media (hover: hover) {
+  [data-ui="button"][data-variant="primary"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--color-accent) 85%, black);
+    border-color: color-mix(in srgb, var(--color-accent) 85%, black);
+    box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
+  }
+  [data-ui="button"][data-variant="secondary"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-surface);
+  }
+  [data-ui="button"][data-variant="ghost"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+}
 /* Keyboard focus ring.
  *
  * Without this the UA default applies — `outline: auto 1px rgb(0, 95, 204)` in

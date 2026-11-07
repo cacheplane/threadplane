@@ -14,12 +14,25 @@ beforeEach(() => {
 });
 
 describe('docs index', () => {
+  it('keeps install-copy controls outside navigation links', () => {
+    render(<DocsLandingPage />);
+    for (const summary of screen.getAllByText('Angular install command'))
+      fireEvent.click(summary);
+    const buttons = screen.getAllByRole('button', {
+      name: 'Copy install command',
+    });
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(button.closest('a')).toBeNull();
+  });
+
   it('wears the same control plane as every other docs route', () => {
     render(<DocsLandingPage />);
 
     expect(screen.queryByRole('heading', { name: 'Scope' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Search docs' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Choose a library' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Choose a library' })
+    ).toBeTruthy();
   });
 
   it('keeps the landing content out of the prose measure', () => {
@@ -42,7 +55,10 @@ describe('docs index', () => {
     const menu = screen.getByRole('menu');
     const pickerNames = within(menu)
       .getAllByRole('menuitemradio')
-      .map((item) => item.querySelector('.docs-sidebar-lib-item-title')?.textContent);
+      .map(
+        (item) =>
+          item.querySelector('.docs-sidebar-lib-item-title')?.textContent
+      );
 
     // 85 occurrences of "json-render" across docs content vs one "Render" in
     // docsConfig. With the control plane on this page both labels are on
@@ -51,13 +67,11 @@ describe('docs index', () => {
     expect(pickerNames).not.toContain('Render');
   });
 
-  it('wires Run to the canonical default example route', () => {
+  it('wires Run to the complete example directory', () => {
     render(<DocsLandingPage />);
 
-    // Registry-derived, not hardcoded: /workspace/langgraph/streaming 404s
-    // because that capability's canonical destination is its docs route.
-    expect(
-      screen.getByRole('link', { name: 'Run' }).getAttribute('href'),
-    ).toBe('/docs/angular/langgraph/guides/streaming?mode=run');
+    expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe(
+      '/docs/examples'
+    );
   });
 });

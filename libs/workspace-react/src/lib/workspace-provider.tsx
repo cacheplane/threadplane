@@ -62,6 +62,10 @@ export interface WorkspaceProviderProps {
   readonly routePath: string;
   readonly requestedMode: string | null;
   readonly docsSlot?: ReactNode;
+  /** Host content enables these modes even without a mapped example. */
+  readonly runFallbackSlot?: ReactNode;
+  readonly apiSlot?: ReactNode;
+  readonly defaultMode?: WorkspaceMode;
   readonly pushIdentity: (
     href: string,
     options?: Pick<WorkspaceNavigationRequest, 'restoreFocus'>
@@ -130,11 +134,14 @@ const routeIdentityKey = (resolution: WorkspaceResolution): string =>
 const normalizedMode = (
   rawMode: string | null,
   resolution: WorkspaceResolution,
-  availability: WorkspaceModeAvailabilityMap
+  availability: WorkspaceModeAvailabilityMap,
+  defaultMode?: WorkspaceMode
 ): WorkspaceMode => {
   const requested = parseControlPlaneMode(rawMode);
   if (requested && availability[requested].available) return requested;
-  return getRouteDefaultMode(resolution);
+  return defaultMode && availability[defaultMode].available
+    ? defaultMode
+    : getRouteDefaultMode(resolution);
 };
 
 const createLocalActivityInput = (
@@ -156,6 +163,9 @@ export function WorkspaceProvider({
   routePath,
   requestedMode,
   docsSlot = null,
+  runFallbackSlot,
+  apiSlot,
+  defaultMode,
   pushIdentity,
   pushMode,
   replaceMode,
@@ -170,11 +180,15 @@ export function WorkspaceProvider({
 }: WorkspaceProviderProps) {
   const preferences = useControlPlanePreferences('cockpit');
   const modeAvailability = useMemo(
-    () => getWorkspaceModeAvailability(resolution, presentation),
-    [presentation, resolution]
+    () => ({
+      ...getWorkspaceModeAvailability(resolution, presentation),
+      ...(runFallbackSlot != null ? { Run: { available: true } } : {}),
+      ...(apiSlot != null ? { API: { available: true } } : {}),
+    }),
+    [presentation, resolution, runFallbackSlot, apiSlot]
   );
   const [activeMode, setActiveMode] = useState<WorkspaceMode>(() =>
-    normalizedMode(requestedMode, resolution, modeAvailability)
+    normalizedMode(requestedMode, resolution, modeAvailability, defaultMode)
   );
   const [activeUtility, setActiveUtilityState] =
     useState<WorkspaceUtility>(null);
@@ -218,7 +232,12 @@ export function WorkspaceProvider({
   const applyRouteMode = useCallback(
     (rawMode: string | null, normalizeUrl: boolean) => {
       const requested = parseControlPlaneMode(rawMode);
-      const nextMode = normalizedMode(rawMode, resolution, modeAvailability);
+      const nextMode = normalizedMode(
+        rawMode,
+        resolution,
+        modeAvailability,
+        defaultMode
+      );
       setActiveMode(nextMode);
       if (
         normalizeUrl &&
@@ -236,7 +255,7 @@ export function WorkspaceProvider({
         lastNormalizationRef.current = null;
       }
     },
-    [modeAvailability, replaceMode, resolution]
+    [modeAvailability, replaceMode, resolution, defaultMode]
   );
 
   const resolutionKey = routeIdentityKey(resolution);
@@ -390,6 +409,8 @@ export function WorkspaceProvider({
       presentation,
       contentBundle,
       docsSlot,
+      runFallbackSlot,
+      apiSlot,
       activeMode,
       modeAvailability,
       activeUtility,
@@ -423,6 +444,8 @@ export function WorkspaceProvider({
       contentBundle,
       copyDiagnostics,
       docsSlot,
+      runFallbackSlot,
+      apiSlot,
       events,
       getSessionId,
       hostServices,

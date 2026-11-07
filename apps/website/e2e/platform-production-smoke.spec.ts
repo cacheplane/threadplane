@@ -231,10 +231,8 @@ test.describe('Production: unified runtime embedding policy', () => {
     });
 
     await page.goto(`${WEBSITE_URL}/docs/angular/langgraph/guides/streaming?mode=run`);
-    const controls = page.locator('[data-workspace-desktop-navigation]');
-    await controls
-      .getByRole('button', { name: 'Settings', exact: true })
-      .click();
+    await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
     await expect(
       page.locator('[data-runtime-target-settings]')
     ).toHaveAttribute('data-runtime-target-kind', 'shared');

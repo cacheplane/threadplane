@@ -1,208 +1,199 @@
 import { Container } from '../../components/ui/Container';
 import { Section } from '../../components/ui/Section';
-import { Eyebrow } from '../../components/ui/Eyebrow';
 import { Button } from '../../components/ui/Button';
-import { Pill } from '../../components/ui/Pill';
-import { FeatureBlock } from '../../components/landing/FeatureBlock';
-import { BrowserFrame } from '../../components/ui/BrowserFrame';
-import { WhitePaperBlock } from '../../components/landing/WhitePaperBlock';
-import { FinalCTA } from '../../components/landing/FinalCTA';
-import { DiagramSection } from '../../components/landing/DiagramSection';
-import { PilotJourney } from '../../components/docs/diagrams';
+import { PilotSketch } from '../../components/services/PilotSketch';
 import { createPageMetadata } from '../../lib/site-metadata';
-import { getFormPolicy } from '../../lib/growth/form-policy';
+import '../../styles/services.css';
 
 export const metadata = createPageMetadata({
   title: 'Pilot to Production — Threadplane',
-  description: 'An optionally scoped eight-week concierge engagement for Angular teams shipping an agent into production with their own runtime, data, and infrastructure.',
+  description:
+    'A scoped delivery engagement to bring your agent into production with your own runtime, data, and infrastructure. Build with our team, then own the result.',
   pathname: '/pilot-to-prod',
   type: 'website',
 });
 
+const CONTACT_HREF = '/contact?intent=enterprise&entry=pilot_to_prod';
+
+const PHASES = [
+  {
+    id: 'discover',
+    title: 'Map the route.',
+    body: 'Start with the workflow, not the model. We work through the product, the people using it, and the constraints that will decide whether it ships.',
+    timing: 'Weeks 1–2 in an example eight-week engagement.',
+    points: [
+      'A workflow and stack review',
+      'A focused scope with acceptance criteria',
+      'An integration plan for auth, data, and deployment',
+    ],
+    deliverable: 'A plan your team can build against.',
+    sketch: 'plan',
+  },
+  {
+    id: 'build',
+    title: 'Make it work. In your app.',
+    body: 'Build against real data and real authentication, alongside your engineers. Stakeholders see working software as the agent and its interface take shape.',
+    timing: 'Weeks 3–5 in an example eight-week engagement.',
+    points: [
+      'Agent and interface integration',
+      'Streaming, tool activity, and human decisions',
+      'Working demos and feedback from your team',
+    ],
+    deliverable: 'A working agent in your product.',
+    sketch: 'build',
+  },
+  {
+    id: 'harden',
+    title: 'Clear it for launch.',
+    body: 'Work through the failures, the fallbacks, and the deployment path. Then hand over the knowledge your team needs to operate and improve what you shipped.',
+    timing: 'Weeks 6–8 in an example eight-week engagement.',
+    points: [
+      'Testing, tracing, and recovery paths',
+      'Deployment and rollback preparation',
+      'A runbook, training, and source-code handoff',
+    ],
+    deliverable: 'A launch plan. A team ready to own it.',
+    sketch: 'launch',
+  },
+] as const;
+
 export default function PilotToProdPage() {
-  const formPolicy = getFormPolicy();
   return (
-    <>
-      {/* Hero */}
-      <Section surface="canvas" ariaLabelledBy="pilot-hero-heading">
+    <div className="services-page pilot-page">
+      <Section ariaLabelledBy="pilot-hero-heading" className="services-hero">
         <Container>
-          <div className="pilot-hero-inner">
-            <Eyebrow tone="accent" className="pilot-eyebrow-spaced">Pilot to production</Eyebrow>
-            <h1 id="pilot-hero-heading" className="pilot-h1">
-              8 weeks. One working agent. Production-ready patterns.
+          <div className="services-hero-copy">
+            <h1 id="pilot-hero-heading">
+              Your pilot.
+              <br />
+              Ready for production.
             </h1>
-            <p className="pilot-hero-subtitle">
-              Pilot-to-Prod is a concierge engagement. We ship your first Angular agent on your real data, in your real app — and your engineers own it at the end.
+            <p>
+              A promising demo is a start. Bring your real app, your data, and
+              your engineers. We’ll help you get the rest ready to ship.
             </p>
-            <div className="pilot-hero-buttons">
-              <Button variant="primary" size="lg" href="#whitepaper-block">Read the field report</Button>
-              <Button variant="secondary" size="lg" href="#contact">Book a discovery call</Button>
-            </div>
-            <div className="pilot-hero-pills">
-              <Pill variant="accent">Fixed scope</Pill>
-              <Pill variant="neutral">Source delivered</Pill>
-              <Pill variant="neutral">IP yours</Pill>
-              <Pill variant="neutral">No lock-in</Pill>
+            <div className="services-actions">
+              <Button variant="primary" size="lg" href={CONTACT_HREF}>
+                Plan a launch
+              </Button>
+              <Button variant="secondary" size="lg" href="#pilot-journey">
+                See the engagement
+              </Button>
             </div>
           </div>
         </Container>
       </Section>
 
-      <DiagramSection
-        id="pilot-journey"
-        eyebrow="The engagement"
-        headline="Three phases, each with a gate you can point at"
-        body="No open-ended consulting arc: each phase ends with a concrete deliverable — a roadmap, a working agent, an on-call runbook — not a status update."
-      >
-        <PilotJourney />
-      </DiagramSection>
-
-      {/* Discover */}
-      <FeatureBlock
-        id="discover"
-        eyebrow="Week 1–2 · Discover"
-        headline="Map your stack. Pick the work that earns its keep."
-        body="We don't start with the model. We start with the workflow — the meeting where someone says 'this would be a great use of AI' and the friction that's stopping it from shipping."
-        rows={[
-          { claim: 'Audit your surfaces and agent-eligible workflows', api: 'stack audit' },
-          { claim: 'Pick the one or two agents that earn their keep', api: 'roadmap' },
-          { claim: 'Auth, residency, observability locked early', api: 'workshops' },
-        ]}
-        cta={{ label: 'See sample roadmap', href: '#whitepaper-block' }}
-        visual={
-          <BrowserFrame url="discover · scope · plan" elevation="md">
-            <div className="pilot-visual-panel">
-              <Eyebrow tone="accent" className="pilot-eyebrow-tight">Roadmap draft</Eyebrow>
-              <ul className="pilot-roadmap-list">
-                {[
-                  ['W1', 'Stakeholder interviews + workflow audit'],
-                  ['W2', 'Agent shortlist + integration plan'],
-                  ['W3–5', 'Build + iterate on real data'],
-                  ['W6–7', 'Harden + observability + deploy'],
-                  ['W8', 'Train your team · handoff'],
-                ].map(([w, desc]) => (
-                  <li key={w} className="pilot-roadmap-item">
-                    <span className="pilot-roadmap-week">{w}</span>
-                    <span className="pilot-roadmap-desc">{desc}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* Build */}
-      <FeatureBlock
-        id="build"
-        eyebrow="Week 3–5 · Build"
-        headline="Ship a working agent on your real data."
-        body="Working code, not slideware. We integrate against your real backend, your real auth, and your real Angular app — paired with your engineers, not behind a curtain."
-        rows={[
-          { claim: 'A working agent on your real data', api: 'your repo, your engineers' },
-          { claim: 'Streaming surface from the chat compositions', api: '@threadplane/chat' },
-          { claim: 'Weekly demos to stakeholders', api: 'open progress' },
-        ]}
-        cta={{ label: 'See @threadplane/chat', href: '/chat' }}
-        visualLeft
-        visual={
-          <BrowserFrame url="threadplane.ai/docs · Run" elevation="md">
-            <img
-              src="/screenshots/workspace-run.webp"
-              alt="Threadplane Website workspace — live chat surface ready to receive a message"
-              className="pilot-screenshot"
-              loading="lazy"
-              decoding="async"
-            />
-          </BrowserFrame>
-        }
-      />
-
-      {/* Harden */}
-      <FeatureBlock
-        id="harden"
-        eyebrow="Week 6–7 · Harden"
-        headline="Production-ready, not demo-ready."
-        body="Observability, error boundaries, fallback strategies, deploy paths, on-call runbook. The stuff that makes the difference between a demo and an app you can leave running on a Friday afternoon."
-        rows={[
-          { claim: 'Tracing, metrics, error budgets', api: 'Distributed tracing hooks' },
-          { claim: 'Fallbacks across every agent surface', api: 'readiness + fallback' },
-          { claim: 'Load tested, on-call ready', api: 'runbook, yours' },
-        ]}
-        cta={{ label: 'Production patterns', href: '/docs/angular/langgraph/guides/deployment' }}
-        visual={
-          <BrowserFrame url="grafana · agent dashboard" elevation="md">
-            <div className="pilot-visual-panel">
-              <Eyebrow tone="accent" className="pilot-eyebrow-tight">Production checklist</Eyebrow>
-              <ul className="pilot-checklist-list">
-                {[
-                  'Streaming latency budget defined',
-                  'Tool-call error boundaries wired',
-                  'Fallback API per surface',
-                  'Tracing → your dashboard',
-                  'On-call runbook delivered',
-                  'Deploy + rollback tested',
-                ].map((item) => (
-                  <li key={item} className="pilot-checklist-item">
-                    <span className="pilot-checklist-badge">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* Outcomes */}
-      <Section surface="tinted" ariaLabelledBy="outcomes-heading">
+      <Section id="pilot-journey" ariaLabelledBy="pilot-journey-heading">
         <Container>
-          <div className="pilot-section-header">
-            <div className="pilot-rail2">
-              <Eyebrow tone="accent" className="pilot-eyebrow-tight">What you walk away with</Eyebrow>
-              <span className="pilot-rail2-line" aria-hidden="true" />
-            </div>
-            <h2 id="outcomes-heading" className="pilot-h2">
-              A working agent. A trained team. A runbook.
+          <header className="services-section-heading">
+            <h2 id="pilot-journey-heading">
+              A clear route.
+              <br />
+              Concrete handoffs.
             </h2>
-          </div>
-          <div className="pilot-outcome-rows">
-            {[
-              { claim: 'Live on your data, in your app — not in a sandbox.', tail: 'working demo' },
-              { claim: 'Error, fallback, and observability built in from the start.', tail: 'hardened patterns' },
-              { claim: 'Integrated with your CI/CD, your auth, your data.', tail: 'deploy-ready' },
-              { claim: 'Your engineers own the framework and the runbook.', tail: 'trained team' },
-            ].map((o) => (
-              <div className="pilot-outcome-row" key={o.tail}>
-                <p className="pilot-outcome-claim">{o.claim}</p>
-                <p className="pilot-outcome-tail">{o.tail}</p>
-              </div>
+            <p>
+              Three phases, each with a tangible deliverable. The eight-week
+              plan below is an example; we agree the scope, timing, and
+              acceptance criteria together.
+            </p>
+          </header>
+          <div className="pilot-phases">
+            {PHASES.map((phase) => (
+              <article
+                className="pilot-phase"
+                id={phase.id}
+                key={phase.id}
+                aria-labelledby={phase.id + '-heading'}
+              >
+                <div className="pilot-phase-copy">
+                  <h2 id={phase.id + '-heading'}>{phase.title}</h2>
+                  <p>{phase.body}</p>
+                  <ul>
+                    {phase.points.map((point) => (
+                      <li key={point}>
+                        <span aria-hidden="true">✓</span>
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="pilot-phase-timing">{phase.timing}</p>
+                </div>
+                <PilotSketch kind={phase.sketch} takeaway={phase.deliverable} />
+              </article>
             ))}
           </div>
         </Container>
       </Section>
 
-      <WhitePaperBlock formPolicy={formPolicy} />
-
-      {/* Contact anchor */}
-      <Section id="contact" surface="white" ariaLabelledBy="contact-heading">
+      <Section ariaLabelledBy="outcomes-heading">
         <Container>
-          <div className="pilot-contact-inner">
-            <Eyebrow tone="accent" className="pilot-eyebrow-spaced">Discovery call</Eyebrow>
-            <h2 id="contact-heading" className="pilot-h2 pilot-h2-spaced">
-              Tell us about your stack.
+          <div className="pilot-ownership">
+            <div>
+              <h2 id="outcomes-heading">
+                Your code.
+                <br />
+                Your team’s next chapter.
+              </h2>
+              <p>
+                We’re here to help you ship and keep going. The result belongs
+                in your repository, your infrastructure, and your engineers’
+                hands.
+              </p>
+              <Button
+                variant="secondary"
+                size="lg"
+                href="/docs/angular/langgraph/guides/deployment"
+              >
+                Explore production patterns <span aria-hidden="true">↗</span>
+              </Button>
+            </div>
+            <ul className="pilot-outcomes">
+              <li>
+                <h3>Working software.</h3>
+                <p>
+                  Integrated with the app, data, and authentication you actually
+                  use.
+                </p>
+              </li>
+              <li>
+                <h3>A path to operate it.</h3>
+                <p>
+                  Tests, observability, deployment guidance, and a runbook
+                  shaped around the agreed scope.
+                </p>
+              </li>
+              <li>
+                <h3>Engineers who own it.</h3>
+                <p>
+                  Source code, training, and a handoff that makes the next
+                  iteration yours.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </Container>
+      </Section>
+
+      <Section id="contact" ariaLabelledBy="pilot-contact-heading">
+        <Container>
+          <div className="services-closing">
+            <h2 id="pilot-contact-heading">
+              Tell us about
+              <br />
+              your runway.
             </h2>
-            <p className="pilot-contact-body">
-              30-minute discovery call. We&apos;ll dig into your Angular surface, your agent-eligible workflows, and whether Pilot-to-Prod is the right fit. No pitch deck.
+            <p>
+              Your stack, your workflow, and what’s keeping it from production.
+              We’ll start there and work out whether Pilot-to-Prod is the right
+              fit.
             </p>
-            <Button variant="primary" size="lg" href="/pricing#enterprise">
+            <Button variant="primary" size="lg" href={CONTACT_HREF}>
               Request a discovery call
             </Button>
           </div>
         </Container>
       </Section>
-
-      <FinalCTA />
-    </>
+    </div>
   );
 }

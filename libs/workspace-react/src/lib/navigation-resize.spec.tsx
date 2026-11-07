@@ -9,11 +9,11 @@ import {
 
 const key = 'threadplane.docs-navigation.width.v1';
 
-function Navigation({ enabled = true }: { enabled?: boolean }) {
-  const { width, update } = useNavigationWidth(enabled);
+function Navigation({ enabled = true, defaultWidth }: { enabled?: boolean; defaultWidth?: number }) {
+  const { width, update } = useNavigationWidth(enabled, defaultWidth);
   return (
     <aside data-testid="navigation" style={{ width }}>
-      {enabled && <NavigationResizeHandle width={width} onChange={update} />}
+      {enabled && <NavigationResizeHandle width={width} defaultWidth={defaultWidth} onChange={update} />}
     </aside>
   );
 }
@@ -54,6 +54,31 @@ afterEach(() => {
 });
 
 describe('navigation width preferences', () => {
+  it.each(['null', '{bad', '"400"'])('uses the compact hydration default when saved width %s is invalid', (stored) => {
+    localStorage.setItem(key, stored);
+    expect(renderToString(<Navigation defaultWidth={264} />)).toContain('width:264px');
+    render(<Navigation defaultWidth={264} />);
+    expect(screen.getByTestId('navigation').style.width).toBe('264px');
+  });
+
+  it('shares saved widths across layouts and resets to the active layout default', () => {
+    localStorage.setItem(key, '400');
+    const compact = render(<Navigation defaultWidth={264} />);
+    const separator = screen.getByRole('separator', { name: 'Resize navigation' });
+    expect(separator.getAttribute('aria-valuenow')).toBe('400');
+    fireEvent.keyDown(separator, { key: 'Home' });
+    expect(separator.getAttribute('aria-valuenow')).toBe('264');
+    fireEvent.keyDown(separator, { key: 'ArrowRight' });
+    expect(separator.getAttribute('aria-valuenow')).toBe('274');
+    fireEvent.doubleClick(separator);
+    expect(localStorage.getItem(key)).toBe('264');
+    compact.unmount();
+    render(<Navigation />);
+    expect(screen.getByTestId('navigation').style.width).toBe('264px');
+    fireEvent.keyDown(screen.getByRole('separator'), { key: 'Home' });
+    expect(screen.getByTestId('navigation').style.width).toBe('328px');
+  });
+
   it('starts with hydration-safe defaults and restores a saved width without rewriting storage', () => {
     localStorage.setItem(key, '400');
     expect(renderToString(<Navigation />)).toContain('width:328px');

@@ -13347,6 +13347,16 @@
       "reason": "Private cockpit, example, or test infrastructure; adapt for React scenarios without adding a public package API."
     },
     {
+      "id": "source:libs/workspace-react/src/lib/components/workspace-toolbar.tsx",
+      "taskIds": [
+        "T33",
+        "T34"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal docs workspace mode and utility navigation; shared React infrastructure without a new public package API."
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/host-services.ts",
       "taskIds": [
         "T33",

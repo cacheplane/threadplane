@@ -1,0 +1,157 @@
+/* Compact reading navigation is an Angular-route opt-in. Shared and React
+ * contexts retain the existing control-plane presentation. */
+body:has(
+    [data-website-workspace-host][data-workspace-route^='/docs/angular/']
+  ) {
+  [data-docs-control-plane-context][data-docs-navigation-compact] {
+    gap: 0;
+    padding: 24px 20px 40px;
+    background: #f6f7f9;
+  }
+
+  [data-docs-navigation-compact] .docs-control-plane-search-trigger {
+    min-height: 44px;
+    margin: 0 0 22px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  [data-docs-navigation-compact] .docs-control-plane-search-label {
+    font-size: 14px;
+  }
+
+  [data-docs-navigation-compact] [data-framework-selector] {
+    padding: 0;
+    margin: 0 0 12px;
+  }
+
+  [data-docs-navigation-compact] [data-framework-selector] > label,
+  [data-docs-navigation-compact] .docs-sidebar-picker-label {
+    display: block;
+    margin: 0 0 6px 3px;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-library {
+    margin: 0 0 26px;
+  }
+
+  [data-docs-navigation-compact] .docs-framework-dropdown {
+    margin: 0;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-trigger {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-trigger-label {
+    font-size: 14px;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-menu {
+    top: calc(100% + 8px);
+    border-radius: 14px;
+    padding: 7px;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-item {
+    min-height: 44px;
+    border-radius: 8px;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-item-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-lib-group {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-section {
+    margin: 0 0 10px;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-section-toggle {
+    width: 100%;
+    min-height: 40px;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    text-align: left;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-section-links {
+    margin: 3px 0 6px 10px;
+    padding-left: 9px;
+    border-left: 1px solid var(--color-border);
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-section-link {
+    min-height: 36px;
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  [data-docs-navigation-compact] [data-docs-navlink][data-active] {
+    color: var(--color-text-primary);
+    background: var(--color-accent-surface);
+    font-weight: 600;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-top-links {
+    margin: 20px 0 0;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-top-link,
+  [data-docs-navigation-compact] .docs-sidebar-supporting-demo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    text-decoration: none;
+  }
+
+  [data-docs-navigation-compact] .docs-sidebar-supporting-demo:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  [data-docs-control-plane-context][data-docs-navigation-compact][data-mobile] {
+    padding: 20px 24px 40px;
+  }
+
+  [data-docs-navigation-compact][data-mobile] .docs-sidebar-section-toggle,
+  [data-docs-navigation-compact][data-mobile] .docs-sidebar-section-link,
+  [data-docs-navigation-compact][data-mobile] .docs-sidebar-top-link,
+  [data-docs-navigation-compact][data-mobile] .docs-sidebar-supporting-demo {
+    min-height: 44px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+}

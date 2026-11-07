@@ -188,7 +188,7 @@ test('native AG-UI A2UI retains Angular as the canonical default', async ({
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', { name: 'React AG-UI A2UI preview', exact: true })
   ).toHaveCount(0);

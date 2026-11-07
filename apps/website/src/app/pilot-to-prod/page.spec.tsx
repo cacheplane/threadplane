@@ -12,22 +12,29 @@ vi.mock('../../lib/analytics/client', () => ({
 }));
 
 describe('PilotToProdPage', () => {
-  it('renders rail-kicked section headers and the outcomes ledger', () => {
+  it('presents three scoped phases and the handoff outcomes', () => {
     const { container } = render(<PilotToProdPage />);
-    expect(container.querySelectorAll('.pilot-rail2')).toHaveLength(1);
-    expect(container.querySelectorAll('.pilot-outcome-row')).toHaveLength(4);
-    expect(container.querySelectorAll('.pilot-outcomes-grid')).toHaveLength(0);
+    expect(container.querySelectorAll('.pilot-phase')).toHaveLength(3);
+    expect(container.querySelectorAll('.pilot-outcomes li')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-ui="eyebrow"]')).toHaveLength(0);
     expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
   });
 
-  it('presents the embedded Website workspace instead of the retired Cockpit host', () => {
+  it('routes discovery directly to the enterprise form and preserves production guidance', () => {
     render(<PilotToProdPage />);
 
     expect(
-      screen.getByAltText(
-        'Threadplane Website workspace — live chat surface ready to receive a message'
-      )
+      screen
+        .getByRole('link', { name: 'Request a discovery call' })
+        .getAttribute('href')
+    ).toBe('/contact?intent=enterprise&entry=pilot_to_prod');
+    expect(
+      screen
+        .getByRole('link', { name: 'Explore production patterns' })
+        .getAttribute('href')
+    ).toBe('/docs/angular/langgraph/guides/deployment');
+    expect(
+      screen.getByText(/eight-week plan below is an example/)
     ).toBeTruthy();
-    expect(screen.queryByText('cockpit.threadplane.ai')).toBeNull();
   });
 });

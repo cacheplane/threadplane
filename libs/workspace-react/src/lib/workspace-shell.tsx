@@ -26,6 +26,7 @@ import {
   type WorkspaceContextPaneRenderer,
 } from './components/control-plane/cockpit-control-plane';
 import { MobileNavOverlay } from './components/mobile-nav-overlay';
+import { WorkspaceToolbar } from './components/workspace-toolbar';
 import { RunMode } from './components/run-mode/run-mode';
 import { PRODUCT_LABELS } from './navigation-labels';
 import { useWorkspace } from './workspace-provider';
@@ -91,7 +92,9 @@ class WorkspacePanelBoundary extends Component<
 }
 
 export interface WorkspaceShellProps {
-  /** Allow hosts to resize desktop navigation; compact layouts keep their rail. */
+  /** Opt-in reading layout; the default retains the cockpit's mode rail. */
+  readonly navigationLayout?: 'rail' | 'toolbar';
+  /** Allow hosts to resize desktop navigation in either navigation layout. */
   readonly resizableNavigation?: boolean;
   readonly rootElement?: 'main' | 'section';
   readonly navigationTree?: NavigationProduct[];
@@ -120,6 +123,7 @@ export interface WorkspaceShellProps {
 }
 
 export function WorkspaceShell({
+  navigationLayout = 'rail',
   resizableNavigation = false,
   rootElement = 'main',
   navigationTree = [],
@@ -138,6 +142,8 @@ export function WorkspaceShell({
   onContextAction,
   onMobileModalPresenceChange,
 }: WorkspaceShellProps) {
+  const toolbarLayout = navigationLayout === 'toolbar';
+  const defaultNavigationWidth = toolbarLayout ? 264 : undefined;
   const RootElement = rootElement;
   const rootRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -146,13 +152,15 @@ export function WorkspaceShell({
     return undefined;
   }, []);
   const { width: navigationWidth, update: updateNavigationWidth } =
-    useNavigationWidth(resizableNavigation);
+    useNavigationWidth(resizableNavigation, defaultNavigationWidth);
   const workspace = useWorkspace();
   const {
     resolution,
     presentation,
     contentBundle,
     docsSlot,
+    runFallbackSlot,
+    apiSlot,
     activeMode,
     modeAvailability,
     activeUtility,
@@ -181,6 +189,9 @@ export function WorkspaceShell({
   const [isTabletContextOpen, setIsTabletContextOpen] = useState(false);
   const [isTabletContextPresent, setIsTabletContextPresent] = useState(false);
   const tabletContextTriggerRef = useRef<HTMLButtonElement>(null);
+  const toolbarUtilityTriggerRef = useRef<HTMLButtonElement>(null);
+  const [utilityOpenedOverlay, setUtilityOpenedOverlay] = useState(false);
+  const pendingToolbarFocusRef = useRef(false);
   const pendingTabletFocusModeRef = useRef<WorkspaceMode | null>(null);
   const mappedEntry =
     suppliedEntry ??
@@ -249,6 +260,7 @@ export function WorkspaceShell({
       themeControl,
       renderContextPane,
       renderContextHeader,
+      persistentContextPane: toolbarLayout,
     }),
     [
       activeMode,
@@ -278,10 +290,12 @@ export function WorkspaceShell({
       renderContextHeader,
       trackNavigation,
       contextPaneLabel,
+      toolbarLayout,
     ]
   );
 
-  const hasPersistentRunPanel = modeAvailability.Run.available;
+  const hasPersistentRunPanel =
+    modeAvailability.Run.available && Boolean(contentBundle.runtimeUrl);
   const focusWorkspacePanel = useCallback((mode: WorkspaceMode) => {
     const target = document.querySelector<HTMLElement>(
       `[data-workspace-panel-target="${mode}"]`
@@ -322,6 +336,10 @@ export function WorkspaceShell({
   );
   useEffect(() => {
     if (isTabletContextPresent) return undefined;
+    if (pendingToolbarFocusRef.current) {
+      pendingToolbarFocusRef.current = false;
+      toolbarUtilityTriggerRef.current?.focus();
+    }
     const mode = pendingTabletFocusModeRef.current;
     if (!mode) return undefined;
     pendingTabletFocusModeRef.current = null;
@@ -357,6 +375,7 @@ export function WorkspaceShell({
       aria-label={ariaLabel}
       className="workspace-shell h-screen overflow-hidden"
       data-workspace-shell=""
+      data-workspace-navigation-layout={navigationLayout}
       data-workspace-kind={resolution.kind}
       data-workspace-mode={activeMode}
       data-hydrated={hydrated ? 'true' : 'false'}
@@ -376,11 +395,18 @@ export function WorkspaceShell({
       >
         <CockpitControlPlane
           {...controlPlaneProps}
+          layout={toolbarLayout ? 'pane' : 'full'}
+          onUtilityDismissed={
+            toolbarLayout
+              ? () => toolbarUtilityTriggerRef.current?.focus()
+              : undefined
+          }
           onModeSelected={handlePrimaryModeSelected}
         />
         {resizableNavigation && (
           <NavigationResizeHandle
             width={navigationWidth}
+            defaultWidth={defaultNavigationWidth}
             onChange={updateNavigationWidth}
           />
         )}
@@ -393,7 +419,27 @@ export function WorkspaceShell({
         isOpen={isNavigationOpen}
         onClose={() => setIsNavigationOpen(false)}
         onPresenceChange={setIsMobileOverlayPresent}
-        triggerRef={mobileNavigationTriggerRef}
+        triggerRef={
+          toolbarLayout && utilityOpenedOverlay
+            ? toolbarUtilityTriggerRef
+            : mobileNavigationTriggerRef
+        }
+        controlPlaneLayout={toolbarLayout ? 'pane' : 'full'}
+        onUtilityDismissed={
+          toolbarLayout
+            ? () => {
+                // The article toolbar remains inert until this modal closes. Keep
+                // focus in the restored navigation when closing a utility panel.
+                requestAnimationFrame(() =>
+                  document
+                    .querySelector<HTMLElement>(
+                      '.workspace-mobile-control-plane[data-variant="mobile"] [data-control-plane-pane] button'
+                    )
+                    ?.focus()
+                );
+              }
+            : undefined
+        }
         onFocusDestination={focusWorkspacePanel}
         onContextAction={onContextAction}
       />
@@ -407,9 +453,20 @@ export function WorkspaceShell({
         isOpen={isTabletContextOpen}
         onClose={() => setIsTabletContextOpen(false)}
         onPresenceChange={setIsTabletContextPresent}
-        triggerRef={tabletContextTriggerRef}
+        triggerRef={
+          toolbarLayout && utilityOpenedOverlay
+            ? toolbarUtilityTriggerRef
+            : tabletContextTriggerRef
+        }
         onFocusDestination={focusWorkspacePanel}
-        onUtilityDismissed={focusTabletUtilityInvoker}
+        onUtilityDismissed={
+          toolbarLayout
+            ? () => {
+                pendingToolbarFocusRef.current = true;
+                setIsTabletContextOpen(false);
+              }
+            : focusTabletUtilityInvoker
+        }
         onContextAction={onContextAction}
       />
 
@@ -419,79 +476,141 @@ export function WorkspaceShell({
         inert={isAdaptiveSurfaceActive ? true : undefined}
         aria-hidden={isAdaptiveSurfaceActive ? true : undefined}
       >
-        <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--ds-border)]">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              ref={mobileNavigationTriggerRef}
-              className="workspace-mobile-navigation-trigger"
-              onClick={() => setIsNavigationOpen(true)}
-              aria-label="Open navigation"
-              aria-expanded={isNavigationOpen}
-              tabIndex={isMobileModalActive ? -1 : undefined}
-            >
-              <Menu size={20} strokeWidth={2} aria-hidden="true" />
-            </button>
-            <button
-              ref={tabletContextTriggerRef}
-              className="workspace-tablet-context-trigger"
-              onClick={() => setIsTabletContextOpen(true)}
-              aria-label="Open context"
-              aria-expanded={isTabletContextOpen}
-              tabIndex={isTabletContextPresent ? -1 : undefined}
-            >
-              <Menu size={20} strokeWidth={2} aria-hidden="true" />
-            </button>
-            {contextTrail && contextTrail.length > 0 ? (
-              <nav aria-label="Breadcrumb" data-workspace-trail>
-                <ol data-workspace-trail-list>
-                  {contextTrail.map((crumb, index) => {
-                    const isLast = index === contextTrail.length - 1;
-                    const icon = crumb.icon ? (
-                      <span data-workspace-trail-icon aria-hidden="true">
-                        {crumb.icon}
-                      </span>
-                    ) : null;
-                    return (
-                      <li key={`${crumb.label}-${index}`}>
-                        {crumb.href && !isLast ? (
-                          <a href={crumb.href} data-workspace-trail-link>
-                            {icon}
-                            {crumb.label}
-                          </a>
-                        ) : (
-                          <span
-                            data-workspace-trail-current={isLast || undefined}
-                            aria-current={isLast ? 'page' : undefined}
-                          >
-                            {icon}
-                            {crumb.label}
-                          </span>
-                        )}
-                        {isLast ? null : (
-                          <span
-                            data-workspace-trail-separator
-                            aria-hidden="true"
-                          >
-                            /
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </nav>
-            ) : (
-              <p className="text-[var(--ds-text-muted)] font-mono text-xs truncate">
-                {contextLabel}
-              </p>
-            )}
-          </div>
-          {headerActions ? (
-            <div className="shrink-0" data-workspace-header-actions>
-              {headerActions}
+        {toolbarLayout ? (
+          <WorkspaceToolbar
+            activeMode={activeMode}
+            availability={modeAvailability}
+            modeLabel={modeNavigationLabel}
+            utilityTriggerRef={toolbarUtilityTriggerRef}
+            unseenProblems={unseenProblems}
+            contextTrail={contextTrail}
+            onModeChange={(mode) => {
+              setActiveUtility(null);
+              selectMode(mode);
+              handlePrimaryModeSelected(mode);
+            }}
+            onUtilityChange={(utility) => {
+              setUtilityOpenedOverlay(true);
+              setActiveUtility(utility);
+              if (isTabletViewport()) setIsTabletContextOpen(true);
+              else if (
+                typeof window.matchMedia === 'function' &&
+                window.matchMedia('(max-width: 47.999rem)').matches
+              )
+                setIsNavigationOpen(true);
+            }}
+            navigationTriggers={
+              <>
+                <button
+                  ref={mobileNavigationTriggerRef}
+                  type="button"
+                  className="workspace-mobile-navigation-trigger"
+                  aria-label="Open navigation"
+                  aria-expanded={isNavigationOpen}
+                  onClick={() => {
+                    setActiveUtility(null);
+                    setUtilityOpenedOverlay(false);
+                    setIsNavigationOpen(true);
+                  }}
+                >
+                  <Menu size={18} aria-hidden="true" />
+                  <span>Browse docs</span>
+                </button>
+                <button
+                  ref={tabletContextTriggerRef}
+                  type="button"
+                  className="workspace-tablet-context-trigger"
+                  aria-label="Open context"
+                  aria-expanded={isTabletContextOpen}
+                  onClick={() => {
+                    setActiveUtility(null);
+                    setUtilityOpenedOverlay(false);
+                    setIsTabletContextOpen(true);
+                  }}
+                >
+                  <Menu size={18} aria-hidden="true" />
+                  <span>Browse docs</span>
+                </button>
+              </>
+            }
+          >
+            {headerActions}
+          </WorkspaceToolbar>
+        ) : (
+          <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--ds-border)]">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                ref={mobileNavigationTriggerRef}
+                className="workspace-mobile-navigation-trigger"
+                onClick={() => setIsNavigationOpen(true)}
+                aria-label="Open navigation"
+                aria-expanded={isNavigationOpen}
+                tabIndex={isMobileModalActive ? -1 : undefined}
+              >
+                <Menu size={20} strokeWidth={2} aria-hidden="true" />
+              </button>
+              <button
+                ref={tabletContextTriggerRef}
+                className="workspace-tablet-context-trigger"
+                onClick={() => setIsTabletContextOpen(true)}
+                aria-label="Open context"
+                aria-expanded={isTabletContextOpen}
+                tabIndex={isTabletContextPresent ? -1 : undefined}
+              >
+                <Menu size={20} strokeWidth={2} aria-hidden="true" />
+              </button>
+              {contextTrail && contextTrail.length > 0 ? (
+                <nav aria-label="Breadcrumb" data-workspace-trail>
+                  <ol data-workspace-trail-list>
+                    {contextTrail.map((crumb, index) => {
+                      const isLast = index === contextTrail.length - 1;
+                      const icon = crumb.icon ? (
+                        <span data-workspace-trail-icon aria-hidden="true">
+                          {crumb.icon}
+                        </span>
+                      ) : null;
+                      return (
+                        <li key={`${crumb.label}-${index}`}>
+                          {crumb.href && !isLast ? (
+                            <a href={crumb.href} data-workspace-trail-link>
+                              {icon}
+                              {crumb.label}
+                            </a>
+                          ) : (
+                            <span
+                              data-workspace-trail-current={isLast || undefined}
+                              aria-current={isLast ? 'page' : undefined}
+                            >
+                              {icon}
+                              {crumb.label}
+                            </span>
+                          )}
+                          {isLast ? null : (
+                            <span
+                              data-workspace-trail-separator
+                              aria-hidden="true"
+                            >
+                              /
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </nav>
+              ) : (
+                <p className="text-[var(--ds-text-muted)] font-mono text-xs truncate">
+                  {contextLabel}
+                </p>
+              )}
             </div>
-          ) : null}
-        </header>
+            {headerActions ? (
+              <div className="shrink-0" data-workspace-header-actions>
+                {headerActions}
+              </div>
+            ) : null}
+          </header>
+        )}
 
         <div className="min-h-0 relative" data-workspace-panels>
           {hasPersistentRunPanel ? (
@@ -522,6 +641,21 @@ export function WorkspaceShell({
                   getSessionId={getSessionId}
                   telemetry={runtimeTelemetry}
                 />
+              </WorkspacePanelBoundary>
+            </div>
+          ) : null}
+
+          {activeMode === 'Run' &&
+          !hasPersistentRunPanel &&
+          modeAvailability.Run.available ? (
+            <div
+              role="region"
+              aria-label="Run workspace panel"
+              className="h-full"
+            >
+              {panelHeading('Run')}
+              <WorkspacePanelBoundary mode="Run" resetKey={identityKey}>
+                {runFallbackSlot}
               </WorkspacePanelBoundary>
             </div>
           ) : null}
@@ -563,7 +697,7 @@ export function WorkspaceShell({
 
           {activeMode === 'API' &&
           modeAvailability.API.available &&
-          presentationCapability ? (
+          (apiSlot != null || presentationCapability) ? (
             <div
               role="region"
               aria-label="API workspace panel"
@@ -571,10 +705,14 @@ export function WorkspaceShell({
             >
               {panelHeading('API')}
               <WorkspacePanelBoundary mode="API" resetKey={identityKey}>
-                <ApiMode
-                  docSections={contentBundle.docSections}
-                  hasCodeFiles={Object.keys(contentBundle.codeFiles).length > 0}
-                />
+                {apiSlot ?? (
+                  <ApiMode
+                    docSections={contentBundle.docSections}
+                    hasCodeFiles={
+                      Object.keys(contentBundle.codeFiles).length > 0
+                    }
+                  />
+                )}
               </WorkspacePanelBoundary>
             </div>
           ) : null}

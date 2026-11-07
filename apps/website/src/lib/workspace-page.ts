@@ -7,6 +7,7 @@ import {
   parseDocsNarrativePath,
   docsNarrativeHref,
   type WorkspaceResolution,
+  type DocsFramework,
 } from '@threadplane/cockpit-registry';
 import {
   buildNavigationTree,
@@ -18,6 +19,10 @@ import {
 } from '@threadplane/cockpit-shell';
 import { resolveNarrativeDocument } from './docs-catalog';
 import type { ExampleCodeContext } from './example-code';
+import { createElement, type ReactNode } from 'react';
+import { DocsExamples } from '../components/workspace/DocsExamples';
+import { GeneratedApiMode } from '../components/docs/api/GeneratedApiMode';
+import { getDocsExamples } from './docs-examples';
 
 export interface WebsiteWorkspaceVariant {
   readonly resolution: WorkspaceResolution;
@@ -27,6 +32,8 @@ export interface WebsiteWorkspaceVariant {
 
 export interface WebsiteWorkspacePageModel extends WebsiteWorkspaceVariant {
   readonly navigationTree: NavigationProduct[];
+  readonly runFallbackSlot: ReactNode;
+  readonly apiSlot: ReactNode;
 }
 
 export function getWebsiteDocumentResolution(options: {
@@ -76,17 +83,27 @@ export function getWebsiteDocumentResolution(options: {
 export async function getWebsiteWorkspacePage(options: {
   docsPath: string;
   title: string;
+  framework?: DocsFramework;
 }): Promise<WebsiteWorkspacePageModel> {
   const resolution = getWebsiteDocumentResolution(options);
   const document = parseDocsNarrativePath(options.docsPath);
   const frontend =
-    document?.scope === 'framework' ? document.framework : 'angular';
+    document?.scope === 'framework'
+      ? document.framework
+      : options.framework ?? 'angular';
   const presentation = getWorkspacePresentation(resolution, frontend);
 
   return {
     resolution,
     presentation,
     contentBundle: await getContentBundle(presentation),
+    runFallbackSlot: createElement(DocsExamples, {
+      key: options.docsPath,
+      examples: getDocsExamples(),
+      framework:
+        document?.scope === 'framework' ? frontend : options.framework ?? 'all',
+    }),
+    apiSlot: createElement(GeneratedApiMode, { docsPath: options.docsPath }),
     navigationTree: buildNavigationTree(cockpitManifest).map((product) => ({
       ...product,
       sections: product.sections.map((section) => ({

@@ -324,7 +324,7 @@ test.describe('native Theming Website', () => {
       'true',
       { timeout: 30000 }
     );
-    await expect(page.getByLabel('Framework')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React chat theming preview',
