@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "cecc42ac8fc13a2ac709f0268286ee61b78e46d8",
+  "baselineHead": "14ea9f3c6992661e8a56796c5ae3047e3b838655",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "apps/website/content/docs/react/getting-started/workbench.mdx"
+      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/angular/ag-ui/guides/subagents.mdx"
     ],
     "untracked": []
   },
@@ -2380,7 +2380,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "sha256": "5aa0b6601d310b212711020600d31cc1e7a0a8eaa36c110101ff13278a2447b3"
+      "sha256": "39a5b10c5049d21cd26fa45ba03b8c2f4d773773648f61fae32b8f26567e458f"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/json-render.mdx",
@@ -2392,7 +2392,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/subagents.mdx",
-      "sha256": "bb7431044c2528160caaf21d60289267d76266b8f8ab2bb11ea6985f149b8c17"
+      "sha256": "2f64da005224dee3fe757e9324817a1701c87971d20912c66f9f2c746845b5af"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/testing.mdx",

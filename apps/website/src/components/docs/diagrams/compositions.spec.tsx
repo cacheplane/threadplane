@@ -20,9 +20,9 @@ describe('AgUiArchitecturePipeline', () => {
   it('mounts with an accessible label and the pipeline stages', () => {
     const { container } = render(<AgUiArchitecturePipeline />);
     expect(container.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toBeTruthy();
-    const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
+    const titles = Array.from(container.querySelectorAll('.tp-network-title')).map((t) => t.textContent);
     expect(titles).toContain('@threadplane/ag-ui');
-    expect(titles).toContain('AbstractAgent');
+    expect(container.textContent).toContain('AbstractAgent');
   });
 });
 

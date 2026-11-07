@@ -8,6 +8,8 @@ AG-UI carries subagent activity as first-class events. When an agent delegates, 
 
 ## What the demo does
 
+<AgUiSubagentFlow />
+
 The Run tab shows the prebuilt `<chat>` composition in front of an orchestrator agent served over AG-UI. There are no starter suggestions here, so type a trip request. Give it the trip details up front, for example "Plan a trip from LAX to JFK, one adult, economy, departing next Tuesday morning and returning Friday evening", because a bare origin-and-destination request usually earns a clarifying question about dates before it delegates anything. If the request is ambiguous, for example it does not mention airports, the orchestrator asks a clarifying question before delegating.
 
 Once it has both airports, the prompt tells it to call the `task` tool three times in a fixed order: research, then booking, then itinerary. Each dispatch appears inline in the transcript as a card carrying that specialist's own answer, streamed token by token inside the card rather than into the parent bubble. The card header shows the role name, the identifier of the tool call it belongs to, a status badge, and a message count.
