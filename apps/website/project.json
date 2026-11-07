@@ -26,6 +26,13 @@
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
+    "learning-e2e": {
+      "executor": "@nx/playwright:playwright",
+      "dependsOn": [{ "projects": ["cockpit-langgraph-streaming-react"], "target": "build" }],
+      "options": {
+        "config": "apps/website/learning.playwright.config.ts"
+      }
+    },
     "generate-api-docs": {
       "executor": "nx:run-commands",
       "cache": true,

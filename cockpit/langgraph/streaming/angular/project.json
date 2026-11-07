@@ -4,6 +4,10 @@
   "sourceRoot": "cockpit/langgraph/streaming/angular/src",
   "projectType": "application",
   "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "options": { "configFile": "cockpit/langgraph/streaming/angular/vite.config.mts" }
+    },
     "build": {
       "executor": "@angular/build:application",
       "outputs": [

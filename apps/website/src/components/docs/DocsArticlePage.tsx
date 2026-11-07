@@ -118,6 +118,7 @@ export async function DocsArticlePage({ pathname }: { pathname: string }) {
       className="docs-workspace-article"
       data-docs-section={section}
       data-docs-framework={scope}
+      data-learning-article={document.id === 'getting-started/workbench' || undefined}
     >
       <DocsSearch
         framework={framework}

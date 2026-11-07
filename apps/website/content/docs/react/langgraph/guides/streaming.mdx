@@ -11,6 +11,8 @@ Let the traveler read an answer while it is being written. Streaming turns one b
 
 The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
 
+Start with the [learning workbench](/docs/react/getting-started/workbench) to follow one turn, inspect partial text and completion, and connect each observation to source. This page keeps the full streaming example in **Run**, **Code**, and **API**.
+
 ## Observe a session, own its lifetime
 
 The application creates and confirms a thread, constructs a session for it, and owns submission and disposal. `useAgent` observes a stable object with `getSnapshot` and `subscribe`; rendering or subscribing does not start a request. The example projects the session into message rows before publishing its application snapshot. This small observer shows the same separation without the rest of the demo UI.

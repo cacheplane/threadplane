@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "542f96730aeb94fa67617107fad4913e92e98ead",
+  "baselineHead": "ce1708f7bc22141dfd7d3d64f5da679286e225b7",
   "sourceState": {
     "modified": [
       "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
       "libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
+      "libs/chat/src/lib/compositions/shared/fixed-viewport.ts",
+      "libs/chat/src/lib/compositions/shared/surface-focus.ts",
       "libs/chat/src/lib/styles/chat-input.styles.ts",
       "libs/react/src/chat/chat-popup.tsx",
       "libs/react/src/chat/styles.css"
     ],
-    "untracked": [
-      "libs/chat/src/lib/compositions/shared/fixed-viewport.ts",
-      "libs/chat/src/lib/compositions/shared/surface-focus.ts"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -1056,7 +1055,7 @@
       "id": "asset:libs/workspace-react/src/styles/workspace.css",
       "kind": "asset",
       "path": "libs/workspace-react/src/styles/workspace.css",
-      "sha256": "e13582704da42f9ab600c0409de451aa96533136ad78d487d973f16b3922d487"
+      "sha256": "532beb3ea177835f764043ea5d8f4560c278039c33a3e942adabf1dd393ee2e1"
     },
     {
       "id": "asset:libs/workspace-react/tsconfig.json",
@@ -2716,7 +2715,13 @@
       "id": "doc:apps/website/content/docs/angular/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/introduction.mdx",
-      "sha256": "57df17b901f7518c7234ea511d92e42567839953fa9b29ac717afc2426a5c0fb"
+      "sha256": "0cf38bac2f36e21e6c88cde67348bae5be57d3dbb65115d53241340927b3c1bf"
+    },
+    {
+      "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "sha256": "78302c1e82db176523aba6336ee6939fa159de1bd9a4ee35c27ec35623b99cf6"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
@@ -2812,7 +2817,7 @@
       "id": "doc:apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
-      "sha256": "2bfd80457d908d76dd088772f75e6be65b793fac41195f20e415431f152e2238"
+      "sha256": "3494897a9dff57909f733a0a4fc558d2845a01968f9ec6a9aa57fe06d7b8f75a"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/guides/subgraphs.mdx",
@@ -3118,7 +3123,13 @@
       "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/introduction.mdx",
-      "sha256": "5df1e5de05445bdf07c637fd923a44ec847915cbd972c7ed7600fb60e992c836"
+      "sha256": "1268026f56b2a4ddc1fc6d128e2a19dc88133ea53161bcc8a29ac520c33cd1f8"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
+      "sha256": "884be77c127a02d908742607cfc894c03abba8442d28b8712f9d36d5eee4504d"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",
@@ -3154,7 +3165,7 @@
       "id": "doc:apps/website/content/docs/react/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
-      "sha256": "5038094e22eaeda3b4e0e22920b08cc83a4d6b5e8ad3f74844e1256bc883f559"
+      "sha256": "897b18b1595015e1c3c74004de9429d654d92cb5f09a3bfb2e3ab4f4a2f15753"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
@@ -15069,7 +15080,7 @@
       "id": "source:libs/cockpit-runtime-bridge/src/index.ts",
       "kind": "source",
       "path": "libs/cockpit-runtime-bridge/src/index.ts",
-      "sha256": "dd05cda7b02faf2765a00df453e8207570c7c4dbda3a2550c919ce9b2959d57d"
+      "sha256": "9ceaf3c9747afa1d39c4ec71ff342970c91395bb13f47b1b25c873021b8c1a41"
     },
     {
       "id": "source:libs/cockpit-runtime-bridge/src/lib/generated-runtime-parent-origins.ts",
@@ -15078,10 +15089,16 @@
       "sha256": "e58d4e20229ecf06d35999030fa70a30b1151bf5edf554e44dbf49ce7c63222c"
     },
     {
+      "id": "source:libs/cockpit-runtime-bridge/src/lib/inspection.ts",
+      "kind": "source",
+      "path": "libs/cockpit-runtime-bridge/src/lib/inspection.ts",
+      "sha256": "2bec108b8b0387956af599d19cc71b112e60046f65fed5c5716dd11b1b2bbfa6"
+    },
+    {
       "id": "source:libs/cockpit-runtime-bridge/src/lib/install-runtime-bridge.ts",
       "kind": "source",
       "path": "libs/cockpit-runtime-bridge/src/lib/install-runtime-bridge.ts",
-      "sha256": "6c28f340bcd4b0c088865005b95d2d00f71a44a99b73b156163aacf3d45bf097"
+      "sha256": "6cbbf3f1e55e65b1c0b6349468e5e8d0ac228c9c0002d4000592149bb4448242"
     },
     {
       "id": "source:libs/cockpit-runtime-bridge/src/lib/protocol.ts",
@@ -15189,7 +15206,13 @@
       "id": "source:libs/cockpit-telemetry/src/lib/harness.ts",
       "kind": "source",
       "path": "libs/cockpit-telemetry/src/lib/harness.ts",
-      "sha256": "584c659103521d654759874125154da43e826c836229ef5b0f01919754e59465"
+      "sha256": "0a5b387bd75cf8012cb2fdfaf6bf8da43537afd931ceefdda16b4ae4140a8c1c"
+    },
+    {
+      "id": "source:libs/cockpit-telemetry/src/lib/inspection-publisher.ts",
+      "kind": "source",
+      "path": "libs/cockpit-telemetry/src/lib/inspection-publisher.ts",
+      "sha256": "232a1a734e7e715467387376c11b4464d2b0e7900bb2275de9032e30f26ed223"
     },
     {
       "id": "source:libs/cockpit-telemetry/src/lib/provide-cockpit-telemetry.ts",
@@ -15213,7 +15236,7 @@
       "id": "source:libs/cockpit-telemetry/src/public-api.ts",
       "kind": "source",
       "path": "libs/cockpit-telemetry/src/public-api.ts",
-      "sha256": "2b66b4f516676621bf3ebf830bb42293fdc961f9a1c7d14f13afaa46711e6e79"
+      "sha256": "7030a9dc23f2a794a0b969e71ecb3da5186e464d27ee91c51518295a6d3242c9"
     },
     {
       "id": "source:libs/cockpit-telemetry/src/test-setup.ts",
@@ -16833,7 +16856,7 @@
       "id": "source:libs/workspace-react/src/index.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/index.ts",
-      "sha256": "73d94e5ff91e0f36165124501981a9cc5628933b4a56c1915709672ca5783340"
+      "sha256": "dcbdb7d216ee9612a6e126365ebbb989ed37b65ea0548e0579428e4d715c8c45"
     },
     {
       "id": "source:libs/workspace-react/src/lib/activity-types.ts",
@@ -16968,6 +16991,12 @@
       "sha256": "fc1aac9326b91be84812b796e076a0a30c0e1fb292478dba6b56b191dba99a71"
     },
     {
+      "id": "source:libs/workspace-react/src/lib/navigation-resize.tsx",
+      "kind": "source",
+      "path": "libs/workspace-react/src/lib/navigation-resize.tsx",
+      "sha256": "fa96469e46f0ce8d89cc8f13226bc77523ae41ddf5fde4ae3b4ca149f4665d72"
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/runtime-contracts.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/runtime-contracts.ts",
@@ -17007,7 +17036,7 @@
       "id": "source:libs/workspace-react/src/lib/runtime/use-runtime-controller.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/runtime/use-runtime-controller.ts",
-      "sha256": "8befa56de8a9dbb86bfbfcd182fab1a151f2d9b8d009239c8f91f953be9b593e"
+      "sha256": "09d962185280074c1e8f82434d636aedc0b075b8b6efa45f74b5e6ed699a3b34"
     },
     {
       "id": "source:libs/workspace-react/src/lib/workspace-contracts.ts",
@@ -17031,7 +17060,7 @@
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "sha256": "7ac1d2fc76d40340a1211c8b9c748957496abdbaa6c0b5ab454ff88c8f321f5d"
+      "sha256": "ceeeaf1a4add317b950f7e331a2b9183401f9b0cb3437e9ffdcd1ef25556ba1c"
     },
     {
       "id": "source:libs/workspace-react/vite.config.mts",

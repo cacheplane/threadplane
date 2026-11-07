@@ -74,6 +74,7 @@ function renderWorkspace(options: {
   docsSlot?: React.ReactNode;
   rootElement?: 'main' | 'section';
   contextTrail?: readonly WorkspaceCrumb[];
+  resizableNavigation?: boolean;
 }) {
   const selectedResolution = options.resolution ?? resolution;
   const selectedPresentation = options.presentation ?? presentation;
@@ -101,6 +102,7 @@ function renderWorkspace(options: {
           manifest={cockpitManifest}
           rootElement={options.rootElement}
           contextTrail={options.contextTrail}
+          resizableNavigation={options.resizableNavigation}
         />
       </WorkspaceProvider>
     </RuntimeTargetProvider>
@@ -113,6 +115,33 @@ describe('WorkspaceShell persistent panel composition', () => {
     window.history.replaceState({}, '', '/');
     runModeFault.shouldThrow = false;
     vi.restoreAllMocks();
+  });
+
+  it('keeps navigation resizing opt-in and preserves the mounted runtime while resizing', async () => {
+    const plain = renderWorkspace({});
+    expect(
+      screen.queryByRole('separator', { name: 'Resize navigation' })
+    ).toBeNull();
+    plain.unmount();
+    const view = renderWorkspace({ resizableNavigation: true });
+    const frame = await waitFor(() => {
+      const frame = view.container.querySelector('iframe');
+      expect(frame).toBeTruthy();
+      return frame;
+    });
+    const separator = screen.getByRole('separator', {
+      name: 'Resize navigation',
+    });
+    fireEvent.keyDown(separator, { key: 'ArrowRight' });
+    expect(
+      view.container
+        .querySelector<HTMLElement>('[data-workspace-shell]')
+        ?.style.getPropertyValue('--workspace-navigation-width')
+    ).toBe('338px');
+    expect(view.container.querySelector('iframe')).toBe(frame);
+    for (const mode of ['Docs', 'Code', 'API']) {
+      expect(screen.getByRole('button', { name: mode })).toBeTruthy();
+    }
   });
 
   it('keeps one Run iframe node mounted through modes and utility switches', async () => {
@@ -275,7 +304,16 @@ describe('WorkspaceShell persistent panel composition', () => {
       /@media \(min-width: 48rem\) and \(max-width: 63\.999rem\)[\s\S]*grid-template-columns:\s*56px minmax\(0, 1fr\)/
     );
     expect(css).toMatch(
-      /@media \(min-width: 64rem\)[\s\S]*grid-template-columns:\s*328px minmax\(0, 1fr\)/
+      /@media \(min-width: 64rem\)[\s\S]*grid-template-columns:\s*var\(--workspace-navigation-width, 328px\) minmax\(0, 1fr\)/
+    );
+    expect(css).toMatch(
+      /\.workspace-navigation-resize\s*\{[^}]*display:\s*none/
+    );
+    expect(css).toMatch(
+      /@media \(min-width: 64rem\)[\s\S]*\.workspace-navigation-resize\s*\{[^}]*display:\s*flex/
+    );
+    expect(css).toContain(
+      'calc(var(--workspace-navigation-width, 328px) - 56px)'
     );
     expect(css).toContain('.workspace-tablet-context-trigger');
     expect(css).toContain('.workspace-tablet-context-surface');
