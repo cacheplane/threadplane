@@ -30,6 +30,7 @@ import { WorkspaceToolbar } from './components/workspace-toolbar';
 import { RunMode } from './components/run-mode/run-mode';
 import { PRODUCT_LABELS } from './navigation-labels';
 import { useWorkspace } from './workspace-provider';
+import { acquireWorkspaceViewport } from './viewport/workspace-viewport';
 import {
   NavigationResizeHandle,
   useNavigationWidth,
@@ -144,6 +145,12 @@ export function WorkspaceShell({
   const toolbarLayout = navigationLayout === 'toolbar';
   const defaultNavigationWidth = toolbarLayout ? 264 : undefined;
   const RootElement = rootElement;
+  const rootRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const document = rootRef.current?.ownerDocument;
+    if (document) return acquireWorkspaceViewport(document);
+    return undefined;
+  }, []);
   const { width: navigationWidth, update: updateNavigationWidth } =
     useNavigationWidth(resizableNavigation, defaultNavigationWidth);
   const workspace = useWorkspace();
@@ -364,6 +371,7 @@ export function WorkspaceShell({
 
   return (
     <RootElement
+      ref={rootRef}
       aria-label={ariaLabel}
       className="workspace-shell h-screen overflow-hidden"
       data-workspace-shell=""

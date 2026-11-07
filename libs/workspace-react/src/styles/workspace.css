@@ -287,6 +287,10 @@
 
 /* Unified sidebar control plane */
 .workspace-shell {
+  position: relative;
+  top: var(--workspace-viewport-page-top, 0px);
+  height: var(--workspace-viewport-height, 100dvh);
+  overflow: clip;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }

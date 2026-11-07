@@ -57,3 +57,81 @@ npx nx e2e cockpit-chat-messages-react
 ~~~
 
 The isolated build uses installed private candidate packages. Browser tests exercise actual SDK HTTP and SSE with events from the compiled Python graph and deterministic providers. Docs, Code and Run select this same React implementation. The default Angular example and its backend remain available.
+
+## Cross-origin iframe hosts
+
+A cross-origin child cannot read the parent’s visible viewport. On iOS Safari,
+the software keyboard can shrink the parent’s `visualViewport` while the child
+continues to see the iframe’s full fixed height. Size the frame in the parent;
+changing the child’s `100dvh` alone does not solve this.
+
+The built-in docs workspace handles parent sizing for Angular and React
+examples. For a custom full-screen parent with a frame normally capped at 580px,
+use a flex host so its header and footer share the same visible height:
+
+```html
+<section class="runtime-host">
+  <header>Your chat</header>
+  <iframe title="Chat" src="https://your-chat.example"></iframe>
+  <footer>Your parent controls</footer>
+</section>
+```
+
+```css
+.runtime-host {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--runtime-top, 0px);
+  height: min(580px, var(--runtime-height, 100dvh));
+  display: flex;
+  flex-direction: column;
+}
+.runtime-host > header,
+.runtime-host > footer {
+  flex: none;
+}
+.runtime-host > iframe {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+}
+```
+
+```js
+function fitRuntimeHost(host) {
+  const viewport = host.ownerDocument.defaultView?.visualViewport;
+  if (!viewport) return () => {};
+  const names = ['--runtime-height', '--runtime-top'];
+  const previous = names.map((name) => [
+    host.style.getPropertyValue(name),
+    host.style.getPropertyPriority(name),
+  ]);
+  const update = () => {
+    if (viewport.scale !== 1) return;
+    host.style.setProperty(names[0], `${viewport.height}px`);
+    // This host is fixed, so use offsetTop, not document-relative pageTop.
+    host.style.setProperty(names[1], `${viewport.offsetTop}px`);
+  };
+  update();
+  viewport.addEventListener('resize', update);
+  viewport.addEventListener('scroll', update);
+  return () => {
+    viewport.removeEventListener('resize', update);
+    viewport.removeEventListener('scroll', update);
+    names.forEach((name, index) => {
+      const [value, priority] = previous[index];
+      if (value) host.style.setProperty(name, value, priority);
+      else host.style.removeProperty(name);
+    });
+  };
+}
+```
+
+Call `fitRuntimeHost` once when the parent host mounts and run its returned
+cleanup when it unmounts—for example, return it from a React effect or register
+it with Angular’s `DestroyRef.onDestroy`. Keep the iframe node and `src` stable
+while resizing so the child retains its conversation, draft, focus and reading
+position. This pattern does not require reading the child DOM or adding a
+cross-origin message protocol. Configure the child’s allowed embedding origins
+separately if its application requires them.

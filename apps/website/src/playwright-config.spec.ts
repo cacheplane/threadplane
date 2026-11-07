@@ -444,6 +444,10 @@ describe('Website Playwright configuration', () => {
         ),
         url: 'http://localhost:4506',
       }),
+      expect.objectContaining({
+        command: 'npx nx run cockpit-chat-messages-angular:serve:cockpit --port 4501',
+        url: 'http://localhost:4501',
+      }),
       expect.objectContaining({command:'npx nx run cockpit-render-computed-functions-angular:serve:cockpit --port 4406',url:'http://localhost:4406'}),
       expect.objectContaining({
         command: expect.stringContaining('custom-runtime-server.ts'),

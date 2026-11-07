@@ -1,23 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e2b7f25a3603917bac16dd4f45f1bae9b3ccb48d",
+  "baselineHead": "0ec11eeadfccd2a36cdfc07f1f2065694a9b39f4",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/getting-started/introduction.mdx",
-      "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
-      "apps/website/content/docs/react/getting-started/introduction.mdx",
-      "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
-      "libs/cockpit-runtime-bridge/src/index.ts",
-      "libs/cockpit-runtime-bridge/src/lib/inspection.ts",
-      "libs/cockpit-runtime-bridge/src/lib/install-runtime-bridge.ts",
-      "libs/cockpit-telemetry/src/lib/harness.ts",
-      "libs/cockpit-telemetry/src/lib/inspection-publisher.ts",
-      "libs/cockpit-telemetry/src/public-api.ts",
-      "libs/workspace-react/src/index.ts",
-      "libs/workspace-react/src/lib/navigation-resize.tsx",
-      "libs/workspace-react/src/lib/runtime/use-runtime-controller.ts",
+      "apps/website/content/docs/angular/chat/concepts/message-model.mdx",
+      "apps/website/content/docs/react/chat/concepts/message-model.mdx",
+      "libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
       "libs/workspace-react/src/lib/workspace-shell.tsx",
       "libs/workspace-react/src/styles/workspace.css"
     ],
@@ -1065,7 +1053,7 @@
       "id": "asset:libs/workspace-react/src/styles/workspace.css",
       "kind": "asset",
       "path": "libs/workspace-react/src/styles/workspace.css",
-      "sha256": "a8f70b5ecab80993ce35df89d7ced8fb7587d3d18a422e6f583b5a1ecbdd3ff2"
+      "sha256": "4f9f58e5437c70ab23a817b7cccc15c0fb3f32c9347c52cbef540b17d3714c3d"
     },
     {
       "id": "asset:libs/workspace-react/tsconfig.json",
@@ -2569,7 +2557,7 @@
       "id": "doc:apps/website/content/docs/angular/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/chat/concepts/message-model.mdx",
-      "sha256": "22ffbdacb5e87e32882b8f6a3ea4f45bc2f011382e8a359d0628a9628c30049b"
+      "sha256": "6920b50e89637e4112031618a4a42ec07ac75b381b5291eb863c39fe1eec219d"
     },
     {
       "id": "doc:apps/website/content/docs/angular/chat/concepts/primitives-vs-compositions.mdx",
@@ -3073,7 +3061,7 @@
       "id": "doc:apps/website/content/docs/react/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/concepts/message-model.mdx",
-      "sha256": "4d2ba167a30687a241d629c81c176277aeaefd9ba9f0a21618fea4c1a932ee04"
+      "sha256": "a96868be8394abfbfb86675e8759926c519bcd147d3c3425af8dfa17a4b1cbeb"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/client-tools.mdx",
@@ -17055,6 +17043,12 @@
       "sha256": "09d962185280074c1e8f82434d636aedc0b075b8b6efa45f74b5e6ed699a3b34"
     },
     {
+      "id": "source:libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
+      "kind": "source",
+      "path": "libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
+      "sha256": "1fbe4019dda0bececa7ba563dde9f9076474dfc41b463bc7b63de4f02b48ca25"
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/workspace-contracts.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-contracts.ts",
@@ -17076,7 +17070,7 @@
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "sha256": "dd54f93b0de7dbf82ece96aeb3a9c2df8a3a45624def82d7a83acd10e1735940"
+      "sha256": "1ef62674c49e38024866c5a6474a2d43a96c119d0e1df7e7bc1594a66f61f965"
     },
     {
       "id": "source:libs/workspace-react/vite.config.mts",
