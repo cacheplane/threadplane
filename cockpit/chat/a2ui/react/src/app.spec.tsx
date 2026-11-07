@@ -73,7 +73,11 @@ it('mount, StrictMode, suggestions and borrowed unmount issue zero owner command
       <A2uiDemo application={f.app} onReady={ready} />
     </StrictMode>
   );
+  expect(screen.getByRole('region', { name: 'Conversation' }).tabIndex).toBe(0);
   fireEvent.click(screen.getByRole('button', { name: 'Try a flight request' }));
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Message' })
+  );
   expect(
     (screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement)
       .value

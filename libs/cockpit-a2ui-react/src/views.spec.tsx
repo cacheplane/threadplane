@@ -67,6 +67,32 @@ function setup(content = wire[3]) {
     },
   };
 }
+it('waits for interaction before displaying initial field errors, while rejecting an invalid Search', () => {
+  const f = setup(wire[0]);
+  render(<A2uiSurface surface={f.card} active />);
+  const date = screen.getByLabelText('Departure date (YYYY-MM-DD)');
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(date.getAttribute('aria-invalid')).not.toBe('true');
+  expect(f.form.canSubmit()).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Search flights' }));
+  expect(document.activeElement).toBe(date);
+  expect(screen.getByRole('alert').textContent).toContain('Enter a real date');
+  expect(f.sent).toHaveLength(0);
+  f.dispose();
+});
+it('does not carry revealed errors into a replacement form owner', () => {
+  const first = setup(wire[0]);
+  const second = setup(wire[0]);
+  const view = render(<A2uiSurface surface={first.card} active />);
+  fireEvent.click(screen.getByRole('button', { name: 'Search flights' }));
+  expect(screen.getByRole('alert')).toBeTruthy();
+  view.rerender(<A2uiSurface surface={second.card} active />);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(second.form.canSubmit()).toBe(false);
+  expect(second.sent).toHaveLength(0);
+  first.dispose();
+  second.dispose();
+});
 it('uses the stable ten-view registry, visible latest values and single-select array mapping', () => {
   expect(Object.keys(a2uiRegistry)).toEqual([
     'Column',
@@ -235,6 +261,7 @@ it('creates unique control and error IDs even when wire IDs collide with an erro
   fireEvent.change(screen.getByLabelText('Passengers'), {
     target: { value: '' },
   });
+  fireEvent.click(screen.getByRole('button', { name: 'Search flights' }));
   const ids = Array.from(v.container.querySelectorAll('[id]')).map((n) => n.id);
   expect(new Set(ids).size).toBe(ids.length);
   for (const label of ['Departure date (YYYY-MM-DD)', 'Passengers']) {

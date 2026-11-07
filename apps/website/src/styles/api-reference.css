@@ -187,7 +187,7 @@
 }
 .api-reference-navigation > a {
   display: block;
-  padding: 10px 12px;
+  padding: 12px;
   border-radius: 10px;
   color: var(--color-text-muted);
 }

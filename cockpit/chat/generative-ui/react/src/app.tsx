@@ -7,6 +7,7 @@ import {
   MessageList,
   Reasoning,
   ToolObservation,
+  type ChatInputHandle,
 } from '@threadplane/react/chat';
 import { Markdown } from '@threadplane/react/markdown';
 import { RenderSpec, type RenderSpecProps } from '@threadplane/react/render';
@@ -47,12 +48,7 @@ export function renderMessage(row: MessageRow, snapshot: GenerativeUiSnapshot) {
       {row.role === 'assistant' && row.reasoning && (
         <Reasoning snapshot={row.reasoning} />
       )}
-      {surface ? (
-        <details>
-          <summary>Layout source</summary>
-          <pre>{row.message.content}</pre>
-        </details>
-      ) : row.role === 'tool' ? (
+      {surface ? null : row.role === 'tool' ? (
         <details>
           <summary>Server tool result</summary>
           <pre>{row.message.content}</pre>
@@ -70,6 +66,12 @@ export function renderMessage(row: MessageRow, snapshot: GenerativeUiSnapshot) {
             fallback={UnsupportedView}
           />
         </div>
+      )}
+      {surface && (
+        <details>
+          <summary>Layout source</summary>
+          <pre>{row.message.content}</pre>
+        </details>
       )}
       {notice && <p role="status">{notice.text}</p>}
       {calls.map((call) => (
@@ -114,7 +116,22 @@ export function GenerativeUiDemo(props: Props) {
 function GenerativeUiOwner({ connection, onReady }: Props) {
   const [application] = useState(() => createConnectedApplication(connection));
   const [draft, setDraft] = useState('');
+  const composer = useRef<ChatInputHandle>(null);
+  const resetButton = useRef<HTMLButtonElement>(null);
+  const focusAfterReset = useRef(false);
   const snapshot = useAgent(application);
+  useEffect(() => {
+    if (!focusAfterReset.current || snapshot.busy) return;
+    focusAfterReset.current = false;
+    const document = resetButton.current?.ownerDocument;
+    if (
+      document &&
+      (document.activeElement === resetButton.current ||
+        document.activeElement === document.body)
+    ) {
+      composer.current?.focus();
+    }
+  }, [snapshot.viewGeneration, snapshot.busy]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -150,9 +167,11 @@ function GenerativeUiOwner({ connection, onReady }: Props) {
           <h1>Chat generative UI</h1>
         </div>
         <button
+          ref={resetButton}
           type="button"
           onClick={() => {
             if (currentView()) {
+              focusAfterReset.current = true;
               setDraft('');
               void application.newConversation();
             }
@@ -165,31 +184,35 @@ function GenerativeUiOwner({ connection, onReady }: Props) {
         Explore airline operations with fixture data. Confirmed dashboards stay
         in the conversation and refresh together when a new update is saved.
       </p>
-      <div className="seed-prompts" aria-label="Example prompts">
-        {[
-          {
-            label: 'Show dashboard',
-            text: 'Show me a dashboard of airline operations.',
-          },
-          {
-            label: 'Cancelled flights',
-            text: 'Filter to only the cancelled flights.',
-          },
-        ].map((prompt) => (
-          <button
-            type="button"
-            key={prompt.label}
-            disabled={snapshot.busy || !snapshot.canSubmit}
-            onClick={() => {
-              const current = application.getSnapshot();
-              if (currentView() && !current.busy && current.canSubmit)
-                setDraft(prompt.text);
-            }}
-          >
-            {prompt.label}
-          </button>
-        ))}
-      </div>
+      {snapshot.rows.length === 0 && (
+        <div className="seed-prompts" aria-label="Example prompts">
+          {[
+            {
+              label: 'Show dashboard',
+              text: 'Show me a dashboard of airline operations.',
+            },
+            {
+              label: 'Cancelled flights',
+              text: 'Filter to only the cancelled flights.',
+            },
+          ].map((prompt) => (
+            <button
+              type="button"
+              key={prompt.label}
+              disabled={snapshot.busy || !snapshot.canSubmit}
+              onClick={() => {
+                const current = application.getSnapshot();
+                if (currentView() && !current.busy && current.canSubmit) {
+                  setDraft(prompt.text);
+                  composer.current?.focus();
+                }
+              }}
+            >
+              {prompt.label}
+            </button>
+          ))}
+        </div>
+      )}
       <MessageList
         key={`messages:${snapshot.viewGeneration}`}
         rows={snapshot.rows}
@@ -199,6 +222,7 @@ function GenerativeUiOwner({ connection, onReady }: Props) {
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput
+          ref={composer}
           key={`composer:${snapshot.viewGeneration}`}
           label="Message"
           value={draft}

@@ -188,7 +188,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     const textarea = await draft.elementHandle();
     assert.ok(textarea);
     const panel = page.getByRole('region', { name: 'Sources', exact: true });
-    const header = panel.getByRole('button', { name: /^Sources \(/ });
+    const header = panel.locator('.tp-citations__toggle');
     const wrappers = panel.locator('.native-source-card');
     const provider = panel.locator(
       '.native-source-card[data-source-id="__proto__"]'
@@ -207,10 +207,29 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         )
       ).toBe(true);
     };
-    await expect(header).toHaveText('Sources (6)');
+    await expect(header).toHaveAccessibleName('Sources (6)');
+    const markers = header.locator('.tp-citations__marker');
+    const chevron = header.locator('.tp-citations__chevron');
+    await expect(header.locator('.tp-citations__markers')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+    await expect(markers).toHaveCount(3);
+    await expect(markers.nth(0)).toHaveText('S');
+    await expect(markers.nth(1)).toHaveClass(/--generic/);
+    await expect(markers.nth(2)).toHaveClass(/--generic/);
+    const sidecarMarker = await markers.nth(0).elementHandle();
+    const providerMarker = await markers.nth(1).elementHandle();
+    const emptyMarker = await markers.nth(2).elementHandle();
+    assert.ok(sidecarMarker && providerMarker && emptyMarker);
+    await expect(header.locator('img,image,a')).toHaveCount(0);
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    await expect(chevron).toHaveAttribute('focusable', 'false');
+    await expect(chevron).toHaveCSS('transform', 'none');
     await expect(header).toHaveAttribute('aria-expanded', 'false');
     await expect(wrappers).toHaveCount(0);
     await header.click();
+    await expect(chevron).toHaveCSS('transform', 'matrix(-1, 0, 0, -1, 0, 0)');
     // Preserve the existing custom card composition before checking derived metadata.
     await expect(wrappers).toHaveCount(6);
     await expect(panel.locator('.tp-citation-card')).toHaveCount(6);
@@ -388,6 +407,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     const retiredTrigger = await trigger.elementHandle();
     assert.ok(retired && retiredTrigger);
     await header.click();
+    await expect(chevron).toHaveCSS('transform', 'none');
     await expect(wrappers).toHaveCount(0);
     expect(await retired.evaluate((node) => node.isConnected)).toBe(false);
     await retiredTrigger.evaluate((node) =>
@@ -396,12 +416,15 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(dialog).toHaveCount(0);
     await retained(3);
     await header.click();
+    await expect(chevron).toHaveCSS('transform', 'matrix(-1, 0, 0, -1, 0, 0)');
     // Scope dark tokens to Sources while the surrounding host keeps its white surface.
     await panel.evaluate((node) => {
       node.style.setProperty('--tp-chat-text', '#f5f5f5');
       node.style.setProperty('--tp-chat-surface', '#1c1c1c');
       node.style.setProperty('--tp-chat-border', '#454545');
     });
+    await expect(markers.nth(1)).toHaveCSS('color', 'rgb(245, 245, 245)');
+    await expect(chevron).toHaveCSS('color', 'rgb(245, 245, 245)');
     await expect(provider).toHaveCSS('color', 'rgb(245, 245, 245)');
     await expect(provider).toHaveCSS('background-color', 'rgb(28, 28, 28)');
     await expect(provider).toHaveCSS('border-color', 'rgb(69, 69, 69)');
@@ -472,6 +495,56 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
       .evaluate((node) => node.setAttribute('dir', 'rtl'));
     for (const width of [320, 390]) {
       await page.setViewportSize({ width, height: 844 });
+      // Stress the label while preserving React's Text nodes and live count.
+      const labelText = await header
+        .locator('.tp-citations__label')
+        .evaluateHandle((node) => {
+          const text = node.firstChild;
+          if (!(text instanceof Text))
+            throw new Error('Expected Sources label Text node');
+          return text;
+        });
+      const originalLabel = await labelText.evaluate((node) => node.data);
+      try {
+        await labelText.evaluate((node) => {
+          node.data = 'مصادر الأدلة '.repeat(18);
+        });
+        await header.scrollIntoViewIfNeeded();
+        const headerGeometry = await header.evaluate((node) => {
+          const box = node.getBoundingClientRect();
+          const label = node.querySelector('.tp-citations__label')!;
+          const stack = node.querySelector('.tp-citations__markers')!;
+          return {
+            x: box.x,
+            right: box.right,
+            height: box.height,
+            overflow: node.scrollWidth > node.clientWidth,
+            labelHeight: label.getBoundingClientRect().height,
+            stackRight: stack.getBoundingClientRect().right,
+            labelLeft: label.getBoundingClientRect().left,
+          };
+        });
+        expect(headerGeometry.x).toBeGreaterThanOrEqual(0);
+        expect(headerGeometry.right).toBeLessThanOrEqual(width);
+        expect(headerGeometry.height).toBeGreaterThanOrEqual(44);
+        expect(headerGeometry.labelHeight).toBeGreaterThan(30);
+        expect(headerGeometry.overflow).toBe(false);
+        expect(headerGeometry.stackRight).toBeLessThanOrEqual(
+          headerGeometry.labelLeft
+        );
+        for (const marker of await markers.all()) {
+          await expect(marker).toHaveCSS('width', '16px');
+          await expect(marker).toHaveCSS('flex-shrink', '0');
+        }
+        await header.screenshot({
+          path: testInfo.outputPath(`citation-header-rtl-${width}.png`),
+        });
+      } finally {
+        await labelText.evaluate((node, original) => {
+          node.data = original;
+        }, originalLabel);
+        await labelText.dispose();
+      }
       await provider.scrollIntoViewIfNeeded();
       for (const card of await wrappers.all()) {
         const box = await card.boundingBox();
@@ -547,6 +620,23 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           'blocked-host',
           '__proto__',
         ]);
+        await expect(markers).toHaveCount(3);
+        expect(await providerMarker.evaluate((node) => node.isConnected)).toBe(
+          false
+        );
+        await expect(markers.nth(0)).toHaveText('S');
+        expect(
+          await markers
+            .nth(0)
+            .evaluate((node, original) => node === original, sidecarMarker)
+        ).toBe(true);
+        expect(
+          await markers
+            .nth(1)
+            .evaluate((node, original) => node === original, emptyMarker)
+        ).toBe(true);
+        await expect(markers.nth(2)).toHaveClass(/--generic/);
+        await expect(header).toHaveAccessibleName('Sources (6)');
         await expect(dialog).toHaveAttribute('aria-label', 'Source 7');
         await expect(providerCard.locator('.tp-citations__type')).toHaveText(
           'Corrected type'
@@ -633,7 +723,14 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           (node as HTMLButtonElement).click()
         );
         await expect(dialog).toHaveCount(0);
-        await expect(header).toHaveText('Sources (5)');
+        await expect(header).toHaveAccessibleName('Sources (5)');
+        await expect(markers).toHaveCount(3);
+        expect(
+          await markers
+            .nth(1)
+            .evaluate((node, original) => node === original, emptyMarker)
+        ).toBe(true);
+        await expect(header.locator('img,image')).toHaveCount(0);
       }
       await step.closed;
       await expect(draft).toBeEnabled();

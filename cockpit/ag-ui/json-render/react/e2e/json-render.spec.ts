@@ -40,6 +40,10 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
     if (mode === 'full') {
       await expect(page.locator('[data-dashboard-view]')).toHaveCount(6);
       await expect(page.locator('.dashboard-metric')).toHaveText('84.2%');
+      const chart = await page
+        .locator('[data-dashboard-view="line_chart"] svg')
+        .boundingBox();
+      expect(chart?.width).toBeGreaterThanOrEqual(280);
       await expect(
         page.getByRole('table', { name: 'Disruptions', exact: true })
       ).toContainText('UA123');
@@ -148,6 +152,9 @@ test('retained layout reads valid streamed shared-state updates while native com
   await page.goto(base);
   await send(page, 'full');
   await expect(page.getByRole('status')).toHaveText('Response complete.');
+  const chartData = page.locator('.dashboard-chart-data').first();
+  await chartData.locator('summary').click();
+  const originalChart = await chartData.elementHandle();
   await request.post('/__hold/final');
   await send(page, 'filter');
   await expect
@@ -157,11 +164,31 @@ test('retained layout reads valid streamed shared-state updates while native com
     page.getByRole('table', { name: 'Disruptions', exact: true })
   ).not.toContainText('UA123');
   await expect(page.locator('[data-dashboard-spec-owner]')).toHaveCount(1);
+  expect(await originalChart?.evaluate((element) => element.isConnected)).toBe(
+    true
+  );
+  await expect(chartData).toHaveAttribute('open', '');
   await expect(
     page.getByRole('button', { name: 'Send', exact: true })
   ).toBeDisabled();
+  const conversation = page.getByRole('region', {
+    name: 'Conversation',
+    exact: true,
+  });
+  await conversation.evaluate((element) => {
+    element.scrollTop = 60;
+    element.dispatchEvent(new Event('scroll'));
+  });
+  const readingPosition = await conversation.evaluate(
+    (element) => element.scrollTop
+  );
+  expect(readingPosition).toBeGreaterThan(0);
   await request.post('/__release');
   await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect
+    .poll(() => conversation.evaluate((element) => element.scrollTop))
+    .toBe(readingPosition);
+  await expect(chartData).toHaveAttribute('open', '');
 });
 for (const mode of [
   'http-error',

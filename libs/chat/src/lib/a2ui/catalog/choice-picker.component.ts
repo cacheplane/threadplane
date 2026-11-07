@@ -15,7 +15,7 @@ interface ResolvedOption {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="a2ui-cp">
+    <div class="a2ui-cp" [attr.role]="displayStyle() === 'chips' || !isSingleSelect() ? 'group' : 'radiogroup'" [attr.aria-label]="label() || null">
       @if (label()) {
         <span class="a2ui-cp__label">{{ label() }}</span>
       }

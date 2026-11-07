@@ -4,6 +4,7 @@ import type { MarkdownSnapshot } from '@threadplane/content/markdown';
 import { definitionToCitation } from '../markdown/citation-source.js';
 import { CitationPreview } from './citation-preview.js';
 import { CitationCard } from './citation-card.js';
+import { CitationSourceMarker } from './internal/citation-source-marker.js';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { availableDialogTarget } from './internal/dialog-presentation.js';
@@ -175,7 +176,29 @@ function Disclosure({
             setExpanded(!expanded);
           }}
         >
-          {label} ({citations.length})
+          <span className="tp-citations__label">
+            {label} ({citations.length})
+          </span>
+          <span className="tp-citations__markers" aria-hidden="true">
+            {citations.slice(0, 3).map((citation) => (
+              <CitationSourceMarker
+                key={citation.id}
+                citation={citation}
+                className="tp-citations__marker"
+              />
+            ))}
+          </span>
+          <svg
+            className="tp-citations__chevron"
+            aria-hidden="true"
+            focusable="false"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </button>
       </h4>
       <div ref={body} id={id} hidden={!expanded}>

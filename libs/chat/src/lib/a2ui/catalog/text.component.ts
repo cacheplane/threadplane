@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body';
@@ -8,7 +8,7 @@ type TextVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body';
   selector: 'a2ui-text',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Default,
-  template: `<span [class]="cssClass()">{{ text() }}</span>`,
+  template: `<span [class]="cssClass()" [attr.role]="headingLevel() ? 'heading' : null" [attr.aria-level]="headingLevel()">{{ text() }}</span>`,
   styles: [`
     .a2ui-text-h1 {
       display: block;
@@ -64,6 +64,8 @@ export class A2uiTextComponent {
   readonly text = input<string>('');
   /** v0.9 prop: typography variant. */
   readonly variant = input<TextVariant>('body');
+  protected readonly headingLevel = computed(() =>
+    /^h[1-5]$/.test(this.variant()) ? Number(this.variant()[1]) : null);
   // Framework-mandated inputs the render harness passes to every element.
   readonly bindings = input<Record<string, string>>({});
   readonly emit = input<(event: string) => void>(() => { /* noop */ });
