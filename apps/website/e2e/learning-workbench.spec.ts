@@ -7,6 +7,16 @@ test.skip(
   'Uses local deterministic HTTP/SSE fixtures, not live model inference.'
 );
 
+async function openWorkbench(page: Page, framework: 'angular' | 'react') {
+  await page.goto(`/docs/${framework}/getting-started/workbench`);
+  // The persistent workspace replaces the server-rendered article when it
+  // registers. A click on that earlier copy can be discarded with its state.
+  // Use the same readiness contract as the other docs control-plane tests.
+  const workspace = page.locator('[data-workspace-shell]');
+  await expect(workspace).toHaveAttribute('data-hydrated', 'true');
+  return workspace.locator('.tp-learn-host');
+}
+
 async function customTarget(page: Page, caseId: string) {
   await page
     .locator('.tp-learn-host')
@@ -63,13 +73,15 @@ for (const framework of ['react', 'angular'] as const) {
       await request.post('http://127.0.0.1:4600/__reset');
     const caseId = `learning-${framework}-${testInfo.retry}`;
     await request.delete(`http://127.0.0.1:4399/__requests/${caseId}`);
-    await page.goto(`/docs/${framework}/getting-started/workbench`);
-    const host = page.locator('.tp-learn-host');
+    const host = await openWorkbench(page, framework);
     await expect(
       host.getByRole('button', { name: 'Live', exact: true })
     ).toBeVisible({ timeout: 30_000 });
     await expect(host.locator('iframe')).toHaveCount(0);
     await host.getByRole('button', { name: 'Live', exact: true }).click();
+    await expect(
+      host.getByRole('button', { name: 'Live', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true');
     if (framework === 'angular') await customTarget(page, caseId);
     const frame = host.frameLocator('iframe');
     await submit(frame, framework, 'First');
@@ -156,9 +168,11 @@ test('React stop and failure remain distinct from application call settlement', 
   request,
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
-  await page.goto('/docs/react/getting-started/workbench');
-  const host = page.locator('.tp-learn-host');
+  const host = await openWorkbench(page, 'react');
   await host.getByRole('button', { name: 'Live', exact: true }).click();
+  await expect(
+    host.getByRole('button', { name: 'Live', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true');
   const frame = host.frameLocator('iframe');
   await submit(frame, 'react', 'First');
   await expect(
@@ -191,9 +205,11 @@ test('framework changes dispose an active React stream and restore opt-in replay
   request,
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
-  await page.goto('/docs/react/getting-started/workbench');
-  const host = page.locator('.tp-learn-host');
+  const host = await openWorkbench(page, 'react');
   await host.getByRole('button', { name: 'Live', exact: true }).click();
+  await expect(
+    host.getByRole('button', { name: 'Live', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true');
   await submit(host.frameLocator('iframe'), 'react', 'First');
   await expect
     .poll(

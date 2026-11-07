@@ -17107,6 +17107,45 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Private example scroll helper. React MessageList already owns equivalent bottom following and reading-position preservation; no additional public package contract."
+    },
+    {
+      "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Shared learning inspector and framework-specific live application; this lesson does not certify complete SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Shared learning inspector and framework-specific live application; this lesson does not certify complete SDK parity."
+    },
+    {
+      "id": "source:libs/cockpit-runtime-bridge/src/lib/inspection.ts",
+      "taskIds": [
+        "T32",
+        "T34"
+      ],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private framework-neutral inspection recorder and validated iframe transport used by both Angular and React learning applications."
+    },
+    {
+      "id": "source:libs/cockpit-telemetry/src/lib/inspection-publisher.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular injection seam for the shared runtime inspection bridge; no public SDK API."
     }
   ]
 }
