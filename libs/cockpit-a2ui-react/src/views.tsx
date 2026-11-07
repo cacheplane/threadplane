@@ -1,4 +1,11 @@
-import { Children, createContext, useContext, useId, useRef } from 'react';
+import {
+  Children,
+  createContext,
+  useContext,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useAgent } from '@threadplane/react';
 import {
   RenderSpec,
@@ -24,6 +31,7 @@ interface Borrowed {
   readonly surface: SurfaceView;
   readonly form: BookingSnapshot | typeof empty;
   readonly disabled: boolean;
+  readonly showErrors: boolean;
   readonly focusInvalid: () => void;
 }
 const Context = createContext<Borrowed | null>(null);
@@ -86,12 +94,19 @@ function Control({
   elementKey,
   kind,
 }: RenderViewProps & { readonly kind: 'choice' | 'date' | 'number' }) {
-  const { surface, form, disabled } = useSurface();
+  const { surface, form, disabled, showErrors } = useSurface();
   const field = (bindings?.value ?? '').slice(1) as BookingField;
   // Binding admission and field drafts belong to the application facade.
   const drafts = form.drafts as Readonly<Partial<Record<BookingField, string>>>;
   const errors = form.errors as Readonly<Partial<Record<BookingField, string>>>;
-  const error = errors[field];
+  const [touchedOwner, setTouchedOwner] = useState<object | null>(null);
+  const owner = surface.form ?? surface;
+  const initial = surface.model[field];
+  const initialDraft = Array.isArray(initial)
+    ? text(initial[0])
+    : text(initial);
+  const edited = touchedOwner === owner || drafts[field] !== initialDraft;
+  const error = showErrors || edited ? errors[field] : undefined;
   const generated = useId();
   const id = generated + '-control',
     errorId = generated + '-error';
@@ -100,9 +115,16 @@ function Control({
     disabled,
     value: drafts[field] ?? '',
     'aria-invalid': !!error,
+    'data-invalid': !!errors[field],
     'aria-describedby': error ? errorId : undefined,
     onChange: (event: { currentTarget: { value: string } }) => {
-      if (!disabled) surface.edits[elementKey]?.(event.currentTarget.value);
+      if (!disabled) {
+        setTouchedOwner(owner);
+        surface.edits[elementKey]?.(event.currentTarget.value);
+      }
+    },
+    onBlur: () => {
+      if (!disabled) setTouchedOwner(owner);
     },
   };
   return (
@@ -188,6 +210,8 @@ export function A2uiSurface({
     surface.form ?? absentForm
   );
   const container = useRef<HTMLElement>(null);
+  const [errorsOwner, setErrorsOwner] = useState<object | null>(null);
+  const owner = surface.form ?? surface;
   return (
     <section
       ref={container}
@@ -201,10 +225,13 @@ export function A2uiSurface({
           surface,
           form,
           disabled: !active,
-          focusInvalid: () =>
+          showErrors: errorsOwner === owner,
+          focusInvalid: () => {
+            setErrorsOwner(owner);
             container.current
-              ?.querySelector<HTMLElement>('[aria-invalid="true"]')
-              ?.focus(),
+              ?.querySelector<HTMLElement>('[data-invalid="true"]')
+              ?.focus();
+          },
         }}
       >
         <RenderSpec

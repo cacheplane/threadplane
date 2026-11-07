@@ -51,4 +51,25 @@ describe('DataGridComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Recently Churned');
   });
+
+  it('names the table and its keyboard-reachable overflow region', () => {
+    fixture.componentRef.setInput('title', 'Disruptions');
+    fixture.componentRef.setInput('rows', [{ flight_number: 'UA204' }]);
+    fixture.componentRef.setInput('columns', ['flight_number']);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('table')?.getAttribute('aria-label')).toBe('Disruptions');
+    const scroll = root.querySelector('[role="region"]');
+    expect(scroll?.getAttribute('aria-label')).toBe('Disruptions table');
+    expect(scroll?.getAttribute('tabindex')).toBe('0');
+    expect(root.querySelector('th')?.getAttribute('scope')).toBe('col');
+  });
+
+  it('distinguishes no matching rows from data that is still loading', () => {
+    fixture.componentRef.setInput('title', 'Disruptions');
+    fixture.componentRef.setInput('rows', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No disruptions.');
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeNull();
+  });
 });

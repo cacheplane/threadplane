@@ -12,6 +12,8 @@ export const appConfig: ApplicationConfig = {
       return {
         apiUrl: connection.apiUrl,
         assistantId: connection.assistantId,
+        // The graph also runs a background title model after each visible turn.
+        transcriptNodeNames: ['build_form', 'search_flights', 'confirm_booking'],
         clientOptions: connection.clientOptions,
       };
     }),

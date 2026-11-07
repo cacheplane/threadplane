@@ -18,7 +18,11 @@ it('StrictMode presentation, suggestion and unmount do not create a native owner
       <A2uiDemo application={application} onReady={() => undefined} />
     </StrictMode>
   );
+  expect(screen.getByRole('region', { name: 'Conversation' }).tabIndex).toBe(0);
   fireEvent.click(screen.getByRole('button', { name: 'Try a flight request' }));
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Message' })
+  );
   expect(
     (screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement)
       .value

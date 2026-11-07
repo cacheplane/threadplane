@@ -10,13 +10,15 @@ import { Component, computed, input } from '@angular/core';
         @for (i of skeletonRows; track i) {
           <div class="skeleton skeleton-row"></div>
         }
+      } @else if (rows()?.length === 0) {
+        <p class="dashboard-empty">No disruptions.</p>
       } @else {
-        <div class="data-grid__scroll">
-          <table class="data-grid__table">
+        <div class="data-grid__scroll" role="region" tabindex="0" [attr.aria-label]="title() + ' table'">
+          <table class="data-grid__table" [attr.aria-label]="title()">
             <thead>
               <tr>
                 @for (col of formattedColumns(); track col.key) {
-                  <th>{{ col.label }}</th>
+                  <th scope="col">{{ col.label }}</th>
                 }
               </tr>
             </thead>

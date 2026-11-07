@@ -616,6 +616,11 @@ function createAgentAdapter(
     };
     activeRun = run;
     store.deliveryRun = run;
+    // Waiting for response headers is already an active request: expose Stop
+    // and block competing UI submissions before RUN_STARTED reaches us.
+    store.status.set('running');
+    store.isLoading.set(true);
+    store.error.set(undefined);
     captureAgentRuntimeTelemetry(options.telemetry, 'tplane:runtime_request_created', {
       ...telemetryProperties,
       requestType,
