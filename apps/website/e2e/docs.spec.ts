@@ -6,7 +6,7 @@ test.describe('Docs landing page', () => {
 
     // Hero
     await expect(page.locator('#docs-heading')).toBeVisible();
-    await expect(page.locator('#docs-heading')).toContainText('Start building with Threadplane');
+    await expect(page.locator('#docs-heading')).toHaveText(/Start building\s*with Threadplane\./);
 
     // Step headings (match the label text; the numbered badge is a separate aria-hidden span)
     await expect(page.getByText('Pick your backend').first()).toBeVisible();
@@ -24,6 +24,7 @@ test.describe('Docs landing page', () => {
     await expect(page.locator('main img[src="/logos/surface/vercel.svg"]').first()).toBeVisible();
 
     // Install snippet copy buttons
+    await page.locator('.docs-entry-install summary').first().click();
     await expect(page.locator('main button[aria-label="Copy install command"]').first()).toBeVisible();
 
     // Step 2 — generative UI links

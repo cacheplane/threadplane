@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import '../../styles/docs-entry.css';
 import { MdxRenderer } from './MdxRenderer';
 import { DocsSearch } from './DocsSearch';
 import { DocsPageHeader } from './DocsPageHeader';
@@ -115,7 +116,9 @@ export async function DocsArticlePage({ pathname }: { pathname: string }) {
   });
   const docsSlot = (
     <div
-      className="docs-workspace-article"
+      className={`docs-workspace-article${
+        section === 'getting-started' ? ' docs-entry-reading' : ''
+      }`}
       data-docs-section={section}
       data-docs-framework={scope}
     >

@@ -88,16 +88,14 @@ test('FAQ opens with the keyboard and homepage article styles stay on home', asy
       .locator('#questions')
       .getByRole('link', { name: 'Choosing an adapter' })
   ).toBeVisible();
+  await expect(page.locator('#articles .post-card-tags').first()).toBeHidden();
   await page
     .locator('#articles')
     .getByRole('link', { name: 'View all articles' })
     .click();
   await expect(page).toHaveURL(/\/blog$/);
   await expect(page.locator('.home-page')).toHaveCount(0);
-  expect(
-    await page
-      .locator('.post-card')
-      .first()
-      .evaluate((node) => getComputedStyle(node).borderTopWidth)
-  ).not.toBe('0px');
+  // Both surfaces intentionally use borderless cards. Home alone hides tags;
+  // the blog keeps them visible for readers browsing article topics.
+  await expect(page.locator('.post-card-tags').first()).toBeVisible();
 });
