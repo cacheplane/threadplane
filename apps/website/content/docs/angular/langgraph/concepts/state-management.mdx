@@ -352,14 +352,7 @@ A common mistake is copying `agent.messages()` into a local signal to "control" 
 
 LangGraph Platform persists state at every node boundary using a checkpoint store. Each checkpoint is an immutable snapshot of the full state at a point in time.
 
-```
-Thread: "user_123_session"
-│
-├── Checkpoint 1  ← After call_model: { messages: [HumanMessage, AIMessage] }
-├── Checkpoint 2  ← After tool_node: { messages: [..., ToolMessage] }
-├── Checkpoint 3  ← After call_model: { messages: [..., AIMessage("Here is what I found...")] }
-└── (current)
-```
+<CheckpointHistory />
 
 ### What This Means for Your Angular App
 

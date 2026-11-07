@@ -5,7 +5,24 @@ import {
   requestDisposition,
   navigationIssue,
   DOCS_AUDIT_ROUTES,
+  docsAuditWidths,
+  expectedDocsAuditChecks,
 } from './docs-audit-checks';
+
+test('counts tablet coverage as well as desktop and phone checks', () => {
+  const targets = [
+    { path: '/docs/angular/langgraph/guides/streaming' },
+    { path: '/docs/api/react/ag-ui' },
+    { path: '/docs/shared/middleware/getting-started/introduction' },
+    { path: '/docs/angular/render/guides/events' },
+  ];
+  expect(docsAuditWidths(targets[0].path)).toEqual([1440, 320]);
+  for (const target of targets.slice(1)) {
+    expect(docsAuditWidths(target.path)).toEqual([1440, 768, 320]);
+  }
+  expect(expectedDocsAuditChecks(targets)).toBe(11);
+  expect(expectedDocsAuditChecks([])).toBe(0);
+});
 
 test('read-only browser audit blocks analytics and rejects application writes without leaking URLs', () => {
   expect(

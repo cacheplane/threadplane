@@ -1,3 +1,23 @@
+export const DOCS_AUDIT_WIDTHS = [1440, 768, 320] as const;
+
+/** Keep execution and completion accounting on the same viewport plan. */
+export function docsAuditWidths(path: string): readonly number[] {
+  const tablet =
+    /^\/docs\/(?:api(?:\/|$)|shared\/)|\/guides\/(?:tool-views|events)(?:\?|$)|\/concepts\/state-management$/.test(
+      path
+    );
+  return DOCS_AUDIT_WIDTHS.filter((width) => width !== 768 || tablet);
+}
+
+export function expectedDocsAuditChecks(
+  targets: readonly { path: string }[]
+): number {
+  return targets.reduce(
+    (count, target) => count + docsAuditWidths(target.path).length,
+    0
+  );
+}
+
 /** The cross-framework learning journey exercised without starting agents or runtimes. */
 export const DOCS_AUDIT_ROUTES: readonly {
   path: string;
@@ -45,6 +65,16 @@ export const DOCS_AUDIT_ROUTES: readonly {
   { path: '/docs/react/render/guides/specs', video: true },
   { path: '/docs/react/langgraph/guides/interrupts' },
   { path: '/docs/react/ag-ui/guides/client-tools' },
+  { path: '/docs/shared/middleware/getting-started/introduction' },
+  { path: '/docs/shared/middleware/getting-started/quickstart' },
+  { path: '/docs/shared/middleware/guides/langgraph-client-tools' },
+  { path: '/docs/shared/middleware/guides/python-langgraph' },
+  { path: '/docs/api' },
+  { path: '/docs/api/render' },
+  { path: '/docs/api/render/RenderSpecComponent' },
+  { path: '/docs/angular/ag-ui/guides/tool-views' },
+  { path: '/docs/angular/render/guides/events' },
+  { path: '/docs/angular/ag-ui/guides/tool-views?mode=api' },
 ];
 
 /** Suppress telemetry without sending it; all other non-read requests fail the audit. */

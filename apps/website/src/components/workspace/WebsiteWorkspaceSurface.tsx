@@ -45,7 +45,7 @@ import { WORKSPACE_PANEL_FOCUS_INTENT } from './workspace-panel-focus';
 import { FrameworkSelector } from '../docs/FrameworkSelector';
 import { DocsSearch } from '../docs/DocsSearch';
 import type { DocsFramework } from '@threadplane/cockpit-registry';
-import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 
 /*
  * The docs workspace surface: the shell, its mode/navigation/runtime wiring and
@@ -171,7 +171,7 @@ export function WebsiteWorkspaceSurface({
   docsContext,
   contextTrail,
 }: WebsiteWorkspaceProps) {
-  const readingLayout = isFrameworkDocsRoute(routePath);
+  const readingLayout = isDocsReadingRoute(routePath);
   const toolbarLayout =
     readingLayout ||
     routePath.startsWith('/docs/api') ||

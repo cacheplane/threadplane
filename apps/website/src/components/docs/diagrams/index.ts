@@ -8,6 +8,7 @@ export { StackDiagram, type StackHighlight } from './StackDiagram';
 export { AgUiArchitecturePipeline } from './AgUiArchitecturePipeline';
 export { AgUiInterruptSequence } from './AgUiInterruptSequence';
 export { AgUiSubagentFlow } from './AgUiSubagentFlow';
+export { ToolViewFlow, RenderEventFlow, CheckpointHistory } from './TeachingFlows';
 export { A2uiMessageFlow } from './A2uiMessageFlow';
 export { RenderHowItFits } from './RenderHowItFits';
 export { RenderVsA2ui } from './RenderVsA2ui';
