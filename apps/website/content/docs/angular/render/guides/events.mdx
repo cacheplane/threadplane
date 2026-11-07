@@ -14,12 +14,7 @@ The event flow has three parts:
 2. **Component** -- calls `emit('eventName')` when the user interacts
 3. **Handler** -- a registered function that executes the action
 
-```
-Component calls emit('submit')
-    --> Library looks up on.submit
-    --> Finds { action: 'handleSubmit', params: { formId: 'login' } }
-    --> Calls handlers['handleSubmit']({ formId: 'login' })
-```
+<RenderEventFlow />
 
 ## Defining Event Handlers in a Spec
 
@@ -247,13 +242,7 @@ Handlers resolve with the same priority as other inputs:
 
 A common pattern is to use handlers to update the state store in response to user interactions. That creates a unidirectional data flow:
 
-```
-User clicks button
-    --> emit('click')
-    --> handler updates store
-    --> Signals propagate
-    --> UI re-renders
-```
+When a handler writes to the store, bound props update through Angular signals, completing the optional return path in the [event flow](#how-events-work) above.
 
 The following is a complete example:
 

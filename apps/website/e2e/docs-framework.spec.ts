@@ -109,11 +109,11 @@ test('missing counterparts stay unavailable with a separate introduction destina
 test('shared documents keep their canonical identity when guide preference changes', async ({ page }) => {
   const shared = '/docs/shared/middleware/getting-started/introduction';
   await page.goto(shared);
-  await (await frameworkControl(page)).selectOption('react');
+  await chooseFramework(page, 'react');
   await expect(page).toHaveURL(shared);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://threadplane.ai${shared}`);
   await expect(page.locator('[data-docs-framework="shared"]')).toBeVisible();
-  await expect(page.locator('.docs-sidebar-top-link').filter({ hasText: /^Introduction$/ })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  await expect(page.getByRole('link', { name: 'React overview', exact: true })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
 });
 
 test('storage denial retains explicit framework selection in the current tab', async ({ page }) => {
@@ -122,9 +122,9 @@ test('storage denial retains explicit framework selection in the current tab', a
     Storage.prototype.setItem = () => { throw new DOMException('Blocked', 'SecurityError'); };
   });
   await page.goto('/docs/shared/middleware/getting-started/introduction');
-  await (await frameworkControl(page)).selectOption('react');
-  await expect(await frameworkControl(page)).toHaveValue('react');
-  await expect(page.locator('.docs-sidebar-top-link').filter({ hasText: /^Introduction$/ })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  await chooseFramework(page, 'react');
+  await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'react');
+  await expect(page.getByRole('link', { name: 'React overview', exact: true })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
 });
 
 test('cross-tab preference changes do not navigate or relabel an open article', async ({ page, context }) => {
