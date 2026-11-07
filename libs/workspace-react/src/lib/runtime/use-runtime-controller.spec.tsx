@@ -12,6 +12,7 @@ import {
 } from 'vitest';
 import {
   RUNTIME_BRIDGE_VERSION,
+  RUNTIME_INSPECTION_VERSION,
   RUNTIME_CONFIGURATION_VERSION,
 } from '@threadplane/cockpit-runtime-bridge';
 import type { RuntimeActivityInput } from './session-activity';
@@ -133,6 +134,9 @@ describe('useRuntimeController', () => {
     () => `${string}-${string}-${string}-${string}-${string}`
   >;
 
+  let onInspection = vi.fn();
+  let onInspectionReset = vi.fn();
+
   const render = (
     runtimeUrl: string | null,
     capability = 'streaming',
@@ -147,6 +151,8 @@ describe('useRuntimeController', () => {
           effectiveTarget={effectiveTarget}
           onActivity={onActivity}
           onTerminalTransition={onTerminalTransition}
+          onInspection={onInspection}
+          onInspectionReset={onInspectionReset}
           mountFrame={mountFrame}
         />
       );
@@ -159,6 +165,8 @@ describe('useRuntimeController', () => {
     randomUUID = vi
       .spyOn(globalThis.crypto, 'randomUUID')
       .mockReturnValue(firstNonce);
+    onInspection = vi.fn();
+    onInspectionReset = vi.fn();
     onActivity = vi.fn();
     onTerminalTransition = vi.fn();
     container = document.createElement('div');
@@ -171,6 +179,196 @@ describe('useRuntimeController', () => {
     container.remove();
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  function inspection(sequence: number, nonce = 'child', generation = 0) {
+    return {
+      type: 'tplane:runtime-inspection',
+      version: RUNTIME_INSPECTION_VERSION,
+      nonce,
+      generation,
+      frame: {
+        sequence,
+        elapsedMs: 0,
+        framework: 'react',
+        messages: [],
+        state: { busy: false },
+        busy: false,
+        calls: [],
+        event: { type: 'snapshot', payload: null },
+        limited: false,
+      },
+    };
+  }
+
+  it('accepts inspection only from a configured session with exact identity and increasing sequence', () => {
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      sharedLangGraphTarget
+    );
+    const source = controller.frameRef.current!.contentWindow;
+    const emit = (
+      data: unknown,
+      origin = 'https://runtime.example.test',
+      sender = source
+    ) => emitMessage(data, origin, sender);
+    emit(inspection(1));
+    emit(childReady('child'));
+    emit(inspection(1));
+    expect(onInspection).not.toHaveBeenCalled();
+    emit(configured('child', 0));
+    emit(inspection(1), 'https://hostile.test');
+    emit(inspection(1), undefined, window);
+    emit(inspection(1, 'other'));
+    emit(inspection(1, 'child', 2));
+    expect(onInspection).not.toHaveBeenCalled();
+    emit(inspection(2));
+    emit(inspection(1));
+    emit(inspection(2));
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    expect(onInspection).toHaveBeenLastCalledWith(inspection(2).frame);
+    act(() => controller.onFrameLoad());
+    emit(inspection(3));
+    expect(onInspection).toHaveBeenCalledTimes(2);
+    // The first load after child-ready/configured must not erase early frames.
+    expect(onInspectionReset).not.toHaveBeenCalled();
+    act(() => controller.reload());
+    expect(onInspectionReset).toHaveBeenCalledTimes(1);
+    emit(inspection(4));
+    expect(onInspection).toHaveBeenCalledTimes(2);
+    emit(childReady('next'));
+    emit(configured('next', 0));
+    emit(inspection(1, 'next'));
+    expect(onInspection).toHaveBeenCalledTimes(3);
+  });
+
+  it('resets inspection ownership on target, route and disposal and isolates callback exceptions', () => {
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      sharedLangGraphTarget
+    );
+    const source = controller.frameRef.current!.contentWindow;
+    const emit = (data: unknown) =>
+      emitMessage(data, 'https://runtime.example.test', source);
+    emit(childReady('child'));
+    emit(configured('child', 0));
+    onInspection.mockImplementation(() => {
+      throw new Error('consumer');
+    });
+    expect(() => emit(inspection(1))).not.toThrow();
+    onInspectionReset.mockImplementation(() => {
+      throw new Error('consumer reset');
+    });
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      customLangGraphTarget()
+    );
+    expect(onInspectionReset).toHaveBeenCalledTimes(1);
+    emit(inspection(2));
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    render(
+      'https://other.example.test',
+      'streaming',
+      true,
+      customLangGraphTarget()
+    );
+    expect(onInspectionReset).toHaveBeenCalledTimes(2);
+    act(() => root.render(null));
+    expect(onInspectionReset).toHaveBeenCalledTimes(3);
+  });
+
+  it('clears inspection on a second iframe load and requires a fresh handshake', () => {
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      sharedLangGraphTarget
+    );
+    const source = controller.frameRef.current!.contentWindow;
+    const emit = (data: unknown) =>
+      emitMessage(data, 'https://runtime.example.test', source);
+    act(() => controller.onFrameLoad());
+    emit(childReady('first-page'));
+    emit(configured('first-page', 0));
+    emit(inspection(20, 'first-page'));
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    act(() => controller.onFrameLoad());
+    expect(onInspectionReset).toHaveBeenCalledTimes(1);
+    emit(inspection(21, 'first-page'));
+    emit(configured('first-page', 0));
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    emit(childReady('second-page'));
+    emit(inspection(1, 'second-page'));
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    emit(configured('second-page', 0));
+    emit(inspection(1, 'second-page'));
+    expect(onInspection).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears inspection when a replacement frame window takes ownership', () => {
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      sharedLangGraphTarget
+    );
+    const source = controller.frameRef.current!.contentWindow;
+    emitMessage(
+      childReady('first-page'),
+      'https://runtime.example.test',
+      source
+    );
+    emitMessage(
+      configured('first-page', 0),
+      'https://runtime.example.test',
+      source
+    );
+    emitMessage(
+      inspection(1, 'first-page'),
+      'https://runtime.example.test',
+      source
+    );
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      false,
+      sharedLangGraphTarget
+    );
+    render(
+      'https://runtime.example.test',
+      'streaming',
+      true,
+      sharedLangGraphTarget
+    );
+    emitMessage(
+      childReady('replacement'),
+      'https://runtime.example.test',
+      controller.frameRef.current!.contentWindow
+    );
+    expect(onInspectionReset).toHaveBeenCalledTimes(1);
+    emitMessage(
+      inspection(2, 'first-page'),
+      'https://runtime.example.test',
+      source
+    );
+    expect(onInspection).toHaveBeenCalledTimes(1);
+    emitMessage(
+      configured('replacement', 0),
+      'https://runtime.example.test',
+      controller.frameRef.current!.contentWindow
+    );
+    emitMessage(
+      inspection(1, 'replacement'),
+      'https://runtime.example.test',
+      controller.frameRef.current!.contentWindow
+    );
+    expect(onInspection).toHaveBeenCalledTimes(2);
   });
 
   it('omits frame commands for missing and invalid targets', () => {

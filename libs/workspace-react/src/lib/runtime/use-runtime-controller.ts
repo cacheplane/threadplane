@@ -11,12 +11,16 @@ import {
 } from 'react';
 import {
   parseRuntimeChildReadyMessage,
+  parseRuntimeInspectionMessage,
+  type InspectionFrame,
   parseRuntimeConfigurationResponseMessage,
   parseRuntimeResponseMessage,
   RUNTIME_BRIDGE_VERSION,
   RUNTIME_CONFIGURATION_VERSION,
   type RuntimeConfigurationTarget,
 } from '@threadplane/cockpit-runtime-bridge';
+import type { RuntimeAdapter } from '@threadplane/cockpit-registry';
+import { useEffectiveRuntimeTarget } from './runtime-target-provider';
 import type {
   RuntimeActivityContext,
   RuntimeActivityInput,
@@ -46,6 +50,8 @@ export interface UseRuntimeControllerOptions {
   runtimeUrl: string | null;
   capability: string;
   effectiveTarget: EffectiveRuntimeTarget;
+  onInspection?(frame: InspectionFrame): void;
+  onInspectionReset?(): void;
   onActivity(event: RuntimeActivityInput): void;
   onTerminalTransition(event: RuntimeTerminalTransition): void;
 }
@@ -87,6 +93,7 @@ interface FrameSession {
   origin: string;
   frameWindow: Window;
   loaded: boolean;
+  inspectionSequence: number;
   nonce: string | null;
   status: 'awaiting' | 'configured' | 'failed';
 }
@@ -221,6 +228,8 @@ export function useRuntimeController({
   effectiveTarget,
   onActivity,
   onTerminalTransition,
+  onInspection,
+  onInspectionReset,
 }: UseRuntimeControllerOptions): RuntimeController {
   const target = useMemo(() => parseRuntimeTarget(runtimeUrl), [runtimeUrl]);
   const [snapshot, dispatch] = useReducer(runtimeReducer, undefined, () =>
@@ -238,13 +247,17 @@ export function useRuntimeController({
   );
   const activeCheckRef = useRef<ActiveCheck | null>(null);
   const frameSessionRef = useRef<FrameSession | null>(null);
+  const onInspectionRef = useRef(onInspection);
+  const onInspectionResetRef = useRef(onInspectionReset);
   const onActivityRef = useRef(onActivity);
   const onTerminalTransitionRef = useRef(onTerminalTransition);
 
   useLayoutEffect(() => {
+    onInspectionRef.current = onInspection;
+    onInspectionResetRef.current = onInspectionReset;
     onActivityRef.current = onActivity;
     onTerminalTransitionRef.current = onTerminalTransition;
-  }, [onActivity, onTerminalTransition]);
+  }, [onActivity, onTerminalTransition, onInspection, onInspectionReset]);
 
   const invalidInputRevision = useMemo(
     () =>
@@ -388,6 +401,11 @@ export function useRuntimeController({
   const cancelFrameSession = useCallback(() => {
     clearConfigurationTimers();
     frameSessionRef.current = null;
+    try {
+      onInspectionResetRef.current?.();
+    } catch {
+      // Inspection consumers cannot interrupt runtime ownership or health.
+    }
   }, [clearConfigurationTimers]);
 
   const recordActivity = useCallback(
@@ -637,26 +655,46 @@ export function useRuntimeController({
     ) {
       return existing;
     }
-    clearConfigurationRetry();
-    frameSessionRef.current = null;
+    if (existing) {
+      cancelFrameSession();
+      configurationAttemptRef.current = {
+        routeToken: route.token,
+        targetGeneration: route.targetGeneration,
+        status: 'awaiting',
+      };
+    } else {
+      clearConfigurationRetry();
+    }
     const session: FrameSession = {
       routeToken: route.token,
       targetGeneration: route.targetGeneration,
       origin: route.target.origin,
       frameWindow,
       loaded: false,
+      inspectionSequence: -1,
       nonce: null,
       status: 'awaiting',
     };
     frameSessionRef.current = session;
     return session;
-  }, [clearConfigurationRetry]);
+  }, [cancelFrameSession, clearConfigurationRetry]);
 
   const onFrameLoad = useCallback(() => {
     const route = routeContextRef.current;
     if (route.effectiveTarget.adapter === 'none') {
       startCheck('frame_load');
       return;
+    }
+    // child-ready can precede the first iframe load. Preserve that session,
+    // including its earliest frames; subsequent loads start a new owner.
+    if (frameSessionRef.current?.loaded) {
+      cancelActiveCheck(false);
+      cancelFrameSession();
+      configurationAttemptRef.current = {
+        routeToken: route.token,
+        targetGeneration: route.targetGeneration,
+        status: 'awaiting',
+      };
     }
     const session = getOrCreateFrameSession();
     if (session === null) return;
@@ -666,7 +704,13 @@ export function useRuntimeController({
     } else if (session.status === 'awaiting') {
       startConfigurationAttempt(session);
     }
-  }, [getOrCreateFrameSession, startCheck, startConfigurationAttempt]);
+  }, [
+    cancelActiveCheck,
+    cancelFrameSession,
+    getOrCreateFrameSession,
+    startCheck,
+    startConfigurationAttempt,
+  ]);
 
   const recheck = useCallback(() => {
     const route = routeContextRef.current;
@@ -761,6 +805,28 @@ export function useRuntimeController({
       }
 
       if (route.effectiveTarget.adapter !== 'none') {
+        const inspection = parseRuntimeInspectionMessage(event.data);
+        if (inspection !== null) {
+          const session = frameSessionRef.current;
+          if (
+            session === null ||
+            session.status !== 'configured' ||
+            !frameSessionMatchesRoute(session, route) ||
+            event.source !== session.frameWindow ||
+            event.origin !== session.origin ||
+            inspection.nonce !== session.nonce ||
+            inspection.generation !== session.targetGeneration ||
+            inspection.frame.sequence <= session.inspectionSequence
+          )
+            return;
+          session.inspectionSequence = inspection.frame.sequence;
+          try {
+            onInspectionRef.current?.(inspection.frame);
+          } catch {
+            // Inspection is optional and must not disrupt health checks.
+          }
+          return;
+        }
         const childReady = parseRuntimeChildReadyMessage(event.data);
         if (childReady !== null) {
           const session = getOrCreateFrameSession();
@@ -1007,4 +1073,28 @@ export function useRuntimeController({
     reload,
     open,
   };
+}
+
+export interface UseEmbeddedRuntimeControllerOptions {
+  runtimeUrl: string | null;
+  capability: string;
+  adapter: RuntimeAdapter;
+  onInspection?(frame: InspectionFrame): void;
+  onInspectionReset?(): void;
+}
+
+const ignoreRuntimeActivity = () => undefined;
+
+/** Embedded surfaces share target selection without exposing connection secrets. */
+export function useEmbeddedRuntimeController({
+  adapter,
+  ...options
+}: UseEmbeddedRuntimeControllerOptions): RuntimeController {
+  const effectiveTarget = useEffectiveRuntimeTarget(adapter);
+  return useRuntimeController({
+    ...options,
+    effectiveTarget,
+    onActivity: ignoreRuntimeActivity,
+    onTerminalTransition: ignoreRuntimeActivity,
+  });
 }

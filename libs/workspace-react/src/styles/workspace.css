@@ -308,6 +308,34 @@
 }
 .workspace-shell-navigation {
   display: none;
+  position: relative;
+}
+.workspace-navigation-resize {
+  display: none;
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+}
+.workspace-navigation-resize span {
+  width: 2px;
+  height: 32px;
+  border-radius: 2px;
+  background: #c58b26;
+  opacity: 0.45;
+}
+.workspace-navigation-resize:hover span,
+.workspace-navigation-resize:focus-visible span {
+  opacity: 1;
+}
+.workspace-navigation-resize:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: -2px;
 }
 @media (min-width: 48rem) and (max-width: 63.999rem) {
   .workspace-shell {
@@ -325,10 +353,19 @@
 }
 @media (min-width: 64rem) {
   .workspace-shell {
-    grid-template-columns: 328px minmax(0, 1fr);
+    grid-template-columns: var(--workspace-navigation-width, 328px) minmax(0, 1fr);
   }
   .workspace-shell-navigation {
     display: block;
+  }
+  .workspace-shell-navigation .workspace-control-plane {
+    grid-template-columns: 56px minmax(
+        0,
+        calc(var(--workspace-navigation-width, 328px) - 56px)
+      );
+  }
+  .workspace-navigation-resize {
+    display: flex;
   }
 }
 .workspace-control-plane {
@@ -1180,6 +1217,12 @@
   border-right: 0;
 }
 @media (forced-colors: active) {
+  .workspace-navigation-resize span {
+    background: Highlight;
+  }
+  .workspace-navigation-resize:focus-visible {
+    outline-color: Highlight;
+  }
   .workspace-control-plane,
   .workspace-control-plane [data-control-plane-rail],
   .workspace-control-plane [data-control-plane-pane],

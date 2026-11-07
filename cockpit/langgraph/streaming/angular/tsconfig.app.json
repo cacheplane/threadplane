@@ -8,6 +8,7 @@
   },
   "files": ["src/main.ts"],
   "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/test-setup.ts"],
   "references": [
     {
       "path": "../../../../libs/cockpit-telemetry"

@@ -433,6 +433,7 @@ export function WebsiteWorkspaceSurface({
           trackRuntimeTransition={trackRuntimeTransition}
         >
           <WorkspaceShell
+            resizableNavigation={Boolean(docsContext)}
             rootElement="section"
             navigationTree={navigationTree}
             entry={
