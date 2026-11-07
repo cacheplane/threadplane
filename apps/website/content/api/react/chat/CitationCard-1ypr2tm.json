@@ -54,7 +54,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/citation-card.tsx",
-        "line": 27
+        "line": 18
       },
       "overloadIndex": 1,
       "parameters": [
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/citation-card.tsx",
-    "line": 27
+    "line": 18
   }
 }

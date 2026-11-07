@@ -67,7 +67,10 @@ Host extraction does not certify a publisher or safe navigation; the public
 card and preview still apply their shared link policy. Publication formatting uses the browser locale
 and timezone, while the preview preserves the supplied publication text.
 Each mounted message starts with a closed Sources header showing its
-source count. Click, tap, Enter, or Space expands or collapses the list; collapsed
+source count, a decorative preview of its first three sources in the exact resolved
+displayed order, and an expansion chevron. Header markers use local category icons
+or web monograms without fetching provider images; the accessible name remains
+the label and count. Click, tap, Enter, or Space expands or collapses the list; collapsed
 source controls are unmounted. Metadata updates preserve the user's expansion
 choice, while conversation selection, including A-B-A, starts a fresh closed
 panel. These local interactions preserve the composer and issue no backend request.

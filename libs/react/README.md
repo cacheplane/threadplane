@@ -189,8 +189,11 @@ source items. An absent title falls back to the supplied URL or `Source <index>`
 intentionally empty fields remain empty.
 
 Set `collapsible` to `true` for a Sources disclosure that starts closed. Its
-header shows the label and current source count, with `aria-expanded` and a stable
-controlled body. Enter, Space, click, or tap toggles it. Collapsed source controls
+header shows the label and current source count, a decorative preview of at most
+the first three sources in the resolved displayed order, and a chevron reflecting
+`aria-expanded`, with a stable controlled body. The preview uses local category
+icons or web monograms, ignores provider images and performs no fetch. Decorative
+visuals do not change the accessible label and count; static headings are unchanged. Enter, Space, click, or tap toggles it. Collapsed source controls
 are unmounted; reopening starts fresh source previews. Updates preserve the
 expansion choice and keyed source rows while open. The choice belongs to the
 mounted message; removing it or switching between static and collapsible modes

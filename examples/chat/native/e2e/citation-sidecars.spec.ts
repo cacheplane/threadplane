@@ -163,7 +163,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
     await expect(panels).toHaveCount(2);
     const mixed = panels.first();
     const header = mixed.getByRole('button', { name: /^Sources \(/ });
-    await expect(header).toHaveText('Sources (3)');
+    await expect(header).toHaveAccessibleName('Sources (3)');
     await header.click();
     await expect(
       mixed.getByRole('listitem').locator('.tp-citation-card__heading')
@@ -264,7 +264,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
         expect(await open.evaluate((node) => node.isConnected)).toBe(false);
         await trigger.evaluate((node) => (node as HTMLButtonElement).click());
         await expect(card).toHaveCount(0);
-        await expect(header).toHaveText('Sources (2)');
+        await expect(header).toHaveAccessibleName('Sources (2)');
       }
       await expect(header).toHaveAttribute('aria-expanded', 'true');
       if (index === 1) step.releaseBody();
