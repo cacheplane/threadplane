@@ -88,6 +88,29 @@ describe('DemoShell — mode signal', () => {
     });
   });
 
+  it('fits the visible keyboard viewport and preserves the Safari pan offset', () => {
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    const viewport = Object.assign(new EventTarget(), { height: 714, offsetTop: 0, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    try {
+      const fixture = TestBed.createComponent(DemoShell);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      viewport.height = 377;
+      viewport.offsetTop = 307;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--demo-viewport-height')).toBe('377px');
+      expect(host.style.getPropertyValue('--demo-viewport-top')).toBe('307px');
+      fixture.destroy();
+      viewport.height = 714;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--demo-viewport-height')).toBe('377px');
+    } finally {
+      if (previous) Object.defineProperty(window, 'visualViewport', previous);
+      else Reflect.deleteProperty(window, 'visualViewport');
+    }
+  });
+
   it('defaults to "embed" when URL is /', async () => {
     const fixture = TestBed.createComponent(DemoShell);
     fixture.detectChanges();

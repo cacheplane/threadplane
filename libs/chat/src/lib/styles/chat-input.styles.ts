@@ -38,6 +38,8 @@ export const CHAT_INPUT_STYLES = `
 .chat-input__textarea {
   flex: 1 1 auto;
   min-width: 0;
+  /* An initially hidden popup can measure zero before its first opening. */
+  min-height: 1.5em;
   border: 0;
   outline: none;
   resize: none;

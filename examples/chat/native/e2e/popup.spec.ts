@@ -12,8 +12,7 @@ async function verifyPanel(
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const title = `${presentation} conversation`;
   const thread = threadEnvelope('popup', title);
   const saved = [{ type: 'ai', id: 'saved', content: '# Saved answer' }];
@@ -275,6 +274,13 @@ async function verifyPanel(
     await draft.press('Control+Enter');
     await backend.steps[3].received;
     expectedRequests = 4;
+    // A busy run blocks submission, while the draft retains keyboard focus.
+    await expect(draft).toBeFocused();
+    await expect(draft).toBeEditable();
+    await draft.fill('Next message is still a draft.');
+    await draft.press('Control+Enter');
+    expect(backend.requests).toHaveLength(4);
+    await draft.fill('');
     await expect(
       dialog.getByText('Response in progress…', { exact: true })
     ).toBeVisible();
@@ -397,6 +403,52 @@ async function verifyPanel(
         fullPage: true,
       });
     }
+    await draft.fill('A mobile draft with several wrapped lines. '.repeat(6));
+    await page.evaluate(() => {
+      // Model iOS: keyboard changes visualViewport while dvh stays unchanged.
+      const viewport = visualViewport!;
+      Object.defineProperty(viewport, 'height', {
+        configurable: true,
+        value: 377,
+      });
+      Object.defineProperty(viewport, 'offsetTop', {
+        configurable: true,
+        value: 0,
+      });
+      viewport.dispatchEvent(new Event('resize'));
+    });
+    await expect(draft).toBeFocused();
+    await expect
+      .poll(async () => {
+        const composer = await draft.boundingBox();
+        const send = await dialog
+          .getByRole('button', { name: 'Send', exact: true })
+          .boundingBox();
+        const bounds = await panel.boundingBox();
+        return !!(
+          composer &&
+          send &&
+          bounds &&
+          composer.y >= bounds.y &&
+          composer.y + composer.height <= bounds.y + bounds.height &&
+          send.y + send.height <= bounds.y + bounds.height &&
+          bounds.y + bounds.height <= 377
+        );
+      })
+      .toBe(true);
+    await expect
+      .poll(
+        async () =>
+          (await dialog.locator('.conversation-body').boundingBox())?.height ??
+          0
+      )
+      .toBeGreaterThanOrEqual(64);
+    await page.evaluate(() => {
+      Reflect.deleteProperty(visualViewport!, 'height');
+      Reflect.deleteProperty(visualViewport!, 'offsetTop');
+      visualViewport!.dispatchEvent(new Event('resize'));
+    });
+    await draft.fill('Mobile draft');
     await page.setViewportSize({ width: 1280, height: 900 });
     await expect(filter).toHaveValue(presentation);
     expect(
@@ -427,3 +479,87 @@ for (const presentation of ['popup', 'sidebar'] as const) {
     await verifyPanel(page, testInfo, presentation, retainedConsumer);
   });
 }
+
+test('installed React embedded page retains a reading area beside a keyboard-sized draft', async ({
+  page,
+  retainedConsumer,
+}) => {
+  const { startProofServer, threadEnvelope } = await import(
+    '../tooling/proof-server.mjs'
+  );
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
+  const thread = threadEnvelope('mobile', 'Mobile conversation');
+  const backend = await startProofServer([
+    {
+      method: 'POST',
+      path: '/api/threads/search',
+      payload: { limit: 50, offset: 0 },
+      body: [thread],
+    },
+    { method: 'GET', path: '/api/threads/mobile', body: thread },
+    {
+      method: 'POST',
+      path: '/api/threads/mobile/history',
+      payload: { limit: 10 },
+      body: [
+        {
+          values: {
+            messages: [
+              {
+                type: 'ai',
+                id: 'saved',
+                content: 'A saved conversation. '.repeat(100),
+              },
+            ],
+          },
+          next: [],
+          tasks: [],
+          checkpoint: {
+            thread_id: 'mobile',
+            checkpoint_ns: '',
+            checkpoint_id: 'saved',
+          },
+          parent_checkpoint: null,
+          metadata: { source: 'input', step: 0, parents: {} },
+          created_at: '2026-10-20T00:00:00.000Z',
+        },
+      ],
+    },
+  ]);
+  let server: Awaited<ReturnType<typeof startCheckedServer>> | undefined;
+  try {
+    server = await startCheckedServer({
+      retained: retainedConsumer,
+      target: backend.origin + '/api',
+    });
+    await page.setViewportSize({ width: 402, height: 714 });
+    await page.goto(server.url);
+    await page
+      .getByRole('button', { name: 'Mobile conversation', exact: true })
+      .click();
+    const draft = page.locator('#message');
+    await draft.fill('A mobile draft with several wrapped lines. '.repeat(6));
+    await page.evaluate(() => {
+      Object.defineProperty(visualViewport!, 'height', {
+        configurable: true,
+        value: 377,
+      });
+      visualViewport!.dispatchEvent(new Event('resize'));
+    });
+    await expect(draft).toBeFocused();
+    await expect
+      .poll(
+        async () =>
+          (await page.locator('.conversation-body').boundingBox())?.height ?? 0
+      )
+      .toBeGreaterThanOrEqual(64);
+    const box = await draft.boundingBox();
+    assert.ok(box);
+    expect(box.y + box.height).toBeLessThanOrEqual(377);
+    backend.verify();
+  } finally {
+    await page.close();
+    await server?.close();
+    await backend.close();
+  }
+});

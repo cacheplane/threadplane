@@ -44,6 +44,46 @@ function createSidebarFixture() {
 }
 
 describe('ChatSidebarComponent', () => {
+  it('makes closed content inert and restores launcher focus without discarding drafts', () => {
+    const { fixture } = createSidebarFixture();
+    const host = fixture.nativeElement as HTMLElement;
+    const panel = host.querySelector<HTMLElement>('.chat-sidebar__panel')!;
+    const close = host.querySelector<HTMLButtonElement>('.chat-sidebar__close')!;
+    const launcher = host.querySelector<HTMLButtonElement>('.chat-sidebar__launcher button')!;
+    const draft = document.createElement('textarea');
+    draft.value = 'Keep this draft';
+    panel.append(draft);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    fixture.componentInstance.openWindow();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(close);
+    draft.focus();
+    fixture.componentInstance.closeWindow();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(launcher);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(draft.value).toBe('Keep this draft');
+  });
+
+  it('keeps its panel sized to the keyboard viewport and follows Safari pan', () => {
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    const viewport = Object.assign(new EventTarget(), { height: 714, offsetTop: 0, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    try {
+      const { fixture } = createSidebarFixture();
+      const host = fixture.nativeElement as HTMLElement;
+      viewport.height = 377;
+      viewport.offsetTop = 309;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-height')).toBe('377px');
+      expect(host.style.getPropertyValue('--tplane-chat-viewport-top')).toBe('309px');
+      fixture.destroy();
+    } finally {
+      if (previous) Object.defineProperty(window, 'visualViewport', previous);
+      else Reflect.deleteProperty(window, 'visualViewport');
+    }
+  });
+
   it('class is defined and imports resolve', () => {
     expect(ChatSidebarComponent).toBeDefined();
     expect(typeof ChatSidebarComponent).toBe('function');
@@ -162,7 +202,7 @@ describe('ChatSidebarComponent — edge-claim attribute', () => {
     // is for external consumer convenience; internal panels read
     // peer-specific to avoid self-feedback.
     const styles = (ChatSidebarComponent as unknown as { ɵcmp: { styles: string[] } }).ɵcmp.styles.join('\n');
-    expect(styles).toMatch(/\.chat-sidebar__panel[^{]*\{[^}]*bottom:\s*var\(--tplane-chat-debug-claim-bottom/);
+    expect(styles).toMatch(/\.chat-sidebar__panel[^{]*\{[^}]*height:[^;]*var\(--tplane-chat-debug-claim-bottom/);
   });
 
   it('launcher CSS reads PEER --tplane-chat-debug-claim-bottom (not aggregate)', () => {

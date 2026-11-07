@@ -9,6 +9,8 @@ import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.
 import type { ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
 import { ChatLauncherButtonComponent } from '../../primitives/chat-launcher-button/chat-launcher-button.component';
 import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens';
+import { installFixedChatViewport } from '../shared/fixed-viewport';
+import { installChatSurfaceFocus } from '../shared/surface-focus';
 
 /** Hosts an agent chat in a toggleable popup with a launcher and configurable keyboard shortcut. */
 @Component({
@@ -26,11 +28,11 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
     .chat-popup__launcher { position: relative; }
     .chat-popup__window {
       position: fixed;
-      bottom: 5rem;
+      top: calc(var(--tplane-chat-viewport-top, 0px) + max(1rem, calc(var(--tplane-chat-viewport-height, 100dvh) - 5rem - 600px)));
       right: var(--tplane-chat-launcher-offset-x);
       width: 24rem;
       height: 600px;
-      max-height: calc(100vh - 6rem);
+      max-height: calc(var(--tplane-chat-viewport-height, 100dvh) - 6rem);
       background: var(--tplane-chat-bg);
       border: 1px solid var(--tplane-chat-separator);
       border-radius: 0.75rem;
@@ -50,7 +52,7 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
       pointer-events: auto;
     }
     @media (max-width: 640px) {
-      .chat-popup__window { inset: 0; width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; bottom: auto; right: auto; }
+      .chat-popup__window { inset: var(--tplane-chat-viewport-top, 0px) 0 auto; width: 100%; height: var(--tplane-chat-viewport-height, 100dvh); max-height: var(--tplane-chat-viewport-height, 100dvh); box-sizing: border-box; border-radius: 0; }
     }
     .chat-popup__close {
       position: absolute; top: 8px; right: 8px;
@@ -69,7 +71,7 @@ import { CHAT_HOST_TOKENS, ensureChatRootStyles } from '../../styles/chat-tokens
     <div class="chat-popup__launcher">
       <chat-launcher-button (clicked)="toggle()" />
     </div>
-    <div class="chat-popup__window" [attr.data-open]="open() ? 'true' : 'false'" role="dialog" aria-modal="false">
+    <div class="chat-popup__window" [attr.data-open]="open() ? 'true' : 'false'" [attr.inert]="open() ? null : ''" [attr.aria-hidden]="open() ? 'false' : 'true'" role="dialog" aria-modal="false">
       <button type="button" class="chat-popup__close" (click)="closeWindow()" aria-label="Close chat">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -139,6 +141,8 @@ export class ChatPopupComponent {
   private readonly document = inject(DOCUMENT);
 
   constructor() {
+    installFixedChatViewport();
+    installChatSurfaceFocus(this.open, '.chat-popup__window', '.chat-popup__close', '.chat-popup__launcher button');
     // Inject chat lib root CSS custom properties — see ChatComponent
     // for the full rationale. Idempotent + lifecycle-guaranteed.
     ensureChatRootStyles();
