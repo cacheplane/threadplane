@@ -1,6 +1,5 @@
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
-import { Eyebrow } from '../ui/Eyebrow';
 import { ClipPlayer } from '../ui/ClipPlayer';
 import type { DemoClip } from '../../lib/demo-media';
 
@@ -19,18 +18,13 @@ import type { DemoClip } from '../../lib/demo-media';
  */
 export function SolutionDemoBlock({ clip }: { clip: DemoClip }) {
   return (
-    <Section surface="tinted" ariaLabelledBy="solution-demo-heading">
+    <Section ariaLabelledBy="solution-demo-heading">
       <Container>
         <div className="sol-demo-wrap">
-          <Eyebrow tone="accent" className="sol-code-eyebrow">See it running</Eyebrow>
           <h2 id="solution-demo-heading" className="sol-demo-heading">
             The approval gate, in the product
           </h2>
-          <p className="sol-demo-caption">
-            {clip.caption}
-          </p>
-
-          <ClipPlayer clip={clip} />
+          <p className="sol-demo-caption">{clip.caption}</p>
 
           <p className="sol-demo-note">
             Recorded from the{' '}
@@ -44,6 +38,7 @@ export function SolutionDemoBlock({ clip }: { clip: DemoClip }) {
             </a>
             , which you can drive yourself.
           </p>
+          <ClipPlayer clip={clip} />
         </div>
       </Container>
     </Section>
