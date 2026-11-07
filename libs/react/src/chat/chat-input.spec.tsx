@@ -13,6 +13,36 @@ const type = (el: HTMLTextAreaElement, value: string) =>
   fireEvent.change(el, { target: { value } });
 
 describe('ChatInput', () => {
+  it('resizes an existing draft for the software keyboard and keeps its focused end visible', async () => {
+    const viewport = Object.assign(new EventTarget(), { height: 700, scale: 1 });
+    vi.stubGlobal('visualViewport', viewport);
+    const view = render(<ChatInput defaultValue="A long draft" onSubmit={() => undefined} />);
+    const el = box(view);
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, value: 400 });
+    let renderedHeight = 140;
+    let scrollTop = 0;
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => renderedHeight });
+    Object.defineProperty(el, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => { scrollTop = Math.min(value, 400 - renderedHeight); },
+    });
+    // The parent shell subscribes after the child input and applies a CSS cap.
+    viewport.addEventListener('resize', () => { renderedHeight = viewport.height * 0.2; });
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+    viewport.height = 200;
+    viewport.dispatchEvent(new Event('resize'));
+    await waitFor(() => expect(el.style.height).toBe('80px'));
+    await waitFor(() => expect(el.scrollTop).toBe(360));
+    el.setSelectionRange(2, 2);
+    el.scrollTop = 25;
+    viewport.height = 400;
+    viewport.dispatchEvent(new Event('resize'));
+    await waitFor(() => expect(el.style.height).toBe('160px'));
+    expect(el.scrollTop).toBe(25);
+    expect(document.activeElement).toBe(el);
+  });
   it.each(['مرحبا، الطلب 4521 و abc-123', 'Request abc-123 ثم المتابعة'])(
     'lets the first strong character determine draft direction: %s',
     (draft) => {

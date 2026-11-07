@@ -17146,6 +17146,15 @@
       "treatment": "internal",
       "status": "complete",
       "reason": "Private Angular injection seam for the shared runtime inspection bridge; no public SDK API."
+    },
+    {
+      "id": "source:libs/example-layouts/src/lib/example-viewport.ts",
+      "taskIds": [
+        "T33"
+      ],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular example shell viewport helper. The internal React ExampleLayout independently follows the same visual viewport for software keyboards; no public package contract."
     }
   ]
 }

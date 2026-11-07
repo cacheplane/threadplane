@@ -47,6 +47,9 @@ async function submit(frame: FrameLocator, framework: string, message: string) {
       exact: true,
     })
     .fill(message);
+  // Fixed-position example shells cannot scroll their own document. Reveal
+  // the containing iframe before Playwright clicks a control inside it.
+  await frame.owner().scrollIntoViewIfNeeded();
   await frame
     .getByRole('button', {
       name: framework === 'react' ? 'Send' : 'Send message',
@@ -120,6 +123,7 @@ for (const framework of ['react', 'angular'] as const) {
       host.getByText('Application call settled', { exact: true })
     ).toBeVisible();
     await expect(host.locator('iframe')).toBeVisible();
+    await frame.owner().scrollIntoViewIfNeeded();
     await frame
       .getByRole('button', { name: 'New conversation', exact: true })
       .click();
@@ -178,11 +182,13 @@ test('React stop and failure remain distinct from application call settlement', 
   await expect(
     frame.getByRole('region', { name: 'Conversation' })
   ).toContainText('Live partial');
+  await frame.owner().scrollIntoViewIfNeeded();
   await frame.getByRole('button', { name: 'Stop', exact: true }).click();
   await host.getByRole('button', { name: 'JSON', exact: true }).click();
   await expect(host.getByLabel('Application state JSON')).toContainText(
     '"outcome": "aborted"'
   );
+  await frame.owner().scrollIntoViewIfNeeded();
   await frame
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();

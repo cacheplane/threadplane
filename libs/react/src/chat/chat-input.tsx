@@ -90,8 +90,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       const el = textarea.current;
       if (!el) return;
       el.style.height = 'auto';
-      const cap = Math.min(window.innerHeight * 0.4, 320);
+      const viewport = el.ownerDocument.defaultView?.visualViewport;
+      const height = viewport?.scale === 1 ? viewport.height : window.innerHeight;
+      const cap = Math.min(height * 0.4, 320);
       el.style.height = `${Math.min(el.scrollHeight, cap)}px`;
+      if (el.ownerDocument.activeElement === el && el.selectionStart === el.value.length) {
+        el.scrollTop = el.scrollHeight;
+      }
     }, []);
     useIsomorphicLayoutEffect(resize, [draft, resize]);
     useIsomorphicLayoutEffect(() => {
@@ -99,6 +104,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       if (!el) return;
       let dimensions = '';
       let frame: number | undefined;
+      const scheduleResize = () => {
+        if (frame !== undefined) cancelAnimationFrame(frame);
+        // Parent shells may apply a viewport-dependent CSS cap in a later
+        // listener. Measure and reveal the caret after that cap is in place.
+        frame = requestAnimationFrame(() => {
+          frame = undefined;
+          resize();
+        });
+      };
       const observer =
         typeof ResizeObserver === 'undefined'
           ? undefined
@@ -107,20 +121,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               const next = `${el.clientWidth}:${style.fontSize}:${style.lineHeight}:${style.fontFamily}`;
               if (next === dimensions) return;
               dimensions = next;
-              if (frame !== undefined) cancelAnimationFrame(frame);
               // Resize after observer delivery; writing the observed height
               // inside its callback causes a delivery loop in WebKit.
-              frame = requestAnimationFrame(() => {
-                frame = undefined;
-                resize();
-              });
+              scheduleResize();
             });
       observer?.observe(el);
       window.addEventListener('resize', resize);
+      const viewport = window.visualViewport;
+      viewport?.addEventListener('resize', scheduleResize);
       return () => {
         observer?.disconnect();
         if (frame !== undefined) cancelAnimationFrame(frame);
         window.removeEventListener('resize', resize);
+        viewport?.removeEventListener('resize', scheduleResize);
       };
     }, [resize]);
     const canSend = !busy && !disabled && draft.trim().length > 0;
