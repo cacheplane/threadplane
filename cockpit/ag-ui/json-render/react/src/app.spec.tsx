@@ -57,6 +57,15 @@ it('starts lazily with native input and a nonsensitive connection label', () => 
   expect(screen.queryByText('PRIVATE_ENDPOINT')).toBeNull();
   expect(application.submit).not.toHaveBeenCalled();
 });
+it('keeps a keyboard-reachable conversation and composer instructions', () => {
+  fixture();
+  expect(screen.getByRole('region', { name: 'Conversation' }).tabIndex).toBe(0);
+  expect(
+    screen
+      .getByRole('textbox', { name: 'Message' })
+      .getAttribute('aria-describedby')
+  ).toBeTruthy();
+});
 it('keeps literal native text, accepted layout and tool observations at their assistant owner', () => {
   const spec = {
     root: 'card',

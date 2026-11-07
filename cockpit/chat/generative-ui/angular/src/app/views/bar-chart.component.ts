@@ -1,5 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 
+let nextBarChartId = 0;
+
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
@@ -8,6 +10,8 @@ import { Component, computed, input } from '@angular/core';
       <div class="chart-card__title">{{ title() }}</div>
       @if (isSkeleton()) {
         <div class="skeleton skeleton-chart"></div>
+      } @else if (data()?.length === 0) {
+        <p class="dashboard-empty">No chart data.</p>
       } @else {
         <svg
           [attr.viewBox]="'0 0 ' + width + ' ' + height"
@@ -33,31 +37,46 @@ import { Component, computed, input } from '@angular/core';
               [attr.width]="bar.w"
               [attr.height]="bar.h"
               [attr.rx]="3"
-              fill="url(#bar-gradient)"
+              [attr.fill]="'url(#' + gradientId + ')'"
             />
+            @if (bar.w >= 36) {
             <text
               [attr.x]="bar.x + bar.w / 2"
               [attr.y]="bar.y - 6"
               text-anchor="middle"
               fill="var(--tplane-chat-text-muted)"
-              font-size="11"
+              font-size="16"
               font-weight="500"
             >{{ bar.value }}</text>
+            }
+            @if (bar.showLabel) {
             <text
               [attr.x]="bar.x + bar.w / 2"
               [attr.y]="height - padding.bottom + 16"
               text-anchor="middle"
               fill="var(--tplane-chat-text-muted)"
-              font-size="11"
+              font-size="16"
             >{{ bar.label }}</text>
+            }
           }
           <defs>
-            <linearGradient id="bar-gradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient [attr.id]="gradientId" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="var(--tplane-chat-primary)" stop-opacity="1"/>
               <stop offset="100%" stop-color="var(--tplane-chat-primary)" stop-opacity="0.75"/>
             </linearGradient>
           </defs>
         </svg>
+        <details class="chart-data">
+          <summary>View chart data</summary>
+          <table [attr.aria-label]="title() + ' data'">
+            <thead><tr><th scope="col">Airline</th><th scope="col">Flights</th></tr></thead>
+            <tbody>
+              @for (row of data(); track $index) {
+                <tr><th scope="row">{{ row[labelKey()] }}</th><td>{{ row[valueKey()] }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </details>
       }
     </div>
   `,
@@ -94,6 +113,7 @@ import { Component, computed, input } from '@angular/core';
   `],
 })
 export class BarChartComponent {
+  protected readonly gradientId = `dashboard-bar-${nextBarChartId++}`;
   readonly title = input<string>('');
   readonly data = input<Record<string, unknown>[] | null>(null);
   readonly labelKey = input<string>('');
@@ -114,8 +134,10 @@ export class BarChartComponent {
     const maxVal = Math.max(...values) || 1;
     const plotW = this.width - this.padding.left - this.padding.right;
     const plotH = this.height - this.padding.top - this.padding.bottom;
-    const gap = 12;
+    const gap = Math.min(12, plotW / (2 * d.length));
     const barW = (plotW - gap * (d.length - 1)) / d.length;
+    const labelIndices = new Set(Array.from({ length: Math.min(4, d.length) }, (_, i) =>
+      Math.round(i * (d.length - 1) / Math.max(1, Math.min(4, d.length) - 1))));
 
     return d.map((item, i) => {
       const val = Number(item[vk]) || 0;
@@ -127,6 +149,7 @@ export class BarChartComponent {
         h,
         label: String(item[lk] ?? ''),
         value: val.toLocaleString(),
+        showLabel: labelIndices.has(i),
       };
     });
   });

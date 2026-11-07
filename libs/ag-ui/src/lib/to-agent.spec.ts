@@ -308,6 +308,33 @@ describe('toAgent', () => {
     expect(a.isLoading()).toBe(false);
   });
 
+  it('is busy and stoppable before the first server event, and ignores late delivery after Stop', async () => {
+    const stub = new StubAgent();
+    let finish!: (value: { result: undefined; newMessages: never[] }) => void;
+    stub.runAgent.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const agent = toAgent(stub as unknown as AbstractAgent);
+    const pending = agent.submit({ message: 'Prepare a preview' });
+    expect(agent.status()).toBe('running');
+    expect(agent.isLoading()).toBe(true);
+    await agent.retry();
+    expect(stub.runAgent).toHaveBeenCalledTimes(1);
+    await agent.stop();
+    expect(stub.abortRun).toHaveBeenCalledTimes(1);
+    expect(agent.status()).toBe('idle');
+    expect(agent.isLoading()).toBe(false);
+    stub.initializeRun('late-run');
+    stub.emit({ type: 'RUN_STARTED', runId: 'late-run' } as BaseEvent, 'late-run');
+    stub.emit({ type: 'STATE_SNAPSHOT', snapshot: { late: true } } as unknown as BaseEvent, 'late-run');
+    stub.emit({ type: 'RUN_FINISHED', runId: 'late-run' } as BaseEvent, 'late-run');
+    finish({ result: undefined, newMessages: [] });
+    await pending;
+    expect(agent.status()).toBe('idle');
+    expect(agent.isLoading()).toBe(false);
+    expect(agent.state()).not.toHaveProperty('late');
+    expect(agent.error()).toBeUndefined();
+    agent.dispose();
+  });
+
   it('reduces RUN_STARTED into running status', () => {
     const stub = new StubAgent();
     const a = toAgent(stub as unknown as AbstractAgent);
@@ -879,7 +906,8 @@ describe('toAgent', () => {
       source.failRun(new Error('late eventless failure'), 'eventless-a');
 
       expect(agent.messages()).toEqual(beforeMessages);
-      expect(agent.status()).toBe('idle');
+      expect(agent.status()).toBe('running');
+      expect(agent.isLoading()).toBe(true);
       expect(agent.error()).toBeUndefined();
       runA.resolve();
       runB.resolve();

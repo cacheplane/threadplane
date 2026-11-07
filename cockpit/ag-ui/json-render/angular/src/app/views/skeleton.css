@@ -39,3 +39,27 @@
   width: 100%;
   margin-bottom: 4px;
 }
+
+.dashboard-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tplane-chat-text-muted);
+}
+.chart-data {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 13px;
+}
+.chart-data summary { cursor: pointer; }
+.chart-data table { width: 100%; border-collapse: collapse; }
+.chart-data th, .chart-data td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--tplane-chat-separator);
+  font-variant-numeric: tabular-nums;
+}
+.chart-data summary:focus-visible {
+  outline: 2px solid var(--tplane-chat-primary);
+  outline-offset: 3px;
+}

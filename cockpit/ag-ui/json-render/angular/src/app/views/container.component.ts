@@ -7,7 +7,7 @@ import { RenderElementComponent } from '@threadplane/render';
   standalone: true,
   imports: [RenderElementComponent],
   template: `
-    <div class="container" [attr.data-direction]="direction()" [style.--container-cols]="rowChildCount()">
+    <div class="container" [attr.data-direction]="direction()" [attr.data-chart-row]="hasChart() ? '' : null" [style.--container-cols]="rowChildCount()">
       @for (key of childKeys(); track key) {
         <render-element [elementKey]="key" [spec]="spec()" />
       }
@@ -24,6 +24,10 @@ import { RenderElementComponent } from '@threadplane/render';
     }
     .container[data-direction="row"] {
       grid-template-columns: repeat(var(--container-cols, 1), minmax(0, 1fr));
+    }
+    .container[data-direction="row"][data-chart-row] {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+      align-items: start;
     }
     /* Responsive collapse: at narrow widths, row containers stack to single column */
     @media (max-width: 720px) {
@@ -44,4 +48,6 @@ export class ContainerComponent {
   readonly direction = input<'row' | 'column'>('column');
 
   readonly rowChildCount = computed(() => Math.max(1, this.childKeys().length));
+  readonly hasChart = computed(() => this.childKeys().some(key =>
+    ['line_chart', 'bar_chart'].includes(this.spec().elements[key]?.type)));
 }

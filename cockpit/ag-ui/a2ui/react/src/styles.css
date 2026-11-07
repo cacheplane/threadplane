@@ -65,6 +65,14 @@ body {
 }
 .a2ui-suggestion {
   align-self: flex-start;
+  min-height: 44px;
+  padding: 10px 16px;
+  margin: 24px max(20px, calc((100% - 768px) / 2)) 0;
+  border: 1px solid var(--ds-border, light-dark(#e5e5e5, #2d2d2d));
+  border-radius: 999px;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
+  color: inherit;
+  font-size: 13px;
 }
 .a2ui-conversation,
 .a2ui-column,
@@ -84,13 +92,7 @@ body {
   flex-direction: column;
   gap: 0.5rem;
 }
-.a2ui-message--user {
-  background: var(--ds-surface-tinted, light-dark(#edf2f7, #182638));
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  align-self: flex-end;
-  max-width: 100%;
-}
+
 .a2ui-empty {
   color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   padding: 2rem 0;
@@ -172,6 +174,7 @@ body {
   align-self: stretch;
 }
 .a2ui-prose {
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -210,3 +213,6 @@ body {
     padding: 0.75rem;
   }
 }
+
+.a2ui-conversation.tp-chat-list { min-height: 0; gap: 0; }
+.a2ui-conversation.tp-chat-list > div { display: flex; flex-direction: column; gap: 1rem; }
