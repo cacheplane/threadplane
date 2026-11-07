@@ -17136,6 +17136,15 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
+    },
+    {
+      "id": "source:libs/example-layouts/src/lib/example-viewport.ts",
+      "taskIds": [
+        "T33"
+      ],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular example shell viewport helper. The internal React ExampleLayout independently follows the same visual viewport for software keyboards; no public package contract."
     }
   ]
 }

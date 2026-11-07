@@ -1,4 +1,4 @@
-import React, { Children, isValidElement, type ReactNode, type ComponentPropsWithoutRef } from 'react';
+import React, { Children, isValidElement, useEffect, useRef, type ReactNode, type ComponentPropsWithoutRef } from 'react';
 
 /** Explicit application-owned composer/status region, including nested workspaces. */
 export function ExampleFooter({ children }: { readonly children: ReactNode }) {
@@ -18,6 +18,25 @@ export function ExampleLayout({
   readonly footer?: ReactNode;
   readonly about?: ReactNode;
 }) {
+  const shell = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = shell.current;
+    const viewport = element?.ownerDocument.defaultView?.visualViewport;
+    if (!element || !viewport) return;
+    const resize = () => {
+      // iOS keyboards shrink the visual viewport, not dvh. Leave pinch zoom alone.
+      if (viewport.scale !== 1) return;
+      element.style.setProperty('--example-viewport-height', `${viewport.height}px`);
+      element.style.setProperty('--example-viewport-top', `${viewport.offsetTop}px`);
+    };
+    resize();
+    viewport.addEventListener('resize', resize);
+    viewport.addEventListener('scroll', resize);
+    return () => {
+      viewport.removeEventListener('resize', resize);
+      viewport.removeEventListener('scroll', resize);
+    };
+  }, []);
   const nodes = Children.toArray(children);
   const header = nodes.find((node) => isValidElement(node) && node.type === 'header');
   const description = nodes.find(
@@ -25,7 +44,7 @@ export function ExampleLayout({
   );
   const composer = nodes.find((node) => isValidElement(node) && node.type === ExampleFooter);
   return (
-    <main {...mainProps} className={`tp-example tp-example--${kind} ${className}`}>
+    <main {...mainProps} ref={shell} className={`tp-example tp-example--${kind} ${className}`}>
       <div className="tp-example__workspace">
         <div className="tp-example__conversation">
           {header}

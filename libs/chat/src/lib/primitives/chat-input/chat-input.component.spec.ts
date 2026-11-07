@@ -117,6 +117,44 @@ describe('ChatInputComponent', () => {
     expect(textarea.style.overflowY).toBe('auto');
   });
 
+  it('resizes an existing draft for the software keyboard and keeps its focused end visible', async () => {
+    fixture.destroy();
+    const viewport = Object.assign(new EventTarget(), { height: 700, scale: 1 });
+    vi.stubGlobal('visualViewport', viewport);
+    try {
+      fixture = TestBed.createComponent(ChatInputComponent);
+      setSignalInput(fixture.componentInstance.agent, mockAgent());
+      fixture.componentInstance.messageText.set('A long draft');
+      fixture.detectChanges();
+      const el = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+      Object.defineProperty(el, 'scrollHeight', { configurable: true, value: 400 });
+      let renderedHeight = 140;
+      let scrollTop = 0;
+      Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => renderedHeight });
+      Object.defineProperty(el, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: (value: number) => { scrollTop = Math.min(value, 400 - renderedHeight); },
+      });
+      viewport.addEventListener('resize', () => { renderedHeight = viewport.height * 0.2; });
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+      viewport.height = 200;
+      viewport.dispatchEvent(new Event('resize'));
+      await vi.waitFor(() => expect(el.style.height).toBe('80px'));
+      await vi.waitFor(() => expect(el.scrollTop).toBe(360));
+      el.setSelectionRange(2, 2);
+      el.scrollTop = 25;
+      viewport.height = 400;
+      viewport.dispatchEvent(new Event('resize'));
+      await vi.waitFor(() => expect(el.style.height).toBe('160px'));
+      expect(el.scrollTop).toBe(25);
+      expect(document.activeElement).toBe(el);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('disables Send and preserves the draft on Enter until the adapter releases input', () => {
     const agent = mockAgent();
     const blocked = signal(true);

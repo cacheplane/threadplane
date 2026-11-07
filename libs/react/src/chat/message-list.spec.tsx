@@ -166,6 +166,10 @@ describe('MessageList', () => {
     expect(observe).toHaveBeenCalledWith(list.firstElementChild);
     expect(observe).toHaveBeenCalledWith(list);
     expect(observe).toHaveBeenCalledTimes(2);
+    height = 1700;
+    fireEvent.scroll(list);
+    act(notify);
+    expect(top).toBe(1700);
     top = height - viewport;
     viewport = 100;
     act(notify);
