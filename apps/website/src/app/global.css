@@ -16,10 +16,10 @@
 @import "../styles/api-reference.css";
 @import "../styles/docs-examples.css";
 @import "../styles/workspace-brand.css";
-@import "../styles/angular-docs.css";
-@import "../styles/angular-docs-navigation.css";
+@import "../styles/docs-reading.css";
+@import "../styles/docs-reading-navigation.css";
 @import "../styles/docs-diagrams.css";
-@import "../styles/angular-docs-diagrams.css";
+@import "../styles/docs-reading-diagrams.css";
 @import "../styles/landing.css";
 @import "../styles/marketing.css";
 @import "../styles/forms.css";

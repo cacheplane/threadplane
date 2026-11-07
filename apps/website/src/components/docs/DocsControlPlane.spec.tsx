@@ -46,6 +46,15 @@ beforeEach(() => {
 });
 
 describe('DocsControlPlane', () => {
+  it('uses compact React navigation with framework-correct overview and collapsed inactive sections', () => {
+    route.pathname = '/docs/react/ag-ui/guides/interrupts';
+    const { container } = render(<DocsContextContent activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" scope="react" />);
+    expect(container.querySelector('[data-docs-navigation-compact]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'React overview' }).getAttribute('href')).toBe('/docs/react/getting-started/introduction');
+    expect(screen.getByRole('button', { name: 'Reference', exact: true }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Guides', exact: true }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('link', { name: 'Interrupts', exact: true }).getAttribute('aria-current')).toBe('page');
+  });
   it.each(['angular', 'react'] as const)('marks the %s introduction as the current featured page', framework => {
     route.pathname = `/docs/${framework}/getting-started/introduction`;
     render(<DocsContextContent activeLibrary={null} activeSection="getting-started" activeSlug="introduction" scope={framework} />);
@@ -526,7 +535,7 @@ describe('DocsContextContent', () => {
     expect(screen.getByRole('link', { name: 'Open live demo' }).textContent).toBe('Open live demo');
   });
 
-  it.each(['/docs/react/langgraph/guides/streaming', '/docs/choosing-an-adapter'])('preserves the existing context structure outside Angular routes (%s)', pathname => {
+  it.each(['/docs/choosing-an-adapter', '/docs/api'])('preserves the existing context structure outside framework articles (%s)', pathname => {
     route.pathname = pathname;
     const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
     expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();

@@ -1,10 +1,10 @@
-/* The shared wrapper keeps its existing kind label outside Angular docs. */
+/* The shared wrapper keeps its existing kind label outside framework articles. */
 .tp-diagram-figure-title {
   display: none;
 }
 
 body:has(
-    [data-website-workspace-host][data-workspace-route^='/docs/angular/']
+    [data-website-workspace-host][data-docs-reading]
   ) .docs-workspace-article {
   .tp-diagram-figure[data-docs-diagram] {
     margin: 28px 0;

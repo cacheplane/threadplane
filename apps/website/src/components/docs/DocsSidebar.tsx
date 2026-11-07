@@ -32,6 +32,7 @@ import { LibraryMark } from './LibraryMark';
 import { useDocsDropdown } from './use-docs-dropdown';
 import type { DocsFramework } from '@threadplane/cockpit-registry/docs-routes';
 import { preferredDocsHref } from '../../lib/framework-preference';
+import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
 
 export interface DocsNavigationProps {
   framework?: DocsFramework;
@@ -281,7 +282,7 @@ export function DocsNavigation({
   const library = libraries.find(candidate => candidate.id === activeLibrary);
   const migrations = libraries.find(candidate => candidate.id === 'chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
-  const compact = pathname?.startsWith('/docs/angular/') ?? false;
+  const compact = isFrameworkDocsRoute(pathname);
 
   const supportingLinks = (
       <nav
@@ -292,7 +293,7 @@ export function DocsNavigation({
           data-active={pathname === preferredDocsHref(framework) || undefined}
           aria-current={pathname === preferredDocsHref(framework) ? 'page' : undefined}
           data-docs-navlink data-workspace-navigation-link>
-          {compact && activeLibrary ? 'Angular overview' : 'Introduction'}
+          {compact && activeLibrary ? `${framework === 'react' ? 'React' : 'Angular'} overview` : 'Introduction'}
         </Link>
         <Link
           href={resolveHref(`/docs/${framework}/getting-started/workbench`)}

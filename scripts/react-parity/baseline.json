@@ -1,13 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0ec11eeadfccd2a36cdfc07f1f2065694a9b39f4",
+  "baselineHead": "cecc42ac8fc13a2ac709f0268286ee61b78e46d8",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/chat/concepts/message-model.mdx",
-      "apps/website/content/docs/react/chat/concepts/message-model.mdx",
-      "libs/workspace-react/src/lib/viewport/workspace-viewport.ts",
-      "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "libs/workspace-react/src/styles/workspace.css"
+      "apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "apps/website/content/docs/react/getting-started/workbench.mdx"
     ],
     "untracked": []
   },
@@ -2719,7 +2716,7 @@
       "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "sha256": "78302c1e82db176523aba6336ee6939fa159de1bd9a4ee35c27ec35623b99cf6"
+      "sha256": "aa1c1efa89bc9b386e16b8a6ade2377948900d7e2dd87771bad33c495ae04013"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
@@ -3127,7 +3124,7 @@
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "sha256": "884be77c127a02d908742607cfc894c03abba8442d28b8712f9d36d5eee4504d"
+      "sha256": "275f63c6fcf13c236bbf979126e03993590f74a23d30eeae643042ede7bd1ff2"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",

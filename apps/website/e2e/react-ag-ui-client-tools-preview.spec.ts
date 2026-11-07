@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework } from './fixtures/framework-controls';
 import { writeFile } from 'node:fs/promises';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
@@ -68,7 +69,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath('docs-mobile.png') });
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Code', exact: true }).click();
+    await documentationModes(page).getByRole('button', { name: 'Code', exact: true }).click();
     await hydrated(page, 'Code');
     const tree = page.getByRole('complementary', { name: 'File tree' });
     for (const file of ['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'graph.py', 'server.py', 'client-tools.md']) {
@@ -80,7 +81,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
       await expect(page.getByRole('tabpanel')).toContainText(text);
     }
     await page.screenshot({ path: info.outputPath('code-desktop.png') });
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
+    await documentationModes(page).getByRole('button', { name: /^Run(?:,|$)/ }).click();
     await hydrated(page, 'Run');
     await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4640\/\?cockpit_did=/);
     const frame = page.frameLocator('iframe');
@@ -159,7 +160,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await expect.poll(() => oldFrame?.evaluate(element => element.isConnected)).toBe(false);
     await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4325\//);
     await page.goBack();
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await expect(frame.getByRole('status')).toHaveText('Ready.');
     await expect(frame.locator('[data-native-message]')).toHaveCount(0);
     await frame.getByLabel('Message', { exact: true }).fill('Unsubmitted draft');

@@ -1,3 +1,4 @@
+import { selectWorkspaceMode as mode } from './fixtures/workspace-controls';
 import { expect, test, type Page } from '@playwright/test';
 
 const toast = (page: Page) => page.locator('[data-announcement-toast]');
@@ -10,29 +11,6 @@ test.skip(
     !baseURL || !['localhost', '127.0.0.1'].includes(new URL(baseURL).hostname),
   'Requires owned local static native previews; never run against a deployed Website.'
 );
-
-async function mode(page: Page, name: 'Docs' | 'Code' | 'API' | 'Run') {
-  const toolbar = page.locator('[data-workspace-toolbar]');
-  if (await toolbar.isVisible()) {
-    await toolbar.locator(`[data-workspace-toolbar-mode="${name}"]`).click();
-    await expect(shell(page)).toHaveAttribute('data-workspace-mode', name);
-    return;
-  }
-  const mobile = (page.viewportSize()?.width ?? 1280) < 768;
-  if (mobile)
-    await page.getByRole('button', { name: 'Open navigation' }).click();
-  const navigation = mobile
-    ? page.getByRole('dialog', { name: 'Documentation control plane' })
-    : page.locator('[data-workspace-desktop-navigation]');
-  await navigation
-    .getByRole('button', {
-      name: name === 'Run' ? /^Run(?:,|$)/ : name,
-      exact: name !== 'Run',
-    })
-    .click();
-  await expect(shell(page)).toHaveAttribute('data-workspace-mode', name);
-  if (mobile) await expect(navigation).toHaveCount(0);
-}
 
 // Workspace locks document scrolling. Exercise the real scroll listener with a
 // temporary inert layout fixture, then restore geometry before any UI assertion.

@@ -72,9 +72,6 @@ function observePrivacyChannels(page: Page): {
   return { browserMessages, outboundPayloads };
 }
 
-const desktopControlPlane = (page: Page) =>
-  page.locator('[data-workspace-desktop-navigation]');
-
 const runtimeFrame = (page: Page, title: string): FrameLocator =>
   page.frameLocator(`iframe[title="${title} live example"]`);
 
@@ -168,9 +165,7 @@ async function assertOperationalPrivacy(
   privacyChannels: ReturnType<typeof observePrivacyChannels>
 ): Promise<void> {
   await openSettings(page);
-  const runtimeSection = desktopControlPlane(page).locator(
-    '[data-runtime-section]'
-  );
+  const runtimeSection = page.locator('[data-runtime-section]:visible');
   await runtimeSection
     .getByRole('button', { name: 'More runtime actions' })
     .click();

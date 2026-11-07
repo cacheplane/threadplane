@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
@@ -56,7 +57,7 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
     ? undefined
     : await (await request.get(origin + '/__requests')).json();
   await page.goto('/docs/react/ag-ui/guides/subagents');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI Subagents preview',
@@ -77,13 +78,11 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
   await page.screenshot({
     path: testInfo.outputPath('react-ag-ui-subagents-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(/\/docs\/react\//);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -95,10 +94,10 @@ test('public React AG-UI subagents keep topic docs, sources, runtime, and histor
   await selectFramework(page, 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4613|ag-ui\/subagents\/react)/

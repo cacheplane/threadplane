@@ -1,3 +1,4 @@
+import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
 import { test, expect, type Page, type Locator } from '@playwright/test';
 
@@ -8,13 +9,8 @@ const browserErrors = new WeakMap<Page, string[]>();
 function events(base64: string) {
   return [...Buffer.from(base64, 'base64').toString().matchAll(/^data: (.+)$/gm)].map(match => JSON.parse(match[1]));
 }
-async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
-  if (width === 390) {
-    await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-    await page.getByRole('dialog').getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
-  } else {
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
-  }
+async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
+  await selectWorkspaceMode(page, name);
 }
 async function fits(locator: Locator) {
   await locator.scrollIntoViewIfNeeded();
@@ -61,7 +57,7 @@ test.describe('native Strands Website', () => {
       await expect(page.locator('[data-example-file="cockpit/runtimes/aws-strands/react/src/approval-policy.ts"]')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath('docs.png') });
-      await mode(page, 'Code', width);
+      await mode(page, 'Code');
       const tree = page.getByRole('complementary', { name: 'File tree' });
       const files = ['app.tsx', 'application.ts', 'approval-policy.ts', 'schedule-projection.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'agent.py', 'server.py', 'subagent_emitter.py', 'aws-strands.md'];
       if (width === 390) {
@@ -76,7 +72,7 @@ test.describe('native Strands Website', () => {
       await expect(page.getByRole('tabpanel')).toContainText('p.methods.resume.call');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath('code.png') });
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4643\/\?cockpit_did=/);
       const frame = page.frameLocator('iframe');
       await expect(frame.getByRole('status')).toHaveText('Ready.');
@@ -85,7 +81,7 @@ test.describe('native Strands Website', () => {
       const draft = await frame.getByRole('textbox', { name: 'Message', exact: true }).inputValue();
       expect(draft).toContain('Q3 roadmap review');
       for (const destination of ['Docs', 'Code', 'Run'] as const) {
-        await mode(page, destination, width);
+        await mode(page, destination);
         expect(await page.locator('iframe').evaluate((element, original) => element === original, iframe)).toBe(true);
       }
       await expect(frame.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue(draft);
@@ -143,7 +139,7 @@ test.describe('native Strands Website', () => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.goto('/docs/react/runtimes/aws-strands/overview');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       const frame = page.frameLocator('iframe');
       await expect(frame.getByRole('status')).toHaveText('Ready.');
       await frame.getByRole('button', { name: 'Q3 roadmap review', exact: true }).click();
@@ -160,9 +156,9 @@ test.describe('native Strands Website', () => {
       const resumed = evidence.requests[1];
       expect(events(resumed.upstreamBase64).some(event => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(true);
       expect(events(resumed.sentBase64).some(event => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(false);
-      await mode(page, 'Docs', width);
+      await mode(page, 'Docs');
       await expect(page.locator('iframe')).toHaveCount(1);
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       await expect(page.frameLocator('iframe').getByRole('status')).toHaveText('Meeting unconfirmed. Start a new conversation.');
       expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(2);
     });

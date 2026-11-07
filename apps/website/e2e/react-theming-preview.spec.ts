@@ -1,3 +1,4 @@
+import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
@@ -16,31 +17,8 @@ const observations = new WeakMap<
   }
 >();
 
-async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
-  if (width === 390) {
-    await page
-      .getByRole('button', { name: 'Open navigation', exact: true })
-      .click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', {
-        name: name === 'Run' ? /^Run(?:,|$)/ : name,
-        exact: name !== 'Run',
-      })
-      .click();
-    await expect(page.getByRole('dialog')).toBeHidden();
-  } else
-    await page
-      .locator('[data-workspace-desktop-navigation]')
-      .getByRole('button', {
-        name: name === 'Run' ? /^Run(?:,|$)/ : name,
-        exact: name !== 'Run',
-      })
-      .click();
-  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-    'data-workspace-mode',
-    name
-  );
+async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
+  await selectWorkspaceMode(page, name);
 }
 
 test.describe('native Theming Website', () => {
@@ -142,7 +120,7 @@ test.describe('native Theming Website', () => {
         path: info.outputPath('docs.png'),
         fullPage: true,
       });
-      await mode(page, 'Code', width);
+      await mode(page, 'Code');
       const files = [
         'app.tsx',
         'application.ts',
@@ -176,7 +154,7 @@ test.describe('native Theming Website', () => {
         );
       }
       await page.screenshot({ path: info.outputPath('code.png') });
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       const iframe = page.locator('iframe');
       await expect(iframe).toHaveAttribute('src', frameURL);
       const original = await iframe.elementHandle();
@@ -198,7 +176,7 @@ test.describe('native Theming Website', () => {
       );
       expect(observations.get(page)?.requests).toEqual([]);
       for (const name of ['Docs', 'Code', 'Run'] as const)
-        await mode(page, name, width);
+        await mode(page, name);
       expect(
         await iframe.evaluate((node, previous) => node === previous, original)
       ).toBe(true);
@@ -289,7 +267,7 @@ test.describe('native Theming Website', () => {
       for (const name of ['Light', 'Ocean', 'Forest', 'Dark'])
         await frame.getByRole('button', { name, exact: true }).click();
       for (const name of ['Code', 'Docs', 'Run'] as const)
-        await mode(page, name, width);
+        await mode(page, name);
       expect(
         await iframe.evaluate((node, previous) => node === previous, original)
       ).toBe(true);

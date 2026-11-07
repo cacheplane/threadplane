@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { frameworkControl, selectFramework } from './fixtures/framework-controls';
+import { chooseFramework, frameworkControl, selectFramework } from './fixtures/framework-controls';
 
 const angular = '/docs/angular/langgraph/guides/streaming';
 const react = '/docs/react/langgraph/guides/streaming';
@@ -36,7 +36,7 @@ test('route identity wins over opposite storage and obsolete frontend queries wi
   await page.addInitScript(key => { if (window === window.top) localStorage.setItem(key, 'angular'); }, preferenceKey);
   await page.goto(`${react}?frontend=angular`);
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
-  await expect(await frameworkControl(page)).toHaveValue('react');
+  await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'react');
   await expect(page.getByRole('heading', { name: 'React streaming preview', exact: true })).toBeVisible();
   await expect(page.locator('[data-example-file="cockpit/langgraph/streaming/react/src/app.tsx"]')).toBeVisible();
   expect(await page.evaluate(key => localStorage.getItem(key), preferenceKey)).toBe('react');
@@ -70,7 +70,7 @@ for (const width of [1440, 390]) {
   });
   try {
     const control = await frameworkControl(page);
-    await control.selectOption('angular');
+    await chooseFramework(page, 'angular');
     await expect.poll(() => intercepted).toBe(true);
     if (width < 768) {
       await expect(control).not.toBeVisible();
@@ -132,7 +132,7 @@ test('cross-tab preference changes do not navigate or relabel an open article', 
   await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'angular');
   const other = await context.newPage();
   await other.goto(react);
-  await expect(await frameworkControl(other)).toHaveValue('react');
+  await expect(await frameworkControl(other)).toHaveAttribute('data-value', 'react');
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), preferenceKey)).toBe('react');
   await expect(page).toHaveURL(angular);
   await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'angular');

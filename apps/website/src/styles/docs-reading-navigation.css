@@ -1,7 +1,6 @@
-/* Compact reading navigation is an Angular-route opt-in. Shared and React
- * contexts retain the existing control-plane presentation. */
+/* Compact navigation shared by Angular and React framework articles. */
 body:has(
-    [data-website-workspace-host][data-workspace-route^='/docs/angular/']
+    [data-website-workspace-host][data-docs-reading]
   ) {
   [data-docs-control-plane-context][data-docs-navigation-compact] {
     gap: 0;

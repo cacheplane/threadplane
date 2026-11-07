@@ -130,7 +130,7 @@ test('Angular example tabs have mobile touch targets', async ({ page }) => {
   }
 });
 
-test('Angular reading treatment is scoped and clears on React navigation', async ({
+test('framework reading treatment stays consistent on Angular and React navigation', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });

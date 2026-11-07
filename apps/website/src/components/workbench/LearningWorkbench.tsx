@@ -32,6 +32,9 @@ export interface LearningWorkbenchPresentation {
   readonly source?: LearningSource;
   readonly sourceOpen?: boolean;
   readonly sourceFocusRequest?: number;
+  readonly sourceRegionId?: string;
+  readonly onCloseSource?: () => void;
+  readonly sourceReturnLabel?: string;
   readonly sessionControls?: ReactNode;
   readonly layoutControls?: ReturnType<typeof useWorkbenchLayout>;
   readonly expanded?: boolean;
@@ -53,6 +56,9 @@ export function LearningWorkbench({
   source: lessonSource,
   sourceOpen = false,
   sourceFocusRequest,
+  sourceRegionId,
+  onCloseSource,
+  sourceReturnLabel,
   sessionControls,
   layoutControls,
   expanded: workbenchExpanded,
@@ -72,6 +78,7 @@ export function LearningWorkbench({
   };
 } & LearningWorkbenchPresentation) {
   const id = useId();
+  const sourceRef = useRef<HTMLElement>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const ownLayout = useWorkbenchLayout();
@@ -90,6 +97,9 @@ export function LearningWorkbench({
   const frame = frameAt(recording.frames, cursor);
   // Background live capture must not disturb a reader's historical scroll.
   const conversationIdentity = isLive ? frame?.id : frame;
+  useEffect(() => {
+    if (sourceOpen) sourceRef.current?.focus({ preventScroll: true });
+  }, [sourceOpen, sourceFocusRequest]);
   useEffect(() => {
     const pane = conversationRef.current;
     if (pane) pane.scrollTop = pane.scrollHeight;
@@ -190,7 +200,21 @@ export function LearningWorkbench({
       </header>
       {sessionControls}
       {lessonSource && (
-        <div hidden={!sourceOpen} inert={!sourceOpen}>
+        <section
+          id={sourceRegionId ?? `${id}-source`}
+          ref={sourceRef}
+          aria-label="Example source"
+          tabIndex={-1}
+          hidden={!sourceOpen}
+          inert={!sourceOpen}
+        >
+          {onCloseSource && (
+            <div className="tp-learn-source-return">
+              <button type="button" onClick={onCloseSource}>
+                {sourceReturnLabel ?? 'Return to example session'}
+              </button>
+            </div>
+          )}
           <LearningSourceView
             source={lessonSource}
             visible={sourceOpen}
@@ -198,7 +222,7 @@ export function LearningWorkbench({
             filesWidth={layout.files}
             onFilesWidth={(files, persist) => update({ files }, persist)}
           />
-        </div>
+        </section>
       )}
       <div
         hidden={sourceOpen}

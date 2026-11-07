@@ -35,6 +35,17 @@ beforeEach(() => {
 });
 
 describe('FrameworkSelector', () => {
+  it('uses the shared menu on React and restores focus after cancelling', () => {
+    state.pathname = targets.react.href;
+    render(<FrameworkSelector scope="react" documentId="langgraph/guides/streaming" targets={targets} />);
+    const control = screen.getByRole('button', { name: 'Framework' });
+    fireEvent.click(control);
+    expect(screen.getByRole('menuitemradio', { name: 'React' }).getAttribute('aria-checked')).toBe('true');
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' });
+    expect(screen.queryByRole('menu', { name: 'Frameworks' })).toBeNull();
+    expect(document.activeElement).toBe(control);
+    expect(state.push).not.toHaveBeenCalled();
+  });
   it('opens a matching menu and restores focus without switching on Escape', () => {
     render(<FrameworkSelector documentId="langgraph/guides/streaming" targets={targets} />);
     const control = screen.getByRole('button', { name: 'Framework' });
