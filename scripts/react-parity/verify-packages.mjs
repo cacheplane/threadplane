@@ -269,6 +269,8 @@ export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: Reac
 export type SuggestionItemContract = Assert<Equal<import('@threadplane/react/chat').SuggestionItem, { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean }>>;
 export type SuggestionsContract = Assert<Equal<import('@threadplane/react/chat').SuggestionsProps, { readonly suggestions: readonly import('@threadplane/react/chat').SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
 export type SuggestionsParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Suggestions>[0], import('@threadplane/react/chat').SuggestionsProps>>;
+export type CitationCardContract = Assert<Equal<import('@threadplane/react/chat').CitationCardProps, { readonly citation: import('@threadplane/core').Citation; readonly className?: string }>>;
+export type CitationCardParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').CitationCard>[0], import('@threadplane/react/chat').CitationCardProps>>;
 export type CitationPreviewContract = Assert<Equal<import('@threadplane/react/chat').CitationPreviewProps, { readonly citation: import('@threadplane/core').Citation; readonly className?: string }>>;
 export type CitationPreviewParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').CitationPreview>[0], import('@threadplane/react/chat').CitationPreviewProps>>;
 export type CitationsContract = Assert<Equal<import('@threadplane/react/chat').CitationsProps, { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode }>>;
@@ -421,6 +423,7 @@ export function assertSupportedExports(project, entry) {
         'ChatSidenavScrim',
         'ChatInput',
         'Citations',
+        'CitationCard',
         'CitationPreview',
         'ConfirmDialog',
         'HistorySearchPalette',

@@ -165,11 +165,9 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
     const header = mixed.getByRole('button', { name: /^Sources \(/ });
     await expect(header).toHaveText('Sources (3)');
     await header.click();
-    await expect(mixed.getByRole('listitem')).toHaveText([
-      '[1] Provider',
-      '[1] Sidecar',
-      '[4] javascript:blocked',
-    ]);
+    await expect(
+      mixed.getByRole('listitem').locator('.tp-citation-card__heading')
+    ).toHaveText(['[1] Provider', '[1] Sidecar', '[4] javascript:blocked']);
     await mixed
       .getByRole('button', {
         name: 'Preview source 4: javascript:blocked',

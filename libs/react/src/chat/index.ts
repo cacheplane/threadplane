@@ -43,6 +43,7 @@ export {
 export { MessageList, type MessageListProps } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export { Citations, type CitationsProps } from './citations.js';
+export { CitationCard, type CitationCardProps } from './citation-card.js';
 export {
   CitationPreview,
   type CitationPreviewProps,
