@@ -6,6 +6,9 @@ import { join, resolve } from 'node:path';
 import { chromium, expect, type Locator, type Page } from '@playwright/test';
 import {
   DOCS_AUDIT_ROUTES,
+  DOCS_AUDIT_WIDTHS,
+  docsAuditWidths,
+  expectedDocsAuditChecks,
   geometryIssues,
   navigationIssue,
   requestDisposition,
@@ -336,7 +339,7 @@ async function main() {
   const succeeded = () =>
     !fatalError &&
     targets.length > 0 &&
-    results.length === targets.length * 2 &&
+    results.length === expectedDocsAuditChecks(targets) &&
     results.every((result) => result.passed);
   // Deliberately retain sanitized metadata only, never request headers/bodies,
   // storage or Playwright HAR/trace files containing the deployment bypass.
@@ -452,7 +455,7 @@ async function main() {
     }
     const auditedOrigin = origin;
     browser = await chromium.launch();
-    for (const width of [1440, 768, 320]) {
+    for (const width of DOCS_AUDIT_WIDTHS) {
       const context = await browser.newContext({
         viewport: { width, height: 720 },
         serviceWorkers: 'block',
@@ -526,14 +529,7 @@ async function main() {
           });
       });
       for (const [index, target] of targets.entries()) {
-        // Tablet drawer coverage for the newly aligned route families and flows.
-        if (
-          width === 768 &&
-          !/^\/docs\/(?:api(?:\/|$)|shared\/)|\/guides\/(?:tool-views|events)(?:\?|$)|\/concepts\/state-management$/.test(
-            target.path
-          )
-        )
-          continue;
+        if (!docsAuditWidths(target.path).includes(width)) continue;
         errors.length = 0;
         try {
           events.push({ event: 'navigate', value: `${width} ${target.path}` });
@@ -588,7 +584,10 @@ async function main() {
               );
             if (target.path.startsWith('/docs/api')) {
               await page
-                .getByRole('button', { name: width < 768 ? 'Open navigation' : 'Open context', exact: true })
+                .getByRole('button', {
+                  name: width < 768 ? 'Open navigation' : 'Open context',
+                  exact: true,
+                })
                 .click();
               const apiNav = page.locator('.api-reference-navigation:visible');
               await expect(apiNav).toBeVisible();
@@ -712,7 +711,9 @@ async function main() {
     console.log(
       `Documentation audit: ${
         results.filter((result) => result.passed).length
-      }/${targets.length * 2} page/viewports passed; ${inventory.reduce(
+      }/${expectedDocsAuditChecks(
+        targets
+      )} page/viewports passed; ${inventory.reduce(
         (total, target) => total + target.diagrams.length,
         0
       )} authored diagram placements`
