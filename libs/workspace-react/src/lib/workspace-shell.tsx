@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import {
@@ -28,6 +29,10 @@ import { MobileNavOverlay } from './components/mobile-nav-overlay';
 import { RunMode } from './components/run-mode/run-mode';
 import { PRODUCT_LABELS } from './navigation-labels';
 import { useWorkspace } from './workspace-provider';
+import {
+  NavigationResizeHandle,
+  useNavigationWidth,
+} from './navigation-resize';
 
 const isTabletViewport = () =>
   typeof window.matchMedia === 'function' &&
@@ -85,6 +90,8 @@ class WorkspacePanelBoundary extends Component<
 }
 
 export interface WorkspaceShellProps {
+  /** Allow hosts to resize desktop navigation; compact layouts keep their rail. */
+  readonly resizableNavigation?: boolean;
   readonly rootElement?: 'main' | 'section';
   readonly navigationTree?: NavigationProduct[];
   readonly manifest?: CockpitManifestEntry[];
@@ -112,6 +119,7 @@ export interface WorkspaceShellProps {
 }
 
 export function WorkspaceShell({
+  resizableNavigation = false,
   rootElement = 'main',
   navigationTree = [],
   manifest = cockpitManifest,
@@ -130,6 +138,8 @@ export function WorkspaceShell({
   onMobileModalPresenceChange,
 }: WorkspaceShellProps) {
   const RootElement = rootElement;
+  const { width: navigationWidth, update: updateNavigationWidth } =
+    useNavigationWidth(resizableNavigation);
   const workspace = useWorkspace();
   const {
     resolution,
@@ -342,6 +352,13 @@ export function WorkspaceShell({
       data-workspace-kind={resolution.kind}
       data-workspace-mode={activeMode}
       data-hydrated={hydrated ? 'true' : 'false'}
+      style={
+        resizableNavigation
+          ? ({
+              '--workspace-navigation-width': `${navigationWidth}px`,
+            } as CSSProperties)
+          : undefined
+      }
     >
       <div
         className="workspace-shell-navigation min-h-0 overflow-hidden"
@@ -353,6 +370,12 @@ export function WorkspaceShell({
           {...controlPlaneProps}
           onModeSelected={handlePrimaryModeSelected}
         />
+        {resizableNavigation && (
+          <NavigationResizeHandle
+            width={navigationWidth}
+            onChange={updateNavigationWidth}
+          />
+        )}
       </div>
 
       <MobileNavOverlay

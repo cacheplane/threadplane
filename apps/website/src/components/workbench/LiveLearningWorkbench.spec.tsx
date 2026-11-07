@@ -8,6 +8,24 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import type { InspectionFrame } from '@threadplane/cockpit-runtime-bridge';
 import { LiveLearningWorkbench } from './LiveLearningWorkbench';
+import type { LearningSource } from './learning-lesson';
+
+const lessonSource: LearningSource = {
+  revision: 'a'.repeat(40),
+  files: [
+    {
+      path: 'cockpit/app.tsx',
+      source: 'const snapshot = useAgent(application);',
+      highlights: [{ start: 1, end: 1 }],
+    },
+  ],
+  snippet: {
+    path: 'cockpit/app.tsx',
+    code: 'const snapshot = useAgent(application);',
+    start: 1,
+    end: 1,
+  },
+};
 
 const bridge = vi.hoisted(() => ({
   options: null as null | {
@@ -48,6 +66,43 @@ const observation = (sequence: number, busy = false): InspectionFrame => ({
 afterEach(() => {
   cleanup();
   bridge.phase = 'ready';
+});
+
+it('opens source without starting a runtime and preserves a running iframe through source and layout changes', () => {
+  render(
+    <LiveLearningWorkbench
+      framework="react"
+      runtimeUrl="http://localhost:4600"
+      capability="streaming"
+      source={lessonSource}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Source', exact: true }));
+  expect(screen.queryByTitle('Framework application')).toBeNull();
+  expect(screen.getByLabelText('Lesson source code').textContent).toContain(
+    'useAgent(application)'
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Live', exact: true }));
+  const iframe = screen.getByTitle('Framework application');
+  act(() => bridge.options!.onInspection(observation(1, true)));
+  fireEvent.click(screen.getByRole('button', { name: 'Source', exact: true }));
+  expect(iframe.isConnected).toBe(true);
+  act(() => bridge.options!.onInspection(observation(2)));
+  fireEvent.click(screen.getByRole('button', { name: 'Live', exact: true }));
+  expect(screen.getByTitle('Framework application')).toBe(iframe);
+  fireEvent.keyDown(
+    screen.getByRole('separator', {
+      name: 'Resize conversation and inspector',
+    }),
+    { key: 'ArrowRight' }
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Expand workbench' }));
+  expect(screen.getByTitle('Framework application')).toBe(iframe);
+  expect(
+    screen
+      .getByRole('link', { name: 'Open React streaming example' })
+      .getAttribute('href')
+  ).toBe('/docs/react/langgraph/guides/streaming');
 });
 
 it('allows recovery reload after a failed child leaves a pending call', () => {

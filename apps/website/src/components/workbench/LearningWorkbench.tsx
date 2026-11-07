@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   advancePlayback,
   frameAt,
@@ -12,6 +19,26 @@ import {
 import { StateTree } from './StateTree';
 import tripRecording from './trip-recording.json';
 import './workbench.css';
+import { WorkbenchSeparator } from './WorkbenchSeparator';
+import { useWorkbenchLayout } from './use-workbench-layout';
+import { LearningSourceView } from './LearningSourceView';
+import {
+  learningMilestones,
+  sourceHref,
+  type LearningSource,
+} from './learning-lesson';
+
+export interface LearningWorkbenchPresentation {
+  readonly source?: LearningSource;
+  readonly sourceOpen?: boolean;
+  readonly sourceFocusRequest?: number;
+  readonly sessionControls?: ReactNode;
+  readonly layoutControls?: ReturnType<typeof useWorkbenchLayout>;
+  readonly expanded?: boolean;
+  readonly onToggleExpanded?: () => void;
+  readonly onResetLayout?: () => void;
+  readonly seekRequest?: { readonly id: number; readonly index: number };
+}
 
 const modes = ['Messages', 'Events', 'State', 'Requests'] as const;
 type Mode = (typeof modes)[number];
@@ -23,6 +50,15 @@ export function LearningWorkbench({
   framework,
   recording = tripRecording as Recording,
   live,
+  source: lessonSource,
+  sourceOpen = false,
+  sourceFocusRequest,
+  sessionControls,
+  layoutControls,
+  expanded: workbenchExpanded,
+  onToggleExpanded,
+  onResetLayout,
+  seekRequest,
 }: {
   readonly framework: 'angular' | 'react';
   readonly recording?: Recording;
@@ -34,9 +70,12 @@ export function LearningWorkbench({
     readonly conversation: ReactNode;
     readonly notice?: string;
   };
-}) {
+} & LearningWorkbenchPresentation) {
   const id = useId();
   const conversationRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const ownLayout = useWorkbenchLayout();
+  const { layout, update, reset } = layoutControls ?? ownLayout;
   const [playback, setPlayback] = useState<Playback>({
     cursor: 0,
     playing: false,
@@ -62,6 +101,14 @@ export function LearningWorkbench({
     setExpanded(new Set());
     setRequestId(null);
   }, [recording, isLive]);
+  useEffect(() => {
+    if (seekRequest && !isLive)
+      setPlayback({ cursor: seek(seekRequest.index, count), playing: false });
+  }, [seekRequest, count, isLive]);
+  useEffect(() => {
+    if (sourceOpen && !isLive)
+      setPlayback((current) => ({ ...current, playing: false }));
+  }, [sourceOpen, isLive]);
   useEffect(() => {
     if (isLive || !playback.playing) return;
     const timer = window.setInterval(
@@ -103,407 +150,495 @@ export function LearningWorkbench({
     <section
       className="tp-learn not-prose"
       aria-label="Streaming learning workbench"
+      style={
+        {
+          '--learn-chat': `${layout.split}fr`,
+          '--learn-inspector': `${100 - layout.split}fr`,
+          '--learn-height': `${layout.height}px`,
+        } as CSSProperties
+      }
     >
       <header className="tp-learn-header">
         <div>
-          <span className="tp-learn-eyebrow">THREADPLANE / WORKBENCH 01</span>
-          <h3>A trip, one observation at a time.</h3>
+          <h3>Watch a turn unfold.</h3>
         </div>
-        <span className="tp-learn-badge">
-          {live
-            ? live.following
-              ? 'Following live'
-              : 'Live history'
-            : 'Fixture replay'}
-        </span>
+        <div className="tp-learn-header-actions">
+          <span className="tp-learn-badge">
+            {sourceOpen
+              ? 'Lesson source'
+              : live
+              ? live.following
+                ? 'Following live'
+                : 'Live history'
+              : 'Fixture replay'}
+          </span>
+          {onToggleExpanded && (
+            <button
+              type="button"
+              aria-label={
+                workbenchExpanded
+                  ? 'Restore workbench width'
+                  : 'Expand workbench'
+              }
+              aria-pressed={workbenchExpanded}
+              onClick={onToggleExpanded}
+            >
+              {workbenchExpanded ? 'Restore width' : 'Expand'}
+            </button>
+          )}
+        </div>
       </header>
-      <div className="tp-learn-body">
-        <section
-          className="tp-learn-conversation"
-          aria-label="Trip conversation"
-        >
-          <div className="tp-learn-pane-heading">
-            <strong>Trip notebook</strong>
-            <span className="tp-learn-dim">
-              {live ? `${frameworkName} application` : 'Streamed response'}
+      {sessionControls}
+      {lessonSource && (
+        <div hidden={!sourceOpen} inert={!sourceOpen}>
+          <LearningSourceView
+            source={lessonSource}
+            visible={sourceOpen}
+            focusRequest={sourceFocusRequest}
+            filesWidth={layout.files}
+            onFilesWidth={(files, persist) => update({ files }, persist)}
+          />
+        </div>
+      )}
+      <div
+        hidden={sourceOpen}
+        inert={sourceOpen}
+        className="tp-learn-observation-view"
+      >
+        <div className="tp-learn-body" ref={bodyRef}>
+          <section
+            className="tp-learn-conversation"
+            aria-label="Trip conversation"
+          >
+            <div className="tp-learn-pane-heading">
+              <strong>Trip notebook</strong>
+              <span className="tp-learn-dim">
+                {live ? `${frameworkName} application` : 'Streamed response'}
+              </span>
+            </div>
+            {live && (
+              <div
+                className="tp-learn-live-frame"
+                hidden={!live.following}
+                inert={!live.following}
+              >
+                {live.conversation}
+              </div>
+            )}
+            <div
+              className="tp-learn-conversation-scroll"
+              ref={conversationRef}
+              tabIndex={0}
+              role="region"
+              aria-label="Recorded conversation messages"
+              hidden={live?.following}
+            >
+              <div className="tp-learn-trip">
+                <h4>A little time in Paris.</h4>
+                <p>
+                  Follow a traveler’s prompt as a response arrives. Pause to see
+                  what the application knows.
+                </p>
+              </div>
+              {frame?.messages.length ? (
+                frame.messages.map((message) => (
+                  <article
+                    className={`tp-learn-message ${
+                      message.role === 'user' || message.role === 'human'
+                        ? 'tp-learn-message-user'
+                        : ''
+                    }`}
+                    key={message.id}
+                  >
+                    <span className="tp-learn-eyebrow">
+                      {message.role === 'user' || message.role === 'human'
+                        ? 'You'
+                        : message.role}
+                    </span>
+                    <p>{message.text || 'No text observed yet.'}</p>
+                  </article>
+                ))
+              ) : (
+                <p className="tp-learn-empty">
+                  {live
+                    ? 'No messages observed at this point.'
+                    : 'Press Play to follow the recorded conversation, or move through it one observation at a time.'}
+                </p>
+              )}
+            </div>
+            <div className="tp-learn-conversation-note">
+              {live?.following
+                ? 'The live application owns your actions'
+                : 'Read-only playback · no requests are sent'}
+            </div>
+          </section>
+          <WorkbenchSeparator
+            label="Resize conversation and inspector"
+            orientation="vertical"
+            value={layout.split}
+            min={25}
+            max={75}
+            step={4}
+            defaultValue={44}
+            onChange={(split, persist) => update({ split }, persist)}
+            valueFromPointer={(event) => {
+              const bounds = bodyRef.current?.getBoundingClientRect();
+              return bounds && bounds.width > 0
+                ? ((event.clientX - bounds.left) / bounds.width) * 100
+                : layout.split;
+            }}
+          />
+          <section className="tp-learn-inspector" aria-label="Inspector">
+            <div className="tp-learn-pane-heading">
+              <strong>Inspector</strong>
+              <span className="tp-learn-dim">At the playhead</span>
+            </div>
+            <div
+              className="tp-learn-modes"
+              role="group"
+              aria-label="Inspector view"
+            >
+              {modes.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={mode === item}
+                  aria-controls={`${id}-panel`}
+                  onClick={() => setMode(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div
+              id={`${id}-panel`}
+              className="tp-learn-inspector-scroll"
+              role="region"
+              aria-label={`${mode} inspection`}
+              tabIndex={0}
+            >
+              {mode === 'State' && (
+                <>
+                  <div className="tp-learn-inspector-heading">
+                    <span>Application state</span>
+                    <div
+                      role="group"
+                      aria-label="State format"
+                      className="tp-learn-segment"
+                    >
+                      {(['Tree', 'JSON'] as const).map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          aria-pressed={stateView === item}
+                          onClick={() => setStateView(item)}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="tp-learn-help">
+                    Observed application fields, not the provider’s internal
+                    state.
+                  </p>
+                  {frame?.state == null ? (
+                    <p className="tp-learn-empty">
+                      State has not been observed at this point.
+                    </p>
+                  ) : stateView === 'JSON' ? (
+                    <pre aria-label="Application state JSON">
+                      {JSON.stringify(frame.state, null, 2)}
+                    </pre>
+                  ) : (
+                    <StateTree
+                      value={frame.state}
+                      expanded={expanded}
+                      onToggle={togglePath}
+                    />
+                  )}
+                </>
+              )}
+              {mode === 'Messages' && (
+                <>
+                  <div className="tp-learn-inspector-heading">
+                    <span>Observed messages</span>
+                    <span className="tp-learn-dim">
+                      {frame?.messages.length ?? 0}
+                    </span>
+                  </div>
+                  {frame?.messages.length ? (
+                    <pre aria-label="Messages JSON">
+                      {JSON.stringify(frame.messages, null, 2)}
+                    </pre>
+                  ) : (
+                    <p className="tp-learn-empty">No messages observed yet.</p>
+                  )}
+                </>
+              )}
+              {mode === 'Events' && (
+                <>
+                  <p className="tp-learn-help">
+                    Select an observation to move the whole workbench to that
+                    point.
+                  </p>
+                  <ol className="tp-learn-events">
+                    {recording.frames.map((item, index) => (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          aria-label={`${index + 1}. ${
+                            item.label
+                          }, ${item.elapsedMs.toFixed(0)} milliseconds`}
+                          aria-current={cursor === index ? 'step' : undefined}
+                          onClick={() => goTo(index)}
+                        >
+                          <span className="tp-learn-event-index">
+                            {index + 1}.
+                          </span>
+                          <span>
+                            {item.label}
+                            <small>{item.event.type}</small>
+                          </span>
+                          <span className="tp-learn-dim">
+                            {item.elapsedMs.toFixed(0)} ms
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                  {frame && (
+                    <details className="tp-learn-event-detail">
+                      <summary>Selected event payload</summary>
+                      <pre>{JSON.stringify(frame.event.payload, null, 2)}</pre>
+                    </details>
+                  )}
+                </>
+              )}
+              {mode === 'Requests' && (
+                <>
+                  {live ? (
+                    <>
+                      <div className="tp-learn-inspector-heading">
+                        Application calls
+                      </div>
+                      <p className="tp-learn-help">
+                        Observed submit inputs and settlement. Settled means the
+                        invocation returned; read State for its outcome. HTTP
+                        and provider requests are not captured here.
+                      </p>
+                      {call ? (
+                        <>
+                          <label
+                            className="tp-learn-request-picker"
+                            htmlFor={`${id}-call`}
+                          >
+                            Observed call
+                            <select
+                              id={`${id}-call`}
+                              value={call.id}
+                              onChange={(event) =>
+                                setRequestId(event.target.value)
+                              }
+                            >
+                              {calls.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name} · {item.id}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="tp-learn-request-status">
+                            Application call {call.status}
+                          </div>
+                          <span className="tp-learn-eyebrow">
+                            Captured submit input
+                          </span>
+                          <pre aria-label="Application call input">
+                            {JSON.stringify(call.input, null, 2)}
+                          </pre>
+                        </>
+                      ) : (
+                        <p className="tp-learn-empty">
+                          No calls observed at this point.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="tp-learn-help">
+                        Application HTTP requests to the fixture server.
+                        Provider requests were not captured.
+                      </p>
+                      {!request ? (
+                        <p className="tp-learn-empty">
+                          No requests observed at this point.
+                        </p>
+                      ) : (
+                        <>
+                          <label
+                            className="tp-learn-request-picker"
+                            htmlFor={`${id}-request`}
+                          >
+                            Observed request
+                            <select
+                              id={`${id}-request`}
+                              value={request.id}
+                              onChange={(event) =>
+                                setRequestId(event.target.value)
+                              }
+                            >
+                              {requests.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.method} {item.path}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="tp-learn-request-status">
+                            {request.status === null
+                              ? 'Response not yet observed'
+                              : `HTTP ${request.status}`}
+                          </div>
+                          <span className="tp-learn-eyebrow">
+                            Captured request body
+                          </span>
+                          <pre aria-label="Request body">
+                            {JSON.stringify(request.body, null, 2)}
+                          </pre>
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+        <WorkbenchSeparator
+          label="Resize workbench height"
+          orientation="horizontal"
+          value={layout.height}
+          min={360}
+          max={800}
+          step={20}
+          defaultValue={520}
+          className="tp-learn-height-separator"
+          onChange={(height, persist) => update({ height }, persist)}
+          valueFromPointer={(event) =>
+            event.clientY -
+            (bodyRef.current?.getBoundingClientRect().top ?? event.clientY)
+          }
+        />
+        <footer className="tp-learn-playback">
+          {live?.notice && (
+            <p className="tp-learn-help" role="status">
+              {live.notice}
+            </p>
+          )}
+          <div className="tp-learn-controls">
+            {live ? (
+              <button
+                type="button"
+                className="tp-learn-play"
+                disabled={live.following}
+                onClick={live.onReturn}
+              >
+                Return to live
+              </button>
+            ) : (
+              <button
+                className="tp-learn-play"
+                type="button"
+                disabled={count < 2}
+                aria-label={
+                  playback.playing
+                    ? 'Pause recording'
+                    : cursor === count - 1
+                    ? 'Replay recording'
+                    : 'Play recording'
+                }
+                onClick={() =>
+                  setPlayback((current) =>
+                    current.playing
+                      ? { ...current, playing: false }
+                      : startPlayback(current.cursor, count)
+                  )
+                }
+              >
+                {playback.playing
+                  ? 'Pause'
+                  : cursor === count - 1
+                  ? 'Replay'
+                  : 'Play'}
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label="Previous observation"
+              disabled={cursor === 0}
+              onClick={() => goTo(cursor - 1)}
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              aria-label="Next observation"
+              disabled={!count || cursor === count - 1}
+              onClick={() => goTo(cursor + 1)}
+            >
+              →
+            </button>
+            <label className="tp-learn-timeline" htmlFor={`${id}-timeline`}>
+              <span className="tp-learn-sr-only">Observation</span>
+              <input
+                id={`${id}-timeline`}
+                type="range"
+                min={0}
+                max={Math.max(0, count - 1)}
+                step={1}
+                value={cursor}
+                disabled={count < 2}
+                aria-valuetext={`${count ? cursor + 1 : 0} of ${count}: ${
+                  frame?.label ?? 'Empty recording'
+                }`}
+                onChange={(event) => goTo(Number(event.target.value))}
+              />
+            </label>
+            <span className="tp-learn-count">
+              {count ? cursor + 1 : 0} / {count}
             </span>
           </div>
-          {live && (
-            <div
-              className="tp-learn-live-frame"
-              hidden={!live.following}
-              inert={!live.following}
-            >
-              {live.conversation}
-            </div>
-          )}
           <div
-            className="tp-learn-conversation-scroll"
-            ref={conversationRef}
-            tabIndex={0}
-            role="region"
-            aria-label="Recorded conversation messages"
-            hidden={live?.following}
-          >
-            <div className="tp-learn-trip">
-              <span className="tp-learn-eyebrow">THE LEARNING APP</span>
-              <h4>A little time in Paris.</h4>
-              <p>
-                Follow a traveler’s prompt as a response arrives. Pause to see
-                what the application knows.
-              </p>
-            </div>
-            {frame?.messages.length ? (
-              frame.messages.map((message) => (
-                <article
-                  className={`tp-learn-message ${
-                    message.role === 'user' || message.role === 'human'
-                      ? 'tp-learn-message-user'
-                      : ''
-                  }`}
-                  key={message.id}
-                >
-                  <span className="tp-learn-eyebrow">
-                    {message.role === 'user' || message.role === 'human'
-                      ? 'You'
-                      : message.role}
-                  </span>
-                  <p>{message.text || 'No text observed yet.'}</p>
-                </article>
-              ))
-            ) : (
-              <p className="tp-learn-empty">
-                {live
-                  ? 'No messages observed at this point.'
-                  : 'Press Play to follow the recorded conversation, or move through it one observation at a time.'}
-              </p>
-            )}
-          </div>
-          <div className="tp-learn-conversation-note">
-            {live?.following
-              ? 'The live application owns your actions'
-              : 'Read-only playback · no requests are sent'}
-          </div>
-        </section>
-        <section className="tp-learn-inspector" aria-label="Inspector">
-          <div className="tp-learn-pane-heading">
-            <strong>Inspector</strong>
-            <span className="tp-learn-dim">At the playhead</span>
-          </div>
-          <div
-            className="tp-learn-modes"
+            className="tp-learn-milestones"
             role="group"
-            aria-label="Inspector view"
+            aria-label="Lesson moments"
           >
-            {modes.map((item) => (
+            {learningMilestones(recording).map((moment) => (
               <button
-                key={item}
+                key={moment.id}
                 type="button"
-                aria-pressed={mode === item}
-                aria-controls={`${id}-panel`}
-                onClick={() => setMode(item)}
+                aria-current={cursor === moment.index ? 'step' : undefined}
+                onClick={() => goTo(moment.index)}
               >
-                {item}
+                {moment.label}
               </button>
             ))}
           </div>
-          <div
-            id={`${id}-panel`}
-            className="tp-learn-inspector-scroll"
-            role="region"
-            aria-label={`${mode} inspection`}
-            tabIndex={0}
-          >
-            {mode === 'State' && (
-              <>
-                <div className="tp-learn-inspector-heading">
-                  <span>Application state</span>
-                  <div
-                    role="group"
-                    aria-label="State format"
-                    className="tp-learn-segment"
-                  >
-                    {(['Tree', 'JSON'] as const).map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        aria-pressed={stateView === item}
-                        onClick={() => setStateView(item)}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <p className="tp-learn-help">
-                  Observed application fields, not the provider’s internal
-                  state.
-                </p>
-                {frame?.state == null ? (
-                  <p className="tp-learn-empty">
-                    State has not been observed at this point.
-                  </p>
-                ) : stateView === 'JSON' ? (
-                  <pre aria-label="Application state JSON">
-                    {JSON.stringify(frame.state, null, 2)}
-                  </pre>
-                ) : (
-                  <StateTree
-                    value={frame.state}
-                    expanded={expanded}
-                    onToggle={togglePath}
-                  />
-                )}
-              </>
-            )}
-            {mode === 'Messages' && (
-              <>
-                <div className="tp-learn-inspector-heading">
-                  <span>Observed messages</span>
-                  <span className="tp-learn-dim">
-                    {frame?.messages.length ?? 0}
-                  </span>
-                </div>
-                {frame?.messages.length ? (
-                  <pre aria-label="Messages JSON">
-                    {JSON.stringify(frame.messages, null, 2)}
-                  </pre>
-                ) : (
-                  <p className="tp-learn-empty">No messages observed yet.</p>
-                )}
-              </>
-            )}
-            {mode === 'Events' && (
-              <>
-                <p className="tp-learn-help">
-                  Select an observation to move the whole workbench to that
-                  point.
-                </p>
-                <ol className="tp-learn-events">
-                  {recording.frames.map((item, index) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        aria-label={`${index + 1}. ${
-                          item.label
-                        }, ${item.elapsedMs.toFixed(0)} milliseconds`}
-                        aria-current={cursor === index ? 'step' : undefined}
-                        onClick={() => goTo(index)}
-                      >
-                        <span className="tp-learn-event-index">
-                          {index + 1}.
-                        </span>
-                        <span>
-                          {item.label}
-                          <small>{item.event.type}</small>
-                        </span>
-                        <span className="tp-learn-dim">
-                          {item.elapsedMs.toFixed(0)} ms
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-                {frame && (
-                  <details className="tp-learn-event-detail">
-                    <summary>Selected event payload</summary>
-                    <pre>{JSON.stringify(frame.event.payload, null, 2)}</pre>
-                  </details>
-                )}
-              </>
-            )}
-            {mode === 'Requests' && (
-              <>
-                {live ? (
-                  <>
-                    <div className="tp-learn-inspector-heading">
-                      Application calls
-                    </div>
-                    <p className="tp-learn-help">
-                      Observed submit inputs and settlement. Settled means the
-                      invocation returned; read State for its outcome. HTTP and
-                      provider requests are not captured here.
-                    </p>
-                    {call ? (
-                      <>
-                        <label
-                          className="tp-learn-request-picker"
-                          htmlFor={`${id}-call`}
-                        >
-                          Observed call
-                          <select
-                            id={`${id}-call`}
-                            value={call.id}
-                            onChange={(event) =>
-                              setRequestId(event.target.value)
-                            }
-                          >
-                            {calls.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} · {item.id}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="tp-learn-request-status">
-                          Application call {call.status}
-                        </div>
-                        <span className="tp-learn-eyebrow">
-                          Captured submit input
-                        </span>
-                        <pre aria-label="Application call input">
-                          {JSON.stringify(call.input, null, 2)}
-                        </pre>
-                      </>
-                    ) : (
-                      <p className="tp-learn-empty">
-                        No calls observed at this point.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="tp-learn-help">
-                      Application HTTP requests to the fixture server. Provider
-                      requests were not captured.
-                    </p>
-                    {!request ? (
-                      <p className="tp-learn-empty">
-                        No requests observed at this point.
-                      </p>
-                    ) : (
-                      <>
-                        <label
-                          className="tp-learn-request-picker"
-                          htmlFor={`${id}-request`}
-                        >
-                          Observed request
-                          <select
-                            id={`${id}-request`}
-                            value={request.id}
-                            onChange={(event) =>
-                              setRequestId(event.target.value)
-                            }
-                          >
-                            {requests.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.method} {item.path}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="tp-learn-request-status">
-                          {request.status === null
-                            ? 'Response not yet observed'
-                            : `HTTP ${request.status}`}
-                        </div>
-                        <span className="tp-learn-eyebrow">
-                          Captured request body
-                        </span>
-                        <pre aria-label="Request body">
-                          {JSON.stringify(request.body, null, 2)}
-                        </pre>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
-            )}
+          <div className="tp-learn-playback-caption">
+            <span aria-live={playback.playing ? 'off' : 'polite'}>
+              {frame?.label ?? 'No observations available'}
+            </span>
+            <span>
+              {live
+                ? live.following
+                  ? 'Following incoming observations'
+                  : 'History is read-only; capture continues'
+                : 'Reading pace · 0.8s per observation'}
+            </span>
           </div>
-        </section>
+        </footer>
       </div>
-      <footer className="tp-learn-playback">
-        {live?.notice && (
-          <p className="tp-learn-help" role="status">
-            {live.notice}
-          </p>
-        )}
-        <div className="tp-learn-controls">
-          {live ? (
-            <button
-              type="button"
-              className="tp-learn-play"
-              disabled={live.following}
-              onClick={live.onReturn}
-            >
-              Return to live
-            </button>
-          ) : (
-            <button
-              className="tp-learn-play"
-              type="button"
-              disabled={count < 2}
-              aria-label={
-                playback.playing
-                  ? 'Pause recording'
-                  : cursor === count - 1
-                  ? 'Replay recording'
-                  : 'Play recording'
-              }
-              onClick={() =>
-                setPlayback((current) =>
-                  current.playing
-                    ? { ...current, playing: false }
-                    : startPlayback(current.cursor, count)
-                )
-              }
-            >
-              {playback.playing
-                ? 'Pause'
-                : cursor === count - 1
-                ? 'Replay'
-                : 'Play'}
-            </button>
-          )}
-          <button
-            type="button"
-            aria-label="Previous observation"
-            disabled={cursor === 0}
-            onClick={() => goTo(cursor - 1)}
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            aria-label="Next observation"
-            disabled={!count || cursor === count - 1}
-            onClick={() => goTo(cursor + 1)}
-          >
-            →
-          </button>
-          <label className="tp-learn-timeline" htmlFor={`${id}-timeline`}>
-            <span className="tp-learn-sr-only">Observation</span>
-            <input
-              id={`${id}-timeline`}
-              type="range"
-              min={0}
-              max={Math.max(0, count - 1)}
-              step={1}
-              value={cursor}
-              disabled={count < 2}
-              aria-valuetext={`${count ? cursor + 1 : 0} of ${count}: ${
-                frame?.label ?? 'Empty recording'
-              }`}
-              onChange={(event) => goTo(Number(event.target.value))}
-            />
-          </label>
-          <span className="tp-learn-count">
-            {count ? cursor + 1 : 0} / {count}
-          </span>
-        </div>
-        <div className="tp-learn-playback-caption">
-          <span aria-live={playback.playing ? 'off' : 'polite'}>
-            {frame?.label ?? 'No observations available'}
-          </span>
-          <span>
-            {live
-              ? live.following
-                ? 'Following incoming observations'
-                : 'History is read-only; capture continues'
-              : 'Reading pace · 0.8s per observation'}
-          </span>
-        </div>
-      </footer>
       <div className="tp-learn-provenance">
         <details>
           <summary>
@@ -524,7 +659,22 @@ export function LearningWorkbench({
             </p>
           )}
         </details>
-        <a href={`${sourceRoot}/${source}`}>{frameworkName} source</a>
+        <a
+          href={
+            lessonSource
+              ? sourceHref(
+                  lessonSource.revision,
+                  lessonSource.snippet.path,
+                  lessonSource.snippet
+                )
+              : `${sourceRoot}/${source}`
+          }
+        >
+          {frameworkName} source
+        </a>
+        <button type="button" onClick={onResetLayout ?? reset}>
+          Reset layout
+        </button>
       </div>
     </section>
   );

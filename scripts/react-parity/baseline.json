@@ -1,15 +1,18 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "0b3c9bf78defd53fb1687dc7e8202bfdd96b1b84",
+  "baselineHead": "86fe2c879b8b784856ffa9c90508686edfe7e34f",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/chat/citation-card.tsx",
-      "libs/react/src/chat/citations.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
+      "apps/website/content/docs/react/getting-started/workbench.mdx",
+      "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
+      "libs/workspace-react/src/lib/workspace-shell.tsx",
+      "libs/workspace-react/src/styles/workspace.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/workspace-react/src/lib/navigation-resize.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -1053,7 +1056,7 @@
       "id": "asset:libs/workspace-react/src/styles/workspace.css",
       "kind": "asset",
       "path": "libs/workspace-react/src/styles/workspace.css",
-      "sha256": "e13582704da42f9ab600c0409de451aa96533136ad78d487d973f16b3922d487"
+      "sha256": "532beb3ea177835f764043ea5d8f4560c278039c33a3e942adabf1dd393ee2e1"
     },
     {
       "id": "asset:libs/workspace-react/tsconfig.json",
@@ -2719,7 +2722,7 @@
       "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "sha256": "61015fc2b15473810d8b0c0edc2db2426f420ebc914bead0cc32bff97f496996"
+      "sha256": "78302c1e82db176523aba6336ee6939fa159de1bd9a4ee35c27ec35623b99cf6"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
@@ -2815,7 +2818,7 @@
       "id": "doc:apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/langgraph/guides/streaming.mdx",
-      "sha256": "2bfd80457d908d76dd088772f75e6be65b793fac41195f20e415431f152e2238"
+      "sha256": "3494897a9dff57909f733a0a4fc558d2845a01968f9ec6a9aa57fe06d7b8f75a"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/guides/subgraphs.mdx",
@@ -3127,7 +3130,7 @@
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "sha256": "9a537c6332657c6d67087cf519566619a0e13aebf45e8441447b72a9da875fa7"
+      "sha256": "884be77c127a02d908742607cfc894c03abba8442d28b8712f9d36d5eee4504d"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",
@@ -3163,7 +3166,7 @@
       "id": "doc:apps/website/content/docs/react/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
-      "sha256": "5038094e22eaeda3b4e0e22920b08cc83a4d6b5e8ad3f74844e1256bc883f559"
+      "sha256": "897b18b1595015e1c3c74004de9429d654d92cb5f09a3bfb2e3ab4f4a2f15753"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
@@ -16977,6 +16980,12 @@
       "sha256": "fc1aac9326b91be84812b796e076a0a30c0e1fb292478dba6b56b191dba99a71"
     },
     {
+      "id": "source:libs/workspace-react/src/lib/navigation-resize.tsx",
+      "kind": "source",
+      "path": "libs/workspace-react/src/lib/navigation-resize.tsx",
+      "sha256": "fa96469e46f0ce8d89cc8f13226bc77523ae41ddf5fde4ae3b4ca149f4665d72"
+    },
+    {
       "id": "source:libs/workspace-react/src/lib/runtime-contracts.ts",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/runtime-contracts.ts",
@@ -17040,7 +17049,7 @@
       "id": "source:libs/workspace-react/src/lib/workspace-shell.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/workspace-shell.tsx",
-      "sha256": "7ac1d2fc76d40340a1211c8b9c748957496abdbaa6c0b5ab454ff88c8f321f5d"
+      "sha256": "ceeeaf1a4add317b950f7e331a2b9183401f9b0cb3437e9ffdcd1ef25556ba1c"
     },
     {
       "id": "source:libs/workspace-react/vite.config.mts",

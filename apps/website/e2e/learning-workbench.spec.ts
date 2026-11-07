@@ -95,11 +95,16 @@ for (const framework of ['react', 'angular'] as const) {
     await expect(
       host.getByRole('button', { name: 'Replay', exact: true })
     ).toBeDisabled();
+    const iframe = await host.locator('iframe').elementHandle();
+    await host.getByRole('button', { name: 'Source', exact: true }).click();
+    await expect(host.getByLabel('Lesson source code')).toBeVisible();
+    expect(await iframe?.evaluate((element) => element.isConnected)).toBe(true);
+    await host.getByRole('button', { name: 'Live', exact: true }).click();
+    expect(await iframe?.evaluate((element) => element.isConnected)).toBe(true);
     if (framework === 'react')
       await expect(
         frame.getByRole('region', { name: 'Conversation' })
       ).toContainText('Live partial');
-    const iframe = await host.locator('iframe').elementHandle();
     await host.getByRole('slider', { name: 'Observation' }).focus();
     await page.keyboard.press('Home');
     await expect(host.locator('iframe')).toBeHidden();
@@ -164,6 +169,88 @@ for (const framework of ['react', 'angular'] as const) {
       )
     ).toBe(true);
     expect(errors).toEqual([]);
+  });
+}
+
+for (const framework of ['react', 'angular'] as const) {
+  test(`${framework}: source, resizable panels, layout persistence and cockpit access`, async ({
+    page,
+  }) => {
+    const host = await openWorkbench(page, framework);
+    await host.getByRole('button', { name: 'Source', exact: true }).click();
+    await expect(host.locator('iframe')).toHaveCount(0);
+    const highlight = host.locator('[data-highlighted]').first();
+    const geometry = await highlight.evaluate((element) => {
+      const pre = element.closest('pre')!;
+      const line = element.getBoundingClientRect();
+      const panel = pre.getBoundingClientRect();
+      return { line: line.top, top: panel.top, bottom: panel.bottom };
+    });
+    expect(geometry.line).toBeGreaterThanOrEqual(geometry.top);
+    expect(geometry.line).toBeLessThan(geometry.bottom);
+    await expect(
+      host.getByRole('link', { name: 'View file on GitHub' })
+    ).toHaveAttribute('href', /\/blob\/[a-f0-9]{40}\//);
+    const files = host.getByRole('separator', {
+      name: 'Resize source file list',
+    });
+    await files.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(files).toHaveAttribute('aria-valuenow', '206');
+    await host.getByRole('button', { name: 'Replay', exact: true }).click();
+    await host.getByRole('button', { name: 'See it run', exact: true }).click();
+    await expect(
+      host.getByRole('slider', { name: 'Observation' })
+    ).not.toHaveValue('0');
+    await expect(
+      host.getByRole('button', { name: 'Play recording' })
+    ).toBeVisible();
+    const split = host.getByRole('separator', {
+      name: 'Resize conversation and inspector',
+    });
+    await split.scrollIntoViewIfNeeded();
+    const box = await split.boundingBox();
+    if (!box) throw new Error('Expected a visible workbench separator');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, {
+      steps: 8,
+    });
+    await page.mouse.up();
+    expect(Number(await split.getAttribute('aria-valuenow'))).toBeGreaterThan(
+      44
+    );
+    const height = host.getByRole('separator', {
+      name: 'Resize workbench height',
+    });
+    await height.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(height).toHaveAttribute('aria-valuenow', '540');
+    const savedSplit = await split.getAttribute('aria-valuenow');
+    await page.reload();
+    await expect(split).toHaveAttribute('aria-valuenow', savedSplit!);
+    await expect(height).toHaveAttribute('aria-valuenow', '540');
+    await host.getByRole('button', { name: 'Expand workbench' }).click();
+    await expect(host).toHaveAttribute('data-expanded', 'true');
+    await host.getByRole('button', { name: 'Reset layout' }).click();
+    await expect(split).toHaveAttribute('aria-valuenow', '44');
+    await expect(height).toHaveAttribute('aria-valuenow', '520');
+    await expect(
+      host.getByRole('link', {
+        name: `Open ${
+          framework === 'react' ? 'React' : 'Angular'
+        } streaming example`,
+      })
+    ).toHaveAttribute('href', `/docs/${framework}/langgraph/guides/streaming`);
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const mode of ['Source', 'Replay']) {
+      await host.getByRole('button', { name: mode, exact: true }).click();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth
+        )
+      ).toBe(true);
+    }
   });
 }
 

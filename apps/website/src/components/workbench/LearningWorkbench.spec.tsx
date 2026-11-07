@@ -70,6 +70,24 @@ afterEach(() => {
 });
 
 describe('learning inspector', () => {
+  it('seeks a requested teaching moment and pauses playback without remounting', () => {
+    const view = render(
+      <LearningWorkbench framework="react" recording={recording} />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Play recording' }));
+    view.rerender(
+      <LearningWorkbench
+        framework="react"
+        recording={recording}
+        seekRequest={{ id: 1, index: 1 }}
+      />
+    );
+    expect(
+      (screen.getByRole('slider', { name: 'Observation' }) as HTMLInputElement)
+        .value
+    ).toBe('1');
+    expect(screen.getByRole('button', { name: 'Play recording' })).toBeTruthy();
+  });
   it('preserves historical reading position when new live observations arrive', () => {
     const live = {
       cursor: 1,

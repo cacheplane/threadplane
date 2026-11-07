@@ -17184,6 +17184,16 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
+    },
+    {
+      "id": "source:libs/workspace-react/src/lib/navigation-resize.tsx",
+      "taskIds": [
+        "T33",
+        "T34"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Docs-host navigation resizing with bounded local layout preferences; preserves cockpit and framework navigation without adding an SDK capability."
     }
   ]
 }

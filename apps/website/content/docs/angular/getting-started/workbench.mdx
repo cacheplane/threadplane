@@ -19,7 +19,11 @@ An **action** asks the application to do something: submit a message, stop an ac
 
 Keep the application responsible for actions. Let the view observe snapshots and render them. A partially written answer is still an observation; its presence does not prove that the request succeeded. The completion outcome is a separate piece of information.
 
-In the Angular streaming example, the component observes the agent’s signals. The template renders the latest messages and status while the application sends user actions to the agent. Follow the streaming guide for the actual Angular setup and stream configuration.
+## Follow one turn
+
+A **turn** begins with a user action and ends when the application knows its outcome. The submitted message, the response text, and the work in progress describe different parts of that turn. Several updates can extend the same assistant message; each update does not need a new chat bubble.
+
+Receiving text tells you that part of a response arrived. It does not tell you that the turn completed successfully. Keep the progress indicator tied to the application's busy state, and inspect the final outcome separately. Stopping a response and losing the connection are different outcomes too.
 
 ## Meet the trip notebook
 
@@ -48,8 +52,10 @@ The State panel describes the recorded application owner’s fields. These are e
 
 ## Follow it into your application
 
-Open the [Angular streaming source](https://github.com/cacheplane/threadplane/blob/main/cockpit/langgraph/streaming/angular/src/app/streaming.component.ts) and identify where the view reads messages, renders progress, and sends a user action. Compare those responsibilities with the observations you just inspected.
+Choose **Source** in the workbench to read the actual Angular streaming files. The highlighted line obtains the agent with `injectAgent(STREAMING_AGENT)`; the template observes its signals. **See it run** below the panel returns to the partial-response moment in the recording. **View source** opens the matching implementation.
 
-Then follow the [Angular streaming guide](/docs/angular/langgraph/guides/streaming) to run the example and connect it to your backend. Use the live workbench to connect those actions to their observations, then inspect the example source to follow the implementation.
+In `streaming.component.ts`, follow the agent into `<chat>` and the loading signal into the status text. Follow the input's submit and stop controls back to the agent. The application owns actions; the template renders observations. `app.config.ts` supplies the connection for that agent.
+
+Continue with the [Angular streaming example](/docs/angular/langgraph/guides/streaming) to use the existing cockpit's **Run**, **Code**, and **API** views and connect it to your backend. The workbench teaches the turn; the cockpit gives you the complete integration example.
 
 The same trip notebook will give later lessons a familiar place to explain tools, approvals, and saved conversations.
