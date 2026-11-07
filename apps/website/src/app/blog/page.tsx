@@ -1,15 +1,15 @@
-import Link from 'next/link';
 import { createPageMetadata } from '../../lib/site-metadata';
 import { getAllPosts, getFeaturedPost, getAllTags } from '../../lib/blog';
 import { FeaturedPostCard } from '../../components/blog/FeaturedPostCard';
 import { PostCard } from '../../components/blog/PostCard';
 import { BlogTagFilter } from '../../components/blog/BlogTagFilter';
-import { Eyebrow } from '../../components/ui/Eyebrow';
+import { Button } from '../../components/ui/Button';
+import '../../styles/editorial.css';
 
 export const metadata = createPageMetadata({
   title: 'Blog — Threadplane',
   description:
-    'Long-form writing on agent UI for Angular: streaming, generative UI, threads, interrupts, production patterns.',
+    'Notes on building agent interfaces: production patterns, design choices, and what we are shipping at Threadplane.',
   pathname: '/blog',
   type: 'website',
 });
@@ -30,41 +30,47 @@ export default async function BlogIndexPage({ searchParams }: Props) {
 
   // Featured only when no filter is active — feels like a clean list otherwise.
   const featured = activeTag ? null : getFeaturedPost();
-  const grid = featured ? filtered.filter((p) => p.slug !== featured.slug) : filtered;
+  const grid = featured
+    ? filtered.filter((p) => p.slug !== featured.slug)
+    : filtered;
 
   return (
-    <div className="blog-index-page">
+    <div className="blog-index-page editorial-page">
       <div className="blog-index-inner">
         <header className="blog-index-header">
-          <Eyebrow tone="accent" className="blog-index-eyebrow-spaced">
-            Blog
-          </Eyebrow>
           <h1 className="blog-index-h1">
-            Articles from Threadplane
+            Notes from
+            <br />
+            the flight deck.
           </h1>
           <p className="blog-index-subtitle">
-            Writing on agent UI for Angular &mdash; production patterns, design
-            choices, and what we&apos;re shipping.
+            What we’re building, what we’re learning, and what it takes to put
+            agents into real products.
           </p>
         </header>
 
-        <BlogTagFilter activeTag={activeTag} tags={tags} />
-
         {featured ? <FeaturedPostCard post={featured} /> : null}
+
+        <details className="blog-topic-picker" open={Boolean(activeTag)}>
+          <summary>
+            {activeTag ? `Topic: ${activeTag}` : 'Browse by topic'}
+          </summary>
+          <BlogTagFilter activeTag={activeTag} tags={tags} />
+        </details>
 
         {grid.length === 0 ? (
           <div className="blog-index-empty">
             <p className="blog-index-empty-text">
               No posts tagged <em>{activeTag}</em> yet.
             </p>
-            <Link href="/blog" className="blog-index-empty-link">
+            <Button variant="secondary" href="/blog">
               View all posts
-            </Link>
+            </Button>
           </div>
         ) : (
           <div className="blog-index-grid">
             {grid.map((p) => (
-              <PostCard key={p.slug} post={p} />
+              <PostCard key={p.slug} post={p} headingLevel={2} />
             ))}
           </div>
         )}

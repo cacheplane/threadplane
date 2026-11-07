@@ -43,28 +43,30 @@ const SNIPPETS = [
   { title: 'Full Configuration', code: SNIPPET_2, lang: 'typescript' },
 ];
 
-export async function LangGraphCodeShowcase() {
+export async function LangGraphCodeShowcase({
+  showIntroduction = true,
+}: { showIntroduction?: boolean } = {}) {
   return (
-    <section className="angular-code">
-      <div className="lg-show-intro">
-        <div className="show-intro-rail">
-          <p className="lg-show-eyebrow">
-          Developer Experience
-          </p>
-          <span className="show-intro-rail-line" aria-hidden="true" />
+    <section
+      className={showIntroduction ? 'angular-code' : 'library-compact-code'}
+    >
+      {showIntroduction && (
+        <div className="lg-show-intro">
+          <div className="show-intro-rail">
+            <p className="lg-show-eyebrow">Developer Experience</p>
+            <span className="show-intro-rail-line" aria-hidden="true" />
+          </div>
+          <h2 className="lg-show-heading">
+            Production streaming in a few lines
+          </h2>
         </div>
-        <h2 className="lg-show-heading">
-          Production streaming in a few lines
-        </h2>
-      </div>
+      )}
 
       <div className="lg-show-grid">
         {SNIPPETS.map((s) => (
           <div key={s.title} className="lg-show-card">
             <div className="lg-show-card-head">
-              <span className="lg-show-card-title">
-                {s.title}
-              </span>
+              <span className="lg-show-card-title">{s.title}</span>
             </div>
             <HighlightedCode code={s.code} lang={s.lang} />
           </div>

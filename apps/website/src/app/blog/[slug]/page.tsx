@@ -4,14 +4,27 @@ import { MdxRenderer } from '../../../components/docs/MdxRenderer';
 import { DocsTOC } from '../../../components/docs/DocsTOC';
 import { AuthorByline } from '../../../components/blog/AuthorByline';
 import { TagChips } from '../../../components/blog/TagChips';
-import { Eyebrow } from '../../../components/ui/Eyebrow';
-import { getAllPosts, getPostBySlug, formatPostDate, readingTimeMin } from '../../../lib/blog';
+import Link from 'next/link';
+import '../../../styles/editorial.css';
+import {
+  getAllPosts,
+  getPostBySlug,
+  formatPostDate,
+  readingTimeMin,
+} from '../../../lib/blog';
 import { getAuthor } from '../../../lib/blog-authors';
 import { extractHeadings } from '../../../lib/extract-headings';
-import { clampMetaDescription, createPageMetadata, ogImagePath } from '../../../lib/site-metadata';
+import {
+  clampMetaDescription,
+  createPageMetadata,
+  ogImagePath,
+} from '../../../lib/site-metadata';
 import { getPostLastModified, publishedDate } from '../../../lib/sitemap-dates';
 import { JsonLd } from '../../../components/shared/JsonLd';
-import { blogPostingJsonLd, breadcrumbJsonLd } from '../../../lib/structured-data';
+import {
+  blogPostingJsonLd,
+  breadcrumbJsonLd,
+} from '../../../lib/structured-data';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -51,16 +64,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   });
 }
 
-
 export default async function BlogPostPage({ params }: Params) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post || post.frontmatter.draft) notFound();
   const author = getAuthor(post.frontmatter.author);
   const minutes = readingTimeMin(post.content);
-  const primaryTag = post.frontmatter.tags?.[0]
-    ? post.frontmatter.tags[0].toUpperCase()
-    : 'POST';
   const headings = extractHeadings(post.content);
   // Same derivation `generateMetadata` uses for `article:modified_time`, and the
   // same one the sitemap uses for `<lastmod>`, so all three agree.
@@ -89,32 +98,51 @@ export default async function BlogPostPage({ params }: Params) {
   ]);
 
   return (
-    <div className="blog-post-page">
+    <article className="blog-post-page editorial-page">
       {postData ? <JsonLd data={postData} /> : null}
       <JsonLd data={breadcrumbs} />
+      <header className="blog-post-header">
+        <Link className="blog-back-link" href="/blog">
+          <span aria-hidden="true">←</span> All articles
+        </Link>
+        <h1 className="blog-post-h1">{post.frontmatter.title}</h1>
+        <p className="blog-post-subtitle">{post.frontmatter.description}</p>
+        <div className="blog-post-byline-row">
+          <AuthorByline author={author} />
+          <span className="blog-post-meta">
+            <time dateTime={post.frontmatter.date}>
+              {formatPostDate(post.frontmatter.date)}
+            </time>
+            <span aria-hidden="true"> · </span>
+            {minutes} min read
+          </span>
+        </div>
+        {post.frontmatter.tags && post.frontmatter.tags.length > 0 ? (
+          <TagChips tags={post.frontmatter.tags} />
+        ) : null}
+      </header>
       <div className="blog-post-layout">
-      <article className="blog-post-article">
-        <header className="blog-post-header">
-          <Eyebrow tone="accent" className="blog-post-eyebrow-spaced">
-            {primaryTag} · {formatPostDate(post.frontmatter.date)} · {minutes} min read
-          </Eyebrow>
-          <h1 className="blog-post-h1">
-            {post.frontmatter.title}
-          </h1>
-          <p className="blog-post-subtitle">
-            {post.frontmatter.description}
-          </p>
-          <div className="blog-post-byline-row">
-            <AuthorByline author={author} />
-          </div>
-          {post.frontmatter.tags && post.frontmatter.tags.length > 0 ? (
-            <TagChips tags={post.frontmatter.tags} />
+        <div className="blog-post-article">
+          {headings.length > 0 ? (
+            <details className="blog-mobile-toc">
+              <summary>In this article</summary>
+              <nav aria-label="Article contents">
+                {headings.map((heading) => (
+                  <a
+                    key={heading.id}
+                    href={`#${heading.id}`}
+                    data-level={heading.level}
+                  >
+                    {heading.text}
+                  </a>
+                ))}
+              </nav>
+            </details>
           ) : null}
-        </header>
-        <MdxRenderer source={post.content} docsPath={`/blog/${slug}`} />
-      </article>
+          <MdxRenderer source={post.content} docsPath={`/blog/${slug}`} />
+        </div>
         <DocsTOC headings={headings} />
       </div>
-    </div>
+    </article>
   );
 }

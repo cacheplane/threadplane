@@ -35,28 +35,30 @@ const SNIPPETS = [
   { title: 'Custom Theming', code: SNIPPET_2, lang: 'css' },
 ];
 
-export async function ChatLandingCodeShowcase() {
+export async function ChatLandingCodeShowcase({
+  showIntroduction = true,
+}: { showIntroduction?: boolean } = {}) {
   return (
-    <section className="chat-code">
-      <div className="chat-show-intro">
-        <div className="show-intro-rail">
-          <p className="chat-show-eyebrow">
-          Developer Experience
-          </p>
-          <span className="show-intro-rail-line" aria-hidden="true" />
+    <section
+      className={showIntroduction ? 'chat-code' : 'library-compact-code'}
+    >
+      {showIntroduction && (
+        <div className="chat-show-intro">
+          <div className="show-intro-rail">
+            <p className="chat-show-eyebrow">Developer Experience</p>
+            <span className="show-intro-rail-line" aria-hidden="true" />
+          </div>
+          <h2 className="chat-show-heading">
+            Full-featured chat in a few lines
+          </h2>
         </div>
-        <h2 className="chat-show-heading">
-          Full-featured chat in a few lines
-        </h2>
-      </div>
+      )}
 
       <div className="chat-show-grid">
         {SNIPPETS.map((s) => (
           <div key={s.title} className="chat-show-card">
             <div className="chat-show-card-head">
-              <span className="chat-show-card-title">
-                {s.title}
-              </span>
+              <span className="chat-show-card-title">{s.title}</span>
             </div>
             <HighlightedCode code={s.code} lang={s.lang} />
           </div>
