@@ -18,13 +18,21 @@ export const DOCS_AUDIT_ROUTES: readonly {
     kinds: ['sequence'],
     video: true,
   },
-  { path: '/docs/angular/langgraph/guides/persistence', kinds: ['erd'], video: true },
+  {
+    path: '/docs/angular/langgraph/guides/persistence',
+    kinds: ['erd'],
+    video: true,
+  },
   { path: '/docs/angular/langgraph/guides/interrupts', kinds: ['state'] },
   {
     path: '/docs/angular/langgraph/concepts/state-management',
     kinds: ['architecture'],
   },
-  { path: '/docs/angular/chat/guides/client-tools', kinds: ['flow'], video: true },
+  {
+    path: '/docs/angular/chat/guides/client-tools',
+    kinds: ['flow'],
+    video: true,
+  },
   { path: '/docs/angular/ag-ui/guides/client-tools', kinds: ['flow'] },
   { path: '/docs/angular/render/getting-started/introduction' },
   { path: '/docs/angular/render/concepts/json-render-vs-a2ui' },
@@ -75,6 +83,9 @@ export interface AuditGeometry {
   viewportWidth: number;
   documentWidth: number;
   fontsLoaded: boolean;
+  /** Present for natural-size network diagrams. */
+  naturalWidth?: number;
+  articleWidth?: number;
   canvas: AuditBox;
   nodes: { id: string; box: AuditBox }[];
   texts: { text: string; node?: string; box: AuditBox }[];
@@ -94,6 +105,17 @@ export function geometryIssues(value: AuditGeometry): string[] {
   if (!value.fontsLoaded) issues.push('Required diagram font did not load');
   if (value.documentWidth > value.viewportWidth + 1)
     issues.push('Document overflows the viewport');
+  if (
+    value.naturalWidth !== undefined &&
+    value.canvas.width + 1 < value.naturalWidth
+  )
+    issues.push('Diagram shrunk below natural size');
+  if (
+    value.viewportWidth >= 1024 &&
+    value.articleWidth !== undefined &&
+    value.canvas.width > value.articleWidth + 1
+  )
+    issues.push('Diagram overflows desktop article');
   if (!value.canvas.width || !value.canvas.height || !value.texts.length)
     issues.push('Empty diagram geometry');
   for (const [index, node] of value.nodes.entries()) {
@@ -109,6 +131,11 @@ export function geometryIssues(value: AuditGeometry): string[] {
     const node = value.nodes.find((candidate) => candidate.id === text.node);
     if (node && !contains(node.box, text.box))
       issues.push(`Text outside node: ${text.text}`);
+    if (
+      !text.node &&
+      value.nodes.some((candidate) => overlaps(candidate.box, text.box))
+    )
+      issues.push(`Relationship label overlaps node: ${text.text}`);
     for (const other of value.texts.slice(index + 1))
       if (overlaps(text.box, other.box))
         issues.push(`Text overlaps: ${text.text} / ${other.text}`);
