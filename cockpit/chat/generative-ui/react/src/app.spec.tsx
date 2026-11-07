@@ -77,6 +77,7 @@ it('mounts inert, seeds without submitting, clears on admission and permits New 
     name: 'Message',
   }) as HTMLTextAreaElement;
   expect(box.value).toBe('Show me a dashboard of airline operations.');
+  expect(box.ownerDocument.activeElement).toBe(box);
   expect(h.app.submit).not.toHaveBeenCalled();
   fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' });
   expect(h.app.submit).toHaveBeenCalledOnce();
@@ -92,6 +93,28 @@ it('mounts inert, seeds without submitting, clears on admission and permits New 
   expect(h.app.newConversation).toHaveBeenCalledOnce();
   h.view.unmount();
   expect(h.app.dispose).toHaveBeenCalledOnce();
+});
+
+it('gives the transcript space after the first turn and restores suggestions and composer focus on New', () => {
+  const h = harness();
+  const content = createMessageContent();
+  const rows = content.project({
+    status: 'idle',
+    messages: [message('question', 'user', 'Show dashboard')],
+    toolCalls: [],
+  });
+  act(() => h.update({ rows }));
+  expect(h.view.queryByRole('button', { name: 'Show dashboard' })).toBeNull();
+  const reset = h.view.getByRole('button', { name: 'New conversation' });
+  reset.focus();
+  fireEvent.click(reset);
+  expect(h.view.getByRole('button', { name: 'Show dashboard' })).toBeTruthy();
+  expect(h.view.getByRole('textbox').ownerDocument.activeElement).toBe(
+    h.view.getByRole('textbox')
+  );
+  expect(h.app.submit).not.toHaveBeenCalled();
+  h.view.unmount();
+  content.dispose();
 });
 it('owns each layout inline and refreshes all retained surfaces from the same confirmed dashboard during loading', () => {
   const h = harness(),

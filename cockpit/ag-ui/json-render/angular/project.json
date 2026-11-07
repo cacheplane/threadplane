@@ -4,6 +4,12 @@
   "sourceRoot": "cockpit/ag-ui/json-render/angular/src",
   "projectType": "application",
   "targets": {
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "tsConfig": "cockpit/ag-ui/json-render/angular/tsconfig.spec.json"
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath.base}"],

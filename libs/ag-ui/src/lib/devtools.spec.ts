@@ -57,10 +57,11 @@ describe('devtools signal reports (AG-UI)', () => {
     ]));
     await agent.submit({ message: 'hi' });
 
-    // TEXT_MESSAGE_END wrote nothing, so it has no report; neither does the
-    // run opening here, which had no superseded run to settle.
+    // TEXT_MESSAGE_END wrote nothing. Opening the request publishes busy state
+    // before its first protocol event, so that transition has its own report.
     expect(summary()).toEqual([
       ['submit', ['messages']],
+      ['run:start', ['status', 'isLoading', 'error']],
       ['RUN_STARTED', ['status', 'isLoading', 'error', 'interrupt', 'customEvents', 'activities']],
       ['TEXT_MESSAGE_START', ['messages']],
       ['TEXT_MESSAGE_CONTENT', ['messages']],
@@ -98,8 +99,9 @@ describe('devtools signal reports (AG-UI)', () => {
     const before = reports.length;
     const assistantIndex = agent.messages().findIndex(m => m.role === 'assistant');
     await agent.regenerate(assistantIndex);
-    expect(summary().slice(before, before + 2)).toEqual([
+    expect(summary().slice(before, before + 3)).toEqual([
       ['submit', ['messages']],
+      ['run:start', ['status', 'isLoading', 'error']],
       ['RUN_STARTED', ['status', 'isLoading', 'error', 'interrupt', 'customEvents', 'activities']],
     ]);
   });

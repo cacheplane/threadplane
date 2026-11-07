@@ -1,3 +1,4 @@
+import { Children, useId, type CSSProperties } from 'react';
 import type {
   ReactRenderRegistry,
   RenderViewProps,
@@ -22,6 +23,11 @@ function Container({ props, children }: RenderViewProps) {
       className="dashboard-container"
       data-dashboard-view="container"
       data-direction={props.direction === 'row' ? 'row' : 'column'}
+      style={
+        {
+          '--dashboard-cols': Math.max(1, Children.count(children)),
+        } as CSSProperties
+      }
     >
       {children}
     </div>
@@ -41,7 +47,18 @@ function StatCard({ props }: RenderViewProps) {
         <p className="dashboard-metric">{text(props.value)}</p>
       )}
       {props.delta !== null && props.delta !== undefined && (
-        <p className="dashboard-delta">{text(props.delta)}</p>
+        <p
+          className="dashboard-delta"
+          data-trend={
+            text(props.delta).startsWith('+')
+              ? 'up'
+              : /^[-−]/.test(text(props.delta))
+              ? 'down'
+              : 'flat'
+          }
+        >
+          {text(props.delta)}
+        </p>
       )}
     </section>
   );
@@ -62,6 +79,7 @@ function Chart({
   props,
   kind,
 }: RenderViewProps & { readonly kind: 'line' | 'bar' }) {
+  const gradientId = useId();
   const title =
     text(props.title) ||
     (kind === 'line' ? 'On-time trend' : 'Flights by airline');
@@ -70,15 +88,58 @@ function Chart({
     kind === 'line' ? 'month' : 'airline',
     kind === 'line' ? 'on_time_pct' : 'count'
   );
-  const maximum =
+  const values = points?.map((point) => point.value) ?? [];
+  const rawMinimum = kind === 'line' && values.length ? Math.min(...values) : 0;
+  const rawMaximum =
+    kind === 'line' && values.length
+      ? Math.max(...values)
+      : Math.max(1, ...values);
+  const domainPadding =
+    kind === 'line' && rawMinimum === rawMaximum
+      ? Math.max(1, Math.abs(rawMinimum) * 0.05)
+      : 0;
+  const minimum = rawMinimum - domainPadding;
+  const maximum = rawMaximum + domainPadding;
+  const range = maximum - minimum || 1;
+  const padding =
     kind === 'line'
-      ? 100
-      : Math.max(1, ...(points?.map((point) => point.value) ?? []));
+      ? { top: 16, right: 32, bottom: 28, left: 64 }
+      : { top: 28, right: 16, bottom: 28, left: 16 };
+  const plotWidth = 400 - padding.left - padding.right;
+  const plotHeight = 220 - padding.top - padding.bottom;
+  const baseline = 220 - padding.bottom;
   const x = (index: number) =>
     (points?.length ?? 0) === 1
-      ? 160
-      : 24 + (index * 272) / ((points?.length ?? 0) - 1);
-  const y = (value: number) => 132 - (value / maximum) * 108;
+      ? padding.left + plotWidth / 2
+      : padding.left + (index * plotWidth) / ((points?.length ?? 0) - 1);
+  const y = (value: number) =>
+    padding.top + plotHeight - ((value - minimum) / range) * plotHeight;
+  const labelStep = Math.max(
+    1,
+    Math.ceil((((points?.length ?? 1) - 1) * 64) / plotWidth)
+  );
+  const labelCount =
+    kind === 'line'
+      ? Math.min(4, Math.floor(((points?.length ?? 1) - 1) / labelStep) + 1)
+      : 4;
+  const labelIndices =
+    (points?.length ?? 0) <= labelCount
+      ? points?.map((_, index) => index) ?? []
+      : Array.from({ length: labelCount }, (_, index) =>
+          Math.round((index * ((points?.length ?? 0) - 1)) / (labelCount - 1))
+        );
+  const numberLabel = (value: number) => {
+    const scale = Math.abs(value) >= 1000 && range >= 1000 ? 1000 : 1;
+    const precision = Math.min(
+      10,
+      Math.max(0, -Math.floor(Math.log10(range / (2 * scale))))
+    );
+    return `${(value / scale).toFixed(precision)}${scale === 1000 ? 'k' : ''}`;
+  };
+  const barGap = Math.min(12, plotWidth / (2 * (points?.length || 1)));
+  const barWidth =
+    (plotWidth - barGap * ((points?.length || 1) - 1)) / (points?.length || 1);
+  const barX = (index: number) => padding.left + index * (barWidth + barGap);
   return (
     <section
       className="dashboard-card dashboard-chart"
@@ -91,14 +152,64 @@ function Chart({
         <p className="dashboard-empty">No chart data.</p>
       ) : (
         <>
-          <svg viewBox="0 0 320 156" role="img" aria-label={title}>
-            <line x1="24" y1="132" x2="296" y2="132" className="chart-axis" />
-            {kind === 'line' && (
-              <polyline
-                points={points
-                  .map((point, index) => `${x(index)},${y(point.value)}`)
-                  .join(' ')}
-                className="chart-line"
+          <svg viewBox="0 0 400 220" role="img" aria-label={title}>
+            {kind === 'line' ? (
+              <>
+                {[maximum, (minimum + maximum) / 2, minimum].map(
+                  (value, index) => {
+                    const tickY = padding.top + (index * plotHeight) / 2;
+                    return (
+                      <g key={index}>
+                        <line
+                          x1={padding.left}
+                          y1={tickY}
+                          x2={400 - padding.right}
+                          y2={tickY}
+                          className="chart-axis"
+                        />
+                        <text
+                          x={padding.left - 8}
+                          y={tickY + 4}
+                          textAnchor="end"
+                        >
+                          {numberLabel(value)}
+                        </text>
+                      </g>
+                    );
+                  }
+                )}
+                <path
+                  d={`${points
+                    .map(
+                      (point, index) =>
+                        `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(
+                          point.value
+                        )}`
+                    )
+                    .join(' ')} L ${x(points.length - 1)} ${baseline} L ${x(
+                    0
+                  )} ${baseline} Z`}
+                  fill={`url(#${gradientId})`}
+                />
+                <polyline
+                  points={points
+                    .map((point, index) => `${x(index)},${y(point.value)}`)
+                    .join(' ')}
+                  className="chart-line"
+                />
+                {labelIndices.map((index) => (
+                  <text key={index} x={x(index)} y={214} textAnchor="middle">
+                    {points[index].label}
+                  </text>
+                ))}
+              </>
+            ) : (
+              <line
+                x1={padding.left}
+                y1={baseline}
+                x2={400 - padding.right}
+                y2={baseline}
+                className="chart-axis"
               />
             )}
             {points.map((point, index) =>
@@ -107,7 +218,7 @@ function Chart({
                   key={index}
                   cx={x(index)}
                   cy={y(point.value)}
-                  r="4"
+                  r="3"
                   className="chart-point"
                 >
                   <title>
@@ -115,20 +226,55 @@ function Chart({
                   </title>
                 </circle>
               ) : (
-                <rect
-                  key={index}
-                  x={24 + (index * 272) / points.length + 4}
-                  y={y(point.value)}
-                  width={Math.max(1, 272 / points.length - 8)}
-                  height={132 - y(point.value)}
-                  className="chart-bar"
-                >
-                  <title>
-                    {point.label}: {point.value}
-                  </title>
-                </rect>
+                <g key={index}>
+                  <rect
+                    x={barX(index)}
+                    y={y(point.value)}
+                    width={barWidth}
+                    height={baseline - y(point.value)}
+                    rx="3"
+                    fill={`url(#${gradientId})`}
+                    className="chart-bar"
+                  >
+                    <title>
+                      {point.label}: {point.value}
+                    </title>
+                  </rect>
+                  {barWidth >= 36 && (
+                    <text
+                      x={barX(index) + barWidth / 2}
+                      y={y(point.value) - 6}
+                      textAnchor="middle"
+                    >
+                      {point.value.toLocaleString()}
+                    </text>
+                  )}
+                  {labelIndices.includes(index) && (
+                    <text
+                      x={barX(index) + barWidth / 2}
+                      y={baseline + 16}
+                      textAnchor="middle"
+                    >
+                      {point.label}
+                    </text>
+                  )}
+                </g>
               )
             )}
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--dashboard-chart-color)"
+                  stopOpacity={kind === 'line' ? 0.28 : 1}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--dashboard-chart-color)"
+                  stopOpacity={kind === 'line' ? 0 : 0.75}
+                />
+              </linearGradient>
+            </defs>
           </svg>
           <details className="dashboard-chart-data">
             <summary>View chart data</summary>

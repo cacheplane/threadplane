@@ -78,7 +78,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-            "line": 68
+            "line": 70
           },
           "isStatic": false,
           "isReadonly": true,
@@ -124,7 +124,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-            "line": 71
+            "line": 73
           },
           "isStatic": false,
           "isReadonly": true,
@@ -170,7 +170,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-            "line": 69
+            "line": 71
           },
           "isStatic": false,
           "isReadonly": true,
@@ -216,7 +216,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-            "line": 70
+            "line": 72
           },
           "isStatic": false,
           "isReadonly": true,
@@ -271,7 +271,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/a2ui/catalog/text.component.ts",
-            "line": 72
+            "line": 74
           },
           "isStatic": false,
           "isReadonly": true,

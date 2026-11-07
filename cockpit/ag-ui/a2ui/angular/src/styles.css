@@ -1,5 +1,15 @@
 @import "@threadplane/example-layouts/theme.css";
 
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+
+/* Keep the flight form compact while retaining native radio/checkbox behavior. */
+a2ui-surface .a2ui-cp .a2ui-cp__checks {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
 html, body {
   height: 100%;
   margin: 0;
