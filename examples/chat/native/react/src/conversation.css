@@ -1,10 +1,12 @@
 /* Preserve the installed primitives' typography and pill focus ring. */
 .application {
-  position: fixed;
+  /* Preserve the shared overlay stacking order while following Safari's pan. */
+  position: relative;
   top: var(--native-viewport-top, 0px);
   left: 0;
   width: 100%;
   height: var(--native-viewport-height, 100dvh);
+  overflow: clip;
 }
 @media (max-width: 700px) {
   .conversation-layout > aside {

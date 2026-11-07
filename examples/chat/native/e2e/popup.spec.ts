@@ -556,6 +556,11 @@ test('installed React embedded page retains a reading area beside a keyboard-siz
     const box = await draft.boundingBox();
     assert.ok(box);
     expect(box.y + box.height).toBeLessThanOrEqual(377);
+    // Hidden or overflowing context must not create a second document-sized
+    // reading surface behind the viewport-bound conversation.
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight)
+    ).toBeLessThanOrEqual(714);
     backend.verify();
   } finally {
     await page.close();

@@ -32,6 +32,11 @@ it('keeps the embedded application in its own visible viewport and cleans up', (
       '377px'
     );
     expect(root.style.getPropertyValue('--native-viewport-top')).toBe('267px');
+    // A non-fixed shell also follows Safari's document scroll while the
+    // visual viewport's layout-relative offset returns to zero.
+    Object.assign(viewport, { offsetTop: 0, pageTop: 299 });
+    viewport.dispatchEvent(new Event('scroll'));
+    expect(root.style.getPropertyValue('--native-viewport-top')).toBe('299px');
     view.unmount();
     viewport.height = 714;
     viewport.dispatchEvent(new Event('resize'));

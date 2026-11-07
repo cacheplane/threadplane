@@ -922,7 +922,7 @@ export function App({
       );
       element.style.setProperty(
         '--native-viewport-top',
-        `${viewport.offsetTop}px`
+        `${viewport.pageTop ?? viewport.offsetTop}px`
       );
     };
     resize();
