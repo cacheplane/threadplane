@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { Container } from '../components/ui/Container';
 import { Section } from '../components/ui/Section';
-import { Eyebrow } from '../components/ui/Eyebrow';
 import { Button } from '../components/ui/Button';
 
 interface ErrorBoundaryProps {
@@ -25,21 +24,22 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
   }, [error]);
 
   return (
-    <Section surface="canvas" ariaLabelledBy="error-heading">
+    <Section
+      surface="white"
+      className="recovery-page"
+      ariaLabelledBy="error-heading"
+    >
       <Container>
         <div className="error-page-inner">
-          <Eyebrow tone="angular" className="error-page-eyebrow-spaced">Error</Eyebrow>
           <h1 id="error-heading" className="error-page-h1">
             Something went wrong.
           </h1>
           <p className="error-page-body">
-            An unexpected error stopped this page from rendering. The team has been
-            notified. You can try again, or head back home.
+            An unexpected error stopped this page from rendering. The team has
+            been notified. You can try again, or head back home.
           </p>
           {error.digest ? (
-            <p className="error-page-digest">
-              Error ID: {error.digest}
-            </p>
+            <p className="error-page-digest">Error ID: {error.digest}</p>
           ) : (
             <div className="error-page-spacer" />
           )}

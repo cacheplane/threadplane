@@ -548,13 +548,6 @@
   margin-top: 32px;
   text-align: center;
 }
-body:has(.home-page) .footer-column-eyebrow {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-}
 body:has(.home-page) .toast-root {
   border-radius: 24px;
   padding: 24px;

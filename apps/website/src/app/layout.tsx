@@ -129,9 +129,12 @@ export default async function RootLayout({
         <JsonLd data={rootJsonLd()} />
         <WebsiteSignals catalog={websiteContentCatalog()} />
         <EngagedTimeSignal />
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
         <Nav githubStars={githubStars} />
         <div id="site-content">
-          <main>
+          <main id="main-content" tabIndex={-1}>
             <WebsiteWorkspaceRoot>{children}</WebsiteWorkspaceRoot>
           </main>
           <SiteFooter formPolicy={formPolicy} />

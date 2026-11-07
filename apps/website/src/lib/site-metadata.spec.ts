@@ -21,7 +21,7 @@ import { resolveWebsiteDir } from './website-dir';
 describe('site positioning copy', () => {
   it('exports the approved primary tagline and supporting copy', () => {
     expect(PRIMARY_TAGLINE).toBe('Threadplane — The open-source threadplane for agents');
-    expect(LONG_SUBHEAD).toContain('open-source thread-plane for agents');
+    expect(LONG_SUBHEAD).toContain('open-source threadplane for agents');
     expect(LONG_SUBHEAD).toContain('LangGraph and AG-UI');
     expect(HERO_SUBHEAD).toBe(
       'Make agent work persistent, durable, visible, reviewable, and resumable.',

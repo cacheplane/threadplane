@@ -50,7 +50,7 @@ export const HOME_DESCRIPTION =
   'The open-source UI layer for agents: chat, durable threads, human approvals, and generative UI. Connect your app to LangGraph and AG-UI.';
 /** Longer form used by layout.tsx OG/Twitter defaults and the About page. */
 export const LONG_SUBHEAD =
-  'Threadplane is the open-source thread-plane for agents: signal-native chat, durable threads, persistence, human approvals, tool progress, subagents, and generative UI for Angular, on LangGraph and AG-UI — without replacing your backend or design system.';
+  'Threadplane is the open-source threadplane for agents: streaming chat, durable threads, persistence, human approvals, tool progress, subagents, and generative UI, on LangGraph and AG-UI — without replacing your backend or design system.';
 
 // ── Trust line (values verified by positioning.spec.ts + angular-support-copy.spec.ts) ──
 export function formatAngularRange(majors: readonly number[]): string {
