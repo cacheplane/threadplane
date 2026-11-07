@@ -11,6 +11,14 @@ const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const type = (el: HTMLTextAreaElement, value: string) =>
   fireEvent.change(el, { target: { value } });
+const deferFrames = () => {
+  const callbacks: FrameRequestCallback[] = [];
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    callbacks.push(callback);
+    return callbacks.length;
+  });
+  return callbacks;
+};
 
 describe('ChatInput', () => {
   it('resizes an existing draft for the software keyboard and keeps its focused end visible', async () => {
@@ -239,26 +247,96 @@ describe('ChatInput', () => {
     expect(document.activeElement).toBe(box(view));
   });
 
-  it('returns focus to the textarea on the next frame after a clearing submit', () => {
-    const raf = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation((cb) => {
-        cb(0);
-        return 0;
-      });
+  it('preserves focus moved outside the composer before the clearing frame', () => {
+    const frames = deferFrames();
+    const onSubmit = vi.fn();
     const view = render(
       <div>
         <button type="button">elsewhere</button>
-        <ChatInput onSubmit={() => undefined} />
+        <ChatInput onSubmit={onSubmit} defaultValue={'  hi \n'} />
       </div>
     );
-    type(box(view), 'hi');
-    view.getByRole('button', { name: 'elsewhere' }).focus();
-    expect(document.activeElement).not.toBe(box(view));
-    fireEvent.click(view.getByRole('button', { name: 'Send' }));
-    expect(document.activeElement).toBe(box(view));
-    raf.mockRestore();
+    const el = box(view);
+    el.focus();
+    fireEvent.keyDown(el, { key: 'Enter' });
+    const other = view.getByRole('button', { name: 'elsewhere' });
+    other.focus();
+    expect(onSubmit.mock.calls).toEqual([['  hi \n']]);
+    expect(el.value).toBe('');
+    expect(frames).toHaveLength(1);
+    frames[0](0);
+    expect(document.activeElement).toBe(other);
   });
+
+  it.each(['onSubmit', 'onValueChange'] as const)(
+    'preserves a synchronous application focus handoff in %s',
+    (callback) => {
+      const frames = deferFrames();
+      const other = createRef<HTMLButtonElement>();
+      const handoff = () => other.current?.focus();
+      const view = render(
+        <>
+          <button ref={other}>elsewhere</button>
+          <ChatInput
+            defaultValue="hi"
+            onSubmit={callback === 'onSubmit' ? handoff : () => undefined}
+            onValueChange={callback === 'onValueChange' ? handoff : undefined}
+          />
+        </>
+      );
+      const send = view.getByRole('button', { name: 'Send' });
+      send.focus();
+      fireEvent.click(send);
+      expect(box(view).value).toBe('');
+      expect(document.activeElement).toBe(other.current);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(other.current);
+    }
+  );
+
+  it.each(['focused', 'disabled', 'removed'])(
+    'returns focus from its %s Send button on the clearing frame',
+    (state) => {
+      const frames = deferFrames();
+      const view = render(<ChatInput defaultValue="hi" onSubmit={() => undefined} />);
+      const el = box(view);
+      const send = view.getByRole('button', { name: 'Send' });
+      send.focus();
+      fireEvent.click(send);
+      expect(el.value).toBe('');
+      expect(send).toHaveProperty('disabled', true);
+      if (state === 'disabled') {
+        // jsdom does not blur a button when React disables it, unlike browsers.
+        document.body.tabIndex = -1;
+        document.body.focus();
+        document.body.removeAttribute('tabindex');
+      }
+      if (state === 'removed') send.remove();
+      expect(document.activeElement).toBe(state === 'focused' ? send : document.body);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(el);
+    }
+  );
+
+  it.each(['unmounted', 'replaced'])(
+    'does not restore focus for an %s composer',
+    (state) => {
+      const frames = deferFrames();
+      const view = render(<ChatInput defaultValue="hi" onSubmit={() => undefined} />);
+      const el = box(view);
+      el.focus();
+      fireEvent.keyDown(el, { key: 'Enter' });
+      expect(el.value).toBe('');
+      if (state === 'unmounted') view.unmount();
+      else view.rerender(<ChatInput key="replacement" defaultValue="new" onSubmit={() => undefined} />);
+      expect(document.activeElement).toBe(document.body);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(document.body);
+    }
+  );
 
   it('auto-resizes to content, capped at min(40vh, 320px)', () => {
     const view = render(<ChatInput onSubmit={() => undefined} />);
