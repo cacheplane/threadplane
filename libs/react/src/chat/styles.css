@@ -651,6 +651,108 @@
 .tp-citations__snippet {
   white-space: pre-wrap;
 }
+.tp-citation-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: var(--tp-chat-radius-card, 0.5rem);
+}
+.tp-citation-card__visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.25rem;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-weight: 600;
+}
+.tp-citation-card__visual svg {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+.tp-citation-card__visual--web {
+  color: white;
+}
+.tp-citation-card__visual--file,
+.tp-citation-card__badge--file {
+  color: var(
+    --tp-chat-citation-file,
+    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+  );
+}
+.tp-citation-card__visual--app,
+.tp-citation-card__badge--app {
+  color: var(
+    --tp-chat-citation-app,
+    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+  );
+}
+.tp-citation-card__visual--memory,
+.tp-citation-card__badge--memory {
+  color: var(
+    --tp-chat-citation-memory,
+    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+  );
+}
+.tp-citation-card__visual--generic,
+.tp-citation-card__badge--generic,
+.tp-citation-card__badge--web {
+  color: inherit;
+}
+.tp-citation-card__body {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+  flex: 1;
+}
+.tp-citation-card__heading {
+  min-width: 0;
+  font-weight: 600;
+}
+.tp-citation-card__snippet {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tp-citation-card__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.375rem 0.625rem;
+  min-width: 0;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+}
+.tp-citation-card__metadata > * {
+  min-width: 0;
+  max-inline-size: 100%;
+}
+.tp-citation-card__badge {
+  margin-inline-start: 0;
+  padding-inline: 0.375rem;
+  border: 1px solid currentColor;
+  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+}
+.tp-citation-card .tp-citation-card__badge {
+  /* Text follows scoped card themes; category colors remain decorative. */
+  color: inherit;
+}
+.tp-citation-card .tp-citations__title {
+  color: inherit;
+}
+.tp-citation-card .tp-citations__title:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .tp-chat-input {
   display: grid;
   gap: 0;

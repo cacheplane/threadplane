@@ -801,11 +801,16 @@ export async function runProductionProofs(browser, retained) {
               month: 'short',
             })
           );
-          await expect(sources.getByRole('listitem')).toHaveText([
-            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', `[7] <b>Supplied source</b>Source type: AuthoredHost: sources.invalidPublished: ${publishedLabel}`,
+          const sourceRows = sources.getByRole('listitem');
+          await expect(sourceRows.locator('.tp-citation-card__heading')).toHaveText([
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+          ]);
+          await expect(sourceRows.getByRole('button')).toHaveText([
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
           ]);
           await expect(sources.locator('.native-source-card')).toHaveCount(5);
           const providerCard = sources.locator('.native-source-card[data-source-id="__proto__"]');
+          await expect(providerCard.locator('.tp-citations__snippet')).toHaveText(citationSnippet);
           await expect(providerCard.locator('.native-source-card__type')).toHaveText('Source type: Authored');
           await expect(
             providerCard.locator('.native-source-card__host')
@@ -864,7 +869,15 @@ export async function runProductionProofs(browser, retained) {
             page.getByLabel('Unresolved citation __proto__', { exact: true })
           ).toHaveText('[^__proto__]');
           await expect(page.locator('a a')).toHaveCount(0);
-          await expect(sources.getByRole('link')).toHaveCount(0);
+          const titleLinks = sources.getByRole('link');
+          await expect(titleLinks).toHaveCount(2);
+          await expect(titleLinks.nth(0)).toHaveAttribute('href', '/sidecar');
+          await expect(titleLinks.nth(1)).toHaveAttribute('href', 'https://sources.invalid/article');
+          for (const link of await titleLinks.all()) {
+            await expect(link).toHaveAttribute('target', '_blank');
+            await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+          }
+          await expect(sources.locator('[data-source-id="blocked"]').getByRole('link')).toHaveCount(0);
           await expect(sources.getByRole('list').getByRole('button')).toHaveCount(5);
           await expect(
             sources.getByRole('button', {

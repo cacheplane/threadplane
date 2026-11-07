@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d81bb3c01ed96a05b55fc753407a01168a1a1335",
+  "baselineHead": "35a6a389cf7b7e55f4d907719b3e7cc61419e0f0",
   "sourceState": {
     "modified": [
       "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
@@ -858,7 +858,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "a229cf8c9146a9f92afeac9e8cdfa9ff2991faabeccab61f38fd7b6134ce7ad4"
+      "sha256": "4cf125d3c22bde16c43d98e0c9d29cc6f36feac189b0bcb8767eb82e87558ef6"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -876,7 +876,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "614d4581b5db78832013616fb0e0f39e2b3b2dd89f89a2d9a5ba7ce814579cef"
+      "sha256": "8e7cc009c6e5d6426f80c8361255244a04315aaacc87df8f12163ca946d001d6"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -11042,6 +11042,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#CitationCard",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "CitationCard",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citation-card.tsx",
+          "symbol": "CitationCard",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function CitationCard({ citation, className }: CitationCardProps) {\n    const visual = citationSourceVisual({ ...citation, iconUrl: undefined });\n    const meta = citationTypeMeta(citation);\n    const domain = deriveDomain(citation.url);\n    const published = formatPublished(citation.publishedAt);\n    const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n    const href = citation.url === undefined ? undefined : markdownUrl(citation.url, 'link');\n    return (<div className={['tp-citation-card', className].filter(Boolean).join(' ')}>\n      <span className={`tp-citation-card__visual tp-citation-card__visual--${meta.tone}`} aria-hidden=\"true\" style={visual.kind === 'monogram'\n            ? { backgroundColor: visual.color }\n            : undefined}>\n        {visual.kind === 'monogram' ? (visual.monogram) : (<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"1.5\" focusable=\"false\">\n            <path d={iconPaths[meta.icon]}/>\n          </svg>)}\n      </span>\n      <div className=\"tp-citation-card__body\">\n        <div className=\"tp-citation-card__heading\">\n          <span className=\"tp-citations__index\">[{citation.index}] </span>\n          {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n              {title}\n            </a>)}\n        </div>\n        {(meta.label !== null || Boolean(domain) || published !== null) && (<div className=\"tp-citation-card__metadata\">\n            {meta.label !== null && (<span className={`tp-citations__type tp-citation-card__badge tp-citation-card__badge--${meta.tone}`}>\n                {meta.label}\n              </span>)}\n            {domain && (<span className=\"tp-citation-card__domain\">{domain}</span>)}\n            {published !== null && (<span className=\"tp-citation-card__published\">{published}</span>)}\n          </div>)}\n        {citation.snippet !== undefined && (<p className=\"tp-citations__snippet tp-citation-card__snippet\">\n            {citation.snippet}\n          </p>)}\n      </div>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationCardProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "CitationCardProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/citation-card.tsx",
+          "symbol": "CitationCardProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface CitationCardProps {\n    readonly citation: Citation;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#CitationPreview",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -16052,6 +16080,12 @@
       "sha256": "58cd9ac3f578752c60c78781a750ab272e3ec5006976afb2c6228c333462cb71"
     },
     {
+      "id": "source:libs/react/src/chat/citation-card.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/citation-card.tsx",
+      "sha256": "f7c071713f1722b5de38a1ebd1f949bcb27a3c6ec7be159f352a18d2edc36b01"
+    },
+    {
       "id": "source:libs/react/src/chat/citation-preview.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citation-preview.tsx",
@@ -16061,7 +16095,7 @@
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "bfa785d16bdbc09e43025633114d3866dcf80b3cc3ee79bff4287535bee392a6"
+      "sha256": "0ffe2fb533215b00da8c3633d17f16fa8d6a63eaea6fae54d6352accfcc0d2ba"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
@@ -16079,7 +16113,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "55b9026a992b76f1202e9c1f77090cf3384c241301c37e6a380a16a780869d2f"
+      "sha256": "d03416f5877a128dd986c4f6e9b7f96f7c3eae9f72520a45be48b92d2fd2bdd1"
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",

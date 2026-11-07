@@ -1,11 +1,9 @@
 'use client';
 import type { Citation } from '@threadplane/core';
-import {
-  markdownUrl,
-  type MarkdownSnapshot,
-} from '@threadplane/content/markdown';
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
 import { definitionToCitation } from '../markdown/citation-source.js';
 import { CitationPreview } from './citation-preview.js';
+import { CitationCard } from './citation-card.js';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import { availableDialogTarget } from './internal/dialog-presentation.js';
@@ -213,33 +211,9 @@ function SourceList({
               <CitationPreview citation={citation} />
             </li>
           );
-        const title =
-          citation.title ?? citation.url ?? `Source ${citation.index}`;
-        const href =
-          citation.url === undefined
-            ? undefined
-            : markdownUrl(citation.url, 'link');
         return (
           <li key={citation.id} className="tp-citations__item">
-            <span className="tp-citations__index">[{citation.index}] </span>
-            {href === undefined ? (
-              <span className="tp-citations__title">{title}</span>
-            ) : (
-              <a
-                className="tp-citations__title"
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {title}
-              </a>
-            )}
-            {citation.sourceType !== undefined && (
-              <span className="tp-citations__type">{citation.sourceType}</span>
-            )}
-            {citation.snippet !== undefined && (
-              <p className="tp-citations__snippet">{citation.snippet}</p>
-            )}
+            <CitationCard citation={citation} />
           </li>
         );
       })}

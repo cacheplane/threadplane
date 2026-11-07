@@ -1942,9 +1942,9 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/citations-card.tsx",
-      "reason": "Native component. Source metadata, image/monogram fallback, safe links and display utilities."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/citation-card.tsx",
+      "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts#ChatCitationCardTemplateDirective",
@@ -1964,7 +1964,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citations.tsx",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts#ChatConfirmDialogComponent",
@@ -5081,7 +5081,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citations.tsx",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatComponent",
@@ -10342,7 +10342,9 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/citation-card.tsx",
+      "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
@@ -10351,7 +10353,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work.",
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work.",
       "target": "libs/react/src/chat/citations.tsx"
     },
     {
@@ -15478,7 +15480,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#CitationsProps",
@@ -15487,7 +15489,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work."
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
@@ -15496,7 +15498,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Shared content/messages helpers support explicit native Host/Published display; default source-card visuals remain open T26 work."
+      "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. Provider images and source-group header visuals remain open T26 work."
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -17109,8 +17111,37 @@
       "reason": "Private example scroll helper. React MessageList already owns equivalent bottom following and reading-position preservation; no additional public package contract."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#CitationCard",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#CitationCardProps",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
+    },
+    {
+      "id": "source:libs/react/src/chat/citation-card.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Provider images and source-group header visuals remain separate."
+    },
+    {
       "id": "source:libs/example-layouts/src/lib/example-viewport.ts",
-      "taskIds": ["T33"],
+      "taskIds": [
+        "T33"
+      ],
       "treatment": "internal",
       "status": "complete",
       "reason": "Private Angular example shell viewport helper. The internal React ExampleLayout independently follows the same visual viewport for software keyboards; no public package contract."
