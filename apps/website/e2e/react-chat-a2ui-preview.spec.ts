@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
@@ -32,7 +33,7 @@ async function hydrated(page: Page, mode: 'Docs' | 'Code' | 'Run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'Run');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
@@ -44,14 +45,14 @@ async function emptyRun(page: Page, draft = '') {
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(draft);
 }
 async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
+  await documentationModes(page).getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
   await hydrated(page, name);
 }
 
 test('native Chat A2UI keeps canonical Docs, Code and Run aligned', async ({ page }, testInfo) => {
   await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'Docs');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.getByRole('heading', { name: 'React chat A2UI preview', exact: true })).toBeVisible();
   await expect(page.locator('[data-example-file="libs/cockpit-a2ui-react/src/protocol.ts"]')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('react-chat-a2ui-docs-desktop.png') });

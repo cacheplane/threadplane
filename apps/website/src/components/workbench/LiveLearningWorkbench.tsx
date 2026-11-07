@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { InspectionFrame } from '@threadplane/cockpit-runtime-bridge';
 import {
   RunMode,
@@ -53,56 +60,80 @@ function WorkbenchSession(props: Props) {
     index: number;
   }>();
   const host = useRef<HTMLDivElement>(null);
+  const sourceOpener = useRef<HTMLButtonElement | null>(null);
+  const sourceRegionId = `${useId()}-source`;
+  function openSource(opener: HTMLButtonElement) {
+    sourceOpener.current = opener;
+    setSourceOpen(true);
+    setSourceFocusRequest((value) => value + 1);
+  }
+  function closeSource() {
+    setSourceOpen(false);
+    sourceOpener.current?.focus();
+  }
   const layoutControls = useWorkbenchLayout();
   const frameworkName = props.framework === 'react' ? 'React' : 'Angular';
   const sessionControls = (
-    <div
-      className="tp-learn-session-controls"
-      role="group"
-      aria-label="Workbench session"
-    >
-      <button
-        type="button"
-        aria-pressed={mode === 'replay' && !sourceOpen}
-        disabled={busy}
-        onClick={() => {
-          setMode('replay');
-          setSourceOpen(false);
-        }}
+    <div className="tp-learn-example-controls">
+      <div
+        className="tp-learn-session-controls"
+        role="group"
+        aria-label="Example session"
       >
-        Replay
-      </button>
-      <button
-        type="button"
-        aria-pressed={mode === 'live' && !sourceOpen}
-        disabled={!props.runtimeUrl}
-        onClick={() => {
-          setMode('live');
-          setSourceOpen(false);
-        }}
-      >
-        Live
-      </button>
+        <span className="tp-learn-session-label">Example session</span>
+        <button
+          type="button"
+          aria-pressed={mode === 'replay'}
+          disabled={busy}
+          onClick={() => {
+            setMode('replay');
+            setSourceOpen(false);
+          }}
+        >
+          Recorded example
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === 'live'}
+          disabled={!props.runtimeUrl}
+          onClick={() => {
+            setMode('live');
+            setSourceOpen(false);
+          }}
+        >
+          Live conversation
+        </button>
+      </div>
       {props.source && (
         <button
           type="button"
-          aria-pressed={sourceOpen}
-          onClick={() => setSourceOpen(true)}
+          className="tp-learn-source-action"
+          aria-expanded={sourceOpen}
+          aria-controls={sourceRegionId}
+          onClick={(event) =>
+            sourceOpen ? closeSource() : openSource(event.currentTarget)
+          }
         >
-          Source
+          View example source
         </button>
       )}
-      <span>
-        {busy
-          ? 'A call is active. You can still inspect its history.'
-          : 'Replay the example or try your own conversation.'}
-      </span>
+      {busy && (
+        <p className="tp-learn-session-status">
+          A call is active. You can still inspect its history.
+        </p>
+      )}
     </div>
   );
   const presentation: LearningWorkbenchPresentation = {
     source: props.source,
     sourceOpen,
     sourceFocusRequest,
+    sourceRegionId,
+    onCloseSource: closeSource,
+    sourceReturnLabel:
+      mode === 'replay'
+        ? 'Return to recorded example'
+        : 'Return to live conversation',
     sessionControls,
     layoutControls,
     expanded,
@@ -172,9 +203,10 @@ function WorkbenchSession(props: Props) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSourceOpen(true);
-                      setSourceFocusRequest((value) => value + 1);
+                    aria-expanded={sourceOpen}
+                    aria-controls={sourceRegionId}
+                    onClick={(event) => {
+                      openSource(event.currentTarget);
                       host.current?.scrollIntoView({
                         block: 'start',
                         behavior: 'smooth',
@@ -192,7 +224,10 @@ function WorkbenchSession(props: Props) {
           </div>
           <aside className="tp-learn-related">
             <h4>Explore the implementation</h4>
-            <p>The cockpit example keeps its Run, Code, and API views.</p>
+            <p>
+              This guide’s example session and source stay here. Use the page’s
+              Docs, Run, Code, and API controls to explore the complete project.
+            </p>
             <a href={`/docs/${props.framework}/langgraph/guides/streaming`}>
               Open {frameworkName} streaming example
             </a>

@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
@@ -61,7 +62,7 @@ test('public React AG-UI JSON Render keeps Docs, Code, and Run aligned', async (
 }, testInfo) => {
   const requestsBefore = await localRequestCount(request);
   await page.goto('/docs/react/ag-ui/guides/json-render');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI JSON Render preview',
@@ -82,13 +83,11 @@ test('public React AG-UI JSON Render keeps Docs, Code, and Run aligned', async (
   await page.screenshot({
     path: testInfo.outputPath('react-ag-ui-json-render-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(/\/docs\/react\//);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -116,7 +115,7 @@ test('public React AG-UI JSON Render restores its runtime through frontend histo
     /(?:localhost:4323(?:[/?#]|$)|\/ag-ui\/json-render\/?(?:[?#]|$))/
   );
   await page.goBack();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/\/docs\/react\//);
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
@@ -138,7 +137,7 @@ test('public React AG-UI JSON Render reloads an empty native runtime and fits mo
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await frame.getByLabel('Message', { exact: true }).fill('Unsent local draft');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/

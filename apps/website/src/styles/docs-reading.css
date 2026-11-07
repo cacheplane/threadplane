@@ -1,9 +1,8 @@
-/* Angular's website presentation. The route predicate also covers portal
- * menus, but never themes embedded runtimes or the reusable workspace SDK.
- * React, shared docs, and generated API routes retain their current design.
+/* Shared framework-article presentation, including portal menus.
+ * Embedded runtimes, SDK consumers, and framework-neutral pages are separate.
  */
 body:has(
-    [data-website-workspace-host][data-workspace-route^='/docs/angular/']
+    [data-website-workspace-host][data-docs-reading]
   ) {
   .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
     background: var(--color-accent);
@@ -14,7 +13,7 @@ body:has(
     background: var(--color-text-primary);
   }
 
-  /* Keep the fixed rail and independently scrolling tree geometry. */
+  /* Keep the independently scrolling navigation geometry. */
   .workspace-control-plane [data-control-plane-pane],
   [data-workspace-context-content] {
     background: #f6f7f9;

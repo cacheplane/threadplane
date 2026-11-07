@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
@@ -5,7 +6,7 @@ test('public React subgraphs keep topic docs, sources, runtime, and history alig
   page,
 }, testInfo) => {
   await page.goto('/docs/react/langgraph/guides/subgraphs');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React subgraphs preview',
@@ -23,13 +24,11 @@ test('public React subgraphs keep topic docs, sources, runtime, and history alig
   await page.screenshot({
     path: testInfo.outputPath('react-subgraphs-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(/\/docs\/react\//);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -39,7 +38,7 @@ test('public React subgraphs keep topic docs, sources, runtime, and history alig
   await selectFramework(page, 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',

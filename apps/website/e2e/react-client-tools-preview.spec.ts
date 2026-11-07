@@ -1,20 +1,21 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React client tools aligns the canonical Chat guide, source, runtime and history', async ({ page }, testInfo) => {
   await page.goto('/docs/react/chat/guides/client-tools');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page.getByRole('heading', { name: 'React client-tools preview', exact: true })).toBeVisible();
   await expect(page.locator('[data-example-file="cockpit/langgraph/client-tools/react/src/tools.ts"]')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('react-client-tools-docs-desktop.png') });
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: 'Code', exact: true }).click();
+  await documentationModes(page).getByRole('button', { name: 'Code', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/react\//);
-  await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: /^Run(?:,|$)/ }).click();
+  await documentationModes(page).getByRole('button', { name: /^Run(?:,|$)/ }).click();
   await expect(page.locator('iframe')).toHaveAttribute('src', /(?:localhost:4603|langgraph\/client-tools\/react)/);
   await selectFramework(page, 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute('src', /(?:localhost:4603|langgraph\/client-tools\/react)/);
   await page.setViewportSize({ width: 390, height: 844 });

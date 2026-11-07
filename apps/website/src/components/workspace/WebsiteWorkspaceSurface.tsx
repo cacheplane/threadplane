@@ -45,6 +45,7 @@ import { WORKSPACE_PANEL_FOCUS_INTENT } from './workspace-panel-focus';
 import { FrameworkSelector } from '../docs/FrameworkSelector';
 import { DocsSearch } from '../docs/DocsSearch';
 import type { DocsFramework } from '@threadplane/cockpit-registry';
+import { isFrameworkDocsRoute } from '../../lib/docs-presentation';
 
 /*
  * The docs workspace surface: the shell, its mode/navigation/runtime wiring and
@@ -170,8 +171,9 @@ export function WebsiteWorkspaceSurface({
   docsContext,
   contextTrail,
 }: WebsiteWorkspaceProps) {
+  const readingLayout = isFrameworkDocsRoute(routePath);
   const toolbarLayout =
-    routePath.startsWith('/docs/angular/') ||
+    readingLayout ||
     routePath.startsWith('/docs/api') ||
     routePath === '/docs/examples';
   const router = useRouter();
@@ -458,6 +460,7 @@ export function WebsiteWorkspaceSurface({
       <div
         className="website-workspace-host"
         data-website-workspace-host=""
+        data-docs-reading={readingLayout || undefined}
         data-workspace-framework={framework}
         data-workspace-route={routePath}
       >
@@ -498,7 +501,7 @@ export function WebsiteWorkspaceSurface({
                 : undefined
             }
             contextTrail={
-              routePath.startsWith('/docs/angular/')
+              readingLayout
                 ? contextTrail?.slice(2, -1)
                 : contextTrail
             }

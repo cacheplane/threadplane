@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
@@ -38,7 +39,7 @@ test.describe('React Deep Agents Skills', () => {
   }
   async function emptyRun(page: Page, draft = '') {
     await hydrated(page, 'run');
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
     await expect(page.locator('iframe')).toBeVisible();
     await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -67,7 +68,7 @@ test.describe('React Deep Agents Skills', () => {
       waitUntil: 'domcontentloaded',
     });
     await hydrated(page, 'docs');
-    await expect(page.getByLabel('Framework')).toHaveValue('react');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React Deep Agents Skills preview',
@@ -89,8 +90,7 @@ test.describe('React Deep Agents Skills', () => {
       path: testInfo.outputPath('react-deep-agents-skills-docs-mobile.png'),
     });
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Code', exact: true })
       .click();
     await hydrated(page, 'code');
@@ -140,8 +140,7 @@ test.describe('React Deep Agents Skills', () => {
     await graph.click();
     await expect(page.getByRole('tabpanel')).toContainText('create_deep_agent');
     await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: /^Run(?:,|$)/ })
       .click();
     await emptyRun(page);
@@ -217,8 +216,7 @@ test.describe('React Deep Agents Skills', () => {
       page.frameLocator('iframe').getByLabel('Message', { exact: true })
     ).toHaveValue('Unsent history draft');
     const before = [...(observations.get(page)?.requests ?? [])];
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Code', exact: true })
       .click();
     await hydrated(page, 'code');
@@ -284,8 +282,7 @@ test.describe('React Deep Agents Skills', () => {
       .frameLocator('iframe')
       .getByLabel('Message', { exact: true })
       .fill('Old frontend draft');
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: 'Docs', exact: true })
       .click();
     await hydrated(page, 'docs');
@@ -307,8 +304,7 @@ test.describe('React Deep Agents Skills', () => {
         exact: true,
       })
     ).toBeVisible();
-    await page
-      .locator('[data-workspace-desktop-navigation]')
+    await documentationModes(page)
       .getByRole('button', { name: /^Run(?:,|$)/ })
       .click();
     await emptyRun(page);

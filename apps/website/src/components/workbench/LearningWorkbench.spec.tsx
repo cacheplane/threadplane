@@ -255,6 +255,8 @@ describe('learning inspector', () => {
     expect(
       screen.getByRole('link', { name: 'React source' }).getAttribute('href')
     ).toContain('/react/src/app.tsx');
-    expect(screen.queryByRole('button', { name: 'Live' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Live conversation' })
+    ).toBeNull();
   });
 });

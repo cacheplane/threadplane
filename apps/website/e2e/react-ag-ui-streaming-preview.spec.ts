@@ -1,3 +1,4 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
@@ -5,7 +6,7 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
   page,
 }, testInfo) => {
   await page.goto('/docs/react/ag-ui/reference/event-mapping');
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI streaming preview',
@@ -23,15 +24,13 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
   await page.screenshot({
     path: testInfo.outputPath('react-ag-ui-streaming-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(
     '/docs/react/ag-ui/reference/event-mapping?mode=code'
   );
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page).toHaveURL(
@@ -48,7 +47,7 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
   await expect(page).toHaveURL(
     '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
-  await expect(page.getByLabel('Framework')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
     '/docs/react/ag-ui/reference/event-mapping?mode=run'
