@@ -1,4 +1,6 @@
-import type { StageBeat, StageMilestone } from '../stage-beats';
+// Retained for the historical marketing event schema; the pinned stage is retired.
+type StageBeat = 'stream' | 'subagents' | 'persist' | 'approve' | 'render';
+type StageMilestone = 'enter' | 'beat' | 'threshold' | 'complete';
 
 export const analyticsEvents = {
   marketingCtaClick: 'marketing:cta_click',

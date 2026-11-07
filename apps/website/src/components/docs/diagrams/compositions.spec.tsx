@@ -6,10 +6,7 @@ import { AgUiArchitecturePipeline } from './AgUiArchitecturePipeline';
 import { A2uiMessageFlow } from './A2uiMessageFlow';
 import { RenderHowItFits } from './RenderHowItFits';
 import { RenderVsA2ui } from './RenderVsA2ui';
-import { RenderTransform } from './RenderTransform';
 import { MiddlewareHowItFits } from './MiddlewareHowItFits';
-import { TelemetryHowItFits } from './TelemetryHowItFits';
-import { PilotJourney } from './PilotJourney';
 
 /**
  * Compositions are hand-placed layouts; the spec guards that each mounts,
@@ -91,71 +88,5 @@ describe('MiddlewareHowItFits', () => {
     const { container } = render(<MiddlewareHowItFits />);
     expect(container.querySelectorAll('.tp-diagram-pill')).toHaveLength(1);
     expect(container.querySelectorAll('path.tp-diagram-edge')).toHaveLength(3);
-  });
-});
-
-describe('TelemetryHowItFits', () => {
-  it('mounts and names the package and both honest destinations', () => {
-    const { container } = render(<TelemetryHowItFits />);
-    const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/telemetry');
-    expect(titles).toContain('Your sink or endpoint — app-owned');
-    expect(titles).toContain('threadplane.ai/api/ingest — default');
-  });
-
-  it('breaks each branch around its pill and wires exactly five edges', () => {
-    const { container } = render(<TelemetryHowItFits />);
-    expect(container.querySelectorAll('.tp-diagram-pill')).toHaveLength(2);
-    expect(container.querySelectorAll('path.tp-diagram-edge')).toHaveLength(5);
-  });
-});
-
-describe('RenderTransform', () => {
-  it('mounts at standard scale with spec, render, and result stages', () => {
-    const { container } = render(<RenderTransform />);
-    const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/render');
-    expect(container.querySelectorAll('.tp-diagram-pill')).toHaveLength(2);
-  });
-
-  it('names the spec fragment, the transport pills, and the payoff node', () => {
-    const { container } = render(<RenderTransform />);
-    const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain("type: 'Text'");
-    expect(titles).toContain('your components');
-    const pills = Array.from(container.querySelectorAll('.tp-diagram-pill text')).map((t) => t.textContent);
-    expect(pills).toEqual(['UI spec', 'bindings + events']);
-  });
-
-  it('accents only the payoff node', () => {
-    const { container } = render(<RenderTransform />);
-    const accented = container.querySelectorAll('g.tp-diagram-node[data-tone="accent"]');
-    expect(accented).toHaveLength(1);
-    expect(accented[0]?.querySelector('.tp-diagram-title')?.textContent).toBe('your components');
-  });
-});
-
-describe('PilotJourney', () => {
-  it('mounts with three phase nodes on the journey line', () => {
-    const { container } = render(<PilotJourney />);
-    expect(container.querySelectorAll('g.tp-diagram-node')).toHaveLength(3);
-    expect(container.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toBeTruthy();
-  });
-
-  it('names the three phases and their gate pills', () => {
-    const { container } = render(<PilotJourney />);
-    const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toEqual(['Discover', 'Build', 'Harden']);
-    const pills = Array.from(container.querySelectorAll('.tp-diagram-pill text')).map((t) => t.textContent);
-    expect(pills).toEqual(['roadmap', 'working agent', 'handoff']);
-    const neutralPills = container.querySelectorAll('.tp-diagram-pill[data-tone="neutral"]');
-    expect(neutralPills).toHaveLength(3);
-  });
-
-  it('accents only the Harden node — the production-ready system the customer keeps', () => {
-    const { container } = render(<PilotJourney />);
-    const accented = container.querySelectorAll('g.tp-diagram-node[data-tone="accent"]');
-    expect(accented).toHaveLength(1);
-    expect(accented[0]?.querySelector('.tp-diagram-title')?.textContent).toBe('Harden');
   });
 });
