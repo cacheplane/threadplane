@@ -1,3 +1,4 @@
+import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
@@ -27,7 +28,7 @@ const WELCOME_SUGGESTIONS = [
     >
       <button headerActions type="button" [disabled]="agent.isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
-      <chat placeholder="Ask for a flight form…" #conversation [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" #conversation [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
         <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
@@ -45,6 +46,7 @@ const WELCOME_SUGGESTIONS = [
   `,
 })
 export class A2uiComponent {
+  protected readonly toolLabel = exampleToolLabel;
   protected newConversation(conversation: ChatComponent): void {
     if (this.agent.isLoading()) return;
     this.agent.switchThread(null);

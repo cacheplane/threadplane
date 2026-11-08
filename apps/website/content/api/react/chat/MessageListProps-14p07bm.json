@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 26
+            "line": 35
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 24
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "groupRelatedTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#groupRelatedTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly groupRelatedTools?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Opt in to one activity group per assistant message. Custom renderers keep full ownership.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 31
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 23
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -212,7 +248,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 22
+            "line": 27
           },
           "isReadonly": true,
           "isOptional": true
@@ -248,15 +284,51 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 16
+            "line": 21
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "toolLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#toolLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(name: string) => string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored human labels; keep this function stable like renderMessage.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 15
+        "line": 20
       },
       "typeParameters": [
         {
@@ -275,6 +347,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 15
+    "line": 20
   }
 }

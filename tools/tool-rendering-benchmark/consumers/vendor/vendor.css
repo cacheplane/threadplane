@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+@source "./*.tsx";
+@theme inline {
+  --color-muted-foreground: var(--muted);
+  --color-foreground: var(--ink);
+  --color-background: var(--surface);
+  --color-muted: var(--panel);
+  --color-border: var(--line);
+  --color-destructive: #c43a42;
+}
+@import '@copilotkit/react-core/v2/styles.css';
+@import './shell.css';
+[data-slot='tool-fallback-trigger'] {
+  padding: 12px 0;
+}
+[data-slot='trace-line'] {
+  gap: 8px;
+  padding: 10px 0;
+}
+[data-slot='trace-collapsible-content-inner'] {
+  padding: 8px 24px;
+}
+.native-thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.native-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+.native-message {
+  margin: 0 0 24px;
+}
+.native-message pre {
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.native-composer {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+}
+.native-composer textarea {
+  flex: 1;
+}

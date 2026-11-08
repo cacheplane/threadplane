@@ -5,7 +5,7 @@ import { useAgent } from '@threadplane/react';
 import {
   ChatInput,
   TextTranscript,
-  ToolObservation,
+  ToolActivity,
 } from '@threadplane/react/chat';
 import {
   createConnectedApplication,
@@ -79,14 +79,16 @@ export function ToolViewsDemo({
               {message.tools.map((tool) => (
                 <div key={tool.id} data-weather-tool={tool.id}>
                   <WeatherCard reading={tool.weather} />
-                  <details>
-                    <summary>Tool details</summary>
-                    <ToolObservation
-                      name={tool.name}
-                      argumentsText={tool.argumentsText}
-                      resultText={tool.resultText}
-                    />
-                  </details>
+                  <ToolActivity
+                    activity={{
+                      id: tool.id,
+                      name: tool.name,
+                      label: 'Checking the weather',
+                      phase: tool.phase,
+                      argumentsText: tool.argumentsText,
+                      resultText: tool.resultText,
+                    }}
+                  />
                 </div>
               ))}
             </li>

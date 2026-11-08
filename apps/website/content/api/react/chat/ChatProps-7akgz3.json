@@ -127,6 +127,48 @@
           "isOptional": true
         },
         {
+          "name": "groupRelatedTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#groupRelatedTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly groupRelatedTools?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['groupRelatedTools']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "renderMessage",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ChatProps#renderMessage:member",
@@ -214,6 +256,48 @@
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "toolLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#toolLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolLabel?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['toolLabel']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {

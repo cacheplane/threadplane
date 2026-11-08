@@ -248,9 +248,9 @@ it('renders unavailable view fallback and literal tool evidence without interpre
   expect(h.view.getByRole('alert').textContent).toBe(
     'This dashboard view is unavailable.'
   );
-  const inspection = h.view
-    .getByRole('region', { name: 'Observed tool: complete', hidden: true })
-    .closest('details');
+  const inspection = h.view.container.querySelector(
+    '.tp-tool-activity details'
+  );
   expect(inspection).not.toBeNull();
   expect(inspection?.open).toBe(false);
   expect(h.view.container.querySelector('script')).toBeNull();

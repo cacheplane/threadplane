@@ -21,6 +21,7 @@ export interface WeatherToolView {
   readonly name: string;
   readonly argumentsText: string;
   readonly resultText?: string;
+  readonly phase?: 'complete' | 'running' | 'unknown';
   readonly weather?: WeatherReading;
 }
 export interface WeatherMessageView {
@@ -350,6 +351,9 @@ export function projectWeatherViews(
           id: call.id,
           name: call.function.name,
           argumentsText: call.function.arguments,
+          // A unique correlated native ToolMessage proves the result arrived.
+          phase:
+            results.length === 1 ? ('complete' as const) : ('unknown' as const),
           ...(resultText !== undefined && { resultText }),
           ...(weather && { weather }),
         })

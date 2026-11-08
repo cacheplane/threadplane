@@ -1,0 +1,25 @@
+{
+  "name": "tool-rendering-benchmark",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "tags": ["type:tool", "scope:scripts-tests"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test tools/tool-rendering-benchmark/*.spec.mjs"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node tools/tool-rendering-benchmark/server.mjs" }
+    },
+    "prepare": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node tools/tool-rendering-benchmark/prepare.mjs"
+      }
+    }
+  }
+}

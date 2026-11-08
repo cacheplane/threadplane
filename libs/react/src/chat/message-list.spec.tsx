@@ -328,7 +328,7 @@ describe('MessageList', () => {
       view.container.querySelector('.tp-chat-message--tool pre')?.textContent
     ).toBe('<b>raw</b>');
     expect(view.container.querySelector('b')).toBeNull();
-    const obs = view.getAllByRole('region', { name: 'Tool observation' });
+    const obs = view.container.querySelectorAll('.tp-tool-activity');
     expect(obs).toHaveLength(1);
     expect(obs[0].textContent).toContain('lookup');
     expect(obs[0].textContent).toContain('"q": 1');
@@ -349,9 +349,11 @@ describe('MessageList', () => {
     );
     const view = render(<MessageList rows={rows} />);
     expect(
-      view.getByRole('region', { name: 'Tool observation' }).textContent
+      view.container.querySelector('.tp-tool-activity')!.textContent
     ).toContain('boom <i>bad</i>');
     expect(view.container.querySelector('i')).toBeNull();
+    expect(view.getByRole('alert').closest('details')).toBeNull();
+    expect(view.container.querySelector('details')!.open).toBe(false);
   });
 
   it('uses the default label and honours label and className', () => {

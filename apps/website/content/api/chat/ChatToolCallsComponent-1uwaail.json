@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 111
+            "line": 178
           },
           "isStatic": false,
           "isReadonly": true,
@@ -125,7 +125,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 122
+            "line": 197
           },
           "isStatic": false,
           "isReadonly": true,
@@ -160,7 +160,7 @@
             },
             {
               "kind": "Content",
-              "text": "<number>>"
+              "text": "<string>>"
             },
             {
               "kind": "Content",
@@ -180,7 +180,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 193
+            "line": 308
           },
           "isStatic": false,
           "isReadonly": true,
@@ -226,7 +226,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 113
+            "line": 180
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "groupRelated",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallsComponent#groupRelated:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly groupRelated: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Opt in to grouping related default tool rows across names; none still disables grouping.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+            "line": 185
           },
           "isStatic": false,
           "isReadonly": true,
@@ -281,7 +327,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 151
+            "line": 233
           },
           "isStatic": false,
           "isReadonly": true,
@@ -327,7 +373,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 114
+            "line": 181
           },
           "isStatic": false,
           "isReadonly": true,
@@ -383,7 +429,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 112
+            "line": 179
           },
           "isStatic": false,
           "isReadonly": true,
@@ -439,7 +485,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 134
+            "line": 211
           },
           "isStatic": false,
           "isReadonly": true,
@@ -456,7 +502,7 @@
             },
             {
               "kind": "Content",
-              "text": "number"
+              "text": "string"
             },
             {
               "kind": "Content",
@@ -484,7 +530,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 195
+            "line": 310
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -554,7 +600,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 147
+            "line": 224
           },
           "isStatic": false,
           "isReadonly": true,
@@ -610,7 +656,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 131
+            "line": 206
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallsComponent#toolLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<((name: string) => string | undefined) | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned readable labels. Technical names remain in Details.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+            "line": 187
           },
           "isStatic": false,
           "isReadonly": true,
@@ -619,7 +711,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-        "line": 26
+        "line": 40
       },
       "angular": {
         "selector": "chat-tool-calls",
@@ -643,6 +735,12 @@
             "type": "\"none\" | \"auto\""
           },
           {
+            "name": "groupRelated",
+            "alias": "groupRelated",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "groupSummary",
             "alias": "groupSummary",
             "required": false,
@@ -659,6 +757,12 @@
             "alias": "toolCallTemplates",
             "required": false,
             "type": "readonly ChatToolCallTemplateDirective[]"
+          },
+          {
+            "name": "toolLabel",
+            "alias": "toolLabel",
+            "required": false,
+            "type": "((name: string) => string | undefined) | undefined"
           }
         ],
         "outputs": []
@@ -667,6 +771,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-    "line": 26
+    "line": 40
   }
 }

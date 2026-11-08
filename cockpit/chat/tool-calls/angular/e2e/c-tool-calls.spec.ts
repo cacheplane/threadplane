@@ -13,9 +13,9 @@ test('c-tool-calls: parent dispatches lookup_flight tool, continuation surfaces 
   // primitive, not just any DOM button that happens to mention the tool.
   await expect(page.locator('chat-tool-calls').first()).toBeVisible({ timeout: 30_000 });
 
-  // Inside the wrapper, the per-call card is rendered as <chat-tool-call-card>.
+  // The shared activity retains literal technical evidence inside Details.
   // For a single lookup_flight call (no grouping), there's exactly one card.
-  const card = page.locator('chat-tool-call-card').first();
+  const card = page.locator('chat-tool-activity').first();
   await expect(card).toBeVisible();
   await expect(card).toContainText('lookup_flight');
 

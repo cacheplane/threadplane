@@ -86,13 +86,13 @@ describe('ChatComponent — chatToolCallTemplate projected through <chat>', () =
     const host = render((h) => { h.withNamed = true; });
     expect(texts(host, '.named-tpl')).toEqual(['c_search']);
     expect(host.querySelector('.named-tpl')?.getAttribute('data-status')).toBe('complete');
-    expect(host.querySelectorAll('chat-tool-call-card').length).toBe(1);
+    expect(host.querySelectorAll('chat-tool-activity').length).toBe(1);
   });
 
   it('renders a wildcard template for every tool call', () => {
     const host = render((h) => { h.withWildcard = true; });
     expect(texts(host, '.wildcard-tpl')).toEqual(['c_search', 'c_read']);
-    expect(host.querySelector('chat-tool-call-card')).toBeNull();
+    expect(host.querySelector('chat-tool-activity')).toBeNull();
   });
 
   it('prefers the named template over the wildcard', () => {
@@ -103,7 +103,7 @@ describe('ChatComponent — chatToolCallTemplate projected through <chat>', () =
 
   it('renders default cards when no template is projected', () => {
     const host = render(() => undefined);
-    expect(host.querySelectorAll('chat-tool-call-card').length).toBe(2);
+    expect(host.querySelectorAll('chat-tool-activity').length).toBe(2);
   });
 
   it('does not use projected tool-call templates while an activity template is present', () => {
@@ -116,6 +116,6 @@ describe('ChatComponent — chatToolCallTemplate projected through <chat>', () =
   it('keeps per-tool templates registered on a <chat-tool-calls> inside the activity template', () => {
     const host = render((h) => { h.withActivity = true; h.nestToolCalls = true; });
     expect(texts(host, '.nested-tpl')).toEqual(['c_search']);
-    expect(host.querySelectorAll('chat-tool-call-card').length).toBe(1);
+    expect(host.querySelectorAll('chat-tool-activity').length).toBe(1);
   });
 });

@@ -32,6 +32,7 @@ describe('per-assistant literal tool observations', () => {
         id: tool.id,
         name: tool.name,
         argumentsText: JSON.stringify(tool.args, null, 2),
+        phase: tool.status,
       }))
     );
   });
