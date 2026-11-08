@@ -36,7 +36,7 @@ for (const framework of ['angular', 'react'] as const) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole('link', { name: 'Learn about turns', exact: true }).click();
     await expect(page).toHaveURL(`/docs/${framework}/getting-started/workbench`);
-    await expect(page.getByRole('heading', { name: 'Watch a turn unfold.', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Follow one turn', exact: true })).toBeVisible();
   });
 }
 

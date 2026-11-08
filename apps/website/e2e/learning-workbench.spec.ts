@@ -129,17 +129,22 @@ for (const framework of ['react', 'angular'] as const) {
   }) => {
     const host = await openWorkbench(page, framework);
     const sessions = host.getByRole('group', { name: 'Example session' });
-    await expect(sessions.getByRole('button')).toHaveCount(2);
-    const recorded = sessions.getByRole('button', { name: 'Recorded example' });
+    await expect(sessions.getByRole('button')).toHaveCount(1);
+    const live = sessions.getByRole('button', { name: 'Live conversation' });
+    await expect(live).toHaveAttribute('aria-pressed', 'false');
     const source = host.getByRole('button', {
       name: 'View example source',
       exact: true,
     });
+    await host.getByRole('button', { name: 'Inspect data', exact: true }).click();
     await host.getByRole('button', { name: 'Next observation' }).click();
+    const cursor = await host
+      .getByRole('slider', { name: 'Observation' })
+      .inputValue();
     await source.focus();
     await page.keyboard.press('Enter');
     await expect(source).toHaveAttribute('aria-expanded', 'true');
-    await expect(recorded).toHaveAttribute('aria-pressed', 'true');
+    await expect(live).toHaveAttribute('aria-pressed', 'false');
     const region = host.getByRole('region', {
       name: 'Example source',
       exact: true,
@@ -163,15 +168,14 @@ for (const framework of ['react', 'angular'] as const) {
     await expect(source).toBeFocused();
     await expect(source).toHaveAttribute('aria-expanded', 'false');
     await expect(host.getByRole('slider', { name: 'Observation' })).toHaveValue(
-      '1'
+      cursor
     );
     await expect(host.locator('iframe')).toHaveCount(0);
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       await source.click();
       for (const control of [
-        recorded,
-        sessions.getByRole('button', { name: 'Live conversation' }),
+        live,
         source,
         back,
       ]) {
@@ -187,7 +191,7 @@ for (const framework of ['react', 'angular'] as const) {
       await back.click();
       await expect(
         host.getByRole('slider', { name: 'Observation' })
-      ).toHaveValue('1');
+      ).toHaveValue(cursor);
     }
   });
 
@@ -346,9 +350,13 @@ for (const framework of ['react', 'angular'] as const) {
     await page.keyboard.press('ArrowRight');
     await expect(files).toHaveAttribute('aria-valuenow', '206');
     await host
-      .getByRole('button', { name: 'Recorded example', exact: true })
+      .getByRole('button', { name: 'Return to recorded example', exact: true })
+      .click();
+    await host
+      .getByText('Connect observations to source', { exact: true })
       .click();
     await host.getByRole('button', { name: 'See it run', exact: true }).click();
+    await host.getByRole('button', { name: 'Inspect data', exact: true }).click();
     await expect(
       host.getByRole('slider', { name: 'Observation' })
     ).not.toHaveValue('0');
@@ -356,7 +364,7 @@ for (const framework of ['react', 'angular'] as const) {
       host.getByRole('button', { name: 'Play recording' })
     ).toBeVisible();
     const split = host.getByRole('separator', {
-      name: 'Resize conversation and inspector',
+      name: 'Resize conversation and explanation',
     });
     await split.scrollIntoViewIfNeeded();
     const box = await split.boundingBox();
@@ -375,16 +383,16 @@ for (const framework of ['react', 'angular'] as const) {
     });
     await height.focus();
     await page.keyboard.press('ArrowDown');
-    await expect(height).toHaveAttribute('aria-valuenow', '540');
+    await expect(height).toHaveAttribute('aria-valuenow', '420');
     const savedSplit = await split.getAttribute('aria-valuenow');
     await page.reload();
     await expect(split).toHaveAttribute('aria-valuenow', savedSplit!);
-    await expect(height).toHaveAttribute('aria-valuenow', '540');
+    await expect(height).toHaveAttribute('aria-valuenow', '420');
     await host.getByRole('button', { name: 'Expand workbench' }).click();
     await expect(host).toHaveAttribute('data-expanded', 'true');
     await host.getByRole('button', { name: 'Reset layout' }).click();
     await expect(split).toHaveAttribute('aria-valuenow', '44');
-    await expect(height).toHaveAttribute('aria-valuenow', '520');
+    await expect(height).toHaveAttribute('aria-valuenow', '400');
     await expect(
       host.getByRole('link', {
         name: `Open ${
@@ -393,7 +401,7 @@ for (const framework of ['react', 'angular'] as const) {
       })
     ).toHaveAttribute('href', `/docs/${framework}/langgraph/guides/streaming`);
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const mode of ['View example source', 'Recorded example']) {
+    for (const mode of ['View example source', 'Return to recorded example']) {
       await host.getByRole('button', { name: mode, exact: true }).click();
       expect(
         await page.evaluate(

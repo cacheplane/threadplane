@@ -9,7 +9,7 @@ export const WORKBENCH_LAYOUT_STORAGE_KEY =
 
 export const DEFAULT_WORKBENCH_LAYOUT: Readonly<WorkbenchLayout> = {
   split: 44,
-  height: 520,
+  height: 400,
   files: 190,
 };
 
