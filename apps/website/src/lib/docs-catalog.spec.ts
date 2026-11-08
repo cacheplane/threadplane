@@ -144,8 +144,8 @@ describe('explicit narrative document catalog', () => {
       expect(doc.lessonId).toBeUndefined();
       const source = fs.readFileSync(path.join(contentRoot, doc.source), 'utf8');
       expect(source).toContain(`<LearningWorkbench framework="${framework}"`);
-      expect(source).toContain(`<DocsDemoVideo demo="streaming" frontend="${framework}"`);
-      expect(source.indexOf('<DocsDemoVideo')).toBeLessThan(source.indexOf('<LearningWorkbench'));
+      expect(source).not.toContain('<DocsDemoVideo');
+      expect(source.indexOf('<LearningWorkbench')).toBeLessThan(source.indexOf('\n## '));
       expect(source).toContain(`/docs/${framework}/langgraph/guides/streaming`);
       expect(source).toContain('fixture');
       const quickstart = getDocumentVariant('getting-started/quickstart', framework)!;

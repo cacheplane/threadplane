@@ -80,18 +80,19 @@ function WorkbenchSession(props: Props) {
         role="group"
         aria-label="Example session"
       >
-        <span className="tp-learn-session-label">Example session</span>
-        <button
-          type="button"
-          aria-pressed={mode === 'replay'}
-          disabled={busy}
-          onClick={() => {
-            setMode('replay');
-            setSourceOpen(false);
-          }}
-        >
-          Recorded example
-        </button>
+        {mode === 'live' && (
+          <button
+            type="button"
+            aria-pressed={false}
+            disabled={busy}
+            onClick={() => {
+              setMode('replay');
+              setSourceOpen(false);
+            }}
+          >
+            Recorded example
+          </button>
+        )}
         <button
           type="button"
           aria-pressed={mode === 'live'}
@@ -165,63 +166,66 @@ function WorkbenchSession(props: Props) {
           className="tp-learn-teaching"
           aria-label="Connect observations to source"
         >
-          <div className="tp-learn-explanation">
-            <h3>Partial text is an observation.</h3>
-            <p>
-              The view can show part of an answer while the application is still
-              busy. Completion is separate: compare <code>busy</code> with{' '}
-              <code>outcome</code> at the final observation.
-            </p>
-            <div className="tp-learn-snippet">
-              <div className="tp-learn-snippet-heading">
-                <span>
-                  {props.source.snippet.path.split('/').at(-1)} · observe the
-                  application
-                </span>
-                <div>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      const moment = learningMilestones(
-                        tripRecording as Recording
-                      ).find((item) => item.id === 'partial');
-                      if (!moment) return;
-                      setMode('replay');
-                      setSourceOpen(false);
-                      setSeekRequest((previous) => ({
-                        id: (previous?.id ?? 0) + 1,
-                        index: moment.index,
-                      }));
-                      host.current?.scrollIntoView({
-                        block: 'start',
-                        behavior: 'smooth',
-                      });
-                    }}
-                  >
-                    See it run
-                  </button>
-                  <button
-                    type="button"
-                    aria-expanded={sourceOpen}
-                    aria-controls={sourceRegionId}
-                    onClick={(event) => {
-                      openSource(event.currentTarget);
-                      host.current?.scrollIntoView({
-                        block: 'start',
-                        behavior: 'smooth',
-                      });
-                    }}
-                  >
-                    View source
-                  </button>
+          <details className="tp-learn-teaching-source">
+            <summary>Connect observations to source</summary>
+            <div className="tp-learn-explanation">
+              <h3>Partial text is an observation.</h3>
+              <p>
+                The view can show part of an answer while the application is
+                still busy. Completion is separate: compare <code>busy</code>{' '}
+                with <code>outcome</code> at the final observation.
+              </p>
+              <div className="tp-learn-snippet">
+                <div className="tp-learn-snippet-heading">
+                  <span>
+                    {props.source.snippet.path.split('/').at(-1)} · observe the
+                    application
+                  </span>
+                  <div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        const moment = learningMilestones(
+                          tripRecording as Recording
+                        ).find((item) => item.id === 'partial');
+                        if (!moment) return;
+                        setMode('replay');
+                        setSourceOpen(false);
+                        setSeekRequest((previous) => ({
+                          id: (previous?.id ?? 0) + 1,
+                          index: moment.index,
+                        }));
+                        host.current?.scrollIntoView({
+                          block: 'start',
+                          behavior: 'smooth',
+                        });
+                      }}
+                    >
+                      See it run
+                    </button>
+                    <button
+                      type="button"
+                      aria-expanded={sourceOpen}
+                      aria-controls={sourceRegionId}
+                      onClick={(event) => {
+                        openSource(event.currentTarget);
+                        host.current?.scrollIntoView({
+                          block: 'start',
+                          behavior: 'smooth',
+                        });
+                      }}
+                    >
+                      View source
+                    </button>
+                  </div>
                 </div>
+                <pre>
+                  <code>{props.source.snippet.code}</code>
+                </pre>
               </div>
-              <pre>
-                <code>{props.source.snippet.code}</code>
-              </pre>
             </div>
-          </div>
+          </details>
           <aside className="tp-learn-related">
             <h4>Explore the implementation</h4>
             <p>
