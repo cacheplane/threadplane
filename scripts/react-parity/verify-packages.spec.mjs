@@ -237,7 +237,7 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   const core = join(consumer, 'node_modules/@threadplane/core');
   mkdirSync(core, { recursive: true });
   writeFileSync(join(core, 'package.json'), JSON.stringify({ name: '@threadplane/core', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
-  writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; }');
+  writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; } export interface AgentError { readonly kind: "connection" | "auth" | "server" | "interrupted" | "aborted"; readonly message: string; readonly status?: number; readonly retryable: boolean; readonly recovery?: "retry" | "check" | "none"; readonly detail?: string; }');
   const content = join(consumer, 'node_modules/@threadplane/content');
   mkdirSync(content, { recursive: true });
   writeFileSync(join(content, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './markdown': { types: './markdown.d.ts' } } }));
@@ -273,7 +273,10 @@ export declare function CitationCard(props: CitationCardProps): unknown;
 export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
 export declare function CitationPreview(props: CitationPreviewProps): unknown;
 export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode; }
-export declare function Citations(props: CitationsProps): unknown;`;
+export declare function Citations(props: CitationsProps): unknown;
+export interface ChatErrorProps { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string; }
+export declare function ChatError(props: ChatErrorProps): unknown;
+export interface ChatProps { readonly onRetry?: () => void; }`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -309,7 +312,7 @@ export declare function Citations(props: CitationsProps): unknown;`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -341,14 +344,35 @@ export declare function Citations(props: CitationsProps): unknown;`;
     ['CitationsProps', 'renderCard', "(citation: import('@threadplane/core').Citation) => import('react').ReactNode", true],
     ['CitationsProps', 'label', 'string', true],
     ['CitationsProps', 'className', 'string', true],
+    ['ChatErrorProps', 'error', "import('@threadplane/core').AgentError | null | undefined", false],
+    ['ChatErrorProps', 'onRetry', '() => void', true],
+    ['ChatErrorProps', 'onCheckStatus', '() => void', true],
+    ['ChatErrorProps', 'disabled', 'boolean', true],
+    ['ChatErrorProps', 'className', 'string', true],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
+  assert.match(compile(declaration.replaceAll('ChatProps', 'MissingChatProps')), /ChatProps/);
+  assert.match(compile(declaration.replace('export declare function ChatError(props: ChatErrorProps): unknown;', '')), /ChatError/);
+  for (const [name, before, after] of [
+    ['ChatErrorProps', "import('@threadplane/core').AgentError | null | undefined", "import('@threadplane/core').AgentError | undefined"],
+    ['ChatErrorProps', "import('@threadplane/core').AgentError | null | undefined", "import('@threadplane/core').AgentError | null"],
+    ['ChatErrorProps', "import('@threadplane/core').AgentError | null | undefined", 'unknown'],
+    ...['onRetry', 'onCheckStatus'].flatMap(property => [
+      ['ChatErrorProps', `readonly ${property}?: () => void;`, `readonly ${property}?: (owner: object) => void;`],
+      ['ChatErrorProps', `readonly ${property}?: () => void;`, `readonly ${property}?: () => Promise<void>;`],
+    ]),
+    ['ChatProps', 'readonly onRetry?: () => void;', ''],
+    ['ChatProps', 'readonly onRetry?: () => void;', 'onRetry?: () => void;'],
+    ['ChatProps', 'readonly onRetry?: () => void;', 'readonly onRetry: () => void;'],
+    ['ChatProps', 'readonly onRetry?: () => void;', 'readonly onRetry?: (owner: object) => void;'],
+    ['ChatProps', 'readonly onRetry?: () => void;', 'readonly onRetry?: () => Promise<void>;'],
+  ]) assert.match(compile(mutateInterface(name, before, after)), /onRetry|false.*true/, `${name}: ${before} → ${after}`);
   const renderCard = "readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode;";
   for (const after of [
     renderCard.replace("import('react').ReactNode", 'any'),
@@ -785,13 +809,14 @@ test('React chat requires its real supported export', () => {
   supported.ToolActivity = component;
   supported.ToolActivityGroup = component;
   supported.toolActivityPhase = component;
+  supported.ChatError = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

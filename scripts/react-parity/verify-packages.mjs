@@ -265,6 +265,9 @@ import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps,
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type ChatErrorContract = Assert<Equal<import('@threadplane/react/chat').ChatErrorProps, { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string }>>;
+export type ChatErrorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatError>[0], import('@threadplane/react/chat').ChatErrorProps>>;
+export type ChatRetryContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'onRetry'>, { readonly onRetry?: () => void }>>;
 export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: ReactNode; readonly children?: ReactNode; readonly suggestions?: ReactNode; readonly className?: string }>>;
 export type SuggestionItemContract = Assert<Equal<import('@threadplane/react/chat').SuggestionItem, { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean }>>;
 export type SuggestionsContract = Assert<Equal<import('@threadplane/react/chat').SuggestionsProps, { readonly suggestions: readonly import('@threadplane/react/chat').SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
@@ -417,6 +420,7 @@ export function assertSupportedExports(project, entry) {
       'react/chat': [
         'ApprovalCard',
         'Chat',
+        'ChatError',
         'ChatPopup',
         'ChatSidebar',
         'ChatSidenav',
