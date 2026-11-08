@@ -1,0 +1,32 @@
+---
+title: Lifecycle
+description: Separate React rendered-view lifetime from application-owned parsing, state, readiness, and asynchronous playback.
+---
+
+# Own render lifetime
+
+`RenderSpec` presents supplied data. The application owns the parser, state store, asynchronous playback, and any connection that produced that data.
+
+These are experimental, private React source-build APIs.
+
+## Prepare before presenting
+
+The [specification example](/docs/react/render/guides/specs) validates complete samples before playback. Its owner copies and freezes supported partial trees before publication. React receives that prepared tree, not a mutable parser object.
+
+A null `spec` renders nothing. Unknown types use the optional fallback or render nothing. Missing child references and ancestor cycles do not recursively mount views. Duplicate child IDs and duplicate repeat identities are rejected.
+
+These protections do not validate your application schema. Admit untrusted view types, props, and relationships before handing them to the renderer.
+
+## Keep identity stable
+
+Use stable element keys and registry component identities across updates. Container views must place the provided `children` where they belong. [Repeat loops](/docs/react/render/guides/repeat-loops) need meaningful unique identities when items can reorder.
+
+A readiness registry entry can defer its component until its synchronous predicate accepts the props. Follow the [registry guide](/docs/react/render/guides/registry) for that mounted-view boundary. Readiness is presentation admission, not a network completion signal.
+
+## Retire owned work
+
+The playback owner cancels obsolete animation callbacks on Pause, Reset, sample selection, seek, and disposal. Seeking rebuilds the parser for the selected prefix. A stale callback cannot replace the newly selected sample.
+
+The [Element Rendering composition](/docs/react/render/guides/element-rendering) separately owns playback and render state. Its page-exit cleanup disposes playback, unmounts the React root, disposes render state, and releases the runtime bridge.
+
+Unmounting RenderSpec does not perform those owner operations. Keep effects and commands out of computed functions and rendering; use [explicit event handlers](/docs/react/render/guides/events) to request changes.

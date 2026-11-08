@@ -1,0 +1,46 @@
+---
+title: Chat
+description: Use the React Chat component to wire a core session to a transcript, error message, and composer.
+---
+
+# Chat
+
+`Chat` from `@threadplane/react/chat` combines `MessageList`, a session error alert, and `ChatInput` for a core `AgentSession`. It borrows that session; the application retains command and lifetime authority.
+
+This is an experimental, private source-build component. See [chat setup](/docs/react/chat/getting-started/installation).
+
+## Supply the session and presentation
+
+In a private source-build client application, pass an existing owner:
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import { Chat } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function Conversation({ session }: { readonly session: AgentSession }) {
+  return <Chat session={session} label="Trip message" placeholder="Ask about your trip…" />;
+}
+~~~
+
+| Prop | Purpose |
+| --- | --- |
+| `session` | Required app-owned core session. |
+| `content` | Optional app-owned `MessageContent` projection. |
+| `renderMessage` | Stable callback replacing default row presentation. |
+| `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior. |
+| `className` | Additional root styling. |
+
+Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
+
+It does not dispose the session. If you supply `content`, it also remains yours to dispose. Without supplied content, Chat manages its own message projection. Replacing the session resets the keyed composer.
+
+## Choose explicit composition for application policy
+
+Chat catches command promise rejections; its displayed error comes from `snapshot.error`. It does not provide a custom recovery policy, saved-history confirmation, or an application-level `canSubmit` prop.
+
+If continuation requires more evidence than session status, use `MessageList` and `ChatInput` around your own facade. The [chat quickstart](/docs/react/chat/getting-started/quickstart) follows that approach.
+
+A native AG-UI snapshot is not automatically a core `AgentSession` snapshot. Use its [supported projection](/docs/react/ag-ui/concepts/architecture) instead of passing an incompatible session to Chat.
+
+See [MessageList](/docs/react/chat/components/chat-message-list) for custom rows and [Lifecycle](/docs/react/chat/guides/lifecycle) for owner cleanup.

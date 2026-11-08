@@ -1,9 +1,81 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d73a364695cca335c560bb8599422db80973f8a1",
+  "baselineHead": "d38a564cf9ee050b3b51c77c1b4247308ecaa438",
   "sourceState": {
-    "modified": [],
-    "untracked": []
+    "modified": [
+      "apps/website/content/docs/angular/langgraph/concepts/conversation-turns.mdx",
+      "apps/website/content/docs/react/a2ui/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/ag-ui/guides/client-tools.mdx",
+      "apps/website/content/docs/react/ag-ui/guides/interrupts.mdx",
+      "apps/website/content/docs/react/ag-ui/guides/json-render.mdx",
+      "apps/website/content/docs/react/ag-ui/guides/subagents.mdx",
+      "apps/website/content/docs/react/ag-ui/guides/tool-views.mdx",
+      "apps/website/content/docs/react/ag-ui/reference/event-mapping.mdx",
+      "apps/website/content/docs/react/chat/a2ui/overview.mdx",
+      "apps/website/content/docs/react/chat/components/chat-debug.mdx",
+      "apps/website/content/docs/react/chat/components/chat-input.mdx",
+      "apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
+      "apps/website/content/docs/react/chat/components/chat-subagent-card.mdx",
+      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
+      "apps/website/content/docs/react/chat/components/chat-trace.mdx",
+      "apps/website/content/docs/react/chat/concepts/message-model.mdx",
+      "apps/website/content/docs/react/chat/guides/client-tools.mdx",
+      "apps/website/content/docs/react/chat/guides/generative-ui.mdx",
+      "apps/website/content/docs/react/chat/guides/theming.mdx",
+      "apps/website/content/docs/react/chat/guides/thread-routing.mdx",
+      "apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx",
+      "apps/website/content/docs/react/deep-agents/capabilities/memory.mdx",
+      "apps/website/content/docs/react/deep-agents/capabilities/planning.mdx",
+      "apps/website/content/docs/react/deep-agents/capabilities/skills.mdx",
+      "apps/website/content/docs/react/deep-agents/capabilities/subagents.mdx",
+      "apps/website/content/docs/react/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/getting-started/workbench.mdx",
+      "apps/website/content/docs/react/langgraph/guides/deployment.mdx",
+      "apps/website/content/docs/react/langgraph/guides/durable-execution.mdx",
+      "apps/website/content/docs/react/langgraph/guides/interrupts.mdx",
+      "apps/website/content/docs/react/langgraph/guides/memory.mdx",
+      "apps/website/content/docs/react/langgraph/guides/persistence.mdx",
+      "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
+      "apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
+      "apps/website/content/docs/react/langgraph/guides/time-travel.mdx",
+      "apps/website/content/docs/react/render/guides/computed-functions.mdx",
+      "apps/website/content/docs/react/render/guides/element-rendering.mdx",
+      "apps/website/content/docs/react/render/guides/registry.mdx",
+      "apps/website/content/docs/react/render/guides/repeat-loops.mdx",
+      "apps/website/content/docs/react/render/guides/specs.mdx",
+      "apps/website/content/docs/react/render/guides/state-store.mdx",
+      "apps/website/content/docs/react/runtimes/aws-strands/overview.mdx",
+      "apps/website/content/docs/react/runtimes/mastra/overview.mdx",
+      "apps/website/content/docs/react/runtimes/microsoft-agent-framework/overview.mdx"
+    ],
+    "untracked": [
+      "apps/website/content/docs/react/ag-ui/concepts/architecture.mdx",
+      "apps/website/content/docs/react/ag-ui/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/ag-ui/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "apps/website/content/docs/react/chat/components/chat-popup.mdx",
+      "apps/website/content/docs/react/chat/components/chat-reasoning.mdx",
+      "apps/website/content/docs/react/chat/components/chat-sidebar.mdx",
+      "apps/website/content/docs/react/chat/components/chat-sidenav.mdx",
+      "apps/website/content/docs/react/chat/components/chat.mdx",
+      "apps/website/content/docs/react/chat/getting-started/installation.mdx",
+      "apps/website/content/docs/react/chat/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/chat/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/chat/guides/error-handling.mdx",
+      "apps/website/content/docs/react/chat/guides/layout-modes.mdx",
+      "apps/website/content/docs/react/chat/guides/lifecycle.mdx",
+      "apps/website/content/docs/react/chat/guides/markdown.mdx",
+      "apps/website/content/docs/react/langgraph/concepts/agent-contract.mdx",
+      "apps/website/content/docs/react/langgraph/concepts/conversation-turns.mdx",
+      "apps/website/content/docs/react/langgraph/concepts/state-management.mdx",
+      "apps/website/content/docs/react/langgraph/getting-started/installation.mdx",
+      "apps/website/content/docs/react/langgraph/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/langgraph/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/render/getting-started/introduction.mdx",
+      "apps/website/content/docs/react/render/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/render/guides/events.mdx",
+      "apps/website/content/docs/react/render/guides/lifecycle.mdx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -2737,7 +2809,7 @@
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/conversation-turns.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/langgraph/concepts/conversation-turns.mdx",
-      "sha256": "77d27dfeace963bf35b41655ae285ee3928db16900d816f2d18c6876a2fe92b8"
+      "sha256": "54cbb9f96421e0fbdaa9ca2df50006e2403f925e6c5d4afa7d8fc7c179abe5e4"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/langgraph-basics.mdx",
@@ -2971,259 +3043,415 @@
       "id": "doc:apps/website/content/docs/react/a2ui/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/a2ui/getting-started/introduction.mdx",
-      "sha256": "fe921b0553c689b5d487a4f97951fc22103cf3c0ab4428485624b28a7d2c5c12"
+      "sha256": "0b7cea3134cee245b3146df1a50bf1293d0e40af496f400f2b2c485452d3805c"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/concepts/architecture.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/ag-ui/concepts/architecture.mdx",
+      "sha256": "6b72788bd3d0ca598fe6c96297a2e4e849532cfe32bd860ff562026f5e77f19d"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/getting-started/introduction.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/ag-ui/getting-started/introduction.mdx",
+      "sha256": "543b3f239848b16758a6c505b319b86b5bbce8d345c15d23ddc2b11864e6bcb8"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/getting-started/quickstart.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/ag-ui/getting-started/quickstart.mdx",
+      "sha256": "33057128b8b337575417f84c4488a5f0fa8d0668dfb7029358692d2a859b6fb4"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/guides/client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/guides/client-tools.mdx",
-      "sha256": "940ba762ddcef765b26b3cb65b5ea21f22e935d24d67b812018242145d074ac8"
+      "sha256": "be87d982764e39bf522a707ca7804a061ddf95b32354eada4ab942ef08ee4191"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/guides/interrupts.mdx",
-      "sha256": "13eff44c7c1a56e46216fe1e3186e32f942d7a111f1dc5b4c7b1a87b456bd010"
+      "sha256": "7c6d1f07a3d310210603a34bb6bf8e4bb5c468dac363b71eb539a3084e88c9ab"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/guides/json-render.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/guides/json-render.mdx",
-      "sha256": "ff041dbde82a5a30d4d6a6c5d78110ab33946db178f6ddc30c90f972c85bada2"
+      "sha256": "e08c4459f108170ea94dbeb576a98e771468a5c7a65067bbee1dc572a0dbff01"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/guides/subagents.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/guides/subagents.mdx",
-      "sha256": "ccc505ffae7bfad99cac8e47b95f19f296a37bbce3ebe28741c0487ecd4e1bf6"
+      "sha256": "bf17d6316b99ca0b15218a785ec3b125e5cfbd7a471f94ed6fd09d3d34f2ddf5"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/guides/tool-views.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/guides/tool-views.mdx",
-      "sha256": "06e65899f936ce15affb3400f7ed2e3eaebe55a7c2abee81d19cbc81a9317f38"
+      "sha256": "a7e22d88bf06b62f7ad01de306f0b400bfa3415b3dd28eb7c51044eb07c686b8"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/reference/event-mapping.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/ag-ui/reference/event-mapping.mdx",
-      "sha256": "f75481a1354193fca0ddfdd28701f7ab939cc4510b2e14c8f7217774ffd3e09c"
+      "sha256": "acf9844c6cde442f318c901d22f9200cc8d1c4e436da54f2ee00dd070232bfd0"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/a2ui/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/a2ui/overview.mdx",
-      "sha256": "e3395be72b8a46b32382e2688affd7030b0fb4da62d6428784236297bca9ca6c"
+      "sha256": "28df5a88e58b43488abc2b9093f27b9ee5658c39e4cd31e65a004bea9abea73c"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-debug.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-debug.mdx",
-      "sha256": "3a56d5d95d286d9172340eb4e6fcaf8e4a643af3f1dd6e8bb51ddd9780876564"
+      "sha256": "dca9e1860259b384edf7f4f81a38575eb1e146943198a2d1e3356e22cf256bdc"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-input.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "sha256": "5861cbab511ccbc0e2b802db999da8765f3a2f88847382df38d3caccf512cf32"
+      "sha256": "cffb1a551aa7ede321806c0dcc608826153018a8361b6438662da50c65ed071e"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
-      "sha256": "f0773cd597f040ab821e74f6d26dce2a4ec02048266a746300c6a07b30ec3824"
+      "sha256": "e4207013d3af79b97823eed92bac1bb9b2c9e01f5b6c677d5e1374e1048f3e62"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "sha256": "fa4d8b6cb6aa24a3c3d27f5eac1ec2642b7d31fbd44687353caf4391e03782a5"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-popup.mdx",
+      "sha256": "7aaaec8795ec5117ff26168c929fa772ead4be44221dc5e374e77bad13ea689f"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-reasoning.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-reasoning.mdx",
+      "sha256": "36e2741af0d48f8d7aa36bc2d6e8d80dd7cdee50acc9edd4986e0dd08d9a4cda"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-sidebar.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-sidebar.mdx",
+      "sha256": "d7db3234235cfae1a6500b19ff693dc1164474084e1cf49d5adc1d1e139aabab"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-sidenav.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-sidenav.mdx",
+      "sha256": "e4073250baa0089b4185638c9a05692efc94d3dfc423ca8b9da184ed3e063c9c"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-subagent-card.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-subagent-card.mdx",
-      "sha256": "fd70b227ef827f7fc0b872748ad23d077a325720d2aa332ac0d2422de97c058e"
+      "sha256": "21761a2d75b337682c407466cc32600e230252e84f96bdbd971b68b7f0711d2a"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "e0859090e570b064fdcccfd9d3631de648b2c73547ab67a84aea69ab761ce071"
+      "sha256": "b02cb2a35874b26af2deb847e506388706d5a6bcab2dbd9f6a71d5d73d1d48a4"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-trace.mdx",
-      "sha256": "b010360e86bc15c3f40a8ae68d455fcc73569001ef3f83a0bb45e18df6c1c68a"
+      "sha256": "90424e8488ce8d64bfadfb6fd4920d3a990767824578abcea2e0f45ae2d7b986"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat.mdx",
+      "sha256": "d3f64132b48c39220015a8b38e6a43c23c67c6a76bb109fbf55be59b80f2c93d"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/concepts/message-model.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/concepts/message-model.mdx",
-      "sha256": "a96868be8394abfbfb86675e8759926c519bcd147d3c3425af8dfa17a4b1cbeb"
+      "sha256": "033fb8e96be6aab01e1016e8f7f4d9c1331146f757debca32f18ce8531387c5d"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/installation.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/getting-started/installation.mdx",
+      "sha256": "0be7129a1bd557da08f1a867203922468cc38353f5cd112c60638c4a5047db7b"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/introduction.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/getting-started/introduction.mdx",
+      "sha256": "de327f556a6a1e321a363db6c3229a5be9587296589fc10bfe4ed8f3738fdc94"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/quickstart.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/getting-started/quickstart.mdx",
+      "sha256": "71b542033361f4a905e3133ef236bbe4b42d056c34bf81c9ed20b63a40750c95"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/client-tools.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/guides/client-tools.mdx",
-      "sha256": "993cb02303244cc45d10bb95617d6eb3d29f6b86bc8cd98a6462a1917aeb2855"
+      "sha256": "d4a79ee970592417e7b71ac801077d5c21399d84c200e25827233a9b45026f1b"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/error-handling.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/guides/error-handling.mdx",
+      "sha256": "3aed736dd6be3411a7180e65b2cfb244aea529795d1400c1b5bd08bf7e94bfb6"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/generative-ui.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/guides/generative-ui.mdx",
-      "sha256": "5b5f19bf60f194198351e5c6ca36a071903e77c9ae639e9443cccc26b919fd2f"
+      "sha256": "fbaaa1f69e767722f469ff4c48305cefcd6b216b77ab5cc94c4944b60c3f3d68"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/layout-modes.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/guides/layout-modes.mdx",
+      "sha256": "e89d1ff47c042023d658045ce8e74766627004898e3d10e75755ee50d1a06853"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/lifecycle.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/guides/lifecycle.mdx",
+      "sha256": "9160bc5a72e5f9ee4a1fa1554a08e06b3a7050dacb43e47998a9025d08ca4dcb"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/markdown.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/guides/markdown.mdx",
+      "sha256": "7d72d2be796cf7df6ecdcf849c82eaf9c3d965d1c118537fbbb72796beb705df"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/theming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/guides/theming.mdx",
-      "sha256": "3e62b539b69559085f2f80c553d28c3b1943189b57b81c4be5bcd1162cb92e83"
+      "sha256": "b6bb1d79391dd8bebb7784de6045235bf2b5b7393e0909a13e5bae411fdded05"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/guides/thread-routing.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/guides/thread-routing.mdx",
-      "sha256": "23cc936b1f669d5d6dd4e3d06d5ff9aab4526a7ec2505e8fe76d1917044a40c5"
+      "sha256": "453939a39b5a9a1a9ac440d822a1a16919654f8497394a868c92470614409ecf"
     },
     {
       "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/deep-agents/capabilities/filesystem.mdx",
-      "sha256": "408d0a70618e25f4fd5dc9e48fd8e400da8c32b3909c79338d83a9614a147c46"
+      "sha256": "16e434ac803132c6851471574e15ced073e83497e03efe702cf807c0d8ff3bc7"
     },
     {
       "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/memory.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/deep-agents/capabilities/memory.mdx",
-      "sha256": "28f29b0cd2412de59a9688ec65ca3c8d63793154a8cc9a1f7a1b03fbdee59123"
+      "sha256": "4cd6ef581ecfb87275030cf874b8156835d3b7db08bc39501eddc12d7b53fdd5"
     },
     {
       "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/planning.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/deep-agents/capabilities/planning.mdx",
-      "sha256": "cdae8d56fb66ba59dc0889e9447e410d9408826f8bb4bb82059b9e9b20c30ef4"
+      "sha256": "11e48abe782206b755be016c1e7b74f7dd4691564c42537afb03ec6f52c036b9"
     },
     {
       "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/skills.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/deep-agents/capabilities/skills.mdx",
-      "sha256": "99a6d0a3426bc7ac6e670d15d3e03abf8e0bf4080505dcf4b27d5dfa5250d681"
+      "sha256": "8f0c5e3ec96fb96d260ddfa1c31d93f9328caf9f5265a771ad45261dd454e469"
     },
     {
       "id": "doc:apps/website/content/docs/react/deep-agents/capabilities/subagents.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/deep-agents/capabilities/subagents.mdx",
-      "sha256": "9c4746f64227c9ee1f98b567e98c2b5f658d529600a9a464ac1ec4bd430c3300"
+      "sha256": "4041b49eff566b5403939fb1d6579e528815b1fd497906e4d99a8f55cdace99d"
     },
     {
       "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/introduction.mdx",
-      "sha256": "1268026f56b2a4ddc1fc6d128e2a19dc88133ea53161bcc8a29ac520c33cd1f8"
+      "sha256": "72d9a0d656604123425c6b5ee2774892b9e58d42f8b410d8b8a871c54b5b776e"
     },
     {
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "sha256": "275f63c6fcf13c236bbf979126e03993590f74a23d30eeae643042ede7bd1ff2"
+      "sha256": "a740be7f9270944de4656186f3fa1d74a9808aa9a378c1e2e1427ff8bb8b5457"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/agent-contract.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/concepts/agent-contract.mdx",
+      "sha256": "7eaaf964df0b33411c96235b7b2f3d57d9ec86a88db005b2037a888380c38c21"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/conversation-turns.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/concepts/conversation-turns.mdx",
+      "sha256": "8f95d8df2b1abd2bd5e3788c0851222a6152d9870c1a753075b7ca11f3c21976"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/state-management.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/concepts/state-management.mdx",
+      "sha256": "af2934e9ad1bece60ca19d133c4c2088f87b9098adc4b32999fb838513296a6d"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/installation.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/getting-started/installation.mdx",
+      "sha256": "3badb3df106e7b465325c5bf2f915a603226ee211f85b77a305b8bf20b37b4a9"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/introduction.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/getting-started/introduction.mdx",
+      "sha256": "366aa1e7ef8de2ecdc28a3aac8f79bc5f87b1538aa3e4b0769be691870443838"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/quickstart.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/langgraph/getting-started/quickstart.mdx",
+      "sha256": "40c4e7772d19085854d21636c90c3ca361dade3608947f41436e221cb098ef98"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/deployment.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/deployment.mdx",
-      "sha256": "2ad3c2b5249150d82c8ece12a3b7086f2b0f1b31578936b5a18e9abdf0aad2b6"
+      "sha256": "4830e453668864035cbfb47421ebd875848f9a8ca4f7474596c37df79359f77a"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/durable-execution.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/durable-execution.mdx",
-      "sha256": "ec280ad89ead8a61fa71d91ca8f551f623f6d12240ff76a8046d2f31ef4a731c"
+      "sha256": "79f7b6eee3a93091d294b68cc087ea231bbbd9ff2124bc2bfbd7ac1fba597a12"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/interrupts.mdx",
-      "sha256": "5906c6f7e42b6af30649d858ed8aebafc308d5ccaa87dc3db727f3d2bb93e1e1"
+      "sha256": "4119979416d1ad6efe330f21066eb48ea305aa48848c391a7787449fa39493b5"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/memory.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/memory.mdx",
-      "sha256": "64e5cea8e5d58ebddbc47bf48487b0ffde128338df2295bbbf7113a0e66a1f49"
+      "sha256": "a546e27835bcb71c5b51d2138add4e6911fc25ac66e9112b0148ca649c958ec6"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/persistence.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/persistence.mdx",
-      "sha256": "99b7994b8678df7a9d2a9ed58ce4ab6adb3a4b2a8ceafb9fdcd16bb72b9eb894"
+      "sha256": "c3ae2b860aede9606a9121a7269f9645c0684899b07d70ae4d60df4d97998b45"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/streaming.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/streaming.mdx",
-      "sha256": "897b18b1595015e1c3c74004de9429d654d92cb5f09a3bfb2e3ab4f4a2f15753"
+      "sha256": "d4b4e7095e18ed26bdff07a1d42b4bf8f90f60eb1c8c8004829aa9e0d8d77098"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/subgraphs.mdx",
-      "sha256": "da4de94a14b7ce34dc7c3f0fa7336a1b1d518e2885353b5be2c7cdef3818ba9e"
+      "sha256": "6878e573aa80afb1c13c86cfdd81822aa20e691945d45657e19ed85bf8aade5f"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/guides/time-travel.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/langgraph/guides/time-travel.mdx",
-      "sha256": "e4ae24bfa5d5248058f866b459126d99ad9e35c647ce138cbf4f63b171b1fcec"
+      "sha256": "c66b2b0347e0883fa3d2215b8a4a25aaff3ed0d600c0041b95d19f406f91154c"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/getting-started/introduction.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/render/getting-started/introduction.mdx",
+      "sha256": "dbe96aa01c8d51874224686f76f66875d7fcb241cf5631e65619f2f9489d3f0c"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/getting-started/quickstart.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/render/getting-started/quickstart.mdx",
+      "sha256": "88f56780ac690bf0317f465a74d05ffa0a1b6b40a482e51b92bad27090e4011e"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/computed-functions.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/computed-functions.mdx",
-      "sha256": "41eebe831a0e2695f81a021a50e0b7a8f005f5ac56fdbd623325bdf9c44f0486"
+      "sha256": "e459fd6ecb4f47766630181b51122737dba2d228446e3770c2f42ee9744693df"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/element-rendering.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/element-rendering.mdx",
-      "sha256": "ee7f31bf07b1b5ad4f63d2537b71265b36238c16d80d61d1484bd76b78ec605b"
+      "sha256": "6a2113e416f34710b70bc863ae937fc5f8d3c53465d5616ad00a4d2539ac9c2c"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/events.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/render/guides/events.mdx",
+      "sha256": "2711e754dcc6915e49baf0189292c3074a519c278c32d6b3771f0254c7f61d5e"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/lifecycle.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/render/guides/lifecycle.mdx",
+      "sha256": "ee3e9fa967d959c07337816c8552d6c6a42b425cb4c51271cd5e930ce3603d96"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/registry.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/registry.mdx",
-      "sha256": "e9c6990687e4c1a0cdfa52aed08e957dc1d0e42636fe2ba09fe3e66153428fda"
+      "sha256": "727764e558de7a696b09c98cceb02a936a59ebf1bcd900da8a15eb3125ff54d4"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/repeat-loops.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/repeat-loops.mdx",
-      "sha256": "bcb037e562373e8a83ac78616eb015c9378e919566a6382dd4ce8dee87dec67d"
+      "sha256": "b6dae472dafab8f44ea849f9cb85d6feaba709f295ada3b07992d90f3fc706f5"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/specs.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/specs.mdx",
-      "sha256": "2331737f64b7639114ef9ae2d9480ec89558334c56b299571371b9d1f56a0d6b"
+      "sha256": "e40e3a35c282436b3a7af1177aefcc257a30528ab2fbb8bccf0c64791eb1bd1c"
     },
     {
       "id": "doc:apps/website/content/docs/react/render/guides/state-store.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/render/guides/state-store.mdx",
-      "sha256": "80db714efd8741568b199198b3a3ed4287c816e85b7288cc4a5a1ca0da6f99b3"
+      "sha256": "f2696dbc649c25365b6f83ef4fb61b9c3107bbdf3e370562bdcdefdf8646c37b"
     },
     {
       "id": "doc:apps/website/content/docs/react/runtimes/aws-strands/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/runtimes/aws-strands/overview.mdx",
-      "sha256": "3de8d131f02a03308a6d8114e7e7986882662b692179daa332c5d3b808febcc0"
+      "sha256": "80dc7d5782789df7111adab601e622e26e6865ca971159e5380a637ed51f2089"
     },
     {
       "id": "doc:apps/website/content/docs/react/runtimes/mastra/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/runtimes/mastra/overview.mdx",
-      "sha256": "df38355443027ce28a79422e4ee302108ca91d6b4e57698282857eb101543bf5"
+      "sha256": "e3b1dce4b05bf7b497d086ee2be713feabefbd3a0c5fc2e774391f418320ccce"
     },
     {
       "id": "doc:apps/website/content/docs/react/runtimes/microsoft-agent-framework/overview.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/runtimes/microsoft-agent-framework/overview.mdx",
-      "sha256": "a67702d76a747512d5b8e00e9deef5f10464973f5be6a50a66be6874472bf0be"
+      "sha256": "fb22e46983e3e0901aa60c28cdecff83dd3fea58768db68bd0cf307323c2818f"
     },
     {
       "id": "doc:apps/website/content/docs/shared/middleware/getting-started/introduction.mdx",

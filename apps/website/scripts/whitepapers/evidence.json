@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "baselineRevision": "1dd602924a0a42659ae04d73dbc7847ea916d7a4",
+  "papers": {
+    "overview": {
+      "reviewedAt": "2026-11-07",
+      "reviewDue": "2027-02-07",
+      "sourceSha256": "03d17c7875503154d39499780e2858ddfd83611ea60e6b30b1a373f99e19a3a0",
+      "sources": [
+        "https://ai.google.dev/gemini-api/docs/function-calling",
+        "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash",
+        "https://angular.dev/reference/releases",
+        "https://developers.openai.com/api/docs/guides/reasoning",
+        "https://developers.openai.com/api/docs/guides/tools",
+        "https://developers.openai.com/api/docs/models",
+        "https://docs.langchain.com/langsmith/observability",
+        "https://docs.langchain.com/oss/javascript/deepagents/retrieval",
+        "https://docs.langchain.com/oss/javascript/langgraph/interrupts",
+        "https://docs.langchain.com/oss/javascript/langgraph/persistence",
+        "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs",
+        "https://platform.claude.com/docs/en/models/overview",
+        "https://react.dev/versions",
+        "https://www.anthropic.com/research/building-effective-agents",
+        "https://www.anthropic.com/research/demystifying-evals-for-ai-agents",
+        "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+        "https://www.anthropic.com/research/managed-agents"
+      ],
+      "claimCategories": [
+        "model capabilities and limits",
+        "agent architecture",
+        "evaluation and reliability"
+      ]
+    },
+    "angular": {
+      "reviewedAt": "2026-11-07",
+      "reviewDue": "2027-02-07",
+      "sourceSha256": "b539e925ebd234bb4fc539dd5f4499000bf3ddf5e3d976f429eea107fd537887",
+      "sources": [
+        "https://a2a-protocol.org/latest/specification/",
+        "https://a2ui.org/specification/v1.0-a2ui/",
+        "https://angular.dev/guide/http/http-resource",
+        "https://angular.dev/guide/signals",
+        "https://angular.dev/reference/releases",
+        "https://docs.ag-ui.com/spec/1.0",
+        "https://docs.ag-ui.com/spec/1.0/basic/patterns",
+        "https://docs.ag-ui.com/spec/1.0/basic/transports",
+        "https://docs.langchain.com/oss/javascript/langgraph/interrupts",
+        "https://docs.langchain.com/oss/javascript/langgraph/persistence",
+        "https://github.com/cacheplane/threadplane/blob/5a66429ecfd86c2777a772af1ae165682c0e4c9f/examples/chat/native/README.md#setup-and-commands",
+        "https://github.com/cacheplane/threadplane/blob/5a66429ecfd86c2777a772af1ae165682c0e4c9f/examples/chat/native/angular/project.json",
+        "https://json-render.dev/docs/changelog",
+        "https://modelcontextprotocol.io/extensions/apps/overview",
+        "https://modelcontextprotocol.io/specification/2026-07-28",
+        "https://react.dev/learn/separating-events-from-effects",
+        "https://react.dev/reference/react/StrictMode",
+        "https://react.dev/reference/react/useSyncExternalStore",
+        "https://react.dev/versions"
+      ],
+      "claimCategories": [
+        "framework and API behavior",
+        "protocol contracts",
+        "ownership and recovery"
+      ]
+    },
+    "render": {
+      "reviewedAt": "2026-11-07",
+      "reviewDue": "2027-02-07",
+      "sourceSha256": "5165e149fdf6afac6e6344c630458f2b322584954b22e0b9a881581040dadac2",
+      "sources": [
+        "https://a2ui.org/specification/v1.0-a2ui/",
+        "https://angular.dev/reference/releases",
+        "https://json-render.dev/docs/catalog",
+        "https://json-render.dev/docs/changelog",
+        "https://json-render.dev/docs/generation-modes",
+        "https://json-render.dev/docs/schemas",
+        "https://json-render.dev/docs/specs",
+        "https://json-render.dev/docs/streaming",
+        "https://modelcontextprotocol.io/extensions/apps/overview",
+        "https://react.dev/versions",
+        "https://www.anthropic.com/research/demystifying-evals-for-ai-agents",
+        "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
+        "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+        "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"
+      ],
+      "claimCategories": [
+        "generative interface protocols",
+        "registry and action boundaries",
+        "Angular and React rendering"
+      ]
+    },
+    "chat": {
+      "reviewedAt": "2026-11-07",
+      "reviewDue": "2027-02-07",
+      "sourceSha256": "b2f8d14713b8783a1c9051d4904e4ca04c6f6c4f9d2943d598a145525735e462",
+      "sources": [
+        "https://angular.dev/reference/releases",
+        "https://docs.langchain.com/langsmith/observability",
+        "https://docs.langchain.com/oss/javascript/langgraph/interrupts",
+        "https://react.dev/versions",
+        "https://www.anthropic.com/research/demystifying-evals-for-ai-agents",
+        "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
+        "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
+        "https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html",
+        "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+        "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
+        "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"
+      ],
+      "claimCategories": [
+        "accessibility",
+        "interaction and recovery",
+        "conversation lifecycle and evaluation"
+      ]
+    }
+  },
+  "packages": [
+    {
+      "file": "libs/core/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.0.0"
+    },
+    {
+      "file": "libs/core/package.json",
+      "pointer": [
+        "private"
+      ],
+      "value": true
+    },
+    {
+      "file": "libs/content/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.0.0"
+    },
+    {
+      "file": "libs/content/package.json",
+      "pointer": [
+        "private"
+      ],
+      "value": true
+    },
+    {
+      "file": "libs/angular/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.0.0"
+    },
+    {
+      "file": "libs/angular/package.json",
+      "pointer": [
+        "private"
+      ],
+      "value": true
+    },
+    {
+      "file": "libs/react/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.0.0"
+    },
+    {
+      "file": "libs/react/package.json",
+      "pointer": [
+        "private"
+      ],
+      "value": true
+    },
+    {
+      "file": "libs/langgraph/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.3.7"
+    },
+    {
+      "file": "libs/ag-ui/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.3.7"
+    },
+    {
+      "file": "libs/chat/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.3.7"
+    },
+    {
+      "file": "libs/render/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.3.7"
+    },
+    {
+      "file": "libs/a2ui/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.3.7"
+    },
+    {
+      "file": "libs/middleware/package.json",
+      "pointer": [
+        "version"
+      ],
+      "value": "0.0.2"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/react",
+        "version"
+      ],
+      "value": "19.2.4"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/@angular/core",
+        "version"
+      ],
+      "value": "21.1.6"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/@langchain/langgraph-sdk",
+        "version"
+      ],
+      "value": "1.10.0"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/@ag-ui/client",
+        "version"
+      ],
+      "value": "1.0.1"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/@ag-ui/core",
+        "version"
+      ],
+      "value": "1.0.1"
+    },
+    {
+      "file": "package-lock.json",
+      "pointer": [
+        "packages",
+        "node_modules/@json-render/core",
+        "version"
+      ],
+      "value": "0.16.0"
+    }
+  ]
+}

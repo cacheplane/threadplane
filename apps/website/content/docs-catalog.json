@@ -49,6 +49,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/getting-started/introduction.mdx",
+        "description": "Connect a React view to an application-owned LangGraph session and follow its immutable snapshots."
       }
     }
   },
@@ -66,6 +70,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/getting-started/quickstart.mdx",
+        "description": "Follow the runnable React streaming example from connection setup through one completed response."
       }
     }
   },
@@ -83,6 +91,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/getting-started/installation.mdx",
+        "description": "Prepare the repository and build the private React LangGraph example with its installed runtime dependencies."
       }
     }
   },
@@ -318,6 +330,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/concepts/conversation-turns.mdx",
+        "description": "Follow a React conversation from a user action through streaming, tools, application state, and saved history."
       }
     }
   },
@@ -335,6 +351,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/concepts/agent-contract.mdx",
+        "description": "Separate the React observer contract from session commands and application-owned lifetime."
       }
     }
   },
@@ -403,6 +423,10 @@
         "apiEntrypointIds": [
           "langgraph"
         ]
+      },
+      "react": {
+        "source": "react/langgraph/concepts/state-management.mdx",
+        "description": "Keep session observations, application policy, and local React presentation state under clear owners."
       }
     }
   },
@@ -420,6 +444,10 @@
         "apiEntrypointIds": [
           "render"
         ]
+      },
+      "react": {
+        "source": "react/render/getting-started/introduction.mdx",
+        "description": "Render caller-prepared interface specifications with an explicit React component registry."
       }
     }
   },
@@ -437,6 +465,10 @@
         "apiEntrypointIds": [
           "render"
         ]
+      },
+      "react": {
+        "source": "react/render/getting-started/quickstart.mdx",
+        "description": "Build and inspect a local React RenderSpec example with authored data, registered views, and owned playback."
       }
     }
   },
@@ -627,6 +659,10 @@
         "apiEntrypointIds": [
           "render"
         ]
+      },
+      "react": {
+        "source": "react/render/guides/events.mdx",
+        "description": "Handle React controls in application code while RenderSpec reads supplied state and prepared data."
       }
     }
   },
@@ -644,6 +680,10 @@
         "apiEntrypointIds": [
           "render"
         ]
+      },
+      "react": {
+        "source": "react/render/guides/lifecycle.mdx",
+        "description": "Separate React rendered-view lifetime from application-owned parsing, state, readiness, and asynchronous playback."
       }
     }
   },
@@ -682,6 +722,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/getting-started/introduction.mdx",
+        "description": "Compose React conversations from owned message content, explicit controls, and accessible presentation components."
       }
     }
   },
@@ -703,6 +747,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/getting-started/quickstart.mdx",
+        "description": "Build a React transcript and composer around the runnable message example's application owner."
       }
     }
   },
@@ -766,6 +814,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/getting-started/installation.mdx",
+        "description": "Build the private React chat entries and run the repository's native conversation application."
       }
     }
   },
@@ -808,6 +860,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/guides/layout-modes.mdx",
+        "description": "Choose inline, popup, sidebar, or conversation-navigation presentation for an owned React chat."
       }
     }
   },
@@ -861,6 +917,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/guides/markdown.mdx",
+        "description": "Render application-owned Markdown snapshots in React with safe links, citations, and clear parsing ownership."
       }
     }
   },
@@ -988,6 +1048,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/guides/error-handling.mdx",
+        "description": "Distinguish React command settlement, response outcomes, and uncertain backend work before choosing recovery."
       }
     }
   },
@@ -1062,6 +1126,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/guides/lifecycle.mdx",
+        "description": "Own React session and content lifetimes independently from observation, shell visibility, and command completion."
       }
     }
   },
@@ -1136,6 +1204,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat.mdx",
+        "description": "Use the React Chat component to wire a core session to a transcript, error message, and composer."
       }
     }
   },
@@ -1157,6 +1229,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-popup.mdx",
+        "description": "Present a persistent React conversation in a controlled nonmodal popup."
       }
     }
   },
@@ -1178,6 +1254,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-sidebar.mdx",
+        "description": "Place a controlled React conversation beside page content while preserving the mounted chat."
       }
     }
   },
@@ -1199,6 +1279,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-sidenav.mdx",
+        "description": "Control expanded, compact, and drawer navigation around a React conversation directory."
       }
     }
   },
@@ -1220,6 +1304,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-message-list.mdx",
+        "description": "Render prepared React message rows with stable identity, custom presentation, and bottom-pinned scrolling."
       }
     }
   },
@@ -1305,6 +1393,10 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-reasoning.mdx",
+        "description": "Show supplied assistant reasoning in a React disclosure without taking ownership of its Markdown document."
       }
     }
   },
@@ -1692,6 +1784,10 @@
         "apiEntrypointIds": [
           "ag-ui"
         ]
+      },
+      "react": {
+        "source": "react/ag-ui/getting-started/introduction.mdx",
+        "description": "Observe native AG-UI sessions in React while keeping protocol execution and display projection application-owned."
       }
     }
   },
@@ -1709,6 +1805,10 @@
         "apiEntrypointIds": [
           "ag-ui"
         ]
+      },
+      "react": {
+        "source": "react/ag-ui/getting-started/quickstart.mdx",
+        "description": "Build the private React AG-UI streaming fixture and follow its native session and text projection."
       }
     }
   },
@@ -1743,6 +1843,10 @@
         "apiEntrypointIds": [
           "ag-ui"
         ]
+      },
+      "react": {
+        "source": "react/ag-ui/concepts/architecture.mdx",
+        "description": "Trace AG-UI events through a native session, application policy, and borrowed React presentation."
       }
     }
   },

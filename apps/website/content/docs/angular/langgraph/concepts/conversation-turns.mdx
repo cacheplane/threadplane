@@ -91,7 +91,7 @@ export function ConversationText({ session }: { session: AgentSession }) {
 }
 ```
 
-`useAgent` reads the current snapshot and subscribes to changes. It does not create a conversation, submit a message, or dispose the session. The application that supplied `session` owns those actions. The [React streaming example](/docs/angular/langgraph/guides/streaming?frontend=react) shows that owner and the richer `MessageList` presentation. These native React packages are private repository builds; the example is not an npm installation recipe.
+`useAgent` reads the current snapshot and subscribes to changes. It does not create a conversation, submit a message, or dispose the session. The application that supplied `session` owns those actions. The [React streaming example](/docs/react/langgraph/guides/streaming) shows that owner and the richer `MessageList` presentation. These native React packages are private repository builds; the example is not an npm installation recipe.
 
 ## A tool call adds work inside the turn
 
@@ -131,4 +131,4 @@ The [persistence guide](/docs/angular/langgraph/guides/persistence) connects thr
 
 ## Build the next part
 
-Follow the [Angular quickstart](/docs/angular/langgraph/getting-started/quickstart) or the [React streaming walkthrough](/docs/angular/langgraph/guides/streaming?frontend=react), then add [tools](/docs/angular/chat/guides/client-tools), [generated UI](/docs/angular/chat/guides/generative-ui), and [saved conversations](/docs/angular/langgraph/guides/persistence) as your application needs them. Each guide explains the capability before walking the running example.
+Follow the [Angular quickstart](/docs/angular/langgraph/getting-started/quickstart) or the [React streaming walkthrough](/docs/react/langgraph/guides/streaming), then add [tools](/docs/angular/chat/guides/client-tools), [generated UI](/docs/angular/chat/guides/generative-ui), and [saved conversations](/docs/angular/langgraph/guides/persistence) as your application needs them. Each guide explains the capability before walking the running example.

@@ -12,8 +12,10 @@ describe('framework navigation configuration', () => {
     }
   });
 
-  it('uses the first available actual guide when a React library has no introduction', () => {
-    expect(libraryIntroPath('langgraph', 'react')).toBe('/docs/react/langgraph/guides/streaming');
+  it('uses React library introductions and keeps shared middleware canonical', () => {
+    for (const library of ['langgraph', 'chat', 'ag-ui', 'render']) {
+      expect(libraryIntroPath(library, 'react')).toBe(`/docs/react/${library}/getting-started/introduction`);
+    }
     expect(libraryIntroPath('middleware', 'react')).toBe('/docs/shared/middleware/getting-started/introduction');
     expect(libraryIntroPath('langgraph')).toBe('/docs/angular/langgraph/getting-started/introduction');
   });

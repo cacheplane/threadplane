@@ -1,0 +1,24 @@
+---
+title: Introduction
+description: Observe native AG-UI sessions in React while keeping protocol execution and display projection application-owned.
+---
+
+# AG-UI with React
+
+The React binding can observe the private native AG-UI session through the same structural `getSnapshot` and `subscribe` contract. The session owns protocol execution; the application selects how its observations become a conversation view.
+
+These APIs are experimental, private source-build packages. The backend `createSession` used by the fixture is a private composition seam, not a public factory exported by `@threadplane/react`.
+
+## Start with native observations
+
+An AG-UI snapshot contains `transcript`, `state`, `subagents`, and root `run` evidence. These are native fields. They are not automatically a core `AgentSnapshot`, and observing them does not make every chat component compatible with that snapshot.
+
+The streaming application projects root text rows for `TextTranscript` and supplies `ChatInput` with explicit admission and busy state. `useAgent(application)` observes the resulting application snapshot.
+
+## Explore supported boundaries
+
+Start with [Quickstart](/docs/react/ag-ui/getting-started/quickstart), then read [Architecture](/docs/react/ag-ui/concepts/architecture).
+
+The dedicated guides demonstrate [interrupts](/docs/react/ag-ui/guides/interrupts), [tool observations](/docs/react/ag-ui/guides/tool-views), [client tools](/docs/react/ag-ui/guides/client-tools), [subagents](/docs/react/ag-ui/guides/subagents), and [JSON Render](/docs/react/ag-ui/guides/json-render). Each uses an authored protocol and application policy. A partial tool-argument string does not authorize execution.
+
+Keep provider credentials in the backend. The browser chooses an allowed endpoint and sends user actions; it should not receive model credentials. Local thread identity also does not establish server-side saved-history support.

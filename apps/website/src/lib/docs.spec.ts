@@ -43,7 +43,7 @@ describe('framework narrative loader', () => {
 
   it('does not load retired paths, traversal, or missing framework variants', () => {
     expect(getDocByPath('/docs/langgraph/guides/streaming')).toBeNull();
-    expect(getDocByPath('/docs/react/langgraph/getting-started/installation')).toBeNull();
+    expect(getDocByPath('/docs/react/langgraph/concepts/angular-signals')).toBeNull();
     expect(getDocByPath('/docs/angular/../../package')).toBeNull();
   });
 
@@ -58,6 +58,41 @@ describe('framework narrative loader', () => {
     expect(metadata?.title).toContain('React streaming preview');
     expect(metadata?.alternates?.canonical).toBe('/docs/react/langgraph/guides/streaming');
     expect(metadata?.description).toContain('traveler');
+  });
+
+  it('loads React onboarding and its conversation walkthrough as canonical framework content', () => {
+    for (const id of [
+      'langgraph/getting-started/installation',
+      'langgraph/getting-started/quickstart',
+      'chat/getting-started/quickstart',
+      'ag-ui/getting-started/quickstart',
+      'render/getting-started/quickstart',
+      'langgraph/concepts/conversation-turns',
+    ]) {
+      const doc = getDocByPath(`/docs/react/${id}`)!;
+      expect(doc.document.scope, id).toBe('react');
+      expect(doc.body, id).toMatch(/private.*source.build/);
+      expect(doc.body, id).not.toMatch(/provideAgent|injectAgent|npm (?:install|i) @threadplane\/react/);
+    }
+    for (const entry of ['getting-started/introduction', 'getting-started/workbench']) {
+      const body = getDocByPath(`/docs/react/${entry}`)!.body;
+      expect(body).toContain('/docs/react/langgraph/getting-started/installation');
+      expect(body).toContain('/docs/react/langgraph/getting-started/quickstart');
+      expect(body).toContain('/docs/react/chat/getting-started/quickstart');
+    }
+  });
+
+  it('keeps React conversation links in React and teaches prepared message rows', () => {
+    for (const doc of getAllDocSlugs('react')) {
+      expect(getDocByPath(doc.href)!.body, doc.href)
+        .not.toContain('/docs/angular/langgraph/concepts/conversation-turns');
+    }
+    const messages = getDocByPath('/docs/react/chat/concepts/message-model')!.body;
+    expect(messages).toContain('<MessageList rows={rows}');
+    expect(messages).not.toContain('rows={content.project(');
+    const angular = getDocByPath('/docs/angular/langgraph/concepts/conversation-turns')!.body;
+    expect(angular).toContain('/docs/react/langgraph/guides/streaming');
+    expect(angular).not.toContain('?frontend=react');
   });
 });
 const mdxLinkPattern =
@@ -145,7 +180,7 @@ describe('website docs bindings', () => {
   it('lists all authored variants from the catalog', () => {
     const slugs = getAllDocSlugs();
     expect(slugs).toEqual(getNarrativeDocuments());
-    expect(slugs).toHaveLength(161);
+    expect(slugs).toHaveLength(187);
     expect(slugs).toContainEqual(expect.objectContaining({
       library: 'langgraph',
       section: 'getting-started',
@@ -459,7 +494,7 @@ describe('website docs bindings', () => {
 
   it('keeps experimental source-build disclosures on every extracted React guide', () => {
     const react = getAllDocSlugs('react');
-    expect(react).toHaveLength(43);
+    expect(react).toHaveLength(69);
     for (const document of react) {
       const doc = getDocByPath(document.href)!;
       expect(readFrontmatterDescription(doc.content), document.id).toBe(document.description);
