@@ -25,6 +25,15 @@ const json = (name, value) =>
 const receipts = () =>
   fetch('http://127.0.0.1:4809/receipts').then((response) => response.json());
 const observe = page => page.evaluate(() => ({ viewport: [innerWidth, innerHeight, devicePixelRatio], text: document.querySelector('main')?.innerText, samples: window.__toolBenchmark?.samples }));
+async function settleCapture(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+  // Chrome can retain old compositor tiles immediately after a viewport/theme
+  // change even when DOM geometry is correct. Allow the surface to repaint.
+  await page.waitForTimeout(200);
+}
 async function until(read, condition, label) {
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
@@ -185,6 +194,7 @@ try {
         ]) {
           await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
           await page.setViewportSize({ width, height });
+          await settleCapture(page);
           await page.screenshot({
             path: join(output, `${participant.id}-references-${name}.png`),
           });
@@ -194,6 +204,7 @@ try {
           reducedMotion: 'reduce',
         });
         await page.setViewportSize({ width: 1440, height: 1000 });
+        await settleCapture(page);
         // Exercise the actual native disclosure controls; do not set `open` via JS.
         // Open a representative technical inspection through its real controls.
         // Stop once literal evidence is visible; expanding every payload would
@@ -208,6 +219,7 @@ try {
           // Otherwise a fast second click can close the same group again.
           await until(() => control.evaluate(element => element.tagName === 'SUMMARY' ? element.parentElement.open : element.getAttribute('aria-expanded') === 'true'), Boolean, participant.id + ' disclosure commit');
         }
+        await settleCapture(page);
         await page.screenshot({
           path: join(output, `${participant.id}-references-details.png`),
         });
