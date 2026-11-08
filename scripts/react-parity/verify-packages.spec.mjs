@@ -281,11 +281,14 @@ export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
 export type ScrollBubbleMode = 'streaming' | 'idle';
 export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
+export type ChatMessageRole = import('@threadplane/core').Role;
+export interface ChatMessageProps { readonly role: ChatMessageRole; readonly speaker?: string; readonly label?: string; readonly children?: import('react').ReactNode; readonly beforeContent?: import('react').ReactNode; readonly afterContent?: import('react').ReactNode; readonly controls?: import('react').ReactNode; readonly className?: string; }
+export declare function ChatMessage(props: ChatMessageProps): unknown;
 export interface MessageListScrollControls { readonly pinned: boolean; readonly scrollToLatest: () => void; readonly focus: () => void; }
 export interface MessageListProps { readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
 export interface ChatProps { readonly onRetry?: () => void; }`;
-  writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
+  writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export type Role = "assistant" | "user" | "system" | "tool"; export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -294,6 +297,38 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
   };
   assert.equal(compile(declaration), '');
+  for (const [before, after] of [
+    ['readonly role: ChatMessageRole;', 'role: ChatMessageRole;'],
+    ['readonly role: ChatMessageRole;', 'readonly role?: ChatMessageRole;'],
+    ['readonly role: ChatMessageRole;', 'readonly role: any;'],
+    ['readonly speaker?: string;', 'speaker?: string;'],
+    ['readonly label?: string;', 'label?: string;'],
+    ["readonly children?: import('react').ReactNode;", 'readonly children?: () => string;'],
+    ["readonly controls?: import('react').ReactNode;", 'readonly controls?: () => string;'],
+    ["readonly children?: import('react').ReactNode;", "children?: import('react').ReactNode;"],
+    ["readonly controls?: import('react').ReactNode;", "controls?: import('react').ReactNode;"],
+    ...['beforeContent', 'afterContent'].flatMap((slot) => [
+      [`readonly ${slot}?: import('react').ReactNode;`, `${slot}?: import('react').ReactNode;`],
+      [`readonly ${slot}?: import('react').ReactNode;`, `readonly ${slot}?: any;`],
+      [`readonly ${slot}?: import('react').ReactNode;`, `readonly ${slot}?: string;`],
+      [`readonly ${slot}?: import('react').ReactNode;`, `readonly ${slot}?: (value: string) => import('react').ReactNode;`],
+      [`readonly ${slot}?: import('react').ReactNode;`, `readonly ${slot}: import('react').ReactNode;`],
+    ]),
+    ['readonly className?: string;', 'className?: string;'],
+    ['readonly className?: string;', 'readonly owner?: object; readonly className?: string;'],
+  ]) {
+    const start = declaration.indexOf('export interface ChatMessageProps');
+    const end = declaration.indexOf('\nexport ', start);
+    const part = declaration.slice(start, end);
+    assert.ok(part.includes(before));
+    assert.match(compile(declaration.slice(0, start) + part.replace(before, after) + declaration.slice(end)), /false.*true/, before);
+  }
+  for (const parameter of ['any', 'unknown', 'ChatMessageProps, extra: string'])
+    assert.match(compile(declaration.replace('props: ChatMessageProps', `props: ${parameter}`)), /false.*true/);
+  assert.match(compile(declaration.replaceAll('ChatMessageProps', 'MissingChatMessageProps')), /ChatMessageProps/);
+  assert.match(compile(declaration.replace('export declare function ChatMessage(props: ChatMessageProps): unknown;', '')), /ChatMessage/);
+  for (const role of ["'assistant'", 'any', 'string'])
+    assert.match(compile(declaration.replace("export type ChatMessageRole = import('@threadplane/core').Role;", `export type ChatMessageRole = ${role};`)), /false.*true/);
   assert.match(compile(declaration.replaceAll('SuggestionsProps', 'MissingSuggestionsProps')), /SuggestionsProps/);
   assert.match(compile(declaration.replaceAll('SuggestionItem', 'MissingSuggestionItem')), /SuggestionItem/);
   assert.match(compile(declaration.replace('readonly suggestions: readonly SuggestionItem[]', 'suggestions: SuggestionItem[]')), /false|true/);
@@ -901,6 +936,7 @@ test('React chat requires its real supported export', () => {
   supported.ChatError = component;
   supported.TypingIndicator = component;
   supported.ScrollBubble = component;
+  supported.ChatMessage = component;
   supported.isTyping = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
@@ -908,7 +944,7 @@ test('React chat requires its real supported export', () => {
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError', 'TypingIndicator', 'ScrollBubble', 'isTyping']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError', 'TypingIndicator', 'ScrollBubble', 'ChatMessage', 'isTyping']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

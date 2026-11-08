@@ -449,7 +449,7 @@ for (const width of [375, 1280])
         await expect(page.locator('#conversation-title')).toHaveText(
           'Tool output check'
         );
-        await expect(page.locator('.message-tool > pre')).toBeAttached();
+        await expect(page.locator('.message-tool > .tp-chat-message__body > pre')).toBeAttached();
         await expect(input).toHaveValue('');
         await expect
           .poll(() =>
@@ -625,7 +625,7 @@ for (const width of [375, 1280])
         await expect
           .poll(() => transcript.evaluate((element) => element.scrollTop))
           .toBeGreaterThan(0);
-        const toolOutput = page.locator('.message-tool > pre');
+        const toolOutput = page.locator('.message-tool > .tp-chat-message__body > pre');
         await toolOutput.scrollIntoViewIfNeeded();
         await expect(toolOutput).toContainText('Long tool output:');
         await expect

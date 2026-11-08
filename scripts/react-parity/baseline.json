@@ -1,19 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "098d95f66531b66683fb75eea7f00a39291c0949",
+  "baselineHead": "1f64a2fcdca47f346fea4c45b82441f2a2cc408a",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "apps/website/content/docs/react/chat/components/chat.mdx",
-      "apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
       "libs/react/README.md",
-      "libs/react/src/chat/chat.tsx",
       "libs/react/src/chat/index.ts",
       "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/scroll-bubble.tsx",
       "libs/react/src/chat/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "libs/react/src/chat/chat-message.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -859,7 +857,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "2d6f576f76d74299a951b6a6f44cbc1b764edad777f47c5133b99b664a64a244"
+      "sha256": "361738ed5631011270183a27384f40058d0c1af4b5af8676405d6dc417b4eac7"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -877,7 +875,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "0658de23f73ebacde43f2044e26ab5ff8e9ea1e7a76a0a07800d68c2bfd21987"
+      "sha256": "e8de41287f6a53a2a58ac2a71c9661c3cadbf570e0a22578174442829b5d861d"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3112,6 +3110,12 @@
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "sha256": "4cdbb5dc9c55fa83f00ddbd991efea483781f2bf510b48d6c7d08977119553ba"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "sha256": "999745be4107a19fdfb9888e38614ace50d7a28171277e6ee663f6978a9b27de"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -11241,6 +11245,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessage",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatMessage",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-message.tsx",
+          "symbol": "ChatMessage",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ChatMessage({ role, speaker = role === 'user' ? 'You' : role === 'assistant' ? 'Assistant' : '', label = `${role} message`, children, beforeContent, afterContent, controls, className, }: ChatMessageProps) {\n    return (<article className={['tp-chat-message', `tp-chat-message--${role}`, className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label}>\n      {speaker !== '' && (<span className=\"tp-chat-message__speaker\">{speaker}:</span>)}\n      {beforeContent}\n      <div className=\"tp-chat-message__body\" dir=\"auto\">\n        {children}\n      </div>\n      {afterContent}\n      {controls != null && typeof controls !== 'boolean' && (<div className=\"tp-chat-message__controls\">{controls}</div>)}\n    </article>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessageProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatMessageProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-message.tsx",
+          "symbol": "ChatMessageProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ChatMessageProps {\n    readonly role: ChatMessageRole;\n    readonly speaker?: string;\n    readonly label?: string;\n    readonly children?: ReactNode;\n    readonly beforeContent?: ReactNode;\n    readonly afterContent?: ReactNode;\n    readonly controls?: ReactNode;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessageRole",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ChatMessageRole",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/chat-message.tsx",
+          "symbol": "ChatMessageRole",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ChatMessageRole = Role;"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ChatPopup",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -16641,6 +16687,12 @@
       "sha256": "ff371842dba9843a4db25bfb8e9b2e5cf94954392a3222b0fbb197f157fb2e45"
     },
     {
+      "id": "source:libs/react/src/chat/chat-message.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/chat-message.tsx",
+      "sha256": "01a64d234edf3fe9d5dd14ad164e38112a3a3abf68633727b151c99079313b99"
+    },
+    {
       "id": "source:libs/react/src/chat/chat-popup.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-popup.tsx",
@@ -16710,7 +16762,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "ba1979d98acf5bb906cc39576af707d5a4de509d30f22c18e8ab56f5d56db557"
+      "sha256": "462605005d3300933fbf72457afdd8d674f9d1c4c2ea78d024d40aea22a6ad8a"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -16758,7 +16810,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "fd3b154930865061c7ff74d62dcfa501e9809000152e3870324774449cd91516"
+      "sha256": "63247bc0612e5f495aaf5cfec7545b40dc9888372dfd18a67cea9fea8fa0b6c6"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",

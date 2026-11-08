@@ -1,0 +1,88 @@
+{
+  "name": "ChatMessage",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ChatMessage",
+  "canonicalReference": "@threadplane/react!ChatMessage:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "A named message article with an independently directed body and explicit controls slot.",
+  "declarations": [
+    {
+      "name": "ChatMessage",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ChatMessage:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ChatMessage(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatMessageProps",
+          "canonicalReference": "@threadplane/react!ChatMessageProps:interface",
+          "href": "/docs/api/react/chat/ChatMessageProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A named message article with an independently directed body and explicit controls slot.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-message.tsx",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ role, speaker, label, children, beforeContent, afterContent, controls, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-message.tsx",
+    "line": 20
+  }
+}

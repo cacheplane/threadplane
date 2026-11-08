@@ -19,6 +19,7 @@ import {
 } from './tool-activity.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
+import { ChatMessage } from './chat-message.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -84,11 +85,31 @@ function RowView<TRow extends MessageRow>({
     };
   });
   return (
-    <article className={`tp-chat-message tp-chat-message--${row.role}`}>
-      <p className="tp-chat-message__role">{row.role}</p>
-      {row.role === 'assistant' && row.reasoning && (
-        <Reasoning snapshot={row.reasoning} />
-      )}
+    <ChatMessage
+      role={row.role}
+      beforeContent={
+        row.role === 'assistant' &&
+        row.reasoning && <Reasoning snapshot={row.reasoning} />
+      }
+      afterContent={
+        <>
+          {row.role === 'assistant' && (
+            <Citations
+              citations={row.message.citations ?? []}
+              snapshot={row.markdown}
+            />
+          )}
+          {row.role !== 'tool' &&
+            (groupRelatedTools ? (
+              <ToolActivityGroup activities={activities} />
+            ) : (
+              activities.map((activity) => (
+                <ToolActivity key={activity.id} activity={activity} />
+              ))
+            ))}
+        </>
+      }
+    >
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (
@@ -99,21 +120,7 @@ function RowView<TRow extends MessageRow>({
           }
         />
       )}
-      {row.role === 'assistant' && (
-        <Citations
-          citations={row.message.citations ?? []}
-          snapshot={row.markdown}
-        />
-      )}
-      {row.role !== 'tool' &&
-        (groupRelatedTools ? (
-          <ToolActivityGroup activities={activities} />
-        ) : (
-          activities.map((activity) => (
-            <ToolActivity key={activity.id} activity={activity} />
-          ))
-        ))}
-    </article>
+    </ChatMessage>
   );
 }
 

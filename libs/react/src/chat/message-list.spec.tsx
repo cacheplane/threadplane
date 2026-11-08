@@ -37,6 +37,77 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('keeps reasoning before and Sources/tool chrome after the independently directed text body', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'مرحبا', {
+            reasoning: 'Why',
+            citations: [{ id: 'source', index: 1, title: 'Source' }],
+            toolCallIds: ['call'],
+          }),
+        ],
+        [
+          {
+            id: 'call',
+            name: 'lookup',
+            args: {},
+            status: 'complete',
+            result: 'Result',
+          },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const view = render(<MessageList rows={rows} />);
+    const article = view.getByRole('article');
+    const body = article.querySelector('.tp-chat-message__body');
+    const reasoning = article.querySelector('.tp-reasoning');
+    const sources = view.getByRole('region', { name: 'Sources' });
+    const tool = article.querySelector('.tp-tool-activity');
+    expect(body?.textContent).toBe('مرحبا');
+    expect(reasoning?.parentElement).toBe(article);
+    expect(reasoning?.nextElementSibling).toBe(body);
+    expect(sources.parentElement).toBe(article);
+    expect(body?.nextElementSibling).toBe(sources);
+    expect(sources.nextElementSibling).toBe(tool);
+    content.dispose();
+  });
+  it('uses the passive message boundary for each default role while custom renderers bypass it', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        ['user', 'assistant', 'system', 'tool'].map((role) =>
+          msg(role, `Content ${role}`, { role: role as Message['role'] })
+        )
+      )
+    );
+    const view = render(<MessageList rows={rows} />);
+    for (const role of ['user', 'assistant', 'system', 'tool']) {
+      const article = view.getByRole('article', { name: `${role} message` });
+      expect(article.querySelectorAll('.tp-chat-message__body')).toHaveLength(
+        1
+      );
+      expect(
+        article.querySelector('.tp-chat-message__body')?.getAttribute('dir')
+      ).toBe('auto');
+      expect(
+        article.querySelector('.tp-chat-message__body')?.textContent
+      ).toContain(`Content ${role}`);
+    }
+    expect(view.getAllByText('You:')).toHaveLength(1);
+    expect(view.getAllByText('Assistant:')).toHaveLength(1);
+    view.rerender(
+      <MessageList
+        rows={rows}
+        renderMessage={(row) => <p>{row.message.content}</p>}
+      />
+    );
+    expect(
+      view.container.querySelector('article,.tp-chat-message__body')
+    ).toBeNull();
+    content.dispose();
+  });
   it('keeps precommit and SSR actions inert and follows resize only while pinned in StrictMode', () => {
     const callbacks: (() => void)[] = [];
     const disconnects: ReturnType<typeof vi.fn>[] = [];
