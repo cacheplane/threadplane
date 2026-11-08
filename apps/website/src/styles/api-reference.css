@@ -400,6 +400,7 @@
 @media (max-width: 1023px) {
   .api-reference-symbols li > a,
   .api-reference-navigation a,
+  .api-reference-navigation details > a,
   .api-reference-navigation summary {
     min-height: 44px;
   }
