@@ -100,7 +100,15 @@ it('keeps native literal text, tool observation and weather data with their assi
   ).toBeTruthy();
   expect(owner.textContent).toContain('68');
   expect(owner.textContent).toContain('Sunny');
-  expect(owner.querySelector('[aria-label="Tool observation"]')).toBeTruthy();
+  expect(owner.querySelector('.tp-tool-activity')).toBeTruthy();
+  expect(
+    owner.querySelector('.tp-tool-activity details')?.hasAttribute('open')
+  ).toBe(false);
+  expect(
+    within(owner)
+      .getByRole('heading', { name: 'Weather for San Francisco' })
+      .closest('details')
+  ).toBeNull();
   expect(conversation.querySelectorAll('[data-weather-message]')).toHaveLength(
     3
   );

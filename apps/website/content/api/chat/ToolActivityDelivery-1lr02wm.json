@@ -1,0 +1,54 @@
+{
+  "name": "ToolActivityDelivery",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ToolActivityDelivery",
+  "canonicalReference": "@threadplane/chat!ToolActivityDelivery:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Observed response delivery facts; a pause does not establish approval.",
+  "declarations": [
+    {
+      "name": "ToolActivityDelivery",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ToolActivityDelivery:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolActivityDelivery = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly phase: 'streaming';\n} | {\n    readonly phase: 'complete';\n    readonly outcome: 'success' | 'error' | 'aborted' | 'interrupted' | 'paused';\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Observed response delivery facts; a pause does not establish approval.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+        "line": 19
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+    "line": 19
+  }
+}

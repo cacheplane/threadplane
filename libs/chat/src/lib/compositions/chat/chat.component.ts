@@ -187,6 +187,9 @@ export function isPinned(
     .chat-empty[hidden] { display: none; }
     .chat-empty__title { font-size: 1.125rem; font-weight: 500; color: var(--tplane-chat-text); margin: 0; }
     .chat-empty__sub { margin: 0; font-size: var(--tplane-chat-font-size-sm); }
+    .chat-source-details { margin-block:12px; color:var(--tplane-chat-text-muted); font-size:12px; }
+    .chat-source-details summary { cursor:pointer; }
+    .chat-source-details pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; }
     .chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-top: var(--tplane-chat-edge-pad); }
     .chat-scroll::-webkit-scrollbar { width: 6px; }
     .chat-scroll::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 10px; }
@@ -270,6 +273,8 @@ export function isPinned(
             @let currentActivityTemplate = activityTemplate();
             @let currentExcludedToolNames = currentActivityTemplate ? [] : excludedToolNames();
             @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
+            @let currentGroupRelatedTools = groupRelatedTools();
+            @let currentToolLabel = toolLabel();
             @let currentViews = effectiveViews();
             @let currentStore = resolvedStore();
             @let currentHandlers = handlers();
@@ -327,6 +332,8 @@ export function isPinned(
                       [message]="message"
                       [excludeToolNames]="currentExcludedToolNames"
                       [toolCallTemplates]="currentToolCallTemplates"
+                      [groupRelated]="currentGroupRelatedTools"
+                      [toolLabel]="currentToolLabel"
                     />
                   }
                   <chat-tool-views
@@ -366,6 +373,9 @@ export function isPinned(
                         (events)="onA2uiEvent($event, i, entry.key)"
                       />
                     }
+                  }
+                  @if (classified.spec() || classified.type() === 'a2ui') {
+                    <details class="chat-source-details"><summary>Details</summary><p>{{ classified.type() === 'a2ui' ? 'Response source' : 'Layout source' }}</p><pre>{{ sourceText(message) }}</pre></details>
                   }
                   </ng-container>
                   <!-- Only show message actions when there is copyable assistant
@@ -619,6 +629,14 @@ export class ChatComponent {
    * `activityTemplate` is present.
    */
   readonly toolCallTemplates = contentChildren(ChatToolCallTemplateDirective);
+  /** Opt in to grouping related default tool rows across names per assistant message. */
+  readonly groupRelatedTools = input(false);
+  /** App-authored readable labels; technical names remain in Details. */
+  readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+
+  protected sourceText(message: Message): string {
+    return typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2);
+  }
 
   private readonly activityContexts = new Map<string, ChatActivityTemplateContext>();
 

@@ -1,0 +1,19 @@
+{
+  "assistantUiCommit": "b7fc2d3e1f8399b8ea6f877430ef4611b6279b1a",
+  "shadcnCommit": "42f3bb63b46a69e52a24bd005cdc9ec15ba7a7b9",
+  "vendorDependencies": {
+    "@assistant-ui/react": "0.15.32",
+    "@assistant-ui/react-ag-ui": "0.1.1",
+    "@copilotkit/react-core": "1.85.0",
+    "@copilotkit/react-ui": "1.85.0",
+    "@ag-ui/client": "1.0.4",
+    "ai": "7.0.165",
+    "@ai-sdk/react": "4.0.169",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "vite": "7.3.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -5,7 +5,7 @@ import type { MessageContent, MessageRow } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { useMessageContent } from './internal/use-message-content.js';
-import { MessageList } from './message-list.js';
+import { MessageList, type MessageListProps } from './message-list.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -20,6 +20,8 @@ export interface ChatProps
   /** Must be referentially stable; see `MessageListProps.renderMessage`. */
   readonly renderMessage?: (row: MessageRow) => ReactNode;
   readonly className?: string;
+  readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
+  readonly toolLabel?: MessageListProps['toolLabel'];
 }
 
 const ignore = () => undefined;
@@ -30,13 +32,20 @@ export function Chat({
   content,
   renderMessage,
   className,
+  groupRelatedTools,
+  toolLabel,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
   const rows = useMessageContent(snapshot, session, content);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
-      <MessageList rows={rows} renderMessage={renderMessage} />
+      <MessageList
+        rows={rows}
+        renderMessage={renderMessage}
+        groupRelatedTools={groupRelatedTools}
+        toolLabel={toolLabel}
+      />
       {snapshot.error && (
         <p role="alert" className="tp-chat__error">
           {snapshot.error.message}

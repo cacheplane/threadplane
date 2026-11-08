@@ -148,6 +148,19 @@ describe('createClientToolsCapability', () => {
 
   // ---- resolve — ok result ---------------------------------------------------
 
+  it.each(['settle', 'resolve'] as const)('%s(ok) completes a running call only when the local result is recorded', (method) => {
+    const source = makeSource();
+    const store = makeStore();
+    const cap = createClientToolsCapability(source, store);
+    store.toolCalls.set([{ id: 'view-1', name: 'weather_card', args: { temperatureF: 72 }, status: 'running' }]);
+
+    cap[method]('view-1', { ok: true, value: { displayed: true } });
+
+    expect(store.toolCalls()[0]).toMatchObject({ status: 'complete', result: { displayed: true } });
+    expect(source.addMessage).toHaveBeenCalledOnce();
+    expect(source.continueRun).toHaveBeenCalledTimes(method === 'resolve' ? 1 : 0);
+  });
+
   it('resolve(ok) calls source.addMessage with the serialized value', () => {
     const source = makeSource();
     const store  = makeStore();

@@ -87,7 +87,9 @@ export function createClientToolsCapability(
           ? {
               ...tc,
               result: ok ? value : { error },
-              ...(ok ? {} : { error, status: 'error' as const }),
+              // Local settlement is an execution result, unlike TOOL_CALL_END.
+              status: ok ? 'complete' : 'error',
+              ...(ok ? {} : { error }),
             }
           : tc,
       ),

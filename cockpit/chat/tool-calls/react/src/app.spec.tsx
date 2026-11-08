@@ -188,9 +188,7 @@ it('renders observed argument and result text literally on the requesting row', 
         },
       ])
     );
-    expect(
-      view.getByRole('region', { name: 'Observed tool result' })
-    ).toBeTruthy();
+    expect(view.container.querySelector('.tp-tool-activity')!).toBeTruthy();
     expect(view.getByText('<button>observed</button>')).toBeTruthy();
     expect(view.queryByRole('button', { name: 'observed' })).toBeNull();
     expect(view.getAllByRole('article')).toHaveLength(1);
@@ -219,9 +217,7 @@ it('labels pending observed calls without claiming execution succeeded', () => {
         { id: 'lookup', name: 'lookup_flight', argumentsText: '{}' },
       ])
     );
-    expect(
-      view.getByRole('region', { name: 'Observed tool call' })
-    ).toBeTruthy();
+    expect(view.container.querySelector('.tp-tool-activity')!).toBeTruthy();
     expect(view.queryByText('Result')).toBeNull();
   } finally {
     content.dispose();

@@ -1,0 +1,118 @@
+{
+  "name": "ToolActivityProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ToolActivityProps",
+  "canonicalReference": "@threadplane/react!ToolActivityProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Presentation evidence and an independently mounted rich-result/action slot.",
+  "declarations": [
+    {
+      "name": "ToolActivityProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ToolActivityProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolActivityProps "
+        }
+      ],
+      "docs": {
+        "summary": "Presentation evidence and an independently mounted rich-result/action slot.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activity",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#activity:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 64
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Rich results and approval actions stay mounted outside technical Details.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 66
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/tool-activity.tsx",
+        "line": 63
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-activity.tsx",
+    "line": 63
+  }
+}

@@ -1,3 +1,4 @@
+import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component, viewChild } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/langgraph';
@@ -43,7 +44,7 @@ const WELCOME_SUGGESTIONS = [
       description="Explore airline operations with fixture data. Confirmed dashboards stay in the conversation and refresh together when a new update is saved."
     >
       <button headerActions type="button" (click)="newConversation()">New conversation</button>
-      <chat placeholder="Ask about airline operations…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask about airline operations…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
         <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
@@ -61,6 +62,7 @@ const WELCOME_SUGGESTIONS = [
   `,
 })
 export class GenerativeUiComponent {
+  protected readonly toolLabel = exampleToolLabel;
   private readonly chat = viewChild(ChatComponent);
   protected readonly agent = injectAgent();
   protected readonly dashboardViews = dashboardViews;

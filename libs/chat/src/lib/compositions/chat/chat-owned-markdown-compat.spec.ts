@@ -332,7 +332,10 @@ describe('Chat owned markdown compatibility', () => {
     await view.settle();
     expect(rich.handlers()).toBe(handlers); expect(rich.loading()).toBe(true);
     expect(view.md()).toBe(markdown); expect(view.md().document()).toBe(document);
-    expect([...view.body('rich').children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'CHAT-GENERATIVE-UI', 'SPAN']);
+    expect([...view.body('rich').children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'CHAT-GENERATIVE-UI', 'DETAILS', 'SPAN']);
+    const details = view.body('rich').querySelector<HTMLDetailsElement>('.chat-source-details');
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('pre')?.textContent).toBe(spec);
   });
 
   it.each(['json-render', 'a2ui'] as const)('keeps the same markdown subtree when controlled %s metadata appears on its own row', async kind => {
@@ -372,8 +375,11 @@ describe('Chat owned markdown compatibility', () => {
       await view.settle();
       const richTag = kind === 'json-render' ? 'CHAT-GENERATIVE-UI' : 'A2UI-SURFACE';
       expect([...body.children].map(child => child.tagName)).toEqual([
-        'CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'CHAT-STREAMING-MD', richTag, 'SPAN',
+        'CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'CHAT-STREAMING-MD', richTag, 'DETAILS', 'SPAN',
       ]);
+      const details = body.querySelector<HTMLDetailsElement>('.chat-source-details');
+      expect(details?.open).toBe(false);
+      expect(details?.querySelector('pre')?.textContent).toBe(view.agent.messages()[0].content);
       expect(body.textContent).toContain('Same-row rich answer');
       const handlers = { selected: () => true };
       view.fixture.componentRef.setInput('handlers', handlers);
@@ -443,7 +449,10 @@ describe('Chat owned markdown compatibility', () => {
     expect(classifier.a2uiSurfaces()).toBe(surfaces);
     expect(update).not.toHaveBeenCalled();
     expect(body.lastElementChild?.className).toBe('chat-message__caret');
-    expect([...body.children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'A2UI-SURFACE', 'A2UI-SURFACE', 'SPAN']);
+    expect([...body.children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'A2UI-SURFACE', 'A2UI-SURFACE', 'DETAILS', 'SPAN']);
+    const details = body.querySelector<HTMLDetailsElement>('.chat-source-details');
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('pre')?.textContent).toBe(content);
     view.fixture.componentRef.setInput('views', undefined); await view.settle();
     expect(body.querySelector('a2ui-surface')).toBeNull();
     expect(view.md()).toBe(markdown); expect(view.md().document()).toBe(document);

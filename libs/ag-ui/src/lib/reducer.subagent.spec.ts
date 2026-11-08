@@ -253,7 +253,10 @@ describe('reduceEvent SUBAGENT_* lifecycle', () => {
     reduceEvent(ev({ type: 'TOOL_CALL_END', toolCallId: 't-1', subagentRunId: 'sa-1' }), store);
     const calls = store.activities().get('sa-1')?.content()['toolCalls'] as Array<Record<string, unknown>>;
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatchObject({ id: 't-1', name: 'web_search', status: 'complete', args: { q: 'x' } });
+    expect(calls[0]).toMatchObject({ id: 't-1', name: 'web_search', status: 'running', args: { q: 'x' } });
+    reduceEvent(ev({ type: 'TOOL_CALL_RESULT', toolCallId: 't-1', messageId: 'r-1', content: 'false', subagentRunId: 'sa-1' }), store);
+    const completed = store.activities().get('sa-1')?.content()['toolCalls'] as Array<Record<string, unknown>>;
+    expect(completed[0]).toMatchObject({ status: 'complete', result: false });
     expect(store.toolCalls()).toHaveLength(0);
   });
 
@@ -364,8 +367,8 @@ describe('reduceEvent SUBAGENT_* lifecycle', () => {
     reduceEvent(ev({ type: 'TOOL_CALL_END', toolCallId: 't-1', subagentRunId: 'sa-2' }), store);
     const calls1 = store.activities().get('sa-1')?.content()['toolCalls'] as Array<Record<string, unknown>>;
     const calls2 = store.activities().get('sa-2')?.content()['toolCalls'] as Array<Record<string, unknown>>;
-    expect(calls1[0]).toMatchObject({ id: 't-1', status: 'complete', args: { q: 'paris' } });
-    expect(calls2[0]).toMatchObject({ id: 't-1', status: 'complete', args: { city: 'x' } });
+    expect(calls1[0]).toMatchObject({ id: 't-1', status: 'running', args: { q: 'paris' } });
+    expect(calls2[0]).toMatchObject({ id: 't-1', status: 'running', args: { city: 'x' } });
   });
 
   it('RUN_STARTED drops a dangling parent args buffer so a same-id call in the next run parses cleanly', () => {
@@ -379,7 +382,7 @@ describe('reduceEvent SUBAGENT_* lifecycle', () => {
     reduceEvent(ev({ type: 'TOOL_CALL_END', toolCallId: 't-1' }), store);
     const call = store.toolCalls().find((t) => t.id === 't-1');
     expect(call?.args).toEqual({ b: 1 });
-    expect(call?.status).toBe('complete');
+    expect(call?.status).toBe('running');
   });
 
   it('unattributed events behave exactly as before (regression)', () => {
