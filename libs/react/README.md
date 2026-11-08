@@ -358,6 +358,17 @@ submits the trimmed draft and ignores rejected `submit`/`stop` promises; the ses
 reports failures through its snapshot. A failed send does not restore the draft.
 Switching sessions resets the draft. Chat never disposes the session.
 
+`ScrollBubble` is a passive latest-activity button with required readonly
+`mode: 'streaming' | 'idle'` and `onClick: () => void`. `MessageList` optionally
+renders `renderScrollControl` as a sibling of its unchanged region. Its readonly
+`pinned`, `scrollToLatest()` and `focus()` controls keep scrolling with the
+existing owner. Attach both methods to an explicit click handler to restore
+following and focus the region with `preventScroll: true` before hiding the
+button. Retained controls are inert before commit and after unmount. Default
+`Chat` uses its existing snapshot status; no new subscription is created.
+The visible action stays readable without CSS and has no live-region semantics.
+This bounded T23 slice does not add unread counts or history loading.
+
 `TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
 waiting-before-text presentation from a borrowed core snapshot. `active` is
 required; optional readonly `label`, `announce`, and `className` customize the

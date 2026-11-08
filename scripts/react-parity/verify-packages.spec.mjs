@@ -278,6 +278,11 @@ export interface ChatErrorProps { readonly error: import('@threadplane/core').Ag
 export declare function ChatError(props: ChatErrorProps): unknown;
 export interface TypingIndicatorProps { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string; }
 export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
+export type ScrollBubbleMode = 'streaming' | 'idle';
+export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
+export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
+export interface MessageListScrollControls { readonly pinned: boolean; readonly scrollToLatest: () => void; readonly focus: () => void; }
+export interface MessageListProps { readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
 export interface ChatProps { readonly onRetry?: () => void; }`;
   writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
@@ -316,7 +321,7 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps', 'ScrollBubbleProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -357,17 +362,79 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     ['TypingIndicatorProps', 'label', 'string', true],
     ['TypingIndicatorProps', 'announce', 'boolean', true],
     ['TypingIndicatorProps', 'className', 'string', true],
+    ['ScrollBubbleProps', 'mode', 'ScrollBubbleMode', false],
+    ['ScrollBubbleProps', 'onClick', '() => void', false],
+    ['ScrollBubbleProps', 'disabled', 'boolean', true],
+    ['ScrollBubbleProps', 'label', 'string', true],
+    ['ScrollBubbleProps', 'className', 'string', true],
+    ['MessageListScrollControls', 'pinned', 'boolean', false],
+    ['MessageListScrollControls', 'scrollToLatest', '() => void', false],
+    ['MessageListScrollControls', 'focus', '() => void', false],
+    [
+      'MessageListProps',
+      'renderScrollControl',
+      "(controls: MessageListScrollControls) => import('react').ReactNode",
+      true,
+    ],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps', 'ScrollBubbleProps', 'MessageListScrollControls'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   assert.match(compile(declaration.replaceAll('ChatProps', 'MissingChatProps')), /ChatProps/);
   assert.match(compile(declaration.replace('export declare function ChatError(props: ChatErrorProps): unknown;', '')), /ChatError/);
   assert.match(compile(declaration.replace('export declare function TypingIndicator(props: TypingIndicatorProps): unknown;', '')), /TypingIndicator/);
+  assert.match(
+    compile(
+      declaration.replace(
+        'export declare function ScrollBubble(props: ScrollBubbleProps): unknown;',
+        ''
+      )
+    ),
+    /ScrollBubble/
+  );
+  for (const mode of [
+    'string',
+    'any',
+    "'idle'",
+    "'idle' | 'streaming' | 'running'",
+  ])
+    assert.match(
+      compile(declaration.replace("'streaming' | 'idle'", mode)),
+      /false.*true/,
+      `closed mode ${mode}`
+    );
+  for (const [name, field] of [
+    ['ScrollBubbleProps', 'onClick'],
+    ['MessageListScrollControls', 'scrollToLatest'],
+    ['MessageListScrollControls', 'focus'],
+  ])
+    for (const signature of [
+      '(...args: any[]) => void',
+      '(event?: Event) => void',
+      '() => any',
+      '() => boolean',
+      '() => void | Promise<void>',
+    ])
+      assert.match(
+        compile(
+          mutateInterface(
+            name,
+            `readonly ${field}: () => void;`,
+            `readonly ${field}: ${signature};`
+          )
+        ),
+        /false.*true/,
+        `${name}.${field} ${signature}`
+      );
+  for (const name of ['MessageListScrollControls', 'MessageListProps'])
+    assert.match(
+      compile(declaration.replaceAll(name, `Missing${name}`)),
+      new RegExp(name)
+    );
   const selector = "export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;";
   assert.match(compile(declaration.replace(selector, '')), /isTyping/);
   for (const mutation of [
@@ -833,6 +900,7 @@ test('React chat requires its real supported export', () => {
   supported.toolActivityPhase = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
+  supported.ScrollBubble = component;
   supported.isTyping = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
@@ -840,7 +908,7 @@ test('React chat requires its real supported export', () => {
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError', 'TypingIndicator', 'isTyping']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError', 'TypingIndicator', 'ScrollBubble', 'isTyping']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

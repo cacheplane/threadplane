@@ -265,6 +265,11 @@ import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps,
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type ScrollBubbleModeContract = Assert<Equal<import('@threadplane/react/chat').ScrollBubbleMode, 'streaming' | 'idle'>>;
+export type ScrollBubbleContract = Assert<Equal<import('@threadplane/react/chat').ScrollBubbleProps, { readonly mode: import('@threadplane/react/chat').ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
+export type ScrollBubbleParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ScrollBubble>, [import('@threadplane/react/chat').ScrollBubbleProps]>>;
+export type MessageListScrollControlsContract = Assert<Equal<import('@threadplane/react/chat').MessageListScrollControls, { readonly pinned: boolean; readonly scrollToLatest: () => void; readonly focus: () => void }>>;
+export type MessageListRenderScrollControlContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderScrollControl'>, { readonly renderScrollControl?: (controls: import('@threadplane/react/chat').MessageListScrollControls) => ReactNode }>>;
 export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type TypingIndicatorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').TypingIndicator>, [import('@threadplane/react/chat').TypingIndicatorProps]>>;
 export type IsTypingParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').isTyping>, [Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>]>>;
@@ -426,6 +431,7 @@ export function assertSupportedExports(project, entry) {
         'Chat',
         'ChatError',
         'TypingIndicator',
+        'ScrollBubble',
         'isTyping',
         'ChatPopup',
         'ChatSidebar',
