@@ -1,0 +1,31 @@
+---
+title: ChatError
+description: Present an already classified error with explicit application-owned recovery intents.
+---
+
+# ChatError
+
+This is an experimental, private React source-build component.
+
+`ChatError` borrows a readonly `AgentError` from `@threadplane/core`. A null or undefined error renders nothing. Otherwise it displays the literal message and optional detail in one accessible alert. Import `@threadplane/react/chat/styles.css` for its standard appearance.
+
+~~~tsx
+import type { AgentError } from '@threadplane/core';
+import { ChatError } from '@threadplane/react/chat';
+
+export function FailureNotice({ error, retry, checkStatus }: {
+  readonly error: AgentError | null | undefined;
+  readonly retry?: () => void;
+  readonly checkStatus?: () => void;
+}) {
+  return <ChatError error={error} onRetry={retry} onCheckStatus={checkStatus} />;
+}
+~~~
+
+The adapter classifies the error before presentation. This component does not coerce unknown exceptions, interpret HTML, infer links, make requests, or own a session. Callbacks receive zero arguments; the application handles async results, deduplication, and lifetime.
+
+`recovery: 'check'` offers **Check status** only when `onCheckStatus` exists. An unavailable check never falls through to Retry. `recovery: 'none'` offers no action even if `retryable` is true. Retry requires `retryable: true`, recovery of `'retry'` or undefined, and an explicit `onRetry`. `disabled` retains the appropriate button while preventing activation. `className` adds classes to the alert. Mounting, updates, and unmounting never dispatch recovery or move focus.
+
+Default [Chat](/docs/react/chat/components/chat) presents the session error through this component and forwards the session's optional `checkStatus` capability. Before dispatch it captures that capability and verifies that the session still presents the same error. An optional `Chat.onRetry` forwards an application-owned intent; Chat never replays a draft or calls submit to retry.
+
+The native React example displays only the ready selected runtime's error. Its application exposes no execution retry or status-check callback, so the notice has no action. The separate selection Retry reloads a failed conversation selection and is not execution recovery. See [error handling](/docs/react/chat/guides/error-handling) for the runtime boundary.

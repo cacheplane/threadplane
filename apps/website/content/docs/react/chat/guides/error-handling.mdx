@@ -35,6 +35,6 @@ Optional core `checkStatus` reconciles without replaying the uncertain submissio
 
 Keep the visible transcript while showing a clear recovery action. Do not use the disappearance of a busy indicator as the only outcome signal. The supplied examples display bounded application error messages instead of raw provider diagnostics.
 
-`Chat` displays `snapshot.error.message` and catches command rejections. Compose `MessageList` and `ChatInput` yourself when your application needs more specific admission, reconciliation, or saved-history checks.
+`Chat` displays the classified error's literal message and optional detail through [ChatError](/docs/react/chat/components/chat-error), forwards supported session status checks, and accepts an explicit application-owned retry intent. It catches session command rejections. Recovery `none` offers no action; an unavailable check never becomes a retry. The application handles async retry results and never needs to replay saved text implicitly. Compose `MessageList` and `ChatInput` yourself when your application needs more specific admission, reconciliation, or saved-history checks.
 
 Keep credentials and provider details server-side. See [Lifecycle](/docs/react/chat/guides/lifecycle) for preventing late failures from replacing a newer selection.

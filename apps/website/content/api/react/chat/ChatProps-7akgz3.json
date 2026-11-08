@@ -83,7 +83,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 22
+            "line": 23
           },
           "isReadonly": true,
           "isOptional": true
@@ -121,7 +121,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 19
+            "line": 20
           },
           "isReadonly": true,
           "isOptional": true
@@ -163,7 +163,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 23
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onRetry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#onRetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onRetry?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Explicit application-owned retry intent; Chat never replays a submission.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 27
           },
           "isReadonly": true,
           "isOptional": true
@@ -214,7 +250,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 21
+            "line": 22
           },
           "isReadonly": true,
           "isOptional": true
@@ -252,7 +288,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 17
+            "line": 18
           },
           "isReadonly": true,
           "isOptional": false
@@ -294,7 +330,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 24
+            "line": 25
           },
           "isReadonly": true,
           "isOptional": true
@@ -302,12 +338,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 11
+        "line": 12
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 11
+    "line": 12
   }
 }

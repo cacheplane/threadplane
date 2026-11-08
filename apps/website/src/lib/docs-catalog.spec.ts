@@ -33,10 +33,15 @@ describe('explicit narrative document catalog', () => {
   });
 
   it('keeps logical identities and canonical variant destinations unique', () => {
-    expect(documentCatalog).toHaveLength(118);
+    expect(documentCatalog).toHaveLength(119);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
     const variants = getNarrativeDocuments();
-    expect(variants).toHaveLength(187);
+    expect(variants).toHaveLength(188);
+    expect(getDocumentVariant('chat/components/chat-error', 'react')).toMatchObject({
+      source: 'react/chat/components/chat-error.mdx',
+      apiEntrypointIds: ['react/chat'],
+    });
+    expect(getDocumentVariant('chat/components/chat-error', 'angular')).toBeUndefined();
     expect(new Set(variants.map(doc => doc.href)).size).toBe(variants.length);
     expect(new Set(variants.map(doc => doc.source)).size).toBe(variants.length);
   });

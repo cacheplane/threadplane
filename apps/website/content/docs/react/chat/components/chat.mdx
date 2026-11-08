@@ -30,6 +30,7 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 | `renderMessage` | Stable callback replacing default row presentation. |
 | `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior. |
 | `className` | Additional root styling. |
+| `onRetry` | Optional application-owned zero-argument retry intent. |
 
 Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
 
@@ -37,7 +38,7 @@ It does not dispose the session. If you supply `content`, it also remains yours 
 
 ## Choose explicit composition for application policy
 
-Chat catches command promise rejections; its displayed error comes from `snapshot.error`. It does not provide a custom recovery policy, saved-history confirmation, or an application-level `canSubmit` prop.
+Chat catches command promise rejections; [ChatError](/docs/react/chat/components/chat-error) displays the classified `snapshot.error` message and detail. Supported session `checkStatus` is forwarded with the session receiver and a latest-error identity guard. Optional `onRetry` forwards your explicit retry intent; Chat never replays a submission. A check without capability never falls through to retry, and explicit `none` offers no action. Your callback owns its async results and lifetime. Chat does not provide saved-history confirmation or an application-level `canSubmit` prop.
 
 If continuation requires more evidence than session status, use `MessageList` and `ChatInput` around your own facade. The [chat quickstart](/docs/react/chat/getting-started/quickstart) follows that approach.
 

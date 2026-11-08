@@ -103,6 +103,7 @@ function composition(selected, types, runtime) {
       ? ['@threadplane/react/src/chat/text-transcript']
       : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/suggestions'] : []),
+    ...(!selected.angular ? ['@threadplane/react/src/chat/error'] : []),
   ]) {
     assert.ok(
       types.includes('node_modules/' + p + '.d.ts'),
