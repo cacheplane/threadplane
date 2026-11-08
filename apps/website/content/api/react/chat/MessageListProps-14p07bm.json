@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 35
+            "line": 50
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 29
+            "line": 44
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 31
+            "line": 46
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 28
+            "line": 43
           },
           "isReadonly": true,
           "isOptional": true
@@ -248,7 +248,58 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 27
+            "line": 42
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderScrollControl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#renderScrollControl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderScrollControl?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(controls: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListScrollControls",
+              "canonicalReference": "@threadplane/react!MessageListScrollControls:interface",
+              "href": "/docs/api/react/chat/MessageListScrollControls"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Render a sibling control; attach actions to explicit event handlers.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 52
           },
           "isReadonly": true,
           "isOptional": true
@@ -284,7 +335,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 21
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": false
@@ -320,7 +371,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 33
+            "line": 48
           },
           "isReadonly": true,
           "isOptional": true
@@ -328,7 +379,7 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 20
+        "line": 35
       },
       "typeParameters": [
         {
@@ -347,6 +398,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 20
+    "line": 35
   }
 }

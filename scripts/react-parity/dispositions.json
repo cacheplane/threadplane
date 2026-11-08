@@ -2317,9 +2317,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/scroll-bubble.tsx",
-      "reason": "Native component. Scroll/unread modes; user-pinned state and accessible jump action."
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-select/chat-select.component.ts#ChatSelectComponent",
@@ -5554,9 +5554,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/scroll-bubble.tsx",
-      "reason": "Native component. Scroll/unread modes; user-pinned state and accessible jump action."
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatScrollBubbleMode",
@@ -5564,7 +5564,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatSelectComponent",
@@ -17807,6 +17809,66 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/typing-indicator.tsx",
       "reason": "Controlled first-text waiting presentation and pure borrowed selector, composed without new subscriptions or commands. Full T23 remains open."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListScrollControls",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubble",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubbleMode",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubbleProps",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "source:libs/react/src/chat/scroll-bubble.tsx",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/scroll-bubble.tsx",
+      "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     }
   ]
 }

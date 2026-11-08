@@ -277,6 +277,7 @@ function fixture(t, framework = 'react') {
         'suggestions',
         'error',
         'typing-indicator',
+        'scroll-bubble',
         'citation-preview',
       ]) {
         const local = 'src/chat/' + name + extension;
@@ -656,6 +657,18 @@ for (const [graph, extension] of [
       () => captureRetainedBuild(f.directory, f),
       /TypingIndicator/
     );
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed ScrollBubble ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/scroll-bubble' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /ScrollBubble/);
   });
 
 for (const name of ['inline-preview', 'preview-position'])

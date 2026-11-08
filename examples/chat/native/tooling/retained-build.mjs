@@ -307,6 +307,7 @@ function selectedInputs(p, selected) {
       ['text-transcript', 'TextTranscript'],
       ['error', 'ChatError'],
       ['typing-indicator', 'TypingIndicator/isTyping'],
+      ['scroll-bubble', 'ScrollBubble'],
     ]) {
       const list = 'node_modules/@threadplane/react/src/chat/' + name;
       assert.ok(

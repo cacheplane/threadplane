@@ -47,6 +47,7 @@ test('production composition requires installed typing indicator runtime and dec
       'suggestions',
       'error',
       'typing-indicator',
+      'scroll-bubble',
     ].map((name) => '@threadplane/react/src/chat/' + name),
     '@threadplane/react/src/render/render-spec',
     '@threadplane/content/src/markdown/create-markdown',
@@ -109,6 +110,23 @@ test('production composition requires installed typing indicator runtime and dec
         runtime.filter((path) => path !== prefix + '.js')
       ),
     /Installed runtime required:.*typing-indicator/
+  );
+  const scroll = 'node_modules/@threadplane/react/src/chat/scroll-bubble';
+  assert.throws(
+    () =>
+      bundle(
+        types.filter((path) => path !== scroll + '.d.ts'),
+        runtime
+      ),
+    /Installed declarations required:.*scroll-bubble/
+  );
+  assert.throws(
+    () =>
+      bundle(
+        types,
+        runtime.filter((path) => path !== scroll + '.js')
+      ),
+    /Installed runtime required:.*scroll-bubble/
   );
 });
 

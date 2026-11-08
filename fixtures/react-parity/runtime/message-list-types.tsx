@@ -11,6 +11,10 @@ import {
   Reasoning,
   type MessageListProps,
   type ReasoningProps,
+  ScrollBubble,
+  type ScrollBubbleProps,
+  type ScrollBubbleMode,
+  type MessageListScrollControls,
 } from '@threadplane/react/chat';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { MarkdownSnapshot } from '@threadplane/content/markdown';
@@ -90,10 +94,21 @@ reasoningProps.snapshot = reasoningSnapshot;
 const props: MessageListProps<WeatherRow> = {
   rows,
   renderMessage: (row) => row.summary,
+  renderScrollControl: (controls) =>
+    controls.pinned ? null : (
+      <ScrollBubble
+        mode="idle"
+        onClick={() => {
+          controls.scrollToLatest();
+          controls.focus();
+        }}
+      />
+    ),
 };
 <MessageList {...props} />;
 <MessageList
   rows={rows}
+  renderScrollControl={(controls) => (controls.pinned ? null : 'Latest')}
   renderMessage={(row) => {
     const reasoning: MarkdownSnapshot | undefined = row.reasoning;
     // @ts-expect-error Projected reasoning is readonly.
@@ -130,3 +145,30 @@ const props: MessageListProps<WeatherRow> = {
 <MessageList rows={[]} renderMessage={(row) => row.id} />;
 // @ts-expect-error A custom renderer must receive the supplied row.
 <MessageList rows={rows} renderMessage={(row: string) => row} />;
+declare const controls: MessageListScrollControls;
+const scrollProps: ScrollBubbleProps = {
+  mode: 'streaming',
+  onClick: controls.scrollToLatest,
+};
+<ScrollBubble {...scrollProps} />;
+// @ts-expect-error Installed mode is required.
+<ScrollBubble onClick={() => undefined} />;
+// @ts-expect-error Installed action is required.
+<ScrollBubble mode="idle" />;
+// @ts-expect-error Installed mode is closed.
+const mode: ScrollBubbleMode = 'running';
+// @ts-expect-error Installed props are readonly.
+scrollProps.mode = 'idle';
+// @ts-expect-error No execution owner.
+<ScrollBubble {...scrollProps} session={{}} />;
+// @ts-expect-error No raw element view surface.
+void controls.element;
+// @ts-expect-error Installed controls are readonly.
+controls.pinned = false;
+// @ts-expect-error Zero-argument actions.
+controls.scrollToLatest('smooth');
+// @ts-expect-error Zero-argument focus.
+controls.focus({ preventScroll: false });
+// @ts-expect-error Render callback is readonly.
+props.renderScrollControl = () => null;
+void mode;

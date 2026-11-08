@@ -1401,6 +1401,21 @@
     }
   },
   {
+    "id": "chat/components/scroll-bubble",
+    "title": "ScrollBubble",
+    "library": "chat",
+    "section": "components",
+    "slug": "scroll-bubble",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/scroll-bubble.mdx",
+        "description": "Offer an explicit return to latest activity through the existing transcript owner.",
+        "apiEntrypointIds": ["react/chat"]
+      }
+    }
+  },
+  {
     "id": "chat/components/typing-indicator",
     "title": "TypingIndicator",
     "library": "chat",

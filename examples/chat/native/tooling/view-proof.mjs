@@ -105,6 +105,7 @@ function composition(selected, types, runtime) {
     ...(!selected.angular ? ['@threadplane/react/src/chat/suggestions'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/error'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/typing-indicator'] : []),
+    ...(!selected.angular ? ['@threadplane/react/src/chat/scroll-bubble'] : []),
   ]) {
     assert.ok(
       types.includes('node_modules/' + p + '.d.ts'),

@@ -1,5 +1,10 @@
 'use client';
 export {
+  ScrollBubble,
+  type ScrollBubbleMode,
+  type ScrollBubbleProps,
+} from './scroll-bubble.js';
+export {
   TypingIndicator,
   isTyping,
   type TypingIndicatorProps,
@@ -55,7 +60,11 @@ export {
   type ChatInputHandle,
   type ChatInputProps,
 } from './chat-input.js';
-export { MessageList, type MessageListProps } from './message-list.js';
+export {
+  MessageList,
+  type MessageListProps,
+  type MessageListScrollControls,
+} from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export { Citations, type CitationsProps } from './citations.js';
 export { CitationCard, type CitationCardProps } from './citation-card.js';

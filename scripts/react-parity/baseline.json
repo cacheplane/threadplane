@@ -1,12 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "04cc9030e2e347c5e34bf4136a44214808d04e20",
+  "baselineHead": "098d95f66531b66683fb75eea7f00a39291c0949",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/getting-started/quickstart.mdx",
-      "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "apps/website/content/docs/react/getting-started/quickstart.mdx",
-      "apps/website/content/docs/react/getting-started/workbench.mdx"
+      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "apps/website/content/docs/react/chat/components/chat.mdx",
+      "apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/scroll-bubble.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -854,7 +859,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "f722f27408e46b8c934eaf72792c1951fd20f751589e588be2eacae6da099002"
+      "sha256": "2d6f576f76d74299a951b6a6f44cbc1b764edad777f47c5133b99b664a64a244"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -872,7 +877,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "9b192a4d5fdd0487b7813d0b1a7f20b96c8536e61b69148e20c4daa365b7661b"
+      "sha256": "0658de23f73ebacde43f2044e26ab5ff8e9ea1e7a76a0a07800d68c2bfd21987"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3106,7 +3111,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "sha256": "2c603ec1e34ffe58252243eee0b5095683829adbed6c93b3658f02ff11f7d15a"
+      "sha256": "4cdbb5dc9c55fa83f00ddbd991efea483781f2bf510b48d6c7d08977119553ba"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -3154,7 +3159,13 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat.mdx",
-      "sha256": "3bee509a64ad4cc57803a703c6acde473a834a75a78ecf2989ee2c699926d1e5"
+      "sha256": "3a5925d98bf4c1835bc54f2587928eaba34f8ac07267397f9f5ba27c7ce3adf8"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
+      "sha256": "f49ccd88e268a19303896e3103fc6203c6fd89bbc889a03bae69ef808c4281b0"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/typing-indicator.mdx",
@@ -11155,7 +11166,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "Chat",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, onRetry, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, onRetry, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} renderScrollControl={(controls) => controls.pinned ? null : (<ScrollBubble mode={snapshot.status === 'running' ? 'streaming' : 'idle'} onClick={() => {\n                controls.scrollToLatest();\n                controls.focus();\n            }}/>)}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
         }
       ]
     },
@@ -11575,7 +11586,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools, toolLabel, children, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const lastScrollTop = useRef(0);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        const onScroll = () => {\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                pinned.current = false;\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                pinned.current = true;\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => el.removeEventListener('scroll', onScroll);\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n      <div ref={content}>\n        {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel}/>))}\n        {children}\n      </div>\n    </div>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools, toolLabel, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
         }
       ]
     },
@@ -11589,7 +11600,21 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly children?: ReactNode;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListScrollControls",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageListScrollControls",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageListScrollControls",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageListScrollControls {\n    readonly pinned: boolean;\n    readonly scrollToLatest: () => void;\n    readonly focus: () => void;\n}"
         }
       ]
     },
@@ -11730,6 +11755,48 @@
           "symbol": "ReasoningProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface ReasoningProps {\n    readonly snapshot: MarkdownSnapshot;\n    readonly durationMs?: number;\n    readonly label?: string;\n    readonly defaultExpanded?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubble",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ScrollBubble",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/scroll-bubble.tsx",
+          "symbol": "ScrollBubble",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ScrollBubble({ mode, onClick, disabled, label, className, }: ScrollBubbleProps) {\n    const text = label ?? 'Scroll to latest';\n    return (<button type=\"button\" disabled={disabled} className={['tp-scroll-bubble', className].filter(Boolean).join(' ')} aria-label={label ??\n            (mode === 'streaming' ? 'Scroll to latest, response in progress' : text)} onClick={() => {\n            if (!disabled)\n                onClick();\n        }}>\n      {mode === 'streaming' ? (<span className=\"tp-scroll-bubble__dots\" aria-hidden=\"true\">\n          <span />\n          <span />\n          <span />\n        </span>) : (<svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\">\n          <path d=\"M10 3v14m-6-6 6 6 6-6\" stroke=\"currentColor\" strokeWidth=\"2\"/>\n        </svg>)}\n      <span>{text}</span>\n    </button>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubbleMode",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ScrollBubbleMode",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/scroll-bubble.tsx",
+          "symbol": "ScrollBubbleMode",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ScrollBubbleMode = 'streaming' | 'idle';"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ScrollBubbleProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ScrollBubbleProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/scroll-bubble.tsx",
+          "symbol": "ScrollBubbleProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ScrollBubbleProps {\n    readonly mode: ScrollBubbleMode;\n    readonly onClick: () => void;\n    readonly disabled?: boolean;\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -16601,7 +16668,7 @@
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "4fda20b8994e4c46a6acdf9e703c9aa29d7368073232617d1ca6a0e3cdaac64b"
+      "sha256": "a9d2ac95a99302dfe698f7b6ec2462ebe348556d8df416ab89a558f48df04561"
     },
     {
       "id": "source:libs/react/src/chat/citation-card.tsx",
@@ -16643,7 +16710,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "30ef02bcb17470223893a089cd0d672c01bf626dcd98dbb48b2951e64e3d4dd5"
+      "sha256": "ba1979d98acf5bb906cc39576af707d5a4de509d30f22c18e8ab56f5d56db557"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -16691,7 +16758,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "efd5b43b253e63ab4c2ba4812f02a44c36cab045671690c283d81ad27b80f4ee"
+      "sha256": "fd3b154930865061c7ff74d62dcfa501e9809000152e3870324774449cd91516"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
@@ -16716,6 +16783,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/reasoning.tsx",
       "sha256": "bfaa8cc507e536d1edc87e0070af6b2996b1216fabea72a226eee03e06cf405f"
+    },
+    {
+      "id": "source:libs/react/src/chat/scroll-bubble.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/scroll-bubble.tsx",
+      "sha256": "f4a136f245c39d90f65886ae87787f8b5a3d36e826d02ecb7698ac9a87ad6f0d"
     },
     {
       "id": "source:libs/react/src/chat/suggestions.tsx",

@@ -30,6 +30,16 @@
   flex: 1 0 4rem;
   min-height: 4rem;
 }
+.conversation-body:has(> .native-scroll-bubble) .transcript {
+  flex: 1 1 4rem;
+}
+.conversation-body > .native-scroll-bubble {
+  position: sticky;
+  inset-block-end: 0;
+  margin-inline: 8px;
+  max-inline-size: calc(100% - 16px);
+  z-index: 1;
+}
 .conversation-body
   > :is(
     .loaded-checkpoint-timeline,

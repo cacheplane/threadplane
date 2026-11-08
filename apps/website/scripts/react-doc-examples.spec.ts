@@ -13,6 +13,7 @@ const pages = [
   'chat/components/chat-reasoning',
   'chat/components/chat-error',
   'chat/components/typing-indicator',
+  'chat/components/scroll-bubble',
   'chat/concepts/message-model',
   'render/getting-started/quickstart',
   'render/guides/events',
