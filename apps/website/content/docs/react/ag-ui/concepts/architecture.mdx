@@ -1,0 +1,32 @@
+---
+title: Architecture
+description: Trace AG-UI events through a native session, application policy, and borrowed React presentation.
+---
+
+# AG-UI React architecture
+
+The AG-UI path has three boundaries: native protocol state, application policy, and React presentation. Keeping them separate prevents a visible protocol event from becoming an unintended command.
+
+This architecture describes experimental, private source-build packages.
+
+## Native session
+
+The private session owns the request and protocol reduction. Its snapshot includes native `transcript`, `state`, `subagents`, and root `run` evidence. Tool arguments can remain partial protocol strings.
+
+`useAgent` can borrow this object directly because it only needs snapshot and subscription methods. It preserves the concrete native type; it does not translate the snapshot to core messages or invent execution states.
+
+## Application owner
+
+The [streaming fixture](/docs/react/ag-ui/getting-started/quickstart) wraps that session to publish rows, busy state, submission permission, and an outcome. It projects root text with the native text projection and confirms terminal history against the owned turn.
+
+The application also owns stop, replacement, disposal, and stale-result checks. A matching success outcome alone is insufficient if the transcript no longer represents the admitted question and prior conversation.
+
+Different examples deliberately admit different evidence. The [subagents example](/docs/react/ag-ui/guides/subagents) preserves explicit child attribution; the [client-tools example](/docs/react/ag-ui/guides/client-tools) owns supported execution. Root text selection must not silently mix child output into canonical history.
+
+## React view
+
+`TextTranscript` displays supplied structural text rows. `ToolObservation` displays literal supplied name, arguments, and optional result text. Neither executes a tool, parses partial arguments, or decides whether a follow-up is safe.
+
+`ChatInput` forwards explicit user actions to the application. Unmounting an observer releases its subscription; the application separately retires the native session.
+
+The protocol is backend-neutral, but the fixture's private constructor is not a public React adapter API. Use the exact example contracts and [event mapping](/docs/react/ag-ui/reference/event-mapping) when investigating how native evidence reaches the UI.

@@ -1,0 +1,49 @@
+---
+title: Agent Contract
+description: Separate the React observer contract from session commands and application-owned lifetime.
+---
+
+# The React agent contract
+
+The React observer contract is deliberately small: an object supplies `getSnapshot()` and `subscribe(notify)`, and `useAgent` returns its concrete snapshot. The owner can be a core session, a content owner, or an application facade with its own fields.
+
+These APIs are experimental, private source-build packages. The [streaming source](/docs/react/langgraph/guides/streaming) shows the real composition.
+
+## Observation borrows an owner
+
+This client component uses only the private source-build entries and an injected owner. The application creates and disposes the session outside this observer:
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import { useAgent } from '@threadplane/react';
+
+export function SessionStatus({ session }: { readonly session: AgentSession }) {
+  const snapshot = useAgent(session);
+  return <p role="status">{snapshot.status}</p>;
+}
+~~~
+
+`getSnapshot()` must return the same aggregate reference between changes. Publish a new immutable aggregate when data changes, then notify subscribers. React compares snapshots with `Object.is`; mutating an existing object does not establish a new observation.
+
+`subscribe` registers change notifications and returns an idempotent release function. Reading or subscribing must not start commands. The hook preserves method receivers and the authored snapshot type; it does not freeze mutable data or infer an application schema.
+
+Unmounting releases that observer's subscription. Replacing the observed object transfers the subscription. Neither action stops or disposes the old owner. Several views can borrow one session.
+
+## Commands belong to the application
+
+A core-compatible `AgentSession` adds these operations:
+
+| Operation | Meaning |
+| --- | --- |
+| `submit(text, { signal })` | Request a response and return its `CompleteOutcome`. |
+| `stop()` | Ask the owned session to stop current work. |
+| Optional `checkStatus()` | Reconcile observed status without replaying an uncertain submission. |
+| `dispose()` | Release the session when its application owner retires it. |
+
+A fulfilled submission can return `error`, `aborted`, `interrupted`, or `paused`, as well as `success`. An application facade may return no value and publish its outcome instead. Read the contract of the object you actually call.
+
+Backend-native snapshots are not interchangeable. AG-UI's native transcript is observed structurally but is not automatically a core display snapshot.
+
+## Own the lifetime explicitly
+
+Create connections and content owners at the application's lifetime boundary. Fence obsolete callbacks, release subscriptions, and dispose owners when that boundary ends. Keep commands out of rendering. See [Lifecycle](/docs/react/chat/guides/lifecycle) and [State management](/docs/react/langgraph/concepts/state-management).

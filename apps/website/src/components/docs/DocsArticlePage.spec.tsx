@@ -38,7 +38,7 @@ describe('canonical documentation articles', () => {
     expect(workspace.props.presentation.kind).toBe('docs-only');
     expect(workspace.props.presentation.runtimeUrl).toBeUndefined();
   });
-  it.each(['/docs/langgraph/guides/streaming', '/docs/vue/langgraph/guides/streaming', '/docs/react/chat/getting-started/installation'])('404s unavailable identity %s', async pathname => {
+  it.each(['/docs/langgraph/guides/streaming', '/docs/vue/langgraph/guides/streaming', '/docs/react/langgraph/concepts/angular-signals'])('404s unavailable identity %s', async pathname => {
     await expect(DocsArticlePage({ pathname })).rejects.toThrow();
   });
   it.each(getNarrativeDocuments('react'))('resolves $href with its declared source context', async doc => {
