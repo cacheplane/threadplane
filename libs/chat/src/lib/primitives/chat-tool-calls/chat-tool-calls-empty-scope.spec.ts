@@ -3,7 +3,7 @@ import { Component, signal, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ChatComponent } from '../../compositions/chat/chat.component';
-import { ChatToolCallCardComponent } from '../../compositions/chat-tool-call-card/chat-tool-call-card.component';
+import { ChatToolActivityComponent } from '../chat-tool-activity/chat-tool-activity.component';
 import { ChatToolViewsComponent } from '../chat-tool-views/chat-tool-views.component';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
@@ -138,7 +138,7 @@ describe('empty message-scoped tool groups', () => {
     const publishedMessages = agent.messages();
     const element = fixture.debugElement.query(By.directive(ChatToolCallsComponent));
     const child = element.componentInstance as ChatToolCallsComponent;
-    const cards = () => fixture.debugElement.queryAll(By.directive(ChatToolCallCardComponent));
+    const cards = () => fixture.debugElement.queryAll(By.directive(ChatToolActivityComponent));
     const templates = () => [...fixture.nativeElement.querySelectorAll('chat-tool-calls [data-template]')]
       .map((node: Element) => `${node.getAttribute('data-template')}:${node.textContent?.trim()}`);
     const a = call('a');
@@ -180,8 +180,8 @@ describe('empty message-scoped tool groups', () => {
     agent.toolCalls.set([a, b, other]);
     await fixture.whenStable();
     expect(child.groups()[0].calls[0]).toBe(a);
-    expect(cards()[0].componentInstance.toolCall()).toEqual({ id: a.id, name: a.name,
-      status: 'complete', args: a.args, result: 'mutated result' });
+    expect(cards()[0].componentInstance.activity()).toMatchObject({ id: a.id, name: a.name,
+      phase: 'complete', argumentsText: JSON.stringify(a.args, null, 2), resultText: 'mutated result' });
     // Nonempty, fully excluded scope still takes the configuration-dependent path.
     host.excluded.set(['search_web', 'read_file']);
     await fixture.whenStable();
@@ -242,11 +242,11 @@ describe('empty message-scoped tool groups', () => {
       host.agent().toolCalls.set([global]);
       await fixture.whenStable();
       expect(child.groups()[0].calls[0]).toBe(global);
-      expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(1);
+      expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
       host.agent().toolCalls.set([]);
       await fixture.whenStable();
       expect(child.groups()).toEqual([]);
-      expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(0);
+      expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(0);
     }
     host.message.set({ id: 'assistant', role: 'assistant', content: 'answer',
       toolCallIds: ['replacement'], delivery: staticDelivery('assistant') });

@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
   ChatInput,
-  ToolObservation,
+  ToolActivityGroup,
+  toolActivityPhase,
   MessageList,
   Reasoning,
   Citations,
 } from '@threadplane/react/chat';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Pure metadata copied into the isolated consumer.
+import { exampleToolLabel } from '../../../../shared/tool-presentation';
 import { Markdown } from '@threadplane/react/markdown';
 import type { MessageRow } from '@threadplane/content/messages';
 import {
@@ -48,20 +51,16 @@ export function renderMessage(
         <Reasoning snapshot={row.reasoning} />
       )}
       <Markdown snapshot={row.markdown} />
-      {cards.map((card) => (
-        <div className="tool-observation" key={card.id}>
-          <ToolObservation
-            name={card.name}
-            argumentsText={card.argumentsText}
-            resultText={card.resultText}
-            label={
-              card.resultText === undefined
-                ? 'Observed tool call'
-                : 'Observed tool result'
-            }
-          />
-        </div>
-      ))}
+      {cards.length > 0 && (
+        <ToolActivityGroup
+          label="Flight information activity"
+          activities={cards.map((card) => ({
+            ...card,
+            label: exampleToolLabel(card.name),
+            phase: toolActivityPhase(card.phase, row.message.delivery),
+          }))}
+        />
+      )}
       {row.role === 'assistant' && row.message.citations && (
         <Citations citations={row.message.citations} />
       )}

@@ -1,0 +1,369 @@
+{
+  "name": "ToolActivityInfo",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ToolActivityInfo",
+  "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Readonly activity evidence. Does not own execution, approval, sessions or persistence.",
+  "declarations": [
+    {
+      "name": "ToolActivityInfo",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolActivityInfo "
+        }
+      ],
+      "docs": {
+        "summary": "Readonly activity evidence. Does not own execution, approval, sessions or persistence.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "argumentsText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#argumentsText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly argumentsText?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 46
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "durationMs",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#durationMs:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly durationMs?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 51
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "errorSummary",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#errorSummary:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly errorSummary?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Safe user-facing copy; diagnostic errorText stays in Details.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 50
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "errorText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#errorText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly errorText?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 48
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 42
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 44
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "name",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#name:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly name: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 43
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "phase",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#phase:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly phase?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityPhase",
+              "canonicalReference": "@threadplane/react!ToolActivityPhase:type",
+              "href": "/docs/api/react/chat/ToolActivityPhase"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 45
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "resultText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#resultText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly resultText?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 47
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/tool-activity.tsx",
+        "line": 41
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-activity.tsx",
+    "line": 41
+  }
+}

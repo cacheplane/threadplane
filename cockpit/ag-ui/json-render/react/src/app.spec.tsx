@@ -119,7 +119,10 @@ it('keeps literal native text, accepted layout and tool observations at their as
     '[data-dashboard-message="owner"]'
   ) as HTMLElement;
   expect(within(owner).getByText('84.2%')).toBeTruthy();
-  expect(owner.querySelector('[aria-label="Tool observation"]')).toBeTruthy();
+  expect(owner.querySelector('.tp-tool-activity')).toBeTruthy();
+  expect(
+    owner.querySelector('.tp-tool-activity details')?.hasAttribute('open')
+  ).toBe(false);
   expect(
     within(owner).getByText('Layout source').closest('details')?.open
   ).toBe(false);

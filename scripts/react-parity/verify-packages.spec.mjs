@@ -782,6 +782,9 @@ test('React chat requires its real supported export', () => {
   supported.Suggestions = component;
   supported.CitationPreview = component;
   supported.CitationCard = component;
+  supported.ToolActivity = component;
+  supported.ToolActivityGroup = component;
+  supported.toolActivityPhase = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

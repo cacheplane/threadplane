@@ -124,7 +124,7 @@ describe('Chat shared transcript reads', () => {
     const tool = fixture.debugElement.query(By.directive(ChatToolCallsComponent));
     const view = fixture.debugElement.query(By.directive(ChatToolViewsComponent));
     const row = fixture.nativeElement.querySelector('chat-message');
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
     expect(view.componentInstance.views()).toBeUndefined();
     expect(view.componentInstance.store()).toBeUndefined();
 
@@ -137,7 +137,7 @@ describe('Chat shared transcript reads', () => {
     const fallbackStore = view.componentInstance.store();
     expect(fallbackStore).toBeDefined();
     expect(tool.componentInstance.excludeToolNames()).toEqual(['search']);
-    expect(fixture.nativeElement.querySelector('chat-tool-call-card')).toBeNull();
+    expect(fixture.nativeElement.querySelector('chat-tool-activity')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('registered view');
 
     const replacementRegistry = views({ search: SharedReadViewComponent });
@@ -163,7 +163,7 @@ describe('Chat shared transcript reads', () => {
     expect(view.componentInstance.views()).toBeUndefined();
     expect(view.componentInstance.store()).toBeUndefined();
     expect(tool.componentInstance.excludeToolNames()).toEqual([]);
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
     expect(fixture.debugElement.query(By.directive(ChatToolCallsComponent)).componentInstance).toBe(tool.componentInstance);
     expect(fixture.debugElement.query(By.directive(ChatToolViewsComponent)).componentInstance).toBe(view.componentInstance);
     expect(view.componentInstance.message()).toBe(answer);
@@ -179,7 +179,7 @@ describe('Chat shared transcript reads', () => {
     const host = fixture.componentInstance;
     const messages = host.agent.messages();
     const originalRow = fixture.nativeElement.querySelector('chat-message');
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
 
     host.wildcard.set(true);
     await fixture.whenStable();
@@ -211,7 +211,7 @@ describe('Chat shared transcript reads', () => {
     expect(fixture.nativeElement.querySelector('.shared-wildcard').textContent).toBe('third:call');
     host.wildcard.set(false);
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('chat-message')).toBe(originalRow);
     expect(host.agent.messages()).toBe(messages);
   });

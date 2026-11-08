@@ -66,6 +66,42 @@
           "isOptional": false
         },
         {
+          "name": "error",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#error:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "error?: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Literal diagnostic error, independent of result.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 14
+          },
+          "isReadonly": false,
+          "isOptional": true
+        },
+        {
           "name": "id",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/chat!ToolCallInfo#id:member",
@@ -206,7 +242,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 14
+            "line": 16
           },
           "isReadonly": false,
           "isOptional": true

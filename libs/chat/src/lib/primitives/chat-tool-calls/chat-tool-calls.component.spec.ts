@@ -142,7 +142,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.detectChanges();
     const strips = fixture.nativeElement.querySelectorAll('[data-group="true"]');
     expect(strips.length).toBe(1);
-    expect(strips[0].textContent).toContain('Searched 3');
+    expect(strips[0].textContent).toContain('3 tool activities');
   });
 
   it('does not group when names differ', () => {
@@ -157,7 +157,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.detectChanges();
     const strips = fixture.nativeElement.querySelectorAll('[data-group="true"]');
     expect(strips.length).toBe(0);
-    const cards = fixture.nativeElement.querySelectorAll('chat-tool-call-card');
+    const cards = fixture.nativeElement.querySelectorAll('chat-tool-activity');
     expect(cards.length).toBe(3);
   });
 
@@ -188,7 +188,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     const tplNodes = fixture.nativeElement.querySelectorAll('[data-tpl="search_web"]');
     expect(tplNodes.length).toBe(2);
     expect(fixture.nativeElement.querySelectorAll('[data-group="true"]').length).toBe(0);
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity').length).toBe(0);
   });
 
   it('falls back to wildcard "*" template when no per-tool template matches', () => {
@@ -201,7 +201,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('[data-tpl="wildcard"]').length).toBe(1);
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity').length).toBe(0);
   });
 
   it('per-tool template wins over wildcard for matching name', () => {
@@ -226,17 +226,17 @@ describe('summarize-group label registry', () => {
     summarize = (await import('./group-summary')).summarizeGroup;
   });
 
-  it('uses "Searched N sites" for search_*', () => {
-    expect(summarize('search_web', 5)).toBe('Searched 5 sites');
-    expect(summarize('search_files', 1)).toBe('Searched 1 site');
+  it('does not guess resource kinds from search prefixes', () => {
+    expect(summarize('search_web', 5)).toBe('5 tool activities');
+    expect(summarize('search_files', 1)).toBe('1 tool activity');
   });
 
-  it('uses "Generated N items" for generate_*', () => {
-    expect(summarize('generate_image', 3)).toBe('Generated 3 items');
+  it('uses a truthful count for generate prefixes', () => {
+    expect(summarize('generate_image', 3)).toBe('3 tool activities');
   });
 
-  it('falls back to "Called {name} N times"', () => {
-    expect(summarize('foo', 4)).toBe('Called foo 4 times');
+  it('uses a truthful count for unknown names', () => {
+    expect(summarize('foo', 4)).toBe('4 tool activities');
   });
 });
 
@@ -389,7 +389,7 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
     expect(cards[0].textContent).toContain('research');
 
     // The sibling search call still renders a generic tool-call card.
-    const toolCards = fixture.nativeElement.querySelectorAll('chat-tool-call-card');
+    const toolCards = fixture.nativeElement.querySelectorAll('chat-tool-activity');
     expect(toolCards.length).toBe(1);
 
     // The task call does NOT render a generic tool-call card.
@@ -436,7 +436,7 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
     expect(cards.length).toBe(1);
     expect(cards[0].textContent).toContain('availability_researcher');
     // The spawning call renders AS the card, not as a generic tool-call chip.
-    expect(fixture.nativeElement.querySelectorAll('chat-tool-call-card').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('chat-tool-activity').length).toBe(0);
   });
 
   it('renders two separate subagent cards for two task calls (not collapsed into one strip)', () => {
@@ -617,5 +617,115 @@ describe('ChatToolCallsComponent — [toolCallTemplates] input', () => {
 
   it('lets its own content-child templates override supplied ones by name', () => {
     expect(rendered(render(true))).toEqual(['own-search_web:a', 'input-wildcard:b']);
+  });
+});
+
+describe('ChatToolCallsComponent — readable activity evidence', () => {
+  it('retains group/member Details and focus when the first call changes through reordering', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const a: ToolCall = { id: 'a', name: 'query', status: 'running', args: {} }, b: ToolCall = { id: 'b', name: 'query', status: 'running', args: {} };
+    const agent = mockAgent({ toolCalls: [a, b] });
+    fixture.componentRef.setInput('agent', agent); fixture.detectChanges();
+    fixture.nativeElement.querySelector('.ctc__group-header').click(); fixture.detectChanges();
+    const group = fixture.nativeElement.querySelector('.ctc__group');
+    const details: HTMLDetailsElement = fixture.nativeElement.querySelector('[data-tool-id="a"] details');
+    details.open = true; const summary = details.querySelector('summary')!; summary.focus();
+    agent.toolCalls.set([b, a]); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ctc__group')).toBe(group);
+    expect(fixture.nativeElement.querySelector('[data-tool-id="a"] details')).toBe(details);
+    expect(details.open).toBe(true);
+    expect(document.activeElement).toBe(summary);
+  });
+  it('retains the first disclosure and focus when one related call grows to two', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const agent = mockAgent({
+      toolCalls: [{ id: 'a', name: 'query', status: 'running', args: {} }],
+    });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('groupRelated', true);
+    fixture.detectChanges();
+    const details: HTMLDetailsElement = fixture.nativeElement.querySelector(
+      'chat-tool-activity details'
+    );
+    const summary = details.querySelector('summary')!;
+    summary.focus();
+    details.open = true;
+    agent.toolCalls.update((calls) => [
+      ...calls,
+      { id: 'b', name: 'layout', status: 'running', args: {} },
+    ]);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('chat-tool-activity details')
+    ).toBe(details);
+    expect(details.open).toBe(true);
+    expect(document.activeElement).toBe(summary);
+    expect(fixture.nativeElement.querySelector('.ctc__group-body').hidden).toBe(
+      false
+    );
+  });
+  it('keeps an error-only diagnostic in Details and a safe failure outside', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput(
+      'agent',
+      mockAgent({
+        toolCalls: [
+          {
+            id: 'bad',
+            name: 'query_private',
+            status: 'error',
+            args: {},
+            error: 'diagnostic only',
+          },
+        ],
+      })
+    );
+    fixture.detectChanges();
+    const details = fixture.nativeElement.querySelector('details');
+    expect(details?.textContent).toContain('diagnostic only');
+    expect(details?.open).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('[role=alert]')?.closest('details')
+    ).toBeNull();
+  });
+  it('opts into mixed-name grouping, keeps expansion by first call id and preserves none', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const agent = mockAgent({
+      toolCalls: [
+        { id: 'a', name: 'query', status: 'running', args: {} },
+        { id: 'b', name: 'layout', status: 'running', args: {} },
+      ],
+    });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('groupRelated', true);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-group=true]')
+    ).toHaveLength(1);
+    const button = fixture.nativeElement.querySelector('.ctc__group-header');
+    button.click();
+    fixture.detectChanges();
+    const inner = fixture.nativeElement.querySelector(
+      'chat-tool-activity details'
+    );
+    inner.open = true;
+    agent.toolCalls.update((calls) => [
+      ...calls,
+      { id: 'c', name: 'other', status: 'complete', args: {} },
+    ]);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('chat-tool-activity details')
+    ).toBe(inner);
+    expect(inner.open).toBe(true);
+    fixture.componentRef.setInput('grouping', 'none');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-group=true]')
+    ).toHaveLength(0);
   });
 });

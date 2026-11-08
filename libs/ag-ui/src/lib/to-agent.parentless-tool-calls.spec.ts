@@ -63,7 +63,8 @@ describe('toAgent with a server that streams tool calls without a parent message
     expect(byId.get('call-weather')).toMatchObject({
       name: 'get_weather', args: { station: 'KPAO' }, status: 'complete', result: { wind: 'calm' },
     });
-    expect(byId.get('call-route')).toMatchObject({ name: 'plan_route', status: 'complete' });
+    // No route result was supplied: finalized arguments do not establish execution success.
+    expect(byId.get('call-route')).toMatchObject({ name: 'plan_route', status: 'running' });
     // The subagent anchors to a call that a message lists.
     const [subagent] = [...agent.subagents().values()];
     expect(subagent.toolCallId).toBe('call-weather');

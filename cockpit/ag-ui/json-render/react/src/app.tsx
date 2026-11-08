@@ -5,8 +5,10 @@ import { useAgent } from '@threadplane/react';
 import {
   ChatInput,
   MessageList,
-  ToolObservation,
+  ToolActivityGroup,
 } from '@threadplane/react/chat';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Pure metadata copied into the isolated consumer.
+import { exampleToolLabel } from '../../../../shared/tool-presentation';
 import { RenderSpec } from '@threadplane/react/render';
 import {
   createConnectedApplication,
@@ -98,16 +100,48 @@ export function DashboardDemo({
                 <p className="tp-chat-message__role">
                   {message.role === 'user' ? 'You' : message.role}
                 </p>
+                {calls.length > 0 && (
+                  <ToolActivityGroup
+                    label="Airline data activity"
+                    activities={calls.map((call) => {
+                      const result = transcript.find(
+                        (row) =>
+                          row.role === 'tool' && row.toolCallId === call.id
+                      );
+                      // A correlated protocol ToolMessage is execution evidence; no result is an unknown outcome after delivery ends.
+                      return {
+                        id: call.id,
+                        name: call.function.name,
+                        label: exampleToolLabel(call.function.name),
+                        phase: result
+                          ? 'complete'
+                          : snapshot.busy
+                          ? 'running'
+                          : snapshot.outcome === 'aborted'
+                          ? 'stopped'
+                          : 'unknown',
+                        argumentsText: call.function.arguments,
+                        resultText:
+                          result?.role === 'tool' &&
+                          typeof result.content === 'string'
+                            ? result.content
+                            : undefined,
+                      };
+                    })}
+                  />
+                )}
                 {surface &&
                 typeof message.content === 'string' &&
                 message.content.trim().startsWith('{') ? (
                   <details>
-                    <summary>Layout source</summary>
+                    <summary>Details</summary>
+                    <p>Layout source</p>
                     {text}
                   </details>
                 ) : message.role === 'tool' ? (
                   <details>
-                    <summary>Server tool result</summary>
+                    <summary>Details</summary>
+                    <p>Server tool result</p>
                     {text}
                   </details>
                 ) : (
@@ -123,26 +157,6 @@ export function DashboardDemo({
                     />
                   </div>
                 )}
-                {calls.map((call) => {
-                  const result = transcript.find(
-                    (row) => row.role === 'tool' && row.toolCallId === call.id
-                  );
-                  return (
-                    <details key={call.id} data-dashboard-tool={call.id}>
-                      <summary>Tool details: {call.function.name}</summary>
-                      <ToolObservation
-                        name={call.function.name}
-                        argumentsText={call.function.arguments}
-                        resultText={
-                          result?.role === 'tool' &&
-                          typeof result.content === 'string'
-                            ? result.content
-                            : undefined
-                        }
-                      />
-                    </details>
-                  );
-                })}
               </li>
             );
           })}
