@@ -1894,7 +1894,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/markdown/inline-citation.tsx",
-      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open."
+      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
     },
     {
       "id": "component:libs/chat/src/lib/markdown/views/markdown-code-block.component.ts#MarkdownCodeBlockComponent",
@@ -2114,7 +2114,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts#ChatCitationsCardComponent",
@@ -5241,7 +5241,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/citation-preview.tsx",
-      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
+      "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatCitationsCardComponent",
@@ -10326,7 +10326,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/markdown/inline-citation.tsx",
-      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open.",
+      "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched.",
       "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
@@ -17416,7 +17416,17 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private pure readonly local category SVG/web monogram shared by CitationCard and the first three resolved disclosure sources. Ignores provider iconUrl without mutation, fetching, hooks or new public exports. Provider images remain deferred."
+      "reason": "Private pure readonly local category SVG/web monogram shared by CitationCard and the first three resolved disclosure sources. Ignores provider iconUrl without mutation, fetching, hooks or new public exports. Provider images remain deferred. Private compact mode supplies intrinsic sizes and system-color monogram contrast for stylesheet-independent preview summaries; existing card/header defaults remain unchanged."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/citation-source-summary.tsx",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private pure summary shared by explicit and inline citation previews. Local compact marker, normalized type, derived hostname and formatted publication supplement unchanged literal details. Intrinsic layout preserves stylesheet-free Markdown, with no fetching, lifecycle ownership or public API.",
+      "target": "libs/react/src/chat/internal/citation-source-summary.tsx"
     },
     {
       "id": "doc:apps/website/content/docs/react/ag-ui/concepts/architecture.mdx",
