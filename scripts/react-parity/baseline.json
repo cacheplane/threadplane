@@ -1,18 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "098d95f66531b66683fb75eea7f00a39291c0949",
+  "baselineHead": "56d88591d3fb8b3f7fe6df6007629df0f5e32426",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "apps/website/content/docs/react/chat/components/chat.mdx",
-      "apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/scroll-bubble.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -15642,7 +15632,7 @@
       "id": "source:libs/cockpit-runtime-bridge/src/lib/generated-runtime-parent-origins.ts",
       "kind": "source",
       "path": "libs/cockpit-runtime-bridge/src/lib/generated-runtime-parent-origins.ts",
-      "sha256": "e58d4e20229ecf06d35999030fa70a30b1151bf5edf554e44dbf49ce7c63222c"
+      "sha256": "109909ec3a4610637f0696a92859d884f1cb92b3df07758bbfb8c3a070c1272a"
     },
     {
       "id": "source:libs/cockpit-runtime-bridge/src/lib/inspection.ts",
@@ -17526,7 +17516,7 @@
       "id": "source:libs/workspace-react/src/lib/components/mobile-nav-overlay.tsx",
       "kind": "source",
       "path": "libs/workspace-react/src/lib/components/mobile-nav-overlay.tsx",
-      "sha256": "bfa6cca257ae78c43ea2e543ead05ee9f2f448db459412f5efbd0ef9e734de96"
+      "sha256": "22c774226d0b218936242e34d898d5ccc04ba5d41b1b8a33bc84b0ca7c687d85"
     },
     {
       "id": "source:libs/workspace-react/src/lib/components/modes/mode-switcher.tsx",
