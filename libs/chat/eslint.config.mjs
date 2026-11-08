@@ -43,6 +43,20 @@ export default [
     },
   },
   {
+    // The private markdown view attaches to the existing body element.
+    files: ['libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts'],
+    rules: {
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: ['chat'],
+          style: 'camelCase',
+        },
+      ],
+    },
+  },
+  {
     // Non-null assertions are acceptable in test code: the test author
     // controls the fixtures, so a wrong assumption surfaces as a test
     // failure rather than a production bug. The rule stays strict for
