@@ -1,0 +1,40 @@
+---
+title: Installation
+description: Prepare the repository and build the private React LangGraph example with its installed runtime dependencies.
+---
+
+# Prepare a React source build
+
+The React binding and native runtime composition are experimental, private source-build packages. `@threadplane/react` is unpublished at `0.0.0`; there is no supported public npm installation command for this guide.
+
+## Use the repository toolchain
+
+Use Node.js 22, the major used by the repository's React CI lanes, and npm at the workspace root. React 19.2.4 is the tested runtime; the React package declares React and React DOM `^19.2.4` peers. React DOM supports the chat presentation's portals; the headless root does not import it.
+
+From a Threadplane checkout:
+
+~~~sh
+npm ci
+npx nx build react
+npx nx build cockpit-langgraph-streaming-react
+~~~
+
+The example build prepares its private LangGraph runtime and builds the core, content, and React dependencies through Nx. It assembles an isolated consumer using local package artifacts. A workspace source alias alone does not reproduce that packaged boundary.
+
+## Verify the binding and example
+
+~~~sh
+npx nx test react
+npx nx run react:type-tests
+npx nx test cockpit-langgraph-streaming-react
+~~~
+
+Browser coverage uses the example's `e2e` target with its fixture prerequisites. Follow the [streaming guide](/docs/react/langgraph/guides/streaming) for the runnable preview and source files; the project has no standalone Nx `serve` target.
+
+## Configure the backend separately
+
+The preview's runtime bridge selects the shared development target or a developer LangGraph target. `connection.ts` disables SDK retries and checks the exact created thread ID. It is example composition, not a backend constructor exported by `@threadplane/react`.
+
+Keep model and provider credentials server-side. If your production browser needs authenticated access, supply an application-controlled endpoint and an appropriate user authentication boundary. Do not bundle provider secrets into React source.
+
+Continue with [Quickstart](/docs/react/langgraph/getting-started/quickstart). The binding is client-side; server rendering and hydration are not supported by `useAgent`.

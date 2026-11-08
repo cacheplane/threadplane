@@ -1,0 +1,30 @@
+---
+title: Chat Sidebar
+description: Place a controlled React conversation beside page content while preserving the mounted chat.
+---
+
+# ChatSidebar
+
+`ChatSidebar` extends the controlled `ChatPopup` contract with a full-height sidebar layout and optional page-content displacement.
+
+It is an experimental, private source-build component. Import `@threadplane/react/chat/styles.css` and keep the application owner outside presentation changes.
+
+## Supply the two regions
+
+Use `children` for the conversation and `pageContent` for the surrounding page. Supply `open`, `onOpenChange`, and `title` as you would for [ChatPopup](/docs/react/chat/components/chat-popup).
+
+`pushContent` defaults to false. When it is true and the sidebar is open, the layout adds space for chat where the stylesheet's responsive layout supports it. The native example labels this preference “Keep page beside chat” on wide screens.
+
+The shell inherits the popup's launcher and close labels, Escape policy, and optional `className`. It remains nonmodal and retains its conversation children while hidden.
+
+## Preserve ownership while hiding
+
+Closing the sidebar changes presentation only. A streaming response, mounted transcript, and composer draft can continue. The shell does not stop commands or dispose the session.
+
+If your application replaces the sidebar subtree with another layout, React may remount local view state. Keep the session and message-content owners at a stable application boundary, and decide separately which drafts or preferences should survive a full presentation replacement.
+
+## Try the native example
+
+Run the [native chat application](/docs/react/chat/getting-started/installation) and use `?presentation=sidebar`. Toggle “Keep page beside chat”, send a message, and close and reopen the panel.
+
+`ConversationSurface` in `examples/chat/native/react/src/app.tsx` shows the actual controlled composition. Use [ChatSidenav](/docs/react/chat/components/chat-sidenav) when the panel is conversation navigation rather than the conversation itself.

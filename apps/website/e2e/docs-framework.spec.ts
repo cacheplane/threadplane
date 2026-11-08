@@ -93,7 +93,7 @@ for (const width of [1440, 390]) {
 
 test('missing counterparts stay unavailable with a separate introduction destination on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/docs/angular/langgraph/getting-started/installation');
+  await page.goto('/docs/angular/langgraph/concepts/angular-signals');
   const control = await frameworkControl(page);
   await control.click();
   await expect(page.getByRole('menuitemradio', { name: /React/ })).toBeDisabled();
@@ -105,6 +105,23 @@ test('missing counterparts stay unavailable with a separate introduction destina
   await expect(page).toHaveURL('/docs/react/getting-started/introduction');
   await expect(page.getByRole('heading', { name: 'React documentation', exact: true })).toBeVisible();
 });
+
+for (const width of [1440, 390]) {
+  test(`React onboarding reaches a real quickstart counterpart at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/docs/react/getting-started/introduction');
+    await page.locator('article').getByRole('link', { name: 'chat quickstart', exact: true }).click();
+    await expect(page).toHaveURL('/docs/react/chat/getting-started/quickstart');
+    await expect(page.getByRole('heading', { name: 'Compose your first React chat', exact: true })).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://threadplane.ai/docs/react/chat/getting-started/quickstart');
+    await selectFramework(page, 'angular');
+    await expect(page).toHaveURL('/docs/angular/chat/getting-started/quickstart');
+    await selectFramework(page, 'react');
+    await expect(page).toHaveURL('/docs/react/chat/getting-started/quickstart');
+    await expect(page.getByRole('heading', { name: 'Compose your first React chat', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
 
 test('shared documents keep their canonical identity when guide preference changes', async ({ page }) => {
   const shared = '/docs/shared/middleware/getting-started/introduction';
@@ -143,7 +160,7 @@ test('retired narratives and missing framework variants return 404 without redir
   for (const pathname of [
     '/docs/langgraph/guides/streaming',
     '/docs/langgraph/guides/streaming?frontend=react',
-    '/docs/react/langgraph/getting-started/installation',
+    '/docs/react/langgraph/concepts/angular-signals',
     '/docs/vue/langgraph/guides/streaming',
     '/api/markdown/langgraph/guides/streaming',
   ]) {

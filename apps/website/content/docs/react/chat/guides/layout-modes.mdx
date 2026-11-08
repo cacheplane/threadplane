@@ -1,0 +1,35 @@
+---
+title: Layout Modes
+description: Choose inline, popup, sidebar, or conversation-navigation presentation for an owned React chat.
+---
+
+# Choose a React chat layout
+
+The conversation owner and its visible layout are separate decisions. Keep the same command and content boundaries whether chat fills a page or sits beside other work.
+
+These layouts use experimental, private React source-build components.
+
+| Layout | Composition | Appropriate use |
+| --- | --- | --- |
+| Inline | `MessageList` and `ChatInput`, or `Chat` | A dedicated conversation page. |
+| Popup | `ChatPopup` around the conversation | A compact launcher and retained panel. |
+| Sidebar | `ChatSidebar` with `pageContent` | Chat alongside the current page. |
+| Sidenav | `ChatSidenav` around a directory | Expanded, compact, or drawer navigation beside chat. |
+
+## Try each supplied presentation
+
+After [starting the native example](/docs/react/chat/getting-started/installation), use its default URL for inline chat, or select `?presentation=popup`, `?presentation=sidebar`, or `?presentation=sidenav`. These are native-example URL options, not library routing APIs.
+
+The popup and sidebar controls preserve mounted children when hidden. The sidenav preserves its full and compact regions across mode changes. Closing a panel does not imply Stop, New conversation, or disposal.
+
+## Own responsive decisions
+
+ChatSidebar supports optional content pushing on wide layouts. ChatSidenav expects the application to select drawer mode; its native example uses `native-navigation.tsx` for that decision.
+
+Import `@threadplane/react/chat/styles.css` and provide a bounded flex layout so the transcript has room to scroll. For a cross-origin iframe, the parent owns visible-viewport sizing; see the [message guide's embedding notes](/docs/react/chat/concepts/message-model).
+
+## Keep accessibility attached to the layout
+
+Provide meaningful panel titles and navigation labels. Popup and sidebar are nonmodal, and sidenav is navigation. Their focus handling does not establish a modal focus trap.
+
+A complete subtree replacement can reset React-local state even when the session survives. Decide explicitly whether drafts and layout preferences belong in the application. See [Lifecycle](/docs/react/chat/guides/lifecycle).

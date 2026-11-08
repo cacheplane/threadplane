@@ -1,0 +1,50 @@
+---
+title: Chat Popup
+description: Present a persistent React conversation in a controlled nonmodal popup.
+---
+
+# ChatPopup
+
+`ChatPopup` is a controlled, nonmodal shell around your conversation. Closing it hides and makes its panel inert while keeping its children mounted.
+
+It is part of the experimental, private React source-build package. Import `@threadplane/react/chat/styles.css` for its presentation.
+
+## Control visibility explicitly
+
+Supply `open`, `onOpenChange`, and `title`. The callback requests a change; your application supplies the next `open` value. Put the conversation in `children`.
+
+Optional `launcherLabel` and `closeLabel` default to “Chat” and “Close chat”. `closeOnEscape` defaults to true. `className` allows scoped styling.
+
+The shell does not create or subscribe to a session. Closing it does not stop an active response, reset the draft, or dispose content. If your product needs one of those actions, make it an explicit application policy.
+
+This private source-build composition keeps the session supplied by its parent:
+
+~~~tsx
+import { useState } from 'react';
+import type { AgentSession } from '@threadplane/core';
+import { Chat, ChatPopup } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function TripPopup({ session }: { readonly session: AgentSession }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <ChatPopup open={open} onOpenChange={setOpen} title="Trip assistant">
+      <Chat session={session} />
+    </ChatPopup>
+  );
+}
+~~~
+
+## Understand focus
+
+Opening moves focus to the close control. Closing returns focus to the launcher when focus is still owned by the panel. The dialog is nonmodal: it does not trap focus or make the rest of the page inert.
+
+Escape inside the open panel requests closure unless disabled, already handled, or part of IME composition. The view also follows the host document's visual viewport for mobile layout.
+
+## Try the native composition
+
+Run the [native chat application](/docs/react/chat/getting-started/installation), then add `?presentation=popup` to its URL. Send a response, close the popup, and reopen it to inspect the retained conversation.
+
+The real composition is `ConversationSurface` in `examples/chat/native/react/src/app.tsx`. It places the same conversation children inside the shell and controls visibility with React state.
+
+For a full-height panel beside page content, use [ChatSidebar](/docs/react/chat/components/chat-sidebar).

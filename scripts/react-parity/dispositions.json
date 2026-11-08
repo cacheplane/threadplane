@@ -17417,6 +17417,266 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private pure readonly local category SVG/web monogram shared by CitationCard and the first three resolved disclosure sources. Ignores provider iconUrl without mutation, fetching, hooks or new public exports. Provider images remain deferred."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/concepts/architecture.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/ag-ui/getting-started/quickstart.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-reasoning.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-sidebar.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-sidenav.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/installation.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/getting-started/quickstart.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/error-handling.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/layout-modes.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/lifecycle.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/guides/markdown.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/agent-contract.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/conversation-turns.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/concepts/state-management.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/installation.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/langgraph/getting-started/quickstart.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/getting-started/introduction.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/getting-started/quickstart.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/events.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/render/guides/lifecycle.mdx",
+      "taskIds": [
+        "T34",
+        "T35"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
     }
   ]
 }

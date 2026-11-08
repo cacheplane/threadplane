@@ -1,0 +1,43 @@
+---
+title: Message List
+description: Render prepared React message rows with stable identity, custom presentation, and bottom-pinned scrolling.
+---
+
+# MessageList
+
+`MessageList` renders readonly `MessageRow` values prepared by an application-owned content projection. It does not subscribe, submit, parse session events, or dispose the projection.
+
+This component belongs to the experimental, private React source-build package.
+
+## Prepare rows before rendering
+
+The [messages example](/docs/react/chat/concepts/message-model) projects session observations in its application owner, then publishes `rows`. React reads that snapshot and passes the rows to `MessageList`.
+
+Each row keeps a stable `id`, role, original message, Markdown snapshot, and associated tool observations. Preserve unique IDs and immutable row references so keyed, memoized rows can retain their presentation between updates.
+
+## Choose default or custom presentation
+
+This private source-build view borrows already prepared rows:
+
+~~~tsx
+import type { MessageRow } from '@threadplane/content/messages';
+import { MessageList } from '@threadplane/react/chat';
+
+export function Transcript({ rows }: { readonly rows: readonly MessageRow[] }) {
+  return <MessageList rows={rows} label="Trip conversation" />;
+}
+~~~
+
+The default renderer displays role labels, Markdown, assistant reasoning, supplied citations, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row)` callback replaces that entire presentation; it must explicitly include anything you want to retain.
+
+Define the callback outside rendering or stabilize it with `useCallback`. Put hooks in a component returned by the callback. Recreating the callback on every token defeats row memoization.
+
+Optional `children` appear after the rows inside the same scrolling region, useful for application-owned approval controls. `label` names the region and defaults to “Conversation”; `className` customizes its root.
+
+## Respect the reader's position
+
+The list follows updates while pinned at the bottom. Scrolling upward releases that pin; returning within 32 pixels of the bottom restores it. Resize observation follows content growth, including later layout changes, while pinned.
+
+Give the list a constrained height through the surrounding layout and import the chat stylesheet. The component owns scrolling presentation only. It does not mark a response successful, authorize a tool, or load older history.
+
+See [Reasoning](/docs/react/chat/components/chat-reasoning) and [Markdown](/docs/react/chat/guides/markdown) for the borrowed content views.

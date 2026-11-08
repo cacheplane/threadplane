@@ -1,0 +1,41 @@
+---
+title: Reasoning
+description: Show supplied assistant reasoning in a React disclosure without taking ownership of its Markdown document.
+---
+
+# Reasoning
+
+`Reasoning` presents an existing `MarkdownSnapshot` in an accessible disclosure. Usually that snapshot is `row.reasoning` from the application's `MessageContent` projection.
+
+This is an experimental, private React source-build view. It displays reasoning supplied by the backend; it does not generate or infer reasoning.
+
+## Borrow the document
+
+For a private source-build client view, pass the prepared snapshot directly:
+
+~~~tsx
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
+import { Reasoning } from '@threadplane/react/chat';
+
+export function ResponseReasoning({ snapshot }: { readonly snapshot: MarkdownSnapshot }) {
+  return <Reasoning snapshot={snapshot} />;
+}
+~~~
+
+The required `snapshot` prop is the complete owned Markdown snapshot. Parsing, observation, and disposal stay with the application. The component renders nothing when the document is empty.
+
+Streaming content defaults open with “Thinking…”. Completed content defaults collapsed with “Show reasoning”. Optional `label` overrides the text, and `defaultExpanded` changes the default completed presentation.
+
+Optional `durationMs` displays an application-supplied duration after completion. The component does not start a timer or infer model execution time. `className` customizes the wrapper; import the chat stylesheet for its standard appearance.
+
+## Keep user choices across updates
+
+A manual expansion or collapse persists through further updates and completion within the same generation. A new document generation, or a completed document becoming streaming again, resets that choice.
+
+This local presentation state does not affect session execution. Hiding the disclosure does not cancel work or dispose the document.
+
+## Compose it with the answer
+
+Default [MessageList](/docs/react/chat/components/chat-message-list) shows assistant reasoning before the answer. A custom `renderMessage` callback replaces the default row, so include Reasoning there when needed.
+
+The canonical native example's `Message` component in `examples/chat/native/react/src/app.tsx` checks for assistant reasoning, then renders the answer Markdown and sources separately. Follow the [message model](/docs/react/chat/concepts/message-model) for the owned-row boundary.

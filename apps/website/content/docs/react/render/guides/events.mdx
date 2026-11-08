@@ -1,0 +1,65 @@
+---
+title: Events
+description: Handle React controls in application code while RenderSpec reads supplied state and prepared data.
+---
+
+# Handle render interactions
+
+React Render currently has no specification-driven action dispatcher or `onAction` prop. Its supported interaction boundary is ordinary React event handling owned by the application.
+
+These APIs are experimental, private source-build packages. Do not translate Angular event-forwarding examples into an invented React render API.
+
+## Follow an actual state change
+
+The [Element Rendering example](/docs/react/render/guides/element-rendering) places a **Show detail** checkbox outside the generated tree. In `app.tsx`, its `onChange` calls the supplied `onShowDetailChange` callback.
+
+The client composition in `main.tsx` handles that callback by calling the owned render state's `set('/showDetail', value)`. The view observes the state snapshot and passes it to `RenderSpec`. Visibility reads the next supplied value.
+
+That path is explicit: user action, owner update, new snapshot, new rendering. Playback and sample changes do not overwrite the user's visibility choice.
+
+## Keep executable behavior in authored code
+
+This private source-build client component keeps the control outside the generated tree and supplies the next state explicitly:
+
+~~~tsx
+import { useState } from 'react';
+import {
+  RenderSpec,
+  type ReactRenderRegistry,
+  type RenderSpecData,
+} from '@threadplane/react/render';
+
+const registry: ReactRenderRegistry = {
+  Text: ({ props }) => <p>{String(props['text'] ?? '')}</p>,
+};
+const spec: RenderSpecData = {
+  root: 'destination',
+  elements: {
+    destination: { type: 'Text', props: { text: { $state: '/destination' } } },
+  },
+};
+
+export function DestinationControl() {
+  const [destination, setDestination] = useState('Portland');
+  return (
+    <>
+      <input
+        aria-label="Destination"
+        value={destination}
+        onChange={(event) => setDestination(event.target.value)}
+      />
+      <RenderSpec spec={spec} registry={registry} state={{ destination }} />
+    </>
+  );
+}
+~~~
+
+Your own registered React components can use ordinary React handlers and application context. Their commands remain your application's responsibility. RenderSpec supplies data props, binding paths, child views, element identity, and loading information; it supplies no automatic state writer or tool executor.
+
+Do not put callback functions in a specification's raw props. The renderer accepts plain data and rejects executable values. A `bindings` path tells an authored view where data came from; it does not write to that path automatically.
+
+## Admit commands separately
+
+If a control eventually requests a tool, submission, or persistent change, validate the intent at the application owner. Rendering, visibility evaluation, and computed functions must remain free of those effects.
+
+See [State Store](/docs/react/render/guides/state-store) for editable local values and [Lifecycle](/docs/react/render/guides/lifecycle) for retiring work. Forms, action providers, and watch effects are outside this private React entry.

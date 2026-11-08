@@ -1,0 +1,40 @@
+---
+title: Error Handling
+description: Distinguish React command settlement, response outcomes, and uncertain backend work before choosing recovery.
+---
+
+# Handle outcomes explicitly
+
+A fulfilled command is not always a successful response. A partial answer is useful display evidence, but it does not establish that the turn completed or was saved.
+
+These contracts belong to experimental, private React source-build packages.
+
+## Read the right outcome
+
+Core `AgentSession.submit` returns a `CompleteOutcome`:
+
+| Outcome | Interpretation |
+| --- | --- |
+| `success` | The session reports successful completion. |
+| `error` | The attempt failed. |
+| `aborted` | The attempt was cancelled. |
+| `interrupted` | The attempt ended with interruption. |
+| `paused` | The attempt awaits resumable input. |
+
+Application wrappers may instead publish `outcome` in their snapshot and return no result. Read their own admission and continuation policy. In the workbench, “settled” describes the application call, not model success.
+
+## Preserve uncertainty
+
+Thread creation can reach the backend before the browser loses confirmation. Retrying the creation or submission blindly can duplicate work. The [streaming connection](/docs/react/langgraph/guides/streaming) disables SDK retries and requires the exact returned thread ID.
+
+Its application permits continuation only after success. Stop, errors, pauses, interruptions, and unconfirmed creation require **New conversation**. Other examples support richer recovery only where they demonstrate a separate confirmation boundary.
+
+Optional core `checkStatus` reconciles without replaying the uncertain submission. Its presence does not authorize a hidden retry.
+
+## Present safe, useful feedback
+
+Keep the visible transcript while showing a clear recovery action. Do not use the disappearance of a busy indicator as the only outcome signal. The supplied examples display bounded application error messages instead of raw provider diagnostics.
+
+`Chat` displays `snapshot.error.message` and catches command rejections. Compose `MessageList` and `ChatInput` yourself when your application needs more specific admission, reconciliation, or saved-history checks.
+
+Keep credentials and provider details server-side. See [Lifecycle](/docs/react/chat/guides/lifecycle) for preventing late failures from replacing a newer selection.

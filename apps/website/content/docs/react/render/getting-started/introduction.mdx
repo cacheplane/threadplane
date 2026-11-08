@@ -1,0 +1,30 @@
+---
+title: Introduction
+description: Render caller-prepared interface specifications with an explicit React component registry.
+---
+
+# React Render
+
+`RenderSpec` turns a caller-prepared specification into your registered React components. The specification supplies data and relationships; the registry supplies executable views.
+
+These APIs are experimental, private source-build packages. `@threadplane/react/render` belongs to unpublished `@threadplane/react` version `0.0.0`.
+
+## Know the inputs
+
+A `RenderSpecData` value names a root key and an elements map. Each element names its type, props, optional children, visibility, and repeat configuration. A stable `ReactRenderRegistry` maps those names to React views.
+
+Registered views receive resolved readonly `props`, rendered `children`, `elementKey`, optional `bindings`, and `loading`. Container views decide where to place the supplied children.
+
+The application may also supply readonly `state` and named pure `functions` for supported expressions. RenderSpec does not create a store or write state.
+
+## Start without a backend
+
+[Quickstart](/docs/react/render/getting-started/quickstart) follows local authored samples. You can inspect partial JSON playback, nested components, and the final specification without model credentials or network requests.
+
+Continue with [registry](/docs/react/render/guides/registry), [state](/docs/react/render/guides/state-store), and [computed functions](/docs/react/render/guides/computed-functions).
+
+## Keep the boundary explicit
+
+The application validates untrusted data and owns parsing, asynchronous work, and disposal. RenderSpec's plain-data checks are not application-schema validation.
+
+This React entry has no specification action dispatcher, form provider, or watch-effect executor. [Events](/docs/react/render/guides/events) explains the supported application-owned controls. [Lifecycle](/docs/react/render/guides/lifecycle) follows parser and view lifetime. These client-side guides do not claim server rendering, hydration, or full Angular Render parity.

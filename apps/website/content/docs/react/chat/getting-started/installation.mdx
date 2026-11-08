@@ -1,0 +1,55 @@
+---
+title: Installation
+description: Build the private React chat entries and run the repository's native conversation application.
+---
+
+# Prepare React chat
+
+The chat entry is part of experimental, private `@threadplane/react`, currently unpublished at `0.0.0`. Use a repository source build; this guide does not prescribe a public npm install.
+
+## Build the supplied application
+
+Use Node.js 22 and npm 10 from the workspace root. The native example was locally verified with Node 22.23.2 and npm 10.9.8. React 19.2.4 is the tested runtime; React and React DOM `^19.2.4` are declared peers.
+
+~~~sh
+npm ci
+npx nx build react
+npx nx build native-conversation-react
+~~~
+
+The native example's tooling builds and installs its local candidate artifacts. An unconfigured build displays a setup screen. To serve a connected application, first run a reachable LangGraph deployment with an existing assistant, then supply its endpoint and assistant ID:
+
+~~~sh
+export NATIVE_LANGGRAPH_URL='http://127.0.0.1:2024'
+export NATIVE_ASSISTANT_ID='chat'
+npx nx serve native-conversation-react --configuration=development --port=4301
+~~~
+
+Replace those values with your deployment and assistant. Serving requires both values. If the deployment requires a key, set `NATIVE_LANGGRAPH_API_KEY` in the server environment; the same-origin proxy adds it upstream. Never put it in browser configuration or a `VITE_` variable. The server prints its ready URL after preparation and strict type checking.
+
+The development server supports macOS and Linux; Windows development serving is unsupported. Full backend and fixture prerequisites live in `examples/chat/native/README.md`. A frontend build does not provision a model backend or the production same-origin proxy.
+
+For the smaller source example:
+
+~~~sh
+npx nx build cockpit-chat-messages-react
+~~~
+
+Open the [messages guide](/docs/react/chat/concepts/message-model) to run that example in the docs workspace.
+
+## Import the intended entry
+
+Use `@threadplane/react` for `useAgent`, `@threadplane/react/chat` for chat components, and `@threadplane/react/markdown` for `Markdown`. Import `@threadplane/react/chat/styles.css` once in the client entry. Styles are opt-in; importing the headless hook does not include chat JavaScript or CSS.
+
+The native example's `main.tsx` and `app.tsx` show its actual imports and application wiring. Avoid copying Angular providers or signal APIs into React.
+
+## Check the contract
+
+~~~sh
+npx nx test react
+npx nx run react:type-tests
+~~~
+
+The binding observes client-side owners; `useAgent` does not support server rendering or hydration. Keep backend credentials on the server and make browser authentication an application responsibility.
+
+Continue with [Quickstart](/docs/react/chat/getting-started/quickstart).

@@ -1,0 +1,65 @@
+---
+title: Quickstart
+description: Build and inspect a local React RenderSpec example with authored data, registered views, and owned playback.
+---
+
+# Render your first specification
+
+Start with the [Specs & Elements example](/docs/react/render/guides/specs). Its samples run locally, so you can learn the renderer without an agent or provider credentials.
+
+The React APIs are experimental, private source-build packages. Use a checkout with Node.js 22 and npm; React 19.2.4 is the tested runtime.
+
+~~~sh
+npm ci
+npx nx build cockpit-render-spec-rendering-react
+~~~
+
+The build installs local package artifacts into its isolated consumer. The project's browser verification command is:
+
+~~~sh
+npx nx e2e cockpit-render-spec-rendering-react
+~~~
+
+## Play a complete local example
+
+Open **Run** on the Specs & Elements guide, choose **Card + Badge**, and press **Play**. Pause midway to compare the JSON prefix with its prepared display. **Finish** presents the complete sample; **Reset** clears playback.
+
+Read the same guide's source in this order:
+
+1. `specs.ts` defines the complete authored samples.
+2. `views.tsx` maps Heading, Text, Card, and Badge to React components.
+3. `projection.ts` validates and copies the supported partial display tree.
+4. `app.tsx` passes the tree and registry to `RenderSpec`.
+5. `playback.ts` owns parsing, seek, cancellation, and completion.
+
+## Preserve the application boundary
+
+After the source build, this complete client component renders a static authored tree. It needs no parser or agent:
+
+~~~tsx
+import {
+  RenderSpec,
+  type ReactRenderRegistry,
+  type RenderSpecData,
+} from '@threadplane/react/render';
+
+const registry: ReactRenderRegistry = {
+  Text: ({ props }) => <p>{String(props['text'] ?? '')}</p>,
+};
+const spec: RenderSpecData = {
+  root: 'summary',
+  elements: {
+    summary: { type: 'Text', props: { text: 'A weekend in Portland' } },
+  },
+};
+
+export function TripSummary() {
+  return <RenderSpec spec={spec} registry={registry} />;
+}
+~~~
+
+A view receives resolved props and rendered children. It does not receive raw network authority. Missing partial references can wait; known types are selected from the authored registry.
+
+The example's completion means the finished parser output matches the validated source. It is not a model-response outcome. Seeking rebuilds parser state, while pausing cancels obsolete playback callbacks.
+
+Next, add [state bindings](/docs/react/render/guides/state-store) or [element visibility](/docs/react/render/guides/element-rendering). Keep user actions explicit through [application-owned events](/docs/react/render/guides/events).
