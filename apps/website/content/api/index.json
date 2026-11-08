@@ -3994,6 +3994,16 @@
       "summary": "Literal evidence and optional app-authored labels for a tool activity."
     },
     {
+      "name": "ToolActivityOutcome",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivityOutcome",
+      "canonicalReference": "@threadplane/chat!ToolActivityOutcome:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+    },
+    {
       "name": "toolActivityPhase",
       "entrypointId": "chat",
       "kind": "Function",
@@ -4012,6 +4022,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Explicit readonly presentation state, separate from execution/session ownership."
+    },
+    {
+      "name": "ToolActivitySource",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivitySource",
+      "canonicalReference": "@threadplane/chat!ToolActivitySource:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolArgs",
@@ -6474,6 +6494,16 @@
       "summary": "Readonly activity evidence. Does not own execution, approval, sessions or persistence."
     },
     {
+      "name": "ToolActivityOutcome",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityOutcome",
+      "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+    },
+    {
       "name": "toolActivityPhase",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6502,6 +6532,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Presentation evidence and an independently mounted rich-result/action slot."
+    },
+    {
+      "name": "ToolActivitySource",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivitySource",
+      "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolObservation",

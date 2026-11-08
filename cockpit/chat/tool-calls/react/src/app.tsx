@@ -11,7 +11,10 @@ import {
   Citations,
 } from '@threadplane/react/chat';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Pure metadata copied into the isolated consumer.
-import { exampleToolLabel } from '../../../../shared/tool-presentation';
+import {
+  exampleToolLabel,
+  exampleToolOutcome,
+} from '../../../../shared/tool-presentation';
 import { Markdown } from '@threadplane/react/markdown';
 import type { MessageRow } from '@threadplane/content/messages';
 import {
@@ -58,6 +61,7 @@ export function renderMessage(
             ...card,
             label: exampleToolLabel(card.name),
             phase: toolActivityPhase(card.phase, row.message.delivery),
+            outcome: exampleToolOutcome(card),
           }))}
         />
       )}
@@ -177,7 +181,7 @@ export function ToolCallsDemo({
             return true;
           }}
         />
-        <p role="status">{status}</p>
+        <p role="status" aria-label="Conversation status">{status}</p>
       </ExampleFooter>
     </ExampleLayout>
   );

@@ -5,7 +5,7 @@
   --ink: #202127;
   --muted: #666b78;
   --line: #e1e3e9;
-  font: 14px/1.6 system-ui, sans-serif;
+  font: 16px/1.6 system-ui, sans-serif;
   background: var(--panel);
   color: var(--ink);
 }
@@ -23,6 +23,7 @@
 }
 body {
   margin: 0;
+  font-size: 14px;
 }
 header.benchmark-header {
   max-width: 960px;
@@ -32,13 +33,13 @@ header.benchmark-header {
   justify-content: space-between;
   gap: 16px;
 }
-h1 {
+.benchmark-header h1 {
   font-size: 20px;
   line-height: 1.4;
   margin: 0;
   font-weight: 600;
 }
-header p {
+.benchmark-header p {
   margin: 4px 0 0;
   color: var(--muted);
 }
@@ -54,7 +55,9 @@ main.benchmark-chat {
   border-radius: 14px;
   overflow: hidden;
 }
-button {
+.benchmark-header button,
+.benchmark-decision button,
+.benchmark-recovery button {
   cursor: pointer;
   color: inherit;
   background: var(--surface);
@@ -63,23 +66,115 @@ button {
   padding: 6px 12px;
   font: inherit;
 }
-button:disabled {
+.benchmark-header button:disabled,
+.benchmark-decision button:disabled,
+.benchmark-recovery button:disabled {
   cursor: default;
   opacity: 0.5;
 }
-textarea {
-  color: inherit;
-  background: var(--surface);
+.benchmark-decision,
+.benchmark-recovery {
+  margin-block: 20px;
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
-  font: inherit;
-  resize: vertical;
 }
-pre {
-  font: 12px/1.6 ui-monospace, monospace;
-  overflow-wrap: anywhere;
+.benchmark-decision h2 {
+  font-size: 16px;
+  margin: 0;
+}
+.benchmark-decision div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.benchmark-decision :focus-visible,
+.benchmark-recovery :focus-visible,
+.benchmark-message-actions :focus-visible,
+.benchmark-header :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.benchmark-message-text {
+  margin: 0;
   white-space: pre-wrap;
+}
+.benchmark-message-text:empty {
+  display: none;
+}
+.benchmark-message-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0 12px;
+  /* Angular message controls are siblings of its inset assistant body. */
+  margin-inline: -4px -12px;
+}
+.benchmark-message-actions button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tp-chat-muted);
+  cursor: pointer;
+}
+.benchmark-message-actions button:hover {
+  color: var(--tp-chat-text);
+  background: var(--tp-chat-surface-alt);
+}
+.benchmark-message-actions svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.benchmark-message-actions button:focus-visible {
+  outline-offset: 2px;
+}
+.benchmark-chat > .tp-chat {
+  --tp-chat-font-size-base: 14px;
+  --tp-chat-reading-width: 48rem;
+}
+/* Angular primitives declare their own host tokens; set the benchmark's
+   base text size on those hosts as well as the composition. Keep rem=16px
+   so fixed controls and reading widths share the same physical geometry. */
+.benchmark-chat chat,
+.benchmark-chat chat * {
+  --tplane-chat-font-size: 14px;
+  --tplane-chat-max-width: 48rem;
+  --tplane-chat-edge-pad: 16px;
+}
+.benchmark-chat .tp-chat-list > div {
+  /* Angular's empty-header chat-window adds 12px above its scroll16+list16. */
+  padding: 44px 24px 16px;
+}
+/* Match Chat's default chat-tool-calls wrapper in reference scenarios. The
+   native/recovery scenarios use the same explicit activity group in both hosts. */
+.benchmark-chat--default-activity .tp-tool-activity-group__details {
+  margin-block-end: 4px;
+}
+.benchmark-chat--default-activity .tp-tool-activity-group {
+  margin-block-end: 20px;
+}
+.benchmark-composer {
+  padding: 0 16px 16px;
+}
+.benchmark-composer .tp-chat-input__textarea {
+  font-size: 1rem;
+}
+/* This host offers only working copy actions; scoring and regeneration are
+   outside the matched benchmark contract. The SDK's Copy remains native. */
+.benchmark-chat chat-message-actions button[aria-label='Regenerate response'],
+.benchmark-chat chat-message-actions button[aria-label='Thumbs up'],
+.benchmark-chat chat-message-actions button[aria-label='Thumbs down'] {
+  display: none;
+}
+.benchmark-chat > .tp-chat {
+  gap: 0;
 }
 @media (max-width: 1024px) {
   header.benchmark-header {

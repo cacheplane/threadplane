@@ -78,6 +78,18 @@ describe('markdownDocument', () => {
 });
 
 describe('ChatComponent', () => {
+  it('forwards authored outcomes into default grouped tool rendering', () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ messages: [{ id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c', 'd'], delivery: completeDelivery('g', 'success') }], toolCalls: ['c', 'd'].map(id => ({ id, name: 'lookup', args: {}, status: 'complete' as const, result: 'ok' })) });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('groupRelatedTools', true);
+    fixture.componentRef.setInput('toolOutcome', () => ({ text: 'Reference verified', sources: [{ title: 'Signals', url: 'https://angular.dev/guide/signals' }] }));
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-outcomes')?.textContent).toContain('Reference verified');
+    expect(root.querySelector('.tp-tool-outcomes')?.closest('[hidden], details')).toBeNull();
+    expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeTruthy();
+  });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
   });

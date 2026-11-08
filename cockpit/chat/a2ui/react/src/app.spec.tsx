@@ -126,7 +126,7 @@ it('uses application status to block sends and show Stop plus visible recovery e
   const f = fixture();
   render(<A2uiDemo application={f.app} onReady={() => undefined} />);
   act(() => f.update({ busy: true, canSubmit: false, activity: 'confirming' }));
-  expect(screen.getByRole('status').textContent).toContain('Confirming');
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toContain('Confirming');
   fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
   expect(f.app.stop).toHaveBeenCalledTimes(1);
   act(() =>

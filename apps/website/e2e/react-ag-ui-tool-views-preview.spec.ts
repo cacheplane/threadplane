@@ -71,11 +71,11 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   await request.post(origin + '/__reset');
   await page.goto('/docs/react/ag-ui/guides/tool-views?mode=run');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await frame.getByLabel('Message', { exact: true }).fill('Hold result');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(frame.locator('.weather-card')).toContainText('68 °F');
-  await expect(frame.getByRole('status')).toHaveText(
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Getting a weather reading…'
   );
   const oldFrame = await page.locator('iframe').elementHandle();
@@ -91,7 +91,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
     .toBe(false);
   await request.post(origin + '/__release');
   await selectFramework(page, 'react');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(frame.locator('[data-weather-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
   const proof = await (await request.get(origin + '/__requests')).json();

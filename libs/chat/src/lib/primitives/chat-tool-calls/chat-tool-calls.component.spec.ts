@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal, computed, Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
@@ -621,6 +621,20 @@ describe('ChatToolCallsComponent — [toolCallTemplates] input', () => {
 });
 
 describe('ChatToolCallsComponent — readable activity evidence', () => {
+  it('projects authored outcomes once per call instead of invoking app callbacks for status counting', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const agent = mockAgent({ toolCalls: ['a', 'b'].map(id => ({ id, name: 'read', args: {}, status: 'complete' as const, result: 'ok' })) });
+    const outcome = vi.fn(() => ({ text: 'Reference checked' }));
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('toolOutcome', outcome);
+    fixture.detectChanges();
+    fixture.detectChanges();
+    expect(outcome).toHaveBeenCalledTimes(2);
+    agent.toolCalls.update(calls => calls.map(call => ({ ...call, result: 'new' })));
+    fixture.detectChanges();
+    expect(outcome).toHaveBeenCalledTimes(4);
+  });
   it('retains group/member Details and focus when the first call changes through reordering', () => {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
@@ -637,6 +651,17 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
     expect(details.open).toBe(true);
     expect(document.activeElement).toBe(summary);
   });
+  it('keeps opted-in related grouping consistent for one call and exposes concise progress', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', mockAgent({ toolCalls: [{ id: 'a', name: 'read', args: {}, status: 'running' }] }));
+    fixture.componentRef.setInput('groupRelated', true);
+    fixture.detectChanges();
+    const header: HTMLButtonElement = fixture.nativeElement.querySelector('.ctc__group-header');
+    expect(header.hidden).toBe(false);
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('1 running');
+  });
   it('retains the first disclosure and focus when one related call grows to two', () => {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
@@ -646,6 +671,8 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
     fixture.componentRef.setInput('agent', agent);
     fixture.componentRef.setInput('groupRelated', true);
     fixture.detectChanges();
+    const header: HTMLButtonElement = fixture.nativeElement.querySelector('.ctc__group-header');
+    if (!header.hidden) { header.click(); fixture.detectChanges(); }
     const details: HTMLDetailsElement = fixture.nativeElement.querySelector(
       'chat-tool-activity details'
     );

@@ -40,7 +40,7 @@ async function emptyRun(page: Page, draft = '') {
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('heading', { name: 'Plan a flight', exact: true })).toBeVisible();
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(frame.getByRole('region', { name: 'Conversation', exact: true }).locator('article')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(draft);
 }

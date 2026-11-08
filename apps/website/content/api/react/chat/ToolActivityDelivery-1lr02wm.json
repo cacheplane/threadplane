@@ -39,7 +39,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 14
+        "line": 24
       },
       "typeTokenRange": {
         "startIndex": 1,
@@ -49,6 +49,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 14
+    "line": 24
   }
 }

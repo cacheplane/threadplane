@@ -82,6 +82,44 @@ const scenarios = deepFreeze({
     requiresApproval: true,
     conclusion: 'The comparison note was saved in the local benchmark store.',
   },
+  'native-approval': {
+    id: 'native-approval',
+    prompt:
+      'Draft a comparison note. Pause for a native approval before saving it.',
+    calls: [
+      call('save-comparison', 'save_note', {
+        text: 'Signals manage reactive values; toSorted creates a sorted copy.',
+      }),
+    ],
+    nativeApproval: true,
+    conclusion: 'The comparison note was saved in the local benchmark store.',
+  },
+  'partial-failure': {
+    id: 'partial-failure',
+    prompt: 'Read both references. Retry the failed read explicitly.',
+    retryPrompt: 'Retry the failed read explicitly.',
+    calls: [lookupCalls[2], lookupCalls[3]],
+    recoverableRead: 'read-sorted',
+    conclusion: 'Both authored references are now available.',
+  },
+  'long-mixed': {
+    id: 'long-mixed',
+    prompt:
+      'Inspect a long sequence of reference reads with one recoverable failure.',
+    calls: Array.from({ length: 18 }, (_, index) =>
+      call('long-read-' + index, 'read_reference', {
+        id:
+          index === 8
+            ? 'not-a-reference'
+            : index % 2
+            ? 'array-to-sorted'
+            : 'angular-signals',
+      })
+    ),
+    continueOnError: true,
+    conclusion:
+      'Seventeen reference reads completed; one reference was unavailable.',
+  },
 });
 
 export function getScenario(id) {

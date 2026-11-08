@@ -10,7 +10,13 @@ const info: ToolActivityInfo = {
   phase: 'pending',
   argumentsText: '{',
   resultText: '',
+  outcome: {
+    text: 'Reference checked',
+    sources: [{ title: 'Signals', url: 'https://angular.dev/guide/signals' }],
+  },
 };
+// @ts-expect-error Source evidence is readonly.
+info.outcome!.sources![0].url = 'https://example.org';
 // @ts-expect-error Display evidence is readonly.
 info.name = 'other';
 // @ts-expect-error Approval/execution belongs to the owner.

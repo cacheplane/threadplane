@@ -45,7 +45,7 @@ async function emptyRun(page: Page, draft = '') {
     reactFrame
   );
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(
     frame
       .getByRole('region', { name: 'Conversation', exact: true })

@@ -52,6 +52,14 @@ The runner uses installed Chrome, actual composer/Send/Stop/New controls, native
 
 The vendor consumer uses AG-UI 1.0.4 for assistant-ui's native adapter and CopilotKit's own exported `HttpAgent` for its exact 1.0.2 dependency. This preserves each published constructor's type identity; do not force either adapter onto the other's SDK class. Angular/React benchmark consumers and the vendor entrypoint are checked against their installed package declarations.
 
+## Native approval, recovery and long sequences
+
+With the same local servers running, execute `node tools/tool-rendering-benchmark/run-native.mjs /private/tmp/tool-native-evidence`. This additional Angular/React tier exercises protocol-native paused `RUN_FINISHED` outcomes and subsequent SDK-owned resume requests, explicit approve/deny, duplicate and reset revocation, a same-thread read-only retry with a retained successful prefix, and a long sequence with an app-authored recoverable error schema. Vendor approval UI remains N/A; the older streaming `/approve` endpoint is a separate backend contract.
+
+The application interprets only the benchmark's known result schemas. Reference previews validate fixed official URLs; partial read errors and declined saves use explicit authored presentation. A complete tool result does not itself establish business success. Native pause IDs/generations come from the SDK; no display component executes or approves a call. Observed local write counts are not a universal exactly-once guarantee. Uncertain side effects are never blindly replayed.
+
+The native driver uses actual composer, disclosure, approval and retry controls and saves receipts, geometry and desktop/dark/compact screenshots. It checks keyboard focus, source visibility outside Details, reading position during longer sequences, reduced-motion and forced-colors focus styling. These automated checks do not establish actual screen-reader speech; manual assistive-technology testing is separate. Both hosts use explicit app-owned Copy actions and a shared host skin; unsupported commands are not fabricated.
+
 AG-UI expresses the error scenario as `RUN_ERROR`, whereas AI SDK supports a per-tool output error. Record that distinction. Native approval/resume is **N/A for these integrations**, not a failure of the underlying products. Never infer approval, persistence or business success from a pretty status label or from the existence of a rendered artifact.
 
 Live ChatGPT/Claude product observations use the same user goal but are a separate qualitative tier: model, backend search selection and returned data are uncontrolled. Record access limits, account state and unknown versions. Do not compare their timing or result hashes against this controlled workload.

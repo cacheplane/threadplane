@@ -35,6 +35,7 @@ import {
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
+import type { ToolActivityInfo, ToolActivityOutcome } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
@@ -287,6 +288,7 @@ export function isPinned(
             @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
             @let currentGroupRelatedTools = groupRelatedTools();
             @let currentToolLabel = toolLabel();
+            @let currentToolOutcome = toolOutcome();
             @let currentViews = effectiveViews();
             @let currentStore = resolvedStore();
             @let currentHandlers = handlers();
@@ -346,6 +348,7 @@ export function isPinned(
                       [toolCallTemplates]="currentToolCallTemplates"
                       [groupRelated]="currentGroupRelatedTools"
                       [toolLabel]="currentToolLabel"
+                      [toolOutcome]="currentToolOutcome"
                     />
                   }
                   <chat-tool-views
@@ -645,6 +648,8 @@ export class ChatComponent {
   readonly groupRelatedTools = input(false);
   /** App-authored readable labels; technical names remain in Details. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+  /** App-authored confirmed outcome previews for default tool rendering. */
+  readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
 
   protected sourceText(message: Message): string {
     return typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2);

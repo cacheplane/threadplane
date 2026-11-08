@@ -25,7 +25,7 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
   await request.post(origin + '/__reset');
   await page.goto('/docs/react/ag-ui/guides/json-render?mode=run');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   for (const mode of ['full', 'filter']) {
     await frame.getByLabel('Message', { exact: true }).fill(mode);
     const response = page.waitForResponse(
@@ -38,7 +38,7 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
     const received = await response;
     expect(received.status()).toBe(200);
     expect(received.headers()['content-type']).toContain('text/event-stream');
-    await expect(frame.getByRole('status')).toHaveText('Response complete.');
+    await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   }
   await expect(frame.locator('[data-dashboard-spec-owner]')).toHaveCount(1);
   await expect(frame.locator('.dashboard-metric')).toHaveText('84.2%');
@@ -95,7 +95,7 @@ test('public React AG-UI JSON Render keeps Docs, Code, and Run aligned', async (
     /(?:localhost:4612|ag-ui\/json-render\/react)/
   );
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   expect(await localRequestCount(request)).toBe(requestsBefore);
 });
 
@@ -106,7 +106,7 @@ test('public React AG-UI JSON Render restores its runtime through frontend histo
   const requestsBefore = await localRequestCount(request);
   await page.goto('/docs/react/ag-ui/guides/json-render?mode=run');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await selectFramework(page, 'angular');
   await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(page).not.toHaveURL(/\/docs\/react\//);
@@ -121,7 +121,7 @@ test('public React AG-UI JSON Render restores its runtime through frontend histo
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/
   );
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(frame.locator('[data-dashboard-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
   expect(await localRequestCount(request)).toBe(requestsBefore);
@@ -134,7 +134,7 @@ test('public React AG-UI JSON Render reloads an empty native runtime and fits mo
   const requestsBefore = await localRequestCount(request);
   await page.goto('/docs/react/ag-ui/guides/json-render?mode=run');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await frame.getByLabel('Message', { exact: true }).fill('Unsent local draft');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
@@ -142,7 +142,7 @@ test('public React AG-UI JSON Render reloads an empty native runtime and fits mo
     'src',
     /(?:localhost:4612|ag-ui\/json-render\/react)/
   );
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   const url = new URL(page.url());
   expect(url.pathname).toBe('/docs/react/ag-ui/guides/json-render');
   expect(url.pathname).toContain('/docs/react/');
@@ -174,7 +174,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   await request.post(origin + '/__reset');
   await page.goto('/docs/react/ag-ui/guides/json-render?mode=run');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await request.post(origin + '/__hold/result');
   await frame.getByLabel('Message', { exact: true }).fill('full');
   const response = page.waitForResponse(
@@ -195,7 +195,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
         ).active
     )
     .toBe(true);
-  await expect(frame.getByRole('status')).toHaveText('Updating the dashboard…');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Updating the dashboard…');
   const oldFrame = await page.locator('iframe').elementHandle();
   await selectFramework(page, 'angular');
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
@@ -209,7 +209,7 @@ test('switching away disposes a held server-tool stream and returning stays lazy
     .toBe(false);
   await request.post(origin + '/__release');
   await selectFramework(page, 'react');
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(frame.locator('[data-dashboard-message]')).toHaveCount(0);
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
   const proof = await (await request.get(origin + '/__requests')).json();

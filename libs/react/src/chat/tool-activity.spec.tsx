@@ -11,6 +11,67 @@ import {
 import { phases } from '../../../../fixtures/tool-activity/phases';
 afterEach(cleanup);
 describe('ToolActivity', () => {
+  it('shows confirmed outcomes and safe deduplicated sources outside collapsed inspection', () => {
+    const activity = {
+      id: 'source',
+      name: 'lookup',
+      phase: 'complete' as const,
+      outcome: {
+        text: 'Found the official reference',
+        sources: [
+          { title: 'Signals', url: 'https://angular.dev/guide/signals' },
+          { title: 'Duplicate', url: 'https://angular.dev/guide/signals' },
+          { title: 'Unsafe', url: 'javascript:alert(1)' },
+          { title: 'Relative', url: '/private' },
+        ],
+      },
+    };
+    const view = render(<ToolActivityGroup activities={[activity]} />);
+    expect(
+      view.getByText('Found the official reference').closest('details')
+    ).toBeNull();
+    expect(view.getAllByRole('link')).toHaveLength(1);
+    expect(
+      view.getByRole('link', { name: 'Signals' }).getAttribute('href')
+    ).toBe('https://angular.dev/guide/signals');
+    expect(view.container.querySelector('details')!.open).toBe(false);
+    view.rerender(
+      <ToolActivity activity={{ ...activity, phase: 'running' }} />
+    );
+    expect(view.queryByText('Found the official reference')).toBeNull();
+    expect(view.queryByRole('link')).toBeNull();
+  });
+  it('announces concise mixed progress and bounds long outcome previews without raw live payloads', () => {
+    const activities = Array.from({ length: 8 }, (_, index) => ({
+      id: String(index),
+      name: 'read',
+      phase: 'complete' as const,
+      outcome: {
+        text: `Read reference ${index}`,
+        sources: [
+          { title: `Source ${index}`, url: `https://example.org/${index}` },
+        ],
+      },
+      resultText: 'raw diagnostic',
+    }));
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          ...activities,
+          { id: 'live', name: 'read', phase: 'running' },
+          { id: 'bad', name: 'read', phase: 'error' },
+        ]}
+      />
+    );
+    const status = view.getByRole('status');
+    expect(status.textContent).toContain('8 complete');
+    expect(status.textContent).toContain('1 running');
+    expect(status.textContent).toContain('1 failed');
+    expect(status.textContent).not.toContain('raw diagnostic');
+    expect(view.getByText('More results (5)')).toBeTruthy();
+    expect(view.getByText('More sources (5)')).toBeTruthy();
+    expect(view.getByText('Read reference 0').closest('details')).toBeNull();
+  });
   it.each(phases)(
     'resolves $phase after $outcome as $expected without mutating execution',
     ({ phase, outcome, expected }) => {
