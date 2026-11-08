@@ -30,6 +30,42 @@
       },
       "members": [
         {
+          "name": "citationPreview",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MarkdownProps#citationPreview:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly citationPreview?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Show local, connected source details instead of direct citation links.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/markdown/markdown.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "citations",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!MarkdownProps#citations:member",

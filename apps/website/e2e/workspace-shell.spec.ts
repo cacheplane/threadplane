@@ -1,11 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-const streamingDocsPath = '/docs/langgraph/guides/streaming';
-const persistenceDocsPath = '/docs/langgraph/guides/persistence';
-const mappedDocsOnlyPath = '/docs/langgraph/getting-started/introduction';
-const unmappedDocsOnlyPath = '/docs/langgraph/getting-started/installation';
-const durableExecutionDocsPath = '/docs/langgraph/guides/durable-execution';
-const RUN_RAIL_ITEM = /^Run(?:,|$)/;
+const streamingDocsPath = '/docs/angular/langgraph/guides/streaming';
+const persistenceDocsPath = '/docs/angular/langgraph/guides/persistence';
+const mappedDocsOnlyPath = '/docs/angular/langgraph/getting-started/introduction';
+const unmappedDocsOnlyPath = '/docs/angular/langgraph/getting-started/installation';
+const durableExecutionDocsPath = '/docs/angular/langgraph/guides/durable-execution';
 
 declare global {
   interface Window {
@@ -15,10 +14,12 @@ declare global {
 }
 
 const modeButton = (page: Page, mode: 'Docs' | 'Run' | 'Code' | 'API') =>
-  page.locator('[data-workspace-desktop-navigation]').getByRole('button', {
-    name: mode === 'Run' ? RUN_RAIL_ITEM : mode,
-    exact: mode !== 'Run',
-  });
+  page.locator(`[data-workspace-toolbar-mode="${mode}"]`);
+
+async function openUtility(page: Page, utility: 'Activity' | 'Settings') {
+  await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+  await page.getByRole('menuitem', { name: utility, exact: true }).click();
+}
 
 const visiblePanel = (page: Page, mode: 'Docs' | 'Run' | 'Code' | 'API') =>
   page.locator(`[data-workspace-panel-target="${mode}"]`).filter({
@@ -152,7 +153,9 @@ test.describe('workspace shell', () => {
     await modeButton(page, 'Run').click();
     await expect(page).toHaveURL(`${streamingDocsPath}?mode=run`);
     await expectMode(page, 'Run');
+    await openUtility(page, 'Settings');
     await expect(page.getByText('Ready', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Close Settings' }).click();
 
     const frame = page.locator(
       'iframe[title="LangGraph Streaming live example"]'
@@ -209,6 +212,7 @@ test.describe('workspace shell', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${streamingDocsPath}?mode=run`);
     await expectMode(page, 'Run');
+    await openUtility(page, 'Settings');
     await expect(page.getByText('Ready', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => window.__websiteAboutBlankMounted)).toBe(
       false
@@ -217,7 +221,7 @@ test.describe('workspace shell', () => {
       await page.evaluate(() => window.__websiteRuntimePhases)
     ).not.toContain('unresponsive');
 
-    await page.getByRole('button', { name: 'Activity', exact: true }).click();
+    await openUtility(page, 'Activity');
     await expect(
       page.locator('[data-activity-kind="runtime_check_requested"]')
     ).toHaveCount(1);
@@ -226,9 +230,10 @@ test.describe('workspace shell', () => {
     ).toHaveCount(1);
     await page.getByRole('button', { name: 'Close Activity' }).click();
 
+    await openUtility(page, 'Settings');
     await page.getByRole('button', { name: 'Recheck' }).click();
     await expect(page.getByText('Ready', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Activity', exact: true }).click();
+    await openUtility(page, 'Activity');
     await expect(
       page.locator('[data-activity-kind="runtime_check_requested"]')
     ).toHaveCount(2);
@@ -268,18 +273,12 @@ test.describe('workspace shell', () => {
     await expect(page).toHaveURL(persistenceDocsPath);
     await expectMode(page, 'Docs');
     await expect(shell).toHaveAttribute('data-e2e-shell-lifetime', 'original');
-    await page
-      .locator('[data-workspace-desktop-navigation]')
-      .getByRole('button', { name: 'Activity', exact: true })
-      .click();
+    await openUtility(page, 'Activity');
     await expect(page.getByText('Mode changed to Code')).toBeVisible();
     await expect(
       page.locator('[data-activity-capability]').first()
     ).toContainText('streaming');
-    await page
-      .locator('[data-workspace-desktop-navigation]')
-      .getByRole('button', { name: 'Activity', exact: true })
-      .click();
+    await page.getByRole('button', { name: 'Close Activity' }).click();
     await page.goBack();
     await expect(page).toHaveURL(`${streamingDocsPath}?mode=code`);
     await expectMode(page, 'Code');
@@ -304,25 +303,21 @@ test.describe('workspace shell', () => {
     });
   }
 
-  test('normalizes a valid but unavailable mode and explains docs-only controls', async ({
+  test('opens fallback Run and generated API on pages without an example', async ({
     page,
   }) => {
     await page.goto(`${mappedDocsOnlyPath}?mode=run`);
-    await expect(page).toHaveURL(mappedDocsOnlyPath);
-    await expectMode(page, 'Docs');
-    await expect(modeButton(page, 'Run')).toHaveAttribute(
-      'aria-disabled',
-      'true'
-    );
+    await expectMode(page, 'Run');
+    await expect(page.getByRole('heading', { name: 'See it in action.' })).toBeVisible();
 
     await page.goto(`${unmappedDocsOnlyPath}?mode=api`);
-    await expect(page).toHaveURL(unmappedDocsOnlyPath);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-workspace-kind',
       'docs-only'
     );
-    await expectMode(page, 'Docs');
-    for (const mode of ['Run', 'Code', 'API'] as const) {
+    await expectMode(page, 'API');
+    await expect(page.getByRole('heading', { name: 'API reference', exact: true })).toBeVisible();
+    for (const mode of ['Code'] as const) {
       await expect(modeButton(page, mode)).toHaveAttribute(
         'aria-disabled',
         'true'
@@ -336,7 +331,7 @@ test.describe('workspace shell', () => {
     }
   });
 
-  test('docs-only /docs/choosing-an-adapter keeps operational modes focusable and local', async ({
+  test('docs-only /docs/choosing-an-adapter links to examples and APIs', async ({
     page,
   }) => {
     const path = '/docs/choosing-an-adapter';
@@ -345,7 +340,9 @@ test.describe('workspace shell', () => {
 
     const controlPlane = page.locator('[data-docs-control-plane]');
     await expect(controlPlane).toBeVisible();
-    for (const mode of ['Run', 'Code', 'API'] as const) {
+    await expect(controlPlane.getByRole('link', { name: 'Run', exact: true })).toHaveAttribute('href', '/docs/examples');
+    await expect(controlPlane.getByRole('link', { name: 'API', exact: true })).toHaveAttribute('href', '/docs/api');
+    for (const mode of ['Code'] as const) {
       const control = controlPlane.getByRole('button', {
         name: mode,
         exact: true,
@@ -369,7 +366,7 @@ test.describe('workspace shell', () => {
     ).toBeVisible();
   });
 
-  test('docs-only /docs keeps Code and API disabled but Run is a live link to the canonical example', async ({
+  test('docs-only /docs links Run to the example directory and API to generated reference', async ({
     page,
   }) => {
     const path = '/docs';
@@ -379,7 +376,8 @@ test.describe('workspace shell', () => {
     const controlPlane = page.locator('[data-docs-control-plane]');
     await expect(controlPlane).toBeVisible();
 
-    for (const mode of ['Code', 'API'] as const) {
+    await expect(controlPlane.getByRole('link', { name: 'API', exact: true })).toHaveAttribute('href', '/docs/api');
+    for (const mode of ['Code'] as const) {
       const control = controlPlane.getByRole('button', {
         name: mode,
         exact: true,
@@ -402,7 +400,7 @@ test.describe('workspace shell', () => {
     const run = controlPlane.getByRole('link', { name: 'Run', exact: true });
     await expect(run).toHaveAttribute(
       'href',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/examples'
     );
     // Match the destination document; hydration can also update history.
     const [response] = await Promise.all([
@@ -412,16 +410,16 @@ test.describe('workspace shell', () => {
           response.request().frame() === page.mainFrame() &&
           response.url() ===
             new URL(
-              '/docs/langgraph/guides/streaming?mode=run',
+              '/docs/examples',
               page.url()
             ).href
       ),
       run.click(),
     ]);
     expect(response.status()).toBe(200);
-    await expect(page).toHaveURL('/docs/langgraph/guides/streaming?mode=run');
+    await expect(page).toHaveURL('/docs/examples');
     await expectMode(page, 'Run');
-    await expect(page.locator('iframe')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'See it in action.' })).toBeVisible();
   });
 
   test('serves the formerly workspace-only capabilities as docs pages with Run available', async ({
@@ -445,7 +443,7 @@ test.describe('workspace shell', () => {
     expect(missing?.status()).toBe(404);
   });
 
-  test('renders the full desktop rail and context at the 64rem breakpoint', async ({
+  test('renders the desktop docs pane and persistent mode toolbar at the 64rem breakpoint', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
@@ -454,8 +452,12 @@ test.describe('workspace shell', () => {
 
     const desktop = page.locator('[data-workspace-desktop-navigation]');
     await expect(desktop).toBeVisible();
-    await expect(desktop.locator('[data-control-plane-rail]')).toBeVisible();
+    await expect(desktop.locator('[data-control-plane-rail]')).toHaveCount(0);
     await expect(desktop.locator('[data-control-plane-pane]')).toBeVisible();
+    await expect(desktop.getByRole('button', { name: 'Search docs' })).toBeVisible();
+    await expect(page.locator('[data-workspace-toolbar]')).toBeVisible();
+    for (const mode of ['Docs', 'Run', 'Code', 'API'] as const)
+      await expect(modeButton(page, mode)).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Open context' })
     ).toBeHidden();
@@ -484,25 +486,19 @@ test.describe('workspace shell', () => {
       const mobileTrigger = page.getByRole('button', {
         name: 'Open navigation',
       });
+      await expect(modeButton(page, 'Run')).toBeVisible();
       if (viewport.width >= 1024) {
         await expect(desktopNavigation).toBeVisible();
         await expect(mobileTrigger).toBeHidden();
-        await expect(
-          page.getByRole('button', { name: 'Runtime', exact: true })
-        ).toBeVisible();
-        await expect(
-          desktopNavigation.getByRole('button', {
-            name: RUN_RAIL_ITEM,
-          })
-        ).toBeVisible();
-        await desktopNavigation
-          .getByRole('button', { name: 'Activity' })
-          .click();
+        await expect(desktopNavigation.getByRole('button', { name: 'Search docs' })).toBeVisible();
+        await openUtility(page, 'Settings');
+        await expect(page.getByRole('button', { name: 'Runtime', exact: true })).toBeVisible();
+        await openUtility(page, 'Activity');
         await expect(
           page.getByRole('heading', { name: 'Activity' })
         ).toBeVisible();
       } else if (viewport.width === 768) {
-        await expect(desktopNavigation).toBeVisible();
+        await expect(desktopNavigation).toBeHidden();
         await expect(mobileTrigger).toBeHidden();
         const contextTrigger = page.getByRole('button', {
           name: 'Open context',
@@ -512,12 +508,14 @@ test.describe('workspace shell', () => {
         const dialog = page.getByRole('dialog', {
           name: 'Documentation control plane context',
         });
-        await expect(
-          dialog.getByRole('button', { name: 'Runtime', exact: true })
-        ).toBeVisible();
-        await desktopNavigation
-          .getByRole('button', { name: 'Activity' })
-          .click();
+        await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await openUtility(page, 'Settings');
+        await expect(dialog.getByRole('button', { name: 'Runtime', exact: true })).toBeVisible();
+        await dialog.getByRole('button', { name: 'Close Settings' }).click();
+        await expect(dialog).toHaveCount(0);
+        await openUtility(page, 'Activity');
         await expect(
           dialog.getByRole('heading', { name: 'Activity' })
         ).toBeVisible();
@@ -531,13 +529,17 @@ test.describe('workspace shell', () => {
         const dialog = page.getByRole('dialog', {
           name: 'Documentation control plane',
         });
-        await expect(
-          dialog.getByRole('button', { name: RUN_RAIL_ITEM })
-        ).toBeVisible();
-        await expect(
-          dialog.getByRole('button', { name: 'Runtime', exact: true })
-        ).toBeVisible();
-        await dialog.getByRole('button', { name: 'Activity' }).click();
+        await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+        await expect(dialog.locator('[data-control-plane-rail]')).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await openUtility(page, 'Settings');
+        await expect(dialog.getByRole('button', { name: 'Runtime', exact: true })).toBeVisible();
+        await dialog.getByRole('button', { name: 'Close Settings' }).click();
+        await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await openUtility(page, 'Activity');
         await expect(
           dialog.getByRole('heading', { name: 'Activity' })
         ).toBeVisible();
@@ -553,13 +555,14 @@ test.describe('workspace shell', () => {
     await expectNoHorizontalOverflow(page, 'tablet workspace');
 
     const desktop = page.locator('[data-workspace-desktop-navigation]');
-    await expect(desktop.locator('[data-control-plane-rail]')).toBeVisible();
+    await expect(desktop).toBeHidden();
+    await expect(desktop.locator('[data-control-plane-rail]')).toHaveCount(0);
     await expect(desktop.locator('[data-control-plane-pane]')).toBeHidden();
     const contextTrigger = page.getByRole('button', { name: 'Open context' });
     await expect(contextTrigger).toBeVisible();
 
-    const activity = desktop.getByRole('button', { name: 'Activity' });
-    await activity.click();
+    const tools = page.getByRole('button', { name: 'Workspace tools', exact: true });
+    await openUtility(page, 'Activity');
     const dialog = page.getByRole('dialog', {
       name: 'Documentation control plane context',
     });
@@ -568,8 +571,10 @@ test.describe('workspace shell', () => {
       dialog.getByRole('heading', { name: 'Activity' })
     ).toBeFocused();
 
-    const settings = desktop.getByRole('button', { name: 'Settings' });
-    await settings.click();
+    await dialog.getByRole('button', { name: 'Close Activity' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(tools).toBeFocused();
+    await openUtility(page, 'Settings');
     await expect(
       dialog.getByRole('heading', { name: 'Settings' })
     ).toBeFocused();
@@ -577,7 +582,7 @@ test.describe('workspace shell', () => {
     await expect(
       dialog.getByRole('heading', { name: 'Settings' })
     ).toBeHidden();
-    await expect(settings).toBeFocused();
+    await expect(tools).toBeFocused();
 
     await modeButton(page, 'Code').click();
     await expect(dialog).toBeHidden();
@@ -650,8 +655,12 @@ test.describe('workspace shell', () => {
       ''
     );
 
-    await dialog.getByRole('button', { name: RUN_RAIL_ITEM }).click();
+    await dialog.getByRole('button', { name: 'Close navigation' }).focus();
+    await page.keyboard.press('Shift+Tab');
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+    await dialog.getByRole('button', { name: 'Close navigation' }).click();
     await expect(dialog).toBeHidden();
+    await modeButton(page, 'Run').click();
     await expectMode(page, 'Run');
     await expect(visiblePanel(page, 'Run')).toBeFocused();
 
@@ -672,8 +681,7 @@ test.describe('workspace shell', () => {
     await expect(announcement).toBeHidden();
     await expect(lateAnnouncement).toBeHidden();
     await expect(trigger).toBeFocused();
-    await trigger.click();
-    await dialog.getByRole('button', { name: 'Docs', exact: true }).click();
+    await modeButton(page, 'Docs').click();
     await expectMode(page, 'Docs');
     await expect(announcement).toBeVisible();
     await expect(lateAnnouncement).toBeVisible();
@@ -681,7 +689,7 @@ test.describe('workspace shell', () => {
     await lateAnnouncement.evaluate((element) => element.remove());
   });
 
-  test('defers mobile Learn navigation and focuses each destination heading', async ({
+  test('defers mobile documentation navigation and focuses each destination heading', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -719,7 +727,7 @@ test.describe('workspace shell', () => {
     await expect(page.locator('main h1').first()).toBeFocused();
   });
 
-  test('keeps Learn and visible Search in mapped and unmapped mobile Docs context', async ({
+  test('keeps section navigation and visible Search in mapped and unmapped mobile Docs context', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -730,7 +738,8 @@ test.describe('workspace shell', () => {
       const dialog = page.getByRole('dialog', {
         name: 'Documentation control plane',
       });
-      await expect(dialog.getByText('Learn', { exact: true })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: path === streamingDocsPath ? 'Guides' : 'Getting Started', exact: true })).toHaveAttribute('aria-expanded', 'true');
+      await expect(dialog.getByRole('link', { name: path === streamingDocsPath ? 'Streaming' : 'Installation', exact: true })).toHaveAttribute('aria-current', 'page');
       await dialog.getByRole('button', { name: 'Search docs' }).click();
       await expect(dialog).toHaveCount(0);
       await expect(
@@ -771,9 +780,13 @@ test.describe('workspace shell', () => {
     expect(Number.parseFloat(styles.outlineWidth)).toBeGreaterThan(0);
 
     await run.click();
-    await expect(page.getByText('Ready', { exact: true })).toBeVisible();
+    await openUtility(page, 'Settings');
     const runtime = page.getByRole('button', { name: 'Runtime', exact: true });
+    await expect(runtime).toBeVisible();
     await runtime.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(runtime).toBeFocused();
     const runtimeStyles = await runtime.evaluate((element) => {
       const style = getComputedStyle(element);
       return {
@@ -802,7 +815,7 @@ test.describe('workspace shell', () => {
     );
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${streamingDocsPath}?mode=run`);
-    await page.getByRole('button', { name: 'Open navigation' }).click();
+    await openUtility(page, 'Settings');
 
     const dialog = page.getByRole('dialog', {
       name: 'Documentation control plane',

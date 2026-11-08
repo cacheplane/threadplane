@@ -1,6 +1,12 @@
 {
   "fixtures": [
     {
+      "match": { "userMessage": "Mobile long response" },
+      "response": {
+        "content": "Paragraph one explains how to keep a mobile conversation readable as the response arrives.\n\nParagraph two continues the aviation example with a second section of useful details.\n\nParagraph three describes the available flight information and safe demo data.\n\nParagraph four gives the reader enough history to scroll back and inspect earlier answers.\n\nParagraph five explains that new content should follow only while the reader stays at the bottom.\n\nParagraph six keeps the composer available while the transcript grows.\n\nParagraph seven makes this response longer than a reduced mobile viewport.\n\nParagraph eight completes the response with the final details."
+      }
+    },
+    {
       "match": { "userMessage": "Hello" },
       "response": {
         "content": "Hi! I'm the chat-messages capability demo. I show how ChatMessageListComponent, ChatInputComponent, and ChatTypingIndicatorComponent render together. Try sending a few messages to see the bubbles and typing indicator in action."

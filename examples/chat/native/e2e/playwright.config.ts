@@ -5,11 +5,17 @@ import { join } from 'node:path';
 export default defineConfig({
   testDir: '.',
   testMatch: [
+    'visual-parity.spec.ts',
     'development.spec.ts',
     'conversation.spec.ts',
     'production.spec.ts',
     'message-list.spec.ts',
     'reasoning.spec.ts',
+    'source-previews.spec.ts',
+    'citation-disclosure.spec.ts',
+    'citation-sidecars.spec.ts',
+    'citation-cards.spec.ts',
+    'inline-source-previews.spec.ts',
     'message-actions.spec.ts',
     'popup.spec.ts',
     'sidenav.spec.ts',

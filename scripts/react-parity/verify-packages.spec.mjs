@@ -5,6 +5,183 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
+test('plain declaration proof checks exact public citation display contracts before React chat', (t) => {
+  const consumer = mkdtempSync(
+    join(tmpdir(), 'threadplane-citation-display-types-')
+  );
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  const core = join(consumer, 'node_modules/@threadplane/core');
+  const content = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(core, { recursive: true });
+  mkdirSync(content, { recursive: true });
+  writeFileSync(
+    join(core, 'package.json'),
+    JSON.stringify({
+      name: '@threadplane/core',
+      type: 'module',
+      exports: { '.': { types: './index.d.ts' } },
+    })
+  );
+  writeFileSync(
+    join(core, 'index.d.ts'),
+    'export interface Citation { readonly id: string; readonly index: number; readonly url?: string; }'
+  );
+  writeFileSync(
+    join(content, 'package.json'),
+    JSON.stringify({
+      name: '@threadplane/content',
+      type: 'module',
+      exports: { './messages': { types: './index.d.ts' } },
+    })
+  );
+  const declaration = `import type { Citation } from '@threadplane/core';
+export type CitationTypeIcon = 'web' | 'file' | 'app' | 'memory' | 'generic';
+export interface CitationTypeMeta { readonly type: string; readonly label: string | null; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly isKnown: boolean; }
+export interface CitationImageVisual { readonly kind: 'image'; readonly iconUrl: string; }
+export interface CitationTypeIconVisual { readonly kind: 'type-icon'; readonly icon: CitationTypeIcon; readonly tone: CitationTypeIcon; readonly label: string | null; }
+export interface CitationMonogramVisual { readonly kind: 'monogram'; readonly monogram: string; readonly color: string; }
+export type CitationSourceVisual = CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual;
+export declare function deriveDomain(url?: string): string | null;
+export declare function deriveSourceType(citation: Citation): string;
+export declare function deriveMonogram(citation: Citation): string;
+export declare function monogramHue(seed: string): number;
+export declare function formatPublished(value?: string | number | Date): string | null;
+export declare function monogramColor(citation: Citation): string;
+export declare function citationTypeMeta(citation: Citation): CitationTypeMeta;
+export declare function citationTypeLabel(citation: Citation): string | null;
+export declare function citationSourceVisual(citation: Citation): CitationSourceVisual;`;
+  const source = join(consumer, 'index.ts');
+  const probe = packageVerifier.plainExportTypes([
+    '@threadplane/content/messages',
+  ]);
+  assert.match(probe, /CitationSourceVisualContract/);
+  assert.doesNotMatch(probe, /from 'react'/);
+  writeFileSync(source, probe);
+  const compile = (text) => {
+    writeFileSync(join(content, 'index.d.ts'), text);
+    const program = ts.createProgram([source], {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.NodeNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      strict: true,
+      skipLibCheck: false,
+      noEmit: true,
+      types: [],
+    });
+    return ts
+      .getPreEmitDiagnostics(program)
+      .map((error) => ts.flattenDiagnosticMessageText(error.messageText, '\n'))
+      .join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const [before, after] of [
+    ['readonly type: string;', 'type: string;'],
+    ['readonly iconUrl: string;', 'iconUrl: string;'],
+    ["readonly kind: 'image';", "readonly kind: 'type-icon';"],
+    ['readonly color: string;', 'color: string;'],
+    ['readonly tone: CitationTypeIcon;', 'tone: CitationTypeIcon;'],
+    [
+      'readonly monogram: string;',
+      'readonly monogram: string; readonly extra: string;',
+    ],
+    [
+      'CitationImageVisual | CitationTypeIconVisual | CitationMonogramVisual;',
+      'any;',
+    ],
+    ["'web' | 'file' | 'app' | 'memory' | 'generic'", 'any'],
+    ['url?: string', 'url: string'],
+    ['url?: string', 'url?: any'],
+    ['seed: string', 'seed: number'],
+    ['value?: string | number | Date', 'value?: string | number'],
+    [
+      'deriveDomain(url?: string): string | null',
+      'deriveDomain(url?: string): string',
+    ],
+    [
+      'citationTypeLabel(citation: Citation): string | null',
+      'citationTypeLabel(citation: Citation): any',
+    ],
+    [
+      'citationSourceVisual(citation: Citation): CitationSourceVisual',
+      'citationSourceVisual(citation: any): CitationSourceVisual',
+    ],
+  ]) {
+    assert.ok(declaration.includes(before), before);
+    assert.match(
+      compile(declaration.replace(before, after)),
+      /false.*true/,
+      `${before} → ${after}`
+    );
+  }
+});
+
+test('content messages requires exactly its factory and nine pure display functions', () => {
+  const names = [
+    'createMessageContent',
+    'deriveDomain',
+    'deriveSourceType',
+    'deriveMonogram',
+    'monogramHue',
+    'formatPublished',
+    'monogramColor',
+    'citationTypeMeta',
+    'citationTypeLabel',
+    'citationSourceVisual',
+  ];
+  const entry = Object.fromEntries(names.map((name) => [name, () => {}]));
+  assert.doesNotThrow(() =>
+    packageVerifier.assertSupportedExports('content/messages', entry)
+  );
+  for (const name of names) {
+    const missing = { ...entry };
+    delete missing[name];
+    assert.throws(
+      () => packageVerifier.assertSupportedExports('content/messages', missing),
+      /missing supported contract/
+    );
+  }
+  assert.throws(
+    () =>
+      packageVerifier.assertSupportedExports('content/messages', {
+        ...entry,
+        surprise: () => {},
+      }),
+    /unexpected exports/
+  );
+});
+
+test('plain declaration proof checks exact opt-in Markdown preview contract', t => {
+  const consumer = mkdtempSync(join(tmpdir(), 'threadplane-inline-preview-types-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
+  for (const [name, entry, declaration] of [
+    ['react', 'markdown', `export interface MarkdownProps { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; }\nexport declare function Markdown(props: MarkdownProps): unknown;`],
+    ['content', 'markdown', 'export interface MarkdownSnapshot { readonly accepted: string; }'],
+    ['core', '', 'export interface Citation { readonly id: string; readonly index: number; }'],
+  ]) {
+    const directory = join(consumer, 'node_modules/@threadplane', name);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/' + name, type: 'module', exports: { [entry ? './' + entry : '.']: { types: './index.d.ts' } } }));
+    writeFileSync(join(directory, 'index.d.ts'), declaration);
+  }
+  const source = join(consumer, 'index.ts');
+  const probe = packageVerifier.plainExportTypes(['@threadplane/react/markdown']);
+  assert.match(probe, /MarkdownContract/);
+  writeFileSync(source, probe);
+  const declarationPath = join(consumer, 'node_modules/@threadplane/react/index.d.ts');
+  const declaration = readFileSync(declarationPath, 'utf8');
+  const compile = text => {
+    writeFileSync(declarationPath, text);
+    const program = ts.createProgram([source], { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, strict: true, skipLibCheck: false, noEmit: true, types: [] });
+    return ts.getPreEmitDiagnostics(program).map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n');
+  };
+  assert.equal(compile(declaration), '');
+  for (const replacement of ['', 'citationPreview?: boolean;', 'readonly citationPreview: boolean;', 'readonly citationPreview?: any;', 'readonly citationPreview?: string;'])
+    assert.match(compile(declaration.replace('readonly citationPreview?: boolean;', replacement)), /false.*true/, replacement);
+  assert.match(compile(declaration.replace('props: MarkdownProps', 'props: any')), /false.*true/);
+});
+
 test('plain declaration proof checks exact passive StateDiff types', t => {
   const consumer = mkdtempSync(join(tmpdir(), 'threadplane-state-diff-types-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
@@ -57,6 +234,14 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   mkdirSync(react, { recursive: true });
   writeFileSync(join(react, 'package.json'), JSON.stringify({ name: 'react', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
   writeFileSync(join(react, 'index.d.ts'), 'export interface MouseEvent<T> { readonly currentTarget: T; readonly clientX: number; } export interface KeyboardEvent<T> { readonly currentTarget: T; readonly key: string; } export type ReactNode = string | number | boolean | null | undefined | readonly ReactNode[];');
+  const core = join(consumer, 'node_modules/@threadplane/core');
+  mkdirSync(core, { recursive: true });
+  writeFileSync(join(core, 'package.json'), JSON.stringify({ name: '@threadplane/core', type: 'module', exports: { '.': { types: './index.d.ts' } } }));
+  writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; }');
+  const content = join(consumer, 'node_modules/@threadplane/content');
+  mkdirSync(content, { recursive: true });
+  writeFileSync(join(content, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './markdown': { types: './markdown.d.ts' } } }));
+  writeFileSync(join(content, 'markdown.d.ts'), 'export interface MarkdownSnapshot { readonly root: null | { readonly citations: ReadonlyMap<string, unknown> }; }');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   const declaration = `export interface ThreadRenameFormProps { readonly value: string; readonly onValueChange: (value: string) => void; readonly onSubmit: () => void; readonly onCancel: () => void; readonly pending?: boolean; readonly error?: string; readonly label?: string; readonly className?: string; }
@@ -82,7 +267,13 @@ export declare function Welcome(props: WelcomeProps): unknown;
 export declare function WelcomeSuggestion(props: WelcomeSuggestionProps): unknown;
 export interface SuggestionItem { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean; }
 export interface SuggestionsProps { readonly suggestions: readonly SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
-export declare function Suggestions(props: SuggestionsProps): unknown;`;
+export declare function Suggestions(props: SuggestionsProps): unknown;
+export interface CitationCardProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
+export declare function CitationCard(props: CitationCardProps): unknown;
+export interface CitationPreviewProps { readonly citation: import('@threadplane/core').Citation; readonly className?: string; }
+export declare function CitationPreview(props: CitationPreviewProps): unknown;
+export interface CitationsProps { readonly citations: readonly import('@threadplane/core').Citation[]; readonly snapshot?: import('@threadplane/content/markdown').MarkdownSnapshot; readonly label?: string; readonly className?: string; readonly preview?: boolean; readonly collapsible?: boolean; readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode; }
+export declare function Citations(props: CitationsProps): unknown;`;
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -118,7 +309,7 @@ export declare function Suggestions(props: SuggestionsProps): unknown;`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -139,14 +330,32 @@ export declare function Suggestions(props: SuggestionsProps): unknown;`;
     ['SuggestionsProps', 'disabled', 'boolean', true],
     ['SuggestionsProps', 'label', 'string', true],
     ['SuggestionsProps', 'className', 'string', true],
+    ['CitationCardProps', 'citation', "import('@threadplane/core').Citation", false],
+    ['CitationCardProps', 'className', 'string', true],
+    ['CitationPreviewProps', 'citation', "import('@threadplane/core').Citation", false],
+    ['CitationPreviewProps', 'className', 'string', true],
+    ['CitationsProps', 'citations', "readonly import('@threadplane/core').Citation[]", false],
+    ['CitationsProps', 'snapshot', "import('@threadplane/content/markdown').MarkdownSnapshot", true],
+    ['CitationsProps', 'preview', 'boolean', true],
+    ['CitationsProps', 'collapsible', 'boolean', true],
+    ['CitationsProps', 'renderCard', "(citation: import('@threadplane/core').Citation) => import('react').ReactNode", true],
+    ['CitationsProps', 'label', 'string', true],
+    ['CitationsProps', 'className', 'string', true],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
+  const renderCard = "readonly renderCard?: (citation: import('@threadplane/core').Citation) => import('react').ReactNode;";
+  for (const after of [
+    renderCard.replace("import('react').ReactNode", 'any'),
+    renderCard.replace("import('react').ReactNode", 'string'),
+    renderCard.replace('Citation)', 'Citation, owner: object)'),
+    renderCard.replace("import('@threadplane/core').Citation", 'unknown'),
+  ]) assert.match(compile(mutateInterface('CitationsProps', renderCard, after)), /false.*true/, `exact custom renderer: ${after}`);
   for (const [name, missing] of [['OverflowMenuItem', 'MissingMenuItem'], ['OverflowMenuProps', 'MissingMenuProps']])
     assert.match(compile(declaration.replaceAll(name, missing)), new RegExp(name));
   for (const [name, before, after] of [
@@ -571,13 +780,15 @@ test('React chat requires its real supported export', () => {
   const component = () => undefined;
   const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
+  supported.CitationPreview = component;
+  supported.CitationCard = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }

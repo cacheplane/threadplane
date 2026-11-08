@@ -301,6 +301,22 @@
   border: 1px solid transparent;
   box-shadow: none;
 }
+@media (hover: hover) {
+  [data-ui="button"][data-variant="primary"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--color-accent) 85%, black);
+    border-color: color-mix(in srgb, var(--color-accent) 85%, black);
+    box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
+  }
+  [data-ui="button"][data-variant="secondary"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-surface);
+  }
+  [data-ui="button"][data-variant="ghost"]:not(:disabled):not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+}
 /* Keyboard focus ring.
  *
  * Without this the UA default applies — `outline: auto 1px rgb(0, 95, 204)` in
@@ -555,44 +571,6 @@
 [data-ui="tab-group-tab"][data-active] {
   background: var(--color-accent);
   color: var(--color-text-inverted);
-}
-
-/* UI primitive — SectionHeader (centered + rail variants, treatment C). */
-[data-ui="section-header"] .section-header-eyebrow {
-  margin-bottom: 16px;
-}
-[data-ui="section-header"] .section-header-heading {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--text-h2);
-  line-height: var(--text-h2--line-height);
-  letter-spacing: -0.015em;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-[data-ui="section-header"] .section-header-aside {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
-  font-style: italic;
-  color: var(--color-text-muted);
-  margin: 16px 0 0;
-}
-[data-ui="section-header"][data-variant="centered"] {
-  text-align: center;
-}
-[data-ui="section-header"][data-variant="rail"] {
-  text-align: left;
-}
-[data-ui="section-header"][data-variant="rail"] .section-header-eyebrow {
-  border-top: 2px solid var(--color-text-primary);
-  padding-top: 8px;
-  margin-bottom: var(--space-4);
-}
-[data-ui="section-header"][data-variant="rail"] .section-header-heading {
-  font-size: clamp(32px, 3.4vw, 44px);
-  line-height: 1.1;
-  letter-spacing: -0.015em;
 }
 
 [data-ui="modal"] {

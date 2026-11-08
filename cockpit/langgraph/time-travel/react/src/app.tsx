@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ChatInput, MessageList } from '@threadplane/react/chat';
@@ -42,10 +44,9 @@ export function TimeTravelDemo({
     ? 'Response complete.'
     : 'Ready.';
   return (
-    <main className="time-travel-demo">
+    <ExampleLayout className="time-travel-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>LangGraph time travel</h1>
         </div>
         <button
@@ -170,23 +171,25 @@ export function TimeTravelDemo({
           Fork selected checkpoint
         </button>
       </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        label="Message"
-        placeholder="Write a message to send or fork…"
-        value={draft}
-        onValueChange={setDraft}
-        disabled={!snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          const pending = application.submit(text);
-          void pending;
-          if (!application.getSnapshot().busy) return false;
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          label="Message"
+          placeholder="Write a message to send or fork…"
+          value={draft}
+          onValueChange={setDraft}
+          disabled={!snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            const pending = application.submit(text);
+            void pending;
+            if (!application.getSnapshot().busy) return false;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

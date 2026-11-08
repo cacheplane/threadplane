@@ -11,6 +11,7 @@ import {
 } from '@threadplane/cockpit-runtime-bridge';
 import type { RuntimeBridgeConfiguration } from '@threadplane/cockpit-runtime-bridge';
 import { readCockpitConfigFromIframe } from './distinct-id';
+import { COCKPIT_INSPECTION_PUBLISHER } from './inspection-publisher';
 import {
   COCKPIT_RUNTIME_CONNECTION,
   type CockpitRuntimeConnection,
@@ -89,7 +90,9 @@ function resolveConnection(
       // The developer-supplied deployment key rides as the SDK's own header
       // for this session; the adapter no longer accepts a key by name.
       clientOptions: Object.freeze({
-        defaultHeaders: Object.freeze({ 'x-api-key': configuration.target.apiKey }),
+        defaultHeaders: Object.freeze({
+          'x-api-key': configuration.target.apiKey,
+        }),
       }),
     });
   }
@@ -137,6 +140,12 @@ export async function bootstrapWithCockpitHarness(
     const runtimeProviders: Provider[] = [];
     if (compatibleRuntime) {
       const configuration = await runtimeBridge.awaitConfiguration();
+      if (configuration.status === 'configured') {
+        runtimeProviders.push({
+          provide: COCKPIT_INSPECTION_PUBLISHER,
+          useValue: runtimeBridge.publishInspection,
+        });
+      }
       runtimeProviders.push({
         provide: COCKPIT_RUNTIME_CONNECTION,
         useValue: resolveConnection(options.runtime, configuration),

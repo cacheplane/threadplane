@@ -305,19 +305,28 @@ const refundRuns = [
 ];
 
 async function armNextRuns(page: Page, runs: unknown[]): Promise<void> {
-  const state = await page.evaluate((runs) => new Promise<string>((resolve) => {
+  await page.evaluate((runs) => new Promise<void>((resolve, reject) => {
     const armId = crypto.randomUUID();
-    window.addEventListener('threadplane:devtools:ack', function onAck(event) {
-      const ack = (event as CustomEvent).detail;
-      if (ack.armId !== armId) return;
+    const timer = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('Timed out waiting for the development agent hooks.'));
+    }, 3000);
+    function cleanup() {
+      window.clearTimeout(timer);
       window.removeEventListener('threadplane:devtools:ack', onAck);
-      resolve(ack.state);
-    });
+    }
+    function onAck(event: Event) {
+      const ack = (event as CustomEvent).detail;
+      if (ack?.armId !== armId) return;
+      cleanup();
+      if (ack.state === 'armed') resolve();
+      else reject(new Error(`Script rejected: ${ack.reason ?? ack.state}`));
+    }
+    window.addEventListener('threadplane:devtools:ack', onAck);
     window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
       detail: { v: 1, armId, adapter: 'ag-ui', runs },
     }));
   }), runs);
-  expect(state).toBe('armed');
 }
 
 test('approving a refund finishes the turn', async ({ page }) => {
@@ -338,7 +347,7 @@ test('approving a refund finishes the turn', async ({ page }) => {
 Let's review:
 
 - First, we wait for the chat input, because the agent registers its listener when it's created.
-- Then, `armNextRuns()` dispatches the arm and waits for the `armed` acknowledgement, so a bad script fails the test right away with the reason.
+- Then, `armNextRuns()` dispatches the arm and waits for the `armed` acknowledgement. A rejected script fails with its reason; missing development hooks fail after three seconds. Both paths remove the listener.
 - The message takes `runs[0]` and pauses on the interrupt, which opens the approval card.
 - Clicking **Approve** calls `submit({ resume })`, which takes `runs[1]` and finishes the turn.
 
@@ -356,9 +365,9 @@ That's a server fix, and there's an example of exactly that fix in the framework
 If the run finished cleanly, the problem is on the client, and that's where the signals report helps.
 Paste this into the console of your development build:
 
-```ts
+```js
 window.addEventListener('threadplane:devtools', (event) => {
-  const report = (event as CustomEvent).detail;
+  const report = event.detail;
   if (report.kind === 'render') return;
   if (report.wrote.includes('status')) {
     console.log(report.adapter, report.eventType, report.wrote.join(', '));
@@ -383,9 +392,9 @@ An **unknown type** badge means your registry has no entry for that type, and **
 
 You can get the same answer from the render report in the console:
 
-```ts
+```js
 window.addEventListener('threadplane:devtools', (event) => {
-  const report = (event as CustomEvent).detail;
+  const report = event.detail;
   if (report.kind !== 'render') return;
   console.table(report.elements.filter((element) => element.state !== 'mounted'));
 });
@@ -430,6 +439,8 @@ Each line in the file is one record, and the header says exactly what was redact
 
 The event types, ids, ordering, sizes, and timings all survive, and that's what a protocol bug report needs.
 Whoever picks it up clicks **Import** in their own panel and sees every event in order.
+
+Redacting tool arguments also removes the evidence needed to diagnose malformed argument JSON. Keep an unredacted capture locally for that investigation, and share sensitive arguments only through an appropriate private channel.
 
 Note, tool results are their own redaction group, so check **Tool results** too if they contain anything private.
 

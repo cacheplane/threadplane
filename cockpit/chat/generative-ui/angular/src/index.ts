@@ -23,7 +23,7 @@ export const chatGenerativeUiAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Chat Generative UI (Angular)',
-  docsPath: '/docs/chat/guides/generative-ui',
+  docsPath: '/docs/angular/chat/guides/generative-ui',
   promptAssetPaths: ['cockpit/chat/generative-ui/python/prompts/generative-ui.md'],
   codeAssetPaths: ['cockpit/chat/generative-ui/angular/src/app/generative-ui.component.ts'],
 };

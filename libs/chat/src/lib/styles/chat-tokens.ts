@@ -142,6 +142,8 @@ const GEOMETRY_TOKENS = `
   --tplane-chat-radius-bubble: 15px;
   --tplane-chat-radius-input: 20px;
   --tplane-chat-radius-card: 8px;
+  /* Small elements inside text: inline code, source icons, task boxes. */
+  --tplane-chat-radius-sm: 4px;
   --tplane-chat-radius-button: 8px;
   --tplane-chat-radius-launcher: 9999px;
   /* Distance from the viewport corner to the <chat-popup> launcher. The popup

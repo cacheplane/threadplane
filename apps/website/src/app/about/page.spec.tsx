@@ -7,13 +7,19 @@ import { getAuthor } from '../../lib/blog-authors';
 import { ABOUT_PARAGRAPHS } from '../../lib/about-content';
 
 vi.mock('../../components/ui/Container', () => ({
-  Container: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Container: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 vi.mock('../../components/ui/Section', () => ({
-  Section: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  Section: ({ children }: { children: React.ReactNode }) => (
+    <section>{children}</section>
+  ),
 }));
 vi.mock('../../components/ui/Eyebrow', () => ({
-  Eyebrow: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  Eyebrow: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 const author = getAuthor('brian');
@@ -40,8 +46,9 @@ describe('AboutPage', () => {
     const { container } = render(<AboutPage />);
     const sourced = new Set<string>(ABOUT_PARAGRAPHS);
 
-    const biography = container.querySelectorAll('section')[0];
-    const paragraphs = Array.from(biography.querySelectorAll('p'))
+    const biography = container.querySelector('[data-about-biography]');
+    expect(biography).not.toBeNull();
+    const paragraphs = Array.from(biography?.querySelectorAll('p') ?? [])
       .map((node) => node.textContent ?? '')
       .filter((text) => text.split(' ').length > 12);
 
@@ -53,13 +60,18 @@ describe('AboutPage', () => {
 
   it('names the author the record gives', () => {
     render(<AboutPage />);
-    expect(screen.getByText(ABOUT_PARAGRAPHS[0]).textContent).toContain(author.name);
+    expect(screen.getByText(ABOUT_PARAGRAPHS[0]).textContent).toContain(
+      author.name
+    );
   });
 
   it('links the GitHub profile the record names', () => {
     render(<AboutPage />);
-    expect(screen.getByRole('link', { name: `github.com/${author.github}` }).getAttribute('href'))
-      .toBe(`https://github.com/${author.github}`);
+    expect(
+      screen
+        .getByRole('link', { name: `github.com/${author.github}` })
+        .getAttribute('href')
+    ).toBe(`https://github.com/${author.github}`);
   });
 
   it('references no image asset', () => {

@@ -15,6 +15,8 @@ import {
 import type { A2uiApplication } from './application';
 import '@threadplane/react/chat/styles.css';
 import './styles.css';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import '../../../../shared/react-example.css';
 
 /** Own bootstrap and teardown outside React's replayable presentation lifetime. */
 export function startA2uiDemo(

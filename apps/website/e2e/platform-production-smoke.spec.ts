@@ -92,7 +92,9 @@ const CHAT_PRIMITIVE_READY_SELECTORS: Record<
 > = {
   'chat/messages': 'chat-message-list',
   'chat/input': 'chat-input',
-  'chat/interrupts': 'chat-interrupt-panel',
+  // Approval panels mount only while an interrupt is pending. The idle demo
+  // is ready when its chat composer mounts; approval flows have separate e2e coverage.
+  'chat/interrupts': 'chat chat-input',
   'chat/debug': 'chat-debug',
 };
 
@@ -228,11 +230,9 @@ test.describe('Production: unified runtime embedding policy', () => {
       iframeReferrer = request.headers()['referer'];
     });
 
-    await page.goto(`${WEBSITE_URL}/docs/langgraph/guides/streaming?mode=run`);
-    const controls = page.locator('[data-workspace-desktop-navigation]');
-    await controls
-      .getByRole('button', { name: 'Settings', exact: true })
-      .click();
+    await page.goto(`${WEBSITE_URL}/docs/angular/langgraph/guides/streaming?mode=run`);
+    await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
     await expect(
       page.locator('[data-runtime-target-settings]')
     ).toHaveAttribute('data-runtime-target-kind', 'shared');

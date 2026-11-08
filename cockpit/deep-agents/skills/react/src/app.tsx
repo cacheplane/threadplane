@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useCallback, useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -249,10 +251,9 @@ export function SkillsDemo({
     ? 'Response saved.'
     : 'Ready.';
   return (
-    <main className="skills-demo">
+    <ExampleLayout className="skills-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Deep Agents skills</h1>
         </div>
         <button
@@ -310,31 +311,33 @@ export function SkillsDemo({
             renderMessage={renderRow}
             label="Conversation"
           />
-          {snapshot.error && <p role="alert">{snapshot.error}</p>}
-          <ChatInput
-            key={snapshot.viewGeneration}
-            label="Message"
-            value={draft}
-            onValueChange={setDraft}
-            placeholder="Ask about aircraft and runway requirements…"
-            hint="Enter to send. Shift+Enter adds a new line."
-            busy={snapshot.busy}
-            disabled={!snapshot.canSubmit && !snapshot.busy}
-            onStop={snapshot.busy ? () => void application.stop() : undefined}
-            onSubmit={(text) => {
-              const current = application.getSnapshot();
-              if (!current.canSubmit || current.busy || !text.trim())
-                return false;
-              void application.submit(text);
-              return true;
-            }}
-          />
-          <p role="status">{status}</p>
+          <ExampleFooter>
+            {snapshot.error && <p role="alert">{snapshot.error}</p>}
+            <ChatInput
+              key={snapshot.viewGeneration}
+              label="Message"
+              value={draft}
+              onValueChange={setDraft}
+              placeholder="Ask about aircraft and runway requirements…"
+              hint="Enter to send. Shift+Enter adds a new line."
+              busy={snapshot.busy}
+              disabled={!snapshot.canSubmit && !snapshot.busy}
+              onStop={snapshot.busy ? () => void application.stop() : undefined}
+              onSubmit={(text) => {
+                const current = application.getSnapshot();
+                if (!current.canSubmit || current.busy || !text.trim())
+                  return false;
+                void application.submit(text);
+                return true;
+              }}
+            />
+            <p role="status">{status}</p>
+          </ExampleFooter>
         </div>
         <aside className="skills-sidebar" aria-label="Skills sidebar">
           <SkillPanels index={snapshot.index} reads={snapshot.reads} />
         </aside>
       </div>
-    </main>
+    </ExampleLayout>
   );
 }

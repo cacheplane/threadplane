@@ -1,0 +1,368 @@
+---
+description: How spec elements dispatch actions through the on property, how handlers are registered and resolved, and what the render-spec events output reports.
+---
+
+# Events
+
+Elements in a spec can define event handlers via the `on` property. When a rendered component calls its `emit` function, the library looks up the corresponding action binding and dispatches it to a registered handler.
+
+## How Events Work
+
+The event flow has three parts:
+
+1. **Element definition** -- the `on` property maps event names to action bindings
+2. **Component** -- calls `emit('eventName')` when the user interacts
+3. **Handler** -- a registered function that executes the action
+
+<RenderEventFlow />
+
+## Defining Event Handlers in a Spec
+
+The `on` property on a `UIElement` maps event names to action bindings:
+
+```typescript
+{
+  type: 'Button',
+  props: { label: 'Submit' },
+  on: {
+    click: { action: 'handleSubmit', params: { formId: 'login' } },
+  },
+}
+```
+
+Each binding is an `ActionBinding` from `@json-render/core`, and this renderer honors every field of it:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `action` | `string` | The key used to look up the handler function |
+| `params?` | `Record<string, DynamicValue>` | Parameters passed to the handler, resolved before the call |
+| `confirm?` | `ActionConfirm` | Ask the user to confirm before running the handler |
+| `onSuccess?` | `ActionOnSuccess` | What to do once the handler settles successfully |
+| `onError?` | `ActionOnError` | What to do if the handler throws or rejects |
+| `preventDefault?` | `boolean` | Call `preventDefault()` on the emitted DOM event |
+
+### Resolved params
+
+`params` are `DynamicValue`s and go through the same resolver an element prop does, in the element's repeat scope. A `$state` expression reads the store, and `$item` / `$index` resolve against the current repeat item:
+
+```typescript
+{
+  type: 'Button',
+  props: { label: 'Open' },
+  on: {
+    click: { action: 'open', params: { id: { $state: '/selected' } } },
+  },
+}
+```
+
+With `/selected` holding `'row-7'`, the handler receives `{ id: 'row-7' }`. Anything a component passes as the emit payload is merged on top, so a payload key wins over a param of the same name.
+
+### Confirmation
+
+`confirm` asks before the handler runs. A declined confirmation skips the handler, and the `onSuccess` and `onError` follow-ups with it:
+
+```typescript
+on: {
+  click: {
+    action: 'deleteAccount',
+    confirm: { title: 'Delete account', message: 'This cannot be undone. Continue?' },
+  },
+}
+```
+
+The prompt is the browser's own confirmation dialog, asked through the injected `DOCUMENT`'s default view. Where there is no default view -- server-side rendering -- there is nobody to ask, and the handler proceeds.
+
+### Follow-ups
+
+`onSuccess` runs after the handler returns, or after the promise it returned resolves. It takes one of three shapes:
+
+| Shape | Effect |
+|-------|--------|
+| `{ set: { '/path': value } }` | Writes each entry into the state store |
+| `{ action: 'name' }` | Dispatches another registered handler, with no params |
+| `{ navigate: '/path' }` | Navigates the browser to that path |
+
+`onError` runs when the handler throws or its promise rejects, and takes the `set` and `action` shapes. Inside an `onError` `set` map the literal string `'$error.message'` is replaced by the thrown error's message:
+
+```typescript
+on: {
+  click: {
+    action: 'saveForm',
+    onSuccess: { set: { '/saved': true } },
+    onError: { set: { '/error': '$error.message' } },
+  },
+}
+```
+
+Without an `onError`, an error from the handler propagates as it always did.
+
+### preventDefault
+
+`preventDefault: true` calls `preventDefault()` on the emitted payload when that payload is a DOM `Event` -- either the event itself, or a payload record carrying it under `event`. Use it for a component that emits the raw event from a link or a form submit.
+
+### Multiple Handlers per Event
+
+An event can trigger multiple actions by using an array:
+
+```typescript
+on: {
+  click: [
+    { action: 'trackAnalytics', params: { event: 'button_click' } },
+    { action: 'handleSubmit', params: { formId: 'login' } },
+  ],
+}
+```
+
+Both handlers are called in order when the component emits `click`.
+
+## The Emit Function
+
+Every rendered component receives an `emit` input -- a function with the signature `(event: string) => void`. Call it from your component to dispatch an event:
+
+```typescript
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+
+@Component({
+  selector: 'app-button',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <button (click)="onClick()">{{ label() }}</button>
+  `,
+})
+export class ButtonComponent {
+  readonly label = input<string>('');
+  readonly emit = input<(event: string) => void>(() => {});
+  readonly childKeys = input<string[]>([]);
+  readonly spec = input<unknown>(null);
+
+  onClick() {
+    this.emit()('click');
+  }
+}
+```
+
+<Callout type="info" title="Emit is a Signal">
+Because `emit` is declared with `input()`, it is a Signal. Call `this.emit()` to get the function, then invoke it with the event name: `this.emit()('click')`.
+</Callout>
+
+## Registering Handlers
+
+Handlers are plain functions registered either globally via `provideRender()` or per-instance on `<render-spec>`:
+
+<Tabs>
+<Tab label="Per-instance">
+
+```typescript
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RenderSpecComponent],
+  template: `
+    <render-spec
+      [spec]="spec"
+      [registry]="registry"
+      [store]="store"
+      [handlers]="handlers"
+    />
+  `,
+})
+export class AppComponent {
+  store = signalStateStore({ submitted: false });
+
+  handlers = {
+    handleSubmit: (params: Record<string, unknown>) => {
+      console.log('Form submitted:', params['formId']);
+      this.store.set('/submitted', true);
+    },
+    trackAnalytics: (params: Record<string, unknown>) => {
+      console.log('Analytics event:', params['event']);
+    },
+  };
+}
+```
+
+</Tab>
+<Tab label="Global (provideRender)">
+
+```typescript
+// app.config.ts
+import { provideRender } from '@threadplane/render';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRender({
+      registry: myRegistry,
+      handlers: {
+        handleSubmit: (params) => {
+          console.log('Submit:', params);
+        },
+      },
+    }),
+  ],
+};
+```
+
+</Tab>
+</Tabs>
+
+### Handler Signature
+
+Each handler receives a `params` object and can return a value or a `Promise`:
+
+```typescript
+type Handler = (params: Record<string, unknown>) => unknown | Promise<unknown>;
+```
+
+### Injection Context
+
+Handlers execute inside Angular's `runInInjectionContext`. This means you can call `inject()` to access services:
+
+```typescript
+const handlers = {
+  saveForm: async (params: Record<string, unknown>) => {
+    const http = inject(HttpClient);
+    const snapshot = store.getSnapshot();
+    await firstValueFrom(http.post('/api/forms', snapshot));
+    store.set('/saved', true);
+  },
+};
+```
+
+This works for handlers passed via `[handlers]` on `<render-spec>`, `provideRender()`, or other render-enabled components like `ChatComponent` (from `@threadplane/chat`).
+
+### Resolution Priority
+
+Handlers resolve with the same priority as other inputs:
+
+1. `handlers` input on `<render-spec>` (highest priority)
+2. `handlers` in `provideRender()` config (fallback)
+
+## Action Dispatch Pattern
+
+A common pattern is to use handlers to update the state store in response to user interactions. That creates a unidirectional data flow:
+
+When a handler writes to the store, bound props update through Angular signals, completing the optional return path in the [event flow](#how-events-work) above.
+
+The following is a complete example:
+
+```typescript
+const spec: Spec = {
+  root: 'app',
+  elements: {
+    app: {
+      type: 'Container',
+      props: {},
+      children: ['counter', 'increment'],
+    },
+    counter: {
+      type: 'Text',
+      props: { label: { $state: '/count' } },
+    },
+    increment: {
+      type: 'Button',
+      props: { label: 'Increment' },
+      on: {
+        click: { action: 'increment', params: {} },
+      },
+    },
+  },
+  state: { count: 0 },
+};
+
+const store = signalStateStore({ count: 0 });
+
+const handlers = {
+  increment: () => {
+    const current = store.get('/count') as number;
+    store.set('/count', current + 1);
+  },
+};
+```
+
+## Async Handlers
+
+Handlers can be asynchronous. The library does not block on the return value, but it does observe a returned Promise: the `handler` render event carries its settled `result`, and the binding's `onSuccess` or `onError` follow-up runs once it settles.
+
+```typescript
+const handlers = {
+  saveForm: async (params: Record<string, unknown>) => {
+    const snapshot = store.getSnapshot();
+    await fetch('/api/forms', {
+      method: 'POST',
+      body: JSON.stringify(snapshot),
+    });
+    store.set('/saved', true);
+  },
+};
+```
+
+## Observing Render Events
+
+Beyond dispatching handlers, `<render-spec>` emits a single stream of every notable thing that happens during rendering through its `events` output. Bind to it to observe handler dispatch, state changes, and mount/destroy lifecycle in one place:
+
+```html
+<render-spec
+  [spec]="spec"
+  [registry]="registry"
+  [store]="store"
+  [handlers]="handlers"
+  (events)="onEvent($event)"
+/>
+```
+
+```typescript
+import type { RenderEvent } from '@threadplane/render';
+
+onEvent(event: RenderEvent) {
+  switch (event.type) {
+    case 'handler':
+      console.log('handler ran:', event.action, event.params, event.result);
+      break;
+    case 'stateChange':
+      console.log('state changed:', event.path, event.value);
+      break;
+    case 'lifecycle':
+      console.log('lifecycle:', event.event, event.scope, event.elementType);
+      break;
+    case 'result':
+      console.log('component result:', event.elementKey, event.value);
+      break;
+  }
+}
+```
+
+`RenderEvent` is a discriminated union of four variants, keyed by `type`:
+
+| `type` | Interface | Fires when | Notable fields |
+|--------|-----------|------------|----------------|
+| `'handler'` | `RenderHandlerEvent` | A handler finishes running | `action`, `params`, `result?` |
+| `'stateChange'` | `RenderStateChangeEvent` | The store value changes | `path` (the mutated pointer), `value` (the value written there), `snapshot` |
+| `'lifecycle'` | `RenderLifecycleEvent` | The spec or one of its elements mounts or is destroyed | `event` (`'mounted'` \| `'destroyed'`), `scope` (`'spec'` \| `'element'`), `elementKey?`, `elementType?` |
+| `'result'` | `RenderResultEvent` | A mounted view component calls `injectRenderHost().result(value)` | `value`, `elementKey?` |
+
+A `stateChange` event names the path that changed. `StateStore.subscribe` hands its listener nothing, so the path comes from `lastChange()` on the store: a store built by [`signalStateStore()`](/docs/api/render/signalStateStore) records its last mutation and the event reports that pointer and the value written there. A store from another implementation has no `lastChange`, so its events fall back to `path: '/'` with the full snapshot as `value`. Either way `snapshot` is the whole state model.
+
+Element-scope lifecycle events (`scope: 'element'`) fire for every element the renderer mounts, carrying that element's `elementKey` and `elementType`. A spec with three elements therefore emits one spec-scope `mounted` event and three element-scope ones, and an element that leaves the tree emits an element-scope `destroyed` event as it is torn down.
+
+All four interfaces are exported from `@threadplane/render`. This output is the single source the [Lifecycle guide](/docs/angular/render/guides/lifecycle) builds its `RENDER_LIFECYCLE` signals on top of -- both observe the same stream, so there is no double-counting.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Registry Guide" href="/docs/angular/render/guides/registry">
+    The emit input and component contract
+  </Card>
+  <Card title="Lifecycle Guide" href="/docs/angular/render/guides/lifecycle">
+    Per-context lifecycle signals derived from the events stream
+  </Card>
+  <Card title="State Store Guide" href="/docs/angular/render/guides/state-store">
+    Updating state from handlers
+  </Card>
+  <Card title="Specs Guide" href="/docs/angular/render/guides/specs">
+    The on property and event binding format
+  </Card>
+  <Card title="RenderSpecComponent API" href="/docs/angular/render/guides/element-rendering">
+    Passing handlers to render-spec
+  </Card>
+</CardGroup>

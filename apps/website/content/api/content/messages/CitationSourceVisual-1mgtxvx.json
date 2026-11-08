@@ -1,0 +1,76 @@
+{
+  "name": "CitationSourceVisual",
+  "entrypointId": "content/messages",
+  "kind": "TypeAlias",
+  "href": "/docs/api/content/messages/CitationSourceVisual",
+  "canonicalReference": "@threadplane/content!CitationSourceVisual:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The image, source-category icon, or monogram selected to identify a citation source.",
+  "declarations": [
+    {
+      "name": "CitationSourceVisual",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/content!CitationSourceVisual:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type CitationSourceVisual = "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationImageVisual",
+          "canonicalReference": "@threadplane/content!CitationImageVisual:interface",
+          "href": "/docs/api/content/messages/CitationImageVisual"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationTypeIconVisual",
+          "canonicalReference": "@threadplane/content!CitationTypeIconVisual:interface",
+          "href": "/docs/api/content/messages/CitationTypeIconVisual"
+        },
+        {
+          "kind": "Content",
+          "text": " | "
+        },
+        {
+          "kind": "Reference",
+          "text": "CitationMonogramVisual",
+          "canonicalReference": "@threadplane/content!CitationMonogramVisual:interface",
+          "href": "/docs/api/content/messages/CitationMonogramVisual"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The image, source-category icon, or monogram selected to identify a citation source.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/content/src/messages/citation-display.ts",
+        "line": 37
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/messages/citation-display.ts",
+    "line": 37
+  }
+}

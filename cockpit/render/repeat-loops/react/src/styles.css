@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #17233b;
-  background: #f5f7fc;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -15,7 +16,7 @@ body {
   padding: 24px;
 }
 .eyebrow {
-  color: #52617b;
+  color: var(--ds-text-secondary, light-dark(#52617b, #b5b5b5));
   font-size: 0.85rem;
 }
 h1 {
@@ -23,10 +24,10 @@ h1 {
 }
 .controls,
 .panels > section {
-  border: 1px solid #dce2ed;
+  border: 1px solid var(--ds-border, light-dark(#dce2ed, #9dc1ff));
   border-radius: 12px;
   padding: 20px;
-  background: white;
+  background: var(--ds-surface, light-dark(white, #1c1c1c));
 }
 .controls {
   display: grid;
@@ -42,10 +43,10 @@ select,
 input:not([type='range']),
 button {
   font: inherit;
-  border: 1px solid #b7c3d7;
+  border: 1px solid var(--ds-border, light-dark(#b7c3d7, #9dc1ff));
   border-radius: 6px;
   padding: 8px 12px;
-  background: white;
+  background: var(--ds-surface, light-dark(white, #1c1c1c));
   color: inherit;
 }
 button {
@@ -75,10 +76,10 @@ input {
 }
 h2 {
   font-size: 1rem;
-  color: #52617b;
+  color: var(--ds-text-secondary, light-dark(#52617b, #b5b5b5));
   margin-top: 0;
 }
-pre {
+pre:where(:not(.tp-markdown *)) {
   min-height: 220px;
   max-height: 520px;
   overflow: auto;
@@ -90,8 +91,8 @@ pre {
 .render-card {
   padding: 16px;
   margin: 16px 0;
-  background: #f5f7fc;
-  border: 1px solid #dce2ed;
+  background: var(--ds-surface, light-dark(#f5f7fc, #182638));
+  border: 1px solid var(--ds-border, light-dark(#dce2ed, #9dc1ff));
   border-radius: 8px;
 }
 .render-card h4 {
@@ -109,12 +110,12 @@ pre {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 20px;
-  background: #e3ecff;
-  color: #234680;
+  background: var(--ds-surface-tinted, light-dark(#e3ecff, #182638));
+  color: var(--ds-accent, light-dark(#234680, #9dc1ff));
   font-size: 0.85rem;
 }
 .empty {
-  color: #66748c;
+  color: var(--ds-text-secondary, light-dark(#66748c, #b5b5b5));
 }
 @media (max-width: 700px) {
   .spec-demo {

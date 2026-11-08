@@ -155,6 +155,22 @@ describe('MarkdownComponent', () => {
       '[1]'
     );
   });
+  it('wraps a semantic table in a bounded keyboard-focusable scroll group', () => {
+    const { root } = mount(
+      snapshot('| Heading | Other |\n| --- | --- |\n| value | result |')
+    );
+    const group = root.querySelector<HTMLElement>(
+      '[role="group"][aria-label="Table"]'
+    );
+    expect(group).not.toBeNull();
+    if (!group) throw new Error('Expected scrollable table group');
+    expect(group.tabIndex).toBe(0);
+    expect(getComputedStyle(group).overflowX).toBe('auto');
+    expect(getComputedStyle(group).maxWidth).toBe('100%');
+    expect(group.querySelectorAll(':scope > table')).toHaveLength(1);
+    expect(group.querySelectorAll('table > thead > tr > th')).toHaveLength(2);
+    expect(group.querySelectorAll('table > tbody > tr > td')).toHaveLength(2);
+  });
   it('numbers citations from definitions and retains missing markers', () => {
     const { root } = mount(
       snapshot(

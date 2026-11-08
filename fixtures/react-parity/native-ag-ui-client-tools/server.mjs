@@ -24,12 +24,39 @@ function alive(pid) {
     throw error;
   }
 }
-export function readProcessInventory(run = execFileSync) {
-  const output = run('ps', ['-axo', 'pid=,ppid=,pgid=,lstart=,args='], {
-    encoding: 'utf8',
-    timeout: 1000,
-    maxBuffer: 4_000_000,
-  });
+export function readProcessInventory(
+  run = execFileSync,
+  pgid,
+  platform = process.platform
+) {
+  const exactGroup =
+    platform === 'darwin' && Number.isInteger(pgid) && pgid > 0;
+  let output;
+  try {
+    output = run(
+      'ps',
+      exactGroup
+        ? ['-g', String(pgid), '-o', 'pid=,ppid=,pgid=,lstart=,args=']
+        : ['-axo', 'pid=,ppid=,pgid=,lstart=,args='],
+      {
+        encoding: 'utf8',
+        timeout: 1000,
+        maxBuffer: 4_000_000,
+      }
+    );
+  } catch (error) {
+    // macOS ps exits 1 without output when its exact group has no members.
+    // Timeouts, diagnostics and partial inventories must still fail closed.
+    if (
+      exactGroup &&
+      error.status === 1 &&
+      error.signal === null &&
+      error.stdout === '' &&
+      error.stderr === ''
+    )
+      output = '';
+    else throw error;
+  }
   return output
     .trim()
     .split('\n')
@@ -64,6 +91,23 @@ export function ownedGroupMembers(inventory, pgid, owners) {
     );
   }
   return members;
+}
+export function ownedGroupTerminationReady(inventory, pgid, owners) {
+  const members = inventory.filter((row) => row.pgid === pgid);
+  let awaitingReap = false;
+  for (const member of members) {
+    const owner = owners.get(member.pid);
+    if (member.command === '<defunct>') {
+      assert.ok(
+        owner && owner.pgid === member.pgid && owner.birth === member.birth,
+        'Ambiguous or unrelated group member; termination forbidden'
+      );
+      // An acquired identity may lose its command while awaiting OS reaping.
+      // This only defers signals; it never proves process/group absence.
+      awaitingReap = true;
+    } else ownedGroupMembers([member], pgid, owners);
+  }
+  return members.length > 0 && !awaitingReap;
 }
 async function portAbsent(port) {
   return new Promise((yes) => {
@@ -292,11 +336,19 @@ export async function createClientToolsServer({
       // Inspect exact PGID membership independently before any owned-group signal.
       const groupAlive = () =>
         Number.isInteger(child.pid) &&
-        readProcessInventory().some((row) => row.pgid === child.pid);
+        readProcessInventory(undefined, child.pid).some(
+          (row) => row.pgid === child.pid
+        );
       const deadline = Date.now() + 1500;
       while (groupAlive() && Date.now() < deadline) await delay(20);
-      if (groupAlive()) {
-        ownedGroupMembers(readProcessInventory(), child.pid, ownedProcesses);
+      if (
+        groupAlive() &&
+        ownedGroupTerminationReady(
+          readProcessInventory(undefined, child.pid),
+          child.pid,
+          ownedProcesses
+        )
+      ) {
         try {
           process.kill(-child.pid, 'SIGTERM');
         } catch (error) {
@@ -305,8 +357,14 @@ export async function createClientToolsServer({
       }
       const killDeadline = Date.now() + 1500;
       while (groupAlive() && Date.now() < killDeadline) await delay(20);
-      if (groupAlive()) {
-        ownedGroupMembers(readProcessInventory(), child.pid, ownedProcesses);
+      if (
+        groupAlive() &&
+        ownedGroupTerminationReady(
+          readProcessInventory(undefined, child.pid),
+          child.pid,
+          ownedProcesses
+        )
+      ) {
         try {
           process.kill(-child.pid, 'SIGKILL');
         } catch (error) {
@@ -355,7 +413,7 @@ export async function createClientToolsServer({
       child.pid,
       'worker belongs to only its owned process group'
     );
-    const inventory = readProcessInventory();
+    const inventory = readProcessInventory(undefined, child.pid);
     for (const pid of new Set([child.pid, ready.pid])) {
       const identity = inventory.find((row) => row.pid === pid);
       assert.ok(

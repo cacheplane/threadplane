@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -23,28 +24,28 @@ body {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.memory-demo header {
+.memory-demo > header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-.memory-demo h1 {
+.memory-demo > h1 {
   font-size: 1.5rem;
   margin: 0;
 }
-.memory-demo h2 {
+.memory-demo h2:where(:not(.tp-markdown *)) {
   font-size: 1.1rem;
 }
-.memory-demo h3 {
+.memory-demo h3:where(:not(.tp-markdown *)) {
   font-size: 1rem;
 }
-.memory-demo p {
+.memory-demo > p {
   margin-block: 0.5rem;
 }
 .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
 }
 .memory-demo button,
@@ -84,7 +85,7 @@ body {
   flex-direction: column;
   gap: 1rem;
 }
-.tool-observation pre {
+.tool-observation pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 16rem;
@@ -93,17 +94,17 @@ body {
 .tool-observation {
   padding: 0.75rem;
   margin-block: 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 0.75rem;
 }
 .memory-demo summary {
   cursor: pointer;
 }
 .memory-demo [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 .memory-demo [role='status'] {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.9rem;
 }
 @media (max-width: 42rem) {
@@ -116,15 +117,43 @@ body {
 }
 
 .memory-panel {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
   border-radius: 0.75rem;
   padding: 1rem;
   max-height: 32rem;
   overflow: auto;
 }
-.memory-panel pre {
+.memory-panel pre:where(:not(.tp-markdown *)) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 22rem;
   overflow: auto;
+}
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.memory-demo .tp-example__content { overflow: hidden; }
+.tp-example.memory-demo .memory-workspace {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.memory-demo .memory-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.memory-demo .memory-chat > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.memory-demo .memory-chat > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.memory-demo .memory-sidebar { min-height: 0; overflow: auto; }
+@media (max-width: 672px) {
+  .tp-example.memory-demo .memory-workspace {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
+  }
 }

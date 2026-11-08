@@ -3,9 +3,10 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
+  useLayoutEffect,
   useRef,
   useState,
+  useTransition,
   type ReactNode,
 } from 'react';
 import {
@@ -41,7 +42,10 @@ import {
   type DocsControlPlaneProps,
 } from '../docs/DocsControlPlane';
 import { WORKSPACE_PANEL_FOCUS_INTENT } from './workspace-panel-focus';
-import type { WebsiteWorkspaceVariant } from '../../lib/workspace-page';
+import { FrameworkSelector } from '../docs/FrameworkSelector';
+import { DocsSearch } from '../docs/DocsSearch';
+import type { DocsFramework } from '@threadplane/cockpit-registry';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 
 /*
  * The docs workspace surface: the shell, its mode/navigation/runtime wiring and
@@ -61,8 +65,10 @@ export interface WebsiteWorkspaceProps {
   /** Test/alternate-host override. Website routes normally read this in-browser. */
   readonly requestedMode?: string | null;
   readonly docsSlot?: ReactNode;
-  readonly frontendVariants?: { readonly react?: WebsiteWorkspaceVariant };
-  readonly reactDocsSlot?: ReactNode;
+  readonly runFallbackSlot?: ReactNode;
+  readonly apiSlot?: ReactNode;
+  readonly defaultMode?: WorkspaceMode;
+  readonly framework?: DocsFramework;
   readonly docsContext?: DocsControlPlaneProps;
   /** Docs routes supply their own trail; workspace routes keep the derived one. */
   readonly contextTrail?: readonly WorkspaceCrumb[];
@@ -71,7 +77,11 @@ export interface WebsiteWorkspaceProps {
 interface DiscoveredRouteMode {
   readonly routePath: string;
   readonly mode: string | null;
-  readonly frontend: 'angular' | 'react';
+}
+
+interface FrameworkNavigationIntent extends DiscoveredRouteMode {
+  readonly sourcePath: string;
+  readonly href: string;
 }
 
 const MODE_ANALYTICS: Record<WorkspaceMode, string> = {
@@ -154,101 +164,90 @@ export function WebsiteWorkspaceSurface({
   routePath,
   requestedMode,
   docsSlot,
-  frontendVariants,
-  reactDocsSlot,
+  runFallbackSlot,
+  apiSlot,
+  defaultMode = 'Docs',
+  framework = 'angular',
   docsContext,
   contextTrail,
 }: WebsiteWorkspaceProps) {
+  const readingLayout = isDocsReadingRoute(routePath);
+  const toolbarLayout =
+    readingLayout ||
+    routePath.startsWith('/docs/api') ||
+    routePath === '/docs/examples';
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
+  const [frameworkNavigationPending, startFrameworkNavigation] =
+    useTransition();
+  const [frameworkNavigationIntent, setFrameworkNavigationIntent] =
+    useState<FrameworkNavigationIntent | null>(null);
+  const navigateFramework = useCallback(
+    (href: string) => {
+      const destination = new URL(href, window.location.origin);
+      setFrameworkNavigationIntent({
+        sourcePath: routePath,
+        routePath: destination.pathname,
+        href: `${destination.pathname}${destination.search}${destination.hash}`,
+        mode: readWorkspaceModeQuery(destination.searchParams),
+      });
+      startFrameworkNavigation(() => routerRef.current.push(href));
+    },
+    [routePath]
+  );
   const [discoveredRouteMode, setDiscoveredRouteMode] =
     useState<DiscoveredRouteMode | null>(null);
   const routeMode =
-    requestedMode !== undefined
+    frameworkNavigationIntent?.routePath === routePath
+      ? frameworkNavigationIntent.mode
+      : requestedMode !== undefined
       ? requestedMode
       : discoveredRouteMode?.routePath === routePath
       ? discoveredRouteMode.mode
       : null;
-  const frontend =
-    discoveredRouteMode?.routePath === routePath
-      ? discoveredRouteMode.frontend
-      : 'angular';
-  const selectedVariant =
-    frontend === 'react' ? frontendVariants?.react : undefined;
-  const selectedNavigationTree = useMemo(() => {
-    if (
-      resolution.kind !== 'mapped' ||
-      selectedVariant?.resolution.kind !== 'mapped'
-    )
-      return navigationTree;
-    const identity = selectedVariant.resolution.identity;
-    return navigationTree.map((product) => ({
-      ...product,
-      sections: product.sections.map((section) => ({
-        ...section,
-        entries: section.entries.map((entry) =>
-          entry.id === resolution.identity.id
-            ? {
-                ...entry,
-                id: identity.id,
-                title: identity.title,
-                availableModes: identity.availableModes,
-              }
-            : entry
-        ),
-      })),
-    }));
-  }, [resolution, selectedVariant, navigationTree]);
-  const apiReference = Boolean(docsContext?.apiContext);
-  const unavailableReact = frontend === 'react' && !selectedVariant && !apiReference;
-  const selectedResolution: WorkspaceResolution =
-    selectedVariant?.resolution ??
-    (unavailableReact
-      ? {
-          kind: 'docs-only',
-          docsPath: routePath,
-          title: 'React preview unavailable',
-          unavailableReason: 'no-workspace-capability',
-        }
-      : resolution);
-  const selectedPresentation: WorkspacePresentation =
-    selectedVariant?.presentation ??
-    (unavailableReact
-      ? {
-          kind: 'docs-only',
-          docsPath: routePath,
-          title: 'React preview unavailable',
-          runnable: false,
-        }
-      : presentation);
-  const selectedContent =
-    selectedVariant?.contentBundle ??
-    (unavailableReact
-      ? {
-          codeFiles: {},
-          codeSources: {},
-          promptFiles: {},
-          runtimeUrl: null,
-          docSections: [],
-        }
-      : contentBundle);
-  const frontendHref = useCallback(
-    (href: string, preserveFragment = false) => {
-      const url = new URL(href, 'https://threadplane.ai');
-      if (frontend === 'react') url.searchParams.set('frontend', 'react');
-      if (preserveFragment) url.hash = window.location.hash;
-      return `${url.pathname}${url.search}${url.hash}`;
+
+  useLayoutEffect(() => {
+    const intent = frameworkNavigationIntent;
+    if (!intent) return;
+    if (routePath !== intent.routePath) {
+      if (routePath !== intent.sourcePath) setFrameworkNavigationIntent(null);
+      return;
+    }
+    if (window.location.pathname !== intent.routePath) return;
+    // A cached production route can restore the query from its first visit.
+    // Keep this explicit selection authoritative without adding history or
+    // navigating through that cache again. Later history visits remain free
+    // to restore their own URL once this one-shot intent has been consumed.
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (current !== intent.href)
+      window.history.replaceState(null, '', intent.href);
+    setDiscoveredRouteMode({ routePath, mode: intent.mode });
+    setFrameworkNavigationIntent(null);
+  }, [frameworkNavigationIntent, routePath]);
+  const modeHref = useCallback((href: string, preserveFragment = false) => {
+    const url = new URL(href, 'https://threadplane.ai');
+    if (preserveFragment) url.hash = window.location.hash;
+    return `${url.pathname}${url.search}${url.hash}`;
+  }, []);
+
+  const canonicalModeHref = useCallback(
+    (mode: WorkspaceMode) => {
+      if (defaultMode === 'Docs')
+        return getCanonicalWebsiteWorkspaceHref(resolution, mode);
+      return mode === defaultMode
+        ? routePath
+        : `${routePath}?mode=${mode.toLowerCase()}`;
     },
-    [frontend]
+    [resolution, defaultMode, routePath]
   );
 
   const synchronizeRouteMode = useCallback(
     (mode: string | null) => {
       if (requestedMode !== undefined) return;
-      setDiscoveredRouteMode({ routePath, mode, frontend });
+      setDiscoveredRouteMode({ routePath, mode });
     },
-    [requestedMode, routePath, frontend]
+    [requestedMode, routePath]
   );
 
   useEffect(() => {
@@ -260,15 +259,15 @@ export function WebsiteWorkspaceSurface({
       setDiscoveredRouteMode({
         routePath,
         mode: readWorkspaceModeQuery(currentUrl.searchParams),
-        frontend:
-          currentUrl.searchParams.get('frontend') === 'react'
-            ? 'react'
-            : 'angular',
       });
     };
+    const restoreHistoryMode = () => {
+      setFrameworkNavigationIntent(null);
+      discoverCurrentMode();
+    };
     discoverCurrentMode();
-    window.addEventListener('popstate', discoverCurrentMode);
-    return () => window.removeEventListener('popstate', discoverCurrentMode);
+    window.addEventListener('popstate', restoreHistoryMode);
+    return () => window.removeEventListener('popstate', restoreHistoryMode);
   }, [requestedMode, routePath]);
 
   const pushIdentity = useCallback(
@@ -278,7 +277,8 @@ export function WebsiteWorkspaceSurface({
         restoreFocus?: 'mobile-navigation-trigger' | 'workspace-panel';
       }
     ) => {
-      href = frontendHref(href);
+      setFrameworkNavigationIntent(null);
+      href = modeHref(href);
       if (options?.restoreFocus === 'workspace-panel') {
         const currentDestination = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         if (href !== currentDestination) {
@@ -294,15 +294,13 @@ export function WebsiteWorkspaceSurface({
       }
       routerRef.current.push(href);
     },
-    [frontendHref]
+    [modeHref]
   );
 
   const pushMode = useCallback(
     (mode: WorkspaceMode) => {
-      const href = frontendHref(
-        getCanonicalWebsiteWorkspaceHref(selectedResolution, mode),
-        true
-      );
+      setFrameworkNavigationIntent(null);
+      const href = modeHref(canonicalModeHref(mode), true);
       synchronizeRouteMode(
         readWorkspaceModeQuery(
           new URL(href, window.location.origin).searchParams
@@ -311,33 +309,30 @@ export function WebsiteWorkspaceSurface({
       if (
         requestedMode === undefined &&
         new URL(href, window.location.origin).pathname ===
-        window.location.pathname
+          window.location.pathname
       ) {
         // Mode views are already loaded. A server navigation can outlive the
-        // visitor's next frontend selection and restore an older destination.
+        // visitor's next navigation and restore an older destination.
         window.history.pushState(null, '', href);
         return;
       }
       routerRef.current.push(href);
     },
-    [selectedResolution, synchronizeRouteMode, frontendHref, requestedMode]
+    [canonicalModeHref, synchronizeRouteMode, modeHref, requestedMode]
   );
 
   const replaceMode = useCallback(
     (mode: WorkspaceMode) => {
-      const href = frontendHref(
-        getCanonicalWebsiteWorkspaceHref(selectedResolution, mode),
-        true
-      );
+      setFrameworkNavigationIntent(null);
+      const href = modeHref(canonicalModeHref(mode), true);
       synchronizeRouteMode(
         readWorkspaceModeQuery(
           new URL(href, window.location.origin).searchParams
         )
       );
       if (
-        mode === 'Docs' &&
         new URL(href, window.location.origin).pathname ===
-          window.location.pathname
+        window.location.pathname
       ) {
         // This corrects the current view's query without navigating through a
         // cached static route that can retain the original invalid query.
@@ -346,7 +341,7 @@ export function WebsiteWorkspaceSurface({
       }
       routerRef.current.replace(href);
     },
-    [selectedResolution, synchronizeRouteMode, frontendHref]
+    [canonicalModeHref, synchronizeRouteMode, modeHref]
   );
 
   const renderContextPane = useCallback<WorkspaceContextPaneRenderer>(
@@ -355,14 +350,41 @@ export function WebsiteWorkspaceSurface({
       return (
         <DocsContextContent
           {...docsContext}
+          showFrameworkSelector={false}
+          frameworkSelector={
+            toolbarLayout ? (
+              <FrameworkSelector
+                scope={docsContext.scope}
+                documentId={docsContext.documentId}
+                targets={docsContext.frameworkTargets}
+                navigationPending={frameworkNavigationPending}
+                navigateTo={navigateFramework}
+                onNavigate={onNavigate}
+              />
+            ) : undefined
+          }
           mobile={Boolean(onAction)}
           onNavigate={onNavigate}
-          resolveHref={frontend === 'react' ? frontendHref : undefined}
           onSearchHandoff={onAction ? () => onAction('search-docs') : undefined}
         />
       );
     },
-    [docsContext, frontend, frontendHref]
+    [docsContext, toolbarLayout, frameworkNavigationPending, navigateFramework]
+  );
+
+  const renderContextHeader = useCallback<WorkspaceContextPaneRenderer>(
+    ({ onNavigate }) =>
+      docsContext ? (
+        <FrameworkSelector
+          scope={docsContext.scope}
+          documentId={docsContext.documentId}
+          targets={docsContext.frameworkTargets}
+          navigationPending={frameworkNavigationPending}
+          navigateTo={navigateFramework}
+          onNavigate={onNavigate}
+        />
+      ) : null,
+    [docsContext, frameworkNavigationPending, navigateFramework]
   );
 
   const handleContextAction = useCallback((action: string) => {
@@ -420,70 +442,39 @@ export function WebsiteWorkspaceSurface({
       return;
     }
     document.getElementById(id)?.scrollIntoView({ block: 'start' });
-  }, [frontend, routePath]);
+  }, [framework, routePath, routeMode]);
 
   return (
     <ThemeProvider theme="light">
-      <div className="website-workspace-host" data-website-workspace-host="">
-        {!apiReference && (Boolean(frontendVariants?.react) || frontend === 'react') && (
-          <div className="website-workspace-frontend">
-            <label>
-              Example UI{' '}
-              <select
-                aria-label="Example UI"
-                value={frontend}
-                onChange={(event) => {
-                  const next =
-                    event.target.value === 'react' ? 'react' : 'angular';
-                  const url = new URL(window.location.href);
-                  // Mode selection is optimistic while a router response is
-                  // pending. Commit the displayed mode with the frontend so a
-                  // delayed response cannot restore the previous selection.
-                  if (routeMode !== null) url.searchParams.set('mode', routeMode);
-                  if (next === 'react')
-                    url.searchParams.set('frontend', 'react');
-                  else url.searchParams.delete('frontend');
-                  // Both frontend variants are already loaded. Next integrates
-                  // native history for query-only view changes and Back/Forward.
-                  window.history.pushState(
-                    null,
-                    '',
-                    `${url.pathname}${url.search}${url.hash}`
-                  );
-                  setDiscoveredRouteMode({
-                    routePath,
-                    mode: routeMode,
-                    frontend: next,
-                  });
-                }}
-              >
-                <option value="angular">Angular</option>
-                <option value="react">React preview</option>
-              </select>
-            </label>
-          </div>
-        )}
+      {docsContext ? (
+        <DocsSearch
+          key={routePath}
+          framework={
+            docsContext.scope === 'angular' || docsContext.scope === 'react'
+              ? docsContext.scope
+              : undefined
+          }
+          library={docsContext.activeLibrary ?? undefined}
+        />
+      ) : null}
+      <div
+        className="website-workspace-host"
+        data-website-workspace-host=""
+        data-docs-reading={readingLayout || undefined}
+        data-workspace-framework={framework}
+        data-workspace-route={routePath}
+      >
         <WorkspaceProvider
-          key={frontend}
-          resolution={selectedResolution}
-          presentation={selectedPresentation}
-          contentBundle={selectedContent}
+          key={framework}
+          resolution={resolution}
+          presentation={presentation}
+          contentBundle={contentBundle}
           routePath={routePath}
           requestedMode={routeMode}
-          docsSlot={
-            unavailableReact ? (
-              <article className="docs-workspace-article">
-                <p>
-                  React preview is not available for this topic. Choose Angular
-                  to view its documentation and example.
-                </p>
-              </article>
-            ) : frontend === 'react' && !apiReference ? (
-              reactDocsSlot
-            ) : (
-              docsSlot
-            )
-          }
+          docsSlot={docsSlot}
+          runFallbackSlot={runFallbackSlot}
+          apiSlot={apiSlot}
+          defaultMode={defaultMode}
           pushIdentity={pushIdentity}
           pushMode={pushMode}
           replaceMode={replaceMode}
@@ -496,26 +487,33 @@ export function WebsiteWorkspaceSurface({
           trackRuntimeTransition={trackRuntimeTransition}
         >
           <WorkspaceShell
+            navigationLayout={toolbarLayout ? 'toolbar' : 'rail'}
+            resizableNavigation={Boolean(docsContext)}
             rootElement="section"
-            navigationTree={selectedNavigationTree}
+            navigationTree={navigationTree}
             entry={
-              selectedVariant && selectedResolution.kind === 'mapped'
-                ? selectedNavigationTree
+              resolution.kind === 'mapped'
+                ? navigationTree
                     .flatMap((product) =>
                       product.sections.flatMap((section) => section.entries)
                     )
-                    .find(
-                      (entry) => entry.id === selectedResolution.identity.id
-                    )
+                    .find((entry) => entry.id === resolution.identity.id)
                 : undefined
             }
-            contextTrail={contextTrail}
+            contextTrail={
+              readingLayout
+                ? contextTrail?.slice(2, -1)
+                : contextTrail
+            }
             ariaLabel="Documentation workspace"
             modeNavigationLabel="Documentation modes"
             contextPaneLabel="Documentation context"
             mobileDialogLabel="Documentation control plane"
             mobileTitle="Documentation"
             renderContextPane={docsContext ? renderContextPane : undefined}
+            renderContextHeader={
+              docsContext && !toolbarLayout ? renderContextHeader : undefined
+            }
             onContextAction={handleContextAction}
             onMobileModalPresenceChange={handleMobileModalPresenceChange}
           />

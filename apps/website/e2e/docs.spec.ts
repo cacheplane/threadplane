@@ -6,7 +6,7 @@ test.describe('Docs landing page', () => {
 
     // Hero
     await expect(page.locator('#docs-heading')).toBeVisible();
-    await expect(page.locator('#docs-heading')).toContainText('Start building with Threadplane');
+    await expect(page.locator('#docs-heading')).toHaveText(/Start building\s*with Threadplane\./);
 
     // Step headings (match the label text; the numbered badge is a separate aria-hidden span)
     await expect(page.getByText('Pick your backend').first()).toBeVisible();
@@ -14,8 +14,8 @@ test.describe('Docs landing page', () => {
     await expect(page.getByText('Chat UI').first()).toBeVisible();
 
     // Step 1 — backend quickstart links
-    await expect(page.locator('main a[href="/docs/langgraph/getting-started/quickstart"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/ag-ui/getting-started/quickstart"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/langgraph/getting-started/quickstart"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/ag-ui/getting-started/quickstart"]').first()).toBeVisible();
 
     // Vendor logo marks on the fork cards
     await expect(page.locator('main img[src="/logos/langgraph.svg"]').first()).toBeVisible();
@@ -24,18 +24,19 @@ test.describe('Docs landing page', () => {
     await expect(page.locator('main img[src="/logos/surface/vercel.svg"]').first()).toBeVisible();
 
     // Install snippet copy buttons
+    await page.locator('.docs-entry-install summary').first().click();
     await expect(page.locator('main button[aria-label="Copy install command"]').first()).toBeVisible();
 
     // Step 2 — generative UI links
-    await expect(page.locator('main a[href="/docs/a2ui/getting-started/introduction"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/render/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/a2ui/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/render/getting-started/introduction"]').first()).toBeVisible();
 
     // Step 3 — chat
-    await expect(page.locator('main a[href="/docs/chat/getting-started/introduction"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/chat/getting-started/introduction"]').first()).toBeVisible();
 
     // Helper links
     await expect(page.locator('main a[href="/docs/choosing-an-adapter"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/docs/render/concepts/json-render-vs-a2ui"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/docs/angular/render/concepts/json-render-vs-a2ui"]').first()).toBeVisible();
 
     // The retired telemetry library must not reappear as a card.
     await expect(page.locator('main a[href^="/docs/telemetry"]')).toHaveCount(0);
@@ -46,12 +47,12 @@ test.describe('Docs landing page', () => {
 });
 
 test.describe('Docs slug page', () => {
-  const route = '/docs/langgraph/getting-started/introduction';
+  const route = '/docs/angular/langgraph/getting-started/introduction';
 
   test('keeps page scroll fixed when focusing the last control-plane nav link', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1024, height: 900 });
+    await page.setViewportSize({ width: 1024, height: 600 });
     await page.goto(route);
 
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
@@ -62,15 +63,15 @@ test.describe('Docs slug page', () => {
     const pane = page.locator(
       '[data-workspace-desktop-navigation] [data-control-plane-pane]',
     );
-    // Search moved to the top of the pane (was the bottom Actions-bar item
-    // this test used to focus), so it can no longer stand in for "something
-    // near the bottom of the scrollable pane". The last link in the Learn
-    // section tree still sits at the bottom of the pane's content and is
-    // rendered on every docs page, so it exercises the same bug class: focus
-    // deep in the pane must scroll the pane, not the window.
-    const lastNavLink = pane.locator('.docs-sidebar-section-link').last();
     await expect(pane).toBeVisible();
+    // Compact navigation opens only the current section by default. Expand
+    // the tree so focusing a deep link genuinely exercises pane scrolling.
+    for (const toggle of await pane.locator('.docs-sidebar-section-toggle').all()) {
+      if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    }
+    const lastNavLink = pane.locator('.docs-sidebar-section-link').last();
     await expect(lastNavLink).toBeVisible();
+    expect(await pane.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
     await pane.evaluate((element) => {
       element.scrollTop = 0;
     });
@@ -83,34 +84,36 @@ test.describe('Docs slug page', () => {
   });
 
   test('renders the hydrated docs page composition', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(route);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true',
     );
 
-    await test.step('renders breadcrumb + h1 + sidebar', async () => {
+    await test.step('renders reading toolbar + h1 + sidebar', async () => {
       await expect(page.locator('aside').first()).toBeVisible();
-      await expect(page.locator('nav[aria-label="Breadcrumb"]').first()).toBeVisible();
+      await expect(page.getByRole('navigation', { name: 'Documentation modes', exact: true })).toBeVisible();
+      await expect(page.getByRole('navigation', { name: 'Documentation section', exact: true })).toBeVisible();
       await expect(page.locator('article').first()).toBeVisible();
+      await expect(page.locator('article h1').first()).toHaveText('Introduction');
     });
 
-    await test.step('renders the branded chrome (sidebar mark, breadcrumb trail, prev/next direction)', async () => {
+    await test.step('renders the branded chrome (sidebar mark, section context, prev/next direction)', async () => {
       // Sidebar shows the active library's logo mark
       await expect(page.locator('aside img[src="/logos/langgraph.svg"]').first()).toBeVisible();
-      // The lib · section label moved into the shell's breadcrumb trail.
-      const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
-      await expect(breadcrumb).toContainText('LangGraph');
-      await expect(breadcrumb).toContainText('Getting Started');
+      const context = page.getByRole('navigation', { name: 'Documentation section', exact: true });
+      await expect(context).toContainText('LangGraph');
+      await expect(context).toContainText('Getting Started');
       // Prev/Next: introduction is the first page, so a "Next →" card is present
       await expect(page.getByText('Next →').first()).toBeVisible();
       // Per-page LLM actions trigger
       await expect(page.locator('main button[aria-label="Page actions"]').first()).toBeVisible();
     });
 
-    await test.step('breadcrumb shows the library + page title', async () => {
-      const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]').first();
-      await expect(breadcrumb).toContainText('Docs');
+    await test.step('section context links to the library introduction', async () => {
+      const context = page.getByRole('navigation', { name: 'Documentation section', exact: true });
+      await expect(context.getByRole('link', { name: 'LangGraph', exact: true })).toHaveAttribute('href', route);
     });
 
     await test.step('renders DocsPrevNext at the bottom (next-only for the first page)', async () => {
@@ -126,8 +129,8 @@ test.describe('Docs slug page', () => {
       expect(id?.length).toBeGreaterThan(0);
     });
 
-    await test.step('breadcrumb renders exactly once', async () => {
-      await expect(page.locator('nav[aria-label="Breadcrumb"]')).toHaveCount(1);
+    await test.step('section context renders exactly once', async () => {
+      await expect(page.getByRole('navigation', { name: 'Documentation section', exact: true })).toHaveCount(1);
     });
   });
 
@@ -233,23 +236,35 @@ test.describe('Docs slug page', () => {
 
 test.describe('a2ui docs', () => {
   test('quickstart renders with sidebar + article', async ({ page }) => {
-    await page.goto('/docs/a2ui/getting-started/quickstart');
+    await page.goto('/docs/angular/a2ui/getting-started/quickstart');
     await expect(page.locator('aside').first()).toBeVisible();
     await expect(page.locator('article').first()).toBeVisible();
     await expect(page.locator('article h1').first()).toContainText('Quick Start');
   });
 
   test('sidebar lists the new guides', async ({ page }) => {
-    await page.goto('/docs/a2ui/getting-started/quickstart');
-    await expect(page.locator('aside').getByText('Message Protocol').first()).toBeVisible();
-    await expect(page.locator('aside').getByText('Data Model').first()).toBeVisible();
-    await expect(page.locator('aside').getByText('Validating & Adapting').first()).toBeVisible();
+    await page.goto('/docs/angular/a2ui/getting-started/quickstart');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+    const sidebar = page.locator('[data-workspace-desktop-navigation]');
+    const guides = sidebar.getByRole('button', { name: 'Guides', exact: true });
+    await expect(guides).toHaveAttribute('aria-expanded', 'false');
+    await guides.click();
+    await expect(guides).toHaveAttribute('aria-expanded', 'true');
+    for (const [title, slug] of [
+      ['Message Protocol', 'message-protocol'],
+      ['Data Model', 'data-model'],
+      ['Validating & Adapting', 'adapters-and-validation'],
+    ]) {
+      const link = sidebar.getByRole('link', { name: title, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', `/docs/angular/a2ui/guides/${slug}`);
+    }
   });
 });
 
 test.describe('Docs search', () => {
   test('Cmd+K opens the search modal', async ({ page, browserName }) => {
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'
@@ -262,7 +277,7 @@ test.describe('Docs search', () => {
   });
 
   test('matches docs pages when query omits small connector words', async ({ page, browserName }) => {
-    await page.goto('/docs/langgraph/getting-started/introduction');
+    await page.goto('/docs/angular/langgraph/getting-started/introduction');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'

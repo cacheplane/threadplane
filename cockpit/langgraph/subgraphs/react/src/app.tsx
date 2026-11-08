@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ChatInput, MessageList } from '@threadplane/react/chat';
@@ -37,10 +39,9 @@ export function SubgraphsDemo({
     ? 'Response complete.'
     : 'Ready.';
   return (
-    <main className="subgraphs-demo">
+    <ExampleLayout className="subgraphs-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>LangGraph subgraphs</h1>
         </div>
         <button
@@ -107,20 +108,22 @@ export function SubgraphsDemo({
           execution status or controls.
         </p>
       </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        placeholder="Ask a factual question or say hello…"
-        disabled={!snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          placeholder="Ask a factual question or say hello…"
+          disabled={!snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

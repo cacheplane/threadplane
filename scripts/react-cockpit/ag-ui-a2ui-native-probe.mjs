@@ -40,6 +40,18 @@ export function parseProofArguments(arguments_) {
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
+/** Compare physical ownership, including compiler-resolved OS aliases and symlinks. */
+export function compilerInputInventory(program, consumer) {
+  const owned = realpathSync(consumer);
+  return program.getSourceFiles().map((source) => {
+    const path = realpathSync(source.fileName);
+    assert.ok(
+      path.startsWith(owned + '/'),
+      'No workspace compiler inputs: ' + path
+    );
+    return { path, sha256: hash(readFileSync(path)) };
+  });
+}
 function files(directory) {
   const result = [];
   function visit(path) {
@@ -336,8 +348,8 @@ export async function runInstalledApplicationProof(options) {
     'Direct exclusive environment Python required'
   );
   assert.notEqual(realpathSync(paths.home), realpathSync(root));
-  const retain = paths.retain;
-  mkdirSync(retain); // Preserve every attempted consumer; never replace previous evidence.
+  mkdirSync(paths.retain); // Preserve every attempted consumer; never replace previous evidence.
+  const retain = realpathSync(paths.retain);
   const save = (name, value) => {
     const bytes = JSON.stringify(value, null, 2) + '\n';
     assert.ok(
@@ -372,7 +384,7 @@ export async function runInstalledApplicationProof(options) {
     const graphHash =
         '9464b3361282252102ffead838724f24e20cc69607859029f98203aaeb5a8390',
       lockHash =
-        'df68d8887942e113eee64106f5afa7fff6c0efd7a50d4395c0950dabd045bf6c';
+        '8cd893138d2feb9f6b6f85bb18ebb8708e7e6d3dba98b3cd2f1a31e963c3b705';
     assert.equal(hash(readFileSync(graph)), graphHash);
     assert.equal(hash(readFileSync(lock)), lockHash);
     const inputs = {},
@@ -388,6 +400,8 @@ export async function runInstalledApplicationProof(options) {
     }
     const selected = [
       ...files(join(root, appPath, 'src')),
+      join(root, 'cockpit/shared/react-example.tsx'),
+      join(root, 'cockpit/shared/react-example.css'),
       ...files(join(root, 'libs/cockpit-a2ui-react/src')),
       ...files(join(root, 'libs/cockpit-runtime-bridge/src')),
     ].filter(
@@ -446,8 +460,8 @@ export async function runInstalledApplicationProof(options) {
       )
     );
     save('tarballs.json', tarballs);
-    const consumer = join(retain, 'consumer');
-    mkdirSync(consumer);
+    mkdirSync(join(retain, 'consumer'));
+    const consumer = realpathSync(join(retain, 'consumer'));
     const rootLock = json(lock),
       derived = derivePresentationConsumer(
         rootLock,
@@ -529,16 +543,7 @@ export async function runInstalledApplicationProof(options) {
       host.getCurrentDirectory = () => consumer;
       const program = ts.createProgram(parsed.fileNames, parsed.options, host),
         diagnostics = ts.getPreEmitDiagnostics(program);
-      const sourceInputs = program.getSourceFiles().map((source) => {
-        assert.ok(
-          source.fileName.startsWith(consumer + '/'),
-          'No workspace compiler inputs'
-        );
-        return {
-          path: source.fileName,
-          sha256: hash(readFileSync(source.fileName)),
-        };
-      });
+      const sourceInputs = compilerInputInventory(program, consumer);
       report.compiler[name] = {
         config,
         typescript: ts.version,

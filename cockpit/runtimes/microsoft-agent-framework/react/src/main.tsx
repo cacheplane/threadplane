@@ -9,6 +9,8 @@ import { mafConnection } from './connection';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Public package CSS is resolved by the isolated installed consumer.
 import '@threadplane/react/chat/styles.css';
 import './styles.css';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import '../../../../shared/react-example.css';
 
 const element = document.getElementById('root');
 if (!element) throw new Error('Application root is missing');

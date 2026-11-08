@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { NAV_TRIGGERS, navItems } from './nav-config';
-import { docsConfig } from '../../lib/docs-config';
+import { resolveNarrativeDocument } from '../../lib/docs-catalog';
 import { getAllSolutionSlugs } from '../../lib/solutions-data';
 
 const APP_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'app');
@@ -20,17 +20,7 @@ const TAXONOMY = join(
  */
 function docsHrefResolves(href: string): boolean {
   if (href === '/docs') return true;
-  const [, , library, section, slug] = href.split('/');
-  if (!library) return false;
-  if (!section) return existsSync(join(APP_ROOT, 'docs', library, 'page.tsx'));
-  return docsConfig.some(
-    (entry) =>
-      entry.id === library &&
-      entry.sections.some(
-        (group) =>
-          group.id === section && group.pages.some((page) => page.slug === slug),
-      ),
-  );
+  return Boolean(resolveNarrativeDocument(href)) || existsSync(join(APP_ROOT, ...href.split('/').filter(Boolean), 'page.tsx'));
 }
 
 function staticHrefResolves(href: string): boolean {
@@ -85,13 +75,21 @@ describe('nav-config', () => {
     expect(thin).toEqual([]);
   });
 
-  it('names four triggers, in order', () => {
+  it('gives demos their own top-level dropdown', () => {
     expect(NAV_TRIGGERS.map((trigger) => trigger.label)).toEqual([
       'Libraries',
       'Docs',
+      'Demos',
       'Solutions',
       'Pricing',
     ]);
+    const demos = NAV_TRIGGERS.find((trigger) => trigger.id === 'demos');
+    const docs = NAV_TRIGGERS.find((trigger) => trigger.id === 'docs');
+    expect(demos?.kind === 'panel' && demos.panel.columns.flatMap((column) => column.items).map((item) => item.href)).toEqual([
+      'https://demo.threadplane.ai',
+      'https://ag-ui.threadplane.ai',
+    ]);
+    expect(docs?.kind === 'panel' && docs.panel.columns.flatMap((column) => column.items).some((item) => item.external)).toBe(false);
   });
 
   /**

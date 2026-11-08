@@ -1,16 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const LANGGRAPH_PATH = '/docs/langgraph/guides/streaming';
+const LANGGRAPH_PATH = '/docs/angular/langgraph/guides/streaming';
 const FIXTURE_ORIGIN = 'http://127.0.0.1:4399';
 const FIXTURE_KEY = 'test-key-redact-me';
 
-const desktopControlPlane = (page: Page) =>
-  page.locator('[data-workspace-desktop-navigation]');
-
 async function openSettings(page: Page): Promise<void> {
-  await desktopControlPlane(page)
-    .getByRole('button', { name: 'Settings', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   await expect(page.locator('[data-runtime-target-settings]')).toBeVisible();
 }
 
@@ -77,9 +73,7 @@ test('clears its memory-only target on an actual persisted BFCache restore', asy
     /^http:\/\/localhost:4300\//
   );
   await expect(
-    desktopControlPlane(page).getByRole('button', {
-      name: /^Run, runtime ready$/,
-    })
+    page.locator('[data-runtime-section]').getByText('Ready', { exact: true })
   ).toBeVisible({ timeout: 15_000 });
   // The lifecycle under test is the top-level memory provider. Detach the
   // already-proven child after its real handshake so Chromium does not reject

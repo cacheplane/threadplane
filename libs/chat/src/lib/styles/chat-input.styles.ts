@@ -37,6 +37,9 @@ export const CHAT_INPUT_STYLES = `
 
 .chat-input__textarea {
   flex: 1 1 auto;
+  min-width: 0;
+  /* An initially hidden popup can measure zero before its first opening. */
+  min-height: 1.5em;
   border: 0;
   outline: none;
   resize: none;
@@ -49,6 +52,8 @@ export const CHAT_INPUT_STYLES = `
   field-sizing: content;
   overflow-y: auto;
 }
+/* Hint copy must not grow an empty composer; actual drafts still wrap. */
+.chat-input__textarea:placeholder-shown { white-space: nowrap; overflow-x: hidden; }
 .chat-input__textarea::placeholder { color: var(--tplane-chat-text-muted); }
 .chat-input__textarea::-webkit-scrollbar { width: 4px; }
 .chat-input__textarea::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 4px; }

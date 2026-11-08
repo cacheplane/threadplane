@@ -10,7 +10,7 @@ draft: false
 
 Most people reach for a LangGraph subgraph expecting a _state_ boundary, and what they actually get is an _observable_ one.
 
-If your question is "single agent, approval loop, or multi-agent?", that's an architecture question, and the [decision matrix](/docs/langgraph/concepts/agent-architecture) already answers it.
+If your question is "single agent, approval loop, or multi-agent?", that's an architecture question, and the [decision matrix](/docs/angular/langgraph/concepts/agent-architecture) already answers it.
 This post is about the layer underneath: what a subgraph actually changes at runtime, why our own graphs got split, and what the frontend sees while a child is running.
 
 ## What does a subgraph actually give you?
@@ -55,7 +55,7 @@ It came from writing two `TypedDict`s and being deliberate about what they share
 ### What about context windows and error boundaries?
 
 Those are real reasons to split (our own docs lean on them).
-The [subgraphs guide](/docs/langgraph/guides/subgraphs) points at per-task context windows and failure containment as reasons to reach for subagents, and the docstring on our own research child's only node calls it "a focused contractor."
+The [subgraphs guide](/docs/angular/langgraph/guides/subgraphs) points at per-task context windows and failure containment as reasons to reach for subagents, and the docstring on our own research child's only node calls it "a focused contractor."
 
 But let's look at where each one actually comes from.
 A narrow context window is a consequence of what you pass into the child's `ainvoke`; you get it by handing over a topic instead of a transcript.
@@ -242,7 +242,7 @@ Split when something outside the graph needs to see the child run as its own thi
 Split when the child has its own control flow (a loop, a branch, a stopping condition the parent doesn't have) and you're willing to own the mapping at both edges.
 Don't split for tidiness, and don't assume the split isolated state: wire a child in as a node on a shared `MessagesState` and it appends straight to the transcript the parent is building.
 
-The [architecture matrix](/docs/langgraph/concepts/agent-architecture) covers the tiering question, the [subgraphs guide](/docs/langgraph/guides/subgraphs) has the composition and `subagents()` wiring, and [What injectAgent() Actually Returns](/blog/what-inject-agent-returns) walks the signal surface those child streams land in.
+The [architecture matrix](/docs/angular/langgraph/concepts/agent-architecture) covers the tiering question, the [subgraphs guide](/docs/angular/langgraph/guides/subgraphs) has the composition and `subagents()` wiring, and [What injectAgent() Actually Returns](/blog/what-inject-agent-returns) walks the signal surface those child streams land in.
 
 If you've split a graph for a third reason (not observability, and not a child that's genuinely its own graph), please let me know.
 Those are the two I've been able to justify, and I doubt they're the only two that exist. 🤔

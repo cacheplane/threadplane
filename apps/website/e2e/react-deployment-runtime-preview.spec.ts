@@ -1,10 +1,12 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React deployment runtime keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/deployment?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/langgraph/guides/deployment');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React deployment runtime preview',
@@ -22,35 +24,33 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
   await page.screenshot({
     path: testInfo.outputPath('react-deployment-runtime-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(
-    '/docs/langgraph/guides/deployment?mode=code&frontend=react'
+    '/docs/react/langgraph/guides/deployment?mode=code'
   );
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page).toHaveURL(
-    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+    '/docs/react/langgraph/guides/deployment?mode=run'
   );
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4608|langgraph\/deployment-runtime\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).toHaveURL('/docs/langgraph/guides/deployment?mode=run');
+  await selectFramework(page, 'angular');
+  await expect(page).toHaveURL('/docs/angular/langgraph/guides/deployment?mode=run');
   await page.goBack({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
-    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+    '/docs/react/langgraph/guides/deployment?mode=run'
   );
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
-    '/docs/langgraph/guides/deployment?mode=run&frontend=react'
+    '/docs/react/langgraph/guides/deployment?mode=run'
   );
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -58,7 +58,7 @@ test('public React deployment runtime keep topic docs, sources, runtime, and his
     /(?:localhost:4608|langgraph\/deployment-runtime\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -78,7 +78,7 @@ test('switching away releases the held Deployment Runtime stream and returning s
   );
   const origin = 'http://127.0.0.1:4608';
   await request.post(origin + '/__reset');
-  await page.goto('/docs/langgraph/guides/deployment?frontend=react&mode=run');
+  await page.goto('/docs/react/langgraph/guides/deployment?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(
     frame.getByRole('region', { name: 'Runtime connection' })
@@ -89,10 +89,8 @@ test('switching away releases the held Deployment Runtime stream and returning s
     frame.getByRole('region', { name: 'Conversation', exact: true })
   ).toContainText('Live partial');
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -102,7 +100,7 @@ test('switching away releases the held Deployment Runtime stream and returning s
     )
     .toBe(false);
   await request.post(origin + '/__release');
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(
     frame

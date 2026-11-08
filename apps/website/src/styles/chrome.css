@@ -18,12 +18,62 @@
   --nav-row-pad: 14px;
 }
 
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  transform: translateY(calc(-100% - 16px));
+  padding: 12px 20px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
 /* Footer */
 .footer-root {
-  padding-inline: 0;
+  padding: 80px 0 32px;
   margin-top: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+}
+.footer-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+  margin-bottom: 64px;
+}
+.footer-navigation {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px;
+}
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 15px;
+}
+.footer-column h2,
+.footer-signup h2 {
+  margin: 0 0 16px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-accent);
+}
+.footer-signup h2 {
+  font-size: 24px;
+  letter-spacing: -0.025em;
 }
 .footer-root > div {
   max-width: var(--container-page);
@@ -35,11 +85,19 @@
   line-height: 1.6;
 }
 .footer-newsletter {
-  max-width: 320px;
-  margin-bottom: 16px;
+  max-width: 480px;
+  margin-bottom: 0;
 }
-.footer-column-eyebrow {
-  margin-bottom: 4px;
+.footer-newsletter[data-ui="form"] {
+  --form-control-height-compact: 44px;
+}
+.footer-newsletter [data-ui="button"] {
+  min-height: 44px;
+}
+.footer-newsletter [data-ui="form-row"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
 }
 .footer-social-link {
   color: var(--color-text-muted);
@@ -53,12 +111,33 @@
   color: var(--color-accent);
 }
 .footer-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 8px;
+  line-height: 1.4;
   color: var(--color-text-secondary);
 }
-.footer-link:hover {
+.footer-link:hover,
+.footer-legal-link:hover {
   color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.footer-root a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 .footer-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 24px;
+  font-size: 13px;
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
 }
@@ -66,8 +145,29 @@
   display: inline-flex;
   gap: 16px;
 }
-.footer-legal-link:hover {
-  color: var(--color-accent);
+.footer-legal-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 767px) {
+  .footer-root {
+    padding-top: 56px;
+  }
+  .footer-top {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  .footer-navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 24px;
+  }
+}
+@media (max-width: 359px) {
+  .footer-newsletter [data-ui="form-row"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Nav */
@@ -187,6 +287,17 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.nav-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.nav-github-stars {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .nav-mobile-github-link {
   display: flex;
@@ -360,10 +471,9 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   background: var(--color-bg);
   border-radius: 12px;
   border: 1px solid var(--color-border);
-  padding: var(--space-6);
-  /* As wide as its columns, never the bar. The max-width is a last resort for
-   * a panel wider than the viewport itself; clampPanelLeft handles the rest. */
-  width: max-content;
+  padding: var(--space-4);
+  /* A shared width and equal tracks give every dropdown the same rhythm. */
+  width: 640px;
   max-width: calc(100vw - 48px);
   animation: nav-panel-in 140ms ease-out;
 }
@@ -381,39 +491,23 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
 .nav-panel-cols {
   display: grid;
   gap: var(--space-6);
-  grid-auto-flow: column;
-  /* Each column is as wide as its widest item, and no item is wider than
-   * 16rem (.nav-panel-item below), so a column is 256px at most and a
-   * short column stays short. Equal tracks were tried first: at 264px the
-   * Docs panel came out 880px, and with the container capped at 1200px the
-   * Docs trigger is a fixed 817px from the row's content edge at every wide
-   * viewport, so that panel could never sit flush under its trigger. Sized
-   * to content it is ~790px and does. */
-  grid-auto-columns: max-content;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-/* The Libraries panel is one column of four items that must sit side by side,
- * not three columns of stacked items like Docs and Solutions. The tracks
- * therefore belong on the column itself — putting them on .nav-panel-cols
- * gives a four-track grid exactly one child wide, which left three quarters of
- * the panel empty. e2e/nav-panels.spec.ts measures this. */
+.nav-panel-col {
+  display: grid;
+  grid-template-rows: auto repeat(3, minmax(80px, 1fr));
+  gap: var(--space-2);
+  min-width: 0;
+}
+/* Ungrouped Libraries and Demos use the same two tracks for their items. */
 .nav-panel[data-columns='1'] .nav-panel-cols {
   grid-template-columns: 1fr;
 }
 .nav-panel[data-columns='1'] .nav-panel-col {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: var(--space-2);
-}
-/* Four cards across is ~1080px, which is more than the row's content box
- * below ~1160px. Two rows of two keeps the cards readable there;
- * e2e/nav-panels.spec.ts pins four-across at 1440 and two-by-two at 1100. */
-@media (max-width: 1199px) {
-  .nav-panel[data-columns='1'] .nav-panel-col {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(2, max-content);
-    grid-auto-columns: auto;
-  }
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: 1fr;
+  column-gap: var(--space-6);
 }
 .nav-panel-col-head {
   display: block;
@@ -427,9 +521,7 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  /* Caps the column it sits in (see .nav-panel-cols). Most descriptions fit
-   * on one line inside it; the longest wrap to two. */
-  max-width: 16rem;
+  min-width: 0;
   padding: var(--space-3);
   border-radius: var(--radius-md);
   text-decoration: none;
@@ -443,7 +535,7 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: rgba(21, 37, 62, 0.07);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,7 +561,9 @@ html:has([data-website-workspace-host] [data-workspace-shell][data-workspace-mod
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: var(--space-6);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 .nav-panel-footer-lead {
   font-family: var(--font-sans);

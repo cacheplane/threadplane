@@ -14,7 +14,7 @@ async function submit(page: Page, text: string) {
 }
 async function send(page: Page, text: string) {
   await submit(page, text);
-  await expect(page.getByRole('status')).toHaveText('Response saved.');
+  await expect(page.getByRole('status')).toHaveText('Response complete.');
 }
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
@@ -113,7 +113,7 @@ test('renders actual graph output inside an unfinished code fence before release
     before.filter((entry) => entry.path.endsWith('/history'))
   ).toHaveLength(0);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response saved.');
+  await expect(page.getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('pre code')).toHaveText(
     'const answer = 42;'
   );
@@ -197,12 +197,12 @@ test('authored developer connection routes only to its configured target', async
         type: 'tplane:runtime-check', version: 1, nonce: 'parent-health', capability: 'messages'
       }, event.origin);
       if (event.data.type === 'tplane:runtime-ready' && event.data.nonce === 'parent-health') document.getElementById('state').textContent = 'Ready';
-    });</script><iframe id="pilot" title="Chat Messages React" src="http://127.0.0.1:4620/chat/messages/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="Chat Messages React" style="width:100%;height:700px" src="http://127.0.0.1:4620/chat/messages/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Developer question');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response saved.');
+  await expect(frame.getByRole('status')).toHaveText('Response complete.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(4);
   expect(

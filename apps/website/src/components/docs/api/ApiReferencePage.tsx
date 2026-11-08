@@ -6,7 +6,6 @@ import {
 } from '../../../lib/api-reference';
 import { getWebsiteWorkspacePage } from '../../../lib/workspace-page';
 import { WebsiteWorkspace } from '../../workspace/WebsiteWorkspace';
-import { DocsSearch } from '../DocsSearch';
 import { ApiIndexView } from './ApiIndexView';
 import { ApiSymbolView } from './ApiSymbolView';
 import { JsonLd } from '../../shared/JsonLd';
@@ -30,11 +29,18 @@ export async function ApiReferencePage({
       : null;
   if (page.kind === 'symbol' && !symbol) notFound();
   const title = symbol?.name ?? page.entrypoint?.importPath ?? 'API Reference';
+  const entrypoint = page.entrypoint;
+  const framework =
+    entrypoint?.framework === 'react'
+      ? 'react'
+      : entrypoint?.framework === 'angular'
+      ? 'angular'
+      : undefined;
   const workspace = await getWebsiteWorkspacePage({
     docsPath: pathname,
     title,
+    framework,
   });
-  const entrypoint = page.entrypoint;
   const contextTrail = [
     { label: 'Docs', href: '/docs' },
     {
@@ -53,13 +59,11 @@ export async function ApiReferencePage({
   ];
   const docsSlot = (
     <div className="docs-workspace-article">
-      <DocsSearch />
       <div className="api-reference-page">
         {symbol && entrypoint ? (
           <ApiSymbolView symbol={symbol} entrypoint={entrypoint} />
         ) : (
           <article>
-            <p className="api-reference-eyebrow">Threadplane SDK</p>
             <h1>{title}</h1>
             <p>
               Explore the exported APIs for Angular, React, and shared
@@ -116,9 +120,14 @@ export async function ApiReferencePage({
       <WebsiteWorkspace
         {...workspace}
         routePath={pathname}
+        framework={framework}
         docsSlot={docsSlot}
+        apiSlot={docsSlot}
+        defaultMode="API"
         contextTrail={contextTrail}
         docsContext={{
+          scope: framework ?? 'shared',
+          currentPath: pathname,
           activeLibrary: null,
           activeSection: 'api',
           activeSlug: segments.at(-1) ?? '',

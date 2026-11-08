@@ -72,6 +72,8 @@ function fixture(t, framework) {
           'use-agent.js',
           'markdown/markdown.js',
           'markdown/inline-citation.js',
+          'markdown/inline-preview.js',
+          'markdown/preview-position.js',
           'chat/tool-observation.js',
           'chat/message-list.js',
           'chat/reasoning.js',
@@ -80,6 +82,7 @@ function fixture(t, framework) {
           'chat/citations.js',
           'chat/text-transcript.js',
           'chat/suggestions.js',
+          'chat/citation-preview.js',
           'render/render-spec.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
   ];
@@ -105,6 +108,9 @@ function fixture(t, framework) {
           'node_modules/@threadplane/react/src/chat/citations.d.ts',
           'node_modules/@threadplane/react/src/chat/text-transcript.d.ts',
           'node_modules/@threadplane/react/src/chat/suggestions.d.ts',
+          'node_modules/@threadplane/react/src/chat/citation-preview.d.ts',
+          'node_modules/@threadplane/react/src/markdown/inline-preview.d.ts',
+          'node_modules/@threadplane/react/src/markdown/preview-position.d.ts',
         ]),
   ];
   const configs = ['view-proof/tsconfig.json', framework + '/tsconfig.json'];
@@ -475,6 +481,37 @@ for (const [graph, extension] of [
     f.save();
     assert.throws(() => readViewProof(f.root), /suggestions/);
   });
+
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed CitationPreview ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/citation-preview' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter((p) => p !== path);
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /citation-preview/);
+  });
+
+for (const name of ['inline-preview', 'preview-position'])
+  for (const [graph, extension] of [['runtime', '.js']])
+    test(`React rejects missing installed ${name} ${graph}`, (t) => {
+      const f = fixture(t, 'react');
+      const path = 'node_modules/@threadplane/react/src/markdown/' + name + extension;
+      if (graph === 'runtime') f.record.runtime = f.record.runtime.filter((p) => p !== path);
+      else f.record.compiler.inputs = f.record.compiler.inputs.filter((p) => p !== path);
+      delete f.record.inputs[path];
+      rmSync(join(f.root, 'inputs', path));
+      f.save();
+      assert.throws(() => readViewProof(f.root), new RegExp(name));
+    });
 
 test('React rejects missing installed MessageList runtime', (t) => {
   const f = fixture(t, 'react');

@@ -30,7 +30,7 @@ export const CHAT_THREAD_LIST_STYLES = `
     display: block;
   }
   .chat-thread-list__item-time {
-    font-size: 11px;
+    font-size: var(--tplane-chat-font-size-xs);
     color: var(--tplane-chat-text-muted);
     display: block;
   }

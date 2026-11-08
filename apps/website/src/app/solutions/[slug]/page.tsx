@@ -1,34 +1,23 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import {
   getSolutionBySlug,
   getAllSolutionSlugs,
-  type ArchitectureLayer,
-  type SolutionPainPoint,
-  type ProofPoint,
 } from '../../../lib/solutions-data';
 import { Container } from '../../../components/ui/Container';
 import { Section } from '../../../components/ui/Section';
+import { Button } from '../../../components/ui/Button';
 import { SolutionCodeBlock } from '../../../components/solutions/SolutionCodeBlock';
 import { SolutionDemoBlock } from '../../../components/solutions/SolutionDemoBlock';
-import { Eyebrow } from '../../../components/ui/Eyebrow';
-import { Button } from '../../../components/ui/Button';
-import { Pill } from '../../../components/ui/Pill';
-import { Card } from '../../../components/ui/Card';
+import { SolutionSketch } from '../../../components/solutions/SolutionSketch';
 import { WhitePaperBlock } from '../../../components/landing/WhitePaperBlock';
 import { FinalCTA } from '../../../components/landing/FinalCTA';
 import { getFormPolicy } from '../../../lib/growth/form-policy';
+import '../../../styles/solutions.css';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-/**
- * Keyed by the display name in solutions-data. A miss renders the card
- * unlinked rather than failing, and `Record<string, string>` will not catch a
- * rename on either side — so `solutions-links.spec.ts` asserts every layer
- * resolves.
- */
 export const LIBRARY_HREF: Record<string, string> = {
   Agent: '/langgraph',
   'json-render': '/render',
@@ -40,175 +29,125 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug } = await params;
-  const solution = getSolutionBySlug(slug);
+  const solution = getSolutionBySlug((await params).slug);
   if (!solution) return {};
-  return {
-    title: solution.metaTitle,
-    description: solution.metaDescription,
-  };
-}
-
-function PainPoints({ items }: { items: SolutionPainPoint[] }) {
-  return (
-    <Section surface="canvas" ariaLabelledBy="problem-heading">
-      <Container>
-        <div className="sol-page-section-header">
-          <div className="sol-page-rail">
-            <Eyebrow tone="accent" className="sol-page-eyebrow-tight">The problem</Eyebrow>
-            <span className="sol-page-rail-line" aria-hidden="true" />
-          </div>
-          <h2 id="problem-heading" className="sol-page-h2">
-            Why this is hard today.
-          </h2>
-        </div>
-        <div className="sol-page-grid-260">
-          {items.map((p) => (
-            <Card key={p.title} padding="lg">
-              <h3 className="sol-page-card-h3">
-                {p.title}
-              </h3>
-              <p className="sol-page-card-body">
-                {p.description}
-              </p>
-            </Card>
-          ))}
-        </div>
-      </Container>
-    </Section>
-  );
-}
-
-function Architecture({
-  intro,
-  layers,
-}: {
-  intro: string;
-  layers: ArchitectureLayer[];
-}) {
-  return (
-    <Section surface="tinted" ariaLabelledBy="arch-heading">
-      <Container>
-        <div className="sol-page-section-header">
-          <div className="sol-page-rail">
-            <Eyebrow tone="accent" className="sol-page-eyebrow-tight">Architecture</Eyebrow>
-            <span className="sol-page-rail-line" aria-hidden="true" />
-          </div>
-          <h2 id="arch-heading" className="sol-page-h2 sol-page-h2-spaced">
-            How the three libraries compose.
-          </h2>
-          <p className="sol-page-section-intro">
-            {intro}
-          </p>
-        </div>
-        <div className="sol-page-grid-280">
-          {layers.map((l) => {
-            const href = LIBRARY_HREF[l.library];
-            const cardInner = (
-              <Card padding="lg" hoverable={!!href} className="sol-page-arch-card">
-                <div className="sol-page-arch-card-header">
-                  <h3 className="sol-page-arch-title">
-                    {l.library}
-                  </h3>
-                  <Pill variant="accent">{l.pkg}</Pill>
-                </div>
-                <p className={href ? 'sol-page-role sol-page-role-linked' : 'sol-page-role'}>
-                  {l.role}
-                </p>
-                {href ? (
-                  <span className="sol-page-arch-cta">
-                    See {l.library} docs →
-                  </span>
-                ) : null}
-              </Card>
-            );
-            return href ? (
-              <Link key={l.library} href={href} className="sol-page-link-plain">
-                {cardInner}
-              </Link>
-            ) : (
-              <div key={l.library}>{cardInner}</div>
-            );
-          })}
-        </div>
-      </Container>
-    </Section>
-  );
-}
-
-function Capabilities({ items }: { items: ProofPoint[] }) {
-  return (
-    <Section surface="canvas" ariaLabelledBy="capabilities-heading">
-      <Container>
-        <div className="sol-page-section-header">
-          <div className="sol-page-rail">
-            <Eyebrow tone="accent" className="sol-page-eyebrow-tight">What you ship</Eyebrow>
-            <span className="sol-page-rail-line" aria-hidden="true" />
-          </div>
-          <h2 id="capabilities-heading" className="sol-page-h2">
-            Capabilities the framework delivers.
-          </h2>
-        </div>
-        <div className="sol-page-grid-260">
-          {items.map((p) => (
-            <Card key={p.metric + p.label} padding="lg">
-              <div className="sol-page-metric">
-                {p.metric}
-              </div>
-              <p className="sol-page-card-body">
-                {p.label}
-              </p>
-            </Card>
-          ))}
-        </div>
-      </Container>
-    </Section>
-  );
+  return { title: solution.metaTitle, description: solution.metaDescription };
 }
 
 export default async function SolutionPage({ params }: PageProps) {
-  const formPolicy = getFormPolicy();
-  const { slug } = await params;
-  const solution = getSolutionBySlug(slug);
+  const solution = getSolutionBySlug((await params).slug);
   if (!solution) notFound();
 
   return (
-    <>
-      {/* Hero — solution-tinted accent */}
-      <Section surface="canvas" ariaLabelledBy="solution-hero-heading">
+    <div className="solutions-page">
+      <Section
+        ariaLabelledBy="solution-hero-heading"
+        className="solutions-hero"
+      >
         <Container>
-          <div className="sol-page-hero-inner">
-            <Eyebrow tone="accent" className="sol-page-eyebrow-spaced">{solution.eyebrow}</Eyebrow>
-            <h1 id="solution-hero-heading" className="sol-page-h1">
-              {solution.title}
+          <div className="solutions-hero-copy">
+            <h1 id="solution-hero-heading">
+              {solution.title.replace('\n', ' ')}
             </h1>
-            <p className="sol-page-hero-subtitle">
-              {solution.subtitle}
-            </p>
-            <div className="sol-page-hero-buttons">
-              <Button variant="primary" size="lg" href="#whitepaper-block">
-                Read the field report
+            <p>{solution.subtitle}</p>
+            <div className="solutions-actions">
+              <Button variant="primary" size="lg" href="/pilot-to-prod">
+                Plan a pilot
               </Button>
-              <Button variant="secondary" size="lg" href="/pilot-to-prod">
-                See the program
+              <Button
+                variant="secondary"
+                size="lg"
+                href="#solution-code-heading"
+              >
+                Explore the code
               </Button>
             </div>
           </div>
         </Container>
       </Section>
 
-      <PainPoints items={solution.painPoints} />
-      <Architecture intro={solution.architectureIntro} layers={solution.architectureLayers} />
-      <Capabilities items={solution.proofPoints} />
+      <Section ariaLabelledBy="capabilities-heading">
+        <Container>
+          <div className="solutions-feature">
+            <SolutionSketch kind={solution.slug} />
+            <div className="solutions-feature-copy">
+              <h2 id="capabilities-heading">
+                Keep the whole
+                <br />
+                picture in view.
+              </h2>
+              <ul className="solutions-capabilities">
+                {solution.proofPoints.map((point) => (
+                  <li key={point.metric}>
+                    <h3>{point.metric}</h3>
+                    <p>{point.label}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      <Section ariaLabelledBy="problem-heading">
+        <Container>
+          <header className="solutions-section-heading">
+            <h2 id="problem-heading">
+              The hard parts deserve
+              <br />a better interface.
+            </h2>
+          </header>
+          <div className="solutions-grid solutions-problems">
+            {solution.painPoints.map((point) => (
+              <article className="solutions-card" key={point.title}>
+                <h3>{point.title}</h3>
+                <p>{point.description}</p>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
+      <Section ariaLabelledBy="arch-heading">
+        <Container>
+          <header className="solutions-section-heading">
+            <h2 id="arch-heading">
+              Connected from
+              <br />
+              agent to interface.
+            </h2>
+            <p>{solution.architectureIntro}</p>
+          </header>
+          <div className="solutions-grid solutions-libraries">
+            {solution.architectureLayers.map((layer) => (
+              <article className="solutions-card" key={layer.library}>
+                <h3>{layer.library}</h3>
+                <code className="solutions-package">{layer.pkg}</code>
+                <p>{layer.role}</p>
+                {LIBRARY_HREF[layer.library] && (
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    href={LIBRARY_HREF[layer.library]}
+                  >
+                    Explore {layer.library} <span aria-hidden="true">↗</span>
+                  </Button>
+                )}
+              </article>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
       <SolutionCodeBlock code={solution.code} />
       {solution.demo && <SolutionDemoBlock clip={solution.demo} />}
-      <WhitePaperBlock formPolicy={formPolicy} />
+      <WhitePaperBlock formPolicy={getFormPolicy()} />
       <FinalCTA
         headline={solution.ctaHeadline}
         subtext={solution.ctaSubtext}
-        primary={{ label: 'Talk to us', href: '/pricing#enterprise' }}
-        secondary={{ label: 'Read the docs →', href: '/docs' }}
+        primary={{ label: 'Explore our services', href: '/pricing#services' }}
+        secondary={{ label: 'Read the docs', href: '/docs' }}
       />
-    </>
+    </div>
   );
 }

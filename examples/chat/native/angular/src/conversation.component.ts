@@ -80,7 +80,7 @@ import { ApprovalComponent } from './approval.component';
       </aside>
       <section class="conversation" aria-labelledby="conversation-title">
         <div class="conversation-heading">
-          <p class="eyebrow">Angular example</p>
+          <p class="eyebrow">Native conversation</p>
           <h1 id="conversation-title">
             {{ selection.row?.title ?? 'Your conversation' }}
           </h1>
@@ -110,14 +110,17 @@ import { ApprovalComponent } from './approval.component';
         } @case ('ready') {
         <div
           class="transcript"
+          tabindex="0"
           role="region"
           aria-label="Conversation messages"
         >
+          <div class="transcript__content">
           @for (row of state.messages; track row.id) {
           <native-message [row]="row" />
           } @empty {
           <p class="empty-state">This conversation has no messages yet.</p>
           }
+          </div>
         </div>
         } }
         <native-approval [application]="application" [snapshot]="state" />

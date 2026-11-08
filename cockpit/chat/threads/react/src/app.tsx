@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -79,10 +81,29 @@ function ThreadsOwner({ connection, onReady }: Props) {
     ? 'Response saved.'
     : 'Ready.';
   return (
-    <main className="threads-demo">
+    <ExampleLayout
+      className="threads-demo"
+      about={
+        <div className="seed-prompts" aria-label="Example prompts">
+          <button
+            type="button"
+            disabled={snapshot.busy || !snapshot.canSubmit}
+            onClick={() => {
+              const current = application.getSnapshot();
+              if (current.canSubmit && !current.busy)
+                application.setDraft(
+                  snapshot.viewGeneration,
+                  'Explain how saved conversations work in two sentences.'
+                );
+            }}
+          >
+            Try a question
+          </button>
+        </div>
+      }
+    >
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat threads</h1>
         </div>
         <button
@@ -121,63 +142,49 @@ function ThreadsOwner({ connection, onReady }: Props) {
           className="conversation-panel"
           aria-label="Selected conversation"
         >
-          <div className="seed-prompts" aria-label="Example prompts">
-            <button
-              type="button"
-              disabled={snapshot.busy || !snapshot.canSubmit}
-              onClick={() => {
-                const current = application.getSnapshot();
-                if (current.canSubmit && !current.busy)
-                  application.setDraft(
-                    snapshot.viewGeneration,
-                    'Explain how saved conversations work in two sentences.'
-                  );
-              }}
-            >
-              Try a question
-            </button>
-          </div>
           <MessageList
             rows={snapshot.rows}
             renderMessage={renderMessage}
             label="Conversation"
           />
-          {snapshot.error && <p role="alert">{snapshot.error}</p>}
-          <ChatInput
-            key={snapshot.viewGeneration}
-            label="Message"
-            value={snapshot.draft}
-            onValueChange={(text) =>
-              application.setDraft(snapshot.viewGeneration, text)
-            }
-            placeholder="Write a message…"
-            hint="Enter to send. Shift+Enter adds a new line."
-            busy={snapshot.busy}
-            disabled={
-              snapshot.activity === 'loading' ||
-              snapshot.activity === 'replacing' ||
-              (!snapshot.canSubmit && !snapshot.busy)
-            }
-            onStop={
-              snapshot.busy && snapshot.activity !== 'replacing'
-                ? () => void application.stop()
-                : undefined
-            }
-            onSubmit={(text) => {
-              const current = application.getSnapshot();
-              if (
-                !current.canSubmit ||
-                current.busy ||
-                current.viewGeneration !== snapshot.viewGeneration
-              )
-                return false;
-              void application.submit(text);
-              return true;
-            }}
-          />
-          <p role="status">{status}</p>
+          <ExampleFooter>
+            {snapshot.error && <p role="alert">{snapshot.error}</p>}
+            <ChatInput
+              key={snapshot.viewGeneration}
+              label="Message"
+              value={snapshot.draft}
+              onValueChange={(text) =>
+                application.setDraft(snapshot.viewGeneration, text)
+              }
+              placeholder="Write a message…"
+              hint="Enter to send. Shift+Enter adds a new line."
+              busy={snapshot.busy}
+              disabled={
+                snapshot.activity === 'loading' ||
+                snapshot.activity === 'replacing' ||
+                (!snapshot.canSubmit && !snapshot.busy)
+              }
+              onStop={
+                snapshot.busy && snapshot.activity !== 'replacing'
+                  ? () => void application.stop()
+                  : undefined
+              }
+              onSubmit={(text) => {
+                const current = application.getSnapshot();
+                if (
+                  !current.canSubmit ||
+                  current.busy ||
+                  current.viewGeneration !== snapshot.viewGeneration
+                )
+                  return false;
+                void application.submit(text);
+                return true;
+              }}
+            />
+            <p role="status">{status}</p>
+          </ExampleFooter>
         </section>
       </div>
-    </main>
+    </ExampleLayout>
   );
 }

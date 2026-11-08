@@ -92,32 +92,32 @@ export const nextConfig: WithNxOptions = {
     // links land on installation, which is where the real providers are.
     {
       source: '/docs/chat/api/provide-chat',
-      destination: '/docs/chat/getting-started/installation',
+      destination: '/docs/angular/chat/getting-started/installation',
       permanent: true,
     },
     {
       source: '/docs/chat/api/chat-config',
-      destination: '/docs/chat/getting-started/installation',
+      destination: '/docs/angular/chat/getting-started/installation',
       permanent: true,
     },
     {
       source: '/docs/chat/guides/configuration',
-      destination: '/docs/chat/getting-started/installation',
+      destination: '/docs/angular/chat/getting-started/installation',
       permanent: true,
     },
     {
       source: '/api/markdown/chat/api/provide-chat',
-      destination: '/api/markdown/chat/getting-started/installation',
+      destination: '/api/markdown/angular/chat/getting-started/installation',
       permanent: true,
     },
     {
       source: '/api/markdown/chat/api/chat-config',
-      destination: '/api/markdown/chat/getting-started/installation',
+      destination: '/api/markdown/angular/chat/getting-started/installation',
       permanent: true,
     },
     {
       source: '/api/markdown/chat/guides/configuration',
-      destination: '/api/markdown/chat/getting-started/installation',
+      destination: '/api/markdown/angular/chat/getting-started/installation',
       permanent: true,
     },
     // Founder booking link for lifecycle mail. Recipient copy carries this

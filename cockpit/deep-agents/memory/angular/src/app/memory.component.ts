@@ -46,8 +46,15 @@ const SUGGESTIONS = [
     ExampleChatLayoutComponent,
   ],
   template: `
-    <example-chat-layout sidebarWidth="22rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Deep Agents Memory"
+      description="Teach the agent about your operation, then start a new conversation and ask what it remembers. Stop cancels local delivery; backend work may continue."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Teach the agent or ask what it remembers…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -160,6 +167,12 @@ const SUGGESTIONS = [
   ],
 })
 export class MemoryComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   private readonly scope = inject(MemoryScope);
   protected readonly agent = guardMemoryAgent(injectAgent(), this.scope);
   protected readonly scopeWarning = computed(() => {

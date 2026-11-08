@@ -7,7 +7,7 @@ import {
   cockpitManifest,
 } from '@threadplane/cockpit-registry';
 import { describe, expect, it } from 'vitest';
-import { docsConfig } from './docs-config';
+import { getNarrativeDocuments, resolveNarrativeDocument } from './docs-catalog';
 
 /**
  * Website-owned guard for registry capability links into the real docs tree.
@@ -29,34 +29,8 @@ const WORKSPACE_ROOT = findWorkspaceRoot();
 const DOCS_CONTENT_ROOT = join(WORKSPACE_ROOT, 'apps/website/content/docs');
 
 /** Every `/docs/<library>/<section>/<slug>` offered by Website navigation. */
-const navRoutes = new Set(
-  docsConfig.flatMap((library) =>
-    library.sections.flatMap((section) =>
-      section.pages.map(
-        (page) => page.href ?? `/docs/${library.id}/${section.id}/${page.slug}`
-      )
-    )
-  )
-);
-
-/** Every three-segment docs route backed by an authored `.mdx` file. */
-const contentRoutes = new Set<string>();
-for (const library of readdirSync(DOCS_CONTENT_ROOT, {
-  withFileTypes: true,
-})) {
-  if (!library.isDirectory()) continue;
-  const libraryDir = join(DOCS_CONTENT_ROOT, library.name);
-  for (const section of readdirSync(libraryDir, { withFileTypes: true })) {
-    if (!section.isDirectory()) continue;
-    const sectionDir = join(libraryDir, section.name);
-    for (const file of readdirSync(sectionDir)) {
-      if (!file.endsWith('.mdx')) continue;
-      contentRoutes.add(
-        `/docs/${library.name}/${section.name}/${file.slice(0, -'.mdx'.length)}`
-      );
-    }
-  }
-}
+const navRoutes = new Set(getNarrativeDocuments().map(document => document.href));
+const contentRoutes = new Set(getNarrativeDocuments().filter(document => existsSync(join(DOCS_CONTENT_ROOT, document.source))).map(document => document.href));
 
 interface DescriptorDocsPath {
   readonly file: string;
@@ -152,9 +126,9 @@ describe('Cockpit registry links into Website docs', () => {
     expect(drifted).toEqual([]);
   });
 
-  it('declares no five-segment legacy docs path anywhere', () => {
+  it('declares only canonical existing narrative paths', () => {
     const legacy = descriptors
-      .filter(({ docsPath }) => docsPath.split('/').filter(Boolean).length > 4)
+      .filter(({ docsPath }) => docsPath && !resolveNarrativeDocument(docsPath))
       .map(({ file, docsPath }) => `${file}: ${docsPath}`);
 
     expect(legacy).toEqual([]);

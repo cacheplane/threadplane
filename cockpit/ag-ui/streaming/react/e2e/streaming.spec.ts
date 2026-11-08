@@ -198,7 +198,7 @@ test('the authored developer AG-UI target routes every request and remains priva
         type: 'tplane:runtime-check', version: 1, nonce: 'parent-health', capability: 'streaming'
       }, event.origin);
       if (event.data.type === 'tplane:runtime-ready' && event.data.nonce === 'parent-health') document.getElementById('state').textContent = 'Ready';
-    });</script><iframe id="pilot" title="React preview" src="http://127.0.0.1:4609/ag-ui/streaming/react/"></iframe></body></html>`);
+    });</script><iframe id="pilot" title="React preview" style="width:100%;height:700px" src="http://127.0.0.1:4609/ag-ui/streaming/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
   await expect(

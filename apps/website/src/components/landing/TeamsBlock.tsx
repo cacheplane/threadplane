@@ -3,7 +3,6 @@
 import type { PublicFormPolicy } from '../../lib/growth/form-policy';
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
-import { Eyebrow } from '../ui/Eyebrow';
 import { trackCtaClick } from '../../lib/analytics/client';
 import { WhitePaperForm } from './WhitePaperForm';
 import { FieldReportCover } from './FieldReportCover';
@@ -24,19 +23,14 @@ import { FIELD_REPORT } from '../../lib/field-report';
  */
 export function TeamsBlock({ formPolicy }: { formPolicy: PublicFormPolicy }) {
   return (
-    <Section surface="tinted" id="teams" ariaLabelledBy="field-report-heading">
+    <Section id="teams" ariaLabelledBy="field-report-heading" className="home-section home-report">
       <Container>
         <div className="teams-grid">
           <div>
-            <Eyebrow tone="accent" className="teams-eyebrow">
-              What breaks between a demo and production
-              <span className="teams-eyebrow-meta">
-                {' '}· {FIELD_REPORT.pages} pages
-              </span>
-            </Eyebrow>
             <h2 id="field-report-heading" className="teams-heading">
               Free preflight briefing for agentic UI
             </h2>
+            <p className="home-report-description">What breaks between a demo and production—and how to prepare. A {FIELD_REPORT.pages}-page field report for teams building agent interfaces with Angular.</p>
             <WhitePaperForm
               paper="overview"
               formPolicy={formPolicy}
@@ -50,7 +44,7 @@ export function TeamsBlock({ formPolicy }: { formPolicy: PublicFormPolicy }) {
 
         <div className="teams-contact">
           <p className="teams-contact-copy">
-            Shipping inside a large Angular platform? Bring your backend, security
+            Shipping inside a large platform? Bring your backend, security
             model, and design system.
           </p>
           <a

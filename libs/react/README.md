@@ -161,17 +161,43 @@ effect on the next render, with no metadata fetching or owner lifecycle. Missing
 blocked and failed images show an accessible alt-text fallback. Destination
 classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. The root binding stays headless; rich math,
-syntax highlighting, citation overlays, custom node registries, legacy migration,
+syntax highlighting, custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
+
+Set readonly `citationPreview` to `true` to replace resolved inline markers outside
+anchors with source buttons: `<Markdown snapshot={snapshot} citations={sources}
+citationPreview />`. Focus or activation opens a connected, nonmodal details card;
+fine-pointer hover opens after 120ms and leaving closes after 200ms. The card
+stays open while its trigger or controls own focus. Tab enters the card, Shift+Tab
+returns to the trigger, and Tab from the last control continues through the page.
+Escape, Close, outside pointer interaction, or focus departure dismisses it.
+Only the explicit safe “Open source” link navigates. Titles, snippets and dates
+remain literal borrowed metadata; icons and metadata are never fetched. The card
+uses the trigger's document, follows viewport/scroll changes and needs no chat
+stylesheet. Generation, marker identity, removal and unmount retire its local state.
+Omitting the opt-in preserves direct links and numbered markers.
 
 ## Chat
 
 `Citations` presents an explicit readonly `Citation[]` from `@threadplane/core`
 as a named Sources section. Empty input renders nothing. It preserves supplied
-order, index, title, snippet and source-type text; IDs must be unique. Optional
+order, index, title and snippet; IDs must be unique. Default rows use `CitationCard`
+for local source icons or monograms, normalized source-type badges, a derived
+hostname, and an optional formatted publication date. Optional
 `label` and `className` customize the section. Same-ID updates preserve mounted
 source items. An absent title falls back to the supplied URL or `Source <index>`;
 intentionally empty fields remain empty.
+
+Set `collapsible` to `true` for a Sources disclosure that starts closed. Its
+header shows the label and current source count, a decorative preview of at most
+the first three sources in the resolved displayed order, and a chevron reflecting
+`aria-expanded`, with a stable controlled body. The preview uses local category
+icons or web monograms, ignores provider images and performs no fetch. Decorative
+visuals do not change the accessible label and count; static headings are unchanged. Enter, Space, click, or tap toggles it. Collapsed source controls
+are unmounted; reopening starts fresh source previews. Updates preserve the
+expansion choice and keyed source rows while open. The choice belongs to the
+mounted message; removing it or switching between static and collapsible modes
+retires that presentation. This adds no fetching or conversation commands.
 
 ```tsx
 import { Citations } from '@threadplane/react/chat';
@@ -179,13 +205,98 @@ import { Citations } from '@threadplane/react/chat';
 <Citations citations={message.citations ?? []} />;
 ```
 
+Pass the same accepted Markdown `snapshot` used by the message's `Markdown`
+view to include its sidecar definitions:
+
+```tsx
+<Citations citations={message.citations ?? []} snapshot={snapshot} collapsible preview />;
+```
+
+With `snapshot`, Sources combines provider citations and previously unseen
+Markdown definition IDs, then orders the combined list by ascending index.
+Equal indices retain provider order followed by definition order. An exact
+provider ID wins as a whole record, including absent fields; sidecars never
+fill missing provider metadata or replace a blocked provider URL. IDs are
+case-sensitive. Neither input is mutated. Without `snapshot`, supplied order
+stays unchanged. The caller keeps the snapshot scoped to its message and owns
+parsing and lifetime. Same-ID streaming corrections retain mounted source rows
+and refresh open previews; removing a source retires its preview.
+
 Allowed URLs use the existing content/Markdown link policy, with a native new-tab
 link and `noopener noreferrer`. Missing or blocked URLs display text. The view
-does not fetch icons, previews or metadata, parse snippets, merge Markdown
-sidecars, infer dates/types, subscribe or dispose anything. Default MessageList
+does not fetch icons, previews or metadata, parse snippets,
+subscribe or dispose anything. Markdown definition text before
+its first top-level link becomes the title, and text after it becomes the snippet,
+shared with inline citation previews. Default MessageList
 shows supplied sources after assistant answers; custom row rendering selects its
-own presentation. Styles are opt-in through `/chat/styles.css`. This bounded
-Sources view does not provide the legacy citation overlays or full citation parity.
+own presentation. Styles are opt-in through `/chat/styles.css`.
+
+`CitationCard` also accepts a required readonly core `citation` and optional
+`className` for custom compositions. Its source marker is decorative: known
+non-web categories use local SVG icons; web sources use a deterministic monogram.
+Provider `iconUrl` values are ignored in favor of that local fallback, so rendering
+never requests an icon or source URL. Custom source-type labels and snippets stay
+text. Snippets display one line with ellipsis while retaining their complete text
+in the DOM and explicit preview. Local SVG source markers and title links follow
+the card foreground by default, including scoped themes. Missing and invalid dates
+are omitted; valid dates use the host locale and
+timezone. Hostname derivation does not approve navigation: blocked URLs can still
+have a displayed hostname, with no title link.
+
+```tsx
+import { CitationCard, CitationPreview } from '@threadplane/react/chat';
+
+<div>
+  <CitationCard citation={citation} />
+  <CitationPreview citation={citation} />
+</div>;
+```
+
+Set `preview` on `Citations` to replace source titles with explicit source-details
+buttons. The separate `CitationPreview` component accepts a required readonly
+core `citation` and optional `className` for the same trigger and modal:
+
+```tsx
+<Citations citations={message.citations ?? []} preview />;
+```
+
+Click, tap, or activate the trigger with a keyboard to inspect the supplied title,
+snippet, source type, publication text, and URL. Text stays literal; metadata and
+icons are never fetched. Allowed URLs get a separate **Open source** new-tab link
+using the shared URL policy. Missing or blocked URLs remain readable text.
+The modal focuses **Close**, contains Tab navigation including the optional link,
+and dismisses with Close, Escape, or a click outside its bounds. It restores
+focus to the available trigger when it still owns focus. Same-ID metadata updates
+refresh the open preview; changing the citation ID or removing its view retires
+it. Preview state belongs to the mounted view and never issues session commands.
+The default Sources list retains direct links. `Markdown.citationPreview` provides
+the separate inline hover/keyboard/touch cards described above.
+
+Use `renderCard` to customize the contents of each source list item:
+
+```tsx
+<Citations
+  citations={message.citations ?? []}
+  renderCard={(citation) => <CitationPreview citation={citation} />}
+/>;
+```
+
+The callback receives only the latest borrowed readonly `Citation`. It takes
+precedence over `preview`, including when it returns `null`, `false`, or
+`undefined`; there is no fallback for an empty result. Empty lists and closed
+disclosures do not render cards. Treat the callback as rendering code: React may
+call it repeatedly. Put hooks in a component returned by the callback.
+
+The library keeps each list item keyed by the exact citation ID. Compatible
+returned components retain state through reordering, same-ID metadata updates,
+and replacement callbacks. Collapsing the list or removing a source unmounts its
+card. The application owns custom markup, links, and actions; compose
+`CitationPreview` to reuse its safe links and modal behavior. Shared display
+helpers from `@threadplane/content/messages`, such as `deriveDomain` and
+`formatPublished`, let custom cards opt into host and date presentation. Hostname
+extraction does not approve a link for navigation, and date formatting uses the
+host locale and timezone. Compose `CitationCard` to reuse the default local visuals
+without changing the literal metadata shown by `CitationPreview`.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
 Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`
@@ -247,10 +358,31 @@ const content = createMessageContent();
 ```
 
 The app owns that projection and calls `content.dispose()` when it is done with it;
-Chat never disposes app-passed content. The stylesheet is opt-in and scoped to `.tp-chat*`
-classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
+Chat never disposes app-passed content. The stylesheet is opt-in and scoped to chat
+and Markdown classes, with `--tp-chat-*` custom properties that fall back to `--ds-*` tokens.
 Compose `MessageList` and `ChatInput` directly when your app owns selection or
 rendering.
+
+The shared presentation uses a bounded reading column, user bubbles, a pill
+composer, scrollable tables and native task-checkbox semantics. Override
+`--tp-chat-bg`, `--tp-chat-surface-alt`, `--tp-chat-reading-width`,
+`--tp-chat-font-family`, `--tp-chat-font-size-base`, or the
+`--tp-chat-radius-*` properties on the composed part to customize it. An explicit
+`color-scheme` or `--tp-chat-color-scheme` selects the host's light/dark treatment.
+User bubbles use the neutral inverted palette; override `--tp-chat-user-bg` and
+`--tp-chat-user-text` on the composed part to supply a different color pair.
+Custom message renderers retain their own layout and need their own integration.
+
+The composer and authored Markdown use automatic text direction; fenced code
+blocks retain left-to-right source order. When a focused Stop button disappears
+after stopping or completing a response, focus returns to its composer. Completion
+does not move focus from another control. The named transcript is keyboard
+focusable so readers can scroll without activating a message action.
+After an accepted clearing submit, the composer returns focus from its Send button
+on the next frame while it still owns focus. Focus moved elsewhere by the user or
+an application callback is preserved, and a replaced composer is never focused.
+The composer also recalculates draft height when its container or viewport
+resizes, retaining the draft and the existing viewport height cap.
 
 `MessageList` infers the concrete row type from `rows`, including authored fields
 and typed tool contracts, and passes it to `renderMessage`. Keep that callback
@@ -258,6 +390,9 @@ stable so unchanged rows stay memoized. Give the list a bounded height and
 overflow scrolling in app CSS; it follows row updates while at the bottom and
 preserves the reader's position when scrolled up. Key it by conversation ID when
 a new selection should start at the bottom. Same-ID updates preserve scroll state.
+Pass application-owned approval controls as `MessageList` children to keep them
+after the rows in that same scrollable transcript. The application still owns
+their decision state and callbacks; the list follows child changes only while pinned.
 Where `ResizeObserver` is available, the list also follows height changes inside
 unchanged rows, including image loads and disclosure expansion, while pinned.
 The same observer follows scroll-region size changes, including a height-only
@@ -909,8 +1044,9 @@ After hydration, a supplied application-scoped `storageKey` restores only open,
 dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
 preferences during hydration. State, history, IDs, target and selection are never
 persisted. Use separate keys for independent panels. Scoped Escape handling and
-outside-pointer close retain outside focus; user-close restores the launcher only
-while focus remains owned by that panel.
+outside-click close retain outside focus. Outside actions activate before dismissal
+so a host layout change cannot move their targets before the click. User-close
+restores the launcher only while focus remains owned by that panel.
 
 ### Passive state comparison (private React Debug)
 

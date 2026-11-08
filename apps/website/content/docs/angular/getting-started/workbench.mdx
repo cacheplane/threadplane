@@ -1,0 +1,61 @@
+---
+title: Learning workbench
+description: Inspect a streamed trip response, replay application observations, and connect them to the Angular streaming example.
+---
+
+# Learn by watching a conversation
+
+<DocsDemoVideo demo="streaming" frontend="angular" />
+
+## A response arrives over time
+
+An agent conversation is a sequence of observations. The traveler sends a message, the application starts a request, and the answer arrives in pieces. The interface can display those pieces before the response is complete.
+
+The video above shows that behavior in the Angular streaming example. In this lesson, you will use a trip conversation to inspect what changes between the first action and the completed answer.
+
+## Separate actions from observations
+
+An **action** asks the application to do something: submit a message, stop an active request, or open a conversation. An **observation** describes what the application currently knows: its messages, whether an operation is active, and the outcome it has received.
+
+Keep the application responsible for actions. Let the view observe snapshots and render them. A partially written answer is still an observation; its presence does not prove that the request succeeded. The completion outcome is a separate piece of information.
+
+## Follow one turn
+
+A **turn** begins with a user action and ends when the application knows its outcome. The submitted message, the response text, and the work in progress describe different parts of that turn. Several updates can extend the same assistant message; each update does not need a new chat bubble.
+
+Receiving text tells you that part of a response arrived. It does not tell you that the turn completed successfully. Keep the progress indicator tied to the application's busy state, and inspect the final outcome separately. Stopping a response and losing the connection are different outcomes too.
+
+## Meet the trip notebook
+
+The workbench below records a prompt about a supplied Paris itinerary and a streamed response. In **Example session**, choose **Recorded example**, then **Play**, pause halfway through, and step backward. The conversation and inspector follow the same observation.
+
+<LearningWorkbench framework="angular" />
+
+This is a real SDK/session capture with deterministic **fixture responses**, not a live model conversation. The shared teaching trace uses the React example’s application owner; selecting a framework changes the video and source links, not the recorded frontend. Replay reads captured observations and sends no requests. The trip response does not demonstrate itinerary edits or client tools.
+
+## Try a live conversation
+
+Choose **Live conversation** to mount the real Angular streaming application. Send a prompt about your trip in that application. The inspector follows its messages and state as they change. **Runtime settings** lets you use the shared development target or your own LangGraph deployment; changing targets starts a fresh live session.
+
+Select an observation or move the timeline to inspect history. The running application stays mounted while the workbench shows a read-only snapshot. **Return to live** reveals the same conversation without submitting again. Use the application’s own controls to stop a response or start a new conversation.
+
+In live mode, **Requests** shows **Application calls**: the observed submit input and whether that invocation is pending, settled, or rejected. Settled means the call returned, not that the model succeeded; read the application’s state for the outcome. HTTP and provider requests are not captured in live mode. Capture stays in this page’s memory and is bounded; the inspector tells you when older observations or long fields are omitted.
+
+## Read the workbench
+
+1. In **Events**, select the initial application snapshot. **State** shows the application’s `creation`, `busy`, `canSubmit`, and `outcome` fields. Before the initial snapshot, the state is unavailable; it is not an empty object.
+2. Move forward until the request begins. **Requests** shows the application HTTP request to the local fixture server. A response status appears only after its headers were observed. Provider/model requests were not captured.
+3. Find a partial answer in the conversation. **Messages** shows the captured message text at that same point. Move backward to see the earlier text restored.
+4. Move to the final observation. Compare the completed text with the settled `busy` and `outcome` fields. Playback visits these snapshots at a reading pace; the millisecond offsets in Events describe the capture, not a performance benchmark.
+
+The State panel describes the recorded application owner’s fields. These are example application fields, not a promise that every Threadplane framework exposes the same public API.
+
+## Follow it into your application
+
+Choose **View example source** in the workbench to read the actual Angular streaming files. Your selected session stays active; use **Return to recorded example** or **Return to live conversation** to resume inspection at the same observation. The highlighted line obtains the agent with `injectAgent(STREAMING_AGENT)`; the template observes its signals. **See it run** below the panel returns to the partial-response moment in the recording. **View source** opens the matching implementation.
+
+In `streaming.component.ts`, follow the agent into `<chat>` and the loading signal into the status text. Follow the input's submit and stop controls back to the agent. The application owns actions; the template renders observations. `app.config.ts` supplies the connection for that agent.
+
+These controls inspect this guide’s example. Continue with the [Angular streaming example](/docs/angular/langgraph/guides/streaming) and use the page-level **Docs**, **Run**, **Code**, and **API** controls to explore the complete project and connect it to your backend.
+
+The same trip notebook will give later lessons a familiar place to explain tools, approvals, and saved conversations.

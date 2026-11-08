@@ -9,6 +9,12 @@ test('c-a2ui: LAX-JFK prompt renders a2ui-surface with form spec', async ({ page
   // booking surface_id. Presence proves the envelope parsed and the
   // A2UI host wired up against the cap's catalog views.
   await expect(page.locator('a2ui-surface')).toBeVisible();
+  await expect(page.getByText('Response complete.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect((await page.locator('a2ui-surface').boundingBox())?.height).toBeLessThan(700);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.evaluate(() => window.postMessage({ type: 'tplane:theme', theme: 'dark' }, location.origin));
+  await expect.poll(() => page.locator('a2ui-surface input[type="date"]').evaluate(element => getComputedStyle(element).colorScheme)).toBe('dark');
 });
 
 test('c-a2ui: SFO-SEA prompt also renders a2ui-surface', async ({ page }) => {

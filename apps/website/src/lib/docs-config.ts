@@ -1,5 +1,7 @@
 import apiEntrypoints from '../../content/api/entrypoints.json';
 import { apiSymbolHref } from './api-reference-model';
+import { getFrameworkDocuments } from './docs-catalog';
+import type { DocsFramework } from '@threadplane/cockpit-registry/docs-routes';
 
 export type LibraryId =
   | 'langgraph'
@@ -197,8 +199,16 @@ export const docsConfig: DocsLibrary[] = [
         color: 'blue',
         pages: [
           { title: 'Component Registry', slug: 'registry', section: 'guides' },
-          { title: 'Element Rendering', slug: 'element-rendering', section: 'guides' },
-          { title: 'Computed Functions', slug: 'computed-functions', section: 'guides' },
+          {
+            title: 'Element Rendering',
+            slug: 'element-rendering',
+            section: 'guides',
+          },
+          {
+            title: 'Computed Functions',
+            slug: 'computed-functions',
+            section: 'guides',
+          },
           { title: 'State Store', slug: 'state-store', section: 'guides' },
           { title: 'Specs & Elements', slug: 'specs', section: 'guides' },
           { title: 'Repeat Loops', slug: 'repeat-loops', section: 'guides' },
@@ -231,11 +241,31 @@ export const docsConfig: DocsLibrary[] = [
         id: 'getting-started',
         color: 'blue',
         pages: [
-          { title: 'Introduction', slug: 'introduction', section: 'getting-started' },
-          { title: 'Quick Start', slug: 'quickstart', section: 'getting-started' },
-          { title: 'Try without a backend', slug: 'try-without-a-backend', section: 'getting-started' },
-          { title: 'Coding agents', slug: 'coding-agents', section: 'getting-started' },
-          { title: 'Installation', slug: 'installation', section: 'getting-started' },
+          {
+            title: 'Introduction',
+            slug: 'introduction',
+            section: 'getting-started',
+          },
+          {
+            title: 'Quick Start',
+            slug: 'quickstart',
+            section: 'getting-started',
+          },
+          {
+            title: 'Try without a backend',
+            slug: 'try-without-a-backend',
+            section: 'getting-started',
+          },
+          {
+            title: 'Coding agents',
+            slug: 'coding-agents',
+            section: 'getting-started',
+          },
+          {
+            title: 'Installation',
+            slug: 'installation',
+            section: 'getting-started',
+          },
           { title: 'Changelog', slug: 'changelog', section: 'getting-started' },
         ],
       },
@@ -379,7 +409,11 @@ export const docsConfig: DocsLibrary[] = [
         id: 'migrations',
         color: 'blue',
         pages: [
-          { title: 'Upgrade an existing application', slug: 'upgrading', section: 'migrations' },
+          {
+            title: 'Upgrade an existing application',
+            slug: 'upgrading',
+            section: 'migrations',
+          },
         ],
       },
     ],
@@ -668,13 +702,15 @@ export const docsConfig: DocsLibrary[] = [
 
 // Keep guide bundles small: this manifest contains import paths, not symbol data.
 for (const library of docsConfig) {
-  const entrypoints = apiEntrypoints.filter(entry => entry.docLibrary === library.id);
+  const entrypoints = apiEntrypoints.filter(
+    (entry) => entry.docLibrary === library.id
+  );
   if (entrypoints.length === 0) continue;
   library.sections.push({
     title: 'API Reference',
     id: 'api',
     color: 'blue',
-    pages: entrypoints.map(entry => ({
+    pages: entrypoints.map((entry) => ({
       title: entry.importPath,
       section: 'api',
       slug: entry.id,
@@ -696,8 +732,50 @@ export function getLibraryConfig(libraryId: string): DocsLibrary | undefined {
  * expects the markup to match what the user sees — deriving both from one
  * function is what makes that true by construction rather than by comment.
  */
-export function libraryIntroPath(library: string): string {
-  return `/docs/${library}/getting-started/introduction`;
+export function libraryIntroPath(
+  library: string,
+  framework: DocsFramework = 'angular'
+): string {
+  return (
+    getFrameworkDocuments(framework).find(
+      (document) => document.library === library
+    )?.href ?? `/docs/${framework}/getting-started/introduction`
+  );
+}
+
+/** Narrative destinations come from the catalog; API entries retain their generated identity. */
+export function getFrameworkDocsConfig(
+  framework: DocsFramework
+): DocsLibrary[] {
+  const documents = getFrameworkDocuments(framework);
+  return docsConfig.flatMap((library) => {
+    const available = documents.filter(
+      (document) => document.library === library.id
+    );
+    if (available.length === 0) return [];
+    const sections = library.sections.flatMap((section) => {
+      if (section.id === 'api') {
+        const pages = section.pages.filter((page) =>
+          apiEntrypoints.some(
+            (entry) =>
+              entry.id === page.slug &&
+              [framework, 'shared', 'backend'].includes(entry.framework)
+          )
+        );
+        return pages.length ? [{ ...section, pages }] : [];
+      }
+      const pages = available
+        .filter((document) => document.section === section.id)
+        .map((document) => ({
+          title: document.title,
+          section: document.section,
+          slug: document.slug,
+          href: document.href,
+        }));
+      return pages.length ? [{ ...section, pages }] : [];
+    });
+    return [{ ...library, sections }];
+  });
 }
 
 export function getLibraryPages(libraryId: string): DocsPage[] {

@@ -139,9 +139,14 @@ const STEP_LABELS: Record<string, string> = {
     }
   `,
   template: `
-    <example-chat-layout sidebarWidth="16rem">
+    <example-chat-layout sidebarWidth="18rem"
+      title="LangGraph durable execution"
+      description="Follow a request through Analyze, Plan and Generate. Each completed node saves a checkpoint on the server."
+    >
       <!-- #region layout -->
-      <chat main [agent]="agent" [views]="ui" [store]="uiStore" class="flex-1 min-w-0" />
+      <chat placeholder="Plan a fictional project…" [welcomeDisabled]="true" main [agent]="agent" [views]="ui" [store]="uiStore" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <div sidebar class="panel">
         <h3 class="cap">Pipeline</h3>
 

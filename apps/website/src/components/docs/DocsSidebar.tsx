@@ -1,12 +1,8 @@
 'use client';
 
 import {
-  useEffect,
   useId,
-  useRef,
-  useState,
   type ComponentType,
-  type KeyboardEvent,
 } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,6 +12,7 @@ import {
   Boxes,
   Braces,
   ChevronDown,
+  Check,
   Circle,
   FileCode2,
   Lightbulb,
@@ -23,7 +20,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 import {
-  docsConfig,
+  getFrameworkDocsConfig,
   getLibraryConfig,
   libraryIntroPath,
   specialDocsPages,
@@ -32,8 +29,13 @@ import {
   type LibraryId,
 } from '../../lib/docs-config';
 import { LibraryMark } from './LibraryMark';
+import { useDocsDropdown } from './use-docs-dropdown';
+import type { DocsFramework } from '@threadplane/cockpit-registry/docs-routes';
+import { preferredDocsHref } from '../../lib/framework-preference';
+import { isDocsReadingRoute } from '../../lib/docs-presentation';
 
 export interface DocsNavigationProps {
+  framework?: DocsFramework;
   /** `null` on a library-neutral docs page. */
   activeLibrary: LibraryId | null;
   activeSection: string;
@@ -44,136 +46,48 @@ export interface DocsNavigationProps {
   resolveHref?: (href: string) => string;
 }
 
-/**
- * Menu entries are `menuitemradio` (single-select from a set), not `menuitem`.
- * Keyboard traversal reads this — if it drifts from the rendered role, arrow
- * keys and Escape silently stop finding anything.
- */
-const MENU_ITEM_SELECTOR = '[role="menuitemradio"]';
-
-/** Breathing room between the open menu and the bottom of the viewport. */
-const MENU_VIEWPORT_GUTTER = 16;
-/** Below this the menu is uselessly short; let the pane scroll instead. */
-const MENU_MIN_HEIGHT = 180;
-
 const LIBRARY_GROUPS: { id: LibraryGroup; label: string }[] = [
   { id: 'adapter', label: 'Adapters' },
   { id: 'library', label: 'Libraries' },
 ];
 
 function LibraryDropdown({
+  framework,
   activeLibrary,
+  compact = false,
   onNavigate,
   resolveHref = href => href,
 }: {
+  framework: DocsFramework;
   activeLibrary: LibraryId | null;
+  compact?: boolean;
   onNavigate?: () => void;
   resolveHref?: (href: string) => string;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const initialFocusRef = useRef(0);
-  const menuId = useId();
-
-  useEffect(() => {
-    const handler = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const items =
-      menuRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR);
-    items?.[initialFocusRef.current]?.focus();
-  }, [open]);
-
-  /**
-   * Cap the menu to the room actually left below the trigger. A CSS `vh` cap
-   * cannot do this: the menu opens ~340px down the pane, so even `60vh` still
-   * overflows a short window by ~100px. Measured from the trigger, it never
-   * runs past the fold — it scrolls internally instead.
-   */
-  useEffect(() => {
-    if (!open) return;
-    const resize = () => {
-      const trigger = triggerRef.current;
-      const menu = menuRef.current;
-      if (!trigger || !menu) return;
-      const available =
-        window.innerHeight -
-        trigger.getBoundingClientRect().bottom -
-        MENU_VIEWPORT_GUTTER;
-      menu.style.maxHeight = `${Math.max(MENU_MIN_HEIGHT, available)}px`;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, [open]);
-
-  const openMenu = (initialIndex: number) => {
-    initialFocusRef.current = initialIndex;
-    setOpen(true);
-  };
-
-  const closeMenu = (restoreFocus = false) => {
-    setOpen(false);
-    if (restoreFocus) triggerRef.current?.focus();
-  };
-
-  const onMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []
-    );
-    const current = Math.max(
-      0,
-      items.indexOf(document.activeElement as HTMLElement)
-    );
-    const nextIndex =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-        ? items.length - 1
-        : event.key === 'ArrowDown'
-        ? (current + 1) % items.length
-        : event.key === 'ArrowUp'
-        ? (current - 1 + items.length) % items.length
-        : -1;
-    if (nextIndex >= 0) {
-      event.preventDefault();
-      items[nextIndex]?.focus();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      event.nativeEvent.stopImmediatePropagation();
-      closeMenu(true);
-    } else if (event.key === 'Tab') {
-      closeMenu();
-    }
-  };
+  const libraries = getFrameworkDocsConfig(framework);
+  const { open, setOpen, ref, triggerRef, menuRef, menuId, openMenu, closeMenu, onMenuKeyDown } = useDocsDropdown();
 
   const currentLibrary = activeLibrary
     ? getLibraryConfig(activeLibrary)
     : undefined;
 
   return (
-    <div ref={ref} className="docs-sidebar-library">
+    <div ref={ref} className="docs-sidebar-library" onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+    }}>
+      {compact ? <span className="docs-sidebar-picker-label">Library</span> : null}
       <button
         ref={triggerRef}
         type="button"
+        data-docs-library-trigger
         onClick={() => {
           if (open) closeMenu(true);
-          else openMenu(0);
+          else openMenu('selected');
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
-            openMenu(event.key === 'ArrowDown' ? 0 : docsConfig.length - 1);
+            openMenu(event.key === 'ArrowDown' ? 'first' : 'last');
           }
         }}
         aria-haspopup="menu"
@@ -205,6 +119,7 @@ function LibraryDropdown({
           ref={menuRef}
           id={menuId}
           role="menu"
+          aria-label="Libraries"
           className="docs-sidebar-lib-menu"
           onKeyDown={onMenuKeyDown}
         >
@@ -216,7 +131,7 @@ function LibraryDropdown({
               <span className="docs-sidebar-lib-group" aria-hidden="true">
                 {group.label}
               </span>
-              {docsConfig
+              {libraries
                 .filter((library) => library.group === group.id)
                 .map((library) => {
                   const isActive = library.id === activeLibrary;
@@ -226,7 +141,7 @@ function LibraryDropdown({
                       aria-checked={isActive}
                       tabIndex={-1}
                       key={library.id}
-                      href={resolveHref(libraryIntroPath(library.id))}
+                      href={resolveHref(libraryIntroPath(library.id, framework))}
                       data-workspace-navigation-link
                       onClick={() => {
                         closeMenu();
@@ -241,6 +156,7 @@ function LibraryDropdown({
                       <span className="docs-sidebar-lib-item-text">
                         <span
                           className="docs-sidebar-lib-item-title"
+                          data-docs-menu-title
                           data-active={isActive || undefined}
                         >
                           {library.title}
@@ -251,6 +167,7 @@ function LibraryDropdown({
                           </span>
                         ) : null}
                       </span>
+                      <Check className="docs-sidebar-lib-item-check" size={16} aria-hidden="true" visibility={isActive ? 'visible' : 'hidden'} />
                     </Link>
                   );
                 })}
@@ -278,19 +195,19 @@ const SECTION_ICONS: Record<
 
 function SectionGroup({
   section,
-  activeLibrary,
   activeSection,
   activeSlug,
   open,
+  compact = false,
   onOpenChange,
   onNavigate,
   resolveHref = href => href,
 }: {
   section: DocsSection;
-  activeLibrary: LibraryId;
   activeSection: string;
   activeSlug: string;
   open: boolean;
+  compact?: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigate?: () => void;
   resolveHref?: (href: string) => string;
@@ -308,7 +225,7 @@ function SectionGroup({
         className="docs-sidebar-section-toggle"
       >
         <span className="docs-sidebar-section-labelrow">
-          <SectionIcon size={16} aria-hidden={true} />
+          {!compact && <SectionIcon size={16} aria-hidden={true} />}
           <span className="docs-sidebar-section-label">{section.title}</span>
         </span>
         <ChevronDown
@@ -327,12 +244,13 @@ function SectionGroup({
           className="docs-sidebar-section-links"
         >
           {section.pages.map((page) => {
+            if (!page.href) return null;
             const isActive =
               page.section === activeSection && page.slug === activeSlug;
             return (
               <Link
                 key={`${page.section}/${page.slug}`}
-                href={resolveHref(page.href ?? `/docs/${activeLibrary}/${page.section}/${page.slug}`)}
+                href={resolveHref(page.href)}
                 onClick={onNavigate}
                 data-docs-navlink
                 data-workspace-navigation-link
@@ -351,6 +269,7 @@ function SectionGroup({
 }
 
 export function DocsNavigation({
+  framework = 'angular',
   activeLibrary,
   activeSection,
   activeSlug,
@@ -359,16 +278,33 @@ export function DocsNavigation({
   onNavigate,
   resolveHref = href => href,
 }: DocsNavigationProps) {
-  const library = activeLibrary ? getLibraryConfig(activeLibrary) : undefined;
-  const migrations = getLibraryConfig('chat')?.sections.find(section => section.id === 'migrations');
+  const libraries = getFrameworkDocsConfig(framework);
+  const library = libraries.find(candidate => candidate.id === activeLibrary);
+  const migrations = libraries.find(candidate => candidate.id === 'chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
+  const compact = isDocsReadingRoute(pathname);
 
-  return (
-    <div data-docs-navigation>
+  const supportingLinks = (
       <nav
-        aria-label="Featured documentation"
+        aria-label={compact ? 'More documentation' : 'Featured documentation'}
         className="docs-sidebar-top-links"
       >
+        <Link href={resolveHref(preferredDocsHref(framework))} className="docs-sidebar-top-link" onClick={onNavigate}
+          data-active={pathname === preferredDocsHref(framework) || undefined}
+          aria-current={pathname === preferredDocsHref(framework) ? 'page' : undefined}
+          data-docs-navlink data-workspace-navigation-link>
+          {compact && activeLibrary ? `${framework === 'react' ? 'React' : 'Angular'} overview` : 'Introduction'}
+        </Link>
+        <Link
+          href={resolveHref(`/docs/${framework}/getting-started/workbench`)}
+          className="docs-sidebar-top-link"
+          onClick={onNavigate}
+          data-docs-navlink
+          data-workspace-navigation-link
+          aria-current={pathname === `/docs/${framework}/getting-started/workbench` ? 'page' : undefined}
+        >
+          Learning workbench
+        </Link>
         <Link
           href={resolveHref('/docs/api')}
           className="docs-sidebar-top-link"
@@ -393,8 +329,13 @@ export function DocsNavigation({
           </Link>
         ))}
       </nav>
+  );
 
-      <LibraryDropdown activeLibrary={activeLibrary} onNavigate={onNavigate} resolveHref={resolveHref} />
+  return (
+    <div data-docs-navigation>
+      {!compact && supportingLinks}
+
+      <LibraryDropdown framework={framework} activeLibrary={activeLibrary} compact={compact} onNavigate={onNavigate} resolveHref={resolveHref} />
 
       {/* No library means no section tree. Narrowing on `activeLibrary` rather
        * than `library` keeps SectionGroup's non-null contract honest. */}
@@ -405,10 +346,10 @@ export function DocsNavigation({
               <SectionGroup
                 key={section.id}
                 section={section}
-                activeLibrary={activeLibrary}
                 activeSection={activeSection}
                 activeSlug={activeSlug}
-                open={expanded[key] ?? true}
+                compact={compact}
+                open={expanded[key] ?? (!compact || section.id === activeSection)}
                 onOpenChange={(open) => onExpandedChange?.(key, open)}
                 onNavigate={onNavigate}
                 resolveHref={resolveHref}
@@ -419,15 +360,16 @@ export function DocsNavigation({
       {migrations ? (
         <SectionGroup
           section={migrations}
-          activeLibrary="chat"
           activeSection={activeLibrary === 'chat' ? activeSection : ''}
           activeSlug={activeSlug}
-          open={expanded['Learn:migrations'] ?? false}
+          compact={compact}
+          open={expanded['Learn:migrations'] ?? (compact && activeLibrary === 'chat' && activeSection === 'migrations')}
           onOpenChange={(open) => onExpandedChange?.('Learn:migrations', open)}
           onNavigate={onNavigate}
           resolveHref={resolveHref}
         />
       ) : null}
+      {compact && supportingLinks}
     </div>
   );
 }

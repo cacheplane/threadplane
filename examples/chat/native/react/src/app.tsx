@@ -1,4 +1,11 @@
-import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { flushSync } from 'react-dom';
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
@@ -29,6 +36,7 @@ import { BackgroundActivity } from './background-activity';
 import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
 import { ObservedStateComparison } from './observed-state-comparison';
 import { CopyAnswer } from './copy-answer';
+import { renderNativeSourceCard } from './source-card';
 import {
   ConversationActions,
   type RenameEditorRequest,
@@ -50,10 +58,10 @@ const literal = (value: unknown) =>
 const Message = memo(function Message({ row }: { row: MessageContent }) {
   return (
     <article
-      className={`message message-${row.role}`}
+      className={`message message-${row.role} tp-chat-message tp-chat-message--${row.role}`}
       aria-label={`${row.role} message`}
     >
-      <h3 className="role-label">{row.role}</h3>
+      <h3 className="role-label tp-chat-message__role">{row.role}</h3>
       {row.role === 'assistant' && row.reasoning && (
         <Reasoning snapshot={row.reasoning} />
       )}
@@ -62,13 +70,19 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
       ) : (
         <Markdown
           snapshot={row.markdown}
+          citationPreview={row.role === 'assistant'}
           citations={
             row.role === 'assistant' ? row.message.citations : undefined
           }
         />
       )}
-      {row.role === 'assistant' && row.message.citations && (
-        <Citations citations={row.message.citations} />
+      {row.role === 'assistant' && (
+        <Citations
+          collapsible
+          renderCard={renderNativeSourceCard}
+          snapshot={row.markdown}
+          citations={row.message.citations ?? []}
+        />
       )}
       {row.role === 'assistant' &&
         row.a2uiTripSummaryRenders.map((prepared) => (
@@ -810,70 +824,73 @@ function Conversation({
         directory={presentation === 'sidebar' ? directory : undefined}
       >
         <section className="conversation" aria-labelledby="conversation-title">
-          <div className="conversation-heading">
-            <p className="eyebrow">React example</p>
-            <h1 id="conversation-title">
-              {selection.row?.title ?? 'Your conversation'}
-            </h1>
-            {selection.id && (
-              <p className="conversation-id muted">
-                Conversation ID: {selection.id}
-              </p>
-            )}
-          </div>
-          {selection.status === 'empty' && (
-            <div className="empty-state">
-              <h2>A place for your next conversation.</h2>
-              <p>Select a conversation or start a new one.</p>
-            </div>
-          )}
-          {selection.status === 'pending' && (
-            <p role="status">Loading conversation…</p>
-          )}
-          {(selection.status === 'missing' || selection.status === 'error') && (
-            <div className="selection-error">
-              <p role="alert">
-                {selection.status === 'missing'
-                  ? 'Conversation not found.'
-                  : 'Could not load this conversation.'}
-              </p>
-              <button type="button" onClick={() => application.retry()}>
-                Retry
-              </button>
-            </div>
-          )}
-          {selection.status === 'ready' && (
-            <>
-              <MessageList
-                key={selection.id}
-                rows={snapshot.messages}
-                renderMessage={renderMessage}
-                label="Conversation messages"
-                className="transcript"
-              />
-              {snapshot.messages.length === 0 && (
-                <p className="empty-state">
-                  This conversation has no messages yet.
+          <div className="conversation-body">
+            <div className="conversation-heading">
+              <p className="eyebrow">Native conversation</p>
+              <h1 id="conversation-title">
+                {selection.row?.title ?? 'Your conversation'}
+              </h1>
+              {selection.id && (
+                <p className="conversation-id muted">
+                  Conversation ID: {selection.id}
                 </p>
               )}
-              <BackgroundActivity
-                observations={snapshot.runtime?.subgraphs ?? []}
-              />
-              <LoadedCheckpointTimeline
-                key={`timeline:${selection.id}`}
-                application={application}
-                threadId={selection.id ?? ''}
-                page={snapshot.runtime?.history}
-              />
-              <ObservedStateComparison
-                key={`state-comparison:${selection.id}`}
-                application={application}
-                threadId={selection.id ?? ''}
-                values={snapshot.runtime?.values}
-              />
-            </>
-          )}
-          <Approval application={application} snapshot={snapshot} />
+            </div>
+            {selection.status === 'empty' && (
+              <div className="empty-state">
+                <h2>A place for your next conversation.</h2>
+                <p>Select a conversation or start a new one.</p>
+              </div>
+            )}
+            {selection.status === 'pending' && (
+              <p role="status">Loading conversation…</p>
+            )}
+            {(selection.status === 'missing' ||
+              selection.status === 'error') && (
+              <div className="selection-error">
+                <p role="alert">
+                  {selection.status === 'missing'
+                    ? 'Conversation not found.'
+                    : 'Could not load this conversation.'}
+                </p>
+                <button type="button" onClick={() => application.retry()}>
+                  Retry
+                </button>
+              </div>
+            )}
+            {selection.status === 'ready' && (
+              <>
+                <MessageList
+                  key={selection.id}
+                  rows={snapshot.messages}
+                  renderMessage={renderMessage}
+                  label="Conversation messages"
+                  className="transcript"
+                />
+                {snapshot.messages.length === 0 && (
+                  <p className="empty-state">
+                    This conversation has no messages yet.
+                  </p>
+                )}
+                <BackgroundActivity
+                  observations={snapshot.runtime?.subgraphs ?? []}
+                />
+                <LoadedCheckpointTimeline
+                  key={`timeline:${selection.id}`}
+                  application={application}
+                  threadId={selection.id ?? ''}
+                  page={snapshot.runtime?.history}
+                />
+                <ObservedStateComparison
+                  key={`state-comparison:${selection.id}`}
+                  application={application}
+                  threadId={selection.id ?? ''}
+                  values={snapshot.runtime?.values}
+                />
+              </>
+            )}
+            <Approval application={application} snapshot={snapshot} />
+          </div>
           <NativeComposer
             key={selection.id}
             application={application}
@@ -892,8 +909,32 @@ export function App({
   application: Application | null;
   presentation?: Presentation;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = root.current;
+    const viewport = element?.ownerDocument.defaultView?.visualViewport;
+    if (!element || !viewport) return;
+    const resize = () => {
+      if (viewport.scale !== 1) return;
+      element.style.setProperty(
+        '--native-viewport-height',
+        `${viewport.height}px`
+      );
+      element.style.setProperty(
+        '--native-viewport-top',
+        `${viewport.pageTop ?? viewport.offsetTop}px`
+      );
+    };
+    resize();
+    viewport.addEventListener('resize', resize);
+    viewport.addEventListener('scroll', resize);
+    return () => {
+      viewport.removeEventListener('resize', resize);
+      viewport.removeEventListener('scroll', resize);
+    };
+  }, []);
   return (
-    <div className="application">
+    <div ref={root} className="application">
       <header>
         <span className="brand-mark" aria-hidden="true" />
         Threadplane<span className="example-label">Native conversation</span>

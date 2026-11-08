@@ -191,7 +191,10 @@ test('installed React follow-ups wait for text success, prefill locally and requ
     await draft.fill('First request');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await backend.steps[3].received;
-    await expect(draft).toBeDisabled();
+    await expect(draft).toBeEditable();
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     await expect(shorter).toHaveCount(0);
     backend.steps[3].releaseBody();
     await expect(page.locator('.submission-status')).toHaveText(
@@ -583,7 +586,10 @@ test('installed React welcome prefills explicitly and retains composer ownership
     ).toBeVisible();
     await expect(welcome).toHaveCount(0);
     await expect(trip).toHaveCount(0);
-    await expect(draft).toBeDisabled();
+    await expect(draft).toBeEditable();
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     await retained(4, '');
     await close.click();
     await preference.check();

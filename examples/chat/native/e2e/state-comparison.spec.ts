@@ -243,7 +243,10 @@ test('installed React observed state comparison preserves a held conversation', 
     // after POST receipt; comparison controls must preserve that epoch.
     await draft.press('Control+Enter');
     await backend.steps[3].received;
-    await expect(draft).toBeDisabled();
+    await expect(draft).toBeEditable();
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     await expect(
       page.getByText('Response in progress…', { exact: true })
     ).toBeVisible();

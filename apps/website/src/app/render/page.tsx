@@ -1,14 +1,7 @@
-import { Container } from '../../components/ui/Container';
-import { Section } from '../../components/ui/Section';
-import { Eyebrow } from '../../components/ui/Eyebrow';
-import { Button } from '../../components/ui/Button';
-import { Pill } from '../../components/ui/Pill';
-import { FeatureBlock } from '../../components/landing/FeatureBlock';
-import { WhitePaperBlock } from '../../components/landing/WhitePaperBlock';
-import { FinalCTA } from '../../components/landing/FinalCTA';
-import { MediumSwitcher } from '../../components/landing/MediumSwitcher';
-import { DiagramSection } from '../../components/landing/DiagramSection';
-import { RenderTransform } from '../../components/docs/diagrams';
+import {
+  LibraryLanding,
+  type LibraryFeature,
+} from '../../components/library/LibraryLanding';
 import { RenderCodeShowcase } from '../../components/landing/render/RenderCodeShowcase';
 import { createPageMetadata } from '../../lib/site-metadata';
 import { SECTION_MEDIA } from '../../lib/section-media';
@@ -16,85 +9,78 @@ import { buildPanes } from '../../lib/build-panes';
 import { getFormPolicy } from '../../lib/growth/form-policy';
 
 export const metadata = createPageMetadata({
-  title: '@threadplane/render — Generative UI for Angular',
-  description: 'Agents that render UI without coupling to your frontend. Built on Vercel json-render spec.',
+  title: 'Render \u2014 Threadplane',
+  description:
+    'Turn structured agent output into an interface built from components you own. Keep the visual language in your application and let the agent assemble the right surface.',
   pathname: '/render',
   type: 'website',
 });
 
+const FEATURES: LibraryFeature[] = [
+  {
+    id: 'schemas',
+    title: 'A spec becomes a surface.',
+    body: 'The agent emits structured JSON. Your application resolves the spec against a registry of components, so the result fits the interface around it.',
+    points: [
+      'Structured specifications across the boundary',
+      'Components selected from your registry',
+      'Design decisions owned by your team',
+    ],
+    illustration: 'components',
+    takeaway: 'The agent assembles. Your components render.',
+  },
+  {
+    id: 'state',
+    title: 'More than a static card.',
+    body: 'Connect rendered components to state and actions. Let a generated surface respond as the underlying data changes and people interact with it.',
+    points: [
+      'State bindings for the rendered surface',
+      'Application-owned action handlers',
+      'Composition with the rest of your UI',
+    ],
+    illustration: 'connections',
+    takeaway: 'Structured output, connected to your application.',
+  },
+  {
+    id: 'fallbacks',
+    title: 'Plan for the unexpected.',
+    body: 'Keep control when a spec arrives before a component is ready, or names something the registry cannot resolve. Handle those boundaries deliberately.',
+    points: [
+      'Registry boundaries you can inspect',
+      'Framework-specific readiness and fallbacks',
+      'Explicit integration and validation patterns',
+    ],
+    illustration: 'durable',
+    takeaway: 'A clear boundary between a spec and your UI.',
+  },
+];
+
 export default async function RenderPage() {
-  const formPolicy = getFormPolicy();
-  const panes = await buildPanes(SECTION_MEDIA.libRender, SECTION_MEDIA.libRender.video?.url ?? '');
-
+  const media = SECTION_MEDIA.libRender;
+  const panes = await buildPanes(media, media.video?.url ?? '');
   return (
-    <>
-      {/* Hero */}
-      <Section surface="canvas" ariaLabelledBy="render-hero-heading">
-        <Container>
-          <div className="render-page-hero-inner">
-            <div className="lib-hero-rail">
-              <Eyebrow tone="accent">@threadplane/render · generative UI</Eyebrow>
-              <span className="lib-hero-rail-line" aria-hidden="true" />
-            </div>
-            <h1 id="render-hero-heading" className="render-page-h1">
-              Generative UI without a second framework.
-            </h1>
-            <p className="render-page-hero-subtitle">
-              Server-emitted JSON specs render into Angular <span className="marker-highlight">components you already own</span>. Vercel json-render and Google A2UI both supported. Unknown specs degrade gracefully — no surprises.
-            </p>
-            <div className="render-page-hero-buttons">
-              <Button variant="primary" size="lg" href="/docs/render/getting-started/introduction">Get started</Button>
-              <Button variant="secondary" size="lg" href="https://github.com/cacheplane/threadplane" target="_blank" rel="noopener noreferrer">View source</Button>
-            </div>
-            <div className="render-page-hero-pills">
-              <Pill variant="accent">MIT</Pill>
-              <Pill variant="neutral">Vercel json-render</Pill>
-              <Pill variant="neutral">Google A2UI</Pill>
-            </div>
-          </div>
-        </Container>
-      </Section>
-
-      <DiagramSection
-        id="render-transform"
-        eyebrow="How it works"
-        headline="Schema on the wire, your design system on screen"
-        body="The agent emits a spec. Your registry, state, and handlers resolve it — and your own Angular components render it."
-      >
-        <RenderTransform />
-      </DiagramSection>
-
-      <FeatureBlock
-        id="schemas"
-        eyebrow="Schemas"
-        headline="One spec. Your components."
-        body="The agent emits structured UI as JSON. @threadplane/render maps each spec node to one of your Angular components — so the design system stays yours, and the agent gets to assemble it."
-        rows={[
-          { claim: 'One spec, rendered by components you own', api: 'component registry' },
-          { claim: 'Both protocols spoken', api: 'json-render + A2UI' },
-          { claim: 'Schema on the server, validation in the client', api: 'validated specs' },
-        ]}
-        cta={{ label: 'See @threadplane/render docs', href: '/docs/render/getting-started/introduction' }}
-        visual={<MediumSwitcher sectionId="lib-render" panes={panes} />}
-      />
-
-      <FeatureBlock
-        id="fallbacks"
-        eyebrow="Fallbacks"
-        headline="Readiness gate + per-component fallback."
-        body="When the agent emits a spec your registry doesn't know how to render, @threadplane/render falls back gracefully — and surfaces it to your observability layer. No mystery white screens."
-        rows={[
-          { claim: 'Unknown components degrade, not crash', api: 'fallback API' },
-          { claim: 'Renders hold until the surface is real', api: 'readiness gate' },
-          { claim: 'Partial renders while streaming', api: 'streaming specs' },
-        ]}
-        cta={{ label: 'Fallback patterns', href: '/docs/render/guides/registry' }}
-        visualLeft
-        visual={<RenderCodeShowcase />}
-      />
-
-      <WhitePaperBlock formPolicy={formPolicy} paper="render" />
-      <FinalCTA variant="dark" />
-    </>
+    <LibraryLanding
+      name="Render"
+      slug="render"
+      headline={
+        <>
+          Your components.
+          <br />
+          Assembled by agents.
+        </>
+      }
+      description="Turn structured agent output into an interface built from components you own. Keep the visual language in your application and let the agent assemble the right surface."
+      reactDocs="/docs/react/render/guides/specs"
+      angularDocs="/docs/angular/render/getting-started/introduction"
+      features={FEATURES}
+      panes={panes}
+      code={<RenderCodeShowcase showIntroduction={false} />}
+      technicalNote="These Angular examples show registry setup and rendering. React has a separate render integration. Use the framework guides for protocol support, including the scope of the React A2UI preview."
+      demoHref="/docs/angular/render/guides/specs?mode=run"
+      guideHref="/docs/angular/render/guides/registry"
+      guideLabel="Explore the registry"
+      paper="render"
+      formPolicy={getFormPolicy()}
+    />
   );
 }

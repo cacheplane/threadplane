@@ -77,7 +77,7 @@ describe('website next.config redirects for the removed chat configuration API',
         (r: { source: string }) => r.source === source
       );
       expect(rule, `missing redirect for ${source}`).toBeTruthy();
-      expect(rule.destination).toBe('/docs/chat/getting-started/installation');
+      expect(rule.destination).toBe('/docs/angular/chat/getting-started/installation');
       expect(rule.permanent).toBe(true);
     }
   });
@@ -90,7 +90,7 @@ describe('website next.config redirects for the removed chat configuration API',
       const rule = redirects.find((r: { source: string }) => r.source === mirror);
       expect(rule, `missing redirect for ${mirror}`).toBeTruthy();
       expect(rule.destination).toBe(
-        '/api/markdown/chat/getting-started/installation'
+        '/api/markdown/angular/chat/getting-started/installation'
       );
       expect(rule.permanent).toBe(true);
     }
@@ -118,8 +118,8 @@ describe('website next.config founder booking redirect', () => {
 
 describe('legacy API reference migration', () => {
   const destinations = {
-    'render/render-spec-component': '/docs/render/guides/element-rendering',
-    'render/provide-render': '/docs/render/guides/computed-functions',
+    'render/render-spec-component': '/docs/angular/render/guides/element-rendering',
+    'render/provide-render': '/docs/angular/render/guides/computed-functions',
     'render/define-angular-registry': '/docs/api/render/defineAngularRegistry',
     'render/signal-state-store': '/docs/api/render/signalStateStore',
     'render/views': '/docs/api/render/views',

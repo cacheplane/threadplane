@@ -1,0 +1,69 @@
+/* Preserve the installed primitives' typography and pill focus ring. */
+.application {
+  /* Preserve the shared overlay stacking order while following Safari's pan. */
+  position: relative;
+  top: var(--native-viewport-top, 0px);
+  left: 0;
+  width: 100%;
+  height: var(--native-viewport-height, 100dvh);
+  overflow: clip;
+}
+@media (max-width: 700px) {
+  .conversation-layout > aside {
+    max-height: calc(var(--native-viewport-height, 100dvh) * 0.22);
+  }
+  .composer {
+    padding-block: 4px;
+  }
+}
+
+/* Keep context and diagnostics scrollable without displacing the composer. */
+.conversation-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.conversation-body .transcript {
+  flex: 1 0 4rem;
+  min-height: 4rem;
+}
+.conversation-body
+  > :is(
+    .loaded-checkpoint-timeline,
+    .observed-state-comparison,
+    .background-activity
+  ) {
+  flex: 0 0 auto;
+  max-height: calc(
+    var(--tp-chat-viewport-height, var(--native-viewport-height, 100dvh)) * 0.2
+  );
+  overflow-y: auto;
+  margin: 0 24px 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+}
+.composer .tp-chat-input__textarea {
+  max-height: calc(
+    var(--tp-chat-viewport-height, var(--native-viewport-height, 100dvh)) * 0.2
+  );
+}
+.composer .tp-welcome__suggestions {
+  max-height: calc(
+    var(--tp-chat-viewport-height, var(--native-viewport-height, 100dvh)) * 0.12
+  );
+  overflow-y: auto;
+}
+.composer .tp-welcome__suggestions > p {
+  order: 1;
+}
+
+.composer .tp-chat-input__textarea:focus-visible {
+  outline: 0;
+}
+.conversation-layout--sidenav {
+  align-items: stretch;
+  gap: 0;
+}

@@ -12,7 +12,7 @@ Threadplane gives you two ways to let an agent build UI: a json-render spec or a
 Let's figure out how to pick.
 
 I think of it as a ladder: markdown when text is the best UI → a fixed spec when you can validate the whole thing up front → a live protocol when the surface keeps changing.
-The [mechanical comparison](/docs/render/concepts/json-render-vs-a2ui) covers what each layer does.
+The [mechanical comparison](/docs/angular/render/concepts/json-render-vs-a2ui) covers what each layer does.
 This post answers the question that page ends on: which rung is yours?
 
 ## What's actually different?
@@ -107,5 +107,5 @@ The heuristic is short.
 If you can validate the entire UI before it renders, start with json-render.
 If the surface keeps changing after it lands (data trickling in, actions coming back, edits across turns), use A2UI.
 
-The [mechanical comparison](/docs/render/concepts/json-render-vs-a2ui) has the layer-by-layer details, the [generative UI guide](/docs/chat/guides/generative-ui) wires up the json-render path end to end, and the [A2UI overview](/docs/chat/a2ui/overview) does the same for surfaces.
+The [mechanical comparison](/docs/angular/render/concepts/json-render-vs-a2ui) has the layer-by-layer details, the [generative UI guide](/docs/angular/chat/guides/generative-ui) wires up the json-render path end to end, and the [A2UI overview](/docs/angular/chat/a2ui/overview) does the same for surfaces.
 Pick a surface you're building this week, run it up the ladder, and let me know where it lands.

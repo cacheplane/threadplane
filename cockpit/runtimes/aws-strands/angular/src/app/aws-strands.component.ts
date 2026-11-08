@@ -59,9 +59,13 @@ interface Booking {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <example-chat-layout>
+    <example-chat-layout
+      title="AWS Strands meetings"
+      description="Review a fictional meeting, then approve or decline it. No real meeting is booked."
+    >
       <div main class="strands-shell">
-        <chat [agent]="agent" class="strands-chat">
+      <chat placeholder="Ask about a fictional meeting…" [welcomeDisabled]="true" [agent]="agent" class="strands-chat">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion

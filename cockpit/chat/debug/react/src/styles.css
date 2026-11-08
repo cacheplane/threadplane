@@ -1,13 +1,9 @@
+body {
+  margin: 0;
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
+}
 .tp-chat.debug-demo {
-  --tp-chat-text: #e0e0e0;
-  --tp-chat-muted: #a3a3a3;
-  --tp-chat-border: #767676;
-  --tp-chat-surface: #1c1c1c;
-  --tp-chat-accent: #3b82f6;
-  --tp-chat-on-accent: #07111f;
-  --tp-chat-danger: #ff8a80;
-  --tp-chat-gap: 1rem;
-  color-scheme: dark;
+  --debug-demo-panel-width: 30rem;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -46,4 +42,16 @@
 }
 .debug-demo .tp-chat__error {
   color: var(--tp-chat-danger);
+}
+.debug-demo .tp-debug__panel:is([data-dock='left'], [data-dock='right']) {
+  width: min(var(--debug-demo-panel-width), 100vw);
+}
+@media (min-width: 64rem) {
+  /* Keep side-docked diagnostics clear of the conversation's actions. */
+  .debug-demo:has(.tp-debug__panel[data-dock='right']) {
+    padding-right: calc(var(--debug-demo-panel-width) + clamp(1rem, 4vw, 2rem));
+  }
+  .debug-demo:has(.tp-debug__panel[data-dock='left']) {
+    padding-left: calc(var(--debug-demo-panel-width) + clamp(1rem, 4vw, 2rem));
+  }
 }

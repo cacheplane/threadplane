@@ -41,8 +41,15 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
     .fact__value { color: var(--ds-text-secondary, #c8c8c8); }
   `,
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" class="flex-1 min-w-0" />
+    <example-chat-layout
+      title="LangGraph memory"
+      description="Teach the assistant a fictional fact, then ask it to recall it in this conversation. Each reply is followed by a memory extraction pass. A new conversation starts empty."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Tell me a fictional fact…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+      </chat>
       <!-- #region memory-panel -->
       <div sidebar class="panel">
         <h3 class="cap">Learned Facts</h3>
@@ -61,6 +68,12 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
   `,
 })
 export class MemoryComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   // #region memory-signal
   /**
    * The streaming resource connected to the memory graph.

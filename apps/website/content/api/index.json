@@ -7,7 +7,7 @@
       "packageName": "@threadplane/a2ui",
       "project": "a2ui",
       "framework": "shared",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "a2ui"
     },
@@ -17,7 +17,7 @@
       "packageName": "@threadplane/ag-ui",
       "project": "ag-ui",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "ag-ui"
     },
@@ -57,7 +57,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -67,7 +67,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -77,7 +77,7 @@
       "packageName": "@threadplane/chat",
       "project": "chat",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "chat"
     },
@@ -187,7 +187,7 @@
       "packageName": "@threadplane/langgraph",
       "project": "langgraph",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "langgraph"
     },
@@ -257,7 +257,7 @@
       "packageName": "@threadplane/render",
       "project": "render",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "render"
     },
@@ -267,7 +267,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "shared",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -277,7 +277,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "angular",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -287,7 +287,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "backend",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "telemetry"
     },
@@ -297,7 +297,7 @@
       "packageName": "@threadplane/telemetry",
       "project": "telemetry",
       "framework": "shared",
-      "version": "0.3.4",
+      "version": "0.3.7",
       "status": "published",
       "docLibrary": "telemetry"
     }
@@ -2031,7 +2031,7 @@
       "canonicalReference": "@threadplane/chat!ChatComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates."
+      "summary": "Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.\nProject `[chatInputFooter]` for composer help in both presentations, and\n`[chatFooterStatus]` for application-owned status below the transcript composer."
     },
     {
       "name": "ChatConfirmDialogComponent",
@@ -4354,6 +4354,96 @@
       "summary": "Classify a Markdown destination without rewriting the supplied value."
     },
     {
+      "name": "CitationImageVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationImageVisual",
+      "canonicalReference": "@threadplane/content!CitationImageVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered from a provider image URL."
+    },
+    {
+      "name": "CitationMonogramVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationMonogramVisual",
+      "canonicalReference": "@threadplane/content!CitationMonogramVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered as a colored initial."
+    },
+    {
+      "name": "citationSourceVisual",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationSourceVisual",
+      "canonicalReference": "@threadplane/content!citationSourceVisual:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Return a fresh image, type-icon, or monogram descriptor without fetching or approving URLs."
+    },
+    {
+      "name": "CitationSourceVisual",
+      "entrypointId": "content/messages",
+      "kind": "TypeAlias",
+      "href": "/docs/api/content/messages/CitationSourceVisual",
+      "canonicalReference": "@threadplane/content!CitationSourceVisual:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "The image, source-category icon, or monogram selected to identify a citation source."
+    },
+    {
+      "name": "CitationTypeIcon",
+      "entrypointId": "content/messages",
+      "kind": "TypeAlias",
+      "href": "/docs/api/content/messages/CitationTypeIcon",
+      "canonicalReference": "@threadplane/content!CitationTypeIcon:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Supported source categories used for citation icons and visual tones."
+    },
+    {
+      "name": "CitationTypeIconVisual",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationTypeIconVisual",
+      "canonicalReference": "@threadplane/content!CitationTypeIconVisual:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A citation source marker rendered with a source-category icon and tone."
+    },
+    {
+      "name": "citationTypeLabel",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationTypeLabel",
+      "canonicalReference": "@threadplane/content!citationTypeLabel:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Human label for the source-type badge; null when type is 'unknown'."
+    },
+    {
+      "name": "citationTypeMeta",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/citationTypeMeta",
+      "canonicalReference": "@threadplane/content!citationTypeMeta:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Derive normalized source-type metadata for badges, icons, and tone tokens."
+    },
+    {
+      "name": "CitationTypeMeta",
+      "entrypointId": "content/messages",
+      "kind": "Interface",
+      "href": "/docs/api/content/messages/CitationTypeMeta",
+      "canonicalReference": "@threadplane/content!CitationTypeMeta:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Normalized source type, label, icon, tone, and recognition status for citation display."
+    },
+    {
       "name": "createMessageContent",
       "entrypointId": "content/messages",
       "kind": "Function",
@@ -4362,6 +4452,46 @@
       "isDeprecated": false,
       "isTypeOnly": false,
       "summary": "Creates a transcript projector that preserves unchanged row identities and releases parsers for removed messages."
+    },
+    {
+      "name": "deriveDomain",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveDomain",
+      "canonicalReference": "@threadplane/content!deriveDomain:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Extract a hostname with leading `www.` removed; null for missing/invalid URLs, empty for hostless URLs. This does not approve navigation."
+    },
+    {
+      "name": "deriveMonogram",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveMonogram",
+      "canonicalReference": "@threadplane/content!deriveMonogram:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Uppercased first letter of the domain (or title) for the monogram chip."
+    },
+    {
+      "name": "deriveSourceType",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/deriveSourceType",
+      "canonicalReference": "@threadplane/content!deriveSourceType:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Trim explicit sourceType, else infer 'web' from any truthy URL, else 'unknown'; no URL validation."
+    },
+    {
+      "name": "formatPublished",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/formatPublished",
+      "canonicalReference": "@threadplane/content!formatPublished:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Format a publication month/year in the host locale and timezone; null when missing or invalid."
     },
     {
       "name": "MessageContent",
@@ -4392,6 +4522,26 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "One transcript row. Unchanged rows keep their identity across projections."
+    },
+    {
+      "name": "monogramColor",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/monogramColor",
+      "canonicalReference": "@threadplane/content!monogramColor:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Deterministic monogram-chip background color (stable per source)."
+    },
+    {
+      "name": "monogramHue",
+      "entrypointId": "content/messages",
+      "kind": "Function",
+      "href": "/docs/api/content/messages/monogramHue",
+      "canonicalReference": "@threadplane/content!monogramHue:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Deterministic hue in [0,360) from a seed string (stable monogram color)."
     },
     {
       "name": "createJson",
@@ -5754,6 +5904,46 @@
       "summary": "Controls backdrop visibility and the dismissal callback, with an accessible button label."
     },
     {
+      "name": "CitationCard",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/CitationCard",
+      "canonicalReference": "@threadplane/react!CitationCard:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Pure source presentation with local decorative visuals and policy-checked navigation."
+    },
+    {
+      "name": "CitationCardProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/CitationCardProps",
+      "canonicalReference": "@threadplane/react!CitationCardProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Borrowed source metadata and an optional card class."
+    },
+    {
+      "name": "CitationPreview",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/CitationPreview",
+      "canonicalReference": "@threadplane/react!CitationPreview:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Explicit source details with local presentation state and no source fetching."
+    },
+    {
+      "name": "CitationPreviewProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/CitationPreviewProps",
+      "canonicalReference": "@threadplane/react!CitationPreviewProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Borrowed source metadata and an optional trigger class."
+    },
+    {
       "name": "Citations",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -5761,7 +5951,7 @@
       "canonicalReference": "@threadplane/react!Citations:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Present supplied sources; selection, metadata and owner lifetime belong to the app."
+      "summary": "Present sources; accepted metadata and message owner lifetime belong to the app."
     },
     {
       "name": "CitationsProps",
@@ -5771,7 +5961,7 @@
       "canonicalReference": "@threadplane/react!CitationsProps:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class."
+      "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions."
     },
     {
       "name": "ConfirmDialog",

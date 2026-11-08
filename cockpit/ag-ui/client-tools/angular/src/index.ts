@@ -12,7 +12,7 @@ export const agUiClientToolsAngularModule: CockpitCapabilityModule = {
   id: 'ag-ui-client-tools-angular',
   manifestIdentity: { product: 'ag-ui', section: 'core-capabilities', topic: 'client-tools', page: 'overview', language: 'angular' },
   title: 'AG-UI Client Tools (Angular)',
-  docsPath: '/docs/ag-ui/guides/client-tools',
+  docsPath: '/docs/angular/ag-ui/guides/client-tools',
   promptAssetPaths: ['cockpit/ag-ui/client-tools/angular/prompts/client-tools.md'],
   codeAssetPaths: [
     'cockpit/ag-ui/client-tools/angular/src/app/client-tools.component.ts',

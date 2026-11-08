@@ -39,3 +39,36 @@ test('interrupt approval: pause renders the interrupt panel with the captured re
   await expect(panel.getByRole('button', { name: /ignore/i })).toBeVisible();
   await expect(page.locator('chat-message').filter({ has: panel })).toHaveCount(0);
 });
+
+for (const mode of ['embed', 'popup', 'sidebar']) {
+  test(`interrupt approval: ${mode} keeps the phone decision in the scrolling conversation`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await openDemo(page, `/${mode}`);
+    if (mode === 'popup') await page.getByRole('button', { name: 'Open chat', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Type a message', exact: true }).fill(PROMPT);
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+
+    const panel = page.locator('chat-interrupt-panel');
+    await expect(panel).toBeVisible({ timeout: 45_000 });
+    await expect(page.locator('.chat-scroll chat-interrupt-panel')).toHaveCount(1);
+    await expect(page.locator('.demo-shell__interrupt-panel')).toHaveCount(0);
+    await expect(panel).toContainText('86.5 GB');
+    const accept = panel.getByRole('button', { name: 'Accept', exact: true });
+    await accept.scrollIntoViewIfNeeded();
+    await expect(accept).toBeInViewport();
+    const decision = await accept.boundingBox();
+    const composer = await page.getByRole('textbox', { name: 'Type a message', exact: true }).boundingBox();
+    if (!decision || !composer) throw new Error('Decision and composer must be rendered');
+    expect(decision.y + decision.height).toBeLessThanOrEqual(composer.y);
+
+    // Cancelling either text prompt must leave the original decision pending.
+    for (const action of ['Edit', 'Respond']) {
+      page.once('dialog', dialog => dialog.dismiss());
+      await panel.getByRole('button', { name: action, exact: true }).click();
+      await expect(panel).toBeVisible();
+    }
+    await accept.click();
+    await expect(panel).toHaveCount(0, { timeout: 30_000 });
+    await expect(page.locator('chat-message[data-role="assistant"]').last()).toContainText('Approved.', { timeout: 30_000 });
+  });
+}

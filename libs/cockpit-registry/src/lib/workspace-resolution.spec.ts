@@ -51,7 +51,7 @@ describe('workspace identity resolution', () => {
     }
     expect(
       resolveDocsWorkspace(
-        '/docs/langgraph/guides/durable-execution',
+        '/docs/angular/langgraph/guides/durable-execution',
         'Durable Execution'
       )
     ).toMatchObject({
@@ -63,9 +63,9 @@ describe('workspace identity resolution', () => {
     expect(
       getWorkspaceDestinationPath({
         id: 'langgraph:core-capabilities:durable-execution:overview:python',
-        docsPath: '/docs/langgraph/guides/durable-execution',
+        docsPath: '/docs/angular/langgraph/guides/durable-execution',
       })
-    ).toBe('/docs/langgraph/guides/durable-execution');
+    ).toBe('/docs/angular/langgraph/guides/durable-execution');
   });
 
   it('returns a discriminated docs-only resolution for an unmapped valid Docs page', () => {
@@ -84,7 +84,7 @@ describe('workspace identity resolution', () => {
 
   it('defaults every route to Docs', () => {
     const mappedDocs = resolveDocsWorkspace(
-      '/docs/langgraph/guides/streaming',
+      '/docs/angular/langgraph/guides/streaming',
       'Streaming'
     );
     const docsOnly = resolveDocsWorkspace(
@@ -97,7 +97,7 @@ describe('workspace identity resolution', () => {
 
   it('never fuzzy-matches Docs slugs', () => {
     expect(
-      resolveDocsWorkspace('/docs/langgraph/guides/stream', 'Stream')
+      resolveDocsWorkspace('/docs/angular/langgraph/guides/stream', 'Stream')
     ).toMatchObject({ kind: 'docs-only' });
   });
 });
@@ -105,25 +105,25 @@ describe('workspace identity resolution', () => {
 describe('canonical Website workspace destinations', () => {
   it('omits Docs mode on every canonical Docs path', () => {
     const primary = resolveDocsWorkspace(
-      '/docs/langgraph/guides/persistence',
+      '/docs/angular/langgraph/guides/persistence',
       'Persistence'
     );
     const secondary = resolveDocsWorkspace(
-      '/docs/langgraph/guides/durable-execution',
+      '/docs/angular/langgraph/guides/durable-execution',
       'Durable Execution'
     );
 
     expect(getCanonicalWebsiteWorkspaceHref(primary, 'Docs')).toBe(
-      '/docs/langgraph/guides/persistence'
+      '/docs/angular/langgraph/guides/persistence'
     );
     expect(getCanonicalWebsiteWorkspaceHref(secondary, 'Docs')).toBe(
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     expect(getCanonicalWebsiteWorkspaceHref(secondary, 'Run')).toBe(
-      '/docs/langgraph/guides/durable-execution?mode=run'
+      '/docs/angular/langgraph/guides/durable-execution?mode=run'
     );
     expect(getCanonicalWebsiteWorkspaceHref(primary, 'Code')).toBe(
-      '/docs/langgraph/guides/persistence?mode=code'
+      '/docs/angular/langgraph/guides/persistence?mode=code'
     );
   });
 

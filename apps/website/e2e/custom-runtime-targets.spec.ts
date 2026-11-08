@@ -7,9 +7,9 @@ import {
 } from '@playwright/test';
 import { renderRuntimeBridgeFrame } from './fixtures/runtime-bridge-frame';
 
-const LANGGRAPH_PATH = '/docs/langgraph/guides/streaming';
-const AG_UI_PATH = '/docs/ag-ui/reference/event-mapping';
-const CHAT_THREADS_PATH = '/docs/chat/guides/thread-routing';
+const LANGGRAPH_PATH = '/docs/angular/langgraph/guides/streaming';
+const AG_UI_PATH = '/docs/angular/ag-ui/reference/event-mapping';
+const CHAT_THREADS_PATH = '/docs/angular/chat/guides/thread-routing';
 const FIXTURE_ORIGIN = 'http://127.0.0.1:4399';
 const FIXTURE_KEY = 'test-key-redact-me';
 const POISON_MARKER = `${FIXTURE_KEY}-poison-body`;
@@ -72,19 +72,22 @@ function observePrivacyChannels(page: Page): {
   return { browserMessages, outboundPayloads };
 }
 
-const desktopControlPlane = (page: Page) =>
-  page.locator('[data-workspace-desktop-navigation]');
-
 const runtimeFrame = (page: Page, title: string): FrameLocator =>
   page.frameLocator(`iframe[title="${title} live example"]`);
 
 async function openSettings(page: Page): Promise<void> {
-  const settings = desktopControlPlane(page).getByRole('button', {
-    name: 'Settings',
-    exact: true,
-  });
-  await settings.click();
+  await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   await expect(page.locator('[data-runtime-target-settings]')).toBeVisible();
+}
+
+async function navigateToAgUiStreaming(page: Page): Promise<void> {
+  // Search performs a single client navigation, preserving the previous
+  // LangGraph history entry and the in-memory custom target slots.
+  await page.getByRole('button', { name: 'Search docs', exact: true }).click();
+  const search = page.getByRole('dialog', { name: 'Search documentation' });
+  await search.getByRole('combobox').fill('event mapping');
+  await search.getByRole('option', { name: /^Event Mapping\b/ }).click();
 }
 
 async function applyCustomTarget(
@@ -105,8 +108,8 @@ async function applyCustomTarget(
   );
   if (apiKey)
     await expect(settings.locator('input[name="rts"]')).toHaveValue('');
-  await desktopControlPlane(page)
-    .getByRole('button', { name: 'Settings', exact: true })
+  await page
+    .getByRole('button', { name: 'Close Settings', exact: true })
     .click();
   await expect(page.locator('[data-runtime-target-settings]')).toBeHidden();
 }
@@ -161,9 +164,8 @@ async function assertOperationalPrivacy(
   endpoint: string,
   privacyChannels: ReturnType<typeof observePrivacyChannels>
 ): Promise<void> {
-  const runtimeSection = desktopControlPlane(page).locator(
-    '[data-runtime-section]'
-  );
+  await openSettings(page);
+  const runtimeSection = page.locator('[data-runtime-section]:visible');
   await runtimeSection
     .getByRole('button', { name: 'More runtime actions' })
     .click();
@@ -192,9 +194,8 @@ async function assertOperationalPrivacy(
     'Copied diagnostics did not retain the sanitized target kind'
   ).toBe(true);
 
-  await desktopControlPlane(page)
-    .getByRole('button', { name: 'Activity', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Workspace tools', exact: true }).click();
+  await page.getByRole('menuitem', { name: /^Activity\b/ }).click();
   const activity = page.locator('[data-control-plane-utility-panel]');
   await expect(
     activity.getByText('Runtime ready', { exact: true }).first()
@@ -364,6 +365,7 @@ test.describe('custom runtime targets', () => {
       'test-key-deliberately-wrong'
     );
     await sendMessage(runtimeFrame(page, 'LangGraph Streaming'), 'Reject me');
+    await openSettings(page);
 
     await expect(page.getByText('Unauthorized', { exact: true })).toBeVisible({
       timeout: 15_000,
@@ -404,6 +406,7 @@ test.describe('custom runtime targets', () => {
         runtimeFrame(page, 'LangGraph Streaming'),
         'Fail safely'
       );
+      await openSettings(page);
 
       await expect(page.getByText('Unauthorized', { exact: true })).toBeVisible(
         {
@@ -426,11 +429,12 @@ test.describe('custom runtime targets', () => {
     const initialFrame = page.locator(
       'iframe[title="Chat Threads live example"]'
     );
+    const sharedFrame = runtimeFrame(page, 'Chat Threads');
     await expect(
-      runtimeFrame(page, 'Chat Threads').getByText(
-        'How can I help?',
-        { exact: true }
-      )
+      sharedFrame.getByRole('heading', { name: 'Chat threads', exact: true })
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      sharedFrame.getByRole('textbox', { name: 'Type a message', exact: true })
     ).toBeVisible({ timeout: 15_000 });
     await initialFrame.evaluate((element) =>
       element.setAttribute('data-shared-generation', 'true')
@@ -463,6 +467,7 @@ test.describe('custom runtime targets', () => {
       }, { timeout: 15_000 })
       .toContain('http://localhost:4506:true:');
 
+    await openSettings(page);
     await expect(page.getByText('Unauthorized', { exact: true })).toBeVisible({
       timeout: 15_000,
     });
@@ -482,6 +487,7 @@ test.describe('custom runtime targets', () => {
       runtimeFrame(page, 'AG-UI Streaming'),
       'Block this request'
     );
+    await openSettings(page);
     await expect(
       page.getByText('Network blocked', { exact: true })
     ).toBeVisible({
@@ -501,6 +507,7 @@ test.describe('custom runtime targets', () => {
       });
     });
     await page.goto(`${LANGGRAPH_PATH}?mode=run`);
+    await openSettings(page);
     await expect(
       page.getByText('Incompatible runtime', { exact: true })
     ).toBeVisible({
@@ -540,6 +547,7 @@ test.describe('custom runtime targets', () => {
     await expect(
       runtimeFrame(page, 'AG-UI Streaming').getByText('Custom AG-UI success')
     ).toBeVisible();
+    await openSettings(page);
     await page.waitForTimeout(2_200);
     await expect(page.getByText('Unauthorized', { exact: true })).toHaveCount(
       0
@@ -556,9 +564,7 @@ test.describe('custom runtime targets', () => {
       fixtureRuntimeUrl(testInfo, 'langgraph/success'),
       FIXTURE_KEY
     );
-    await page
-      .getByRole('link', { name: 'AG-UI Streaming', exact: true })
-      .click();
+    await navigateToAgUiStreaming(page);
     await expect(page).toHaveURL(
       new RegExp(`${AG_UI_PATH.replaceAll('/', '\\/')}`)
     );
@@ -583,12 +589,10 @@ test.describe('custom runtime targets', () => {
     await expect(
       page.locator('[data-runtime-target-settings]')
     ).toHaveAttribute('data-runtime-target-kind', 'shared');
-    await desktopControlPlane(page)
-      .getByRole('button', { name: 'Settings', exact: true })
-      .click();
     await page
-      .getByRole('link', { name: 'AG-UI Streaming', exact: true })
+      .getByRole('button', { name: 'Close Settings', exact: true })
       .click();
+    await navigateToAgUiStreaming(page);
     await expect(page).toHaveURL(
       new RegExp(`${AG_UI_PATH.replaceAll('/', '\\/')}`)
     );

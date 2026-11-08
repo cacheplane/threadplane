@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isValidElement, type ReactNode } from 'react';
-import DocsPage, { generateMetadata } from './[library]/[section]/[slug]/page';
+import DocsPage, { generateMetadata } from './[framework]/[...slug]/page';
 import { docsConfig } from '../../lib/docs-config';
 import { getSitemapRoutes } from '../../lib/site-metadata';
 
@@ -25,7 +25,7 @@ const SAMPLES: Slug[] = [
 
 /** Every `data` payload the page hands to a `<JsonLd>`, in render order. */
 async function renderedJsonLd({ library, section, slug }: Slug): Promise<Record<string, unknown>[]> {
-  const tree = await DocsPage({ params: Promise.resolve({ library, section, slug }) });
+  const tree = await DocsPage({ params: Promise.resolve({ framework: 'angular', slug: [library, section, slug] }) });
   const found: Record<string, unknown>[] = [];
 
   const walk = (node: ReactNode): void => {
@@ -76,7 +76,7 @@ describe('docs page structured data', () => {
     for (const sample of SAMPLES) {
       const [article, metadata] = await Promise.all([
         renderedJsonLd(sample).then((nodes) => nodeOfType(nodes, 'TechArticle')),
-        generateMetadata({ params: Promise.resolve(sample) }),
+        generateMetadata({ params: Promise.resolve({ framework: 'angular', slug: [sample.library, sample.section, sample.slug] }) }),
       ]);
 
       const label = `${sample.library}/${sample.section}/${sample.slug}`;
@@ -92,7 +92,7 @@ describe('docs page structured data', () => {
 
   it('links the same library URL the visible trail links', async () => {
     for (const sample of SAMPLES) {
-      const tree = await DocsPage({ params: Promise.resolve(sample) });
+      const tree = await DocsPage({ params: Promise.resolve({ framework: 'angular', slug: [sample.library, sample.section, sample.slug] }) });
       const nodes = await renderedJsonLd(sample);
       const crumbs = nodeOfType(nodes, 'BreadcrumbList')?.itemListElement as
         | { name: string; item: string }[]

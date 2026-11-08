@@ -6,6 +6,9 @@ import { join, resolve } from 'node:path';
 import { chromium, expect, type Locator, type Page } from '@playwright/test';
 import {
   DOCS_AUDIT_ROUTES,
+  DOCS_AUDIT_WIDTHS,
+  docsAuditWidths,
+  expectedDocsAuditChecks,
   geometryIssues,
   navigationIssue,
   requestDisposition,
@@ -32,22 +35,25 @@ const delay = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 async function measureDiagram(region: Locator) {
   const snapshot = await region.evaluate((element) => {
-    const svg = element.querySelector('svg');
-    const canvas = svg ?? element.querySelector('.tp-lesson-diagram');
+    // Inline arrow icons are not the canvas of an HTML diagram.
+    const svg = element.querySelector('svg.tp-diagram-svg');
+    const canvas =
+      svg ??
+      element.querySelector('.tp-lesson-diagram, .tp-human-approval-flow');
     if (!canvas) throw new Error('Diagram canvas missing');
     const box = (el: Element) => {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     };
     const nodeSelector = svg
-      ? '.tp-diagram-node'
-      : '.tp-diagram-card, .tp-sequence-event';
+      ? '.tp-diagram-node, .tp-network-node'
+      : '.tp-diagram-card, .tp-sequence-event, .tp-human-approval-node';
     const nodeElements = [...canvas.querySelectorAll(nodeSelector)];
     const texts = [
       ...canvas.querySelectorAll(
         svg
           ? 'text'
-          : '.tp-diagram-card > strong, .tp-diagram-card > small, .tp-sequence-event > strong, .tp-sequence-event > small, .tp-sequence-route, .tp-state-transitions dt, .tp-state-transitions dd, .tp-erd-relations p'
+          : '.tp-diagram-card > strong, .tp-diagram-card > small, .tp-sequence-event > strong, .tp-sequence-event > small, .tp-sequence-route, .tp-state-transitions dt, .tp-state-transitions dd, .tp-erd-relations p, .tp-human-approval-node > strong, .tp-human-approval-node > small'
       ),
     ];
     const normalized = (value: string) => value.replace(/["']/g, '').trim();
@@ -72,6 +78,15 @@ async function measureDiagram(region: Locator) {
       viewportWidth: innerWidth,
       documentWidth: document.documentElement.scrollWidth,
       canvas: box(canvas),
+      ...(svg?.classList.contains('tp-network-diagram')
+        ? {
+            naturalWidth: Number(svg.getAttribute('width')),
+            articleWidth:
+              element.clientWidth -
+              parseFloat(getComputedStyle(element).paddingLeft) -
+              parseFloat(getComputedStyle(element).paddingRight),
+          }
+        : {}),
       fontsLoaded,
       nodes: nodeElements.map((node, i) => {
         const shape = svg ? node.querySelector('rect') : node;
@@ -324,7 +339,7 @@ async function main() {
   const succeeded = () =>
     !fatalError &&
     targets.length > 0 &&
-    results.length === targets.length * 2 &&
+    results.length === expectedDocsAuditChecks(targets) &&
     results.every((result) => result.passed);
   // Deliberately retain sanitized metadata only, never request headers/bodies,
   // storage or Playwright HAR/trace files containing the deployment bypass.
@@ -440,7 +455,7 @@ async function main() {
     }
     const auditedOrigin = origin;
     browser = await chromium.launch();
-    for (const width of [1440, 320]) {
+    for (const width of DOCS_AUDIT_WIDTHS) {
       const context = await browser.newContext({
         viewport: { width, height: 720 },
         serviceWorkers: 'block',
@@ -514,6 +529,7 @@ async function main() {
           });
       });
       for (const [index, target] of targets.entries()) {
+        if (!docsAuditWidths(target.path).includes(width)) continue;
         errors.length = 0;
         try {
           events.push({ event: 'navigate', value: `${width} ${target.path}` });
@@ -532,8 +548,64 @@ async function main() {
           );
           await expect(page.locator('article').first()).toBeVisible();
           await page.evaluate(() => document.fonts.ready);
-          if (target.path.includes('frontend=react'))
-            await expect(page.getByLabel('Example UI')).toHaveValue('react');
+          await expect(
+            page.locator('[data-website-workspace-host]')
+          ).toHaveAttribute('data-docs-reading', 'true');
+          await expect(
+            page.getByRole('navigation', { name: 'Documentation modes' })
+          ).toBeVisible();
+          const readingHeading = page.locator(
+            '.docs-workspace-article .docs-prose h1'
+          );
+          if (await readingHeading.count())
+            await expect(readingHeading).toHaveCSS(
+              'font-size',
+              width < 768 ? '36px' : '44px'
+            );
+          const apiHeading = page.locator('.api-reference-page h1');
+          if (await apiHeading.count()) {
+            const symbol = await page.locator('.api-reference-detail').count();
+            await expect(apiHeading).toHaveCSS(
+              'font-size',
+              symbol ? '24px' : width < 768 ? '32px' : '44px'
+            );
+          }
+          const steps = page.locator('.docs-workspace-article .mdx-steps-list');
+          if (await steps.count())
+            await expect(steps.first()).toHaveCSS(
+              'gap',
+              width < 768 ? '24px' : '28px'
+            );
+          if (width < 1024 && (await apiHeading.count())) {
+            const symbolLinks = page.locator('.api-reference-symbols li > a');
+            for (const link of await symbolLinks.all())
+              expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(
+                44
+              );
+            if (target.path.startsWith('/docs/api')) {
+              await page
+                .getByRole('button', {
+                  name: width < 768 ? 'Open navigation' : 'Open context',
+                  exact: true,
+                })
+                .click();
+              const apiNav = page.locator('.api-reference-navigation:visible');
+              await expect(apiNav).toBeVisible();
+              for (const link of await apiNav
+                .locator('a:visible, summary:visible')
+                .all())
+                expect(
+                  (await link.boundingBox())?.height
+                ).toBeGreaterThanOrEqual(44);
+              await page
+                .getByRole('button', { name: 'Close navigation', exact: true })
+                .click();
+            }
+          }
+          if (target.path.startsWith('/docs/react/'))
+            await expect(
+              page.locator('[data-framework-control]').first()
+            ).toHaveAttribute('data-value', 'react');
           const actualKinds = await page
             .locator('figure[data-docs-diagram][data-diagram-kind]')
             .evaluateAll((els) =>
@@ -552,18 +624,39 @@ async function main() {
             await expect(media).toHaveCount(1);
             await expect(media).toHaveAttribute(
               'data-frontend',
-              target.path.includes('frontend=react') ? 'react' : 'angular'
+              target.path.startsWith('/docs/react/') ? 'react' : 'angular'
             );
             await checkMedia(page, media);
           }
           if (width === 1440) {
             const nav = page.locator('[data-workspace-desktop-navigation]');
-            const last = nav.locator('.docs-sidebar-section').last();
-            await expect(last).toContainText('Migrations');
-            await expect(last.getByRole('button').first()).toHaveAttribute(
-              'aria-expanded',
-              'false'
-            );
+            const selectedFramework = await nav
+              .locator('[data-framework-control]')
+              .getAttribute('data-value');
+            const apiNavigation = nav.locator('.api-reference-navigation');
+            if (await apiNavigation.count()) {
+              await expect(apiNavigation).toBeVisible();
+              await expect(
+                apiNavigation.locator('[aria-current="page"]')
+              ).toHaveCount(1);
+            } else if (selectedFramework === 'react') {
+              // Shared pages retain the last explicit framework preference.
+              // React navigation contains only authored React/shared variants;
+              // the Angular migration section has no React documents yet.
+              await expect(
+                nav.getByRole('button', { name: 'Migrations', exact: true })
+              ).toHaveCount(0);
+              await expect(
+                nav.locator('.docs-sidebar-section').first()
+              ).toBeVisible();
+            } else {
+              const last = nav.locator('.docs-sidebar-section').last();
+              await expect(last).toContainText('Migrations');
+              await expect(last.getByRole('button').first()).toHaveAttribute(
+                'aria-expanded',
+                target.path.includes('/migrations/') ? 'true' : 'false'
+              );
+            }
             if (index === 1) await checkIndependentScroll(page);
           }
           const size = await page.evaluate(() => ({
@@ -618,7 +711,9 @@ async function main() {
     console.log(
       `Documentation audit: ${
         results.filter((result) => result.passed).length
-      }/${targets.length * 2} page/viewports passed; ${inventory.reduce(
+      }/${expectedDocsAuditChecks(
+        targets
+      )} page/viewports passed; ${inventory.reduce(
         (total, target) => total + target.diagrams.length,
         0
       )} authored diagram placements`

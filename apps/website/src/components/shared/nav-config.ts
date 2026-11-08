@@ -20,6 +20,7 @@ import { DEMOS, demoCtaSuffix } from '../../lib/demos';
 export type NavIcon = ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
 
 export interface NavItem {
+  readonly frameworkEntry?: boolean;
   readonly label: string;
   /** One whole literal — never assembled from interpolated fragments, so the
    *  rendered-copy scan in lib/public-copy.spec.ts can see all of it. */
@@ -53,7 +54,7 @@ const LIBRARIES: NavPanel = {
       items: [
         {
           label: '@threadplane/langgraph',
-          description: 'LangGraph and LangChain agents in Angular',
+          description: 'LangGraph and LangChain agents',
           href: '/langgraph',
           library: 'langgraph',
           ctaId: 'libraries_langgraph',
@@ -105,9 +106,10 @@ const DOCS: NavPanel = {
           ctaId: 'docs_documentation',
         },
         {
-          label: 'Quick start',
+          label: 'Getting started',
+          frameworkEntry: true,
           description: 'An agent on screen in ten minutes',
-          href: '/docs/langgraph/getting-started/quickstart',
+          href: '/docs/angular/getting-started/introduction',
           icon: Rocket,
           ctaId: 'docs_quick_start',
         },
@@ -126,14 +128,14 @@ const DOCS: NavPanel = {
         {
           label: 'Guides',
           description: 'Streaming, persistence, interrupts, memory',
-          href: '/docs/langgraph/guides/streaming',
+          href: '/docs/angular/langgraph/guides/streaming',
           icon: MapIcon,
           ctaId: 'docs_guides',
         },
         {
           label: 'Concepts',
           description: 'The agent contract, signals, and state',
-          href: '/docs/langgraph/concepts/agent-contract',
+          href: '/docs/angular/langgraph/concepts/agent-contract',
           icon: Lightbulb,
           ctaId: 'docs_concepts',
         },
@@ -146,20 +148,21 @@ const DOCS: NavPanel = {
         },
       ],
     },
-    {
-      heading: 'See it running',
-      // Derived from DEMOS so the nav, the footer, and the mobile stack cannot
-      // disagree about where a demo lives.
-      items: DEMOS.map((demo) => ({
-        label: demo.label,
-        description: new URL(demo.href).host,
-        href: demo.href,
-        external: true as const,
-        icon: Play,
-        ctaId: `docs_demo_${demoCtaSuffix(demo.key)}`,
-      })),
-    },
   ],
+};
+
+const DEMO_PANEL: NavPanel = {
+  columns: [{
+    // Keep destinations shared with the footer and mobile navigation.
+    items: DEMOS.map((demo) => ({
+      label: demo.label,
+      description: demo.key === 'langgraph' ? 'Explore a LangGraph agent in action' : 'Explore an agent over the AG-UI protocol',
+      href: demo.href,
+      external: true as const,
+      icon: Play,
+      ctaId: `demos_${demoCtaSuffix(demo.key)}`,
+    })),
+  }],
 };
 
 const SOLUTIONS: NavPanel = {
@@ -222,6 +225,7 @@ const SOLUTIONS: NavPanel = {
 export const NAV_TRIGGERS: readonly NavTrigger[] = [
   { kind: 'panel', id: 'libraries', label: 'Libraries', panel: LIBRARIES },
   { kind: 'panel', id: 'docs', label: 'Docs', panel: DOCS },
+  { kind: 'panel', id: 'demos', label: 'Demos', panel: DEMO_PANEL },
   { kind: 'panel', id: 'solutions', label: 'Solutions', panel: SOLUTIONS },
   { kind: 'link', id: 'pricing', label: 'Pricing', href: '/pricing', ctaId: 'pricing' },
 ];

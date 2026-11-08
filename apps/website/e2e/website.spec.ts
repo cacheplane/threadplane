@@ -11,7 +11,7 @@ const GROWTH_FORM_POLICY_VERSION = 'growth_v1.2026-09-09';
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-const docsRoute = '/docs/langgraph/getting-started/introduction';
+const docsRoute = '/docs/angular/langgraph/getting-started/introduction';
 
 async function expectNoHorizontalOverflow(
   page: import('@playwright/test').Page,
@@ -27,30 +27,25 @@ test('landing page renders its composition', async ({ page }) => {
   await page.goto('/');
   await test.step('landing page renders hero headline', async () => {
     await expect(page.locator('#hero-heading')).toBeVisible();
-    // This also carries the guard that the hero names the framework. That guard
-    // used to live on .hero-eyebrow, because the H1 was framework-neutral; the H1
-    // names Angular itself now, so the eyebrow no longer repeats it. Asserting
-    // "Angular" separately here would be green by construction — the literal
-    // above already contains it — so the full-text pin is the whole check.
-    await expect(page.locator('#hero-heading')).toHaveText('The open-source thread-plane for Angular agents.');
+    await expect(page.locator('#hero-heading')).toHaveText('The open source (and free) threadplane for agents');
   });
 
-  await test.step('landing page renders the dark proof band', async () => {
-    await expect(page.locator('#proof-heading')).toBeVisible();
-    await expect(page.locator('#proof[data-surface="dark"]')).toBeVisible();
+  await test.step('landing page replaces the proof band with capabilities', async () => {
+    await expect(page.locator('#capabilities-heading')).toBeVisible();
+    await expect(page.locator('#capabilities article')).toHaveCount(5);
+    await expect(page.locator('#proof')).toHaveCount(0);
   });
 
-  await test.step('landing page renders the spine in order (live-stage spec §3)', async () => {
+  await test.step('landing page renders its editorial sections in order', async () => {
     const ids = [
       'hero-heading',
-      'proof-heading',
+      'capabilities-heading',
       'compatibility-heading',
       'architecture-heading',
-      'no-runtime-heading',
       'open-source-heading',
-      'stage-heading',
       'field-report-heading',
       'faq-heading',
+      'recent-articles-heading',
     ];
     const tops: number[] = [];
     for (const id of ids) {
@@ -100,28 +95,30 @@ test('every page links the canonical privacy policy from the footer', async ({ p
   ).toBeVisible();
 });
 
-test('pricing page presents three software and support paths', async ({ page }) => {
+test('pricing page separates free software from three scoped services', async ({ page }) => {
   await page.goto('/pricing');
-  const plans = page.locator('.pricing-plan-card');
+  const plans = page.locator('.pricing-service-card');
   await expect(plans).toHaveCount(3);
-  await expect(plans.nth(0).getByRole('heading', { level: 3 })).toHaveText('Community');
-  await expect(plans.nth(1).getByRole('heading', { level: 3 })).toHaveText('Production Assurance');
-  await expect(plans.nth(2).getByRole('heading', { level: 3 })).toHaveText('Enterprise');
-  await expect(plans.nth(0)).toContainText('All packages are MIT-licensed');
-  await expect(page.getByText('No Threadplane cloud').first()).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Made you look!');
+  await expect(plans.nth(0).getByRole('heading', { level: 3 })).toHaveText('Production Assurance');
+  await expect(plans.nth(1).getByRole('heading', { level: 3 })).toHaveText('Pilot-to-Prod');
+  await expect(plans.nth(2).getByRole('heading', { level: 3 })).toHaveText('Agent builds & integrations');
+  await expect(page.locator('.pricing-source')).toContainText('Every package is MIT licensed');
+  await expect(page.getByText('No Threadplane cloud.').first()).toBeVisible();
 });
 
 test('pricing page routes software and support CTAs without checkout', async ({ page }) => {
   await page.goto('/pricing');
 
-  await expect(page.getByRole('link', { name: 'Install from npm' })).toHaveAttribute('href', /npmjs\.com\/package\/@threadplane\/chat/);
+  await expect(page.getByRole('link', { name: 'Take the code' })).toHaveAttribute('href', 'https://github.com/cacheplane/threadplane');
   await expect(page.getByRole('link', { name: 'Discuss assurance' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_production_assurance');
-  await expect(page.getByRole('link', { name: 'Talk to Sales' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Plan a launch' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Explore b4.run' })).toHaveAttribute('href', 'https://b4.run/');
   await expect(page.locator('form[action*="checkout"]')).toHaveCount(0);
 });
 
 test('pricing page is responsive without page-level horizontal overflow', async ({ page }) => {
-  for (const width of [375, 768, 1280]) {
+  for (const width of [320, 375, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/pricing');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -129,9 +126,24 @@ test('pricing page is responsive without page-level horizontal overflow', async 
   }
 });
 
+test('pricing buttons visibly respond to hover and comparison icons retain labels', async ({ page }) => {
+  await page.goto('/pricing');
+  for (const name of ['Discuss assurance', 'Take the code', 'Explore Pretable', 'Explore b4.run']) {
+    const button = page.getByRole('link', { name, exact: true });
+    await expect(button).toHaveAttribute('data-ui', 'button');
+    await page.mouse.move(0, 0);
+    const restingColor = await button.evaluate(el => getComputedStyle(el).backgroundColor);
+    await button.hover();
+    await expect.poll(() => button.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(restingColor);
+  }
+  const support = page.getByRole('row', { name: /Private support channel/ });
+  await expect(support.getByRole('img', { name: 'Not included', exact: true })).toHaveCount(1);
+  await expect(support.getByRole('img', { name: 'Included', exact: true })).toHaveCount(2);
+});
+
 test('pricing plan buttons lead to the enterprise contact intent', async ({ page }) => {
   await page.goto('/pricing');
-  await expect(page.getByRole('link', { name: 'Talk to Sales' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
+  await expect(page.getByRole('link', { name: 'Build with us' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_tier_enterprise');
   await expect(page.getByRole('link', { name: 'Request a conversation' })).toHaveAttribute('href', '/contact?intent=enterprise&entry=pricing_enterprise_band');
   await expect(page.locator('#lead-form')).toHaveCount(0);
 });
@@ -244,21 +256,17 @@ test('whitepaper signup form posts to /api/whitepaper-signup and renders success
 });
 
 test('docs page renders sidebar and content', async ({ page }) => {
-  await page.goto('/docs/langgraph/getting-started/introduction');
+  await page.goto('/docs/angular/langgraph/getting-started/introduction');
   await expect(page.locator('aside').first()).toBeVisible();
   await expect(page.locator('article')).toBeVisible();
 });
 
-test('docs landing page shows library cards', async ({ page }) => {
+test('docs landing page shows framework, backend, and surface cards', async ({ page }) => {
   await page.goto('/docs');
-  // Assert on card titles, not page text. A bare getByText('Render') passed on
-  // a substring of "json-render"; hasText on the card would match the Chat
-  // card too, whose blurb mentions json-render. Only the title is the card.
+  // Match the card titles exactly, rather than text inside their blurbs.
   const titles = page.locator('.docs-index-card-title');
-  await expect(titles.filter({ hasText: /^LangGraph$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^json-render$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^AG-UI$/ })).toBeVisible();
-  await expect(titles.filter({ hasText: /^Chat$/ })).toBeVisible();
+  await expect(titles).toHaveText(['Angular', 'React', 'LangGraph', 'AG-UI', 'A2UI', 'json-render']);
+  for (const title of await titles.all()) await expect(title).toBeVisible();
 });
 
 test('docs landing page carries the control plane', async ({ page }) => {
@@ -280,7 +288,9 @@ test('footer has pricing link', async ({ page }) => {
 test('mobile viewport renders nav', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
-  await expect(page.locator('nav')).toBeVisible();
+  const navigation = page.locator('nav[data-site-navigation]');
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole('button', { name: 'Open menu', exact: true })).toBeVisible();
 });
 
 for (const viewport of [
@@ -300,6 +310,20 @@ for (const viewport of [
     );
     await expectNoHorizontalOverflow(page, `Docs at ${viewport.width}px`);
 
+    const modes = page.getByRole('navigation', { name: 'Documentation modes', exact: true });
+    await expect(modes).toBeVisible();
+    await expect(modes.getByRole('button')).toHaveCount(4);
+    for (const mode of ['Docs', 'Run', 'Code', 'API']) {
+      const button = modes.locator(`[data-workspace-toolbar-mode="${mode}"]`);
+      await expect(button).toBeVisible();
+      if (viewport.width < 768) {
+        const bounds = await button.boundingBox();
+        expect(bounds?.width).toBeGreaterThanOrEqual(44);
+        expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      }
+    }
+    await expect(modes.getByRole('button', { name: 'Docs', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
     const desktopControlPlane = page.locator('[data-workspace-desktop-navigation]');
     await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
     if (viewport.width >= 1024) {
@@ -307,14 +331,13 @@ for (const viewport of [
       await expect(
         desktopControlPlane.locator('[data-control-plane-pane]'),
       ).toBeVisible();
-      await expect(
-        desktopControlPlane.getByRole('button', { name: 'Docs', exact: true }),
-      ).toBeVisible();
+      await expect(desktopControlPlane.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(desktopControlPlane.locator('[data-docs-library-trigger]')).toBeVisible();
       await expect(
         desktopControlPlane.getByRole('button', { name: 'Search docs' }),
       ).toBeVisible();
     } else if (viewport.width >= 768) {
-      await expect(desktopControlPlane).toBeVisible();
+      await expect(desktopControlPlane).toBeHidden();
       await expect(
         desktopControlPlane.locator('[data-control-plane-pane]'),
       ).toBeHidden();
@@ -326,6 +349,9 @@ for (const viewport of [
       });
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(dialog.locator('[data-docs-library-trigger]')).toBeVisible();
+      await expectNoHorizontalOverflow(page, `Docs context drawer at ${viewport.width}px`);
       await page.keyboard.press('Escape');
       await expect(dialog).toHaveCount(0);
       await expect(contextTrigger).toBeFocused();
@@ -345,21 +371,23 @@ for (const viewport of [
       });
       await expect(dialog).toBeVisible();
       await expect(page.locator('[data-workspace-surface]')).toHaveAttribute('inert', '');
-      await expect(page.locator('nav.nav-bar')).toHaveAttribute('inert', '');
+      await expect(page.locator('nav[data-site-navigation]')).toHaveAttribute('inert', '');
 
       const close = dialog.getByRole('button', { name: 'Close navigation' });
       const closeBox = await close.boundingBox();
       expect(closeBox?.width).toBeGreaterThanOrEqual(44);
       expect(closeBox?.height).toBeGreaterThanOrEqual(44);
 
-      await expect(
-        dialog.getByRole('button', { name: 'Docs', exact: true }),
-      ).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(dialog.locator('[data-docs-library-trigger]')).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'Search docs' })).toBeVisible();
+      await expectNoHorizontalOverflow(page, `Docs navigation drawer at ${viewport.width}px`);
 
       await page.keyboard.press('Escape');
       await expect(dialog).toHaveCount(0);
       await expect(navigationTrigger).toBeFocused();
+      await expect(page.locator('[data-workspace-surface]')).not.toHaveAttribute('inert', '');
+      await expect(page.locator('nav[data-site-navigation]')).not.toHaveAttribute('inert', '');
     }
   });
 }
@@ -376,9 +404,11 @@ test('docs forced colors preserve control boundaries and keyboard focus', async 
   );
 
   const run = page
-    .locator('[data-workspace-desktop-navigation]')
+    .getByRole('navigation', { name: 'Documentation modes', exact: true })
     .getByRole('button', { name: 'Run', exact: true });
+  await expect(run).toBeVisible();
   await run.focus();
+  await expect(run).toBeFocused();
   const styles = await run.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -481,16 +511,16 @@ test('sitemap.xml includes configured docs pages', async ({ request }) => {
 
   const body = await response.text();
   expect(body).toContain('https://threadplane.ai/docs');
-  expect(body).toContain('https://threadplane.ai/docs/langgraph/getting-started/introduction');
-  expect(body).toContain('https://threadplane.ai/docs/chat/a2ui/overview');
+  expect(body).toContain('https://threadplane.ai/docs/angular/langgraph/getting-started/introduction');
+  expect(body).toContain('https://threadplane.ai/docs/angular/chat/a2ui/overview');
 });
 
 test('docs pages render canonical and social metadata', async ({ page }) => {
-  await page.goto('/docs/langgraph/guides/streaming');
+  await page.goto('/docs/angular/langgraph/guides/streaming');
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    'https://threadplane.ai/docs/langgraph/guides/streaming',
+    'https://threadplane.ai/docs/angular/langgraph/guides/streaming',
   );
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     'content',
@@ -498,7 +528,7 @@ test('docs pages render canonical and social metadata', async ({ page }) => {
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     'content',
-    'https://threadplane.ai/docs/langgraph/guides/streaming',
+    'https://threadplane.ai/docs/angular/langgraph/guides/streaming',
   );
   await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
     'content',
@@ -519,10 +549,10 @@ test('marketing pages render canonical and page-specific social URLs', async ({ 
 test.describe('representative docs pages do not create page-level horizontal overflow', () => {
   const routes = [
     '/docs',
-    '/docs/langgraph/getting-started/introduction',
+    '/docs/angular/langgraph/getting-started/introduction',
     '/docs/api/langgraph/injectAgent',
-    '/docs/chat/components/chat-tool-calls',
-    '/docs/chat/a2ui/overview',
+    '/docs/angular/chat/components/chat-tool-calls',
+    '/docs/angular/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',
   ];
   const widths = [320, 375, 768, 1280];

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { Container } from '../../components/ui/Container';
 import { Section } from '../../components/ui/Section';
-import { Eyebrow } from '../../components/ui/Eyebrow';
 import { createPageMetadata } from '../../lib/site-metadata';
 
 const CONTACT_EMAIL = 'brian@threadplane.ai';
@@ -25,12 +24,13 @@ export const metadata = createPageMetadata({
  */
 export default function PrivacyPage() {
   return (
-    <Section surface="canvas" ariaLabelledBy="privacy-heading">
+    <Section
+      surface="white"
+      className="privacy-page"
+      ariaLabelledBy="privacy-heading"
+    >
       <Container>
         <div className="privacy-inner">
-          <Eyebrow tone="accent" className="privacy-eyebrow">
-            Legal
-          </Eyebrow>
           <h1 id="privacy-heading" className="privacy-h1">
             Privacy
           </h1>

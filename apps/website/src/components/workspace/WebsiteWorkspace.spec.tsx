@@ -75,14 +75,14 @@ const emptyContent: ContentBundle = {
 
 const docsOnlyResolution: WorkspaceResolution = {
   kind: 'docs-only',
-  docsPath: '/docs/langgraph/guides/testing',
+  docsPath: '/docs/angular/langgraph/guides/testing',
   title: 'Testing',
   unavailableReason: 'no-workspace-capability',
 };
 
 const docsOnlyPresentation: WorkspacePresentation = {
   kind: 'docs-only',
-  docsPath: '/docs/langgraph/guides/testing',
+  docsPath: '/docs/angular/langgraph/guides/testing',
   title: 'Testing',
   runnable: false,
 };
@@ -91,7 +91,7 @@ const mappedResolution = (
   id: string,
   topic: string,
   availableModes: ('Docs' | 'Run' | 'Code' | 'API')[],
-  docsPath = `/docs/langgraph/guides/${topic}`
+  docsPath = `/docs/angular/langgraph/guides/${topic}`
 ): WorkspaceResolution => ({
   kind: 'mapped',
   identity: {
@@ -133,7 +133,7 @@ const renderWorkspace = (
         presentation={docsOnlyPresentation}
         contentBundle={emptyContent}
         navigationTree={[]}
-        routePath="/docs/langgraph/guides/testing"
+        routePath="/docs/angular/langgraph/guides/testing"
         docsSlot={<article>Server-rendered docs article</article>}
         {...overrides}
       />
@@ -144,65 +144,129 @@ const activeWorkspaceMode = (): string | undefined =>
   document.querySelector<HTMLElement>('[data-workspace-shell]')?.dataset
     .workspaceMode;
 
+const chooseReactFramework = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Framework' }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'React' }));
+};
+
 describe('WebsiteWorkspace', () => {
-  it.each(['Docs', 'Code', 'Run', 'API'] as const)(
-    'commits same-page %s through browser history',
-    async (mode) => {
-      const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code', 'API']);
-      const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code', 'API']);
-      window.history.replaceState({}, '', `/docs/langgraph/guides/streaming?frontend=react${mode === 'Docs' ? '&mode=code' : ''}#ownership`);
-      renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming',
-        frontendVariants: { react: { resolution: reactResolution, presentation: mappedPresentation(reactResolution), contentBundle: emptyContent } },
-        reactDocsSlot: <article>React ownership</article> });
-      await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution));
-      const historyLength = window.history.length;
+  const frameworkRoute = (framework: 'angular' | 'react') => {
+    const path = `/docs/${framework}/langgraph/guides/streaming`;
+    const resolution = mappedResolution(`streaming:${framework}`, 'streaming', ['Docs', 'Run', 'Code'], path);
+    return <RuntimeTargetProvider><WebsiteWorkspace
+      resolution={resolution} presentation={mappedPresentation(resolution)}
+      contentBundle={emptyContent} navigationTree={[]} routePath={path} framework={framework}
+      docsSlot={<article><h1>{framework} streaming</h1></article>}
+      docsContext={{ activeLibrary: 'langgraph', activeSection: 'guides', activeSlug: 'streaming', scope: framework,
+        documentId: 'langgraph/guides/streaming', frameworkTargets: {
+          angular: { href: '/docs/angular/langgraph/guides/streaming', modes: ['Docs', 'Run', 'Code'], anchors: ['ownership'] },
+          react: { href: '/docs/react/langgraph/guides/streaming', modes: ['Docs', 'Run', 'Code'], anchors: ['ownership'] },
+        } }}
+    /></RuntimeTargetProvider>;
+  };
 
-      act(() => mocks.latestProviderProps?.pushMode(mode));
+  it.each(['Docs', 'Code'] as const)('retains intended %s when a cached framework route restores an old Run query', async mode => {
+    const query = mode === 'Docs' ? '' : '?mode=code';
+    window.history.replaceState({}, '', `/docs/angular/langgraph/guides/streaming${query}#ownership`);
+    const view = render(frameworkRoute('angular'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
+    chooseReactFramework();
+    expect(mocks.push).toHaveBeenCalledWith(`/docs/react/langgraph/guides/streaming${query}#ownership`);
 
-      const destination = new URL(window.location.href);
-      expect(destination.pathname).toBe('/docs/langgraph/guides/streaming');
-      expect(destination.searchParams.get('mode')).toBe(mode === 'Docs' ? null : mode.toLowerCase());
-      expect(destination.searchParams.get('frontend')).toBe('react');
-      expect(destination.hash).toBe('#ownership');
-      expect(window.history.length).toBe(historyLength + 1);
-      expect(mocks.push).not.toHaveBeenCalled();
-      await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
-    }
-  );
+    // Production's static route cache can restore the query from its first visit.
+    window.history.pushState({}, '', '/docs/react/langgraph/guides/streaming?mode=run#stale');
+    const historyLength = window.history.length;
+    view.rerender(frameworkRoute('react'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe(mode));
+    expect(window.location.search).toBe(query);
+    expect(window.location.hash).toBe('#ownership');
+    expect(window.history.length).toBe(historyLength);
+    if (mode === 'Docs') expect(screen.getByRole('heading', { name: 'react streaming' })).toBeTruthy();
+
+    // Consuming the intent leaves later browser history authoritative.
+    act(() => {
+      window.history.replaceState({}, '', '/docs/react/langgraph/guides/streaming?mode=run');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
+  });
+
+  it('does not apply a superseded framework intent after browser history navigation', async () => {
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming');
+    const view = render(frameworkRoute('angular'));
+    chooseReactFramework();
+    act(() => {
+      window.history.replaceState({}, '', '/docs/react/langgraph/guides/streaming?mode=code');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    view.rerender(frameworkRoute('react'));
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
+    expect(window.location.search).toBe('?mode=code');
+  });
+
+  it.each(['Docs', 'Code', 'Run', 'API'] as const)('keeps %s mode changes on the server-selected React route', async mode => {
+    const path = '/docs/react/langgraph/guides/streaming';
+    const resolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code', 'API'], path);
+    window.history.replaceState({}, '', `${path}?mode=code#ownership`);
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: path,
+      framework: 'react', docsSlot: <article>React ownership</article> });
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
+    act(() => mocks.latestProviderProps?.pushMode(mode));
+    expect(window.location.pathname).toBe(path);
+    expect(window.location.search).toBe(mode === 'Docs' ? '' : `?mode=${mode.toLowerCase()}`);
+    expect(window.location.hash).toBe('#ownership');
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Example UI')).toBeNull();
+  });
+
+  it('offers framework switching from Code while preserving a supported mode', async () => {
+    const path = '/docs/angular/langgraph/guides/streaming';
+    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Code']);
+    window.history.replaceState({}, '', `${path}?mode=code`);
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: path,
+      docsContext: { activeLibrary: 'langgraph', activeSection: 'guides', activeSlug: 'streaming', scope: 'angular',
+        documentId: 'langgraph/guides/streaming', frameworkTargets: {
+          angular: { href: path, modes: ['Docs', 'Code'], anchors: [] },
+          react: { href: '/docs/react/langgraph/guides/streaming', modes: ['Docs', 'Code'], anchors: [] },
+        } } });
+    await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
+    chooseReactFramework();
+    expect(mocks.push).toHaveBeenCalledWith('/docs/react/langgraph/guides/streaming?mode=code');
+  });
 
   it('retains router navigation when the canonical mode path differs', () => {
     const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
-    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming' });
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/angular/langgraph/guides/streaming' });
     const historyLength = window.history.length;
 
     act(() => mocks.latestProviderProps?.pushMode('Run'));
 
-    expect(mocks.push).toHaveBeenCalledWith('/docs/langgraph/guides/streaming?mode=run');
-    expect(window.location.pathname).toBe('/docs/langgraph/guides/testing');
+    expect(mocks.push).toHaveBeenCalledWith('/docs/angular/langgraph/guides/streaming?mode=run');
+    expect(window.location.pathname).toBe('/docs/angular/langgraph/guides/testing');
     expect(window.history.length).toBe(historyLength);
   });
 
   it('retains router navigation until a controlled mode is updated', async () => {
     const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?mode=code');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming?mode=code');
     const view = renderWorkspace({ resolution, presentation: mappedPresentation(resolution),
-      routePath: '/docs/langgraph/guides/streaming', requestedMode: 'code' });
+      routePath: '/docs/angular/langgraph/guides/streaming', requestedMode: 'code' });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
     const historyLength = window.history.length;
 
     act(() => mocks.latestProviderProps?.pushMode('Run'));
 
-    expect(mocks.push).toHaveBeenCalledWith('/docs/langgraph/guides/streaming?mode=run');
+    expect(mocks.push).toHaveBeenCalledWith('/docs/angular/langgraph/guides/streaming?mode=run');
     expect(window.location.search).toBe('?mode=code');
     expect(window.history.length).toBe(historyLength);
     expect(activeWorkspaceMode()).toBe('Code');
 
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?mode=run');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming?mode=run');
     view.rerender(
       <RuntimeTargetProvider>
         <WebsiteWorkspace resolution={resolution} presentation={mappedPresentation(resolution)}
           contentBundle={emptyContent} navigationTree={[]}
-          routePath="/docs/langgraph/guides/streaming" requestedMode="run"
+          routePath="/docs/angular/langgraph/guides/streaming" requestedMode="run"
           docsSlot={<article>Updated docs article</article>} />
       </RuntimeTargetProvider>
     );
@@ -220,51 +284,20 @@ describe('WebsiteWorkspace', () => {
     await waitFor(() => expect(screen.getByText('Generated useAgent reference')).toBeTruthy());
     expect(screen.queryByText(/React preview is not available/)).toBeNull();
   });
-  it('selects the React identity and runtime together from a public URL', async () => {
-    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
-    const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?mode=code&frontend=react#ownership');
-    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming',
-      frontendVariants: { react: { resolution: reactResolution, presentation: mappedPresentation(reactResolution), contentBundle: { ...emptyContent, runtimeUrl: 'https://examples.threadplane.ai/langgraph/streaming/react' } } },
-      reactDocsSlot: <article>React ownership</article> });
-    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution));
-    expect(mocks.latestProviderProps?.contentBundle.runtimeUrl).toContain('/streaming/react');
-    act(() => mocks.latestProviderProps?.pushMode?.('Run'));
-    expect(window.location.pathname + window.location.search + window.location.hash).toBe('/docs/langgraph/guides/streaming?mode=run&frontend=react#ownership');
-    expect(mocks.push).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText('Example UI'), { target: { value: 'angular' } });
+  it('ignores obsolete frontend query state and preserves server-selected article', async () => {
+    const path = '/docs/angular/langgraph/guides/streaming';
+    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Code']);
+    window.history.replaceState({}, '', `${path}?frontend=react`);
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: path,
+      framework: 'angular', docsSlot: <article>Angular article</article> });
     await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(resolution));
+    expect(screen.getByText('Angular article')).toBeTruthy();
   });
 
-  it('commits a frontend switch and its current mode without waiting for a route response', async () => {
-    const resolution = mappedResolution('streaming', 'streaming', ['Docs', 'Run', 'Code']);
-    const reactResolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code']);
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming?frontend=react#ownership');
-    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/streaming',
-      frontendVariants: { react: { resolution: reactResolution, presentation: mappedPresentation(reactResolution), contentBundle: emptyContent } },
-      reactDocsSlot: <article>React ownership</article> });
-    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution));
-    act(() => mocks.latestProviderProps?.pushMode('Run'));
-    fireEvent.change(screen.getByLabelText('Example UI'), { target: { value: 'angular' } });
-    expect(window.location.search).not.toContain('frontend=react');
-    expect(window.location.search).toContain('mode=run');
-    expect(window.location.hash).toBe('#ownership');
-    await waitFor(() => expect(mocks.latestProviderProps?.resolution).toEqual(resolution));
-  });
-
-  it('does not expose Angular code or runtime for an unsupported React URL', async () => {
-    const resolution = mappedResolution('persistence', 'persistence', ['Docs', 'Run', 'Code']);
-    window.history.replaceState({}, '', '/docs/langgraph/guides/persistence?frontend=react&mode=run');
-    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: '/docs/langgraph/guides/persistence' });
-    await waitFor(() => expect(screen.getByText(/React preview is not available for this topic/)).toBeTruthy());
-    expect(mocks.latestProviderProps?.presentation.kind).toBe('docs-only');
-    expect(mocks.latestProviderProps?.contentBundle.runtimeUrl).toBeNull();
-    expect(mocks.latestProviderProps?.contentBundle.codeFiles).toEqual({});
-  });
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
-    window.history.replaceState({}, '', '/docs/langgraph/guides/testing');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/testing');
     mocks.latestProviderProps = null;
     mocks.latestShellProps = null;
     mocks.push.mockClear();
@@ -280,7 +313,7 @@ describe('WebsiteWorkspace', () => {
       resolution: docsOnlyResolution,
       presentation: docsOnlyPresentation,
       contentBundle: emptyContent,
-      routePath: '/docs/langgraph/guides/testing',
+      routePath: '/docs/angular/langgraph/guides/testing',
       requestedMode: null,
     });
     expect(mocks.latestShellProps).toMatchObject({
@@ -347,7 +380,7 @@ describe('WebsiteWorkspace', () => {
     ],
     ['unmapped', docsOnlyResolution],
   ] as const)(
-    'renders Website Learn and Search context for %s Docs routes',
+    'renders compact Website navigation and Search for %s Angular Docs routes',
     (_kind, resolution) => {
       renderWorkspace({
         resolution,
@@ -362,7 +395,8 @@ describe('WebsiteWorkspace', () => {
         },
       });
 
-      expect(screen.getByText('Learn')).toBeTruthy();
+      expect(screen.queryByText('Learn')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Guides' })).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Search docs' })).toBeTruthy();
     }
   );
@@ -397,7 +431,7 @@ describe('WebsiteWorkspace', () => {
     );
 
     const view = render(
-      route(source, '/docs/langgraph/guides/streaming', 'Streaming article')
+      route(source, '/docs/angular/langgraph/guides/streaming', 'Streaming article')
     );
     const shell = await waitFor(() => {
       const candidate = document.querySelector<HTMLElement>(
@@ -408,11 +442,11 @@ describe('WebsiteWorkspace', () => {
     });
     shell.dataset.shellLifetime = 'original';
 
-    window.history.replaceState({}, '', '/docs/langgraph/guides/persistence');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/persistence');
     view.rerender(
       route(
         destination,
-        '/docs/langgraph/guides/persistence',
+        '/docs/angular/langgraph/guides/persistence',
         'Persistence article'
       )
     );
@@ -421,7 +455,7 @@ describe('WebsiteWorkspace', () => {
     expect(document.querySelector('[data-workspace-shell]')).toBe(shell);
     expect(shell.dataset.shellLifetime).toBe('original');
     expect(mocks.latestProviderProps?.routePath).toBe(
-      '/docs/langgraph/guides/persistence'
+      '/docs/angular/langgraph/guides/persistence'
     );
   });
 
@@ -475,7 +509,7 @@ describe('WebsiteWorkspace', () => {
       </WebsiteWorkspaceRoot>
     );
 
-    const view = render(route(source, '/docs/langgraph/guides/streaming'));
+    const view = render(route(source, '/docs/angular/langgraph/guides/streaming'));
     fireEvent.click(
       screen.getByRole('button', { name: 'Apply Website target' })
     );
@@ -483,8 +517,8 @@ describe('WebsiteWorkspace', () => {
       'langsmith'
     );
 
-    window.history.replaceState({}, '', '/docs/langgraph/guides/persistence');
-    view.rerender(route(destination, '/docs/langgraph/guides/persistence'));
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/persistence');
+    view.rerender(route(destination, '/docs/angular/langgraph/guides/persistence'));
 
     await screen.findByText('persistence');
     expect(screen.getByTestId('website-target-kind').textContent).toBe(
@@ -496,7 +530,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/testing?mode=run&keep=1'
+      '/docs/angular/langgraph/guides/testing?mode=run&keep=1'
     );
     const historyLength = window.history.length;
     renderWorkspace();
@@ -504,7 +538,7 @@ describe('WebsiteWorkspace', () => {
     await waitFor(() => {
       expect(activeWorkspaceMode()).toBe('Docs');
       expect(window.location.pathname + window.location.search).toBe(
-        '/docs/langgraph/guides/testing'
+        '/docs/angular/langgraph/guides/testing'
       );
     });
     expect(window.history.length).toBe(historyLength);
@@ -520,68 +554,41 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=code&mode=run&keep=1'
+      '/docs/angular/langgraph/guides/streaming?mode=code&mode=run&keep=1'
     );
     renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
 
     await waitFor(() => {
       expect(activeWorkspaceMode()).toBe('Docs');
       expect(window.location.pathname + window.location.search).toBe(
-        '/docs/langgraph/guides/streaming'
+        '/docs/angular/langgraph/guides/streaming'
       );
     });
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
-  it('normalizes React mode queries without dropping the frontend or fragment', async () => {
-    const resolution = mappedResolution('streaming', 'streaming', [
-      'Docs', 'Run', 'Code',
-    ]);
-    const reactResolution = mappedResolution('streaming:react', 'streaming', [
-      'Docs', 'Run', 'Code',
-    ]);
-    window.history.replaceState(
-      {}, '',
-      '/docs/langgraph/guides/streaming?mode=invalid&frontend=react#ownership'
-    );
-    const historyLength = window.history.length;
-    renderWorkspace({
-      resolution,
-      presentation: mappedPresentation(resolution),
-      routePath: '/docs/langgraph/guides/streaming',
-      frontendVariants: {
-        react: {
-          resolution: reactResolution,
-          presentation: mappedPresentation(reactResolution),
-          contentBundle: emptyContent,
-        },
-      },
-      reactDocsSlot: <article>React ownership</article>,
-    });
-    await waitFor(() => {
-      expect(
-        window.location.pathname + window.location.search + window.location.hash
-      ).toBe('/docs/langgraph/guides/streaming?frontend=react#ownership');
-      expect(mocks.latestProviderProps?.resolution).toEqual(reactResolution);
-      expect(activeWorkspaceMode()).toBe('Docs');
-    });
-    expect(window.history.length).toBe(historyLength);
+  it('normalizes invalid mode without changing the React path or fragment', async () => {
+    const path = '/docs/react/langgraph/guides/streaming';
+    const resolution = mappedResolution('streaming:react', 'streaming', ['Docs', 'Run', 'Code'], path);
+    window.history.replaceState({}, '', `${path}?mode=invalid#ownership`);
+    renderWorkspace({ resolution, presentation: mappedPresentation(resolution), routePath: path, framework: 'react' });
+    await waitFor(() => expect(window.location.pathname + window.location.search + window.location.hash).toBe(`${path}#ownership`));
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
   it('keeps router replacement when canonical Docs belongs to a different path', () => {
     window.history.replaceState(
-      {}, '', '/docs/langgraph/guides/streaming?mode=invalid'
+      {}, '', '/docs/angular/langgraph/guides/streaming?mode=invalid'
     );
     renderWorkspace();
     act(() => mocks.latestProviderProps?.replaceMode('Docs'));
-    expect(mocks.replace).toHaveBeenCalledWith('/docs/langgraph/guides/testing');
+    expect(mocks.replace).toHaveBeenCalledWith('/docs/angular/langgraph/guides/testing');
     expect(window.location.pathname + window.location.search).toBe(
-      '/docs/langgraph/guides/streaming?mode=invalid'
+      '/docs/angular/langgraph/guides/streaming?mode=invalid'
     );
   });
 
@@ -589,19 +596,19 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/testing?keep=1'
+      '/docs/angular/langgraph/guides/testing?keep=1'
     );
     const resolution = mappedResolution('testing', 'testing', ['Docs', 'Run']);
     renderWorkspace({ resolution, presentation: mappedPresentation(resolution) });
 
     act(() => mocks.latestProviderProps?.pushMode('Run'));
     expect(window.location.pathname + window.location.search).toBe(
-      '/docs/langgraph/guides/testing?mode=run'
+      '/docs/angular/langgraph/guides/testing?mode=run'
     );
 
     act(() => mocks.latestProviderProps?.pushMode('Docs'));
     expect(window.location.pathname + window.location.search).toBe(
-      '/docs/langgraph/guides/testing'
+      '/docs/angular/langgraph/guides/testing'
     );
     expect(mocks.push).not.toHaveBeenCalled();
     expect(window.location.href).not.toMatch(
@@ -614,17 +621,17 @@ describe('WebsiteWorkspace', () => {
       'langgraph:core-capabilities:durable-execution:overview:python',
       'durable-execution',
       ['Docs', 'Run', 'Code', 'API'],
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution?mode=run&keep=1'
+      '/docs/angular/langgraph/guides/durable-execution?mode=run&keep=1'
     );
     renderWorkspace({
       resolution,
       presentation: mappedPresentation(resolution),
-      routePath: '/docs/langgraph/guides/durable-execution',
+      routePath: '/docs/angular/langgraph/guides/durable-execution',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
 
@@ -632,7 +639,7 @@ describe('WebsiteWorkspace', () => {
 
     await waitFor(() => {
       expect(window.location.pathname + window.location.search).toBe(
-        '/docs/langgraph/guides/durable-execution'
+        '/docs/angular/langgraph/guides/durable-execution'
       );
       expect(mocks.push).not.toHaveBeenCalled();
       expect(mocks.latestProviderProps?.requestedMode).toBe(null);
@@ -648,9 +655,9 @@ describe('WebsiteWorkspace', () => {
     expect(
       resolveHref({
         id: 'langgraph:core-capabilities:durable-execution:overview:python',
-        docsPath: '/docs/langgraph/guides/durable-execution',
+        docsPath: '/docs/angular/langgraph/guides/durable-execution',
       } as never)
-    ).toBe('/docs/langgraph/guides/durable-execution');
+    ).toBe('/docs/angular/langgraph/guides/durable-execution');
   });
 
   it('records cross-route focus intent before navigating', () => {
@@ -658,19 +665,19 @@ describe('WebsiteWorkspace', () => {
 
     act(() =>
       mocks.latestProviderProps?.pushIdentity(
-        '/docs/langgraph/guides/streaming',
+        '/docs/angular/langgraph/guides/streaming',
         { restoreFocus: 'workspace-panel' }
       )
     );
 
-    expect(mocks.push).toHaveBeenCalledWith('/docs/langgraph/guides/streaming');
+    expect(mocks.push).toHaveBeenCalledWith('/docs/angular/langgraph/guides/streaming');
     expect(
       [...Array(window.sessionStorage.length)]
         .map((_, index) =>
           window.sessionStorage.getItem(window.sessionStorage.key(index) ?? '')
         )
         .join(' ')
-    ).toContain('/docs/langgraph/guides/streaming');
+    ).toContain('/docs/angular/langgraph/guides/streaming');
   });
 
   it('adapts shared workspace analytics to the Website event surface', () => {
@@ -726,12 +733,12 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     const view = renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
     mocks.replace.mockClear();
@@ -739,7 +746,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/code-only?mode=code'
+      '/docs/angular/langgraph/guides/code-only?mode=code'
     );
     view.rerender(
       <RuntimeTargetProvider>
@@ -748,7 +755,7 @@ describe('WebsiteWorkspace', () => {
           presentation={mappedPresentation(destination)}
           contentBundle={emptyContent}
           navigationTree={[]}
-          routePath="/docs/langgraph/guides/code-only"
+          routePath="/docs/angular/langgraph/guides/code-only"
           docsSlot={<article>Destination docs article</article>}
         />
       </RuntimeTargetProvider>
@@ -768,17 +775,17 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     const view = renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
     mocks.replace.mockClear();
 
-    window.history.replaceState({}, '', '/docs/langgraph/guides/testing');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/testing');
     view.rerender(
       <RuntimeTargetProvider>
         <WebsiteWorkspace
@@ -786,7 +793,7 @@ describe('WebsiteWorkspace', () => {
           presentation={docsOnlyPresentation}
           contentBundle={emptyContent}
           navigationTree={[]}
-          routePath="/docs/langgraph/guides/testing"
+          routePath="/docs/angular/langgraph/guides/testing"
           docsSlot={<article>Testing docs article</article>}
         />
       </RuntimeTargetProvider>
@@ -806,12 +813,12 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     const view = renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
 
@@ -821,7 +828,7 @@ describe('WebsiteWorkspace', () => {
 
     await waitFor(() => {
       expect(window.location.pathname + window.location.search).toBe(
-        '/docs/langgraph/guides/streaming?mode=code'
+        '/docs/angular/langgraph/guides/streaming?mode=code'
       );
       expect(mocks.push).not.toHaveBeenCalled();
       expect(activeWorkspaceMode()).toBe('Code');
@@ -835,7 +842,7 @@ describe('WebsiteWorkspace', () => {
           presentation={mappedPresentation(source)}
           contentBundle={emptyContent}
           navigationTree={[]}
-          routePath="/docs/langgraph/guides/streaming"
+          routePath="/docs/angular/langgraph/guides/streaming"
           docsSlot={<article>Updated docs article</article>}
         />
       </RuntimeTargetProvider>
@@ -852,19 +859,19 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Run'));
 
     window.history.pushState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=code'
+      '/docs/angular/langgraph/guides/streaming?mode=code'
     );
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
 
@@ -879,24 +886,24 @@ describe('WebsiteWorkspace', () => {
       'langgraph:core-capabilities:durable-execution:overview:python',
       'durable-execution',
       ['Docs', 'Run', 'Code', 'API'],
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/durable-execution',
+      routePath: '/docs/angular/langgraph/guides/durable-execution',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Docs'));
 
     window.history.pushState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution?mode=code'
+      '/docs/angular/langgraph/guides/durable-execution?mode=code'
     );
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
@@ -904,7 +911,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Docs'));
@@ -912,7 +919,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution?mode=code'
+      '/docs/angular/langgraph/guides/durable-execution?mode=code'
     );
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
@@ -923,17 +930,17 @@ describe('WebsiteWorkspace', () => {
       'langgraph:core-capabilities:durable-execution:overview:python',
       'durable-execution',
       ['Docs', 'Run', 'Code', 'API'],
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution?mode=code'
+      '/docs/angular/langgraph/guides/durable-execution?mode=code'
     );
     renderWorkspace({
       resolution: source,
       presentation: mappedPresentation(source),
-      routePath: '/docs/langgraph/guides/durable-execution',
+      routePath: '/docs/angular/langgraph/guides/durable-execution',
     });
     await waitFor(() => expect(activeWorkspaceMode()).toBe('Code'));
     mocks.replace.mockClear();
@@ -941,7 +948,7 @@ describe('WebsiteWorkspace', () => {
     window.history.pushState(
       {},
       '',
-      '/docs/langgraph/guides/durable-execution?mode=api&mode=docs&keep=1'
+      '/docs/angular/langgraph/guides/durable-execution?mode=api&mode=docs&keep=1'
     );
     const replaceHistory = vi.spyOn(window.history, 'replaceState');
     act(() => window.dispatchEvent(new PopStateEvent('popstate')));
@@ -955,7 +962,7 @@ describe('WebsiteWorkspace', () => {
       window.location.origin
     );
     expect(replacement.pathname).toBe(
-      '/docs/langgraph/guides/durable-execution'
+      '/docs/angular/langgraph/guides/durable-execution'
     );
     expect(replacement.searchParams.getAll('mode')).toEqual([]);
     expect(replacement.searchParams.has('keep')).toBe(false);
@@ -972,7 +979,7 @@ describe('WebsiteWorkspace', () => {
     window.history.replaceState(
       {},
       '',
-      '/docs/langgraph/guides/streaming?mode=run'
+      '/docs/angular/langgraph/guides/streaming?mode=run'
     );
     renderWorkspace({
       resolution: source,
@@ -981,7 +988,7 @@ describe('WebsiteWorkspace', () => {
         ...emptyContent,
         runtimeUrl: 'https://runtime.example.test/demo',
       },
-      routePath: '/docs/langgraph/guides/streaming',
+      routePath: '/docs/angular/langgraph/guides/streaming',
     });
 
     const frame = await waitFor(() => {

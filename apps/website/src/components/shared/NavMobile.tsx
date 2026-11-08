@@ -90,6 +90,7 @@ function CloseIcon() {
 }
 
 export interface NavMobileProps {
+  readonly starCount?: string | null;
   readonly isDocsPage: boolean;
   readonly docsLibrary: LibraryId | null;
   readonly activeSection: string;
@@ -99,6 +100,7 @@ export interface NavMobileProps {
 }
 
 export function NavMobile({
+  starCount = null,
   isDocsPage,
   docsLibrary,
   activeSection,
@@ -217,7 +219,7 @@ export function NavMobile({
     const focusable = () =>
       Array.from(
         dialog?.querySelectorAll<HTMLElement>(
-          'a[href], button:not(:disabled), [tabindex]:not([tabindex="-1"])'
+          'a[href]:not([tabindex="-1"]), button:not(:disabled):not([tabindex="-1"]), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
         ) ?? []
       );
     // A pop returns to the trigger row it came from — an explicit ref, never
@@ -255,16 +257,15 @@ export function NavMobile({
       }
       if (event.key !== 'Tab') return;
       const items = focusable();
-      const first = items[0];
-      const last = items.at(-1);
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (!items.length) return;
+      // Safari's platform tab policy may skip links, including the last item.
+      // Advance explicitly so focus cannot escape before reaching that edge.
+      const current = items.indexOf(document.activeElement as HTMLElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? items.length - 1 : current - 1)
+        : (current + 1) % items.length;
+      event.preventDefault();
+      items[next].focus();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
@@ -384,6 +385,7 @@ export function NavMobile({
                     className="nav-mobile-github-link"
                   >
                     <GitHubIcon /> GitHub
+                    {starCount !== null && <span className="nav-github-stars" aria-label={`${starCount} stars`}>{starCount}</span>}
                   </a>
                   <div className="nav-mobile-cta-wrap">
                     <Button

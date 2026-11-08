@@ -5,6 +5,8 @@ export default defineConfig({
   retries: 0,
   fullyParallel: false,
   timeout: 45000,
+  // The first command includes cold startup within the owned worker's 10s bound.
+  expect: { timeout: 15000 },
   outputDir: '../../../../../output/playwright/chat-debug-react',
   use: { baseURL: 'http://127.0.0.1:4645', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

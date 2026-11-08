@@ -22,6 +22,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;
   readonly label?: string;
   readonly className?: string;
+  /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
+  readonly children?: ReactNode;
 }
 
 const PIN_THRESHOLD = 32;
@@ -78,16 +80,20 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderMessage,
   label = 'Conversation',
   className,
+  children,
 }: MessageListProps<TRow>) {
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  const lastScrollTop = useRef(0);
   useEffect(() => {
     const el = container.current;
     if (!el) return;
     const onScroll = () => {
-      pinned.current =
-        el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;
+      const max = Math.max(0, el.scrollHeight - el.clientHeight);
+      if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1) pinned.current = false;
+      else if (max - el.scrollTop <= PIN_THRESHOLD) pinned.current = true;
+      lastScrollTop.current = el.scrollTop;
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
@@ -98,7 +104,10 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     if (!el || !body || typeof ResizeObserver === 'undefined') return;
     let active = true;
     const observer = new ResizeObserver(() => {
-      if (active && pinned.current) el.scrollTop = el.scrollHeight;
+      if (active && pinned.current) {
+        el.scrollTop = el.scrollHeight;
+        lastScrollTop.current = el.scrollTop;
+      }
     });
     observer.observe(body);
     observer.observe(el);
@@ -109,12 +118,16 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   }, []);
   useIsomorphicLayoutEffect(() => {
     const el = container.current;
-    if (el && pinned.current) el.scrollTop = el.scrollHeight;
-  }, [rows]);
+    if (el && pinned.current) {
+      el.scrollTop = el.scrollHeight;
+      lastScrollTop.current = el.scrollTop;
+    }
+  }, [rows, children]);
   return (
     <div
       ref={container}
       role="region"
+      tabIndex={0}
       aria-label={label}
       className={['tp-chat-list', className].filter(Boolean).join(' ')}
     >
@@ -122,6 +135,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
         {rows.map((row) => (
           <Row key={row.id} row={row} renderMessage={renderMessage} />
         ))}
+        {children}
       </div>
     </div>
   );

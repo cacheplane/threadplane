@@ -37,7 +37,7 @@ function renderSettings(adapter: RuntimeAdapter) {
 
 describe('RuntimeTargetSettings', () => {
   beforeEach(() => {
-    window.history.replaceState({}, '', '/docs/langgraph/guides/streaming');
+    window.history.replaceState({}, '', '/docs/angular/langgraph/guides/streaming');
     window.localStorage.clear();
     window.sessionStorage.clear();
   });

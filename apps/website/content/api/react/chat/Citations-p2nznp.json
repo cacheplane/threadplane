@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!Citations:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Present supplied sources; selection, metadata and owner lifetime belong to the app.",
+  "summary": "Present sources; accepted metadata and message owner lifetime belong to the app.",
   "declarations": [
     {
       "name": "Citations",
@@ -46,7 +46,7 @@
         }
       ],
       "docs": {
-        "summary": "Present supplied sources; selection, metadata and owner lifetime belong to the app.",
+        "summary": "Present sources; accepted metadata and message owner lifetime belong to the app.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -58,12 +58,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 13
+        "line": 31
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ citations, label, className, }",
+          "parameterName": "{ citations, snapshot, label, className, preview, renderCard, collapsible, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -87,6 +87,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 13
+    "line": 31
   }
 }

@@ -335,6 +335,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     '@threadplane/react/src/chat/approval-card',
     '@threadplane/react/src/chat/message-actions',
     '@threadplane/react/src/chat/citations',
+    '@threadplane/react/src/chat/citation-preview',
     '@threadplane/react/src/chat/text-transcript',
     '@threadplane/react/src/chat/suggestions',
     '@threadplane/react/src/render/render-spec',
@@ -351,6 +352,8 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
       `Installed runtime required: ${suffix}`
     );
   }
+  for (const name of ['inline-preview', 'preview-position'])
+    assert.ok(runtimeInputs.includes('node_modules/@threadplane/react/src/markdown/' + name + '.js'), 'Installed ' + name + ' runtime required');
   assert.ok(
     runtimeInputs.includes(
       'node_modules/@threadplane/react/src/markdown/inline-citation.js'

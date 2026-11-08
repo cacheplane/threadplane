@@ -29,7 +29,7 @@ const identity: WorkspaceIdentity = {
   page: 'overview',
   language: 'python',
   title: 'Streaming',
-  docsPath: '/docs/langgraph/guides/streaming',
+  docsPath: '/docs/angular/langgraph/guides/streaming',
   runtimeAdapter: 'langgraph',
   availableModes: ['Docs', 'Run', 'Code', 'API'],
 };
@@ -335,7 +335,7 @@ describe('WorkspaceProvider route mode ownership', () => {
       id: 'langgraph:core-capabilities:memory:overview:python',
       topic: 'memory',
       title: 'Memory',
-      docsPath: '/docs/langgraph/guides/memory',
+      docsPath: '/docs/angular/langgraph/guides/memory',
       availableModes: ['Docs', 'Run'],
     };
     const replaceMode = vi.fn();

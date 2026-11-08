@@ -58,6 +58,7 @@ const citationMetadata = (
     url,
     snippet: citationSnippet,
     sourceType: 'Authored',
+    publishedAt: '2024-04-15T12:00:00.000Z',
     iconUrl: 'https://images.invalid/icon',
   },
   {
@@ -70,7 +71,7 @@ const citationMetadata = (
   { id: '', index: 4, title: '', snippet: '' },
 ];
 const citationReferences =
-  '\n\nSources [^__proto__], [^blocked], [^absent], [^missing].';
+  '\n\nSources [^__proto__], [^blocked], [^absent], [^missing].\n\n[^sidecar]: Markdown sidecar [source](/sidecar) Sidecar snippet [later](/later)\n\n[^__proto__]: Hidden collision [fallback](/never-fallback) Hidden snippet\n';
 const citedValues = (text, title, url) => {
   const event = values(text + citationReferences);
   event.data.messages[0].additional_kwargs = {
@@ -312,8 +313,15 @@ async function scenario(browser, retained, name, expectations, action) {
         });
     });
     await page.route('**/*', (route) => {
-      if (new URL(route.request().url()).origin === server.url)
-        return route.continue();
+      const requested = new URL(route.request().url());
+      if (
+        ['sources.invalid', 'images.invalid'].includes(requested.hostname) ||
+        ['/sidecar', '/later', '/never-fallback'].includes(requested.pathname)
+      ) {
+        errors.push(`Unexpected source request: ${route.request().url()}`);
+        return route.abort();
+      }
+      if (requested.origin === server.url) return route.continue();
       errors.push(`Unexpected external request: ${route.request().url()}`);
       return route.abort();
     });
@@ -779,18 +787,94 @@ export async function runProductionProofs(browser, retained) {
             name: 'Sources',
             exact: true,
           });
-          await expect(sources.getByRole('listitem')).toHaveCount(4);
-          const inline = page.getByRole('link', {
-            name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+          const disclosure = sources.getByRole('button', {
+            name: 'Sources (5)',
             exact: true,
           });
-          await expect(inline).toHaveAttribute(
+          await expect(disclosure).toHaveAccessibleName('Sources (5)');
+          const headerMarkers = disclosure.locator('.tp-citations__marker');
+          const headerChevron = disclosure.locator('.tp-citations__chevron');
+          await expect(headerMarkers).toHaveCount(3);
+          await expect(headerMarkers.nth(0)).toHaveText('?');
+          await expect(headerMarkers.nth(1)).toHaveClass(/--generic/);
+          await expect(headerMarkers.nth(2)).toHaveClass(/--generic/);
+          await expect(
+            disclosure.locator('.tp-citations__markers')
+          ).toHaveAttribute('aria-hidden', 'true');
+          await expect(headerChevron).toHaveAttribute('aria-hidden', 'true');
+          await expect(headerChevron).toHaveAttribute('focusable', 'false');
+          await expect(disclosure.locator('img,image,a')).toHaveCount(0);
+          if ((await disclosure.getAttribute('aria-expanded')) === 'false') {
+            await expect(headerChevron).toHaveCSS('transform', 'none');
+            await disclosure.click();
+          }
+          await expect(headerChevron).toHaveCSS(
+            'transform',
+            'matrix(-1, 0, 0, -1, 0, 0)'
+          );
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+          await expect(sources.getByRole('listitem')).toHaveCount(5);
+          const publishedLabel = await page.evaluate(() =>
+            new Date('2024-04-15T12:00:00.000Z').toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+            })
+          );
+          const sourceRows = sources.getByRole('listitem');
+          await expect(sourceRows.locator('.tp-citation-card__heading')).toHaveText([
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+          ]);
+          await expect(sourceRows.getByRole('button')).toHaveText([
+            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+          ]);
+          await expect(sources.locator('.native-source-card')).toHaveCount(5);
+          const providerCard = sources.locator('.native-source-card[data-source-id="__proto__"]');
+          await expect(providerCard.locator('.tp-citations__snippet')).toHaveText(citationSnippet);
+          await expect(providerCard.locator('.native-source-card__type')).toHaveText('Source type: Authored');
+          await expect(
+            providerCard.locator('.native-source-card__host')
+          ).toHaveText('Host: sources.invalid');
+          await expect(
+            providerCard.locator('.native-source-card__published')
+          ).toHaveText(`Published: ${publishedLabel}`);
+          for (const id of ['blocked', 'absent', 'sidecar']) {
+            await expect(
+              sources.locator(
+                `[data-source-id="${id}"] .native-source-card__host`
+              )
+            ).toHaveCount(0);
+            await expect(
+              sources.locator(
+                `[data-source-id="${id}"] .native-source-card__published`
+              )
+            ).toHaveCount(0);
+          }
+          await expect(sources.locator('.native-source-card[data-source-id="sidecar"]')).toContainText('[5] Markdown sidecar');
+          await expect(sources.locator('.native-source-card[data-source-id="sidecar"] .native-source-card__type')).toHaveCount(0);
+          await sources.getByRole('button', { name: 'Preview source 5: Markdown sidecar', exact: true }).click();
+          const sidecar = page.getByRole('dialog', { name: 'Source 5', exact: true });
+          await expect(sidecar).toContainText('Sidecar snippet later');
+          await expect(sidecar.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute('href', '/sidecar');
+          await sidecar.getByRole('button', { name: 'Close', exact: true }).click();
+          await expect(sources).not.toContainText('Hidden collision');
+          const inline = page.getByRole('button', {
+            name: 'Citation 7: <b>Supplied source</b>',
+            exact: true,
+          });
+          await expect(inline).toHaveText('[7]');
+          await inline.click();
+          const inlineCard = page.getByRole('dialog', { name: 'Source 7', exact: true });
+          await expect(inlineCard.getByRole('heading')).toHaveText('<b>Supplied source</b>');
+          await expect(inlineCard.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute(
             'href',
             'https://sources.invalid/article'
           );
-          await expect(inline).toHaveAttribute('target', '_blank');
-          await expect(inline).toHaveAttribute('rel', 'noopener noreferrer');
-          await expect(inline).toHaveText('[7]');
+          await expect(inlineCard.getByRole('link')).toHaveAttribute('target', '_blank');
+          await expect(inlineCard.getByRole('link')).toHaveAttribute('rel', 'noopener noreferrer');
+          await expect(inlineCard).toContainText(citationSnippet);
+          await expect(inlineCard.locator('img,script,b')).toHaveCount(0);
+          await inlineCard.getByRole('button', { name: 'Close', exact: true }).click();
+          await expect(inlineCard).toHaveCount(0);
           await expect(
             page.getByLabel('Citation 2: Blocked source', { exact: true })
           ).toHaveText('[2]');
@@ -804,32 +888,65 @@ export async function runProductionProofs(browser, retained) {
             page.getByLabel('Unresolved citation __proto__', { exact: true })
           ).toHaveText('[^__proto__]');
           await expect(page.locator('a a')).toHaveCount(0);
-          await expect(sources.getByRole('link')).toHaveCount(1);
-          await expect(sources.getByRole('link')).toHaveAttribute(
+          const titleLinks = sources.getByRole('link');
+          await expect(titleLinks).toHaveCount(2);
+          await expect(titleLinks.nth(0)).toHaveAttribute('href', '/sidecar');
+          await expect(titleLinks.nth(1)).toHaveAttribute('href', 'https://sources.invalid/article');
+          for (const link of await titleLinks.all()) {
+            await expect(link).toHaveAttribute('target', '_blank');
+            await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+          }
+          await expect(sources.locator('[data-source-id="blocked"]').getByRole('link')).toHaveCount(0);
+          await expect(sources.getByRole('list').getByRole('button')).toHaveCount(5);
+          await expect(
+            sources.getByRole('button', {
+              name: 'Preview source 2: Blocked source',
+              exact: true,
+            })
+          ).toBeVisible();
+          await expect(sources.locator('img, script, b')).toHaveCount(0);
+          await sources
+            .getByRole('button', {
+              name: 'Preview source 7: <b>Supplied source</b>',
+              exact: true,
+            })
+            .click();
+          const preview = page.getByRole('dialog', {
+            name: 'Source 7',
+            exact: true,
+          });
+          await expect(preview.getByRole('heading')).toHaveText(
+            '<b>Supplied source</b>'
+          );
+          await expect(
+            preview.getByRole('link', { name: 'Open source', exact: true })
+          ).toHaveCount(1);
+          await expect(preview.getByRole('link')).toHaveAttribute(
             'href',
             'https://sources.invalid/article'
           );
-          await expect(sources.getByRole('link')).toHaveText(
-            '<b>Supplied source</b>'
+          await expect(preview.getByRole('link')).toHaveAttribute(
+            'target',
+            '_blank'
           );
-          await expect(sources.getByRole('link')).toHaveAttribute(
+          await expect(preview.getByRole('link')).toHaveAttribute(
             'rel',
             'noopener noreferrer'
           );
-          await expect(
-            sources.getByText('Blocked source', { exact: true })
-          ).toBeVisible();
-          await expect(sources.locator('img, script, b')).toHaveCount(0);
-          await expect(
-            sources.locator('.tp-citations__snippet').first()
-          ).toHaveText(citationSnippet);
+          await expect(preview.locator('img, script, b')).toHaveCount(0);
+          await expect(preview.locator('[data-field="snippet"]')).toHaveText(
+            citationSnippet
+          );
           assert.equal(
-            await sources
-              .locator('.tp-citations__snippet')
-              .first()
+            await preview
+              .locator('[data-field="snippet"]')
               .evaluate((el) => getComputedStyle(el).whiteSpace),
             'pre-wrap'
           );
+          await preview
+            .getByRole('button', { name: 'Close', exact: true })
+            .click();
+          await expect(preview).toHaveCount(0);
           await page.setViewportSize({ width: 375, height: 812 });
           assert.equal(
             await page.evaluate(
@@ -1136,12 +1253,20 @@ export async function runProductionProofs(browser, retained) {
         await page.goto(url + '/?thread=a');
         await ready(page, expect);
         await submit(page, '  Exact text\nSecond line.  ');
+        if (retained.framework === 'react') {
+          const disclosure = page
+            .getByRole('region', { name: 'Sources', exact: true })
+            .getByRole('button', { name: 'Sources (5)', exact: true });
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+          await disclosure.click();
+          await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+        }
         const sourceItem =
           retained.framework === 'react'
             ? await page
                 .getByRole('region', { name: 'Sources', exact: true })
                 .getByRole('listitem')
-                .first()
+                .filter({ has: page.getByRole('button', { name: 'Preview source 7: <b>Supplied source</b>', exact: true }) })
                 .elementHandle()
             : undefined;
         await expect(
@@ -1150,11 +1275,16 @@ export async function runProductionProofs(browser, retained) {
         await expect(
           page.getByRole('button', { name: 'Send', exact: true })
         ).toBeDisabled();
-        await expect(
-          page.getByRole('textbox', { name: 'Message', exact: true })
-        ).toBeDisabled();
+        const draft = page.getByRole('textbox', { name: 'Message', exact: true });
+        if (retained.framework === 'react') {
+          await expect(draft).toBeEditable();
+          await draft.fill('Keep this local while the response runs.');
+        } else {
+          await expect(draft).toBeDisabled();
+        }
         await page.keyboard.press('Control+Enter');
         await page.keyboard.press('Control+Enter');
+        assert.equal(backend.requests.length, 4);
         await page.getByRole('button', { name: 'Stop', exact: true }).click();
         await physicallyClosed(backend.steps[3]);
         await expect(
@@ -1179,20 +1309,73 @@ export async function runProductionProofs(browser, retained) {
         if (retained.framework === 'react') {
           assert.ok(sourceItem);
           assert.equal(await sourceItem.evaluate((el) => el.isConnected), true);
+          const correctedPreview = page
+            .getByRole('region', { name: 'Sources', exact: true })
+            .getByRole('button', {
+              name: 'Preview source 7: Corrected source',
+              exact: true,
+            });
+          assert.equal(
+            await correctedPreview.evaluate(
+              (node, original) => node.closest('li') === original,
+              sourceItem
+            ),
+            true
+          );
+          await expect(correctedPreview).toHaveText('[7] Corrected source');
+          await expect(correctedPreview.locator('..')).toHaveClass('native-source-card');
+          await expect(correctedPreview.locator('..').locator('.native-source-card__type')).toHaveText('Source type: Authored');
           await expect(
-            page
-              .getByRole('region', { name: 'Sources', exact: true })
-              .getByRole('link')
-          ).toHaveText('Corrected source');
+            correctedPreview.locator('..').locator('.native-source-card__host')
+          ).toHaveText('Host: sources.invalid');
+          const correctedPublishedLabel = await page.evaluate(() =>
+            new Date('2024-04-15T12:00:00.000Z').toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+            })
+          );
           await expect(
-            page.getByRole('link', {
-              name: 'Citation 7: Corrected source (opens in new tab)',
+            correctedPreview
+              .locator('..')
+              .locator('.native-source-card__published')
+          ).toHaveText(`Published: ${correctedPublishedLabel}`);
+          await correctedPreview.click();
+          const correctedDialog = page.getByRole('dialog', {
+            name: 'Source 7',
+            exact: true,
+          });
+          await expect(correctedDialog.getByRole('heading')).toHaveText(
+            'Corrected source'
+          );
+          await expect(
+            correctedDialog.getByRole('link', {
+              name: 'Open source',
               exact: true,
             })
           ).toHaveAttribute('href', 'https://sources.invalid/corrected');
+          await expect(correctedDialog.getByRole('link')).toHaveAttribute(
+            'target',
+            '_blank'
+          );
+          await expect(correctedDialog.getByRole('link')).toHaveAttribute(
+            'rel',
+            'noopener noreferrer'
+          );
+          await correctedDialog
+            .getByRole('button', { name: 'Close', exact: true })
+            .click();
+          const correctedInline = page.getByRole('button', {
+            name: 'Citation 7: Corrected source', exact: true,
+          });
+          await correctedInline.click();
+          const correctedInlineCard = page.getByRole('dialog', { name: 'Source 7', exact: true });
+          await expect(correctedInlineCard.getByRole('link', { name: 'Open source', exact: true })).toHaveAttribute('href', 'https://sources.invalid/corrected');
+          await expect(correctedInlineCard.getByRole('link')).toHaveAttribute('target', '_blank');
+          await expect(correctedInlineCard.getByRole('link')).toHaveAttribute('rel', 'noopener noreferrer');
+          await correctedInlineCard.getByRole('button', { name: 'Close', exact: true }).click();
           await expect(
-            page.getByRole('link', {
-              name: 'Citation 7: <b>Supplied source</b> (opens in new tab)',
+            page.getByRole('button', {
+              name: 'Citation 7: <b>Supplied source</b>',
               exact: true,
             })
           ).toHaveCount(0);
@@ -1310,7 +1493,8 @@ export async function runProductionProofs(browser, retained) {
         await expect(approve).toBeDisabled();
         await expect(decline).toBeDisabled();
         await expect(send).toBeDisabled();
-        await expect(draft).toBeDisabled();
+        if (retained.framework === 'react') await expect(draft).toBeEditable();
+        else await expect(draft).toBeDisabled();
         await expect(draft).toHaveValue(text);
         await expect(stop).toBeEnabled();
         await page.keyboard.press('Enter');

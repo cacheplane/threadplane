@@ -2,6 +2,7 @@ import { Component, computed } from '@angular/core';
 import {
   ChatComponent,
   ChatInterruptPanelComponent,
+  ChatInterruptTemplateDirective,
   ChatWelcomeSuggestionComponent,
 } from '@threadplane/chat';
 import type { InterruptAction } from '@threadplane/chat';
@@ -14,13 +15,13 @@ const SUGGESTIONS = [
   {
     label: 'Book a flight (you confirm)',
     value: 'Book me on UA123.',
-    description: 'Agent pauses for approval; click Accept in the sidebar to complete the booking.',
+    description: 'Agent pauses for approval; click Accept in the conversation to complete the booking.',
   },
   // Cancel flow: book + Ignore → "Booking cancelled."
   {
     label: 'Book a flight (you cancel)',
     value: 'Book me on AA404.',
-    description: 'Same interrupt flow; click Ignore to see the cancellation path.',
+    description: 'Same interrupt flow; click Ignore in the conversation to see the cancellation path.',
   },
 ] as const;
 
@@ -28,7 +29,7 @@ const SUGGESTIONS = [
  * InterruptsComponent demonstrates human-in-the-loop approval gates
  * using ChatComponent and ChatInterruptPanelComponent.
  *
- * Shows interrupt payload and action buttons in a sidebar panel.
+ * Shows interrupt payload and action buttons inside the scrollable transcript.
  * Maps the panel's UI actions to LangGraph resume payloads:
  *   Accept  → resume('confirm')   — the book_flight tool returns Booked …
  *   Ignore  → resume('cancel')    — the book_flight tool returns Booking cancelled.
@@ -43,12 +44,21 @@ const SUGGESTIONS = [
   imports: [
     ChatComponent,
     ChatInterruptPanelComponent,
+    ChatInterruptTemplateDirective,
     ChatWelcomeSuggestionComponent,
     ExampleChatLayoutComponent,
   ],
   template: `
-    <example-chat-layout sidebarWidth="20rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Chat interrupts"
+      description="Explore flight approvals with demo data. Confirm or cancel a saved booking request; no real ticket is purchased."
+    >
+      <chat placeholder="Ask about a flight or request a booking…" [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <ng-template chatInterruptTemplate let-agent>
+          <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
+        </ng-template>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -62,8 +72,6 @@ const SUGGESTIONS = [
       </chat>
       <!-- #region panel -->
       <div sidebar class="panel">
-        <h3 class="cap">Interrupt Panel</h3>
-        <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
         <div>
           <h4 class="cap">Stream Status</h4>
           <p class="metric-value">{{ streamStatus() }}</p>

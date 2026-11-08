@@ -9,6 +9,8 @@ import {
   viewChild,
   ElementRef,
   ChangeDetectionStrategy,
+  DestroyRef,
+  inject,
 } from '@angular/core';
 import type { Agent } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
@@ -150,16 +152,30 @@ export class ChatInputComponent {
       const text = this.messageText();
       const el = this.textareaEl()?.nativeElement;
       if (!el) return;
-      // Cap: min(40vh, 320px). Recomputed on each input so viewport resizes
-      // between keystrokes are picked up without a dedicated resize listener.
-      const viewportH = typeof window === 'undefined' ? 600 : window.innerHeight;
-      const cap = Math.min(viewportH * 0.4, 320);
-      el.style.height = 'auto';
-      const next = Math.min(el.scrollHeight, cap);
-      el.style.height = `${next}px`;
-      el.style.overflowY = el.scrollHeight > cap ? 'auto' : 'hidden';
+      this.resizeTextarea();
       void text;
     });
+
+    const destroyRef = inject(DestroyRef);
+    if (typeof window !== 'undefined') {
+      const viewport = window.visualViewport;
+      let frame: number | undefined;
+      const resize = () => this.resizeTextarea();
+      const scheduleResize = () => {
+        if (frame !== undefined) cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          frame = undefined;
+          resize();
+        });
+      };
+      window.addEventListener('resize', resize);
+      viewport?.addEventListener('resize', scheduleResize);
+      destroyRef.onDestroy(() => {
+        window.removeEventListener('resize', resize);
+        viewport?.removeEventListener('resize', scheduleResize);
+        if (frame !== undefined) cancelAnimationFrame(frame);
+      });
+    }
 
     effect(() => {
       if (!this.isLoading()) this.enterBlockedByRun.set(false);
@@ -173,6 +189,22 @@ export class ChatInputComponent {
         if (!active || active === active.ownerDocument.body) this.focusTextarea();
       });
     });
+  }
+
+  private resizeTextarea(): void {
+    const el = this.textareaEl()?.nativeElement;
+    if (!el) return;
+    const view = el.ownerDocument.defaultView;
+    const viewport = view?.visualViewport;
+    const height = viewport?.scale === 1 ? viewport.height : (view?.innerHeight ?? 600);
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, height * 0.4, 320)}px`;
+    // Respect smaller layout caps, and keep a focused end caret in view when
+    // the keyboard reduces the rendered box without another keystroke.
+    el.style.overflowY = el.scrollHeight > el.clientHeight ? 'auto' : 'hidden';
+    if (el.ownerDocument.activeElement === el && el.selectionStart === el.value.length) {
+      el.scrollTop = el.scrollHeight;
+    }
   }
 
   focusTextarea(): void {
@@ -189,11 +221,17 @@ export class ChatInputComponent {
     const submitted = submitMessage(this.agent(), this.messageText());
     if (submitted !== null) {
       this.submitted.emit(submitted);
-      this.messageText.set('');
-      const el = this.textareaEl()?.nativeElement;
-      if (el) el.value = '';
+      this.clearDraft();
       requestAnimationFrame(() => this.textareaEl()?.nativeElement.focus());
     }
+  }
+
+  /** Clears the local draft after a successful submit or application-owned reset. */
+  clearDraft(): void {
+    this.messageText.set('');
+    this.enterBlockedByRun.set(false);
+    const element = this.textareaEl()?.nativeElement;
+    if (element) element.value = '';
   }
 
   /** Sync the textarea's value into the signal on user input. A direct

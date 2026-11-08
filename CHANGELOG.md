@@ -1,3 +1,64 @@
+## 0.3.7 (2026-11-06)
+
+### Features
+
+- **chat:** add a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content ([#1447](https://github.com/cacheplane/threadplane/pull/1447)).
+
+### Performance
+
+- **chat:** skip unrelated grouping preparation when a message's scoped tool-call list is empty. In the H1000 Angular regression fixture, 501 empty scopes avoid four configuration reads each during a fresh-wrapper tail update. Nonempty grouping and later live tool calls remain observable; native latency and FPS improvements have not been established ([#1453](https://github.com/cacheplane/threadplane/pull/1453)).
+
+### Fixes
+
+- **chat:** fix constrained textarea scrolling, mobile placeholder width, Firefox Markdown list flow, and message speaker positioning ([#1447](https://github.com/cacheplane/threadplane/pull/1447), [e524ab11d](https://github.com/cacheplane/threadplane/commit/e524ab11d)).
+- **smoke:** pin the verified LangGraph SDK artifact ([#1450](https://github.com/cacheplane/threadplane/pull/1450)).
+
+### Repository React work
+
+- The private React implementation adds inline citation previews, collapsible Sources panels, merged Markdown sidecar sources, and custom citation-card rendering ([#1444](https://github.com/cacheplane/threadplane/pull/1444), [#1446](https://github.com/cacheplane/threadplane/pull/1446), [#1448](https://github.com/cacheplane/threadplane/pull/1448), [#1452](https://github.com/cacheplane/threadplane/pull/1452)). These are repository changes; the six synchronized npm packages remain chat, langgraph, ag-ui, render, a2ui, and telemetry.
+
+## 0.3.6 (2026-11-05)
+
+### Performance
+
+- **chat:** read the shared transcript once per render instead of repeatedly reading it for every message's previous role and current state. Fresh message projections and mutable message updates remain observable. A real Angular 10,000-message regression fixture reduced transcript reads from 15,007 to 7 for one tail update; native latency and FPS improvements have not yet been established.
+
+### Fixes
+
+- **chat:** align spacing, typography and radii with the token scale ([#1439](https://github.com/cacheplane/threadplane/pull/1439)).
+- **chat:** render approvals inside chat, popup and sidebar transcripts ([#1440](https://github.com/cacheplane/threadplane/pull/1440)).
+
+## 0.3.5 (2026-11-04)
+
+### ✨ Highlights
+
+- **langgraph:** indexed exact-ID reconciliation removes triangular searches in full history snapshots.
+- **langgraph:** unchanged empty tool-call and subagent state no longer repeatedly invalidates historical consumers during text streaming. Nonempty updates and thread resets remain observable.
+- **chat:** task controls, keyboard behavior, speaker labels and bidirectional text improve ([#1435](https://github.com/cacheplane/threadplane/pull/1435)).
+
+### 🚀 Features
+
+- **docs:** generate SDK API reference for Angular and React ([#1418](https://github.com/cacheplane/threadplane/pull/1418))
+- **growth:** LinkedIn engagement leads pipeline ([#1426](https://github.com/cacheplane/threadplane/pull/1426))
+- **marketing:** voice lint, [BRIAN:] markers, and missed-slot hold ([#1422](https://github.com/cacheplane/threadplane/pull/1422))
+- **react:** dogfood project overflow menus ([#1419](https://github.com/cacheplane/threadplane/pull/1419))
+- **react:** add controlled welcome suggestions ([#1427](https://github.com/cacheplane/threadplane/pull/1427))
+- **react:** resolve inline message citations ([#1433](https://github.com/cacheplane/threadplane/pull/1433))
+- **react:** add controlled follow-up suggestions ([#1434](https://github.com/cacheplane/threadplane/pull/1434))
+- **website:** align brand typography and spacing grid ([#1421](https://github.com/cacheplane/threadplane/pull/1421))
+
+### 🩹 Fixes
+
+- **ci:** pin the actual shared deployment image ([#1428](https://github.com/cacheplane/threadplane/pull/1428))
+- **deploy:** validate the current shared image repository ([#1424](https://github.com/cacheplane/threadplane/pull/1424))
+- **docs:** resolve source TSDoc and API declaration links ([#1423](https://github.com/cacheplane/threadplane/pull/1423))
+- **website:** align API docs and prevent nested card links ([#1429](https://github.com/cacheplane/threadplane/pull/1429))
+
+### 🔥 Performance
+
+- **langgraph:** index exact IDs in history snapshots ([#1431](https://github.com/cacheplane/threadplane/pull/1431))
+- **langgraph:** avoid redundant empty derived-state publications ([#1437](https://github.com/cacheplane/threadplane/pull/1437))
+
 ## 0.3.4 (2026-10-31)
 
 ### ✨ Highlights

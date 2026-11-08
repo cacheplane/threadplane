@@ -5,7 +5,24 @@ import {
   requestDisposition,
   navigationIssue,
   DOCS_AUDIT_ROUTES,
+  docsAuditWidths,
+  expectedDocsAuditChecks,
 } from './docs-audit-checks';
+
+test('counts tablet coverage as well as desktop and phone checks', () => {
+  const targets = [
+    { path: '/docs/angular/langgraph/guides/streaming' },
+    { path: '/docs/api/react/ag-ui' },
+    { path: '/docs/shared/middleware/getting-started/introduction' },
+    { path: '/docs/angular/render/guides/events' },
+  ];
+  expect(docsAuditWidths(targets[0].path)).toEqual([1440, 320]);
+  for (const target of targets.slice(1)) {
+    expect(docsAuditWidths(target.path)).toEqual([1440, 768, 320]);
+  }
+  expect(expectedDocsAuditChecks(targets)).toBe(11);
+  expect(expectedDocsAuditChecks([])).toBe(0);
+});
 
 test('read-only browser audit blocks analytics and rejects application writes without leaking URLs', () => {
   expect(
@@ -92,19 +109,57 @@ test('geometry rejects fallback fonts, overlap, clipped labels, and page overflo
   ).toContain('Nodes overlap: a / b');
 });
 
+test('network geometry rejects unrelated-node label collisions and shrinking', () => {
+  const clean = {
+    viewportWidth: 1440,
+    documentWidth: 1440,
+    fontsLoaded: true,
+    canvas: { x: 0, y: 0, width: 640, height: 300 },
+    naturalWidth: 640,
+    articleWidth: 700,
+    nodes: [{ id: 'a', box: { x: 10, y: 10, width: 180, height: 80 } }],
+    texts: [
+      { text: 'connection', box: { x: 250, y: 100, width: 100, height: 20 } },
+    ],
+  };
+  expect(geometryIssues(clean)).toEqual([]);
+  expect(
+    geometryIssues({
+      ...clean,
+      texts: [
+        { text: 'connection', box: { x: 20, y: 20, width: 100, height: 20 } },
+      ],
+    })
+  ).toContain('Relationship label overlaps node: connection');
+  expect(
+    geometryIssues({ ...clean, canvas: { ...clean.canvas, width: 500 } })
+  ).toContain('Diagram shrunk below natural size');
+  expect(geometryIssues({ ...clean, articleWidth: 600 })).toContain(
+    'Diagram overflows desktop article'
+  );
+  expect(
+    geometryIssues({
+      ...clean,
+      viewportWidth: 320,
+      documentWidth: 320,
+      articleWidth: 280,
+    })
+  ).toEqual([]);
+});
+
 test('central route inventory includes both supported framework readings and all diagram kinds', () => {
   expect(
     DOCS_AUDIT_ROUTES.filter((route) => route.video).map((route) => route.path)
   ).toEqual([
-    '/docs/langgraph/concepts/conversation-turns',
-    '/docs/langgraph/guides/streaming',
-    '/docs/langgraph/guides/persistence',
-    '/docs/chat/guides/client-tools',
-    '/docs/render/guides/specs',
-    '/docs/langgraph/guides/streaming?frontend=react',
-    '/docs/langgraph/guides/persistence?frontend=react',
-    '/docs/chat/guides/client-tools?frontend=react',
-    '/docs/render/guides/specs?frontend=react',
+    '/docs/angular/langgraph/concepts/conversation-turns',
+    '/docs/angular/langgraph/guides/streaming',
+    '/docs/angular/langgraph/guides/persistence',
+    '/docs/angular/chat/guides/client-tools',
+    '/docs/angular/render/guides/specs',
+    '/docs/react/langgraph/guides/streaming',
+    '/docs/react/langgraph/guides/persistence',
+    '/docs/react/chat/guides/client-tools',
+    '/docs/react/render/guides/specs',
   ]);
   expect(new Set(DOCS_AUDIT_ROUTES.map((route) => route.path)).size).toBe(
     DOCS_AUDIT_ROUTES.length

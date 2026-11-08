@@ -1,8 +1,10 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
   ChatInput,
-  TextTranscript,
+  MessageList,
   ToolObservation,
 } from '@threadplane/react/chat';
 import { RenderSpec } from '@threadplane/react/render';
@@ -45,10 +47,19 @@ export function DashboardDemo({
     ? 'Response complete.'
     : 'Ready.';
   return (
-    <main className="dashboard-demo">
+    <ExampleLayout
+      className="dashboard-demo"
+      about={
+        <section aria-label="Runtime connection" className="runtime-details">
+          <details>
+            <summary>Runtime connection</summary>
+            <p>{connection.label}</p>
+          </details>
+        </section>
+      }
+    >
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>AG-UI airline dashboard</h1>
         </div>
         <button
@@ -63,12 +74,8 @@ export function DashboardDemo({
         Ask for an airline dashboard, then filter the disruptions or change its
         layout. This example uses fixed demo data.
       </p>
-      <section aria-label="Runtime connection">
-        <h2>Runtime connection</h2>
-        <p>{connection.label}</p>
-      </section>
-      <section aria-label="Conversation" className="dashboard-conversation">
-        <ol>
+      <MessageList rows={[]} label="Conversation" key={snapshot.viewGeneration}>
+        <ol className="dashboard-native-rows" role="list">
           {transcript.map((message) => {
             const surface = snapshot.surfaces.find(
               (item) => item.ownerId === message.id
@@ -80,19 +87,17 @@ export function DashboardDemo({
                 message.role === 'assistant' ||
                 message.role === 'tool') &&
               typeof message.content === 'string' ? (
-                <TextTranscript
-                  messages={[
-                    {
-                      id: message.id,
-                      role: message.role,
-                      content: message.content,
-                    },
-                  ]}
-                  label="Message text"
-                />
+                <p className="dashboard-native-text">{message.content}</p>
               ) : null;
             return (
-              <li key={message.id} data-dashboard-message={message.id}>
+              <li
+                key={message.id}
+                data-dashboard-message={message.id}
+                className={`tp-chat-message tp-chat-message--${message.role}`}
+              >
+                <p className="tp-chat-message__role">
+                  {message.role === 'user' ? 'You' : message.role}
+                </p>
                 {surface &&
                 typeof message.content === 'string' &&
                 message.content.trim().startsWith('{') ? (
@@ -142,23 +147,26 @@ export function DashboardDemo({
             );
           })}
         </ol>
-      </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        label="Message"
-        placeholder="Ask for an airline dashboard…"
-        value={draft}
-        onValueChange={setDraft}
-        disabled={!snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          return application.getSnapshot().busy;
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      </MessageList>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          label="Message"
+          hint="Enter to send. Shift+Enter adds a new line."
+          placeholder="Ask for an airline dashboard…"
+          value={draft}
+          onValueChange={setDraft}
+          disabled={!snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            return application.getSnapshot().busy;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

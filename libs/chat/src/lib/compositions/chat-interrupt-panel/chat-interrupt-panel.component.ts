@@ -55,7 +55,7 @@ export function interruptReasonText(interrupt: AgentInterrupt | undefined): stri
     }
     .chat-interrupt-panel__eyebrow {
       font-family: ui-monospace, Menlo, Consolas, monospace;
-      font-size: 10px;
+      font-size: var(--tplane-chat-font-size-xs);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;

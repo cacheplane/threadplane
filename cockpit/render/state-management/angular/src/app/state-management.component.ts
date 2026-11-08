@@ -325,7 +325,10 @@ class DemoCardComponent {
     }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="State Management"
+      description="Edit the local state and watch its values appear in the view. Playback controls keep your edits."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

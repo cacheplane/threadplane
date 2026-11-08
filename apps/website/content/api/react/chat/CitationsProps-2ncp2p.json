@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!CitationsProps:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+  "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions.",
   "declarations": [
     {
       "name": "CitationsProps",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Supplied citation list with unique IDs and an optional source-section label and CSS class.",
+        "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 7
+            "line": 14
           },
           "isReadonly": true,
           "isOptional": false
@@ -106,7 +106,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 9
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "collapsible",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#collapsible:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly collapsible?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Literal true enables an initially closed Sources panel with local presentation state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 27
           },
           "isReadonly": true,
           "isOptional": true
@@ -142,7 +178,132 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citations.tsx",
-            "line": 8
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "preview",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#preview:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly preview?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderCard",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#renderCard:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderCard?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(citation: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Citation",
+              "canonicalReference": "@threadplane/react!~Citation:interface",
+              "href": "/docs/api/core/Citation"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replace row contents before preview with the latest borrowed Citation.\nNull, false and undefined intentionally render no contents or fallback.\nRendering may repeat; return a component to own hooks and local state.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "snapshot",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!CitationsProps#snapshot:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly snapshot?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MarkdownSnapshot",
+              "canonicalReference": "@threadplane/react!~MarkdownSnapshot:interface",
+              "href": "/docs/api/content/markdown/MarkdownSnapshot"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Borrow accepted Markdown definitions to merge and sort Sources by index.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/citations.tsx",
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -150,12 +311,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/citations.tsx",
-        "line": 6
+        "line": 13
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/citations.tsx",
-    "line": 6
+    "line": 13
   }
 }

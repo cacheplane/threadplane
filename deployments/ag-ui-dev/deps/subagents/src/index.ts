@@ -26,7 +26,7 @@ export const agUiSubagentsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'AG-UI Subagents (Python)',
-  docsPath: '/docs/ag-ui/guides/subagents',
+  docsPath: '/docs/angular/ag-ui/guides/subagents',
   promptAssetPaths: ['cockpit/ag-ui/subagents/python/prompts/subagents.md'],
   codeAssetPaths: [
     'cockpit/ag-ui/subagents/angular/src/app/subagents.component.ts',

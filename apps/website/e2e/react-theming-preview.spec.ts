@@ -1,10 +1,13 @@
+import { selectWorkspaceMode } from './fixtures/workspace-controls';
+import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const origin = 'http://127.0.0.1:4644';
-const route = '/docs/chat/guides/theming';
+const route = '/docs/angular/chat/guides/theming';
+const reactRoute = '/docs/react/chat/guides/theming';
 const frameURL = /(?:localhost:4644|chat\/theming\/react)/;
 const observations = new WeakMap<
   Page,
@@ -14,31 +17,8 @@ const observations = new WeakMap<
   }
 >();
 
-async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
-  if (width === 390) {
-    await page
-      .getByRole('button', { name: 'Open navigation', exact: true })
-      .click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', {
-        name: name === 'Run' ? /^Run(?:,|$)/ : name,
-        exact: name !== 'Run',
-      })
-      .click();
-    await expect(page.getByRole('dialog')).toBeHidden();
-  } else
-    await page
-      .locator('[data-workspace-desktop-navigation]')
-      .getByRole('button', {
-        name: name === 'Run' ? /^Run(?:,|$)/ : name,
-        exact: name !== 'Run',
-      })
-      .click();
-  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-    'data-workspace-mode',
-    name
-  );
+async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
+  await selectWorkspaceMode(page, name);
 }
 
 test.describe('native Theming Website', () => {
@@ -119,7 +99,7 @@ test.describe('native Theming Website', () => {
     }, info) => {
       test.setTimeout(90000);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      expect((await page.goto(route + '?frontend=react'))?.status()).toBe(200);
+      expect((await page.goto(reactRoute))?.status()).toBe(200);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-hydrated',
         'true',
@@ -140,7 +120,7 @@ test.describe('native Theming Website', () => {
         path: info.outputPath('docs.png'),
         fullPage: true,
       });
-      await mode(page, 'Code', width);
+      await mode(page, 'Code');
       const files = [
         'app.tsx',
         'application.ts',
@@ -174,7 +154,7 @@ test.describe('native Theming Website', () => {
         );
       }
       await page.screenshot({ path: info.outputPath('code.png') });
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       const iframe = page.locator('iframe');
       await expect(iframe).toHaveAttribute('src', frameURL);
       const original = await iframe.elementHandle();
@@ -196,7 +176,7 @@ test.describe('native Theming Website', () => {
       );
       expect(observations.get(page)?.requests).toEqual([]);
       for (const name of ['Docs', 'Code', 'Run'] as const)
-        await mode(page, name, width);
+        await mode(page, name);
       expect(
         await iframe.evaluate((node, previous) => node === previous, original)
       ).toBe(true);
@@ -287,7 +267,7 @@ test.describe('native Theming Website', () => {
       for (const name of ['Light', 'Ocean', 'Forest', 'Dark'])
         await frame.getByRole('button', { name, exact: true }).click();
       for (const name of ['Code', 'Docs', 'Run'] as const)
-        await mode(page, name, width);
+        await mode(page, name);
       expect(
         await iframe.evaluate((node, previous) => node === previous, original)
       ).toBe(true);
@@ -322,14 +302,14 @@ test.describe('native Theming Website', () => {
       'true',
       { timeout: 30000 }
     );
-    await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+    await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
     await expect(
       page.getByRole('heading', {
         name: 'React chat theming preview',
         exact: true,
       })
     ).toHaveCount(0);
-    await page.getByLabel('Example UI').selectOption('react');
+    await selectFramework(page, 'react');
     await expect(
       page.getByRole('heading', {
         name: 'React chat theming preview',

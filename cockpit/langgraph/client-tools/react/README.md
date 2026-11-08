@@ -10,4 +10,4 @@ Thread creation and execution use zero SDK retries. Stop, failures, uncertain cr
 
 Use `npx nx build cockpit-langgraph-client-tools-react`, `npx nx test cockpit-langgraph-client-tools-react`, `npx nx lint cockpit-langgraph-client-tools-react`, and `npx nx e2e cockpit-langgraph-client-tools-react`.
 
-The isolated build consumes private local candidate packages and checks strict installed declarations and emitted modules. No npm publication is implied. The public guide is `/docs/chat/guides/client-tools?frontend=react`; assets use `/langgraph/client-tools/react/`. The shared backend deployment is reused. Developer keys travel only in SDK headers; local proof routes and build-proof JSON are excluded from deployment.
+The isolated build consumes private local candidate packages and checks strict installed declarations and emitted modules. No npm publication is implied. The public guide is `/docs/angular/chat/guides/client-tools?frontend=react`; assets use `/langgraph/client-tools/react/`. The shared backend deployment is reused. Developer keys travel only in SDK headers; local proof routes and build-proof JSON are excluded from deployment.

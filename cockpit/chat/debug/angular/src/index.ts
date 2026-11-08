@@ -23,7 +23,7 @@ export const chatDebugAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Chat Debug (Angular)',
-  docsPath: '/docs/chat/components/chat-debug',
+  docsPath: '/docs/angular/chat/components/chat-debug',
   promptAssetPaths: ['cockpit/chat/debug/python/prompts/debug.md'],
   codeAssetPaths: ['cockpit/chat/debug/angular/src/app/debug.component.ts'],
 };

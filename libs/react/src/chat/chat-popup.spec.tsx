@@ -1,11 +1,74 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ChatPopup } from './index';
+import { ChatPopup, ChatSidebar } from './index';
 
 afterEach(cleanup);
 
 describe('ChatPopup', () => {
+  it.each([ChatPopup, ChatSidebar])(
+    'keeps fixed chrome within the unzoomed visible viewport and releases listeners',
+    (Shell) => {
+      const previous = Object.getOwnPropertyDescriptor(
+        window,
+        'visualViewport'
+      );
+      const viewport = Object.assign(new EventTarget(), {
+        height: 714,
+        offsetTop: 0,
+        scale: 1,
+      });
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: viewport,
+      });
+      try {
+        const view = render(
+          <StrictMode>
+            <Shell open title="Support" onOpenChange={vi.fn()}>
+              <textarea aria-label="Draft" />
+            </Shell>
+          </StrictMode>
+        );
+        const root =
+          view.container.querySelector<HTMLElement>('.tp-chat-popup')!;
+        expect(root.style.getPropertyValue('--tp-chat-viewport-height')).toBe(
+          '714px'
+        );
+        viewport.height = 377;
+        viewport.offsetTop = 194;
+        viewport.dispatchEvent(new Event('resize'));
+        expect(root.style.getPropertyValue('--tp-chat-viewport-height')).toBe(
+          '377px'
+        );
+        expect(root.style.getPropertyValue('--tp-chat-viewport-top')).toBe(
+          '194px'
+        );
+        viewport.offsetTop = 267;
+        viewport.dispatchEvent(new Event('scroll'));
+        expect(root.style.getPropertyValue('--tp-chat-viewport-top')).toBe(
+          '267px'
+        );
+        viewport.scale = 2;
+        viewport.height = 200;
+        viewport.dispatchEvent(new Event('resize'));
+        expect(root.style.getPropertyValue('--tp-chat-viewport-height')).toBe(
+          '377px'
+        );
+        view.unmount();
+        viewport.scale = 1;
+        viewport.height = 714;
+        viewport.dispatchEvent(new Event('resize'));
+        expect(root.style.getPropertyValue('--tp-chat-viewport-height')).toBe(
+          '377px'
+        );
+      } finally {
+        if (previous) Object.defineProperty(window, 'visualViewport', previous);
+        else Reflect.deleteProperty(window, 'visualViewport');
+      }
+    }
+  );
+
   it('keeps closed content mounted, hidden and inert without moving focus', () => {
     const view = render(
       <ChatPopup open={false} onOpenChange={vi.fn()} title="Support">

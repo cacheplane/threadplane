@@ -172,7 +172,7 @@ test.describe('docs deep links', () => {
   test('a hard load with a heading fragment reaches the heading (workspace page)', async ({
     page,
   }) => {
-    const route = '/docs/langgraph/guides/streaming';
+    const route = '/docs/angular/langgraph/guides/streaming';
     await page.setViewportSize({ width: 1280, height: 900 });
     const target = await findDeepLinkTarget(
       page,

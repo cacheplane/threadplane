@@ -1,0 +1,137 @@
+---
+title: "Message Model"
+description: "Render a conversation from stable message rows, then choose how each row looks."
+---
+
+# React chat messages preview
+
+Render a conversation from stable message rows, then choose how each row looks. Message identity, parsed Markdown, reasoning, and tool observations can remain structured while your product controls the layout.
+
+The native React APIs on this page are experimental, private source-build packages. Run the repository example to use them; they are not an npm installation recipe.
+
+## Project messages before rendering rows
+
+`createMessageContent` turns session messages into reusable `MessageRow` values. `MessageList` consumes those rows and provides default presentation; `renderMessage` replaces that presentation when your application needs a custom row. Keep the projection owner for the conversation lifetime and dispose it with that owner, not each time React renders.
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import type { MessageContent } from '@threadplane/content/messages';
+import { useAgent } from '@threadplane/react';
+import { MessageList } from '@threadplane/react/chat';
+
+export function Transcript({ session, content }: { session: AgentSession; content: MessageContent }) {
+  const snapshot = useAgent(session);
+  return <MessageList rows={content.project(snapshot)} label="Trip conversation" />;
+}
+~~~
+
+The [conversation walkthrough (Angular guide)](/docs/angular/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
+
+## Ask and continue
+
+Choose **Run** and ask an aviation question. The assistant's answer arrives as text and Markdown. Wait for **Response saved** before sending another question in the same conversation. **New conversation** clears the page; a new server thread is created only when you send a message.
+
+**Stop** cancels active work. A failed, stopped, uncertain or unexpectedly paused conversation requires **New conversation**. Resetting never retries an earlier question. Reloading starts an empty page-local conversation.
+
+## Compose message presentation
+
+A stable row renderer labels user, assistant and system articles. It presents application-owned Markdown snapshots and preserves assistant reasoning and citations when supplied. Tool rows are deliberately hidden in this text-only example; observing a tool, interrupt or child blocks further submission.
+
+<ExampleCode file="cockpit/chat/messages/react/src/app.tsx" />
+
+The owner holds the composer disabled through one explicit server history read after a successful response. The saved terminal transcript must preserve every confirmed message and the exact current question and answer. Streaming success alone, changed history and fulfilled reads after Stop do not authorize continuation. Title generation updates thread metadata without entering the visible answer stream.
+
+<ExampleCode file="cockpit/chat/messages/react/src/application.ts" />
+
+The shared backend runs the existing c-messages graph by default. Runtime settings may select a developer LangGraph target; the same target is used for creation, streaming and saved history. SDK retries are disabled, and only the exact returned thread ID confirms creation.
+
+<ExampleCode file="cockpit/chat/messages/react/src/connection.ts" />
+
+## Build from source
+
+From a Threadplane checkout with dependencies installed:
+
+~~~sh
+npx nx build cockpit-chat-messages-react
+npx nx e2e cockpit-chat-messages-react
+~~~
+
+The isolated build uses installed private candidate packages. Browser tests exercise actual SDK HTTP and SSE with events from the compiled Python graph and deterministic providers. Docs, Code and Run select this same React implementation. The default Angular example and its backend remain available.
+
+## Cross-origin iframe hosts
+
+A cross-origin child cannot read the parent’s visible viewport. On iOS Safari,
+the software keyboard can shrink the parent’s `visualViewport` while the child
+continues to see the iframe’s full fixed height. Size the frame in the parent;
+changing the child’s `100dvh` alone does not solve this.
+
+The built-in docs workspace handles parent sizing for Angular and React
+examples. For a custom full-screen parent with a frame normally capped at 580px,
+use a flex host so its header and footer share the same visible height:
+
+```html
+<section class="runtime-host">
+  <header>Your chat</header>
+  <iframe title="Chat" src="https://your-chat.example"></iframe>
+  <footer>Your parent controls</footer>
+</section>
+```
+
+```css
+.runtime-host {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--runtime-top, 0px);
+  height: min(580px, var(--runtime-height, 100dvh));
+  display: flex;
+  flex-direction: column;
+}
+.runtime-host > header,
+.runtime-host > footer {
+  flex: none;
+}
+.runtime-host > iframe {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+}
+```
+
+```js
+function fitRuntimeHost(host) {
+  const viewport = host.ownerDocument.defaultView?.visualViewport;
+  if (!viewport) return () => {};
+  const names = ['--runtime-height', '--runtime-top'];
+  const previous = names.map((name) => [
+    host.style.getPropertyValue(name),
+    host.style.getPropertyPriority(name),
+  ]);
+  const update = () => {
+    if (viewport.scale !== 1) return;
+    host.style.setProperty(names[0], `${viewport.height}px`);
+    // This host is fixed, so use offsetTop, not document-relative pageTop.
+    host.style.setProperty(names[1], `${viewport.offsetTop}px`);
+  };
+  update();
+  viewport.addEventListener('resize', update);
+  viewport.addEventListener('scroll', update);
+  return () => {
+    viewport.removeEventListener('resize', update);
+    viewport.removeEventListener('scroll', update);
+    names.forEach((name, index) => {
+      const [value, priority] = previous[index];
+      if (value) host.style.setProperty(name, value, priority);
+      else host.style.removeProperty(name);
+    });
+  };
+}
+```
+
+Call `fitRuntimeHost` once when the parent host mounts and run its returned
+cleanup when it unmounts—for example, return it from a React effect or register
+it with Angular’s `DestroyRef.onDestroy`. Keep the iframe node and `src` stable
+while resizing so the child retains its conversation, draft, focus and reading
+position. This pattern does not require reading the child DOM or adding a
+cross-origin message protocol. Configure the child’s allowed embedding origins
+separately if its application requires them.

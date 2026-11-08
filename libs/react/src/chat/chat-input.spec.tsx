@@ -1,14 +1,115 @@
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChatInput, type ChatInputHandle } from './index';
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const type = (el: HTMLTextAreaElement, value: string) =>
   fireEvent.change(el, { target: { value } });
+const deferFrames = () => {
+  const callbacks: FrameRequestCallback[] = [];
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    callbacks.push(callback);
+    return callbacks.length;
+  });
+  return callbacks;
+};
 
 describe('ChatInput', () => {
+  it('resizes an existing draft for the software keyboard and keeps its focused end visible', async () => {
+    const viewport = Object.assign(new EventTarget(), { height: 700, scale: 1 });
+    vi.stubGlobal('visualViewport', viewport);
+    const view = render(<ChatInput defaultValue="A long draft" onSubmit={() => undefined} />);
+    const el = box(view);
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, value: 400 });
+    let renderedHeight = 140;
+    let scrollTop = 0;
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => renderedHeight });
+    Object.defineProperty(el, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => { scrollTop = Math.min(value, 400 - renderedHeight); },
+    });
+    // The parent shell subscribes after the child input and applies a CSS cap.
+    viewport.addEventListener('resize', () => { renderedHeight = viewport.height * 0.2; });
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+    viewport.height = 200;
+    viewport.dispatchEvent(new Event('resize'));
+    await waitFor(() => expect(el.style.height).toBe('80px'));
+    await waitFor(() => expect(el.scrollTop).toBe(360));
+    el.setSelectionRange(2, 2);
+    el.scrollTop = 25;
+    viewport.height = 400;
+    viewport.dispatchEvent(new Event('resize'));
+    await waitFor(() => expect(el.style.height).toBe('160px'));
+    expect(el.scrollTop).toBe(25);
+    expect(document.activeElement).toBe(el);
+  });
+  it.each(['مرحبا، الطلب 4521 و abc-123', 'Request abc-123 ثم المتابعة'])(
+    'lets the first strong character determine draft direction: %s',
+    (draft) => {
+      const view = render(<ChatInput onSubmit={() => undefined} />);
+      type(box(view), draft);
+      expect(box(view).dir).toBe('auto');
+      expect(box(view).value).toBe(draft);
+    }
+  );
+
+  it.each(['stop', 'completion'])(
+    'keeps keyboard focus in the composer when focused Stop disappears on %s',
+    (cause) => {
+      function Composer() {
+        const [busy, setBusy] = useState(true);
+        return (
+          <>
+            <button onClick={() => setBusy(false)}>Complete response</button>
+            <ChatInput
+              onSubmit={() => undefined}
+              busy={busy}
+              onStop={() => setBusy(false)}
+            />
+          </>
+        );
+      }
+      const view = render(<Composer />);
+      const stop = view.getByRole('button', { name: 'Stop' });
+      stop.focus();
+      // A removal can emit focusout while the old button is still connected.
+      fireEvent.blur(stop, { relatedTarget: null });
+      fireEvent.click(
+        cause === 'stop'
+          ? stop
+          : view.getByRole('button', { name: 'Complete response' })
+      );
+      expect(document.activeElement).toBe(box(view));
+    }
+  );
+
+  it('does not take focus from another control when a response completes', () => {
+    const view = render(
+      <>
+        <button>Another control</button>
+        <ChatInput onSubmit={() => undefined} busy onStop={() => undefined} />
+      </>
+    );
+    view.getByRole('button', { name: 'Stop' }).focus();
+    const other = view.getByRole('button', { name: 'Another control' });
+    other.focus();
+    view.rerender(
+      <>
+        <button>Another control</button>
+        <ChatInput onSubmit={() => undefined} />
+      </>
+    );
+    expect(document.activeElement).toBe(other);
+  });
+
   it('Enter submits the draft as typed and clears; Shift+Enter does not', () => {
     const onSubmit = vi.fn();
     const view = render(<ChatInput onSubmit={onSubmit} />);
@@ -146,26 +247,96 @@ describe('ChatInput', () => {
     expect(document.activeElement).toBe(box(view));
   });
 
-  it('returns focus to the textarea on the next frame after a clearing submit', () => {
-    const raf = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation((cb) => {
-        cb(0);
-        return 0;
-      });
+  it('preserves focus moved outside the composer before the clearing frame', () => {
+    const frames = deferFrames();
+    const onSubmit = vi.fn();
     const view = render(
       <div>
         <button type="button">elsewhere</button>
-        <ChatInput onSubmit={() => undefined} />
+        <ChatInput onSubmit={onSubmit} defaultValue={'  hi \n'} />
       </div>
     );
-    type(box(view), 'hi');
-    view.getByRole('button', { name: 'elsewhere' }).focus();
-    expect(document.activeElement).not.toBe(box(view));
-    fireEvent.click(view.getByRole('button', { name: 'Send' }));
-    expect(document.activeElement).toBe(box(view));
-    raf.mockRestore();
+    const el = box(view);
+    el.focus();
+    fireEvent.keyDown(el, { key: 'Enter' });
+    const other = view.getByRole('button', { name: 'elsewhere' });
+    other.focus();
+    expect(onSubmit.mock.calls).toEqual([['  hi \n']]);
+    expect(el.value).toBe('');
+    expect(frames).toHaveLength(1);
+    frames[0](0);
+    expect(document.activeElement).toBe(other);
   });
+
+  it.each(['onSubmit', 'onValueChange'] as const)(
+    'preserves a synchronous application focus handoff in %s',
+    (callback) => {
+      const frames = deferFrames();
+      const other = createRef<HTMLButtonElement>();
+      const handoff = () => other.current?.focus();
+      const view = render(
+        <>
+          <button ref={other}>elsewhere</button>
+          <ChatInput
+            defaultValue="hi"
+            onSubmit={callback === 'onSubmit' ? handoff : () => undefined}
+            onValueChange={callback === 'onValueChange' ? handoff : undefined}
+          />
+        </>
+      );
+      const send = view.getByRole('button', { name: 'Send' });
+      send.focus();
+      fireEvent.click(send);
+      expect(box(view).value).toBe('');
+      expect(document.activeElement).toBe(other.current);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(other.current);
+    }
+  );
+
+  it.each(['focused', 'disabled', 'removed'])(
+    'returns focus from its %s Send button on the clearing frame',
+    (state) => {
+      const frames = deferFrames();
+      const view = render(<ChatInput defaultValue="hi" onSubmit={() => undefined} />);
+      const el = box(view);
+      const send = view.getByRole('button', { name: 'Send' });
+      send.focus();
+      fireEvent.click(send);
+      expect(el.value).toBe('');
+      expect(send).toHaveProperty('disabled', true);
+      if (state === 'disabled') {
+        // jsdom does not blur a button when React disables it, unlike browsers.
+        document.body.tabIndex = -1;
+        document.body.focus();
+        document.body.removeAttribute('tabindex');
+      }
+      if (state === 'removed') send.remove();
+      expect(document.activeElement).toBe(state === 'focused' ? send : document.body);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(el);
+    }
+  );
+
+  it.each(['unmounted', 'replaced'])(
+    'does not restore focus for an %s composer',
+    (state) => {
+      const frames = deferFrames();
+      const view = render(<ChatInput defaultValue="hi" onSubmit={() => undefined} />);
+      const el = box(view);
+      el.focus();
+      fireEvent.keyDown(el, { key: 'Enter' });
+      expect(el.value).toBe('');
+      if (state === 'unmounted') view.unmount();
+      else view.rerender(<ChatInput key="replacement" defaultValue="new" onSubmit={() => undefined} />);
+      expect(document.activeElement).toBe(document.body);
+      expect(frames).toHaveLength(1);
+      frames[0](0);
+      expect(document.activeElement).toBe(document.body);
+    }
+  );
 
   it('auto-resizes to content, capped at min(40vh, 320px)', () => {
     const view = render(<ChatInput onSubmit={() => undefined} />);
@@ -180,6 +351,50 @@ describe('ChatInput', () => {
     expect(el.style.height).toBe('50px');
     inner.mockRestore();
     height.mockRestore();
+  });
+
+  it('keeps an unchanged draft within the cap when the viewport shrinks', () => {
+    const view = render(<ChatInput onSubmit={() => undefined} />);
+    const el = box(view);
+    const height = vi.spyOn(el, 'scrollHeight', 'get').mockReturnValue(300);
+    const inner = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(500);
+    type(el, 'A draft to preserve');
+    expect(el.style.height).toBe('200px');
+    inner.mockReturnValue(250);
+    fireEvent(window, new Event('resize'));
+    expect(el.style.height).toBe('100px');
+    expect(el.value).toBe('A draft to preserve');
+    inner.mockRestore();
+    height.mockRestore();
+  });
+
+  it('fits newly wrapped draft lines after a container resize and releases observation', async () => {
+    let notify: (() => void) | undefined;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          notify = callback;
+        }
+        observe() {
+          /* The browser supplies the resize notification below. */
+        }
+        disconnect = disconnect;
+      }
+    );
+    const view = render(<ChatInput onSubmit={() => undefined} />);
+    const el = box(view);
+    const height = vi.spyOn(el, 'scrollHeight', 'get').mockReturnValue(60);
+    type(el, 'A draft that wraps in a narrower column');
+    height.mockReturnValue(180);
+    notify?.();
+    await waitFor(() => expect(el.style.height).toBe('180px'));
+    expect(el.value).toBe('A draft that wraps in a narrower column');
+    view.unmount();
+    expect(disconnect).toHaveBeenCalledOnce();
+    height.mockRestore();
+    vi.unstubAllGlobals();
   });
 
   it('a disabled input cannot submit via Ctrl+Enter or form submit', () => {

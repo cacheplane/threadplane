@@ -140,8 +140,14 @@ let threadCounter = 0;
     }
   `,
   template: `
-    <example-chat-layout sidebarWidth="14rem">
-      <chat main [agent]="agent" class="block flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="LangGraph persistence"
+      description="Create two conversations, then switch between them to load their saved history from the server."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Tell me a fictional fact…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="block flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -180,6 +186,12 @@ let threadCounter = 0;
   `,
 })
 export class PersistenceComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.newThread();
+    conversation.clearDraft();
+  }
+
   protected readonly threads = threadsState;
   protected readonly activeThreadId = activeThreadIdState;
   protected readonly suggestions = WELCOME_SUGGESTIONS;

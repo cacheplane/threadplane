@@ -11,6 +11,7 @@ export const CHAT_ERROR_STYLES = `
     border-radius: var(--tplane-chat-radius-card);
     padding: 8px 12px;
     font-size: var(--tplane-chat-font-size-sm);
+    line-height: var(--tplane-chat-line-height-tight);
     box-sizing: border-box;
     max-width: var(--tplane-chat-max-width);
     margin: 0 auto var(--tplane-chat-space-2);

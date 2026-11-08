@@ -90,10 +90,13 @@ export interface CockpitControlPlaneProps {
   onCopyDiagnostics: RuntimeCommand;
   mobile?: boolean;
   layout?: 'full' | 'pane';
+  /** Keep the host's page navigation available beside every article mode. */
+  persistentContextPane?: boolean;
   onModeSelected?: (mode: ControlPlaneMode) => void;
   onNavigate?: () => void;
   onUtilityDismissed?: (utility: Exclude<CockpitUtility, null>) => void;
   renderContextPane?: WorkspaceContextPaneRenderer;
+  renderContextHeader?: WorkspaceContextPaneRenderer;
   onContextAction?: (action: string) => void;
   trackNavigation?: TrackNavigation;
   themeControl?: React.ReactNode;
@@ -134,10 +137,12 @@ export function CockpitControlPlane({
   onCopyDiagnostics,
   mobile = false,
   layout = 'full',
+  persistentContextPane = false,
   onModeSelected,
   onNavigate,
   onUtilityDismissed,
   renderContextPane,
+  renderContextHeader,
   onContextAction,
   trackNavigation,
   themeControl,
@@ -236,6 +241,20 @@ export function CockpitControlPlane({
           adapter={runtimeAdapter}
           runtimeOrigin={runtimeOrigin}
         />
+        {persistentContextPane && entry ? (
+          <RuntimeSection
+            snapshot={runtimeSnapshot}
+            product={product}
+            language={language}
+            open={expanded.Runtime ?? true}
+            onOpenChange={(open) => onExpandedChange('Runtime', open)}
+            onRecheck={onRecheck}
+            onReload={onReload}
+            onOpenRuntime={onOpenRuntime}
+            onCopyDiagnostics={onCopyDiagnostics}
+            runtimeTargetView={runtimeTargetView}
+          />
+        ) : null}
         {themeControl ? (
           <div className="workspace-control-plane-setting">
             <span>Theme</span>
@@ -244,7 +263,7 @@ export function CockpitControlPlane({
         ) : null}
       </ControlPlaneUtilityPanel>
     );
-  } else if (activeMode === 'Docs' && renderContextPane) {
+  } else if ((activeMode === 'Docs' || persistentContextPane) && renderContextPane) {
     paneContent = renderContextPane({
       mobile,
       onNavigate,
@@ -351,6 +370,11 @@ export function CockpitControlPlane({
       ) : null}
 
       <ControlPlanePane label={contextPaneLabel}>
+        {renderContextHeader?.({
+          mobile,
+          onNavigate,
+          onAction: onContextAction,
+        })}
         {paneContent}
       </ControlPlanePane>
     </div>

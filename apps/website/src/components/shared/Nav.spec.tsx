@@ -7,7 +7,7 @@ import { Nav } from './Nav';
 const { trackCtaClick, trackExternalLinkClick, pathnameRef } = vi.hoisted(() => ({
   trackCtaClick: vi.fn(),
   trackExternalLinkClick: vi.fn(),
-  pathnameRef: { current: '/docs/langgraph/guides/streaming' },
+  pathnameRef: { current: '/docs/angular/langgraph/guides/streaming' },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -25,7 +25,7 @@ describe('Docs mobile navigation', () => {
     window.localStorage.clear();
     trackCtaClick.mockClear();
     trackExternalLinkClick.mockClear();
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
   });
 
   it('mounts the docs control plane, search trigger included, on the library-neutral docs index', () => {
@@ -133,7 +133,7 @@ describe('Docs mobile navigation', () => {
     ).toBe('/docs/choosing-an-adapter');
   });
 
-  it('keeps Pricing a plain link and retires the Demo dropdown', () => {
+  it('keeps Pricing a plain link and puts both demos in Demos', () => {
     pathnameRef.current = '/';
     render(<Nav />);
     const navigation = screen.getByRole('navigation');
@@ -141,9 +141,9 @@ describe('Docs mobile navigation', () => {
     expect(
       within(navigation).getByRole('link', { name: 'Pricing' }).getAttribute('href'),
     ).toBe('/pricing');
-    expect(within(navigation).queryByRole('button', { name: /^Demo/ })).toBeNull();
-
     fireEvent.click(within(navigation).getByRole('button', { name: 'Docs' }));
+    expect(screen.queryByRole('link', { name: /LangGraph demo/ })).toBeNull();
+    fireEvent.click(within(navigation).getByRole('button', { name: 'Demos' }));
     expect(
       screen.getByRole('link', { name: /LangGraph demo/ }).getAttribute('href'),
     ).toBe('https://demo.threadplane.ai');
@@ -188,12 +188,12 @@ describe('Docs mobile navigation', () => {
     pathnameRef.current = '/';
     render(<Nav />);
     const navigation = screen.getByRole('navigation');
-    fireEvent.click(within(navigation).getByRole('button', { name: 'Docs' }));
+    fireEvent.click(within(navigation).getByRole('button', { name: 'Demos' }));
     fireEvent.click(within(navigation).getByRole('link', { name: /LangGraph demo/ }));
 
     expect(trackExternalLinkClick).toHaveBeenCalledWith('https://demo.threadplane.ai', {
       surface: 'nav',
-      cta_id: 'nav_docs_demo_langgraph',
+      cta_id: 'nav_demos_langgraph',
       cta_text: 'LangGraph demo',
     });
   });
@@ -208,15 +208,28 @@ describe('Docs mobile navigation', () => {
     ).toBe('https://github.com/cacheplane/threadplane');
   });
 
+  it.each([1234, 0])('shows %s GitHub stars in desktop and mobile navigation', (stars) => {
+    pathnameRef.current = '/';
+    render(<Nav githubStars={stars} />);
+    const count = stars.toLocaleString('en-US');
+    const desktopLink = screen.getByRole('link', { name: `GitHub repository, ${count} stars` });
+    expect(within(desktopLink).getByText(count)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' });
+    expect(within(dialog).getByLabelText(`${count} stars`).textContent).toBe(count);
+  });
+
   it('opens pre-pushed to the docs tree on a docs route, with no tab strip', () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
     const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' });
 
     expect(within(dialog).queryByRole('button', { name: 'Site' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Search docs' })).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Guides' })).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Back to menu' })).toBeTruthy();
   });
 
@@ -270,8 +283,8 @@ describe('Docs mobile navigation', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Docs' }));
     expect(
-      within(dialog).getByRole('link', { name: /Quick start/ }).getAttribute('href'),
-    ).toBe('/docs/langgraph/getting-started/quickstart');
+      within(dialog).getByRole('link', { name: /Getting started/ }).getAttribute('href'),
+    ).toBe('/docs/angular/getting-started/introduction');
     expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
   });
 
@@ -297,7 +310,7 @@ describe('Docs mobile navigation', () => {
   });
 
   it('Escape closes from the drawer root reached by going back on a docs route', async () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     const trigger = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(trigger);
@@ -313,7 +326,7 @@ describe('Docs mobile navigation', () => {
   });
 
   it('Escape still pops a level pushed from that root on a docs route', async () => {
-    pathnameRef.current = '/docs/langgraph/guides/streaming';
+    pathnameRef.current = '/docs/angular/langgraph/guides/streaming';
     render(<Nav />);
     const trigger = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(trigger);
@@ -422,7 +435,7 @@ describe('Docs mobile navigation', () => {
     const destination = within(screen.getByRole('dialog')).getByRole('link', {
       name: 'Persistence',
     });
-    expect(destination.getAttribute('href')).toBe('/docs/langgraph/guides/persistence');
+    expect(destination.getAttribute('href')).toBe('/docs/angular/langgraph/guides/persistence');
     fireEvent.click(destination);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -580,7 +593,7 @@ describe('Docs mobile navigation', () => {
 
     expect(trackCtaClick).toHaveBeenCalledWith({
       surface: 'mobile_nav',
-      destination_url: '/docs/langgraph/guides/streaming',
+      destination_url: '/docs/angular/langgraph/guides/streaming',
       cta_id: 'mobile_nav_docs_page',
       cta_text: 'Streaming',
       library: 'langgraph',

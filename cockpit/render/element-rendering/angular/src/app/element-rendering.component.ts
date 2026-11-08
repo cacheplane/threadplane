@@ -309,7 +309,10 @@ class DemoCardComponent {
     .list-row__remove:hover { color: #ef4444; }
   `,
   template: `
-    <example-split-layout>
+    <example-split-layout
+      title="Element Rendering"
+      description="Render ordered children and nested views. Choose whether the native renderer shows the conditional detail."
+    >
       <!-- Spec picker + streaming status -->
       <div header class="bar">
         <span class="bar__lbl">Spec</span>

@@ -1,7 +1,8 @@
 :root {
+  color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  color: #202832;
-  background: #fafafa;
+  color: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
 }
 * {
   box-sizing: border-box;
@@ -19,7 +20,7 @@ body {
   gap: 1rem;
   overflow-wrap: anywhere;
 }
-.timeline-demo header,
+.timeline-demo > header,
 .timeline-demo .panel-heading {
   display: flex;
   align-items: center;
@@ -27,31 +28,31 @@ body {
   gap: 1rem;
   flex-wrap: wrap;
 }
-.timeline-demo h1 {
+.timeline-demo > h1 {
   font-size: 1.5rem;
   margin: 0;
 }
-.timeline-demo h2 {
+.timeline-demo h2:where(:not(.tp-markdown *)) {
   font-size: 1rem;
   margin: 0;
 }
-.timeline-demo p {
+.timeline-demo > p {
   margin: 0;
   line-height: 1.45;
 }
 .timeline-demo .eyebrow {
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
   font-size: 0.8rem;
   margin-bottom: 0.4rem;
 }
-.timeline-demo button {
+.timeline-demo button:where(:not(.tp-chat-input button)) {
   font: inherit;
   cursor: pointer;
   max-width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #cbd2da;
+  border: 1px solid var(--ds-border, light-dark(#cbd2da, #666666));
   border-radius: 0.4rem;
-  background: #fff;
+  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
   color: inherit;
   overflow-wrap: anywhere;
 }
@@ -64,7 +65,7 @@ body {
   white-space: nowrap;
 }
 .timeline-demo button:focus-visible {
-  outline: 2px solid #415873;
+  outline: 2px solid var(--ds-accent, light-dark(#415873, #9dc1ff));
   outline-offset: 3px;
 }
 .timeline-layout {
@@ -84,10 +85,10 @@ body {
 }
 .timeline-demo .current-panel,
 .timeline-demo .preview-panel {
-  border: 1px solid #dce1e7;
+  border: 1px solid var(--ds-border, light-dark(#dce1e7, #666666));
   border-radius: 0.6rem;
   padding: 1rem;
-  background: white;
+  background: var(--ds-surface, light-dark(white, #1c1c1c));
 }
 .timeline-demo .checkpoint-picker {
   max-height: 18rem;
@@ -98,13 +99,13 @@ body {
   text-align: left;
 }
 .timeline-demo button[aria-pressed='true'] {
-  border-color: #415873;
-  background: #eaf0f6;
+  border-color: var(--ds-border, light-dark(#415873, #9dc1ff));
+  background: var(--ds-surface-tinted, light-dark(#eaf0f6, #182638));
 }
 .timeline-demo .checkpoint-time {
   display: block;
   font-size: 0.8rem;
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
 .timeline-demo .tp-chat-list {
   min-height: 10rem;
@@ -122,7 +123,7 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.timeline-demo pre {
+.timeline-demo pre:where(:not(.tp-markdown *)) {
   max-width: 100%;
   overflow-x: auto;
 }
@@ -130,11 +131,11 @@ body {
   max-width: 100%;
 }
 .timeline-demo [role='alert'] {
-  color: #a52323;
+  color: var(--tp-chat-danger, light-dark(#a52323, #ff8a80));
 }
 .timeline-demo [role='status'] {
   font-size: 0.85rem;
-  color: #606b76;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
 @media (max-width: 48rem) {
   .timeline-demo {
@@ -142,5 +143,33 @@ body {
   }
   .timeline-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Keep the application-owned workspace beside its own scrollable transcript. */
+.tp-example.timeline-demo .tp-example__content { overflow: hidden; }
+.tp-example.timeline-demo .timeline-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.tp-example.timeline-demo .current-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.tp-example.timeline-demo .current-panel > .tp-chat-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.tp-example.timeline-demo .current-panel > :not(.tp-chat-list) { flex-shrink: 0; }
+.tp-example.timeline-demo .history-panel { min-height: 0; overflow: auto; }
+@media (max-width: 768px) {
+  .tp-example.timeline-demo .timeline-layout {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 20dvh);
+    gap: 8px;
   }
 }

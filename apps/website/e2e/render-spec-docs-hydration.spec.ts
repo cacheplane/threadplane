@@ -18,8 +18,7 @@ for (const frontend of ['angular', 'react'] as const) {
         executions.push(request.url());
     });
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    const query = frontend === 'react' ? '?frontend=react' : '';
-    await page.goto('/docs/render/guides/specs' + query, {
+    await page.goto(`/docs/${frontend}/render/guides/specs`, {
       waitUntil: 'domcontentloaded',
     });
     for (const reload of [false, true]) {
@@ -28,7 +27,7 @@ for (const frontend of ['angular', 'react'] as const) {
         'data-hydrated',
         'true'
       );
-      await expect(page.getByLabel('Example UI')).toHaveValue(frontend);
+      await expect(page.getByLabel('Framework', { exact: true })).toHaveAttribute('data-value', frontend);
       const path =
         frontend === 'react'
           ? 'cockpit/render/spec-rendering/react/src/playback.ts'

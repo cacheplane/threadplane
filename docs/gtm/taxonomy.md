@@ -161,7 +161,7 @@ Browser events never fire unless the consumer explicitly opts in. See `libs/tele
 
 **Nav**
 
-The navbar was rebuilt on 2026-09-08 into four triggers, three of which open panels.
+The navbar has five top-level entries; Libraries, Docs, Demos, and Solutions open panels.
 Every panel destination is data in `apps/website/src/components/shared/nav-config.ts`,
 and `trackNavItem` prefixes each item's `ctaId` with the surface — so **every id below
 also exists with a `mobile_nav_` prefix**, emitted by the same items in the mobile
@@ -173,7 +173,7 @@ automatically; there is no second list to keep in sync.
 - Docs panel — `nav_docs_documentation` `nav_docs_quick_start`
   `nav_docs_choosing_an_adapter` `nav_docs_guides` `nav_docs_concepts`
   `nav_docs_api_reference`
-- Docs panel, external demos — `nav_docs_demo_langgraph` `nav_docs_demo_ag_ui`
+- Demos panel, external demos — `nav_demos_langgraph` `nav_demos_ag_ui`
   (derived from `DEMOS` in `lib/demos.ts`, so a new demo adds its own id)
 - Solutions panel — `nav_solutions_customer_support` `nav_solutions_analytics`
   `nav_solutions_compliance` `nav_solutions_pilot_to_prod` `nav_solutions_blog`
@@ -181,6 +181,9 @@ automatically; there is no second list to keep in sync.
 - Bar itself — `nav_pricing` `nav_github` `nav_talk_to_us`
 - Mobile drawer only — `mobile_nav_docs_page` (any link inside the docs tree, with the
   page title in `cta_text` and the library in `library`)
+
+- retired 2026-11-06: `nav_docs_demo_langgraph` / `nav_docs_demo_ag_ui` (moved to the
+  top-level Demos panel as `nav_demos_langgraph` / `nav_demos_ag_ui`)
 
 - retired 2026-09-08: `nav_demo_langgraph` `nav_demo_ag_ui` (the hand-rolled `Demo ▾`
   dropdown was absorbed into the Docs panel — the demos are now

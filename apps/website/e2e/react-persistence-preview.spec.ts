@@ -1,10 +1,12 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React persistence keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/persistence?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/langgraph/guides/persistence');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React persistence preview',
@@ -22,30 +24,28 @@ test('public React persistence keep topic docs, sources, runtime, and history al
   await page.screenshot({
     path: testInfo.outputPath('react-persistence-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await expect(page).toHaveURL(/\/docs\/react\//);
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4604|langgraph\/persistence\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4604|langgraph\/persistence\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -65,7 +65,7 @@ test('switching away releases held React history and returning starts with an em
     'Local history lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4604/__reset');
-  await page.goto('/docs/langgraph/guides/persistence?frontend=react&mode=run');
+  await page.goto('/docs/react/langgraph/guides/persistence?mode=run');
   const frame = page.frameLocator('iframe');
   for (const text of [
     'Remember Avery likes tea',
@@ -87,10 +87,8 @@ test('switching away releases held React history and returning starts with an em
     'Loading saved conversation…'
   );
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -100,7 +98,7 @@ test('switching away releases held React history and returning starts with an em
     )
     .toBe(false);
   await request.post('http://127.0.0.1:4604/__release');
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(
     frame.getByRole('region', { name: 'Saved conversations' })

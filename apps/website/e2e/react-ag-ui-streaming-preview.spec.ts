@@ -1,10 +1,12 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React AG-UI streaming keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/ag-ui/reference/event-mapping?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/ag-ui/reference/event-mapping');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React AG-UI streaming preview',
@@ -22,35 +24,33 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
   await page.screenshot({
     path: testInfo.outputPath('react-ag-ui-streaming-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await expect(page).toHaveURL(
-    '/docs/ag-ui/reference/event-mapping?mode=code&frontend=react'
+    '/docs/react/ag-ui/reference/event-mapping?mode=code'
   );
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page).toHaveURL(
-    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+    '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4609|ag-ui\/streaming\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).toHaveURL('/docs/ag-ui/reference/event-mapping?mode=run');
+  await selectFramework(page, 'angular');
+  await expect(page).toHaveURL('/docs/angular/ag-ui/reference/event-mapping?mode=run');
   await page.goBack({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
-    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+    '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(
-    '/docs/ag-ui/reference/event-mapping?mode=run&frontend=react'
+    '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -58,7 +58,7 @@ test('public React AG-UI streaming keep topic docs, sources, runtime, and histor
     /(?:localhost:4609|ag-ui\/streaming\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -79,7 +79,7 @@ test('switching away releases the held AG-UI Streaming stream and returning stay
   const origin = 'http://127.0.0.1:4609';
   await request.post(origin + '/__reset');
   await page.goto(
-    '/docs/ag-ui/reference/event-mapping?frontend=react&mode=run'
+    '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
   const frame = page.frameLocator('iframe');
   await expect(
@@ -91,10 +91,8 @@ test('switching away releases the held AG-UI Streaming stream and returning stay
     frame.getByRole('region', { name: 'Conversation', exact: true })
   ).toContainText('Live partial');
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -104,7 +102,7 @@ test('switching away releases the held AG-UI Streaming stream and returning stay
     )
     .toBe(false);
   await request.post(origin + '/__release');
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(
     frame

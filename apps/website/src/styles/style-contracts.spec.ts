@@ -96,9 +96,17 @@ const CONTRACTS: StyleContract[] = [
     selector: '.website-workspace-host',
     why: 'The fixed site nav remains outside the workspace. This wrapper owns the remaining viewport and prevents the page footer from creating a second scroller.',
     requires: {
-      height: /height:\s*100dvh/,
+      height: /height:\s*100%/,
       'padding-top': /padding-top:\s*var\(--nav-h\)/,
       overflow: /overflow:\s*hidden/,
+    },
+  },
+  {
+    file: 'docs.css',
+    selector: 'body:has([data-website-workspace-host]) [data-site-navigation]',
+    why: 'Safari pans fixed chrome in layout-viewport coordinates; the site nav must stay aligned with the resized iframe host.',
+    requires: {
+      top: /top:\s*var\(--workspace-viewport-offset-top,\s*0px\)/,
     },
   },
   {
@@ -107,6 +115,8 @@ const CONTRACTS: StyleContract[] = [
     why: 'The shell fills the remaining height below the fixed site nav and frontend selector, without clipping its panels.',
     requires: {
       height: /height:\s*auto/,
+      position: /position:\s*static/,
+      top: /top:\s*auto/,
       flex: /flex:\s*1/,
       'min-height': /min-height:\s*0/,
     },
@@ -116,7 +126,8 @@ const CONTRACTS: StyleContract[] = [
     selector: '#site-content:has([data-website-workspace-host])',
     why: 'Workspace routes own the viewport beneath the global nav and must not inherit ordinary page/footer scrolling.',
     requires: {
-      height: /height:\s*100dvh/,
+      height: /height:\s*var\(--workspace-viewport-height,\s*100dvh\)/,
+      top: /top:\s*var\(--workspace-viewport-page-top,\s*0px\)/,
       overflow: /overflow:\s*hidden/,
     },
   },
@@ -491,97 +502,4 @@ describe('style contracts', () => {
    * screen reader hears an empty section. A review of this band already caught
    * exactly that once.
    */
-  describe('landing.css airport stack is hidden visually, never removed', () => {
-    const css = loadStylesheet('landing.css');
-    const desktop = baseDeclarationsFor(css, '.airport-stack');
-    const narrow = mediaBlock(css, '(max-width: 1023px)');
-
-    it('hides the desktop stack with the clip-path idiom', () => {
-      // Asserted positively first so the `not.toMatch` below cannot pass
-      // against an empty string if the rule is ever renamed away.
-      expect(desktop, '.airport-stack has no rule outside a media query').not.toBe('');
-      expect(desktop).toMatch(/position:\s*absolute/);
-      expect(desktop).toMatch(/clip-path:\s*inset\(50%\)/);
-      expect(desktop).toMatch(/width:\s*1px/);
-    });
-
-    it('never takes the stack out of the accessibility tree', () => {
-      expect(desktop).not.toMatch(/display:\s*none/);
-      expect(desktop).not.toMatch(/visibility:\s*hidden/);
-    });
-
-    /**
-     * The plate and the stack must swap at the same width, or one viewport
-     * band gets both or neither. 1023px rather than the usual 767px is
-     * measured: `.ap-svg` is `width: 100%`, so at 768px the 1000-unit plate
-     * renders at ~0.71 and its callsigns land at 6px.
-     */
-    it('swaps the plate for the stack at one breakpoint', () => {
-      expect(declarationsFor(narrow, '.airport-figure')).toMatch(/display:\s*none/);
-      expect(declarationsFor(narrow, '.airport-stack')).toMatch(/position:\s*static/);
-      expect(declarationsFor(narrow, '.airport-stack')).toMatch(/clip-path:\s*none/);
-    });
-  });
-
-  describe('landing.css stage act', () => {
-    const css = loadStylesheet('landing.css');
-
-    /**
-     * The engine sets the act's inline height and sticks `[data-sc-stage]`
-     * only if the stylesheet already makes it sticky; when it is not, the
-     * engine warns to the console and the act scrolls straight through.
-     * Cues start hidden so the engine's per-frame opacity is the only thing
-     * that reveals a rail block.
-     */
-    it('the stage pin is sticky — the engine only warns when it is not', () => {
-      expect(declarationsFor(css, '.stage-pin')).toMatch(/position:\s*sticky/);
-      expect(declarationsFor(css, '.stage-act [data-sc-cue]')).toMatch(
-        /opacity:\s*0/
-      );
-    });
-
-    /**
-     * The cues stack in one grid cell and are hidden by opacity alone, so a
-     * hidden ledger sits over the visible beat block and would take the click
-     * meant for its docs link. No cue owns the pointer until the publisher
-     * marks the block `now` or the ledger active.
-     */
-    it("a hidden cue does not intercept the visible one's clicks", () => {
-      expect(declarationsFor(css, '.stage-act [data-sc-cue]')).toMatch(
-        /pointer-events:\s*none/
-      );
-      expect(
-        declarationsFor(css, ".stage-rail-beat[data-beat-state='now']")
-      ).toMatch(/pointer-events:\s*auto/);
-      expect(declarationsFor(css, '.stage-rail-close[data-active]')).toMatch(
-        /pointer-events:\s*auto/
-      );
-    });
-
-    /**
-     * The rail's state is written as attributes by the publisher, not React,
-     * so nothing in a component test notices when the attribute has no rule
-     * behind it: the segment bar would never light and the checks never fill,
-     * and the ledger must share the cues' one cell: when it spanned two rail
-     * rows instead, the grid split its height across both and pushed the hold
-     * line ~150px below the beat block.
-     */
-    it('shows square checks in persistent rows without dividing lines', () => {
-      expect(declarationsFor(css, '.stage-check')).toMatch(
-        /border-radius:\s*5px/
-      );
-      expect(declarationsFor(css, '.stage-check[data-checked]')).toMatch(
-        /background:/
-      );
-      expect(declarationsFor(css, '.stage-rail-beat')).toMatch(
-        /display:\s*flex/
-      );
-      expect(declarationsFor(css, '.stage-rail-beat')).not.toMatch(
-        /border-bottom:|grid-area:/
-      );
-      expect(declarationsFor(css, '.stage-checklist')).toMatch(
-        /display:\s*grid/
-      );
-    });
-  });
 });

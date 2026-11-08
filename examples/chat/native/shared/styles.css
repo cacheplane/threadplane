@@ -1,5 +1,27 @@
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light dark;
+  --ds-bg: light-dark(#fff, #111);
+  --ds-surface: light-dark(#fff, #1c1c1c);
+  --ds-surface-tinted: light-dark(#fbfbfb, #2c2c2c);
+  --ds-surface-dim: light-dark(#f5f5f5, #282828);
+  --ds-text-primary: light-dark(#0a0a0a, #f5f5f5);
+  --ds-text-secondary: light-dark(#464646, #b5b5b5);
+  --ds-text-muted: light-dark(#737373, #a0a0a0);
+  --ds-text-inverted: light-dark(#fff, #111);
+  --ds-border: light-dark(#e5e5e5, #2d2d2d);
+  --ds-border-strong: light-dark(#767676, #858585);
+  --ds-accent: var(--ds-text-primary);
+  --ds-accent-hover: light-dark(#333, #ddd);
+  --ds-accent-surface: color-mix(
+    in srgb,
+    var(--ds-text-primary) 6%,
+    transparent
+  );
+  --ds-accent-border: var(--ds-border);
+  --ds-accent-border-hover: var(--ds-text-muted);
+  --ds-alert: light-dark(#b42318, #ff8a80);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--ds-text-primary);
   background: var(--ds-bg);
   font-synthesis: none;
@@ -11,12 +33,19 @@ body {
   margin: 0;
   min-width: 280px;
 }
-header {
-  min-height: 76px;
+.application {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.application > header {
+  flex: 0 0 auto;
+  min-height: 56px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px 4vw;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--ds-border);
   font-weight: 650;
 }
@@ -33,20 +62,28 @@ header {
   font-weight: 400;
   font-size: 0.85rem;
 }
-main {
-  width: min(1260px, 92vw);
-  margin: 36px auto;
+.application > main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  margin: 0;
 }
 .conversation-layout {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
-  gap: clamp(24px, 4vw, 64px);
+  grid-template-columns: 18rem minmax(0, 1fr);
 }
-aside {
+.conversation-layout > aside {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   border-right: 1px solid var(--ds-border);
-  padding-right: 24px;
+  padding: 16px;
 }
-h1 {
+.setup h1 {
   font-size: clamp(1.7rem, 4vw, 2.5rem);
   letter-spacing: -0.035em;
   line-height: 1.2;
@@ -189,44 +226,100 @@ textarea:disabled {
 .conversation-id {
   font-size: 0.75rem;
 }
+.conversation {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.conversation-heading {
+  flex: 0 0 auto;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ds-border);
+}
+.conversation-heading h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+.conversation-heading :is(.eyebrow, .conversation-id) {
+  margin: 0;
+  line-height: 1.5;
+}
 .empty-state {
   padding: 32px 0;
   color: var(--ds-text-secondary);
 }
 .transcript {
-  margin: 30px 0;
+  flex: 1 1 0%;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+.transcript:focus-visible {
+  outline: 2px solid var(--ds-text-primary);
+  outline-offset: -2px;
+}
+.message-tool > pre {
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--ds-surface-tinted);
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
+.transcript__content,
+.transcript.tp-chat-list > div {
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: 16px 24px;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 .message {
-  padding: 22px 0;
-  border-top: 1px solid var(--ds-border);
+  border: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.message-assistant {
+  margin-block-start: 24px;
+  padding-inline: 4px 12px;
+}
+.transcript.tp-chat-list > div > .message-assistant:first-child,
+native-message:first-child > .message-assistant {
+  margin-block-start: 0;
+}
+.message-user {
+  width: fit-content;
+  max-width: 80%;
+  margin-block-start: 8px;
+  margin-inline-start: auto;
+  padding: 8px 12px;
+  border-radius: 15px;
+  background: var(--ds-text-primary);
+  color: var(--ds-surface);
+  line-height: 1.5;
+}
+native-message:has(> .message-assistant) + native-message > .message-user {
+  margin-block-start: 24px;
 }
 .role-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ds-text-muted);
-  margin: 0 0 16px;
-}
-.message p {
-  margin-block: 12px;
-}
-.message pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: var(--ds-surface-dim);
-  padding: 14px;
-  border-radius: 8px;
-}
-.message table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 16px 0;
-}
-.message th,
-.message td {
-  border: 1px solid var(--ds-border);
-  padding: 8px;
-  text-align: left;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
 }
 .message img {
   max-width: 100%;
@@ -292,54 +385,67 @@ textarea:disabled {
   white-space: pre-wrap;
 }
 .composer {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: calc(48rem + 32px);
+  margin-inline: auto;
   border-top: 1px solid var(--ds-border);
-  padding-top: 12px;
-  margin-top: 24px;
+  padding: 12px 16px 16px;
 }
 .native-react-welcome {
   --tp-welcome-padding: 0;
+  --tp-welcome-max-width: 48rem;
 }
 .native-react-welcome--plain {
   --tp-welcome-max-width: none;
   --tp-welcome-gap: 0;
 }
-.conversation .tp-chat-list {
-  max-height: min(60vh, 640px);
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-}
-.composer-actions,
-.composer .tp-chat-input__actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.composer-actions p,
-.composer .tp-chat-input__hint {
-  margin: 0 auto 0 0;
-  font-size: 0.75rem;
-}
-.composer .tp-chat-input__hint {
-  color: var(--ds-text-secondary);
-}
-.composer .tp-chat-input__textarea {
-  min-height: calc(3 * 1.55em + 26px);
-}
-.primary,
-.composer .tp-chat-input__send {
+.primary {
   background: var(--ds-accent);
   color: var(--ds-text-inverted);
   border-color: var(--ds-accent);
 }
-.primary:hover:not(:disabled),
-.composer .tp-chat-input__send:hover:not(:disabled) {
+.primary:hover:not(:disabled) {
   background: var(--ds-accent-hover);
 }
 .submission-status {
-  min-height: 1.6em;
-  font-size: 0.85rem;
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.submission-status:empty {
+  display: none;
+}
+.composer :is(.tp-chat-input__send, .tp-chat-input__stop) {
+  min-height: 36px;
+  min-width: 36px;
+}
+.composer .tp-chat-input__hint {
+  line-height: 1.5;
+}
+.conversation :is(.tp-chat-list, .tp-chat-input) {
+  --tp-chat-muted: var(--ds-text-muted);
+}
+.composer textarea:disabled {
+  background: transparent;
+}
+.composer :is(.tp-chat-input__send, .tp-chat-input__stop):hover:not(:disabled) {
+  background: var(--ds-text-primary);
+  border-color: transparent;
+  transform: scale(1.05);
+}
+.conversation
+  > :is(
+    .loaded-checkpoint-timeline,
+    .observed-state-comparison,
+    .background-activity
+  ) {
+  flex: 0 0 auto;
+  max-height: 24dvh;
+  overflow-y: auto;
+  margin: 0 24px 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
 }
 [role='alert'] {
   border-left: 3px solid var(--ds-alert);
@@ -353,18 +459,13 @@ textarea:disabled {
 @media (max-width: 700px) {
   .conversation-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
-  aside {
+  .conversation-layout > aside {
+    max-height: 22dvh;
     border-right: 0;
     border-bottom: 1px solid var(--ds-border);
-    padding: 0 0 20px;
-  }
-  .conversation-list {
-    max-height: 220px;
-    overflow-y: auto;
-  }
-  main {
-    margin-top: 24px;
+    padding: 12px 16px;
   }
 }
 @media (max-width: 400px) {
@@ -405,10 +506,10 @@ textarea:disabled {
   padding-inline-start: 1.25rem;
 }
 .conversation .tp-citations__title,
-.conversation .tp-citations__snippet {
+.conversation .tp-citations__snippet:not(.tp-citation-card__snippet) {
   white-space: pre-wrap;
 }
-.conversation .tp-citations__type {
+.conversation .tp-citations__type:not(.tp-citation-card__badge) {
   margin-inline-start: 0.5rem;
   color: var(--ds-text-secondary);
 }

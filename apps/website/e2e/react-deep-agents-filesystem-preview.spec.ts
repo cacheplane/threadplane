@@ -1,6 +1,9 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
-const route = '/docs/deep-agents/capabilities/filesystem';
+const route = '/docs/angular/deep-agents/capabilities/filesystem';
+const reactRoute = '/docs/react/deep-agents/capabilities/filesystem';
 const reactFrame = /(?:localhost:4629|deep-agents\/filesystem\/react)/;
 const observations = new WeakMap<
   Page,
@@ -35,7 +38,7 @@ async function hydrated(page: Page, mode: 'docs' | 'code' | 'run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'run');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', reactFrame);
@@ -54,9 +57,9 @@ async function noOverflow(page: Page) {
 test('native Deep Agents Filesystem keeps canonical Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(route + '?frontend=react', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Filesystem preview',
@@ -78,8 +81,7 @@ test('native Deep Agents Filesystem keeps canonical Docs, Code and Run aligned',
     path: testInfo.outputPath('react-deep-agents-filesystem-docs-mobile.png'),
   });
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
@@ -115,8 +117,7 @@ test('native Deep Agents Filesystem keeps canonical Docs, Code and Run aligned',
   await graph.click();
   await expect(page.getByRole('tabpanel')).toContainText('FilesystemPermission');
   await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await emptyRun(page);
@@ -126,7 +127,7 @@ test('native Deep Agents Filesystem keeps canonical Docs, Code and Run aligned',
     path: testInfo.outputPath('react-deep-agents-filesystem-run-desktop.png'),
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -147,26 +148,26 @@ test('the canonical Filesystem guide keeps Angular as its default frontend', asy
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Filesystem preview',
       exact: true,
     })
   ).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React Deep Agents Filesystem preview',
       exact: true,
     })
   ).toBeVisible();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
 });
 test('a direct React run link mounts an empty conversation without creating a thread', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -174,7 +175,7 @@ test('a direct React run link mounts an empty conversation without creating a th
 test('history preserves the mounted React owner and unsent draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -187,8 +188,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
     page.frameLocator('iframe').getByLabel('Message', { exact: true })
   ).toHaveValue('Unsent history draft');
   const before = [...(observations.get(page)?.requests ?? [])];
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
@@ -205,7 +205,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
 test('reload clears an unsent React draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -223,7 +223,7 @@ test('reload clears an unsent React draft without runtime requests', async ({
 });
 
 test('the aviation suggestion fills an exact inert draft', async ({ page }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);

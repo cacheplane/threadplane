@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, NavigationEnd } from '@angular/router';
 import {
@@ -38,6 +38,39 @@ const threadsAdapterProvider = {
   useFactory: createThreadsAdapterMock,
 };
 
+describe('DemoShell — approval decisions', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function decisionShell() {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const shell = Object.create(DemoShell.prototype) as DemoShell;
+    Object.defineProperty(shell, 'agent', {
+      value: { interrupt: () => ({ value: { reason: 'Review this plan' } }), submit },
+    });
+    return { shell, submit };
+  }
+
+  it.each([
+    ['accept', 'approved'],
+    ['ignore', 'denied'],
+    ['edit', 'Use a smaller scope'],
+    ['respond', 'Please keep the latest backup'],
+  ] as const)('submits the %s decision to the existing session', async (action, resume) => {
+    const { shell, submit } = decisionShell();
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(resume);
+    await shell.onInterruptAction(action);
+    expect(submit).toHaveBeenCalledExactlyOnceWith(null, { command: { resume } });
+    expect(prompt).toHaveBeenCalledTimes(action === 'edit' || action === 'respond' ? 1 : 0);
+  });
+
+  it.each(['edit', 'respond'] as const)('keeps the interrupt pending when %s is cancelled', async action => {
+    const { shell, submit } = decisionShell();
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    await shell.onInterruptAction(action);
+    expect(submit).not.toHaveBeenCalled();
+  });
+});
+
 describe('DemoShell — mode signal', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -53,6 +86,29 @@ describe('DemoShell — mode signal', () => {
         ]),
       ],
     });
+  });
+
+  it('fits the visible keyboard viewport and preserves the Safari pan offset', () => {
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    const viewport = Object.assign(new EventTarget(), { height: 714, offsetTop: 0, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    try {
+      const fixture = TestBed.createComponent(DemoShell);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      viewport.height = 377;
+      viewport.offsetTop = 307;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--demo-viewport-height')).toBe('377px');
+      expect(host.style.getPropertyValue('--demo-viewport-top')).toBe('307px');
+      fixture.destroy();
+      viewport.height = 714;
+      viewport.dispatchEvent(new Event('resize'));
+      expect(host.style.getPropertyValue('--demo-viewport-height')).toBe('377px');
+    } finally {
+      if (previous) Object.defineProperty(window, 'visualViewport', previous);
+      else Reflect.deleteProperty(window, 'visualViewport');
+    }
   });
 
   it('defaults to "embed" when URL is /', async () => {

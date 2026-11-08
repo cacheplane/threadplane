@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { projectTextTranscript } from '@threadplane/ag-ui';
 import { useAgent } from '@threadplane/react';
@@ -102,10 +104,9 @@ function MafPresentation({
     disposed: 'Preview closed.',
   }[snapshot.status];
   return (
-    <main className="maf-demo">
+    <ExampleLayout className="maf-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Microsoft Agent Framework expenses</h1>
         </div>
         <button
@@ -184,34 +185,36 @@ function MafPresentation({
           <pre>{snapshot.result}</pre>
         </section>
       )}
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <section aria-label="Compose message">
-        <ChatInput
-          label="Message"
-          placeholder="Ask about a fictional expense…"
-          value={draft}
-          onValueChange={setDraft}
-          disabled={!snapshot.canSend}
-          busy={snapshot.busy}
-          onStop={
-            snapshot.busy && snapshot.status !== 'replacing'
-              ? () => {
-                  void application.stop();
-                }
-              : undefined
-          }
-          onSubmit={(text) => {
-            void application.submit(text, generation);
-            const current = application.getSnapshot();
-            return (
-              current.generation === generation &&
-              current.busy &&
-              current.status === 'running'
-            );
-          }}
-        />
-      </section>
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <section aria-label="Compose message">
+          <ChatInput
+            label="Message"
+            placeholder="Ask about a fictional expense…"
+            value={draft}
+            onValueChange={setDraft}
+            disabled={!snapshot.canSend}
+            busy={snapshot.busy}
+            onStop={
+              snapshot.busy && snapshot.status !== 'replacing'
+                ? () => {
+                    void application.stop();
+                  }
+                : undefined
+            }
+            onSubmit={(text) => {
+              void application.submit(text, generation);
+              const current = application.getSnapshot();
+              return (
+                current.generation === generation &&
+                current.busy &&
+                current.status === 'running'
+              );
+            }}
+          />
+        </section>
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

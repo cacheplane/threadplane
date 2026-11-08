@@ -1,6 +1,6 @@
 # Native React Chat A2UI preview
 
-Experimental native React flight form at `/docs/chat/a2ui/overview?frontend=react`, using the existing shared `c-a2ui` Python graph. Angular remains the default frontend. React, core, content, A2UI and neutral LangGraph candidates are private, unpublished source builds.
+Experimental native React flight form at `/docs/angular/chat/a2ui/overview?frontend=react`, using the existing shared `c-a2ui` Python graph. Angular remains the default frontend. React, core, content, A2UI and neutral LangGraph candidates are private, unpublished source builds.
 
 Request a form → edit origin, destination, departure date, passenger count and fare → Search → Select a demonstration flight → Modify. There is no real booking or payment. Modify restores the search values supplied by the server, including the last submitted route and party. The supported airports are LAX, JFK, SFO, ORD, BOS, ATL, DFW, SEA, MIA and DEN; fares are Economy, Premium, Business and First.
 

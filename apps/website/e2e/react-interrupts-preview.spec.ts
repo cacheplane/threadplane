@@ -1,10 +1,12 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
 
 test('public React approvals keep topic docs, sources, runtime, and history aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto('/docs/langgraph/guides/interrupts?frontend=react');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await page.goto('/docs/react/langgraph/guides/interrupts');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', { name: 'React interrupts preview', exact: true })
   ).toBeVisible();
@@ -17,30 +19,28 @@ test('public React approvals keep topic docs, sources, runtime, and history alig
     )
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('react-interrupts-docs-desktop.png') });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
-  await expect(page).toHaveURL(/frontend=react/);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await expect(page).toHaveURL(/\/docs\/react\//);
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4601|langgraph\/interrupts\/react)/
   );
-  await page.getByLabel('Example UI').selectOption('angular');
-  await expect(page).not.toHaveURL(/frontend=react/);
+  await selectFramework(page, 'angular');
+  await expect(page).not.toHaveURL(/\/docs\/react\//);
   await page.goBack();
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await page.reload();
   await expect(page.locator('iframe')).toHaveAttribute(
     'src',
     /(?:localhost:4601|langgraph\/interrupts\/react)/
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -59,17 +59,15 @@ test('switching away releases a held React decision and returning starts fresh',
   );
   await request.post('http://127.0.0.1:4601/__reset');
   await request.post('http://127.0.0.1:4601/__hold-resume');
-  await page.goto('/docs/langgraph/guides/interrupts?frontend=react&mode=run');
+  await page.goto('/docs/react/langgraph/guides/interrupts?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await frame.getByRole('button', { name: 'Approve refund' }).click();
   await expect(frame.getByRole('status')).toHaveText('Sending decision…');
   const oldFrame = await page.locator('iframe').elementHandle();
-  await page.getByLabel('Example UI').selectOption('angular');
-  expect(await oldFrame?.evaluate((element) => element.isConnected)).toBe(
-    false
-  );
+  await selectFramework(page, 'angular');
+  await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await expect
     .poll(
       async () =>
@@ -78,7 +76,7 @@ test('switching away releases a held React decision and returning starts fresh',
         ).active
     )
     .toBe(false);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
   await expect(
     frame.getByRole('region', { name: 'Refund approval required' })

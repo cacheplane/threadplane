@@ -116,7 +116,11 @@ export function isPinned(
   return scrollHeight - scrollTop - clientHeight < tolerance;
 }
 
-/** Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates. */
+/**
+ * Composes an agent conversation with message input, streaming content, tool views, and customizable activity templates.
+ * Project `[chatInputFooter]` for composer help in both presentations, and
+ * `[chatFooterStatus]` for application-owned status below the transcript composer.
+ */
 @Component({
   selector: 'chat',
   standalone: true,
@@ -183,8 +187,6 @@ export function isPinned(
     .chat-empty[hidden] { display: none; }
     .chat-empty__title { font-size: 1.125rem; font-weight: 500; color: var(--tplane-chat-text); margin: 0; }
     .chat-empty__sub { margin: 0; font-size: var(--tplane-chat-font-size-sm); }
-    .chat-empty__title { font-size: 1.125rem; font-weight: 500; color: var(--tplane-chat-text); margin: 0; }
-    .chat-empty__sub { margin: 0; font-size: var(--tplane-chat-font-size-sm); }
     .chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-top: var(--tplane-chat-edge-pad); }
     .chat-scroll::-webkit-scrollbar { width: 6px; }
     .chat-scroll::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 10px; }
@@ -206,6 +208,7 @@ export function isPinned(
       padding: 0 var(--tplane-chat-space-6);
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-sm);
+      line-height: var(--tplane-chat-line-height-tight);
     }
     .chat-stopped-notice svg { width: 12px; height: 12px; flex: none; }
     .chat-sr-only {
@@ -219,9 +222,15 @@ export function isPinned(
     }
   `],
   template: `
+    <ng-template #welcomeSuggestions>
+      <ng-content select="[chatWelcomeSuggestions]" />
+    </ng-template>
+    <ng-template #inputFooter>
+      <ng-content select="[chatInputFooter]" />
+    </ng-template>
     @if (showWelcome()) {
       <chat-welcome (focusin)="welcomeHadFocus = isKeyboardFocus($event)" (focusout)="onWelcomeFocusOut($event)">
-        <chat-input chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message...">
+        <chat-input #composer chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()">
           @if (showModelPicker() && modelOptions().length > 0) {
             <chat-select
               chatInputModelSelect
@@ -230,9 +239,12 @@ export function isPinned(
               [placeholder]="modelPickerPlaceholder()"
             />
           }
+          <ng-container ngProjectAs="[chatInputFooter]">
+            <ng-container [ngTemplateOutlet]="inputFooter" />
+          </ng-container>
         </chat-input>
         <ng-container ngProjectAs="[chatWelcomeSuggestions]">
-          <ng-content select="[chatWelcomeSuggestions]" />
+          <ng-container [ngTemplateOutlet]="welcomeSuggestions" />
         </ng-container>
       </chat-welcome>
     } @else {
@@ -253,9 +265,20 @@ export function isPinned(
                with no links holds no other tab stop to scroll it into view. -->
           <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)"
                role="region" aria-label="Conversation" tabindex="0">
-            <chat-message-list [agent]="agent()">
+            @let currentAgent = agent();
+            @let currentMessages = currentAgent.messages();
+            @let currentActivityTemplate = activityTemplate();
+            @let currentExcludedToolNames = currentActivityTemplate ? [] : excludedToolNames();
+            @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
+            @let currentViews = effectiveViews();
+            @let currentStore = resolvedStore();
+            @let currentHandlers = handlers();
+            @if (currentMessages.length === 0) {
+              <ng-container [ngTemplateOutlet]="welcomeSuggestions" />
+            }
+            <chat-message-list [agent]="currentAgent">
               <ng-template chatMessageTemplate="human" let-message let-i="index">
-                <chat-message [role]="'user'" [prevRole]="prevRole(i)">{{ humanContent(message) }}</chat-message>
+                <chat-message [role]="'user'" [prevRole]="previousRole(currentMessages, i)">{{ humanContent(message) }}</chat-message>
               </ng-template>
 
               <ng-template chatMessageTemplate="ai" let-message let-i="index">
@@ -264,14 +287,14 @@ export function isPinned(
                 <chat-message
                   [role]="'assistant'"
                   [message]="message"
-                  [prevRole]="prevRole(i)"
+                  [prevRole]="previousRole(currentMessages, i)"
                   [streaming]="message.delivery.phase === 'streaming'"
-                  [current]="i === agent().messages().length - 1"
+                  [current]="i === currentMessages.length - 1"
                 >
                   <!-- A projected chatActivityTemplate owns the reasoning +
                        tool-call region for this message. It renders at
                        message level (never inside a clipped trace body). -->
-                  @if (activityTemplate(); as activity) {
+                  @if (currentActivityTemplate; as activity) {
                     <ng-container
                       [ngTemplateOutlet]="activity.templateRef"
                       [ngTemplateOutletContext]="activityContextFor(message, i)"
@@ -297,18 +320,18 @@ export function isPinned(
                          <chat-tool-calls> cannot see templates re-projected
                          through <chat>'s own ng-content. -->
                     <chat-tool-calls
-                      [agent]="agent()"
+                      [agent]="currentAgent"
                       [message]="message"
-                      [excludeToolNames]="excludedToolNames()"
-                      [toolCallTemplates]="toolCallTemplates()"
+                      [excludeToolNames]="currentExcludedToolNames"
+                      [toolCallTemplates]="currentToolCallTemplates"
                     />
                   }
                   <chat-tool-views
-                    [agent]="agent()"
+                    [agent]="currentAgent"
                     [message]="message"
-                    [views]="effectiveViews()"
-                    [store]="resolvedStore()"
-                    [handlers]="handlers()"
+                    [views]="currentViews"
+                    [store]="currentStore"
+                    [handlers]="currentHandlers"
                     (events)="onClientToolEvent($event)"
                   />
                   @if (classified.markdown(); as md) {
@@ -325,8 +348,8 @@ export function isPinned(
                       [spec]="spec"
                       [registry]="renderRegistry()"
                       [store]="store()"
-                      [handlers]="handlers()"
-                      [loading]="agent().isLoading()"
+                      [handlers]="currentHandlers"
+                      [loading]="currentAgent.isLoading()"
                       (events)="onSpecEvent($event, i)"
                     />
                   }
@@ -336,7 +359,7 @@ export function isPinned(
                         [surface]="entry.value"
                         [state]="classified.a2uiSurfaceStates().get(entry.key)"
                         [catalog]="catalog"
-                        [handlers]="handlers()"
+                        [handlers]="currentHandlers"
                         (action)="onA2uiAction($event)"
                         (events)="onA2uiEvent($event, i, entry.key)"
                       />
@@ -351,7 +374,7 @@ export function isPinned(
                     <chat-message-actions
                       chatMessageControls
                       [content]="content"
-                      [disabled]="agent().isLoading() || !!agent().isInputBlocked?.()"
+                      [disabled]="currentAgent.isLoading() || !!currentAgent.isInputBlocked?.()"
                       (regenerate)="onRegenerate(i)"
                       (rate)="onRate(message, $event)"
                       (contentCopied)="onCopy(message, $event)"
@@ -418,7 +441,7 @@ export function isPinned(
               />
             }
             <chat-error [agent]="agent()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
-            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" placeholder="Type a message..." (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
+            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
                   chatInputModelSelect
@@ -431,7 +454,11 @@ export function isPinned(
                   <ng-content select="[chatInputModelSelect]" />
                 </ng-container>
               }
+              <ng-container ngProjectAs="[chatInputFooter]">
+                <ng-container [ngTemplateOutlet]="inputFooter" />
+              </ng-container>
             </chat-input>
+            <ng-content select="[chatFooterStatus]" />
           </div>
         </chat-window>
         <!-- Run endings for assistive technology. Streaming text is not
@@ -458,6 +485,8 @@ export class ChatComponent {
   readonly threads = input<Thread[]>([]);
   readonly activeThreadId = input<string>('');
   readonly welcomeDisabled = input<boolean>(false);
+  /** Placeholder shared by welcome and transcript composers. */
+  readonly placeholder = input('Type a message...');
 
   /**
    * High-level model-picker API. When `modelOptions` is non-empty, the chat
@@ -799,6 +828,10 @@ export class ChatComponent {
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
   private readonly composer = viewChild<ChatInputComponent>('composer');
+  /** Clears the local composer after an application-owned conversation reset. */
+  clearDraft(): void {
+    this.composer()?.clearDraft();
+  }
   /**
    * Controls that remove themselves when used — the welcome view on the first
    * send (typed or a suggestion), Retry once the error clears — drop focus to
@@ -1174,7 +1207,12 @@ export class ChatComponent {
 
   prevRole(index: number): ChatMessageRole | undefined {
     if (index === 0) return undefined;
-    const prev = this.agent().messages()[index - 1];
+    return this.previousRole(this.agent().messages(), index);
+  }
+
+  protected previousRole(messages: readonly Message[], index: number): ChatMessageRole | undefined {
+    if (index === 0) return undefined;
+    const prev = messages[index - 1];
     if (!prev) return undefined;
     const role = (prev as unknown as { role?: string }).role;
     if (role === 'user') return 'user';

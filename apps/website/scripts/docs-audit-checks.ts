@@ -1,3 +1,23 @@
+export const DOCS_AUDIT_WIDTHS = [1440, 768, 320] as const;
+
+/** Keep execution and completion accounting on the same viewport plan. */
+export function docsAuditWidths(path: string): readonly number[] {
+  const tablet =
+    /^\/docs\/(?:api(?:\/|$)|shared\/)|\/guides\/(?:tool-views|events)(?:\?|$)|\/concepts\/state-management$/.test(
+      path
+    );
+  return DOCS_AUDIT_WIDTHS.filter((width) => width !== 768 || tablet);
+}
+
+export function expectedDocsAuditChecks(
+  targets: readonly { path: string }[]
+): number {
+  return targets.reduce(
+    (count, target) => count + docsAuditWidths(target.path).length,
+    0
+  );
+}
+
 /** The cross-framework learning journey exercised without starting agents or runtimes. */
 export const DOCS_AUDIT_ROUTES: readonly {
   path: string;
@@ -5,38 +25,56 @@ export const DOCS_AUDIT_ROUTES: readonly {
   video?: boolean;
 }[] = [
   {
-    path: '/docs/langgraph/getting-started/introduction',
+    path: '/docs/angular/langgraph/getting-started/introduction',
     kinds: ['architecture'],
   },
   {
-    path: '/docs/langgraph/concepts/conversation-turns',
+    path: '/docs/angular/langgraph/concepts/conversation-turns',
     kinds: ['architecture', 'sequence', 'state'],
     video: true,
   },
   {
-    path: '/docs/langgraph/guides/streaming',
+    path: '/docs/angular/langgraph/guides/streaming',
     kinds: ['sequence'],
     video: true,
   },
-  { path: '/docs/langgraph/guides/persistence', kinds: ['erd'], video: true },
-  { path: '/docs/langgraph/guides/interrupts', kinds: ['state'] },
   {
-    path: '/docs/langgraph/concepts/state-management',
+    path: '/docs/angular/langgraph/guides/persistence',
+    kinds: ['erd'],
+    video: true,
+  },
+  { path: '/docs/angular/langgraph/guides/interrupts', kinds: ['state'] },
+  {
+    path: '/docs/angular/langgraph/concepts/state-management',
     kinds: ['architecture'],
   },
-  { path: '/docs/chat/guides/client-tools', kinds: ['flow'], video: true },
-  { path: '/docs/ag-ui/guides/client-tools', kinds: ['flow'] },
-  { path: '/docs/render/getting-started/introduction' },
-  { path: '/docs/render/concepts/json-render-vs-a2ui' },
-  { path: '/docs/render/guides/specs', video: true },
-  { path: '/docs/runtimes/getting-started/introduction' },
-  { path: '/docs/chat/migrations/upgrading' },
-  { path: '/docs/langgraph/guides/streaming?frontend=react', video: true },
-  { path: '/docs/langgraph/guides/persistence?frontend=react', video: true },
-  { path: '/docs/chat/guides/client-tools?frontend=react', video: true },
-  { path: '/docs/render/guides/specs?frontend=react', video: true },
-  { path: '/docs/langgraph/guides/interrupts?frontend=react' },
-  { path: '/docs/ag-ui/guides/client-tools?frontend=react' },
+  {
+    path: '/docs/angular/chat/guides/client-tools',
+    kinds: ['flow'],
+    video: true,
+  },
+  { path: '/docs/angular/ag-ui/guides/client-tools', kinds: ['flow'] },
+  { path: '/docs/angular/render/getting-started/introduction' },
+  { path: '/docs/angular/render/concepts/json-render-vs-a2ui' },
+  { path: '/docs/angular/render/guides/specs', video: true },
+  { path: '/docs/angular/runtimes/getting-started/introduction' },
+  { path: '/docs/angular/chat/migrations/upgrading' },
+  { path: '/docs/react/langgraph/guides/streaming', video: true },
+  { path: '/docs/react/langgraph/guides/persistence', video: true },
+  { path: '/docs/react/chat/guides/client-tools', video: true },
+  { path: '/docs/react/render/guides/specs', video: true },
+  { path: '/docs/react/langgraph/guides/interrupts' },
+  { path: '/docs/react/ag-ui/guides/client-tools' },
+  { path: '/docs/shared/middleware/getting-started/introduction' },
+  { path: '/docs/shared/middleware/getting-started/quickstart' },
+  { path: '/docs/shared/middleware/guides/langgraph-client-tools' },
+  { path: '/docs/shared/middleware/guides/python-langgraph' },
+  { path: '/docs/api' },
+  { path: '/docs/api/render' },
+  { path: '/docs/api/render/RenderSpecComponent' },
+  { path: '/docs/angular/ag-ui/guides/tool-views' },
+  { path: '/docs/angular/render/guides/events' },
+  { path: '/docs/angular/ag-ui/guides/tool-views?mode=api' },
 ];
 
 /** Suppress telemetry without sending it; all other non-read requests fail the audit. */
@@ -75,6 +113,9 @@ export interface AuditGeometry {
   viewportWidth: number;
   documentWidth: number;
   fontsLoaded: boolean;
+  /** Present for natural-size network diagrams. */
+  naturalWidth?: number;
+  articleWidth?: number;
   canvas: AuditBox;
   nodes: { id: string; box: AuditBox }[];
   texts: { text: string; node?: string; box: AuditBox }[];
@@ -94,6 +135,17 @@ export function geometryIssues(value: AuditGeometry): string[] {
   if (!value.fontsLoaded) issues.push('Required diagram font did not load');
   if (value.documentWidth > value.viewportWidth + 1)
     issues.push('Document overflows the viewport');
+  if (
+    value.naturalWidth !== undefined &&
+    value.canvas.width + 1 < value.naturalWidth
+  )
+    issues.push('Diagram shrunk below natural size');
+  if (
+    value.viewportWidth >= 1024 &&
+    value.articleWidth !== undefined &&
+    value.canvas.width > value.articleWidth + 1
+  )
+    issues.push('Diagram overflows desktop article');
   if (!value.canvas.width || !value.canvas.height || !value.texts.length)
     issues.push('Empty diagram geometry');
   for (const [index, node] of value.nodes.entries()) {
@@ -109,6 +161,11 @@ export function geometryIssues(value: AuditGeometry): string[] {
     const node = value.nodes.find((candidate) => candidate.id === text.node);
     if (node && !contains(node.box, text.box))
       issues.push(`Text outside node: ${text.text}`);
+    if (
+      !text.node &&
+      value.nodes.some((candidate) => overlaps(candidate.box, text.box))
+    )
+      issues.push(`Relationship label overlaps node: ${text.text}`);
     for (const other of value.texts.slice(index + 1))
       if (overlaps(text.box, other.box))
         issues.push(`Text overlaps: ${text.text} / ${other.text}`);

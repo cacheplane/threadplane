@@ -10,8 +10,7 @@ test('installed React project assignment confirms exact metadata while preservin
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const destination = '00000000-0000-4000-8000-000000000001';
   const name = '<Destination> ' + 'W'.repeat(160);
   const alpha = {
@@ -205,7 +204,10 @@ test('installed React project assignment confirms exact metadata while preservin
       page.getByText('Assignment response remains active.', { exact: true })
     ).toBeVisible();
     const heldDraft = await draft.inputValue();
-    await expect(draft).toBeDisabled();
+    await expect(draft).toBeEditable();
+    await expect(
+      page.getByRole('button', { name: 'Send', exact: true })
+    ).toBeDisabled();
     const stop = page.getByRole('button', { name: 'Stop', exact: true });
     await expect(stop).toBeEnabled();
     const openMove = async (title: string, id: string) => {

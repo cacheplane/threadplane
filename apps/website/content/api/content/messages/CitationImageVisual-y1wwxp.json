@@ -1,0 +1,115 @@
+{
+  "name": "CitationImageVisual",
+  "entrypointId": "content/messages",
+  "kind": "Interface",
+  "href": "/docs/api/content/messages/CitationImageVisual",
+  "canonicalReference": "@threadplane/content!CitationImageVisual:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A citation source marker rendered from a provider image URL.",
+  "declarations": [
+    {
+      "name": "CitationImageVisual",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!CitationImageVisual:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface CitationImageVisual "
+        }
+      ],
+      "docs": {
+        "summary": "A citation source marker rendered from a provider image URL.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "iconUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!CitationImageVisual#iconUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly iconUrl: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/messages/citation-display.ts",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "kind",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!CitationImageVisual#kind:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly kind: "
+            },
+            {
+              "kind": "Content",
+              "text": "'image'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/messages/citation-display.ts",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/messages/citation-display.ts",
+        "line": 16
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/messages/citation-display.ts",
+    "line": 16
+  }
+}

@@ -20,8 +20,8 @@ import { resolveWebsiteDir } from './website-dir';
 
 describe('site positioning copy', () => {
   it('exports the approved primary tagline and supporting copy', () => {
-    expect(PRIMARY_TAGLINE).toBe('Threadplane — The open-source thread-plane for Angular agents');
-    expect(LONG_SUBHEAD).toContain('open-source thread-plane for agents');
+    expect(PRIMARY_TAGLINE).toBe('Threadplane — The open-source threadplane for agents');
+    expect(LONG_SUBHEAD).toContain('open-source threadplane for agents');
     expect(LONG_SUBHEAD).toContain('LangGraph and AG-UI');
     expect(HERO_SUBHEAD).toBe(
       'Make agent work persistent, durable, visible, reviewable, and resumable.',
@@ -36,11 +36,11 @@ describe('site positioning copy', () => {
     ]);
     expect(POSITIONING_PROOF_POINTS.map((p) => p.href)).toEqual([
       '/docs/choosing-an-adapter',
-      '/docs/langgraph/guides/persistence',
-      '/docs/langgraph/guides/interrupts',
-      '/docs/langgraph/guides/subgraphs',
-      '/docs/langgraph/guides/memory',
-      '/docs/render/concepts/json-render-vs-a2ui',
+      '/docs/angular/langgraph/guides/persistence',
+      '/docs/angular/langgraph/guides/interrupts',
+      '/docs/angular/langgraph/guides/subgraphs',
+      '/docs/angular/langgraph/guides/memory',
+      '/docs/angular/render/concepts/json-render-vs-a2ui',
     ]);
     expect(DEFAULT_META_DESCRIPTION).toBe(SHORT_POSITIONING_DESCRIPTION);
   });
@@ -67,7 +67,7 @@ describe('site positioning copy', () => {
       type: 'website',
     });
 
-    expect(metadata.title).toBe('Threadplane — The open-source thread-plane for Angular agents');
+    expect(metadata.title).toBe('Threadplane — The open-source threadplane for agents');
     expect(metadata.description).toBe(HOME_DESCRIPTION);
   });
 });
@@ -144,7 +144,7 @@ describe('createPageMetadata article fields', () => {
     expect(openGraph.images[0].url).toBe('/opengraph-image');
     expect(openGraph.images[0].width).toBe(1200);
     expect(openGraph.images[0].height).toBe(630);
-    expect(openGraph.images[0].alt).toMatch(/open-source thread-plane for Angular agents/);
+    expect(openGraph.images[0].alt).toMatch(/open-source threadplane for agents/);
   });
 
   it('accepts a page-specific social image', () => {

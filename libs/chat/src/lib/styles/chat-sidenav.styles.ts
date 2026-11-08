@@ -211,7 +211,7 @@ export const CHAT_SIDENAV_STYLES = `
   }
   .chat-sidenav__threads-heading {
     padding: 8px 12px 4px;
-    font-size: 11px;
+    font-size: var(--tplane-chat-font-size-xs);
     color: var(--tplane-chat-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.4px;

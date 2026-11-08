@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -75,10 +77,40 @@ export function InputDemo({
     ? 'Start a new conversation to continue.'
     : 'Ready.';
   return (
-    <main className="input-demo">
+    <ExampleLayout
+      className="input-demo"
+      about={
+        <fieldset className="input-settings">
+          <legend>Composer settings</legend>
+          <label className="input-settings__placeholder">
+            Custom placeholder
+            <input
+              type="text"
+              value={placeholder}
+              onChange={(event) => setPlaceholder(event.target.value)}
+            />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={submitOnEnter}
+              onChange={(event) => setSubmitOnEnter(event.target.checked)}
+            />
+            Enter sends a message
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={disabled}
+              onChange={(event) => setDisabled(event.target.checked)}
+            />
+            Disable message input
+          </label>
+        </fieldset>
+      }
+    >
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat input</h1>
         </div>
         <button
@@ -97,61 +129,37 @@ export function InputDemo({
         Try the keyboard shortcuts and customize your composer. You can draft
         your next message while a response arrives.
       </p>
-      <fieldset className="input-settings">
-        <legend>Composer settings</legend>
-        <label className="input-settings__placeholder">
-          Custom placeholder
-          <input
-            type="text"
-            value={placeholder}
-            onChange={(event) => setPlaceholder(event.target.value)}
-          />
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={submitOnEnter}
-            onChange={(event) => setSubmitOnEnter(event.target.checked)}
-          />
-          Enter sends a message
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={disabled}
-            onChange={(event) => setDisabled(event.target.checked)}
-          />
-          Disable message input
-        </label>
-      </fieldset>
+
       <MessageList
         rows={snapshot.rows}
         renderMessage={renderMessage}
         label="Conversation"
       />
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        placeholder={placeholder}
-        submitOnEnter={submitOnEnter}
-        hint={
-          submitOnEnter
-            ? 'Enter to send. Shift+Enter adds a new line.'
-            : 'Ctrl/Command+Enter to send. Enter adds a new line.'
-        }
-        busy={snapshot.busy}
-        disabled={disabled || (!snapshot.canSubmit && !snapshot.busy)}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder={placeholder}
+          submitOnEnter={submitOnEnter}
+          hint={
+            submitOnEnter
+              ? 'Enter to send. Shift+Enter adds a new line.'
+              : 'Ctrl/Command+Enter to send. Enter adds a new line.'
+          }
+          busy={snapshot.busy}
+          disabled={disabled || (!snapshot.canSubmit && !snapshot.busy)}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

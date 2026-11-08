@@ -21,8 +21,13 @@ const WELCOME_SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
+    <example-chat-layout
+      title="Plan a flight"
+      description="Flight preview: request a flight form, edit your details, and select a demonstration flight. This preview makes no booking or payment."
+    >
+      <chat placeholder="Ask for a flight form…" [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion [label]="s.label" [value]="s.value" [description]="s.description" (selected)="send($event)" />

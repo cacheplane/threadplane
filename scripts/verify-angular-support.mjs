@@ -39,10 +39,10 @@ export const ANGULAR_SUPPORT_READMES = ANGULAR_SUPPORT_README_BLOCKS.map(
 );
 
 export const ANGULAR_SUPPORT_INSTALLATION_PAGES = [
-  'apps/website/content/docs/chat/getting-started/installation.mdx',
-  'apps/website/content/docs/langgraph/getting-started/installation.mdx',
-  'apps/website/content/docs/ag-ui/getting-started/installation.mdx',
-  'apps/website/content/docs/render/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/chat/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/langgraph/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/ag-ui/getting-started/installation.mdx',
+  'apps/website/content/docs/angular/render/getting-started/installation.mdx',
 ];
 
 function formatAngularMajorList(majors) {

@@ -23,7 +23,7 @@ export const renderRegistryAngularModule: CockpitCapabilityModule = {
     language: 'angular',
   },
   title: 'Render Registry (Angular)',
-  docsPath: '/docs/render/guides/registry',
+  docsPath: '/docs/angular/render/guides/registry',
   promptAssetPaths: ['cockpit/render/registry/angular/prompts/registry.md'],
   codeAssetPaths: ['cockpit/render/registry/angular/src/app/registry.component.ts'],
 };

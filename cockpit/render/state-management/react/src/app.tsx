@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useAgent } from '@threadplane/react';
 import { RenderSpec } from '@threadplane/react/render';
@@ -52,9 +54,8 @@ export function StateDemo({
       ? 'Unavailable'
       : state.phase[0].toUpperCase() + state.phase.slice(1);
   return (
-    <main className="spec-demo">
+    <ExampleLayout kind="render" className="spec-demo">
       <header>
-        <p className="eyebrow">React · Experimental</p>
         <h1>State Management</h1>
       </header>
       <p>
@@ -193,6 +194,6 @@ export function StateDemo({
           <pre>{state.rawJson}</pre>
         </section>
       </div>
-    </main>
+    </ExampleLayout>
   );
 }

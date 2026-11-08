@@ -1,5 +1,11 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { ChatInput } from '@threadplane/react/chat';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  ChatInput,
+  MessageList,
+  type ChatInputHandle,
+} from '@threadplane/react/chat';
 import type { A2uiApplication } from './application';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Same-layout private presentation source in installed consumers.
 import { A2uiSurface } from '../../../../../libs/cockpit-a2ui-react/src/index';
@@ -50,6 +56,7 @@ export function A2uiDemo({
     application.getSnapshot
   );
   const [draft, setDraft] = useState('');
+  const composer = useRef<ChatInputHandle>(null);
   useEffect(onReady, [onReady]);
   const status = snapshot.busy
     ? snapshot.activity === 'replacing'
@@ -61,10 +68,9 @@ export function A2uiDemo({
     ? 'Preview confirmed.'
     : 'Ready.';
   return (
-    <main className="a2ui-demo">
+    <ExampleLayout className="a2ui-demo">
       <header>
         <div>
-          <p className="a2ui-eyebrow">Flight preview</p>
           <h1>Plan a flight</h1>
         </div>
         <button
@@ -78,22 +84,27 @@ export function A2uiDemo({
         </button>
       </header>
       <p>
-        Request a flight form, edit your details, and select a demonstration
-        flight. This preview makes no booking or payment.
+        Flight preview: request a flight form, edit your details, and select a
+        demonstration flight. This preview makes no booking or payment.
       </p>
-      <button
-        className="a2ui-suggestion"
-        type="button"
-        disabled={snapshot.busy || !snapshot.canSubmit}
-        onClick={() => setDraft('I want to fly LAX to JFK')}
-      >
-        Try a flight request
-      </button>
-      <section
+      {snapshot.messages.length === 0 && (
+        <button
+          className="a2ui-suggestion"
+          type="button"
+          disabled={snapshot.busy || !snapshot.canSubmit}
+          onClick={() => {
+            setDraft('I want to fly LAX to JFK');
+            composer.current?.focus();
+          }}
+        >
+          Try a flight request
+        </button>
+      )}
+      <MessageList
+        rows={[]}
+        label="Conversation"
         className="a2ui-conversation"
-        aria-label="Conversation"
-        aria-live="polite"
-        aria-relevant="additions"
+        key={`messages:${snapshot.viewGeneration}`}
       >
         {!snapshot.messages.length && (
           <p className="a2ui-empty">
@@ -107,10 +118,10 @@ export function A2uiDemo({
           return (
             <article
               key={message.id}
-              className={'a2ui-message a2ui-message--' + message.role}
+              className={`tp-chat-message tp-chat-message--${message.role} a2ui-message a2ui-message--${message.role}`}
               aria-label={message.role === 'user' ? 'You' : 'Assistant'}
             >
-              <p className="a2ui-message-role">
+              <p className="tp-chat-message__role a2ui-message-role">
                 {message.role === 'user' ? 'You' : 'Assistant'}
               </p>
               {surface ? (
@@ -130,8 +141,7 @@ export function A2uiDemo({
             </article>
           );
         })}
-      </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
+      </MessageList>
       {snapshot.error && snapshot.native && (
         <details className="a2ui-wire">
           <summary>Unconfirmed response details</summary>
@@ -143,31 +153,35 @@ export function A2uiDemo({
           </pre>
         </details>
       )}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        placeholder="Ask for a flight form…"
-        hint="Enter to send. Shift+Enter adds a new line."
-        busy={snapshot.busy}
-        disabled={!snapshot.canSubmit && !snapshot.busy}
-        onStop={
-          snapshot.busy
-            ? () => {
-                void application.stop().catch(() => undefined);
-              }
-            : undefined
-        }
-        onSubmit={(text) => {
-          const state = application.getSnapshot();
-          if (state.busy || !state.canSubmit) return false;
-          // ChatInput clears this admitted draft synchronously, independently of settlement.
-          void application.submit(text).catch(() => undefined);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          ref={composer}
+          key={snapshot.viewGeneration}
+          label="Message"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder="Ask for a flight form…"
+          hint="Enter to send. Shift+Enter adds a new line."
+          busy={snapshot.busy}
+          disabled={!snapshot.canSubmit && !snapshot.busy}
+          onStop={
+            snapshot.busy
+              ? () => {
+                  void application.stop().catch(() => undefined);
+                }
+              : undefined
+          }
+          onSubmit={(text) => {
+            const state = application.getSnapshot();
+            if (state.busy || !state.canSubmit) return false;
+            // ChatInput clears this admitted draft synchronously, independently of settlement.
+            void application.submit(text).catch(() => undefined);
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

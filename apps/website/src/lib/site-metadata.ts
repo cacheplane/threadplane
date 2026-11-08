@@ -1,6 +1,7 @@
+import { getNarrativeDocuments } from './docs-catalog';
 import type { Metadata } from 'next';
 import { getAllSolutionSlugs } from './solutions-data';
-import { docsConfig, specialDocsPages } from './docs-config';
+import { specialDocsPages } from './docs-config';
 import { getAllPosts } from './blog';
 import { SITE_ORIGIN } from './site-origin';
 import { apiPagePaths, readApiIndex } from './api-reference';
@@ -29,7 +30,7 @@ export const DEFAULT_SOCIAL_IMAGE_META = {
   url: DEFAULT_SOCIAL_IMAGE,
   width: 1200,
   height: 630,
-  alt: 'Threadplane — the open-source thread-plane for Angular agents. Beside the tagline, a browser frame shows the product pausing for a human: an agent proposes deleting three backups, with Approve and Decline.',
+  alt: 'Threadplane — the open-source threadplane for agents. Beside the tagline, a browser frame shows the product pausing for a human: an agent proposes deleting three backups, with Approve and Decline.',
 } as const;
 export {
   CODING_AGENT_PROMPT,
@@ -180,13 +181,9 @@ export function createPageMetadata({
 }
 
 export function getSitemapRoutes(): string[] {
-  const staticRoutes = ['/', '/langgraph', '/render', '/chat', '/ag-ui', '/pricing', '/solutions', '/pilot-to-prod', '/docs', '/blog', '/about', '/contact', '/privacy'];
+  const staticRoutes = ['/', '/langgraph', '/render', '/chat', '/ag-ui', '/pricing', '/solutions', '/pilot-to-prod', '/docs', '/docs/examples', '/blog', '/about', '/contact', '/privacy'];
   const solutionRoutes = getAllSolutionSlugs().map((slug) => `/solutions/${slug}`);
-  const docsRoutes = docsConfig.flatMap((library) =>
-    library.sections.flatMap((section) =>
-      section.pages.map((page) => ('href' in page && typeof page.href === 'string') ? page.href : `/docs/${library.id}/${page.section}/${page.slug}`),
-    ),
-  );
+  const docsRoutes = getNarrativeDocuments().map(document => document.href);
   const specialDocsRoutes = specialDocsPages.map((page) => page.path);
   const blogRoutes = getAllPosts().map((p) => `/blog/${p.slug}`);
 

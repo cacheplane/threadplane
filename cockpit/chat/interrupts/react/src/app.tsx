@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -88,10 +90,9 @@ export function InterruptsDemo({
     void application.decide(decision, value);
   };
   return (
-    <main className="interrupts-demo">
+    <ExampleLayout className="interrupts-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat interrupts</h1>
         </div>
         <button
@@ -132,71 +133,78 @@ export function InterruptsDemo({
         rows={snapshot.rows}
         renderMessage={renderMessage}
         label="Conversation"
-      />
-      {decision && (
-        <ApprovalCard
-          title="Approve demo booking"
-          disabled={snapshot.busy}
-          actions={[
-            {
-              id: 'confirm',
-              label: 'Confirm',
-              onSelect: () => decide('confirm'),
-            },
-            { id: 'cancel', label: 'Cancel', onSelect: () => decide('cancel') },
-          ]}
-        >
-          <p>{decision.approval.summary}</p>
-          <dl className="flight-details">
-            <div>
-              <dt>Flight</dt>
-              <dd>{decision.approval.flight.flight_number}</dd>
-            </div>
-            <div>
-              <dt>Airline</dt>
-              <dd>{decision.approval.flight.airline}</dd>
-            </div>
-            <div>
-              <dt>From</dt>
-              <dd>{decision.approval.flight.from}</dd>
-            </div>
-            <div>
-              <dt>To</dt>
-              <dd>{decision.approval.flight.to}</dd>
-            </div>
-            <div>
-              <dt>Departure</dt>
-              <dd>{decision.approval.flight.depart_local}</dd>
-            </div>
-            <div>
-              <dt>Aircraft</dt>
-              <dd>{decision.approval.flight.aircraft}</dd>
-            </div>
-          </dl>
-        </ApprovalCard>
-      )}
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        placeholder="Ask about a flight or request a booking…"
-        hint="Enter to send. Shift+Enter adds a new line."
-        busy={snapshot.busy}
-        disabled={!snapshot.canSubmit && !snapshot.busy}
-        onStop={
-          snapshot.busy && snapshot.activity !== 'replacing'
-            ? () => void application.stop()
-            : undefined
-        }
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      >
+        {decision && (
+          <ApprovalCard
+            title="Approve demo booking"
+            disabled={snapshot.busy}
+            actions={[
+              {
+                id: 'confirm',
+                label: 'Confirm',
+                onSelect: () => decide('confirm'),
+              },
+              {
+                id: 'cancel',
+                label: 'Cancel',
+                onSelect: () => decide('cancel'),
+              },
+            ]}
+          >
+            <p>{decision.approval.summary}</p>
+            <dl className="flight-details">
+              <div>
+                <dt>Flight</dt>
+                <dd>{decision.approval.flight.flight_number}</dd>
+              </div>
+              <div>
+                <dt>Airline</dt>
+                <dd>{decision.approval.flight.airline}</dd>
+              </div>
+              <div>
+                <dt>From</dt>
+                <dd>{decision.approval.flight.from}</dd>
+              </div>
+              <div>
+                <dt>To</dt>
+                <dd>{decision.approval.flight.to}</dd>
+              </div>
+              <div>
+                <dt>Departure</dt>
+                <dd>{decision.approval.flight.depart_local}</dd>
+              </div>
+              <div>
+                <dt>Aircraft</dt>
+                <dd>{decision.approval.flight.aircraft}</dd>
+              </div>
+            </dl>
+          </ApprovalCard>
+        )}
+      </MessageList>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder="Ask about a flight or request a booking…"
+          hint="Enter to send. Shift+Enter adds a new line."
+          busy={snapshot.busy}
+          disabled={!snapshot.canSubmit && !snapshot.busy}
+          onStop={
+            snapshot.busy && snapshot.activity !== 'replacing'
+              ? () => void application.stop()
+              : undefined
+          }
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+            return true;
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

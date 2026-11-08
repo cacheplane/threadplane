@@ -13,7 +13,7 @@ describe('GET /api/docs-search', () => {
     expect(res.status).toBe(200);
     const { results } = await res.json();
     expect(results.length).toBeGreaterThan(0);
-    expect(results.some((r: { href: string }) => r.href.includes('/docs/langgraph/'))).toBe(true);
+    expect(results.some((r: { href: string }) => r.href.includes('/docs/angular/langgraph/'))).toBe(true);
   });
 
   it('returns hits that carry a snippet and marks', async () => {
@@ -25,7 +25,7 @@ describe('GET /api/docs-search', () => {
   it('returns a hit shaped exactly as the wire contract, no extra fields', async () => {
     const { results } = await (await call('checkpointer')).json();
     expect(Object.keys(results[0]).sort()).toEqual(
-      ['href', 'title', 'heading', 'libraryTitle', 'snippet', 'marks'].sort()
+      ['href', 'title', 'heading', 'libraryTitle', 'snippet', 'marks', 'scope'].sort()
     );
   });
 
@@ -67,8 +67,8 @@ describe('GET /api/docs-search', () => {
 describe('buildIndex', () => {
   it('skips a single document that throws without breaking the rest of the corpus', () => {
     const entries = [
-      { library: 'lib', section: 'guides', slug: 'good' },
-      { library: 'lib', section: 'guides', slug: 'bad' },
+      { id: 'lib/guides/good', scope: 'angular' as const, href: '/docs/angular/lib/guides/good', library: 'lib', section: 'guides', slug: 'good' },
+      { id: 'lib/guides/bad', scope: 'angular' as const, href: '/docs/angular/lib/guides/bad', library: 'lib', section: 'guides', slug: 'bad' },
     ];
 
     const result = buildIndex(entries, (entry) => {
@@ -81,4 +81,16 @@ describe('buildIndex', () => {
     expect(result).toHaveLength(1);
     expect(result[0].slug).toBe('good');
   });
+});
+
+
+it('defaults to selected-framework and shared content, with an explicit wider search', async () => {
+  const request = (all = false) => new Request(`http://localhost/api/docs-search?q=streaming&framework=react&allFrameworks=${all}`);
+  const scoped = await (await GET(request())).json();
+  expect(scoped.results.length).toBeGreaterThan(0);
+  expect(scoped.results.every((hit: {scope: string}) => ['react', 'shared'].includes(hit.scope))).toBe(true);
+  expect(scoped.results.some((hit: {href: string}) => hit.href.startsWith('/docs/react/'))).toBe(true);
+  const all = await (await GET(request(true))).json();
+  expect(all.results.some((hit: {scope: string}) => hit.scope === 'angular')).toBe(true);
+  expect(all.results.some((hit: {scope: string}) => hit.scope === 'react')).toBe(true);
 });

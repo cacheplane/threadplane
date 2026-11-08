@@ -1,0 +1,83 @@
+---
+title: Quickstart
+description: Run the Microsoft Agent Framework runtime example locally on ports 5330 and 4330, with Azure OpenAI or plain OpenAI.
+---
+
+# Microsoft Agent Framework Quickstart
+
+These steps run the canonical Angular/provider example. The React selection on the overview provides a bounded fictional expense preview with native Session approval, literal result confirmation, and owned cleanup. Its private source-build e2e target uses frozen Python 3.12 dependencies and an offline model seam; that local proof does not establish a live provider request or specialist streaming parity.
+
+This runs the example from a clone of the [monorepo](https://github.com/cacheplane/threadplane). The backend is a uvicorn process on port 5330; the Angular dev server is on port 4330 and proxies `/agent` to it.
+
+<Callout type="info" title="Prerequisites">
+Node.js 20 or newer, Python 3.12 or newer, [`uv`](https://docs.astral.sh/uv/), and either an Azure OpenAI resource or an OpenAI API key.
+</Callout>
+
+<Steps>
+<Step title="Install workspace dependencies">
+
+```bash
+git clone https://github.com/cacheplane/threadplane.git
+cd threadplane
+npm ci
+```
+
+</Step>
+<Step title="Configure the backend environment">
+
+Copy the example file and fill in whichever model path you are using.
+
+```bash
+cp cockpit/runtimes/microsoft-agent-framework/python/.env.example \
+   cockpit/runtimes/microsoft-agent-framework/python/.env
+```
+
+Azure OpenAI is the default path. Setting `AZURE_OPENAI_ENDPOINT` selects it; leaving it unset selects the OpenAI fallback.
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `AZURE_OPENAI_ENDPOINT` | For Azure | Resource endpoint. Its presence is what selects the Azure path. |
+| `AZURE_OPENAI_API_KEY` | For Azure | Key authentication against that resource. |
+| `AZURE_OPENAI_MODEL` | For Azure | Deployment name of a chat model, not a public model id. |
+| `AZURE_OPENAI_API_VERSION` | No | Read by the Azure client, not by the example code. `.env.example` ships `2024-12-01-preview`. |
+| `OPENAI_API_KEY` | For the fallback | Used only when `AZURE_OPENAI_ENDPOINT` is unset. |
+| `OPENAI_CHAT_MODEL` | No | Model name for the fallback path. |
+| `OPENAI_BASE_URL` | No | Redirects the OpenAI client. The end-to-end fixture harness sets this to replay recorded calls. |
+
+<Callout type="warning" title="AZURE_OPENAI_MODEL is a deployment name">
+Azure addresses models by the deployment name you chose in your resource, which is frequently not the public model id. A valid key paired with a public model id fails as a missing deployment.
+</Callout>
+
+</Step>
+<Step title="Start both halves">
+
+One command starts the Angular dev server and the Python backend together.
+
+```bash
+npx tsx scripts/examples/serve-example.ts --capability=rt-maf
+```
+
+The script runs `uv sync` in `cockpit/runtimes/microsoft-agent-framework/python` on the way, so the first start takes longer than later ones. Two processes appear in the output, one per half; stopping the script stops both.
+
+</Step>
+<Step title="Open the app">
+
+Visit `http://localhost:4330`. The backend answers on `http://localhost:5330/agent`, with an unauthenticated health check at `http://localhost:5330/ok`.
+
+</Step>
+<Step title="Exercise every surface">
+
+The app opens with two welcome suggestions, and either one drives the whole loop in a single turn.
+
+1. Send **File a team dinner expense**, which submits *"File a $220 team dinner expense from Blue Finch Bistro for the platform team offsite (6 attendees)."* The agent delegates the policy research to a specialist through `research_policy` — that call renders as a subagent card whose text streams while the child runs — and calls the server-side `lookup_expense_policy` tool.
+2. Watch the side panel while the model is still writing the `submit_expense` call. `predict_state_config` maps the tool's `expense` argument onto a state key, so the vendor, category, amount, and memo fill in through real `STATE_DELTA` events before the tool has been invoked or approved.
+3. The run then pauses. An approval card shows the amount, vendor, category, and memo above Cancel and Approve. Approve it and the agent confirms the submission in one sentence; cancel it and the agent acknowledges that nothing was filed.
+4. The second suggestion, **File a monitor purchase**, submits *"File a $340 equipment expense from Pixel Peak Displays for a 27-inch monitor."* and runs the same loop against the equipment policy.
+
+</Step>
+</Steps>
+
+## Next steps
+
+- [How It Connects](/docs/angular/runtimes/microsoft-agent-framework/how-it-connects) — the wire conventions this example relies on.
+- [Overview](/docs/angular/runtimes/microsoft-agent-framework/overview) — what the integration does and does not support.

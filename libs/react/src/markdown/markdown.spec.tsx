@@ -44,6 +44,27 @@ const dispositions = {
 } satisfies Record<MarkdownNode['type'], string>;
 
 describe('Markdown', () => {
+  it('keeps source code left-to-right within an RTL response', () => {
+    const view = render(
+      <Markdown
+        snapshot={snapshot('مرحبا\n\n```ts\nconst answer = 42;\n```')}
+      />
+    );
+    expect(view.container.querySelector('pre')?.dir).toBe('ltr');
+    expect(view.container.querySelector('code')?.textContent).toBe(
+      'const answer = 42;'
+    );
+  });
+
+  it('derives message direction from authored content independently of speaker labels', () => {
+    const view = render(
+      <Markdown snapshot={snapshot('مرحبا، الطلب 4521 و abc-123')} />
+    );
+    const body = view.container.firstElementChild as HTMLElement;
+    expect(body.dir).toBe('auto');
+    expect(body.textContent).toBe('مرحبا، الطلب 4521 و abc-123');
+  });
+
   it('assigns every current kind a disposition and renders a null root empty', () => {
     expect(Object.keys(dispositions)).toHaveLength(27);
     expect(
@@ -188,13 +209,24 @@ describe('Markdown', () => {
     (url) => {
       const warn = vi.spyOn(console, 'warn');
       const error = vi.spyOn(console, 'error');
-      const accepted = snapshot(`[link](${url}) ![image](${url}) [reference][ref]\n\n[ref]: ${url}\n`);
+      const accepted = snapshot(
+        `[link](${url}) ![image](${url}) [reference][ref]\n\n[ref]: ${url}\n`
+      );
       const paragraph = accepted.root?.children[0];
-      if (paragraph?.type !== 'paragraph') throw new Error('Expected paragraph');
-      expect(paragraph.children.filter(node => 'url' in node).map(node => node.url)).toEqual([url, url, url]);
-      expect(paragraph.children.find(node => node.type === 'link-reference')).toMatchObject({ resolved: true, url });
+      if (paragraph?.type !== 'paragraph')
+        throw new Error('Expected paragraph');
+      expect(
+        paragraph.children
+          .filter((node) => 'url' in node)
+          .map((node) => node.url)
+      ).toEqual([url, url, url]);
+      expect(
+        paragraph.children.find((node) => node.type === 'link-reference')
+      ).toMatchObject({ resolved: true, url });
       const view = render(<Markdown snapshot={accepted} />);
-      expect(view.container.querySelectorAll('a[href], img[src]')).toHaveLength(0);
+      expect(view.container.querySelectorAll('a[href], img[src]')).toHaveLength(
+        0
+      );
       expect(view.container.textContent).toBe('link image reference');
       expect(view.getByRole('img', { name: 'image' }).tagName).toBe('SPAN');
       expect(view.container.innerHTML).not.toContain('unsafe:');
@@ -202,25 +234,48 @@ describe('Markdown', () => {
       expect(error).not.toHaveBeenCalled();
     }
   );
-  it.each(['./a&b', './a&b:c', '/a&b:c', '?a&b:c', '#a&b:c', 'HTTPS://example.test/a&b:c?q=a&b:c', 'safe-relative'])(
-    'preserves native-compatible parser destination %j unchanged',
-    (url) => {
-      const warn = vi.spyOn(console, 'warn');
-      const error = vi.spyOn(console, 'error');
-      const view = render(<Markdown snapshot={snapshot(`[link](${url}) ![image](${url}) [reference][ref]\n\n[ref]: ${url}\n`)} />);
-      expect(Array.from(view.container.querySelectorAll('a'), node => node.getAttribute('href'))).toEqual([url, url]);
-      expect(view.getByRole('img', { name: 'image' }).getAttribute('src')).toBe(url);
-      expect(warn).not.toHaveBeenCalled();
-      expect(error).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    './a&b',
+    './a&b:c',
+    '/a&b:c',
+    '?a&b:c',
+    '#a&b:c',
+    'HTTPS://example.test/a&b:c?q=a&b:c',
+    'safe-relative',
+  ])('preserves native-compatible parser destination %j unchanged', (url) => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const view = render(
+      <Markdown
+        snapshot={snapshot(
+          `[link](${url}) ![image](${url}) [reference][ref]\n\n[ref]: ${url}\n`
+        )}
+      />
+    );
+    expect(
+      Array.from(view.container.querySelectorAll('a'), (node) =>
+        node.getAttribute('href')
+      )
+    ).toEqual([url, url]);
+    expect(view.getByRole('img', { name: 'image' }).getAttribute('src')).toBe(
+      url
+    );
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+  });
   it('omits a space-prefixed scheme preserved by a resolved reference definition', () => {
     const warn = vi.spyOn(console, 'warn');
     const error = vi.spyOn(console, 'error');
-    const accepted = snapshot('[reference][ref]\n\n[ref]: < https://example.test>\n');
+    const accepted = snapshot(
+      '[reference][ref]\n\n[ref]: < https://example.test>\n'
+    );
     const paragraph = accepted.root?.children[0];
     if (paragraph?.type !== 'paragraph') throw new Error('Expected paragraph');
-    expect(paragraph.children[0]).toMatchObject({ type: 'link-reference', resolved: true, url: ' https://example.test' });
+    expect(paragraph.children[0]).toMatchObject({
+      type: 'link-reference',
+      resolved: true,
+      url: ' https://example.test',
+    });
     const view = render(<Markdown snapshot={accepted} />);
     expect(view.container.querySelector('a')).toBeNull();
     expect(view.container.textContent).toBe('reference');
@@ -337,12 +392,31 @@ describe('Markdown', () => {
       />
     );
     expect(
-      view.getAllByLabelText('Citation 2: Second').map((node) => node.textContent)
+      view
+        .getAllByLabelText('Citation 2: Second')
+        .map((node) => node.textContent)
     ).toEqual(['[2]', '[2]']);
     expect(view.getByLabelText('Citation 1: First').textContent).toBe('[1]');
     expect(view.getByLabelText('Unresolved citation missing').textContent).toBe(
       '[^missing]'
     );
+  });
+  it('converts literal definition text before and after the first top-level link for inline previews', () => {
+    const view = render(
+      <Markdown
+        citationPreview
+        snapshot={snapshot(
+          'See [^a].\n\n[^a]: **Nested** <b>raw</b> [first](/first) after *emphasis* [second](/second) <https://later.invalid> `code`\n'
+        )}
+      />
+    );
+    fireEvent.click(view.getByRole('button', { name: /Citation 1:/ }));
+    const card = view.getByRole('dialog');
+    expect(card.textContent).toContain(
+      'after emphasis second https://later.invalid code'
+    );
+    expect(view.getByRole('link').getAttribute('href')).toBe('/first');
+    expect(card.querySelector('b')).toBeNull();
   });
   it('keeps unchanged DOM through equal renders, appends and finish but replaces generations and incompatible kinds', () => {
     const owner = createMarkdown({

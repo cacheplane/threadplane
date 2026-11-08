@@ -32,8 +32,8 @@ export interface ToolCallInfo {
     .tcc__pill {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      padding: 1px 6px;
+      gap: var(--tplane-chat-space-1);
+      padding: 1px var(--tplane-chat-space-2);
       border-radius: 9999px;
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
@@ -48,7 +48,7 @@ export interface ToolCallInfo {
     .tcc__section { padding: 8px 0; }
     .tcc__section + .tcc__section { border-top: 1px solid var(--tplane-chat-separator); }
     .tcc__section-label {
-      font-size: 11px;
+      font-size: var(--tplane-chat-font-size-xs);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;

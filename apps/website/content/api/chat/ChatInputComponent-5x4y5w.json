@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 148
+            "line": 150
           },
           "overloadIndex": 1,
           "parameters": []
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 105
+            "line": 107
           },
           "isStatic": false,
           "isReadonly": true,
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 125
+            "line": 127
           },
           "isStatic": false,
           "isReadonly": true,
@@ -199,11 +199,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 119
+            "line": 121
           },
           "isStatic": false,
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "clearDraft",
+          "kind": "Method",
+          "canonicalReference": "@threadplane/chat!ChatInputComponent#clearDraft:member(1)",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "clearDraft(): "
+            },
+            {
+              "kind": "Content",
+              "text": "void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Clears the local draft after a successful submit or application-owned reset.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
+            "line": 230
+          },
+          "overloadIndex": 1,
+          "isStatic": false,
+          "isOptional": false,
+          "parameters": [],
+          "returnTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
         },
         {
           "name": "focused",
@@ -245,7 +287,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 116
+            "line": 118
           },
           "isStatic": false,
           "isReadonly": true,
@@ -282,7 +324,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 178
+            "line": 210
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -333,7 +375,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 113
+            "line": 115
           },
           "isStatic": false,
           "isReadonly": true,
@@ -379,7 +421,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 112
+            "line": 114
           },
           "isStatic": false,
           "isReadonly": true,
@@ -425,7 +467,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 235
+            "line": 273
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -476,7 +518,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 227
+            "line": 265
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -518,7 +560,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 182
+            "line": 214
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -569,7 +611,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 107
+            "line": 109
           },
           "isStatic": false,
           "isReadonly": true,
@@ -615,7 +657,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 109
+            "line": 111
           },
           "isStatic": false,
           "isReadonly": true,
@@ -661,7 +703,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 111
+            "line": 113
           },
           "isStatic": false,
           "isReadonly": true,
@@ -707,7 +749,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 106
+            "line": 108
           },
           "isStatic": false,
           "isReadonly": true,
@@ -753,7 +795,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-            "line": 110
+            "line": 112
           },
           "isStatic": false,
           "isReadonly": true,
@@ -762,7 +804,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-        "line": 32
+        "line": 34
       },
       "angular": {
         "selector": "chat-input",
@@ -811,6 +853,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-input/chat-input.component.ts",
-    "line": 32
+    "line": 34
   }
 }

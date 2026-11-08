@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ApprovalCard, ChatInput, MessageList } from '@threadplane/react/chat';
@@ -56,10 +58,9 @@ export function ClientToolsDemo({
     ? 'Start a new conversation to continue.'
     : 'Ready.';
   return (
-    <main className="client-tools-demo">
+    <ExampleLayout className="client-tools-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>LangGraph client tools</h1>
         </div>
         <button
@@ -100,20 +101,22 @@ export function ClientToolsDemo({
           </ApprovalCard>
         ) : <div key={row.id}><p>{row.summary}</p><p>{({ confirmed: 'Confirmed', cancelled: 'Cancelled', aborted: 'Aborted' })[row.status]}</p></div>) : <p>No booking decisions yet.</p>}
       </section>
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={generation}
-        label="Message"
-        placeholder="Ask for weather or a fictional booking…"
-        disabled={resetting || !snapshot.canSubmit}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={generation}
+          label="Message"
+          placeholder="Ask for weather or a fictional booking…"
+          disabled={resetting || !snapshot.canSubmit}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void application.submit(text);
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

@@ -4,6 +4,8 @@ import { searchTokens } from './docs-search-tokens';
 export type { DocsSearchHit };
 
 export interface IndexedDoc {
+  scope?: 'angular' | 'react' | 'shared';
+  id?: string;
   /** Generated API pages have import-path-qualified destinations. */
   href?: string;
   library: string;
@@ -143,10 +145,11 @@ export function searchIndexedDocs(docs: IndexedDoc[], query: string): DocsSearch
         score,
         length: section.text.length,
         hit: {
-          href: `${doc.href ?? `/docs/${doc.library}/${doc.section}/${doc.slug}`}${section.anchor ? `#${section.anchor}` : ''}`,
+          href: `${doc.href ?? `/docs/angular/${doc.library}/${doc.section}/${doc.slug}`}${section.anchor ? `#${section.anchor}` : ''}`,
           title: doc.title,
           heading: section.heading,
           libraryTitle: doc.libraryTitle,
+          scope: doc.scope,
           snippet,
           marks,
         },

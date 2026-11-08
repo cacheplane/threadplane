@@ -1,6 +1,5 @@
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
-import { Eyebrow } from '../ui/Eyebrow';
 import { FAQ, type FAQItem } from '../ui/FAQ';
 
 // Five questions the page above does not answer (live-stage spec §3; the
@@ -13,18 +12,18 @@ const ITEMS: FAQItem[] = [
     q: 'Is Threadplane a backend agent framework?',
     a: (
       <>
-        No. Threadplane is the Angular UI layer. Your agent runs in LangGraph, in an
+        No. Threadplane is the UI layer. Your agent runs in LangGraph, in an
         AG-UI-compatible runtime, or in your own service.{' '}
         <a href="/docs/choosing-an-adapter">Choosing an adapter</a>
       </>
     ),
   },
   {
-    q: 'Can I use my existing Angular component library and design system?',
+    q: 'Can I use my existing component library and design system?',
     a: (
       <>
-        Yes. The chat compositions are stylable, the primitives are headless, and generated UI
-        renders components you register. <a href="/render">Generated UI</a>
+        Yes. Keep your components and style the interface to match your application.
+        For Angular, generated UI renders components you register. <a href="/render">Generated UI</a>
       </>
     ),
   },
@@ -34,7 +33,7 @@ const ITEMS: FAQItem[] = [
       <>
         No. The agent emits constrained structured output that is validated against a schema, and
         Angular renders registered components with a per-component fallback.{' '}
-        <a href="/docs/render/concepts/json-render-vs-a2ui">json-render and A2UI</a>
+        <a href="/docs/angular/render/concepts/json-render-vs-a2ui">json-render and A2UI</a>
       </>
     ),
   },
@@ -42,7 +41,7 @@ const ITEMS: FAQItem[] = [
     q: 'Does Threadplane require a hosted service or an account?',
     a: (
       <>
-        No. Every package is MIT and runs inside your Angular application against a backend you
+        No. Every package is MIT and runs inside your application against a backend you
         host. <a href="/pricing">Pricing</a>
       </>
     ),
@@ -61,18 +60,13 @@ const ITEMS: FAQItem[] = [
 
 export function HomeFAQ() {
   return (
-    <Section surface="white" ariaLabelledBy="faq-heading">
+    <Section id="questions" ariaLabelledBy="faq-heading" className="home-section home-questions">
       <Container>
-        <div className="home-faq-intro">
-          <div className="home-faq-rail">
-            <Eyebrow tone="accent" className="home-faq-eyebrow">
-              Questions
-            </Eyebrow>
-            <span className="home-faq-rail-line" aria-hidden="true" />
-          </div>
+        <div className="home-faq-intro home-section-heading">
           <h2 id="faq-heading" className="home-faq-heading">
-            Frequently asked questions.
+            A few things<br />worth knowing.
           </h2>
+          <p>From the first integration to production.</p>
         </div>
         <div className="home-faq-body">
           <FAQ items={ITEMS} />

@@ -1,8 +1,9 @@
+import { getNarrativeDocuments } from '../docs-catalog';
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { apiPagePaths, readApiIndex } from '../api-reference';
 import { getAllSlugs } from '../blog';
-import { docsConfig, specialDocsPages } from '../docs-config';
+import { specialDocsPages } from '../docs-config';
 import type { WebsiteCatalog, WebsiteTopic } from './website-metadata';
 
 let cached: WebsiteCatalog | undefined;
@@ -32,18 +33,9 @@ export function websiteContentCatalog(): WebsiteCatalog {
     add(path, 'getting_started');
   add('/pricing', 'pricing');
   add('/privacy', 'security');
-  for (const library of docsConfig)
-    for (const section of library.sections)
-      for (const page of section.pages) {
-        add(
-          page.href ?? `/docs/${library.id}/${page.section}/${page.slug}`,
-          page.section === 'getting-started'
-            ? 'getting_started'
-            : page.slug.includes('deploy')
-            ? 'deployment'
-            : 'architecture'
-        );
-      }
+  for (const page of getNarrativeDocuments()) {
+    add(page.href, page.section === 'getting-started' ? 'getting_started' : page.slug.includes('deploy') ? 'deployment' : 'architecture');
+  }
   for (const path of apiPagePaths(readApiIndex())) {
     if (path === '/docs/api') continue;
     // Export identities are case-sensitive; collection IDs must be lowercase.

@@ -1054,14 +1054,19 @@ describe('CI workflow', () => {
     assert.ok(job.indexOf(build) < job.indexOf(packages));
     assert.ok(job.indexOf('run-many -t build --projects=$LIBS') < job.indexOf(packages));
   });
-  it('verifies stage scrolling and interaction against the matching local replay build', async () => {
+  it('verifies the redesigned homepage against the existing production build', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const step = readNamedStep(readJobBlock(workflow, 'website-production-checks'), 'Stage scroll verification (scroll-craft harness)');
-    assert.match(step, /NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http:\/\/localhost:4200/);
-    assert.match(step, /nx serve examples-chat-angular --configuration=production --port=4200/);
-    assert.match(step, /nx build website --configuration=production --skip-nx-cache/);
-    assert.match(step, /STAGE_LIVE_FRAME=true BASE_URL=http:\/\/127\.0\.0\.1:4308/);
-    assert.match(step, /scroll-craft\/verify-home\.mjs/);
+    const job = readJobBlock(workflow, 'website-production-checks');
+    const step = readNamedStep(job, 'Homepage layout and interactions (production build)');
+    assert.match(step, /nx serve website --configuration=production --port=4308/);
+    assert.match(step, /BASE_URL=http:\/\/127\.0\.0\.1:4308/);
+    for (const spec of ['home-hero', 'home-capabilities', 'home-airport', 'home-architecture', 'home-no-runtime', 'home-editorial', 'home-stage']) {
+      assert.ok(step.includes(`${spec}.spec.ts`), `production homepage gate must run ${spec}`);
+    }
+    assert.ok(job.indexOf('Public copy boundary (production build)') < job.indexOf(step));
+    assert.doesNotMatch(step, /nx build website|examples-chat-angular|STAGE_LIVE_FRAME|NEXT_PUBLIC_STAGE_DEMO_ORIGIN|scroll-craft|ffmpeg/);
+    assert.match(job, /name: Upload homepage browser report/);
+    assert.match(job, /path: dist\/homepage-report/);
   });
   it('scopes every vercel promote to the team that owns the deployment', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
@@ -2438,12 +2443,22 @@ it('requires installed native React readiness immediately after owned render sta
 });
 
 
+it('runs the Angular list wrapper regression in Firefox on the first chat shard', async () => {
+  const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'examples-chat-e2e');
+  const install = readNamedStep(job, 'Install Firefox for the Angular list layout regression');
+  const regression = readNamedStep(job, 'Verify Angular list wrappers in Firefox');
+  for (const step of [install, regression]) assert.match(step, /if: matrix\.shard == 1/);
+  assert.match(install, /npx playwright install --with-deps firefox/);
+  assert.match(regression, /npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"/);
+  assert.ok(job.indexOf(install) < job.indexOf(regression));
+});
+
 it('bounds every Playwright dependency install and configures Ubuntu downloads first', async () => {
   for (const file of ['ci.yml', 'aimock-drift.yml']) {
     const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
     const steps = workflow.split(/(?=^      - )/m);
     const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
-    assert.equal(installs.length, file === 'ci.yml' ? 11 : 1, `enumerate actual install callers in ${file}`);
+    assert.equal(installs.length, file === 'ci.yml' ? 12 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
       assert.match(steps[index - 1], /name: Configure bounded Ubuntu package downloads/);
@@ -2453,5 +2468,4 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
   }
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
-  assert.match(workflow, /sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'/);
 });

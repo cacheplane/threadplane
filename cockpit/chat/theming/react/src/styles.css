@@ -1,3 +1,13 @@
+body {
+  margin: 0;
+  background: var(--ds-bg, light-dark(#ffffff, #111111));
+}
+:root:has(.theming-demo--light) {
+  color-scheme: light;
+}
+:root:has(.theming-demo--dark, .theming-demo--ocean, .theming-demo--forest) {
+  color-scheme: dark;
+}
 .tp-chat.theming-demo.theming-demo--dark {
   --tp-chat-text: #e0e0e0;
   --tp-chat-muted: #a3a3a3;
@@ -43,6 +53,12 @@
   color-scheme: dark;
 }
 .tp-chat.theming-demo {
+  --tp-chat-bg: var(--tp-chat-surface);
+  --tp-chat-surface-alt: color-mix(
+    in srgb,
+    var(--tp-chat-text) 7%,
+    var(--tp-chat-surface)
+  );
   box-sizing: border-box;
   width: 100%;
   max-width: 56rem;
@@ -66,8 +82,8 @@
   justify-content: space-between;
   gap: var(--tp-chat-gap);
 }
-.theming-demo h1,
-.theming-demo p {
+.theming-demo > h1,
+.theming-demo > p {
   margin-block: 0;
 }
 .theming-demo .theming-demo__eyebrow,
@@ -80,7 +96,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.theming-demo button {
+.theming-demo button:where(:not(.tp-chat-input button)) {
   padding: 0.6rem 1rem;
   border: 1px solid var(--tp-chat-border);
   border-radius: 0.5rem;
@@ -104,7 +120,10 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.theming-demo :is(button, textarea, summary, a):focus-visible {
+.theming-demo
+  :is(button, textarea, summary, a):focus-visible:where(
+    :not(.tp-chat-input__textarea)
+  ) {
   outline: 2px solid var(--tp-chat-accent);
   outline-offset: 3px;
 }
@@ -121,7 +140,7 @@
   min-width: 0;
   max-width: 100%;
 }
-.theming-demo pre {
+.theming-demo pre:where(:not(.tp-markdown *)) {
   max-width: 100%;
   overflow-x: auto;
 }
@@ -140,8 +159,7 @@
 }
 @media (max-width: 36rem) {
   .theming-demo .theming-demo__header,
-  .theming-demo .theming-demo__palettes,
-  .theming-demo .tp-chat-input__actions {
+  .theming-demo .theming-demo__palettes {
     flex-direction: column;
     align-items: stretch;
   }

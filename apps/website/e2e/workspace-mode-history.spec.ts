@@ -1,22 +1,27 @@
+import { documentationModes } from './fixtures/workspace-controls';
 import { test, expect } from '@playwright/test';
+import { chooseFramework } from './fixtures/framework-controls';
 
 const topics = [
   {
-    path: '/docs/langgraph/guides/deployment',
+    path: '/docs/angular/langgraph/guides/deployment',
+    reactPath: '/docs/react/langgraph/guides/deployment',
     react:
       /(?:localhost:4608(?:[/?#]|$)|\/langgraph\/deployment-runtime\/react\/?(?:[?#]|$))/,
     angular:
       /(?:localhost:4307(?:[/?#]|$)|\/langgraph\/deployment-runtime\/?(?:[?#]|$))/,
   },
   {
-    path: '/docs/ag-ui/reference/event-mapping',
+    path: '/docs/angular/ag-ui/reference/event-mapping',
+    reactPath: '/docs/react/ag-ui/reference/event-mapping',
     react:
       /(?:localhost:4609(?:[/?#]|$)|\/ag-ui\/streaming\/react\/?(?:[?#]|$))/,
     angular: /(?:localhost:4321(?:[/?#]|$)|\/ag-ui\/streaming\/?(?:[?#]|$))/,
   },
   {
-    path: '/docs/chat/guides/client-tools',
-    hash: '#ownership',
+    path: '/docs/angular/chat/guides/client-tools',
+    reactPath: '/docs/react/chat/guides/client-tools',
+    hash: '#booking-decisions-and-ownership',
     react:
       /(?:localhost:4603(?:[/?#]|$)|\/langgraph\/client-tools\/react\/?(?:[?#]|$))/,
     angular:
@@ -42,7 +47,7 @@ for (const topic of topics) {
       }
     });
     const hash = topic.hash ?? '';
-    await page.goto(`${topic.path}?frontend=react${hash}`);
+    await page.goto(`${topic.reactPath}${hash}`);
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-hydrated',
       'true'
@@ -66,7 +71,7 @@ for (const topic of topics) {
       const request = route.request();
       const url = new URL(request.url());
       if (
-        url.pathname === topic.path &&
+        url.pathname === topic.reactPath &&
         url.searchParams.has('_rsc') &&
         ['code', 'run'].includes(url.searchParams.get('mode') ?? '')
       ) {
@@ -90,18 +95,18 @@ for (const topic of topics) {
     });
 
     try {
-      const navigation = page.locator('[data-workspace-desktop-navigation]');
+      const navigation = documentationModes(page);
       await navigation
         .getByRole('button', { name: 'Code', exact: true })
         .click();
       await navigation.getByRole('button', { name: /^Run(?:,|$)/ }).click();
       await expect(page.locator('iframe')).toBeVisible();
-      await page.getByLabel('Example UI').selectOption('angular');
+      await chooseFramework(page, 'angular');
       release();
       await page.unrouteAll({ behavior: 'wait' });
 
-      await expect(page).toHaveURL(`${topic.path}?mode=run${hash}`);
-      await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+      await expect(page).toHaveURL(`${topic.path}?mode=run`);
+      await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'
@@ -116,9 +121,9 @@ for (const topic of topics) {
 
       await page.goBack({ waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(
-        `${topic.path}?mode=run&frontend=react${hash}`
+        `${topic.reactPath}?mode=run${hash}`
       );
-      await expect(page.getByLabel('Example UI')).toHaveValue('react');
+      await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',
         'Run'
@@ -129,7 +134,7 @@ for (const topic of topics) {
 
       await page.reload({ waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(
-        `${topic.path}?mode=run&frontend=react${hash}`
+        `${topic.reactPath}?mode=run${hash}`
       );
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-mode',

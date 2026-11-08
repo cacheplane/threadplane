@@ -31,22 +31,21 @@ describe('FIELD_REPORT', () => {
     expect(FIELD_REPORT.pages).toBe(pages);
   });
 
-  it('lists the six chapters the document actually contains', () => {
-    // Not machine-checkable: the text lives in compressed streams. Verify by
-    // hand with the command in the module's docblock when the PDF changes.
-    expect(FIELD_REPORT.chapters).toEqual([
-      'Streaming State Management',
-      'Thread Persistence',
-      'Tool-Call Rendering',
-      'Human Approval Flows',
-      'Generative UI',
-      'Deterministic Testing',
-    ]);
+  it('lists the chapters in the authored publication', () => {
+    const source = readFileSync(
+      join(findWorkspaceRoot(), 'apps/website/content/whitepapers/overview.md'),
+      'utf8'
+    );
+    expect(FIELD_REPORT.chapters).toEqual(
+      [...source.matchAll(/^## (.+)$/gm)].map((match) => match[1])
+    );
   });
 
   it('carries the cover strings the document prints', () => {
     expect(FIELD_REPORT.title).toBe('From Prototype to Production');
-    expect(FIELD_REPORT.kicker).toBe('Threadplane · Open source · Angular');
+    expect(FIELD_REPORT.kicker).toBe(
+      'Threadplane · Open source · Angular + React'
+    );
     expect(FIELD_REPORT.subtitle).toBeTruthy();
     expect(FIELD_REPORT.year).toBe('2026');
   });

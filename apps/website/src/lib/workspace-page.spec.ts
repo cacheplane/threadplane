@@ -16,19 +16,19 @@ const workspaceRoot = process.cwd().endsWith('/apps/website')
 
 describe('getWebsiteWorkspacePage', () => {
   it('loads the authored MAF snapshot compatibility helper into actual ExampleCode context', async () => {
-    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/runtimes/microsoft-agent-framework/overview', title: 'Overview' });
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/angular/runtimes/microsoft-agent-framework/overview', title: 'Overview' });
     const context = getExampleCodeContext(page);
     const helper = 'cockpit/runtimes/microsoft-agent-framework/python/src/snapshot_compat.py';
     if (!context) throw new Error('Missing MAF ExampleCode context');
     expect(resolveExampleFile('snapshot_compat.py', context)).toBe(helper);
     expect(context?.assetPaths).toContain(helper);
     expect(context?.sources[helper]).toBe(readFileSync(resolve(workspaceRoot, helper), 'utf8'));
-    const docs = readFileSync(resolve(workspaceRoot, 'apps/website/content/docs/runtimes/microsoft-agent-framework/overview.mdx'), 'utf8');
+    const docs = readFileSync(resolve(workspaceRoot, 'apps/website/content/docs/angular/runtimes/microsoft-agent-framework/overview.mdx'), 'utf8');
     expect(docs).toContain('<ExampleCode file="snapshot_compat.py"');
   });
   it('loads the canonical Subagents React code and child bridge with the same native runtime', async () => {
-    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/ag-ui/guides/subagents', title: 'Subagents' });
-    const react = page.frontendVariants?.react;
+    const page = await getWebsiteWorkspacePage({ docsPath: '/docs/angular/ag-ui/guides/subagents', title: 'Subagents' });
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.presentation.runtimeUrl).toBe('ag-ui/subagents/react');
     const files = Object.keys(react?.contentBundle.codeFiles ?? {});
     expect(files).toContain('cockpit/ag-ui/subagents/react/src/children.ts');
@@ -37,8 +37,8 @@ describe('getWebsiteWorkspacePage', () => {
     expect(page.presentation.runtimeUrl).toBe('ag-ui/subagents');
   });
   it('loads AG-UI Streaming React from Event Mapping with its own native source and backend', async () => {
-    const page = await getWebsiteWorkspacePage({ docsPath:'/docs/ag-ui/reference/event-mapping',title:'Event Mapping' });
-    const react = page.frontendVariants?.react;
+    const page = await getWebsiteWorkspacePage({ docsPath:'/docs/angular/ag-ui/reference/event-mapping',title:'Event Mapping' });
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.presentation.runtimeUrl).toBe('ag-ui/streaming/react');
     const files = Object.keys(react?.contentBundle.codeFiles ?? {});
     expect(files).toContain('cockpit/ag-ui/streaming/react/src/canonical-transcript.ts');
@@ -48,10 +48,10 @@ describe('getWebsiteWorkspacePage', () => {
   });
   it('loads Deployment Runtime React from the canonical deployment slug without Angular source fallback', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/deployment',
+      docsPath: '/docs/angular/langgraph/guides/deployment',
       title: 'Deployment',
     });
-    const react = page.frontendVariants?.react;
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.presentation.runtimeUrl).toBe(
       'langgraph/deployment-runtime/react'
     );
@@ -74,10 +74,10 @@ describe('getWebsiteWorkspacePage', () => {
   });
   it('loads a bounded React variant with matching source and runtime', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/streaming',
+      docsPath: '/docs/angular/langgraph/guides/streaming',
       title: 'Streaming',
     });
-    const react = page.frontendVariants?.react;
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.resolution).toMatchObject({
       kind: 'mapped',
       identity: { id: expect.stringMatching(/:react$/), language: 'python' },
@@ -94,17 +94,17 @@ describe('getWebsiteWorkspacePage', () => {
       )
     ).toBe(false);
     const unsupported = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/testing',
+      docsPath: '/docs/angular/langgraph/guides/testing',
       title: 'Testing',
     });
     expect(unsupported.frontendVariants?.react).toBeUndefined();
   });
   it('loads Time Travel canonical history and full checkpoint source helpers with the exact React runtime', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/time-travel',
+      docsPath: '/docs/angular/langgraph/guides/time-travel',
       title: 'Time Travel',
     });
-    const react = page.frontendVariants?.react;
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.presentation.runtimeUrl).toBe('langgraph/time-travel/react');
     const files = Object.keys(react?.contentBundle.codeFiles ?? {});
     for (const file of [
@@ -123,10 +123,10 @@ describe('getWebsiteWorkspacePage', () => {
   });
   it('loads the Subgraphs parent owner and exact frontend runtime together', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/subgraphs',
+      docsPath: '/docs/angular/langgraph/guides/subgraphs',
       title: 'Subgraphs',
     });
-    const react = page.frontendVariants?.react;
+    const react = await getWebsiteWorkspacePage({ docsPath: page.resolution.kind === 'mapped' ? page.resolution.identity.docsPath.replace('/angular/', '/react/') : page.resolution.docsPath.replace('/angular/', '/react/'), title: 'React' });
     expect(react?.presentation.runtimeUrl).toBe('langgraph/subgraphs/react');
     const files = Object.keys(react?.contentBundle.codeFiles ?? {});
     expect(files).toContain(
@@ -138,7 +138,7 @@ describe('getWebsiteWorkspacePage', () => {
   });
   it('loads descriptor-backed content for a mapped LangGraph docs page', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/streaming',
+      docsPath: '/docs/angular/langgraph/guides/streaming',
       title: 'Streaming',
     });
 
@@ -169,7 +169,7 @@ describe('getWebsiteWorkspacePage', () => {
 
   it('uses the explicit primary capability for a duplicate docs path', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/persistence',
+      docsPath: '/docs/angular/langgraph/guides/persistence',
       title: 'Persistence',
     });
 
@@ -184,7 +184,7 @@ describe('getWebsiteWorkspacePage', () => {
 
   it('keeps a mapped limited-mode entry truthful', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/getting-started/introduction',
+      docsPath: '/docs/angular/langgraph/getting-started/introduction',
       title: 'Introduction',
     });
 
@@ -210,19 +210,19 @@ describe('getWebsiteWorkspacePage', () => {
 
   it('returns a docs-only model for an unmapped valid docs page', async () => {
     const page = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/testing',
+      docsPath: '/docs/angular/langgraph/guides/testing',
       title: 'Testing',
     });
 
     expect(page.resolution).toEqual({
       kind: 'docs-only',
-      docsPath: '/docs/langgraph/guides/testing',
+      docsPath: '/docs/angular/langgraph/guides/testing',
       title: 'Testing',
       unavailableReason: 'no-workspace-capability',
     });
     expect(page.presentation).toEqual({
       kind: 'docs-only',
-      docsPath: '/docs/langgraph/guides/testing',
+      docsPath: '/docs/angular/langgraph/guides/testing',
       title: 'Testing',
       runnable: false,
     });
@@ -231,12 +231,12 @@ describe('getWebsiteWorkspacePage', () => {
 
   it('builds an example-code context for a page with code assets', async () => {
     const model = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/streaming',
+      docsPath: '/docs/angular/langgraph/guides/streaming',
       title: 'Streaming',
     });
     const context = getExampleCodeContext(model);
 
-    expect(context?.docsPath).toBe('/docs/langgraph/guides/streaming');
+    expect(context?.docsPath).toBe('/docs/angular/langgraph/guides/streaming');
     expect(context?.assetPaths).toEqual([
       'cockpit/langgraph/streaming/angular/src/app/streaming.component.ts',
       'cockpit/langgraph/streaming/angular/src/app/app.config.ts',
@@ -249,7 +249,7 @@ describe('getWebsiteWorkspacePage', () => {
 
   it('has no example-code context for a docs-only page', async () => {
     const model = await getWebsiteWorkspacePage({
-      docsPath: '/docs/langgraph/guides/testing',
+      docsPath: '/docs/angular/langgraph/guides/testing',
       title: 'Testing',
     });
     expect(getExampleCodeContext(model)).toBeNull();

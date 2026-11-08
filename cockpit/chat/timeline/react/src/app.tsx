@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -75,10 +77,9 @@ function TimelineOwner({ connection, onReady }: Props) {
     ? 'Response saved.'
     : 'Ready.';
   return (
-    <main className="timeline-demo">
+    <ExampleLayout className="timeline-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>Chat timeline</h1>
         </div>
         <button
@@ -105,34 +106,36 @@ function TimelineOwner({ connection, onReady }: Props) {
             renderMessage={renderMessage}
             label="Current messages"
           />
-          {snapshot.error && <p role="alert">{snapshot.error}</p>}
-          <ChatInput
-            key={`composer:${snapshot.viewGeneration}`}
-            label="Message"
-            value={snapshot.draft}
-            onValueChange={(text) => {
-              if (currentView()) application.setDraft(text);
-            }}
-            placeholder="Write a message…"
-            hint="Enter to send. Shift+Enter adds a new line."
-            busy={snapshot.busy}
-            disabled={snapshot.busy || !snapshot.canSubmit}
-            onStop={
-              snapshot.busy && snapshot.activity !== 'replacing'
-                ? () => {
-                    if (currentView()) void application.stop();
-                  }
-                : undefined
-            }
-            onSubmit={(text) => {
-              const current = application.getSnapshot();
-              if (!currentView() || !current.canSubmit || current.busy)
-                return false;
-              void application.submit(text);
-              return true;
-            }}
-          />
-          <p role="status">{status}</p>
+          <ExampleFooter>
+            {snapshot.error && <p role="alert">{snapshot.error}</p>}
+            <ChatInput
+              key={`composer:${snapshot.viewGeneration}`}
+              label="Message"
+              value={snapshot.draft}
+              onValueChange={(text) => {
+                if (currentView()) application.setDraft(text);
+              }}
+              placeholder="Write a message…"
+              hint="Enter to send. Shift+Enter adds a new line."
+              busy={snapshot.busy}
+              disabled={snapshot.busy || !snapshot.canSubmit}
+              onStop={
+                snapshot.busy && snapshot.activity !== 'replacing'
+                  ? () => {
+                      if (currentView()) void application.stop();
+                    }
+                  : undefined
+              }
+              onSubmit={(text) => {
+                const current = application.getSnapshot();
+                if (!currentView() || !current.canSubmit || current.busy)
+                  return false;
+                void application.submit(text);
+                return true;
+              }}
+            />
+            <p role="status">{status}</p>
+          </ExampleFooter>
         </section>
         <aside className="history-panel" aria-label="Timeline">
           <nav className="checkpoint-picker" aria-label="Saved checkpoints">
@@ -272,6 +275,6 @@ function TimelineOwner({ connection, onReady }: Props) {
           </section>
         </aside>
       </div>
-    </main>
+    </ExampleLayout>
   );
 }

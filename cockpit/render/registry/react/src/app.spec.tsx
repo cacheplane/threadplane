@@ -10,7 +10,13 @@ import { RegistryDemo } from './app';
 import { createPlayback } from './playback';
 import { REGISTRY_SAMPLES } from './specs';
 
-afterEach(cleanup);
+const ownedPlaybacks = new Set<ReturnType<typeof createPlayback>>();
+afterEach(() => {
+  // Like main.tsx, the harness owns playback; unmounting the view does not dispose it.
+  for (const playback of ownedPlaybacks) playback.dispose();
+  ownedPlaybacks.clear();
+  cleanup();
+});
 function fixture() {
   const callbacks: FrameRequestCallback[] = [];
   const playback = createPlayback(REGISTRY_SAMPLES, {
@@ -20,6 +26,7 @@ function fixture() {
     },
     cancel: () => undefined,
   });
+  ownedPlaybacks.add(playback);
   const ready = vi.fn();
   render(
     <RegistryDemo
@@ -152,20 +159,26 @@ it('displays native children exactly once in each authored container', () => {
     expect(output().textContent?.split(text)).toHaveLength(2);
 });
 
-it('mounts every actual prefix through all native registry modes without executable markup', () => {
-  const { playback } = fixture();
-  for (const choice of ['registered', 'omitted', 'fallback']) {
+// Keep every prefix of every sample in all three modes, with a fresh owner and
+// React tree per case rather than one synchronous test monopolizing its timeout.
+it.each(
+  ['registered', 'omitted', 'fallback'].flatMap((choice) =>
+    REGISTRY_SAMPLES.map(({ label }, sample) => ({ choice, label, sample }))
+  )
+)(
+  'mounts every actual prefix of $label in $choice mode without executable markup',
+  ({ choice, sample }) => {
+    const { playback } = fixture();
     mode(choice);
-    for (let sample = 0; sample < REGISTRY_SAMPLES.length; sample++) {
-      choose(sample);
-      for (
-        let position = 0;
-        position <= REGISTRY_SAMPLES[sample].json.length;
-        position++
-      )
-        act(() => playback.seek(position));
-      expect(playback.getSnapshot().phase).toBe('complete');
-    }
+    choose(sample);
+    for (
+      let position = 0;
+      position <= REGISTRY_SAMPLES[sample].json.length;
+      position++
+    )
+      act(() => playback.seek(position));
+    expect(playback.getSnapshot().phase).toBe('complete');
+    expect(source()).toBe(REGISTRY_SAMPLES[sample].json);
+    expect(output().querySelector('script')).toBeNull();
   }
-  expect(output().querySelector('script')).toBeNull();
-});
+);

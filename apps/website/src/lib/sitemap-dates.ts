@@ -1,3 +1,4 @@
+import { resolveNarrativeDocument } from './docs-catalog';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -69,13 +70,8 @@ export function sourcePathsForRoute(
   const special = specialDocsPages.find((page) => page.path === route);
   if (special) return [path.join('content', 'docs', special.contentPath)];
 
-  if (route.startsWith('/docs/')) {
-    const [, , library, section, slug] = route.split('/');
-    if (library && section && slug) {
-      return [path.join('content', 'docs', library, section, `${slug}.mdx`)];
-    }
-    // Anything else under /docs is a hand-written route, dated like any other.
-  }
+  const document = resolveNarrativeDocument(route);
+  if (document) return [path.join('content', 'docs', document.source)];
 
   if (route.startsWith('/solutions/')) {
     // Programmatic pages: one dynamic route template rendering data from a
@@ -159,7 +155,7 @@ export function parseGitLog(
  * that overflows its buffer or times out — all of which throw rather than
  * returning partial output).
  */
-function computeGitTimes(): GitTimes | null {
+export function computeGitTimes(cwd = process.cwd()): GitTimes | null {
   try {
     const git = (args: string[], cwd: string): string =>
       execFileSync(
@@ -185,7 +181,7 @@ function computeGitTimes(): GitTimes | null {
         }
       );
 
-    const root = git(['rev-parse', '--show-toplevel'], process.cwd()).trim();
+    const root = git(['rev-parse', '--show-toplevel'], cwd).trim();
     const graftedShas = new Set<string>();
     const shallow =
       git(['rev-parse', '--is-shallow-repository'], root).trim() === 'true';
@@ -213,6 +209,9 @@ function computeGitTimes(): GitTimes | null {
         'log',
         `--format=${GIT_LOG_MARKER}%ct %H`,
         '--name-only',
+        // Include edits made during a merge, while leaving files inherited
+        // unchanged from either parent dated by their original commits.
+        '--diff-merges=combined',
         '--',
         `${prefix}content`,
         `${prefix}src/app`,

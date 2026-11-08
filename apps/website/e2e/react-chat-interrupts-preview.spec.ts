@@ -1,6 +1,9 @@
+import { documentationModes } from './fixtures/workspace-controls';
+import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
-const route = '/docs/chat/components/chat-interrupt-panel';
+const route = '/docs/angular/chat/components/chat-interrupt-panel';
+const reactRoute = '/docs/react/chat/components/chat-interrupt-panel';
 const reactFrame = /(?:localhost:4622|chat\/interrupts\/react)/;
 const observations = new WeakMap<
   Page,
@@ -34,7 +37,7 @@ async function hydrated(page: Page, mode: 'docs' | 'code' | 'run') {
 }
 async function emptyRun(page: Page, draft = '') {
   await hydrated(page, 'run');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(page).toHaveURL(/(?:\?|&)mode=run(?:&|$)/);
   await expect(page.locator('iframe')).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
@@ -53,9 +56,9 @@ async function emptyRun(page: Page, draft = '') {
 test('native Chat Interrupts keeps canonical Docs, Code and Run aligned', async ({
   page,
 }, testInfo) => {
-  await page.goto(route + '?frontend=react', { waitUntil: 'domcontentloaded' });
+  await page.goto(reactRoute, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('react');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React chat interrupts preview',
@@ -70,19 +73,17 @@ test('native Chat Interrupts keeps canonical Docs, Code and Run aligned', async 
   await page.screenshot({
     path: testInfo.outputPath('react-chat-interrupts-docs-desktop.png'),
   });
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
   await expect(page).toHaveURL(/(?:\?|&)mode=code(?:&|$)/);
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: /^Run(?:,|$)/ })
     .click();
   await emptyRun(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel('Example UI')).toBeVisible();
+  await expectFrameworkControl(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth
@@ -97,26 +98,26 @@ test('the canonical message concept keeps Angular as its default frontend', asyn
 }) => {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await hydrated(page, 'docs');
-  await expect(page.getByLabel('Example UI')).toHaveValue('angular');
+  await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'angular');
   await expect(
     page.getByRole('heading', {
       name: 'React chat interrupts preview',
       exact: true,
     })
   ).toHaveCount(0);
-  await page.getByLabel('Example UI').selectOption('react');
+  await selectFramework(page, 'react');
   await expect(
     page.getByRole('heading', {
       name: 'React chat interrupts preview',
       exact: true,
     })
   ).toBeVisible();
-  await expect(page).toHaveURL(/frontend=react/);
+  await expect(page).toHaveURL(/\/docs\/react\//);
 });
 test('a direct React run link mounts an empty conversation without creating a thread', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -124,7 +125,7 @@ test('a direct React run link mounts an empty conversation without creating a th
 test('history preserves the mounted React owner and unsent draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
@@ -137,8 +138,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
     page.frameLocator('iframe').getByLabel('Message', { exact: true })
   ).toHaveValue('Unsent history draft');
   const before = [...(observations.get(page)?.requests ?? [])];
-  await page
-    .locator('[data-workspace-desktop-navigation]')
+  await documentationModes(page)
     .getByRole('button', { name: 'Code', exact: true })
     .click();
   await hydrated(page, 'code');
@@ -155,7 +155,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
 test('reload clears an unsent React draft without runtime requests', async ({
   page,
 }) => {
-  await page.goto(route + '?frontend=react&mode=run', {
+  await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);

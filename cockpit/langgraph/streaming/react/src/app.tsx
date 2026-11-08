@@ -1,6 +1,10 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import { ChatInput, MessageList } from '@threadplane/react/chat';
+import { createStreamingInspection } from './inspection';
+import type { InspectionFrame } from './inspection';
 import {
   createConnectedApplication,
   type streamingConnection,
@@ -9,10 +13,17 @@ import {
 export function StreamingDemo({
   connection,
   onReady,
+  onInspection,
 }: {
   readonly connection: ReturnType<typeof streamingConnection>;
   readonly onReady: () => void;
+  readonly onInspection?: (frame: InspectionFrame) => void;
 }) {
+  const publisher = useRef(onInspection);
+  publisher.current = onInspection;
+  const [inspection] = useState(() =>
+    createStreamingInspection((frame) => publisher.current?.(frame))
+  );
   const [application, setApplication] = useState(() =>
     createConnectedApplication(connection)
   );
@@ -20,6 +31,7 @@ export function StreamingDemo({
   const [generation, setGeneration] = useState(0);
   const live = useRef(true);
   const snapshot = useAgent(application);
+  useEffect(() => inspection.attach(application), [application, inspection]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -32,13 +44,15 @@ export function StreamingDemo({
   useEffect(
     () => () => {
       live.current = false;
+      inspection.dispose();
     },
-    []
+    [inspection]
   );
 
   async function reset() {
     if (snapshot.busy || resetting) return;
     setResetting(true);
+    inspection.reset();
     await application.dispose();
     if (!live.current) return;
     setApplication(createConnectedApplication(connection));
@@ -59,10 +73,9 @@ export function StreamingDemo({
     : 'Ready.';
 
   return (
-    <main className="streaming-demo">
+    <ExampleLayout className="streaming-demo">
       <header>
         <div>
-          <p className="eyebrow">React · Experimental</p>
           <h1>LangGraph streaming</h1>
         </div>
         <button
@@ -75,20 +88,22 @@ export function StreamingDemo({
       </header>
       <p>Watch an answer arrive as the agent writes it.</p>
       <MessageList rows={snapshot.rows} label="Conversation" />
-      {snapshot.error && <p role="alert">{snapshot.error}</p>}
-      <ChatInput
-        key={generation}
-        label="Message"
-        placeholder="Ask about LangGraph…"
-        disabled={resetting || (!snapshot.canSubmit && !snapshot.busy)}
-        busy={snapshot.busy}
-        onStop={snapshot.busy ? () => void application.stop() : undefined}
-        onSubmit={(text) => {
-          if (!application.getSnapshot().canSubmit) return false;
-          void application.submit(text);
-        }}
-      />
-      <p role="status">{status}</p>
-    </main>
+      <ExampleFooter>
+        {snapshot.error && <p role="alert">{snapshot.error}</p>}
+        <ChatInput
+          key={generation}
+          label="Message"
+          placeholder="Ask about LangGraph…"
+          disabled={resetting || (!snapshot.canSubmit && !snapshot.busy)}
+          busy={snapshot.busy}
+          onStop={snapshot.busy ? () => void application.stop() : undefined}
+          onSubmit={(text) => {
+            if (!application.getSnapshot().canSubmit) return false;
+            void inspection.submit(application, text);
+          }}
+        />
+        <p role="status">{status}</p>
+      </ExampleFooter>
+    </ExampleLayout>
   );
 }

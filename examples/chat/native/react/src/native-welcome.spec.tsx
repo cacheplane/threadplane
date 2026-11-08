@@ -194,6 +194,21 @@ function inputOf(view: ReturnType<typeof render>) {
   return view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 }
 
+it.each(['مرحبا، الطلب 4521 و abc-123', 'Request abc-123 ثم المتابعة'])(
+  'preserves automatic direction and the reviewed native draft %j',
+  async (draft) => {
+    const f = await owner();
+    const view = render(
+      <NativeComposer application={f.application} snapshot={f.snapshot()} />
+    );
+    const input = inputOf(view);
+    fireEvent.change(input, { target: { value: draft } });
+    expect(input.dir).toBe('auto');
+    expect(input.value).toBe(draft);
+    expect(f.submit).not.toHaveBeenCalled();
+  }
+);
+
 it.each(['A draft', '   '])(
   'protects the nonempty draft %j and reenables suggestions after clear',
   async (draft) => {

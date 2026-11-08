@@ -13,6 +13,7 @@ const SLUG = 'a2ui-flow';
 export function A2uiMessageFlow() {
   return (
     <DiagramFrame
+      title="From an A2UI message to a rendered surface"
       slug={SLUG}
       viewWidth={640}
       viewHeight={428}

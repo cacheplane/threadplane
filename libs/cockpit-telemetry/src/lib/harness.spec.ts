@@ -72,6 +72,7 @@ describe('bootstrapWithCockpitHarness', () => {
       markReady: vi.fn(),
       markError: vi.fn(),
       dispose: vi.fn(),
+      publishInspection: vi.fn(),
     };
     mocks.bootstrapApplication.mockReset().mockResolvedValue(undefined);
     mocks.installRuntimeBridge.mockReset().mockReturnValue(bridge);
@@ -85,6 +86,37 @@ describe('bootstrapWithCockpitHarness', () => {
       return { provideCockpitTelemetry: mocks.provideCockpitTelemetry };
     });
     ({ bootstrapWithCockpitHarness } = await import('./harness'));
+  });
+
+  test('provides inspection only after configured bootstrap, independently of analytics', async () => {
+    const { COCKPIT_INSPECTION_PUBLISHER } = await import(
+      './inspection-publisher'
+    );
+    vi.mocked(bridge.awaitConfiguration).mockResolvedValue({
+      status: 'configured',
+      target: { kind: 'shared' },
+      generation: 0,
+      reportOperationFailure: vi.fn(),
+    });
+    await bootstrapWithCockpitHarness(
+      TestComponent,
+      { providers: [] },
+      {
+        runtime: {
+          adapter: 'langgraph',
+          sharedApiUrl: 'https://shared.test',
+          assistantId: 'streaming',
+          operationReporterToken: LANGGRAPH_REPORTER,
+        },
+      }
+    );
+    const config = mocks.bootstrapApplication.mock
+      .calls[0][1] as ApplicationConfig;
+    expect(config.providers).toContainEqual({
+      provide: COCKPIT_INSPECTION_PUBLISHER,
+      useValue: bridge.publishInspection,
+    });
+    expect(mocks.providerModuleLoaded).not.toHaveBeenCalled();
   });
 
   test('installs the runtime bridge before invoking Angular bootstrap', async () => {
@@ -501,16 +533,20 @@ describe('bootstrapWithCockpitHarness', () => {
         adapter: 'langgraph',
         apiUrl: 'https://runtime.example/api',
         assistantId: 'streaming',
-        clientOptions: { defaultHeaders: { 'x-api-key': 'test-key-redact-me' } },
+        clientOptions: {
+          defaultHeaders: { 'x-api-key': 'test-key-redact-me' },
+        },
       },
     });
     expect(
       JSON.stringify(
-        config.providers?.filter(
-          (provider) =>
-            (provider as { provide?: unknown }).provide !==
-            COCKPIT_RUNTIME_CONNECTION
-        )
+        config.providers
+          ?.filter(
+            (provider) =>
+              (provider as { provide?: unknown }).provide !==
+              COCKPIT_RUNTIME_CONNECTION
+          )
+          .map((provider) => (provider as { useValue?: unknown }).useValue)
       )
     ).not.toContain('test-key-redact-me');
   });

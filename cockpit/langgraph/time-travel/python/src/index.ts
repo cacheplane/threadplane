@@ -26,7 +26,7 @@ export const langgraphTimeTravelPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'LangGraph Time Travel (Python)',
-  docsPath: '/docs/langgraph/guides/time-travel',
+  docsPath: '/docs/angular/langgraph/guides/time-travel',
   promptAssetPaths: ['cockpit/langgraph/time-travel/python/prompts/time-travel.md'],
   codeAssetPaths: [
     'cockpit/langgraph/time-travel/angular/src/app/time-travel.component.ts',

@@ -72,12 +72,12 @@ describe('devtools signal reports (LangGraph)', () => {
     await run;
 
     expect(summary(afterStart)).toEqual([
-      ['messages', ['messages', 'messageMetadata', 'subagents', 'toolCalls']],
-      ['values', ['values', 'messages', 'subagents', 'toolCalls']],
+      ['messages', ['messages', 'messageMetadata']],
+      ['values', ['values', 'messages']],
       ['updates', ['values']],
       ['custom', ['custom']],
-      // Settling the attempt settles its running subgraphs before the error lands.
-      ['error', ['subagents', 'error', 'status']],
+      // No empty subagent publication is fabricated while settling this run.
+      ['error', ['error', 'status']],
     ]);
   });
 
@@ -94,8 +94,6 @@ describe('devtools signal reports (LangGraph)', () => {
     expect(summary()).toEqual([
       ['run:start', ['status', 'error', 'custom', 'toolProgress', 'messages']],
       ['values', ['values']],
-      // Settling the attempt completes running subgraphs; then the run resolves.
-      ['run:end', ['subagents']],
       ['run:end', ['status']],
     ]);
   });
@@ -139,9 +137,41 @@ describe('devtools signal reports (LangGraph)', () => {
     await vi.waitFor(() => expect(reports.length).toBe(3));
     expect(summary()).toEqual([
       ['history', ['isThreadLoading']],
-      ['history', ['history', 'messages', 'values', 'toolCalls', 'subagents']],
+      ['history', ['history', 'messages', 'values']],
       ['history', ['isThreadLoading']],
     ]);
+  });
+
+  it('still reports actual nonempty tool and subagent publications', async () => {
+    const { ref, transport } = create();
+    const run = ref.submit({});
+    await transport.flush();
+    const afterStart = reports.length;
+    await transport.emit([{
+      type: 'messages',
+      messages: [{
+        id: 'ai-task', type: 'ai', content: '',
+        tool_calls: [{ id: 'child-1', name: 'task', args: { subagent_type: 'researcher', description: 'Research signals' } }],
+      }],
+      messageMetadata: { langgraph_node: 'model' },
+    }]);
+    await transport.emit([{
+      type: 'values|tools:child-1', namespace: ['tools:child-1'],
+      data: { messages: [{ type: 'human', content: 'Research signals' }], notes: 'started' },
+    }]);
+    await transport.emit([{
+      type: 'messages/partial',
+      data: [{ id: 'tool-1', type: 'tool', tool_call_id: 'child-1', content: 'done', status: 'success' }],
+    }]);
+    expect(summary(afterStart)).toEqual([
+      ['messages', ['messages', 'messageMetadata', 'toolCalls']],
+      ['values|tools:child-1', ['subagents']],
+      ['messages/partial', ['messages', 'subagents', 'toolCalls']],
+    ]);
+    expect(ref.toolCalls()[0].status).toBe('complete');
+    expect(ref.subagents?.().get('child-1')?.status()).toBe('complete');
+    await transport.close();
+    await run;
   });
 
   it('numbers reports per agent instance and keeps every report inside the contract', async () => {

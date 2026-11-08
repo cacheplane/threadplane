@@ -37,8 +37,12 @@ const WELCOME_SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout>
-      <chat main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+    <example-chat-layout
+      title="AG-UI airline dashboard"
+      description="Ask for an airline dashboard, then filter the disruptions or change its layout. This example uses fixed demo data."
+    >
+      <chat placeholder="Ask for an airline dashboard…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion [label]="s.label" [value]="s.value" [description]="s.description" (selected)="send($event)" />

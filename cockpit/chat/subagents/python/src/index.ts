@@ -26,7 +26,7 @@ export const chatSubagentsPythonModule: CockpitCapabilityModule = {
     language: 'python',
   },
   title: 'Chat Subagents (Python)',
-  docsPath: '/docs/chat/components/chat-subagent-card',
+  docsPath: '/docs/angular/chat/components/chat-subagent-card',
   promptAssetPaths: ['cockpit/chat/subagents/python/prompts/subagents.md'],
   codeAssetPaths: [
     'cockpit/chat/subagents/angular/src/app/subagents.component.ts',

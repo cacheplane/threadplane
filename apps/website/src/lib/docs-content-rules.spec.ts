@@ -185,7 +185,7 @@ describe('docs content rules', () => {
   it('scans the whole authored MDX tree', () => {
     const paths = CONTENT_FILES.map((file) => file.relativePath);
     expect(paths.length).toBeGreaterThan(100);
-    expect(paths).toContain('content/docs/chat/getting-started/introduction.mdx');
+    expect(paths).toContain('content/docs/angular/chat/getting-started/introduction.mdx');
     expect(paths).toContain(
       'content/blog/2026-05-28-human-in-the-loop-langgraph-agents-in-angular.mdx'
     );

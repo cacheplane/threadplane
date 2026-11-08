@@ -18,7 +18,7 @@ describe('CalloutAction', () => {
   });
 
   it('keeps in-site hrefs in the same tab', () => {
-    render(<CalloutAction href="/docs/ag-ui/getting-started/quickstart">Quick Start</CalloutAction>);
+    render(<CalloutAction href="/docs/angular/ag-ui/getting-started/quickstart">Quick Start</CalloutAction>);
 
     const link = screen.getByRole('link', { name: 'Quick Start' });
     expect(link.getAttribute('target')).toBeNull();

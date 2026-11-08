@@ -1,0 +1,2445 @@
+[
+  {
+    "id": "getting-started/introduction",
+    "title": "Introduction",
+    "library": null,
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 0,
+    "variants": {
+      "angular": {
+        "source": "angular/getting-started/introduction.mdx",
+        "description": "Start with the Angular guides for agent conversations, streaming, rendering, and backend integrations."
+      },
+      "react": {
+        "source": "react/getting-started/introduction.mdx",
+        "description": "Explore the experimental React source-build guides, session ownership, and runnable repository examples."
+      }
+    }
+  },
+  {
+    "id": "getting-started/workbench",
+    "title": "Learning workbench",
+    "library": null,
+    "section": "getting-started",
+    "slug": "workbench",
+    "order": 1,
+    "variants": {
+      "angular": {
+        "source": "angular/getting-started/workbench.mdx",
+        "description": "Inspect a streamed trip response, replay application observations, and connect them to the Angular streaming example."
+      },
+      "react": {
+        "source": "react/getting-started/workbench.mdx",
+        "description": "Inspect a streamed trip response, replay application observations, and connect them to the React streaming example."
+      }
+    }
+  },
+  {
+    "id": "langgraph/getting-started/introduction",
+    "title": "Introduction",
+    "library": "langgraph",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 1,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/getting-started/introduction.mdx",
+        "description": "The end-to-end LangGraph workflow — build a Python graph, run it locally, connect an Angular app with injectAgent(), and deploy to LangGraph Cloud.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "langgraph",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 2,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/getting-started/quickstart.mdx",
+        "description": "Build a streaming Angular chat component against a LangGraph Platform assistant with provideAgent() and injectAgent() in about five minutes.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/getting-started/installation",
+    "title": "Installation",
+    "library": "langgraph",
+    "section": "getting-started",
+    "slug": "installation",
+    "order": 3,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/getting-started/installation.mdx",
+        "description": "Install @threadplane/langgraph, satisfy its peer dependencies, register provideAgent(), and verify the setup against a running LangGraph server.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/streaming",
+    "title": "Streaming",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "streaming",
+    "order": 4,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/streaming.mdx",
+        "description": "How the streaming example wires a LangGraph graph to Angular signals, plus stream modes, status, error handling, and throttling",
+        "lessonId": "langgraph-streaming-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/streaming.mdx",
+        "description": "Let the traveler read an answer while it is being written.",
+        "lessonId": "langgraph-streaming-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/persistence",
+    "title": "Persistence",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "persistence",
+    "order": 5,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/persistence.mdx",
+        "description": "How the persistence example lists, switches, and starts threads with onThreadId and switchThread, plus checkpointer choices and thread lifecycle",
+        "lessonId": "langgraph-persistence-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/persistence.mdx",
+        "description": "Keep the Portland itinerary when the traveler opens another conversation.",
+        "lessonId": "langgraph-persistence-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/durable-execution",
+    "title": "Durable Execution",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "durable-execution",
+    "order": 6,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/durable-execution.mdx",
+        "description": "Resume a LangGraph run after a crash, restart, or redeploy from its last checkpoint, and offer retry from the Angular UI.",
+        "lessonId": "langgraph-durable-execution-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/durable-execution.mdx",
+        "description": "A long answer may depend on several completed steps.",
+        "lessonId": "langgraph-durable-execution-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/interrupts",
+    "title": "Interrupts",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "interrupts",
+    "order": 7,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/interrupts.mdx",
+        "description": "Pause and resume a LangGraph refund workflow, with typed payloads, captured-command retry, server checkpoint restoration, and timeout strategies",
+        "lessonId": "langgraph-interrupts-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/interrupts.mdx",
+        "description": "Pause a proposed action long enough for a person to decide.",
+        "lessonId": "langgraph-interrupts-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/memory",
+    "title": "Memory",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "memory",
+    "order": 8,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/memory.mdx",
+        "description": "How the memory example keeps learned facts in graph state, extracts them after every reply, and renders them in a live sidebar with value()",
+        "lessonId": "langgraph-memory-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/memory.mdx",
+        "description": "An assistant can use a preference from earlier in the conversation without asking for it again.",
+        "lessonId": "langgraph-memory-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/time-travel",
+    "title": "Time Travel",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "time-travel",
+    "order": 9,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/time-travel.mdx",
+        "description": "How the time travel example checkpoints every turn, lists them in a timeline sidebar, and forks from one, plus the history signals and the branch tree.",
+        "lessonId": "langgraph-time-travel-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/time-travel.mdx",
+        "description": "Inspect an earlier itinerary without replacing the current conversation.",
+        "lessonId": "langgraph-time-travel-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/subgraphs",
+    "title": "Subgraphs",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "subgraphs",
+    "order": 10,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/subgraphs.mdx",
+        "description": "How the subgraphs example routes a turn into a compiled child graph, keeps the child's state and tokens out of the transcript, and streams the child.",
+        "lessonId": "langgraph-subgraphs-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/subgraphs.mdx",
+        "description": "A trip-planning agent can delegate research while keeping one conversation with the traveler.",
+        "lessonId": "langgraph-subgraphs-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/testing",
+    "title": "Testing",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "testing",
+    "order": 11,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/testing.mdx",
+        "description": "Testing LangGraph agents in Angular with provideFakeAgent, mockLangGraphAgent, and hand-scripted MockAgentTransport specs, plus pytest coverage for the graph",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/deployment",
+    "title": "Deployment",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "deployment",
+    "order": 12,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/deployment.mdx",
+        "description": "How the deployment example packages a graph and points an Angular app at it, plus authentication, CORS, error handling, CI, and monitoring",
+        "lessonId": "langgraph-deployment-runtime-python",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      },
+      "react": {
+        "source": "react/langgraph/guides/deployment.mdx",
+        "description": "The same conversation UI can connect to a different LangGraph deployment when the application changes its connection configuration.",
+        "lessonId": "langgraph-deployment-runtime-python-react"
+      }
+    }
+  },
+  {
+    "id": "langgraph/guides/lifecycle",
+    "title": "Lifecycle Signals",
+    "library": "langgraph",
+    "section": "guides",
+    "slug": "lifecycle",
+    "order": 13,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/guides/lifecycle.mdx",
+        "description": "Eight per-agent lifecycle signals on every LangGraphAgent — first chunk, errors, interrupts, thread creation, and tool-call timings, plus their reset semantics.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/conversation-turns",
+    "title": "Conversation Turns",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "conversation-turns",
+    "order": 14,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/conversation-turns.mdx",
+        "description": "Follow a trip-planning conversation from a user message through requests, streaming, tools, UI state, and a saved thread in Angular or React.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/agent-contract",
+    "title": "Agent Contract",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "agent-contract",
+    "order": 15,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/agent-contract.mdx",
+        "description": "The runtime-neutral Agent contract from @threadplane/chat — its state signals, actions, optional capabilities, and how the adapters satisfy it.",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/angular-signals",
+    "title": "Angular Signals",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "angular-signals",
+    "order": 16,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/angular-signals.mdx",
+        "description": "How injectAgent() exposes agent state as Angular Signals, and how to derive, combine, and react to them with computed() and effect()",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/langgraph-basics",
+    "title": "LangGraph Basics",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "langgraph-basics",
+    "order": 17,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/langgraph-basics.mdx",
+        "description": "What a LangGraph graph is made of — state, nodes, edges, checkpoints — and how each piece reaches an Angular app through injectAgent()",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/agent-architecture",
+    "title": "Agent Architecture",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "agent-architecture",
+    "order": 18,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/agent-architecture.mdx",
+        "description": "How planning, tool execution, subagents, and checkpoints work in a LangGraph agent, and which injectAgent() signal surfaces each one in Angular",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "langgraph/concepts/state-management",
+    "title": "State Management",
+    "library": "langgraph",
+    "section": "concepts",
+    "slug": "state-management",
+    "order": 19,
+    "variants": {
+      "angular": {
+        "source": "angular/langgraph/concepts/state-management.mdx",
+        "description": "How LangGraph thread state reaches Angular Signals — designing the Python state, pinning its TypeScript shape, and keeping UI state separate",
+        "apiEntrypointIds": [
+          "langgraph"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/getting-started/introduction",
+    "title": "Introduction",
+    "library": "render",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 20,
+    "variants": {
+      "angular": {
+        "source": "angular/render/getting-started/introduction.mdx",
+        "description": "What @threadplane/render is, how it relates to @json-render/core, and the rendering pipeline that turns a JSON spec into a live Angular component tree.",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "render",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 21,
+    "variants": {
+      "angular": {
+        "source": "angular/render/getting-started/quickstart.mdx",
+        "description": "Render a JSON spec as a live Angular component tree: build a component, define a registry, write a spec, then add reactive state with signalStateStore().",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/getting-started/installation",
+    "title": "Installation",
+    "library": "render",
+    "section": "getting-started",
+    "slug": "installation",
+    "order": 22,
+    "variants": {
+      "angular": {
+        "source": "angular/render/getting-started/installation.mdx",
+        "description": "Setup guide for @threadplane/render in an Angular 20-22 application: install the package and its peers, configure provideRender(), and verify the first render.",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/registry",
+    "title": "Component Registry",
+    "library": "render",
+    "section": "guides",
+    "slug": "registry",
+    "order": 23,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/registry.mdx",
+        "description": "How the registry example maps four type names to Angular components, what a registered component receives as inputs, and how an element resolves at render time.",
+        "lessonId": "render-registry-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/registry.mdx",
+        "description": "Decide which component names a generated layout may use.",
+        "lessonId": "render-registry-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/element-rendering",
+    "title": "Element Rendering",
+    "library": "render",
+    "section": "guides",
+    "slug": "element-rendering",
+    "order": 24,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/element-rendering.mdx",
+        "description": "How the element rendering example drives render-spec with a streaming spec, a registry and a store, plus the component inputs, outputs and resolution order.",
+        "lessonId": "render-element-rendering-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/element-rendering.mdx",
+        "description": "Render nested elements in the order described by a specification, including elements that depend on local state.",
+        "lessonId": "render-element-rendering-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/computed-functions",
+    "title": "Computed Functions",
+    "library": "render",
+    "section": "guides",
+    "slug": "computed-functions",
+    "order": 25,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/computed-functions.mdx",
+        "description": "Register the registry, store, computed functions, and handlers that every render surface in an application uses by default.",
+        "lessonId": "render-computed-functions-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/computed-functions.mdx",
+        "description": "Transform values in a generated layout using a small set of functions your application provides.",
+        "lessonId": "render-computed-functions-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/state-store",
+    "title": "State Store",
+    "library": "render",
+    "section": "guides",
+    "slug": "state-store",
+    "order": 26,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/state-store.mdx",
+        "description": "How the state management example seeds a signal-backed store, resolves $state props against JSON Pointer paths, and re-renders when the host writes.",
+        "lessonId": "render-state-management-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/state-store.mdx",
+        "description": "Update a rendered view by changing its data, without replacing the layout.",
+        "lessonId": "render-state-management-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/specs",
+    "title": "Specs & Elements",
+    "library": "render",
+    "section": "guides",
+    "slug": "specs",
+    "order": 27,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/specs.mdx",
+        "description": "How the spec rendering example streams a JSON spec into a live component tree, plus the spec format: root, elements, props, children, visibility and repeat.",
+        "lessonId": "render-spec-rendering-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/specs.mdx",
+        "description": "Describe a small interface as JSON and render it with your own React components.",
+        "lessonId": "render-spec-rendering-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/repeat-loops",
+    "title": "Repeat Loops",
+    "library": "render",
+    "section": "guides",
+    "slug": "repeat-loops",
+    "order": 28,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/repeat-loops.mdx",
+        "description": "How a spec element repeats itself over an array in the state store with repeat, $item and $index, and how the running example holds that array.",
+        "lessonId": "render-repeat-loops-python",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      },
+      "react": {
+        "source": "react/render/guides/repeat-loops.mdx",
+        "description": "Use one component description to render every stop in an itinerary.",
+        "lessonId": "render-repeat-loops-python-react",
+        "apiEntrypointIds": [
+          "react/render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/events",
+    "title": "Events & Handlers",
+    "library": "render",
+    "section": "guides",
+    "slug": "events",
+    "order": 29,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/events.mdx",
+        "description": "How spec elements dispatch actions through the on property, how handlers are registered and resolved, and what the render-spec events output reports.",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/guides/lifecycle",
+    "title": "Lifecycle Signals",
+    "library": "render",
+    "section": "guides",
+    "slug": "lifecycle",
+    "order": 30,
+    "variants": {
+      "angular": {
+        "source": "angular/render/guides/lifecycle.mdx",
+        "description": "How RENDER_LIFECYCLE exposes mount, state-change, and handler signals, why provideRender() is required, and what mountCount actually counts.",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "render/concepts/json-render-vs-a2ui",
+    "title": "JSON Render vs A2UI",
+    "library": "render",
+    "section": "concepts",
+    "slug": "json-render-vs-a2ui",
+    "order": 31,
+    "variants": {
+      "angular": {
+        "source": "angular/render/concepts/json-render-vs-a2ui.mdx",
+        "description": "json-render renders a fixed spec. A2UI is an agent-to-UI protocol for surfaces that update over time and send user actions back. When to pick each.",
+        "apiEntrypointIds": [
+          "render"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/introduction",
+    "title": "Introduction",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 32,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/introduction.mdx",
+        "description": "How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a runtime adapter.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 33,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/quickstart.mdx",
+        "description": "Install @threadplane/chat, register a LangGraph agent provider, and render a streaming chat surface — with a no-backend variant using mockAgent().",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/try-without-a-backend",
+    "title": "Try without a backend",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "try-without-a-backend",
+    "order": 34,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/try-without-a-backend.mdx",
+        "description": "Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real adapter.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/coding-agents",
+    "title": "Coding agents",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "coding-agents",
+    "order": 35,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/coding-agents.mdx",
+        "description": "A maintained setup prompt for Claude Code, Codex and other coding agents adding Threadplane to an Angular app, plus the references they should read first.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/installation",
+    "title": "Installation",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "installation",
+    "order": 36,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/installation.mdx",
+        "description": "Install @threadplane/chat with a LangGraph or AG-UI adapter, confirm the Angular and peer-dependency requirements, and render a first chat surface.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/getting-started/changelog",
+    "title": "Changelog",
+    "library": "chat",
+    "section": "getting-started",
+    "slug": "changelog",
+    "order": 37,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/getting-started/changelog.mdx",
+        "description": "Highlight releases of @threadplane/chat since 0.0.19, from client tools and A2UI v0.9.1 to the AG-UI 1.0 upgrade and the per-message activity slot.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/layout-modes",
+    "title": "Layout Modes",
+    "library": "chat",
+    "section": "guides",
+    "slug": "layout-modes",
+    "order": 38,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/layout-modes.mdx",
+        "description": "The four ready-made chat layouts — embedded, popup, sidebar, and the sidenav navigation panel — with when to reach for each and how to drive them.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/theming",
+    "title": "Theming",
+    "library": "chat",
+    "section": "guides",
+    "slug": "theming",
+    "order": 39,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/theming.mdx",
+        "description": "How the theming example swaps --tplane-chat-* custom properties at runtime, where the token defaults come from, and how to override them in your app.",
+        "lessonId": "chat-theming-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/guides/theming.mdx",
+        "description": "Give the same conversation a different visual theme without replacing its session.",
+        "lessonId": "chat-theming-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/markdown",
+    "title": "Markdown Rendering",
+    "library": "chat",
+    "section": "guides",
+    "slug": "markdown",
+    "order": 40,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/markdown.mdx",
+        "description": "How chat renders assistant markdown — the streaming node renderer, the renderMarkdown() helper, the 26-node registry, and per-instance node overrides.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/generative-ui",
+    "title": "Generative UI",
+    "library": "chat",
+    "section": "guides",
+    "slug": "generative-ui",
+    "order": 41,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/generative-ui.mdx",
+        "description": "How the generative UI example authors a dashboard spec as message content, streams the data as state updates, and renders it through a views registry.",
+        "lessonId": "chat-generative-ui-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/guides/generative-ui.mdx",
+        "description": "Render an airline dashboard inside a conversation using components your application owns.",
+        "lessonId": "chat-generative-ui-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/client-tools",
+    "title": "Client Tools",
+    "library": "chat",
+    "section": "guides",
+    "slug": "client-tools",
+    "order": 42,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/client-tools.mdx",
+        "description": "Declare tools in the browser, ship the catalog to a LangGraph graph as client_tools, and carry each browser-produced result back into the run.",
+        "lessonId": "langgraph-client-tools-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/guides/client-tools.mdx",
+        "description": "Give the agent access to a capability in the browser, such as reading a selected itinerary day or showing a weather card.",
+        "lessonId": "langgraph-client-tools-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/custom-catalogs",
+    "title": "Custom A2UI Catalogs",
+    "library": "chat",
+    "section": "guides",
+    "slug": "custom-catalogs",
+    "order": 43,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/custom-catalogs.mdx",
+        "description": "Compose custom component catalogs for generative UI using ViewRegistry composition.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/streaming",
+    "title": "Streaming",
+    "library": "chat",
+    "section": "guides",
+    "slug": "streaming",
+    "order": 44,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/streaming.mdx",
+        "description": "How chat classifies assistant content as markdown, a json-render spec or A2UI as it streams, and how to drive ContentClassifier and ParseTreeStore directly.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/error-handling",
+    "title": "Error Handling",
+    "library": "chat",
+    "section": "guides",
+    "slug": "error-handling",
+    "order": 45,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/error-handling.mdx",
+        "description": "The structured AgentError on the agent error signal — its failure kinds, the retryable and recovery fields, the chat-error UI, and classifying failures.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/writing-an-adapter",
+    "title": "Writing an Adapter",
+    "library": "chat",
+    "section": "guides",
+    "slug": "writing-an-adapter",
+    "order": 46,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/writing-an-adapter.mdx",
+        "description": "Implement the runtime-neutral Agent contract for a custom backend — the required fields, a working in-process example, and the conformance suite.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/thread-routing",
+    "title": "Thread Routing",
+    "library": "chat",
+    "section": "guides",
+    "slug": "thread-routing",
+    "order": 47,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/thread-routing.mdx",
+        "description": "How the threads example lists, switches, creates, and removes conversations, and how injectThreadRouting binds the active thread to the URL",
+        "lessonId": "chat-threads-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/guides/thread-routing.mdx",
+        "description": "Give each trip its own conversation and draft.",
+        "lessonId": "chat-threads-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/guides/lifecycle",
+    "title": "Lifecycle Signals",
+    "library": "chat",
+    "section": "guides",
+    "slug": "lifecycle",
+    "order": 48,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/guides/lifecycle.mdx",
+        "description": "The CHAT_LIFECYCLE token exposes per-instance signals for readiness, first submit, submit count and last submit time, and where they are reachable.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/concepts/primitives-vs-compositions",
+    "title": "Primitives vs Compositions",
+    "library": "chat",
+    "section": "concepts",
+    "slug": "primitives-vs-compositions",
+    "order": 49,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/concepts/primitives-vs-compositions.mdx",
+        "description": "The two levels of @threadplane/chat UI — styled compositions like chat and chat-sidebar, versus headless primitives you assemble yourself — and how to choose.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/concepts/message-model",
+    "title": "Message Model",
+    "library": "chat",
+    "section": "concepts",
+    "slug": "message-model",
+    "order": 50,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/concepts/message-model.mdx",
+        "description": "How the messages example renders one template per role, plus the runtime-neutral message shape, delivery lifecycle, content, tool calls and citations.",
+        "lessonId": "chat-messages-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/concepts/message-model.mdx",
+        "description": "Render a conversation from stable message rows, then choose how each row looks.",
+        "lessonId": "chat-messages-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat",
+    "title": "ChatComponent",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat",
+    "order": 51,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat.mdx",
+        "description": "Reference for the chat composition — inputs, outputs, projection slots, message templates, the thread sidebar, generative UI, and auto-scroll behavior.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-popup",
+    "title": "ChatPopup",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-popup",
+    "order": 52,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-popup.mdx",
+        "description": "The ChatPopupComponent launcher and overlay window - inputs, outputs, methods, projection slots, and how to reposition the fixed launcher.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-sidebar",
+    "title": "ChatSidebar",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-sidebar",
+    "order": 53,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-sidebar.mdx",
+        "description": "The ChatSidebarComponent docked chat panel - overlay and push-content modes, inputs and outputs, projection slots, and the panel-width token.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-sidenav",
+    "title": "ChatSidenav",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-sidenav",
+    "order": 54,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-sidenav.mdx",
+        "description": "The ChatSidenavComponent thread list - its inputs and outputs, the Thread and ThreadActionAdapter shapes, named projection slots, and drawer mode.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-message-list",
+    "title": "ChatMessageList",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-message-list",
+    "order": 55,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-message-list.mdx",
+        "description": "The ChatMessageListComponent inputs, the chatMessageTemplate directive contexts, and how to read a runtime-neutral message's content in a custom template.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-trace",
+    "title": "ChatTrace",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-trace",
+    "order": 56,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-trace.mdx",
+        "description": "How the timeline example mounts the surface that hosts trace rows, plus the chat-trace inputs, slots, expansion rules and styling hooks.",
+        "lessonId": "chat-timeline-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-trace.mdx",
+        "description": "Browse how a conversation changed over time, then choose whether to continue from its present or fork from an earlier checkpoint.",
+        "lessonId": "chat-timeline-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-input",
+    "title": "ChatInput",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-input",
+    "order": 57,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-input.mdx",
+        "description": "How the input example wires chat-input to a streaming agent, plus the component inputs, outputs, keyboard handling, projection slots and styling hooks.",
+        "lessonId": "chat-input-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-input.mdx",
+        "description": "Let the traveler write the next question while the current answer arrives.",
+        "lessonId": "chat-input-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-reasoning",
+    "title": "ChatReasoning",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-reasoning",
+    "order": 58,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-reasoning.mdx",
+        "description": "The ChatReasoningComponent pill that expands to reveal an assistant's reasoning text, its five inputs, and the auto-collapse behavior.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-interrupt-panel",
+    "title": "ChatInterruptPanel",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-interrupt-panel",
+    "order": 59,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-interrupt-panel.mdx",
+        "description": "How the interrupts example pauses a flight booking at interrupt() and resumes it from the panel's Accept and Ignore buttons, plus the component API",
+        "lessonId": "chat-interrupts-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-interrupt-panel.mdx",
+        "description": "Place a booking decision beside the conversation that requested it.",
+        "lessonId": "chat-interrupts-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-tool-calls",
+    "title": "ChatToolCalls",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-tool-calls",
+    "order": 60,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-tool-calls.mdx",
+        "description": "How the tool-calls example renders an aviation agent's calls in a sidebar panel, plus grouping, per-tool templates and the component API.",
+        "lessonId": "chat-tool-calls-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-tool-calls.mdx",
+        "description": "Show the lookups behind an answer without asking readers to infer them from prose.",
+        "lessonId": "chat-tool-calls-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-tool-call-template",
+    "title": "chatToolCallTemplate",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-tool-call-template",
+    "order": 61,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-tool-call-template.mdx",
+        "description": "The ChatToolCallTemplateDirective that registers a per-tool-name template inside chat-tool-calls, including the wildcard catch-all name.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-activity-template",
+    "title": "chatActivityTemplate",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-activity-template",
+    "order": 62,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-activity-template.mdx",
+        "description": "The ChatActivityTemplateDirective replaces the reasoning pill and tool-call region of each assistant message with your own per-message activity renderer.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-run-activity-template",
+    "title": "chatRunActivityTemplate",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-run-activity-template",
+    "order": 63,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-run-activity-template.mdx",
+        "description": "The ChatRunActivityTemplateDirective renders a chat run while it is active and has no assistant message, in place of the typing indicator.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-interrupt-template",
+    "title": "chatInterruptTemplate",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-interrupt-template",
+    "order": 64,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-interrupt-template.mdx",
+        "description": "The ChatInterruptTemplateDirective renders your approval card or other interrupt UI at the end of the chat transcript while an interrupt is pending.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-tool-call-card",
+    "title": "ChatToolCallCard",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-tool-call-card",
+    "order": 65,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-tool-call-card.mdx",
+        "description": "The ChatToolCallCardComponent status pill, its auto-expand rules and the one case where a user's manual toggle is discarded, plus the ToolCallInfo shape.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-subagent-card",
+    "title": "ChatSubagentCard",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-subagent-card",
+    "order": 66,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-subagent-card.mdx",
+        "description": "How the subagents example dispatches task calls to real subgraphs, and the Subagent contract the card reads to render each dispatch inline",
+        "lessonId": "chat-subagents-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-subagent-card.mdx",
+        "description": "Show specialist activity without blending every child answer into the main transcript.",
+        "lessonId": "chat-subagents-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-debug",
+    "title": "ChatDebug",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-debug",
+    "order": 67,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-debug.mdx",
+        "description": "How the debug example mounts the chat-debug panel against a multi-node LangGraph agent, plus the panel inputs, outputs, sidenav integration and bundle gate.",
+        "lessonId": "chat-debug-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-debug.mdx",
+        "description": "Inspect the state behind a conversation without changing it.",
+        "lessonId": "chat-debug-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-select",
+    "title": "ChatSelect",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-select",
+    "order": 68,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/components/chat-select.mdx",
+        "description": "ChatSelectComponent renders its trigger in the host and portals its menu into a body-level overlay container, so panelClass is the styling seam.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/a2ui/overview",
+    "title": "Overview",
+    "library": "chat",
+    "section": "a2ui",
+    "slug": "overview",
+    "order": 69,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/a2ui/overview.mdx",
+        "description": "How the flight-booking demo streams A2UI surfaces into the chat composition, and how chat detects them, renders them, and returns actions to the agent.",
+        "lessonId": "chat-a2ui-python",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      },
+      "react": {
+        "source": "react/chat/a2ui/overview.mdx",
+        "description": "Let the agent offer a flight-search form, then let the traveler edit it before submitting an action.",
+        "lessonId": "chat-a2ui-python-react",
+        "apiEntrypointIds": [
+          "react/chat",
+          "react/markdown",
+          "react/debug"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/a2ui/surface-component",
+    "title": "A2uiSurfaceComponent",
+    "library": "chat",
+    "section": "a2ui",
+    "slug": "surface-component",
+    "order": 70,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/a2ui/surface-component.mdx",
+        "description": "The A2uiSurfaceComponent that renders one A2UI surface - its inputs and outputs, the built-in handler map, and how validation blocks an event action.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/a2ui/surface-store",
+    "title": "createA2uiSurfaceStore()",
+    "library": "chat",
+    "section": "a2ui",
+    "slug": "surface-store",
+    "order": 71,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/a2ui/surface-store.mdx",
+        "description": "The A2uiSurfaceStore that accumulates streamed A2UI messages into per-surface state, and its per-component readiness metadata.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/a2ui/catalog",
+    "title": "Component Catalog",
+    "library": "chat",
+    "section": "a2ui",
+    "slug": "catalog",
+    "order": 72,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/a2ui/catalog.mdx",
+        "description": "Every component in the built-in A2UI catalog - its Angular class, selector, props and defaults, plus how bound inputs write values back.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "chat/migrations/upgrading",
+    "title": "Upgrade an existing application",
+    "library": "chat",
+    "section": "migrations",
+    "slug": "upgrading",
+    "order": 73,
+    "variants": {
+      "angular": {
+        "source": "angular/chat/migrations/upgrading.mdx",
+        "description": "Upgrade Angular integrations deliberately, distinguish private React source builds, and review AG-UI, A2UI, and persisted client-tool changes.",
+        "apiEntrypointIds": [
+          "angular/chat",
+          "angular/markdown",
+          "chat",
+          "chat/debug",
+          "chat/testing"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/getting-started/introduction",
+    "title": "Introduction",
+    "library": "ag-ui",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 74,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/getting-started/introduction.mdx",
+        "description": "What @threadplane/ag-ui does, which parts of the AG-UI protocol it covers, and how it fits between an AG-UI backend and the chat UI primitives.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "ag-ui",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 75,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/getting-started/quickstart.mdx",
+        "description": "Bind the chat composition to an AG-UI backend in three steps: install the packages, register provideAgent(), and read the agent with injectAgent().",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/getting-started/installation",
+    "title": "Installation",
+    "library": "ag-ui",
+    "section": "getting-started",
+    "slug": "installation",
+    "order": 76,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/getting-started/installation.mdx",
+        "description": "Install @threadplane/ag-ui and its peers, register provideAgent() in an Angular app config, and read the agent in a component.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/concepts/architecture",
+    "title": "Architecture",
+    "library": "ag-ui",
+    "section": "concepts",
+    "slug": "architecture",
+    "order": 77,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/concepts/architecture.mdx",
+        "description": "How the AG-UI adapter reduces protocol events into Angular signals, which providers register an agent, and what the adapter deliberately leaves out.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/fake-agent",
+    "title": "Fake Agent",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "fake-agent",
+    "order": 78,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/fake-agent.mdx",
+        "description": "Run the chat UI with no backend using provideFakeAgent(), what the canned stream contains, and how to script exact AG-UI events instead.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/citations",
+    "title": "Citations",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "citations",
+    "order": 79,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/citations.mdx",
+        "description": "Attach sources to AG-UI assistant messages through state.citations, which field names the bridge normalizes, and when the merge runs.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/custom-events",
+    "title": "Custom Events",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "custom-events",
+    "order": 80,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/custom-events.mdx",
+        "description": "How an AG-UI backend produces CUSTOM events, which delivery paths reach the adapter under ag-ui-langgraph, and how Angular reads the customEvents signal.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/interrupts",
+    "title": "Interrupts",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "interrupts",
+    "order": 81,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/interrupts.mdx",
+        "description": "Approve and cancel AG-UI interrupts with generation-aware controls, native batches, and application-owned persistence and recovery",
+        "lessonId": "ag-ui-interrupts-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/guides/interrupts.mdx",
+        "description": "Let a person review a fictional refund before the backend continues.",
+        "lessonId": "ag-ui-interrupts-python-react"
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/client-tools",
+    "title": "Client Tools",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "client-tools",
+    "order": 82,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/client-tools.mdx",
+        "description": "Declare a tool in the Angular app, let an AG-UI agent call it, and submit the result back to continue the run with no server-side implementation.",
+        "lessonId": "ag-ui-client-tools-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/guides/client-tools.mdx",
+        "description": "Allow an AG-UI agent to request browser capabilities, including simulated weather and a person’s booking decision.",
+        "lessonId": "ag-ui-client-tools-python-react"
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/tool-views",
+    "title": "Tool Views",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "tool-views",
+    "order": 83,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/tool-views.mdx",
+        "description": "Render an AG-UI tool call's plain data through a component the frontend owns, keyed by tool name, with no UI spec crossing the wire.",
+        "lessonId": "ag-ui-tool-views-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/guides/tool-views.mdx",
+        "description": "Display a weather lookup as an application component while the agent writes its answer.",
+        "lessonId": "ag-ui-tool-views-python-react"
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/json-render",
+    "title": "Generative UI",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "json-render",
+    "order": 84,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/json-render.mdx",
+        "description": "Stream a json-render UI spec with AG-UI shared state and let @threadplane/render resolve $state bindings into a live Angular component tree.",
+        "lessonId": "ag-ui-json-render-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/guides/json-render.mdx",
+        "description": "Let the agent choose a dashboard layout while React supplies the components and data bindings.",
+        "lessonId": "ag-ui-json-render-python-react"
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/subagents",
+    "title": "Subagents",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "subagents",
+    "order": 85,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/subagents.mdx",
+        "description": "Show an AG-UI agent's delegated child runs as attributed subagent cards with their own tool calls and messages.",
+        "lessonId": "ag-ui-subagents-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/guides/subagents.mdx",
+        "description": "Follow research, booking, and itinerary specialists inside one trip-planning conversation.",
+        "lessonId": "ag-ui-subagents-python-react"
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/testing",
+    "title": "Testing",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "testing",
+    "order": 86,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/testing.mdx",
+        "description": "Test AG-UI components with provideFakeAgent() and its event script, the neutral mockAgent(), or a hand-written AbstractAgent, and which double fits where.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/deployment",
+    "title": "Deployment",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "deployment",
+    "order": 87,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/deployment.mdx",
+        "description": "Point provideAgent() at a deployed AG-UI server through an endpoint you own, pass user identity through it, configure CORS, handle errors, and ship with CI",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/guides/troubleshooting",
+    "title": "Troubleshooting",
+    "library": "ag-ui",
+    "section": "guides",
+    "slug": "troubleshooting",
+    "order": 88,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/guides/troubleshooting.mdx",
+        "description": "Diagnose AG-UI integration failures — nothing renders, loading never stops, errors stay hidden, state or citations do not arrive, retry does nothing.",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ag-ui/reference/event-mapping",
+    "title": "Event Mapping",
+    "library": "ag-ui",
+    "section": "reference",
+    "slug": "event-mapping",
+    "order": 89,
+    "variants": {
+      "angular": {
+        "source": "angular/ag-ui/reference/event-mapping.mdx",
+        "description": "How the adapter turns AG-UI protocol events into Angular Signals, walked through the streaming example and then listed event by event.",
+        "lessonId": "ag-ui-streaming-python",
+        "apiEntrypointIds": [
+          "ag-ui"
+        ]
+      },
+      "react": {
+        "source": "react/ag-ui/reference/event-mapping.mdx",
+        "description": "Watch an AG-UI backend turn a question into an answer one event at a time.",
+        "lessonId": "ag-ui-streaming-python-react"
+      }
+    }
+  },
+  {
+    "id": "a2ui/getting-started/introduction",
+    "title": "Introduction",
+    "library": "a2ui",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 90,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/getting-started/introduction.mdx",
+        "description": "The protocol layer for A2UI messages, taught through the flight-booking demo whose agent authors every surface and streams it as v0.9 JSONL.",
+        "lessonId": "ag-ui-a2ui-python",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      },
+      "react": {
+        "source": "react/a2ui/getting-started/introduction.mdx",
+        "description": "Turn a flight request into a form the traveler can edit.",
+        "lessonId": "ag-ui-a2ui-python-react",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "a2ui",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 91,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/getting-started/quickstart.mdx",
+        "description": "Parse an A2UI JSONL stream, apply an updateDataModel envelope with the pointer helpers, and resolve a dynamic value with resolveDynamic.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/guides/message-protocol",
+    "title": "Message Protocol",
+    "library": "a2ui",
+    "section": "guides",
+    "slug": "message-protocol",
+    "order": 92,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/guides/message-protocol.mdx",
+        "description": "Surfaces, flat components, dynamic values, the four v0.9 envelopes, and how a rendered surface sends an action message back to the agent.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/guides/data-model",
+    "title": "Data Model",
+    "library": "a2ui",
+    "section": "guides",
+    "slug": "data-model",
+    "order": 93,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/guides/data-model.mdx",
+        "description": "Read and write an A2UI surface data model with the pointer helpers, apply updateDataModel envelopes, and resolve dynamic values in scope.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/guides/adapters-and-validation",
+    "title": "Validating & Adapting",
+    "library": "a2ui",
+    "section": "guides",
+    "slug": "adapters-and-validation",
+    "order": 94,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/guides/adapters-and-validation.mdx",
+        "description": "Consume an A2UI stream with the parser, narrow dynamic values with the guards, build test payloads, and back a custom renderer.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/reference/schema",
+    "title": "Schema",
+    "library": "a2ui",
+    "section": "reference",
+    "slug": "schema",
+    "order": 95,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/reference/schema.mdx",
+        "description": "The TypeScript model of the A2UI v0.9 protocol: constants, dynamic values, actions, the basic-catalog components, envelopes, and outbound messages.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "a2ui/reference/parser-resolver-guards",
+    "title": "Parser, Resolver, and Guards",
+    "library": "a2ui",
+    "section": "reference",
+    "slug": "parser-resolver-guards",
+    "order": 96,
+    "variants": {
+      "angular": {
+        "source": "angular/a2ui/reference/parser-resolver-guards.mdx",
+        "description": "The runtime API of @threadplane/a2ui - the JSONL parser, resolveDynamic, the pointer helpers, the two guards, and the client-side function registry.",
+        "apiEntrypointIds": [
+          "a2ui"
+        ]
+      }
+    }
+  },
+  {
+    "id": "middleware/getting-started/introduction",
+    "title": "Introduction",
+    "library": "middleware",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 97,
+    "variants": {
+      "shared": {
+        "source": "shared/middleware/getting-started/introduction.mdx",
+        "description": "What the Threadplane LangGraph middleware does, the TypeScript and Python entry points, and the routing flow for browser-executed client tools."
+      }
+    }
+  },
+  {
+    "id": "middleware/getting-started/quickstart",
+    "title": "Quick Start",
+    "library": "middleware",
+    "section": "getting-started",
+    "slug": "quickstart",
+    "order": 98,
+    "variants": {
+      "shared": {
+        "source": "shared/middleware/getting-started/quickstart.mdx",
+        "description": "Install @threadplane/middleware, add the client-tool state channels, bind tools per run, and route client-tool-only turns back to the browser."
+      }
+    }
+  },
+  {
+    "id": "middleware/guides/langgraph-client-tools",
+    "title": "LangGraph.js Client Tools",
+    "library": "middleware",
+    "section": "guides",
+    "slug": "langgraph-client-tools",
+    "order": 99,
+    "variants": {
+      "shared": {
+        "source": "shared/middleware/guides/langgraph-client-tools.mdx",
+        "description": "How the TypeScript middleware reads the client-tool catalog from state, converts it for the model, and routes server-tool and client-tool turns."
+      }
+    }
+  },
+  {
+    "id": "middleware/guides/python-langgraph",
+    "title": "Python LangGraph Middleware",
+    "library": "middleware",
+    "section": "guides",
+    "slug": "python-langgraph",
+    "order": 100,
+    "variants": {
+      "shared": {
+        "source": "shared/middleware/guides/python-langgraph.mdx",
+        "description": "The threadplane-middleware Python package — binding browser-declared client tools per run and routing client-tool-only turns to END."
+      }
+    }
+  },
+  {
+    "id": "runtimes/getting-started/introduction",
+    "title": "Introduction",
+    "library": "runtimes",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 101,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/getting-started/introduction.mdx",
+        "description": "Measured AG-UI runtime support for AWS Strands, Microsoft Agent Framework, and Mastra behind one Angular adapter."
+      }
+    }
+  },
+  {
+    "id": "runtimes/aws-strands/overview",
+    "title": "Overview",
+    "library": "runtimes",
+    "section": "aws-strands",
+    "slug": "overview",
+    "order": 102,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/aws-strands/overview.mdx",
+        "description": "How the AWS Strands example books meetings over AG-UI, and why its shared-state support is measured as partial.",
+        "lessonId": "runtimes-aws-strands-python"
+      },
+      "react": {
+        "source": "react/runtimes/aws-strands/overview.mdx",
+        "description": "Review a proposed meeting with a Strands agent, then choose whether to continue.",
+        "lessonId": "runtimes-aws-strands-react"
+      }
+    }
+  },
+  {
+    "id": "runtimes/aws-strands/quickstart",
+    "title": "Quickstart",
+    "library": "runtimes",
+    "section": "aws-strands",
+    "slug": "quickstart",
+    "order": 103,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/aws-strands/quickstart.mdx",
+        "description": "Run the AWS Strands runtime example locally, backend and Angular app, on ports 5331 and 4331."
+      }
+    }
+  },
+  {
+    "id": "runtimes/aws-strands/how-it-connects",
+    "title": "How It Connects",
+    "library": "runtimes",
+    "section": "aws-strands",
+    "slug": "how-it-connects",
+    "order": 104,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/aws-strands/how-it-connects.mdx",
+        "description": "The AG-UI wire conventions measured for AWS Strands: outcome interrupts, top-level resume entries, and snapshot-only state."
+      }
+    }
+  },
+  {
+    "id": "runtimes/microsoft-agent-framework/overview",
+    "title": "Overview",
+    "library": "runtimes",
+    "section": "microsoft-agent-framework",
+    "slug": "overview",
+    "order": 105,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/microsoft-agent-framework/overview.mdx",
+        "description": "How the Microsoft Agent Framework example is built, from the approval tool and predictive state on the Python side to the Angular component that renders both.",
+        "lessonId": "runtimes-microsoft-agent-framework-python"
+      },
+      "react": {
+        "source": "react/runtimes/microsoft-agent-framework/overview.mdx",
+        "description": "Review a fictional expense with a Microsoft Agent Framework backend.",
+        "lessonId": "runtimes-microsoft-agent-framework-react"
+      }
+    }
+  },
+  {
+    "id": "runtimes/microsoft-agent-framework/quickstart",
+    "title": "Quickstart",
+    "library": "runtimes",
+    "section": "microsoft-agent-framework",
+    "slug": "quickstart",
+    "order": 106,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/microsoft-agent-framework/quickstart.mdx",
+        "description": "Run the Microsoft Agent Framework runtime example locally on ports 5330 and 4330, with Azure OpenAI or plain OpenAI."
+      }
+    }
+  },
+  {
+    "id": "runtimes/microsoft-agent-framework/how-it-connects",
+    "title": "How It Connects",
+    "library": "runtimes",
+    "section": "microsoft-agent-framework",
+    "slug": "how-it-connects",
+    "order": 107,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/microsoft-agent-framework/how-it-connects.mdx",
+        "description": "Measured AG-UI wire behavior for Microsoft Agent Framework: outcome interrupts, resume entries for every pending interrupt, and real state deltas."
+      }
+    }
+  },
+  {
+    "id": "runtimes/mastra/overview",
+    "title": "Overview",
+    "library": "runtimes",
+    "section": "mastra",
+    "slug": "overview",
+    "order": 108,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/mastra/overview.mdx",
+        "description": "How the Mastra example is built, from the Node service that serves AG-UI events to the Angular component that renders them.",
+        "lessonId": "runtimes-mastra-angular"
+      },
+      "react": {
+        "source": "react/runtimes/mastra/overview.mdx",
+        "description": "Connect a React conversation to a Mastra agent through AG-UI, including a human decision when the agent pauses.",
+        "lessonId": "runtimes-mastra-react"
+      }
+    }
+  },
+  {
+    "id": "runtimes/mastra/quickstart",
+    "title": "Quickstart",
+    "library": "runtimes",
+    "section": "mastra",
+    "slug": "quickstart",
+    "order": 109,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/mastra/quickstart.mdx",
+        "description": "Run the Mastra runtime example locally against the Node AG-UI hosting service on port 5332, with the Angular app on 4332."
+      }
+    }
+  },
+  {
+    "id": "runtimes/mastra/how-it-connects",
+    "title": "How It Connects",
+    "library": "runtimes",
+    "section": "mastra",
+    "slug": "how-it-connects",
+    "order": 110,
+    "variants": {
+      "angular": {
+        "source": "angular/runtimes/mastra/how-it-connects.mdx",
+        "description": "Measured AG-UI wire behavior for Mastra: both interrupt conventions, correlated approval and cancellation commands, and JSON-Patch state deltas."
+      }
+    }
+  },
+  {
+    "id": "deep-agents/getting-started/introduction",
+    "title": "Introduction",
+    "library": "deep-agents",
+    "section": "getting-started",
+    "slug": "introduction",
+    "order": 111,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/getting-started/introduction.mdx",
+        "description": "Render Deep Agents middleware capabilities in the canonical Angular UI or an experimental native React preview over LangGraph."
+      }
+    }
+  },
+  {
+    "id": "deep-agents/capabilities/planning",
+    "title": "Planning",
+    "library": "deep-agents",
+    "section": "capabilities",
+    "slug": "planning",
+    "order": 112,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/capabilities/planning.mdx",
+        "description": "Render evolving todo plans with TodoListMiddleware. Angular is the default; the native React preview shows live and saved plans on the same Python graph.",
+        "lessonId": "deep-agents-planning-python"
+      },
+      "react": {
+        "source": "react/deep-agents/capabilities/planning.mdx",
+        "description": "Make an agent’s plan visible while it works.",
+        "lessonId": "deep-agents-planning-python-react"
+      }
+    }
+  },
+  {
+    "id": "deep-agents/capabilities/filesystem",
+    "title": "Filesystem",
+    "library": "deep-agents",
+    "section": "capabilities",
+    "slug": "filesystem",
+    "order": 113,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/capabilities/filesystem.mdx",
+        "description": "How the Deep Agents filesystem example keeps the agent workspace on graph state and pauses writes under /reports/ for human approval",
+        "lessonId": "deep-agents-filesystem-python"
+      },
+      "react": {
+        "source": "react/deep-agents/capabilities/filesystem.mdx",
+        "description": "Show the files an agent is working with and ask for a decision before protected changes.",
+        "lessonId": "deep-agents-filesystem-python-react"
+      }
+    }
+  },
+  {
+    "id": "deep-agents/capabilities/subagents",
+    "title": "Subagents",
+    "library": "deep-agents",
+    "section": "capabilities",
+    "slug": "subagents",
+    "order": 114,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/capabilities/subagents.mdx",
+        "description": "Register specialists on the task tool and inspect delegation through the Angular example or native React preview.",
+        "lessonId": "deep-agents-subagents-python"
+      },
+      "react": {
+        "source": "react/deep-agents/capabilities/subagents.mdx",
+        "description": "Let an orchestrator delegate focused work while the user keeps one conversation.",
+        "lessonId": "deep-agents-subagents-python-react"
+      }
+    }
+  },
+  {
+    "id": "deep-agents/capabilities/memory",
+    "title": "Memory",
+    "library": "deep-agents",
+    "section": "capabilities",
+    "slug": "memory",
+    "order": 115,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/capabilities/memory.mdx",
+        "description": "Agent-authored memory shared across conversations under a captured browser identity, with fresh read-time observations.",
+        "lessonId": "deep-agents-memory-python"
+      },
+      "react": {
+        "source": "react/deep-agents/capabilities/memory.mdx",
+        "description": "Teach an agent a fact, then see whether it can recall that fact in another interaction.",
+        "lessonId": "deep-agents-memory-python-react"
+      }
+    }
+  },
+  {
+    "id": "deep-agents/capabilities/skills",
+    "title": "Skills",
+    "library": "deep-agents",
+    "section": "capabilities",
+    "slug": "skills",
+    "order": 116,
+    "variants": {
+      "angular": {
+        "source": "angular/deep-agents/capabilities/skills.mdx",
+        "description": "SkillsMiddleware puts a skill's name, description, and instruction path in the prompt, leaving its body on the backend until requested.",
+        "lessonId": "deep-agents-skills-python"
+      },
+      "react": {
+        "source": "react/deep-agents/capabilities/skills.mdx",
+        "description": "Load detailed instructions only when the agent needs them.",
+        "lessonId": "deep-agents-skills-python-react"
+      }
+    }
+  }
+]

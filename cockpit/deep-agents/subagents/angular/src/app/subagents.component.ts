@@ -37,8 +37,15 @@ const SUGGESTIONS = [
   standalone: true,
   imports: [ChatComponent, ChatWelcomeSuggestionComponent, ExampleChatLayoutComponent],
   template: `
-    <example-chat-layout sidebarWidth="20rem">
-      <chat main [agent]="agent" class="flex-1 min-w-0">
+    <example-chat-layout sidebarWidth="18rem"
+      title="Deep Agents subagents"
+      description="Dispatch sample field research and weather tasks, and inspect separate native child streams. Aviation lookups use fixed sample data, including weather. Stop cancels local delivery; it does not roll back backend work."
+    >
+      <button headerActions type="button" [disabled]="agent.isLoading()"
+        (click)="newConversation(conversation)">New conversation</button>
+      <chat placeholder="Ask about field data or weather…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+        <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -113,6 +120,12 @@ const SUGGESTIONS = [
   ],
 })
 export class SubagentsComponent {
+  protected newConversation(conversation: ChatComponent): void {
+    if (this.agent.isLoading()) return;
+    this.agent.switchThread(null);
+    conversation.clearDraft();
+  }
+
   protected readonly agent = injectAgent();
 
   protected readonly suggestions = SUGGESTIONS;

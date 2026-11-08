@@ -1,3 +1,4 @@
+import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
 import { test, expect, type Page, type Locator } from '@playwright/test';
 
@@ -8,13 +9,8 @@ const browserErrors = new WeakMap<Page, string[]>();
 function events(base64: string) {
   return [...Buffer.from(base64, 'base64').toString().matchAll(/^data: (.+)$/gm)].map(match => JSON.parse(match[1]));
 }
-async function mode(page: Page, name: 'Docs' | 'Code' | 'Run', width: number) {
-  if (width === 390) {
-    await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-    await page.getByRole('dialog').getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
-  } else {
-    await page.locator('[data-workspace-desktop-navigation]').getByRole('button', { name: name === 'Run' ? /^Run(?:,|$)/ : name, exact: name !== 'Run' }).click();
-  }
+async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
+  await selectWorkspaceMode(page, name);
 }
 async function fits(locator: Locator) {
   await locator.scrollIntoViewIfNeeded();
@@ -52,14 +48,14 @@ test.describe('native MAF Website', () => {
     test(`Docs Code Run and actual native ${decision} at ${width}`, async ({ page, request }, info) => {
       test.setTimeout(90000);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      const response = await page.goto('/docs/runtimes/microsoft-agent-framework/overview?frontend=react');
+      const response = await page.goto('/docs/react/runtimes/microsoft-agent-framework/overview');
       expect(response?.status()).toBe(200);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
       await expect(page.getByRole('heading', { name: 'React Microsoft Agent Framework expense preview', exact: true })).toBeVisible();
       await expect(page.locator('[data-example-file="cockpit/runtimes/microsoft-agent-framework/react/src/approval-policy.ts"]')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath('docs.png') });
-      await mode(page, 'Code', width);
+      await mode(page, 'Code');
       const tree = page.getByRole('complementary', { name: 'File tree' });
       const files = ['app.tsx', 'application.ts', 'approval-policy.ts', 'expense-projection.ts', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'agent.py', 'server.py', 'snapshot_compat.py', 'microsoft-agent-framework.md'];
       if (width === 390) {
@@ -74,18 +70,18 @@ test.describe('native MAF Website', () => {
       await expect(page.getByRole('tabpanel')).toContainText('p.methods.resume.call');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath('code.png') });
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4642\/\?cockpit_did=/);
       const frame = page.frameLocator('iframe');
       await expect(frame.getByRole('status')).toHaveText('Ready.');
       await frame.getByRole('button', { name: 'Team dinner for 4', exact: true }).click();
       const iframe = await page.locator('iframe').elementHandle();
       const draft = await frame.getByRole('textbox', { name: 'Message', exact: true }).inputValue();
-      await mode(page, 'Docs', width);
+      await mode(page, 'Docs');
       await expect(page.getByRole('heading', { name: 'React Microsoft Agent Framework expense preview', exact: true })).toBeVisible();
-      await mode(page, 'Code', width);
+      await mode(page, 'Code');
       await expect(page.getByRole('tabpanel')).toBeVisible();
-      await mode(page, 'Run', width);
+      await mode(page, 'Run');
       expect(await page.locator('iframe').evaluate((current, retained) => current === retained, iframe)).toBe(true);
       await expect(frame.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue(draft);
       await expect(frame.getByRole('status')).toHaveText('Ready.');

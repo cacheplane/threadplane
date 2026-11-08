@@ -1,4 +1,5 @@
 import { cockpitManifest } from './manifest';
+import { docsNarrativeHref, parseDocsNarrativePath } from './docs-routes';
 import type {
   CockpitManifestEntry,
   WorkspaceIdentity,
@@ -40,8 +41,18 @@ export const resolveDocsWorkspace = (
   title: string,
   manifest: readonly CockpitManifestEntry[] = cockpitManifest
 ): WorkspaceResolution => {
-  const matches = manifest.filter((entry) => entry.docsPath === docsPath);
-  if (matches.length === 1) return mapped(matches[0]);
+  const document = parseDocsNarrativePath(docsPath);
+  const lookupPath =
+    document?.scope === 'framework'
+      ? docsNarrativeHref({ ...document, framework: 'angular' })
+      : docsPath;
+  const matches = manifest.filter((entry) => entry.docsPath === lookupPath);
+  if (matches.length === 1) {
+    const resolution = mapped(matches[0]);
+    return resolution.kind === 'mapped'
+      ? { ...resolution, identity: { ...resolution.identity, docsPath } }
+      : resolution;
+  }
   if (matches.length > 1) {
     throw new Error(
       `Docs path ${docsPath} is published by ${matches.length} manifest entries`

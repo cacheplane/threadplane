@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openWorkspaceTool } from './fixtures/workspace-controls';
 
 const observations = new WeakMap<Page, { writes: string[]; errors: string[] }>();
 
@@ -27,7 +28,7 @@ for (const viewport of [
 ]) {
   test(`static React runtime explains browser execution on ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
-    await page.goto('/docs/render/guides/state-store?frontend=react&mode=run', {
+    await page.goto('/docs/react/render/guides/state-store?mode=run', {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
@@ -37,10 +38,8 @@ for (const viewport of [
     await example.getByRole('button', { name: 'Finish', exact: true }).click();
     await expect(example.getByRole('region', { name: 'Render output' })).toContainText('Ada');
 
-    if (viewport.name === 'mobile') {
-      await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-      await expect(page.getByRole('dialog', { name: 'Documentation control plane', exact: true })).toBeVisible();
-    }
+    await openWorkspaceTool(page, 'Settings');
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
     const section = page.locator('[data-runtime-section]:visible');
     const toggle = section.getByRole('button', { name: 'Runtime', exact: true });
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
@@ -53,18 +52,19 @@ for (const viewport of [
     await expect(section.getByText('Runs in your browser', { exact: true })).toBeInViewport();
     await expect(section.getByText('Browser · Render', { exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`static-browser-runtime-${viewport.name}.png`) });
-    if (viewport.name === 'mobile') {
-      await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog', { name: 'Documentation control plane', exact: true })).toBeHidden();
-      await expect(example.getByRole('region', { name: 'Render output' })).toContainText('Ada');
-    }
+    await page.getByRole('button', { name: 'Close Settings', exact: true }).click();
+    await expect(section).toBeHidden();
+    await expect(example.getByRole('region', { name: 'Render output' })).toContainText('Ada');
   });
 }
 
 test('live LangGraph metadata preserves its backend language and shared target', async ({ page }) => {
-  await page.goto('/docs/langgraph/guides/streaming?mode=code', { waitUntil: 'domcontentloaded' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/docs/angular/langgraph/guides/streaming?mode=code', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', 'Code');
+  await openWorkspaceTool(page, 'Settings');
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   const section = page.locator('[data-runtime-section]:visible');
   const toggle = section.getByRole('button', { name: 'Runtime', exact: true });
   if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();

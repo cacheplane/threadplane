@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -86,10 +88,9 @@ export function DebugDemo({
         ]
       : undefined;
   return (
-    <main className="tp-chat debug-demo">
+    <ExampleLayout className="tp-chat debug-demo">
       <header className="debug-demo__header">
         <div>
-          <p>React · Experimental</p>
           <h1>Chat debug</h1>
         </div>
         <button
@@ -117,46 +118,48 @@ export function DebugDemo({
             {String(analysis.words)} words
           </p>
         )}
-      {snapshot.error && (
-        <p role="alert" className="tp-chat__error">
-          {snapshot.error}
-        </p>
-      )}
       {snapshot.readError && (
         <p role="status" aria-label="Checkpoint read status">
           {snapshot.readError}
         </p>
       )}
-      <ChatInput
-        key={snapshot.contextKey}
-        label="Message"
-        placeholder="Ask an aviation question…"
-        busy={snapshot.busy}
-        disabled={
-          snapshot.activity === 'cleanup-failed' ||
-          (!snapshot.canSubmit && !snapshot.busy)
-        }
-        onStop={
-          snapshot.busy &&
-          snapshot.activity !== 'replacing' &&
-          snapshot.activity !== 'cleanup-failed'
-            ? () => void application.stop()
-            : undefined
-        }
-        onSubmit={(text) => {
-          const current = application.getSnapshot();
-          if (
-            current.contextKey !== snapshot.contextKey ||
-            !current.canSubmit ||
-            current.busy ||
-            !text.trim()
-          )
-            return false;
-          void application.submit(text, snapshot.contextKey);
-          return true;
-        }}
-      />
-      <p role="status">{status}</p>
+      <ExampleFooter>
+        {snapshot.error && (
+          <p role="alert" className="tp-chat__error">
+            {snapshot.error}
+          </p>
+        )}
+        <ChatInput
+          key={snapshot.contextKey}
+          label="Message"
+          placeholder="Ask an aviation question…"
+          busy={snapshot.busy}
+          disabled={
+            snapshot.activity === 'cleanup-failed' ||
+            (!snapshot.canSubmit && !snapshot.busy)
+          }
+          onStop={
+            snapshot.busy &&
+            snapshot.activity !== 'replacing' &&
+            snapshot.activity !== 'cleanup-failed'
+              ? () => void application.stop()
+              : undefined
+          }
+          onSubmit={(text) => {
+            const current = application.getSnapshot();
+            if (
+              current.contextKey !== snapshot.contextKey ||
+              !current.canSubmit ||
+              current.busy ||
+              !text.trim()
+            )
+              return false;
+            void application.submit(text, snapshot.contextKey);
+            return true;
+          }}
+        />
+        <p className="debug-demo__status" role="status">{status}</p>
+      </ExampleFooter>
       <ChatDebug
         contextKey={snapshot.contextKey}
         current={snapshot.current}
@@ -174,6 +177,6 @@ export function DebugDemo({
           return undefined;
         }}
       />
-    </main>
+    </ExampleLayout>
   );
 }

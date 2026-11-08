@@ -659,6 +659,7 @@ jobs:
       - run: npx nx test cockpit-chat-a2ui-react --skip-nx-cache
       - run: npx nx test cockpit-ag-ui-a2ui-react --skip-nx-cache
       - run: npx nx lint workspace-react
+      - run: npx nx lint react-example-layouts
       - run: npx nx run-many -t test --projects=cockpit-registry,cockpit-shell,workspace-react --skip-nx-cache
   cockpit-examples-build:
     name: Cockpit — build all examples
@@ -791,6 +792,16 @@ jobs:
         timeout-minutes: 10
         run: npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
+      - name: Configure bounded Ubuntu package downloads
+        if: matrix.shard == 1
+        run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
+      - name: Install Firefox for the Angular list layout regression
+        if: matrix.shard == 1
+        timeout-minutes: 10
+        run: npx playwright install --with-deps firefox
+      - name: Verify Angular list wrappers in Firefox
+        if: matrix.shard == 1
+        run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"
       - name: Upload Playwright trace on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -1266,39 +1277,32 @@ jobs:
           path: dist/docs-audit/local
           if-no-files-found: warn
           retention-days: 7
-      # Spec §8: scroll-craft's own harness walks the homepage's pinned stage
-      # act and fails on dead scroll outside the declared hold and on cues that
-      # never peak. The Nx build lands in dist/apps/website with a rewritten
-      # next.config, which `nx serve --configuration=production` starts.
-      # Rebuild explicitly with the paired stage origin: serve reuses the
-      # prior output, whose public-copy build points at production. The content
-      # symlink, which mirrors playwright.config.ts's production mode, is
-      # added only after the server answers, so it lands on the dist the
-      # build has finished writing rather than on one it is about to replace.
-      - name: Stage scroll verification (scroll-craft harness)
+      # Reuse the build already verified by the public-copy gate. The homepage
+      # now has a hero demo and static capability cards, so verify its responsive
+      # layout and interactions instead of waiting for the retired scroll engine.
+      - name: Homepage layout and interactions (production build)
         env:
           GROWTH_FORM_POLICY: growth_v1
-          SCROLLCRAFT_CHROME: /usr/bin/google-chrome
-          NEXT_PUBLIC_STAGE_DEMO_ORIGIN: http://localhost:4200
+          PLAYWRIGHT_HTML_REPORT: dist/homepage-report
         run: |
-          command -v ffmpeg > /dev/null || sudo timeout --signal=TERM --kill-after=10s 590s bash -c 'apt-get update && apt-get install -y ffmpeg'
-          # Verify this commit's recording, not the older production demo.
-          (npx nx serve examples-chat-angular --configuration=production --port=4200 > /tmp/stage-demo.log 2>&1 &)
-          for i in $(seq 1 60); do curl -sf http://localhost:4200/stage > /dev/null && break; sleep 2; done
-          curl -sf http://localhost:4200/stage > /dev/null || { cat /tmp/stage-demo.log; exit 1; }
-          npx nx build website --configuration=production --skip-nx-cache
           (npx nx serve website --configuration=production --port=4308 --skip-nx-cache > /tmp/next-start.log 2>&1 &)
           for i in $(seq 1 60); do curl -sf http://127.0.0.1:4308/ > /dev/null && break; sleep 2; done
           curl -sf http://127.0.0.1:4308/ > /dev/null || { cat /tmp/next-start.log; exit 1; }
-          ln -sfn ../../../apps/website/content dist/apps/website/content
-          STAGE_LIVE_FRAME=true BASE_URL=http://127.0.0.1:4308 npx playwright test apps/website/e2e/home-stage.spec.ts --config apps/website/playwright.config.ts
-          node apps/website/e2e/scroll-craft/verify-home.mjs --url http://127.0.0.1:4308 --out dist/stage-shots
-      - name: Upload stage contact sheets
+          BASE_URL=http://127.0.0.1:4308 npx playwright test \
+            apps/website/e2e/home-hero.spec.ts \
+            apps/website/e2e/home-capabilities.spec.ts \
+            apps/website/e2e/home-airport.spec.ts \
+            apps/website/e2e/home-architecture.spec.ts \
+            apps/website/e2e/home-no-runtime.spec.ts \
+            apps/website/e2e/home-editorial.spec.ts \
+            apps/website/e2e/home-stage.spec.ts \
+            --config apps/website/playwright.config.ts --workers=2 --reporter=line,html
+      - name: Upload homepage browser report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: stage-shots
-          path: dist/stage-shots/**/sheet.png
+          name: homepage-browser-report
+          path: dist/homepage-report
           if-no-files-found: ignore
       # The production-smoke spec is testIgnore'd outside PRODUCTION_SMOKE mode,
       # so a module-load error in it is invisible until the post-merge Production

@@ -1,3 +1,5 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
+import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
@@ -83,13 +85,12 @@ export function ThemingDemo({
       ? 'Start a new conversation to continue.'
       : 'Ready.';
   return (
-    <main
+    <ExampleLayout
       className={`tp-chat theming-demo theming-demo--${theme}`}
       data-theme={theme}
     >
       <header className="theming-demo__header">
         <div>
-          <p className="theming-demo__eyebrow">React · Experimental</p>
           <h1>Chat theming</h1>
         </div>
         <button
@@ -126,42 +127,44 @@ export function ThemingDemo({
         renderMessage={renderMessage}
         label="Conversation"
       />
-      {snapshot.error && (
-        <p role="alert" className="tp-chat__error">
-          {snapshot.error}
+      <ExampleFooter>
+        {snapshot.error && (
+          <p role="alert" className="tp-chat__error">
+            {snapshot.error}
+          </p>
+        )}
+        <ChatInput
+          key={snapshot.viewGeneration}
+          label="Message"
+          placeholder="Ask an aviation question…"
+          busy={snapshot.busy}
+          disabled={
+            snapshot.activity === 'cleanup-failed' ||
+            (!snapshot.canSubmit && !snapshot.busy)
+          }
+          onStop={
+            snapshot.busy && snapshot.activity !== 'cleanup-failed'
+              ? () => void application.stop()
+              : undefined
+          }
+          onSubmit={(text) => {
+            const current = application.getSnapshot();
+            // A retained callback belongs to its rendered conversation generation.
+            if (
+              current.viewGeneration !== snapshot.viewGeneration ||
+              !current.canSubmit ||
+              current.busy ||
+              !text.trim()
+            )
+              return false;
+            void application.submit(text, snapshot.viewGeneration);
+            return true;
+          }}
+        />
+        <p role="status" className="theming-demo__status">
+          {status}
         </p>
-      )}
-      <ChatInput
-        key={snapshot.viewGeneration}
-        label="Message"
-        placeholder="Ask an aviation question…"
-        busy={snapshot.busy}
-        disabled={
-          snapshot.activity === 'cleanup-failed' ||
-          (!snapshot.canSubmit && !snapshot.busy)
-        }
-        onStop={
-          snapshot.busy && snapshot.activity !== 'cleanup-failed'
-            ? () => void application.stop()
-            : undefined
-        }
-        onSubmit={(text) => {
-          const current = application.getSnapshot();
-          // A retained callback belongs to its rendered conversation generation.
-          if (
-            current.viewGeneration !== snapshot.viewGeneration ||
-            !current.canSubmit ||
-            current.busy ||
-            !text.trim()
-          )
-            return false;
-          void application.submit(text, snapshot.viewGeneration);
-          return true;
-        }}
-      />
-      <p role="status" className="theming-demo__status">
-        {status}
-      </p>
+      </ExampleFooter>
       <details className="theming-demo__tokens" aria-label="Chat CSS variables">
         <summary>Eight chat CSS tokens</summary>
         <p>
@@ -176,6 +179,6 @@ export function ThemingDemo({
           ))}
         </ul>
       </details>
-    </main>
+    </ExampleLayout>
   );
 }

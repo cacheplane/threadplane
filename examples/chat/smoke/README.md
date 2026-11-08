@@ -17,6 +17,10 @@ npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
 
 `--no-install` can generate a consumer with another npm version. The CLI checks
 npm after the installation choice and before packing or changing the target.
+The generated consumer pins `@langchain/langgraph-sdk` to the workspace-tested
+`1.10.0`. This keeps compatibility checks from resolving the unavailable upstream
+`1.14.0` tarball; the library's supported SDK peer range remains unchanged.
+
 The following direct commands also work when npm 11.6.0 is already on PATH.
 
 ```bash

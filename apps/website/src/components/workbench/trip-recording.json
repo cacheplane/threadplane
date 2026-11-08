@@ -1,0 +1,850 @@
+{
+  "version": 1,
+  "provenance": {
+    "kind": "sdk-fixture",
+    "description": "Real streaming application and LangGraph SDK observations with a deterministic local HTTP/SSE fixture response. State is an allowlisted application state projection (creation, busy, canSubmit, outcome), not itinerary or provider state. Requests are observed application HTTP at the fixture server, with status when its response headers are sent. elapsedMs is measured capture time; playback pacing is separate.",
+    "source": "examples/chat/native/tooling/capture-workbench.ts"
+  },
+  "frames": [
+    {
+      "id": "frame-1",
+      "label": "Capture started; state not yet observed",
+      "elapsedMs": 12.129,
+      "messages": [],
+      "state": null,
+      "requests": [],
+      "event": {
+        "type": "capture.start",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-2",
+      "label": "Initial application snapshot",
+      "elapsedMs": 12.177,
+      "messages": [],
+      "state": {
+        "creation": "idle",
+        "busy": false,
+        "canSubmit": true,
+        "outcome": null
+      },
+      "requests": [],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-3",
+      "label": "Application snapshot changed",
+      "elapsedMs": 12.464,
+      "messages": [],
+      "state": {
+        "creation": "idle",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-4",
+      "label": "Application snapshot changed",
+      "elapsedMs": 12.516,
+      "messages": [],
+      "state": {
+        "creation": "pending",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-5",
+      "label": "Application HTTP request received",
+      "elapsedMs": 56.319,
+      "messages": [],
+      "state": {
+        "creation": "pending",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": null
+        }
+      ],
+      "event": {
+        "type": "http.request",
+        "payload": {
+          "requestId": "request-1"
+        }
+      }
+    },
+    {
+      "id": "frame-6",
+      "label": "Fixture response headers sent",
+      "elapsedMs": 74.496,
+      "messages": [],
+      "state": {
+        "creation": "pending",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "http.response",
+        "payload": {
+          "requestId": "request-1",
+          "status": 200
+        }
+      }
+    },
+    {
+      "id": "frame-7",
+      "label": "Application snapshot changed",
+      "elapsedMs": 84.724,
+      "messages": [],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-8",
+      "label": "Application snapshot changed",
+      "elapsedMs": 93.39,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-9",
+      "label": "Application HTTP request received",
+      "elapsedMs": 98.575,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": null
+        }
+      ],
+      "event": {
+        "type": "http.request",
+        "payload": {
+          "requestId": "request-2"
+        }
+      }
+    },
+    {
+      "id": "frame-10",
+      "label": "Fixture response headers sent",
+      "elapsedMs": 98.824,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "http.response",
+        "payload": {
+          "requestId": "request-2",
+          "status": 200
+        }
+      }
+    },
+    {
+      "id": "frame-11",
+      "label": "Application snapshot changed",
+      "elapsedMs": 111.551,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\n"
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-12",
+      "label": "Application snapshot changed",
+      "elapsedMs": 122.186,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\n"
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-13",
+      "label": "Application snapshot changed",
+      "elapsedMs": 142.138,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\n"
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-14",
+      "label": "Application snapshot changed",
+      "elapsedMs": 164.535,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-15",
+      "label": "Application snapshot changed",
+      "elapsedMs": 187.101,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-16",
+      "label": "Application snapshot changed",
+      "elapsedMs": 196.118,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": false,
+        "outcome": null
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-17",
+      "label": "Application snapshot changed",
+      "elapsedMs": 196.252,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": true,
+        "canSubmit": true,
+        "outcome": "success"
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-18",
+      "label": "Application snapshot changed",
+      "elapsedMs": 196.289,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": false,
+        "canSubmit": true,
+        "outcome": "success"
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "application.snapshot",
+        "payload": null
+      }
+    },
+    {
+      "id": "frame-19",
+      "label": "Response complete",
+      "elapsedMs": 196.323,
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+        },
+        {
+          "id": "message-2",
+          "role": "assistant",
+          "text": "Here is your Paris itinerary.\n\nDay 1: Visit the Louvre, then walk through the Tuileries.\nDay 2: Explore Montmartre and stop at a cafe.\n\nWalk between nearby stops and leave time to enjoy each neighborhood."
+        }
+      ],
+      "state": {
+        "creation": "confirmed",
+        "busy": false,
+        "canSubmit": true,
+        "outcome": "success"
+      },
+      "requests": [
+        {
+          "id": "request-1",
+          "method": "POST",
+          "path": "/threads",
+          "body": {},
+          "status": 200
+        },
+        {
+          "id": "request-2",
+          "method": "POST",
+          "path": "/threads/trip-thread/runs/stream",
+          "body": {
+            "assistant_id": "streaming",
+            "input": {
+              "messages": [
+                {
+                  "id": "message-1",
+                  "type": "human",
+                  "content": "Recap this supplied Paris itinerary: day 1 Louvre and Tuileries; day 2 Montmartre and a cafe. Walk between nearby stops. Do not call tools."
+                }
+              ]
+            },
+            "stream_mode": [
+              "values",
+              "messages-tuple",
+              "updates",
+              "custom",
+              "checkpoints"
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "event": {
+        "type": "capture.complete",
+        "payload": null
+      }
+    }
+  ]
+}

@@ -28,6 +28,7 @@ export function buildApiSearchIndex(
     );
     return {
       href: summary.href,
+      scope: entrypoint?.framework === 'angular' || entrypoint?.framework === 'react' ? entrypoint.framework : 'shared',
       library: entrypoint?.docLibrary ?? entrypoint?.project ?? 'api',
       libraryTitle: entrypoint?.importPath ?? summary.entrypointId,
       section: 'api',

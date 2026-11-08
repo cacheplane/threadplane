@@ -292,7 +292,7 @@ describe('Website Playwright configuration', () => {
     expect(coverage).toContain("page.on('request'");
     expect(coverage).toContain('request.postData()');
     expect(coverage).toContain('navigator.clipboard.readText()');
-    expect(coverage).toContain("name: 'Activity'");
+    expect(coverage).toContain("getByRole('menuitem', { name: /^Activity");
     expect(coverage).toContain("name: 'Copy diagnostics'");
     expect(coverage).toContain('assertSensitiveValuesAbsent');
     expect(coverage).not.toContain('expect(activityText).not.toContain');
@@ -443,6 +443,10 @@ describe('Website Playwright configuration', () => {
           'cockpit-chat-threads-angular:serve:cockpit'
         ),
         url: 'http://localhost:4506',
+      }),
+      expect.objectContaining({
+        command: 'npx nx run cockpit-chat-messages-angular:serve:cockpit --port 4501',
+        url: 'http://localhost:4501',
       }),
       expect.objectContaining({command:'npx nx run cockpit-render-computed-functions-angular:serve:cockpit --port 4406',url:'http://localhost:4406'}),
       expect.objectContaining({

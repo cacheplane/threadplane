@@ -1,6 +1,10 @@
 :host {
   display: block;
-  height: 100dvh;
+  position: fixed;
+  top: var(--demo-viewport-top, 0px);
+  left: 0;
+  width: 100%;
+  height: var(--demo-viewport-height, 100dvh);
 }
 
 .demo-shell {
@@ -65,11 +69,10 @@
   font-family: inherit;
   font-size: var(--tplane-chat-font-size-sm);
   box-sizing: border-box;
-  /* Toolbar establishes its own stacking context so the chat-select
-   * dropdown menus (z-index 10 inside the primitive) render above the
-   * chat content's scroll/transform stacking contexts below. */
+  /* Dropdowns sit above page content, while open chat surfaces retain
+   * reachable close controls when they cover the toolbar on phones. */
   position: relative;
-  z-index: 50;
+  z-index: calc(var(--tplane-chat-z-overlay-content, 30) - 1);
   /* No overflow-x: that would clip absolutely-positioned dropdown menus.
    * flex-wrap handles narrow viewports by wrapping fields to a new row. */
 }
@@ -127,18 +130,6 @@
  * and the host-scoped ::ng-deep rule no longer reaches the portaled menu.) */
 
 
-.demo-shell__interrupt-panel {
-  position: fixed;
-  left: 50%;
-  bottom: calc(80px + var(--demo-shell-interrupt-offset, 0px));
-  transform: translateX(-50%);
-  z-index: 999;
-  width: min(640px, calc(100vw - 32px));
-  max-width: min(640px, calc(100vw - 32px));
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
-  border-radius: var(--tplane-chat-radius-card, 10px);
-}
-
 .demo-shell__theme-toggle {
   width: 28px;
   height: 28px;
@@ -169,15 +160,6 @@
    * viewport minus the toolbar. */
   height: calc(100% - var(--demo-toolbar-height));
 }
-/* chat-sidebar panel renders top-aligned with the page, NOT under the
- * toolbar — so the panel's close button sits at the same viewport-y as
- * the hamburger inside the toolbar (both at surface-top + 8 padding).
- * The panel's z-index is below the toolbar's so the toolbar still
- * renders above it where they overlap on the right edge. */
-.demo-shell ::ng-deep .chat-sidebar__panel {
-  top: 0;
-}
-
 /* App-mode toggle: pill button in the toolbar. Enabled only when a Google
  * Maps key is configured (App mode renders the map cockpit). */
 .demo-shell__app-toggle {
