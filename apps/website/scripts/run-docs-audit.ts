@@ -594,7 +594,7 @@ async function main() {
               const apiNav = page.locator('.api-reference-navigation:visible');
               await expect(apiNav).toBeVisible();
               for (const link of await apiNav
-                .locator('a:visible, summary:visible')
+                .locator('a:visible, button:visible')
                 .all())
                 expect(
                   (await link.boundingBox())?.height
