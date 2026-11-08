@@ -179,7 +179,7 @@ export function DashboardDemo({
             return application.getSnapshot().busy;
           }}
         />
-        <p role="status">{status}</p>
+        <p role="status" aria-label="Conversation status">{status}</p>
       </ExampleFooter>
     </ExampleLayout>
   );

@@ -19,6 +19,7 @@ it('StrictMode presentation, suggestion and unmount do not create a native owner
     </StrictMode>
   );
   expect(screen.getByRole('region', { name: 'Conversation' }).tabIndex).toBe(0);
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe('Ready.');
   fireEvent.click(screen.getByRole('button', { name: 'Try a flight request' }));
   expect(document.activeElement).toBe(
     screen.getByRole('textbox', { name: 'Message' })

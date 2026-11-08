@@ -70,6 +70,7 @@ function harness() {
 }
 it('mounts inert, seeds without submitting, clears on admission and permits New during pending work', () => {
   const h = harness();
+  expect(h.view.getByRole('status', { name: 'Conversation status' }).textContent).toBe('Ready.');
   expect(h.onReady).toHaveBeenCalledOnce();
   expect(h.app.submit).not.toHaveBeenCalled();
   fireEvent.click(h.view.getByRole('button', { name: 'Show dashboard' }));

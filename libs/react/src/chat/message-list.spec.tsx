@@ -36,6 +36,17 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('forwards authored outcomes through nonempty default rows and leaves custom rendering in control', () => {
+    const content = createMessageContent();
+    const rows = content.project(snap([msg('a', 'Answer', { toolCallIds: ['c'] })], [{ id: 'c', name: 'lookup', args: {}, status: 'complete', result: 'ok' }]));
+    const toolOutcome = () => ({ text: 'Reference verified', sources: [{ title: 'Signals', url: 'https://angular.dev/guide/signals' }] });
+    const view = render(<MessageList rows={rows} groupRelatedTools toolOutcome={toolOutcome} />);
+    expect(view.getByText('Reference verified').closest('details')).toBeNull();
+    expect(view.getByRole('link', { name: 'Signals' })).toBeTruthy();
+    view.rerender(<MessageList rows={rows} toolOutcome={toolOutcome} renderMessage={() => <p>Owned view</p>} />);
+    expect(view.queryByText('Reference verified')).toBeNull();
+    content.dispose();
+  });
   it('resolves provider-only inline references and Markdown-only Sources from projected rows', () => {
     const content = createMessageContent();
     const rows = content.project(

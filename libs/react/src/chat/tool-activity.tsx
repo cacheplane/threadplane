@@ -1,5 +1,15 @@
 'use client';
 import type { ReactNode } from 'react';
+import {
+  activityProgress,
+  confirmedOutcomes,
+  outcomeSources,
+  type ToolActivityOutcome,
+} from './tool-outcome.js';
+export type {
+  ToolActivityOutcome,
+  ToolActivitySource,
+} from './tool-outcome.js';
 
 /** Explicit presentation state supplied by an application or adapter, never inferred from literal payloads. */
 export type ToolActivityPhase =
@@ -49,6 +59,8 @@ export interface ToolActivityInfo {
   /** Safe user-facing copy; diagnostic errorText stays in Details. */
   readonly errorSummary?: string;
   readonly durationMs?: number;
+  /** App-authored preview, displayed only after explicit completion and outside technical Details. */
+  readonly outcome?: ToolActivityOutcome;
 }
 const labels: Record<ToolActivityPhase, string> = {
   pending: 'Pending',
@@ -122,8 +134,58 @@ export function ToolActivity({ activity, children }: ToolActivityProps) {
           </>
         )}
       </details>
+      <ToolOutcomes activities={[activity]} />
       {children}
     </section>
+  );
+}
+function ToolOutcomes({
+  activities,
+}: {
+  readonly activities: readonly ToolActivityInfo[];
+}) {
+  const outcomes = confirmedOutcomes(activities);
+  const sources = outcomeSources(activities);
+  if (!outcomes.length && !sources.length) return null;
+  return (
+    <div className="tp-tool-outcomes">
+      {outcomes.slice(0, 3).map((outcome) => (
+        <p key={outcome.text}>{outcome.text}</p>
+      ))}
+      {outcomes.length > 3 && (
+        <details>
+          <summary>More results ({outcomes.length - 3})</summary>
+          {outcomes.slice(3).map((outcome) => (
+            <p key={outcome.text}>{outcome.text}</p>
+          ))}
+        </details>
+      )}
+      {!!sources.length && (
+        <ul aria-label="Tool sources">
+          {sources.slice(0, 3).map((source) => (
+            <li key={new URL(source.url).href}>
+              <a href={source.url} target="_blank" rel="noopener noreferrer">
+                {source.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {sources.length > 3 && (
+        <details>
+          <summary>More sources ({sources.length - 3})</summary>
+          <ul aria-label="More tool sources">
+            {sources.slice(3).map((source) => (
+              <li key={new URL(source.url).href}>
+                <a href={source.url} target="_blank" rel="noopener noreferrer">
+                  {source.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
   );
 }
 /** Explicit opt-in grouping for related display activities, with no execution ownership. */
@@ -164,15 +226,31 @@ export function ToolActivityGroup({
                   activities.length === 1 ? 'activity' : 'activities'
                 }`}
             </span>
-            <span className="tp-tool-activity__phase">{labels[phase]}</span>
+            <span className="tp-tool-activity__phase" aria-hidden="true">
+              {labels[phase]}
+            </span>
           </summary>
           <div className="tp-tool-activity-group__items">
             {activities.map((activity) => (
-              <ToolActivity key={activity.id} activity={activity} />
+              <ToolActivity
+                key={activity.id}
+                activity={{ ...activity, outcome: undefined }}
+              />
             ))}
           </div>
         </details>
       )}
+      {activities.length > 0 && (
+        <p
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="tp-tool-activity__progress"
+        >
+          {activityProgress(activities)}
+        </p>
+      )}
+      <ToolOutcomes activities={activities} />
       {failed && (
         <p role="alert" className="tp-tool-activity__error">
           Some tools could not finish. Check Details before retrying.

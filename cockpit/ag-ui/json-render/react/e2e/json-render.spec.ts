@@ -27,7 +27,7 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
     ['all-airlines', 5],
   ] as const) {
     await send(page, mode);
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     count += added;
     await expect(rows(page)).toHaveCount(count);
     nativeIds.push(
@@ -114,7 +114,7 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
   await expect(page.locator('[data-dashboard-spec-owner]')).toHaveCount(0);
   expect(await (await request.get('/__requests')).json()).toHaveLength(8);
   await send(page, 'full');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   const after = await (await request.get('/__requests')).json();
   expect(after).toHaveLength(9);
   expect(after[8].body.threadId).not.toBe(after[0].body.threadId);
@@ -141,7 +141,7 @@ for (const stage of ['state', 'result', 'final'])
     ).toBeDisabled();
     await expect(page.locator('[data-dashboard-spec-owner]')).toHaveCount(0);
     await request.post('/__release');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     await expect(page.locator('[data-dashboard-view]')).toHaveCount(6);
     expect(await (await request.get('/__requests')).json()).toHaveLength(1);
   });
@@ -151,7 +151,7 @@ test('retained layout reads valid streamed shared-state updates while native com
 }) => {
   await page.goto(base);
   await send(page, 'full');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   const chartData = page.locator('.dashboard-chart-data').first();
   await chartData.locator('summary').click();
   const originalChart = await chartData.elementHandle();
@@ -184,7 +184,7 @@ test('retained layout reads valid streamed shared-state updates while native com
   );
   expect(readingPosition).toBeGreaterThan(0);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   await expect
     .poll(() => conversation.evaluate((element) => element.scrollTop))
     .toBe(readingPosition);
@@ -214,10 +214,10 @@ for (const mode of [
   }) => {
     await page.goto(base);
     await send(page, 'full');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     await request.post('/__mode/' + mode);
     await send(page, 'full');
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(
@@ -226,7 +226,7 @@ for (const mode of [
     expect(await (await request.get('/__requests')).json()).toHaveLength(2);
     await expect(page.locator('body')).not.toContainText('PRIVATE');
     await page.getByRole('button', { name: 'New conversation' }).click();
-    await expect(page.getByRole('status')).toHaveText('Ready.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
     await expect(rows(page)).toHaveCount(0);
   });
 for (const action of ['Stop', 'pagehide'])
@@ -254,7 +254,7 @@ for (const action of ['Stop', 'pagehide'])
     expect(await (await request.get('/__requests')).json()).toHaveLength(1);
     await expect(page.locator('[data-dashboard-spec-owner]')).toHaveCount(0);
     if (action === 'Stop')
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
         'Start a new conversation to continue.'
       );
   });
@@ -266,7 +266,7 @@ test('all six views fit a narrow viewport with contained chart and table data', 
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(base);
   await send(page, 'full');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   const width = await page.evaluate(() => ({
     viewport: innerWidth,
     document: document.documentElement.scrollWidth,
@@ -294,7 +294,7 @@ test('native human text stays literal beside the dashboard', async ({
     page,
     '<script>private markup</script> <img src=x onerror=alert(1)>'
   );
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   await expect(rows(page).first()).toContainText(
     '<script>private markup</script>'
   );
@@ -327,7 +327,7 @@ test('the authored developer endpoint routes all native requests and stays out o
   for (const mode of ['full', 'filter']) {
     await frame.getByLabel('Message', { exact: true }).fill(mode);
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
-    await expect(frame.getByRole('status')).toHaveText('Response complete.');
+    await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     if (mode === 'full')
       priorIds = await frame
         .locator('[data-dashboard-message]')

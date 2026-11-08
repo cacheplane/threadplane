@@ -50,7 +50,7 @@ function fixture(update = {}) {
 it('starts lazily with native input and a nonsensitive connection label', () => {
   const { application, ready } = fixture();
   expect(ready).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole('status').textContent).toBe('Ready.');
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe('Ready.');
   expect(
     screen.getByRole('region', { name: 'Runtime connection' }).textContent
   ).toContain('Shared runtime');
@@ -180,7 +180,7 @@ it('does not publish an unaccepted layout from partial native arguments or state
     canSubmit: false,
   });
   expect(screen.queryByText('84.2%')).toBeNull();
-  expect(screen.getByRole('status').textContent).toBe(
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe(
     'Updating the dashboard…'
   );
   expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
@@ -197,7 +197,7 @@ it('requires New after an unconfirmed outcome and disables Send', () => {
   expect(
     screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')
   ).toBe(true);
-  expect(screen.getByRole('status').textContent).toBe(
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe(
     'Start a new conversation to continue.'
   );
   expect(screen.getByRole('alert').textContent).toBe(

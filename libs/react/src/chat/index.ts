@@ -10,6 +10,8 @@ export {
   toolActivityPhase,
   type ToolActivityDelivery,
   type ToolActivityInfo,
+  type ToolActivityOutcome,
+  type ToolActivitySource,
   type ToolActivityPhase,
   type ToolActivityProps,
   type ToolActivityGroupProps,

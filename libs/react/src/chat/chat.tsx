@@ -24,6 +24,8 @@ export interface ChatProps
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
   readonly toolLabel?: MessageListProps['toolLabel'];
+  /** App-authored confirmed result previews; execution and business confirmation remain app-owned. */
+  readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
 }
@@ -38,6 +40,7 @@ export function Chat({
   className,
   groupRelatedTools,
   toolLabel,
+  toolOutcome,
   onRetry,
   ...input
 }: ChatProps) {
@@ -50,6 +53,7 @@ export function Chat({
         renderMessage={renderMessage}
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
+        toolOutcome={toolOutcome}
       />
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError

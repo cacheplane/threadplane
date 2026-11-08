@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 35
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 29
+            "line": 30
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 31
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 28
+            "line": 29
           },
           "isReadonly": true,
           "isOptional": true
@@ -248,7 +248,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 27
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -284,7 +284,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 21
+            "line": 22
           },
           "isReadonly": true,
           "isOptional": false
@@ -320,7 +320,63 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 33
+            "line": 34
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "toolOutcome",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#toolOutcome:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolOutcome?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityOutcome",
+              "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+              "href": "/docs/api/react/chat/ToolActivityOutcome"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored confirmed result previews. Keep stable; custom renderMessage retains full ownership.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -328,7 +384,7 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 20
+        "line": 21
       },
       "typeParameters": [
         {
@@ -347,6 +403,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 20
+    "line": 21
   }
 }

@@ -33,6 +33,77 @@ class Host {
   activities = signal<readonly ToolActivityInfo[]>([]);
 }
 describe('tool activity', () => {
+  it('shows confirmed outcomes and safe deduplicated sources outside collapsed inspection', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.activities.set([
+      {
+        id: 'source',
+        name: 'lookup',
+        phase: 'complete',
+        ...{
+          outcome: {
+            text: 'Found the official reference',
+            sources: [
+              { title: 'Signals', url: 'https://angular.dev/guide/signals' },
+              { title: 'Duplicate', url: 'https://angular.dev/guide/signals' },
+              { title: 'Unsafe', url: 'javascript:alert(1)' },
+              { title: 'Relative', url: '/private' },
+            ],
+          },
+        },
+      },
+    ]);
+    fixture.detectChanges();
+    const group: HTMLElement = fixture.nativeElement.querySelector(
+      'chat-tool-activity-group'
+    );
+    expect(group.querySelector('.tp-tool-outcomes')?.textContent).toContain(
+      'Found the official reference'
+    );
+    expect(
+      group.querySelector('.tp-tool-outcomes')?.closest('details')
+    ).toBeNull();
+    expect(group.querySelectorAll('a')).toHaveLength(1);
+    expect(group.querySelector('a')?.getAttribute('href')).toBe(
+      'https://angular.dev/guide/signals'
+    );
+    fixture.componentInstance.activities.update((items) =>
+      items.map((item) => ({ ...item, phase: 'running' }))
+    );
+    fixture.detectChanges();
+    expect(
+      group.querySelector('.tp-tool-outcomes')?.textContent ?? ''
+    ).not.toContain('Found the official reference');
+    expect(group.querySelector('a')).toBeNull();
+  });
+  it('announces concise mixed progress and bounds long outcome previews', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.activities.set([
+      ...Array.from({ length: 8 }, (_, index) => ({
+        id: String(index),
+        name: 'read',
+        phase: 'complete' as const,
+        outcome: {
+          text: `Read reference ${index}`,
+          sources: [
+            { title: `Source ${index}`, url: `https://example.org/${index}` },
+          ],
+        },
+      })),
+      { id: 'live', name: 'read', phase: 'running' },
+      { id: 'bad', name: 'read', phase: 'error' },
+    ]);
+    fixture.detectChanges();
+    const group: HTMLElement = fixture.nativeElement.querySelector(
+      'chat-tool-activity-group'
+    );
+    const status = group.querySelector('[role="status"]')!;
+    expect(status?.textContent).toContain('8 complete');
+    expect(status?.textContent).toContain('1 running');
+    expect(status?.textContent).toContain('1 failed');
+    expect(group.textContent).toContain('More results (5)');
+    expect(group.textContent).toContain('More sources (5)');
+  });
   it.each(phases)(
     'resolves $phase after $outcome as $expected without mutating execution',
     ({ phase, outcome, expected }) => {

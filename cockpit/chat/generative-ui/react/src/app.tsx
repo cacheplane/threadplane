@@ -254,7 +254,7 @@ function GenerativeUiOwner({ connection, onReady }: Props) {
             return currentView() && application.getSnapshot().busy;
           }}
         />
-        <p role="status">{status}</p>
+        <p role="status" aria-label="Conversation status">{status}</p>
       </ExampleFooter>
     </ExampleLayout>
   );
