@@ -1,0 +1,86 @@
+---
+title: Quickstart
+description: Install Angular chat, create a fake agent, and send your first message.
+---
+
+# Build your first Angular conversation
+
+Add a conversation to your app and send a message. Start with a fake agent so you can get the chat working without a backend or model key. Once it works, choose whether to learn how a turn unfolds or connect your own backend.
+
+## What you need
+
+An Angular 20–22 application and a Node.js version supported by that Angular version. Run the commands below from your app's directory.
+
+## 1. Install the packages
+
+```sh
+npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+```
+
+This example uses the LangGraph package's fake agent. The fake agent streams fixed text through the same chat component you can later connect to your backend.
+
+## 2. Create a fake agent
+
+Add `provideFakeAgent()` to the providers in your existing application configuration. Keep the other providers your app already uses.
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideFakeAgent } from '@threadplane/langgraph';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFakeAgent({
+      tokens: ['Hello', ' from', ' Threadplane.'],
+      delayMs: 100,
+    }),
+  ],
+};
+```
+
+## 3. Render the conversation
+
+Import the chat component and pass it the agent. Use this template in your app's root component, keeping its existing selector and class name if they differ.
+
+```ts
+// app.component.ts
+import { Component } from '@angular/core';
+import { ChatComponent } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ChatComponent],
+  template: `<chat [agent]="agent" />`,
+})
+export class AppComponent {
+  protected readonly agent = injectAgent();
+}
+```
+
+## 4. Send your first message
+
+```sh
+npx ng serve
+```
+
+Open your app, type **Hello**, and press **Send**. Your message appears in the conversation, followed by **Hello from Threadplane.** arriving in pieces. Send another message to continue the conversation. This is a scripted reply, not a model-generated answer.
+
+If a production build reports an initial bundle budget error, see the [backend-free setup guide](/docs/angular/chat/getting-started/try-without-a-backend) for the Angular budget setting.
+
+## Choose where to go next
+
+You now have a working chat. Keep exploring the conversation or replace the fake agent with your backend.
+
+<CardGroup cols={3}>
+  <Card title="Learn about turns" href="/docs/angular/getting-started/workbench">
+    Use the learning workbench to follow a submitted message, inspect a partial response, and see how the turn ends.
+  </Card>
+  <Card title="Connect LangGraph" href="/docs/angular/langgraph/getting-started/quickstart">
+    Set up your server and replace the fake provider with LangGraph's `provideAgent()`. Keep the chat component above.
+  </Card>
+  <Card title="Connect AG-UI" href="/docs/angular/ag-ui/getting-started/quickstart">
+    Install the AG-UI adapter and import its provider and `injectAgent` from `@threadplane/ag-ui`. Keep the same chat template.
+  </Card>
+</CardGroup>

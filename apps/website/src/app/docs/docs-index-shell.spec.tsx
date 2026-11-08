@@ -14,6 +14,13 @@ beforeEach(() => {
 });
 
 describe('docs index', () => {
+  it('starts each framework at its own quickstart', () => {
+    render(<DocsLandingPage />);
+    for (const framework of ['Angular', 'React']) {
+      expect(screen.getByRole('link', { name: new RegExp(`Start with ${framework}`) }).getAttribute('href'))
+        .toBe(`/docs/${framework.toLowerCase()}/getting-started/quickstart`);
+    }
+  });
   it('keeps install-copy controls outside navigation links', () => {
     render(<DocsLandingPage />);
     for (const summary of screen.getAllByText('Angular install command'))

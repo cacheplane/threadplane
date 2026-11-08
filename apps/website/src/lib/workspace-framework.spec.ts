@@ -17,8 +17,8 @@ test('resolves a React document to its native runtime and source assets', async 
 
 test('keeps a React document readable without attaching an unrelated example', async () => {
   const page = await getWebsiteWorkspacePage({
-    docsPath: '/docs/react/getting-started/introduction',
-    title: 'React introduction',
+    docsPath: '/docs/react/getting-started/quickstart',
+    title: 'React quickstart',
   });
 
   expect(page.presentation).toMatchObject({ kind: 'docs-only', runnable: false });

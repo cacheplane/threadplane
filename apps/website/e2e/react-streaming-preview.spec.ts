@@ -69,7 +69,7 @@ test('missing counterparts are explicit in mobile framework navigation', async (
   ).toHaveAttribute('aria-disabled', 'true');
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
-  await expect(page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction' })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  await expect(page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React quickstart' })).toHaveAttribute('href', '/docs/react/getting-started/quickstart');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('react-unavailable-mobile.png') });
 });
