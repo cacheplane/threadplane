@@ -100,6 +100,7 @@ export function assertTemplateDiagnostic(kind, output) {
 export function buildPresentation(root, consumer, expected) {
   const sourceFiles = [
     'presentation.tsx',
+    'presentation-default-transcript.tsx',
     'presentation-angular.ts',
     'presentation-state.ts',
     'presentation.html',
@@ -123,6 +124,9 @@ export function buildPresentation(root, consumer, expected) {
   for (const path of [
     'node_modules/@threadplane/content/src/markdown/index.d.ts',
     'node_modules/@threadplane/react/src/markdown/index.d.ts',
+    'node_modules/@threadplane/react/src/chat/message-list.d.ts',
+    'node_modules/@threadplane/react/src/chat/citations.d.ts',
+    'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
     'node_modules/@threadplane/angular/types/threadplane-angular-markdown.d.ts',
   ])
     assert.ok(
@@ -184,9 +188,13 @@ export class NegativeHost { readonly value = 'not a snapshot'; }\n`
   assertInstalledInputs(consumer, inputs, expected);
   for (const file of [
     'presentation.tsx',
+    'presentation-default-transcript.tsx',
     'presentation-angular.ts',
     'presentation-state.ts',
     'node_modules/@threadplane/react/src/markdown/markdown.js',
+    'node_modules/@threadplane/react/src/chat/message-list.js',
+    'node_modules/@threadplane/react/src/chat/citations.js',
+    'node_modules/@threadplane/content/src/messages/create-message-content.js',
     'node_modules/@threadplane/angular/fesm2022/threadplane-angular-markdown.mjs',
     'node_modules/@threadplane/content/src/markdown/create-markdown.js',
     'node_modules/@threadplane/react/src/use-agent.js',
@@ -202,6 +210,26 @@ export class NegativeHost { readonly value = 'not a snapshot'; }\n`
     )
   );
   const outputDirectory = join(consumer, 'presentation-output');
+  const stylesheetInput = 'node_modules/@threadplane/react/src/chat/styles.css';
+  assertInstalledInputs(consumer, [stylesheetInput], expected);
+  const stylesheetOutput =
+    'presentation-output/browser/default-transcript-chat.css';
+  assert.equal(existsSync(join(consumer, stylesheetOutput)), false);
+  cpSync(join(consumer, stylesheetInput), join(consumer, stylesheetOutput));
+  assert.deepEqual(
+    readFileSync(join(consumer, stylesheetOutput)),
+    readFileSync(join(consumer, stylesheetInput))
+  );
+  const stylesheet = {
+    input: {
+      path: stylesheetInput,
+      sha256: sha256(readFileSync(join(consumer, stylesheetInput))),
+    },
+    output: {
+      path: stylesheetOutput,
+      sha256: sha256(readFileSync(join(consumer, stylesheetOutput))),
+    },
+  };
   for (const file of ['failure.png', 'success.svg'])
     assert.equal(
       existsSync(join(outputDirectory, 'browser', file)),
@@ -224,10 +252,11 @@ export class NegativeHost { readonly value = 'not a snapshot'; }\n`
   }));
   return {
     inputs,
+    stylesheet,
     types,
     negatives,
     outputs,
-    inputHashes: inputs.map((path) => ({
+    inputHashes: [...inputs, stylesheetInput].map((path) => ({
       path,
       sha256: sha256(readFileSync(resolve(consumer, path))),
     })),
@@ -246,7 +275,65 @@ export class NegativeHost { readonly value = 'not a snapshot'; }\n`
 export function readPresentation(directory, provenance) {
   if (!provenance.presentation) return undefined; // Historical owner-only proofs.
   const proof = provenance.presentation;
+  const required = [
+    ['inputs', 'presentation-default-transcript.tsx'],
+    ...['message-list', 'citations'].flatMap((name) => [
+      ['inputs', `node_modules/@threadplane/react/src/chat/${name}.js`],
+      ['types', `node_modules/@threadplane/react/src/chat/${name}.d.ts`],
+    ]),
+    [
+      'inputs',
+      'node_modules/@threadplane/content/src/messages/create-message-content.js',
+    ],
+    [
+      'types',
+      'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
+    ],
+  ];
+  for (const [kind, path] of required)
+    assert.ok(
+      proof[kind]?.some(
+        (record) => (typeof record === 'string' ? record : record.path) === path
+      ),
+      'Required default transcript input: ' + path
+    );
+  assert.equal(
+    proof.stylesheet?.input.path,
+    'node_modules/@threadplane/react/src/chat/styles.css',
+    'Required installed stylesheet input'
+  );
+  assert.equal(
+    proof.stylesheet?.output.path,
+    'presentation-output/browser/default-transcript-chat.css',
+    'Required isolated stylesheet output'
+  );
+  assert.equal(
+    proof.stylesheet.input.sha256,
+    proof.stylesheet.output.sha256,
+    'Copied stylesheet bytes must match installed input'
+  );
+  for (const [records, record] of [
+    [proof.inputHashes, proof.stylesheet.input],
+    [proof.outputs, proof.stylesheet.output],
+  ])
+    assert.ok(
+      records?.some(
+        (item) => item.path === record.path && item.sha256 === record.sha256
+      ),
+      'Stylesheet hash inventory required'
+    );
   const base = realpathSync(join(directory, 'consumer'));
+  const installedStylesheet = realpathSync(join(base, proof.stylesheet.input.path));
+  assert.ok(installedStylesheet.startsWith(base + '/node_modules/@threadplane/react/'), 'Installed stylesheet path escapes retained package');
+  assert.equal(
+    sha256(readFileSync(installedStylesheet)),
+    proof.stylesheet.input.sha256,
+    'Retained installed stylesheet bytes must match input hash'
+  );
+  assert.ok(provenance.frozen.some(record =>
+    record.path === 'consumer/' + proof.stylesheet.input.path &&
+    record.sha256 === proof.stylesheet.input.sha256
+  ), 'Installed stylesheet input requires frozen record');
   const safePath = (path) => {
     assert.ok(
       typeof path === 'string' &&

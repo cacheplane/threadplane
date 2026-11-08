@@ -28,7 +28,11 @@ export function Transcript({ rows }: { readonly rows: readonly MessageRow[] }) {
 }
 ~~~
 
-The default renderer displays role labels, Markdown, assistant reasoning, supplied citations, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row)` callback replaces that entire presentation; it must explicitly include anything you want to retain.
+The default renderer displays role labels, Markdown, assistant reasoning, resolved sources, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row)` callback replaces that entire presentation; it must explicitly include anything you want to retain.
+
+Default assistant rows pass their provider citations to inline Markdown references and merge Sources with the same accepted Markdown snapshot. Whole provider records win exact-ID collisions, including missing or blocked URLs; Markdown-only sources are included. Combined Sources use stable ascending index order. Metadata-only corrections update both views while preserving unchanged Markdown snapshots.
+
+Provider metadata is supplied only to assistant rows. User and system rows retain their own Markdown definitions, and tool content stays literal. Default citation links use the shared destination policy; inline previews remain an explicit choice in a custom renderer.
 
 Define the callback outside rendering or stabilize it with `useCallback`. Put hooks in a component returned by the callback. Recreating the callback on every token defeats row memoization.
 

@@ -47,10 +47,18 @@ function RowView<TRow extends MessageRow>({
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (
-        <Markdown snapshot={row.markdown} />
+        <Markdown
+          snapshot={row.markdown}
+          citations={
+            row.role === 'assistant' ? row.message.citations : undefined
+          }
+        />
       )}
-      {row.role === 'assistant' && row.message.citations && (
-        <Citations citations={row.message.citations} />
+      {row.role === 'assistant' && (
+        <Citations
+          citations={row.message.citations ?? []}
+          snapshot={row.markdown}
+        />
       )}
       {row.role !== 'tool' &&
         row.toolCalls.map((call) => (

@@ -8,6 +8,7 @@ import {
 import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import { PresentationAngular } from './presentation-angular';
+import { mountDefaultTranscript } from './presentation-default-transcript';
 import {
   reactObserver,
   views,
@@ -164,6 +165,7 @@ window.addEventListener('pagehide', () => {
   angularApp?.destroy();
 });
 mountReact();
+void mountDefaultTranscript();
 void mountAngular().then(() => {
   state.ready = true;
   draw();

@@ -49,6 +49,139 @@ export const parserKinds = [
   'thematic-break',
 ];
 
+async function verifyDefaultTranscript(page) {
+  await page.waitForFunction(() => window.__defaultTranscript?.().ready);
+  const fixture = page.locator('#default-transcript');
+  const rows = fixture.locator('article');
+  await rows.first().waitFor();
+  assert.equal(await rows.count(), 7);
+  const provider = rows.nth(0),
+    markdown = rows.nth(1),
+    mixed = rows.nth(2);
+  const inline = provider.getByRole('link', {
+    name: 'Citation 7: Original (opens in new tab)',
+    exact: true,
+  });
+  assert.equal(await inline.getAttribute('href'), '/Original');
+  assert.equal(await inline.getAttribute('target'), '_blank');
+  assert.equal(
+    await provider
+      .getByRole('link', { name: 'Original', exact: true })
+      .getAttribute('href'),
+    '/Original'
+  );
+  assert.equal(
+    await provider
+      .locator('sup[aria-label="Unresolved citation missing"]')
+      .count(),
+    1
+  );
+  assert.equal(
+    await markdown
+      .getByRole('region', { name: 'Sources' })
+      .getByRole('link', { name: 'Markdown source', exact: true })
+      .getAttribute('href'),
+    '/markdown-source'
+  );
+  assert.deepEqual(
+    await mixed.locator('.tp-citations__title').allTextContents(),
+    [
+      '<b>Unsafe provider</b>',
+      'Tie first',
+      'Tie second',
+      'Markdown only',
+      'Late',
+    ]
+  );
+  assert.equal(
+    await mixed
+      .locator('sup[aria-label="Citation 1: <b>Unsafe provider</b>"]')
+      .count(),
+    1
+  );
+  assert.equal(
+    await fixture
+      .locator(
+        'a[href="/forbidden-fallback"],a[href^="javascript:"],b,img,dialog'
+      )
+      .count(),
+    0
+  );
+  assert.match(await provider.innerText(), /<img data-fixture-raw src=x>/);
+  for (const index of [3, 4]) {
+    assert.equal(
+      await rows
+        .nth(index)
+        .locator('sup[aria-label="Unresolved citation p"]')
+        .count(),
+      1
+    );
+    assert.equal(
+      await rows.nth(index).getByRole('region', { name: 'Sources' }).count(),
+      0
+    );
+  }
+  assert.match(
+    await rows.nth(5).locator('pre').innerText(),
+    /\[\^local\]: Local definition/
+  );
+  assert.equal(await rows.nth(5).locator('sup,a').count(), 0);
+  assert.equal(
+    await rows.nth(6).getByRole('region', { name: 'Sources' }).count(),
+    0
+  );
+  const click = async (label, revision) => {
+    await fixture.getByRole('button', { name: label, exact: true }).click();
+    await page.waitForFunction(
+      (revision) => window.__defaultTranscript().revision === revision,
+      revision
+    );
+  };
+  await click('Correct default metadata', 2);
+  await provider
+    .getByRole('link', {
+      name: 'Citation 7: Corrected (opens in new tab)',
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(
+    await provider
+      .getByRole('link', { name: 'Corrected', exact: true })
+      .getAttribute('href'),
+    '/Corrected'
+  );
+  assert.equal(
+    await provider.getByRole('link', { name: 'Original', exact: true }).count(),
+    0
+  );
+  assert.equal(
+    await page.evaluate(() => window.__defaultTranscript().markdownStable),
+    true
+  );
+  await click('Remove default metadata', 3);
+  await provider.locator('sup[aria-label="Unresolved citation p"]').waitFor();
+  assert.equal(
+    await provider.getByRole('region', { name: 'Sources' }).count(),
+    0
+  );
+  await click('Use custom default rows', 4);
+  await fixture.locator('[data-custom-row]').first().waitFor();
+  assert.equal(await fixture.locator('[data-custom-row]').count(), 7);
+  assert.equal(
+    await fixture.locator('article,sup,.tp-citations,.tp-markdown').count(),
+    0
+  );
+  await click('Restore default rows', 5);
+  await rows.first().waitFor();
+  await click('Dispose default owner', 6);
+  assert.equal(await rows.count(), 7, 'Disposed accepted rows remain readable');
+  const retained = await page.evaluate(() => window.__defaultTranscript());
+  await click('Unmount default transcript', 7);
+  assert.equal(await rows.count(), 0);
+  assert.equal(retained.disposed, true);
+  return { cases: 12, controls: 6, shadowStylesheetLoaded: true, unmounted: true, ...retained };
+}
+
 async function semantics(panel) {
   return panel.evaluate((root) => ({
     // Browser-visible text, not just textContent. Semantic descendants omit
@@ -487,6 +620,10 @@ export async function verifyPresentationBrowser(browser, url) {
     );
     assert.ok(responses.some((url) => url.endsWith('/failure.png')));
     assert.ok(responses.some((url) => url.endsWith('/success.svg')));
+    const defaultTranscript = await verifyDefaultTranscript(page);
+    assert.ok(
+      responses.some((url) => url.endsWith('/default-transcript-chat.css'))
+    );
     assert.deepEqual(problems, []);
     assert.deepEqual(external, []);
     return {
@@ -494,6 +631,7 @@ export async function verifyPresentationBrowser(browser, url) {
       parserKinds: [...observedKinds].sort(),
       supplementaryOnly: ['hard-break'],
       spacing: spacingEvidence,
+      defaultTranscript,
       problems,
       external,
       ...(await read()),

@@ -77,23 +77,80 @@ test('frozen presentation requires all outputs and rejects missing, tampered and
   mkdirSync(output, { recursive: true });
   writeFileSync(join(output, 'index.html'), '<html>generated</html>');
   writeFileSync(join(output, 'main.js'), 'export {};');
+  writeFileSync(join(output, 'default-transcript-chat.css'), '.tp-chat-list{}');
   const record = (path) => ({
     path: 'presentation-output/browser/' + path,
     sha256: createHash('sha256')
       .update(readFileSync(join(output, path)))
       .digest('hex'),
   });
-  const outputs = ['index.html', 'main.js'].map(record);
+  const outputs = ['default-transcript-chat.css', 'index.html', 'main.js'].map(record);
+  const stylesheetInput = {
+    path: 'node_modules/@threadplane/react/src/chat/styles.css',
+    sha256: outputs[0].sha256,
+  };
+  const installed = join(directory, 'consumer', stylesheetInput.path);
+  mkdirSync(join(installed, '..'), { recursive: true });
+  writeFileSync(installed, readFileSync(join(output, 'default-transcript-chat.css')));
   const proof = {
-    presentation: { shell: outputs[0].path, outputs, assets: [outputs[1]] },
-    frozen: outputs.map((r) => ({ ...r, path: 'consumer/' + r.path })),
+    presentation: {
+      shell: outputs[1].path,
+      outputs,
+      assets: [outputs[0], outputs[2]],
+      inputs: [
+        'presentation-default-transcript.tsx',
+        'node_modules/@threadplane/content/src/messages/create-message-content.js',
+        ...['message-list', 'citations'].map(
+          (name) => `node_modules/@threadplane/react/src/chat/${name}.js`
+        ),
+      ],
+      types: [
+        'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
+        ...['message-list', 'citations'].map(
+          (name) => `node_modules/@threadplane/react/src/chat/${name}.d.ts`
+        ),
+      ].map((path) => ({ path })),
+      inputHashes: [stylesheetInput],
+      stylesheet: { input: stylesheetInput, output: outputs[0] },
+    },
+    frozen: [...outputs, stylesheetInput].map((r) => ({ ...r, path: 'consumer/' + r.path })),
   };
   assert.equal(
     presentation.readPresentation(directory, proof).shell.toString(),
     '<html>generated</html>'
   );
+  for (const mutate of [
+    (p) => {
+      p.presentation.inputs.pop();
+    },
+    (p) => {
+      p.presentation.types.pop();
+    },
+    (p) => {
+      delete p.presentation.stylesheet;
+    },
+    (p) => {
+      p.presentation.stylesheet.input.sha256 = 'changed';
+    },
+    (p) => {
+      p.presentation.inputHashes = [];
+    },
+    (p) => {
+      p.presentation.outputs.shift();
+    },
+    (p) => {
+      p.frozen.pop();
+    },
+  ]) {
+    const malformed = structuredClone(proof);
+    mutate(malformed);
+    assert.throws(
+      () => presentation.readPresentation(directory, malformed),
+      /input|stylesheet|Stylesheet/
+    );
+  }
   const missing = structuredClone(proof);
-  missing.frozen.pop();
+  missing.frozen.splice(2, 1);
   assert.throws(
     () => presentation.readPresentation(directory, missing),
     /frozen/
@@ -105,12 +162,15 @@ test('frozen presentation requires all outputs and rejects missing, tampered and
     /outputs/
   );
   const traversal = structuredClone(proof);
-  traversal.presentation.assets[0].path =
+  traversal.presentation.assets[1].path =
     'presentation-output/browser/../browser/main.js';
   assert.throws(
     () => presentation.readPresentation(directory, traversal),
     /path/
   );
+  writeFileSync(installed, 'changed installed stylesheet');
+  assert.throws(() => presentation.readPresentation(directory, proof), /stylesheet bytes/);
+  writeFileSync(installed, readFileSync(join(output, 'default-transcript-chat.css')));
   writeFileSync(join(output, 'main.js'), 'tampered');
   assert.throws(
     () => presentation.readPresentation(directory, proof),

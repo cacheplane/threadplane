@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "354392f5b4c661815d89e6b59b62e70f76a7e7a8",
+  "baselineHead": "67c289bcabb2c75879057572df1ce42ec91f8932",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/getting-started/introduction.mdx",
-      "apps/website/content/docs/angular/getting-started/quickstart.mdx",
-      "apps/website/content/docs/react/getting-started/introduction.mdx",
-      "apps/website/content/docs/react/getting-started/quickstart.mdx"
+      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/message-list.tsx"
     ],
     "untracked": []
   },
@@ -854,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "bc72aae32618bb06f860fc1309dbebe5aa08e7b0614b467094d54340ac292d32"
+      "sha256": "f3aae1713db69abceb2f49e34263b0b52c0177ef77d03de61995b6eae2f12f79"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -3060,7 +3059,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "sha256": "fa4d8b6cb6aa24a3c3d27f5eac1ec2642b7d31fbd44687353caf4391e03782a5"
+      "sha256": "2c603ec1e34ffe58252243eee0b5095683829adbed6c93b3658f02ff11f7d15a"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -16349,7 +16348,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "d7a7c5e4012848a6063761ae9c9dd841b3ad6ff81b3f9c7a959b6536debaff2c"
+      "sha256": "73552c200370f26575f669523c92e7b53768577a5a024ac6ff9a8e6e2055bb85"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
