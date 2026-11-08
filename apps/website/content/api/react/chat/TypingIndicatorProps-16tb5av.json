@@ -1,0 +1,187 @@
+{
+  "name": "TypingIndicatorProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/TypingIndicatorProps",
+  "canonicalReference": "@threadplane/react!TypingIndicatorProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controlled waiting presentation; no session, execution or lifetime ownership.",
+  "declarations": [
+    {
+      "name": "TypingIndicatorProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!TypingIndicatorProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface TypingIndicatorProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controlled waiting presentation; no session, execution or lifetime ownership.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "active",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TypingIndicatorProps#active:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly active: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/typing-indicator.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "announce",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TypingIndicatorProps#announce:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly announce?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/typing-indicator.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TypingIndicatorProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/typing-indicator.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!TypingIndicatorProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/typing-indicator.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/typing-indicator.tsx",
+        "line": 18
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/typing-indicator.tsx",
+    "line": 18
+  }
+}

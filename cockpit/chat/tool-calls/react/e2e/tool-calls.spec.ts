@@ -10,10 +10,7 @@ test('a held real tool call exposes complete arguments before its result', async
   expect((await request.post('/__hold-tool')).status()).toBe(200);
   await page.goto(base);
   await submit(page, 'Status UA123');
-  const pending = page.getByRole('region', {
-    name: 'Observed tool call',
-    exact: true,
-  });
+  const pending = page.locator('.tp-tool-activity[data-phase="pending"]');
   await expect(pending).toHaveCount(1);
   await expect(pending).toContainText('"flight_number": "UA123"');
   await expect(pending.getByText('Result', { exact: true })).toHaveCount(0);
@@ -142,7 +139,7 @@ type Wire = {
 };
 const base = '/chat/tool-calls/react/';
 const cards = (page: Page) =>
-  page.getByRole('region', { name: 'Observed tool result', exact: true });
+  page.locator('.tp-tool-activity[data-phase="complete"]');
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 async function submit(page: Page, text: string) {

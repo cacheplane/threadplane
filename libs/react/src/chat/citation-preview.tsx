@@ -4,6 +4,7 @@ import { markdownUrl } from '@threadplane/content/markdown';
 import { useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
+import { CitationSourceSummary } from './internal/citation-source-summary.js';
 import {
   dialogPresentation,
   availableDialogTarget,
@@ -15,7 +16,7 @@ export interface CitationPreviewProps {
   readonly className?: string;
 }
 
-/** Explicit source details with local presentation state and no source fetching. */
+/** Explicit source details and local source summary with no source fetching. */
 export function CitationPreview(props: CitationPreviewProps) {
   return <SourcePreview key={props.citation.id} {...props} />;
 }
@@ -301,6 +302,7 @@ function SourceDialog({
       >
         Close
       </button>
+      <CitationSourceSummary citation={citation} />
       <h2 id={`${id}-title`}>{title}</h2>
       <dl>
         <dt>Index</dt>

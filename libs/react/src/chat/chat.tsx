@@ -4,8 +4,10 @@ import type { AgentSession } from '@threadplane/core';
 import type { MessageContent, MessageRow } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
+import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
-import { MessageList } from './message-list.js';
+import { MessageList, type MessageListProps } from './message-list.js';
+import { isTyping, TypingIndicator } from './typing-indicator.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -20,6 +22,10 @@ export interface ChatProps
   /** Must be referentially stable; see `MessageListProps.renderMessage`. */
   readonly renderMessage?: (row: MessageRow) => ReactNode;
   readonly className?: string;
+  readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
+  readonly toolLabel?: MessageListProps['toolLabel'];
+  /** Explicit application-owned retry intent; Chat never replays a submission. */
+  readonly onRetry?: () => void;
 }
 
 const ignore = () => undefined;
@@ -30,18 +36,41 @@ export function Chat({
   content,
   renderMessage,
   className,
+  groupRelatedTools,
+  toolLabel,
+  onRetry,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
   const rows = useMessageContent(snapshot, session, content);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
-      <MessageList rows={rows} renderMessage={renderMessage} />
-      {snapshot.error && (
-        <p role="alert" className="tp-chat__error">
-          {snapshot.error.message}
-        </p>
-      )}
+      <MessageList
+        rows={rows}
+        renderMessage={renderMessage}
+        groupRelatedTools={groupRelatedTools}
+        toolLabel={toolLabel}
+      />
+      <TypingIndicator active={isTyping(snapshot)} />
+      <ChatError
+        error={snapshot.error}
+        className="tp-chat__error"
+        onRetry={
+          onRetry &&
+          (() => {
+            if (session.getSnapshot().error === snapshot.error) onRetry();
+          })
+        }
+        onCheckStatus={
+          session.checkStatus &&
+          (() => {
+            const checkStatus = session.checkStatus;
+            if (checkStatus && session.getSnapshot().error === snapshot.error) {
+              checkStatus.call(session).catch(ignore);
+            }
+          })
+        }
+      />
       <ChatInput
         key={sessionKey(session)}
         {...input}

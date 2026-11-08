@@ -74,12 +74,16 @@ describe('framework narrative loader', () => {
       expect(doc.body, id).toMatch(/private.*source.build/);
       expect(doc.body, id).not.toMatch(/provideAgent|injectAgent|npm (?:install|i) @threadplane\/react/);
     }
-    for (const entry of ['getting-started/introduction', 'getting-started/workbench']) {
-      const body = getDocByPath(`/docs/react/${entry}`)!.body;
-      expect(body).toContain('/docs/react/langgraph/getting-started/installation');
-      expect(body).toContain('/docs/react/langgraph/getting-started/quickstart');
-      expect(body).toContain('/docs/react/chat/getting-started/quickstart');
-    }
+    const quickstart = getDocByPath('/docs/react/getting-started/quickstart')!.body;
+    expect(quickstart).toContain('createFakeAgent');
+    expect(quickstart).toContain('<Chat session={agent}');
+    expect(quickstart).toContain('/docs/react/getting-started/workbench');
+    expect(quickstart).toContain('/docs/react/langgraph/guides/streaming');
+    expect(quickstart).toContain('/docs/react/ag-ui/reference/event-mapping');
+    const workbench = getDocByPath('/docs/react/getting-started/workbench')!.body;
+    expect(workbench).toContain('/docs/react/langgraph/getting-started/installation');
+    expect(workbench).toContain('/docs/react/langgraph/getting-started/quickstart');
+    expect(workbench).toContain('/docs/react/chat/getting-started/quickstart');
   });
 
   it('keeps React conversation links in React and teaches prepared message rows', () => {
@@ -180,7 +184,7 @@ describe('website docs bindings', () => {
   it('lists all authored variants from the catalog', () => {
     const slugs = getAllDocSlugs();
     expect(slugs).toEqual(getNarrativeDocuments());
-    expect(slugs).toHaveLength(187);
+    expect(slugs).toHaveLength(189);
     expect(slugs).toContainEqual(expect.objectContaining({
       library: 'langgraph',
       section: 'getting-started',
@@ -494,7 +498,7 @@ describe('website docs bindings', () => {
 
   it('keeps experimental source-build disclosures on every extracted React guide', () => {
     const react = getAllDocSlugs('react');
-    expect(react).toHaveLength(69);
+    expect(react).toHaveLength(71);
     for (const document of react) {
       const doc = getDocByPath(document.href)!;
       expect(readFrontmatterDescription(doc.content), document.id).toBe(document.description);

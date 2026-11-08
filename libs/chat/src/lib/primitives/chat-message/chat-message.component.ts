@@ -5,6 +5,8 @@ import { CHAT_MESSAGE_STYLES } from '../../styles/chat-message.styles';
 import { ChatCitationsComponent } from '../chat-citations/chat-citations.component';
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 import type { Message } from '../../agent/message';
+import { OwnedMarkdownContextDirective } from './owned-markdown-context';
+import { OwnedMarkdownBodyComponent } from './owned-markdown-body.component';
 
 /** Message roles used to select the chat message layout. */
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';
@@ -15,7 +17,7 @@ const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You'
 @Component({
   selector: 'chat-message',
   standalone: true,
-  imports: [ChatCitationsComponent],
+  imports: [ChatCitationsComponent, OwnedMarkdownBodyComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, CHAT_MESSAGE_STYLES],
   providers: [CitationsResolverService],
@@ -31,9 +33,17 @@ const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You'
     }
     <!-- dir="auto": a message takes its base direction from its own first
          strong character, so right-to-left text keeps its reading order. -->
-    <div [class]="bodyClass()" dir="auto">
+    <div [class]="bodyClass()" dir="auto" [chatOwnedMarkdownBody]="ownedMarkdownContext?.context() ?? null">
+      <ng-container ngProjectAs="[chatBeforeMarkdown]">
+        <ng-content select="[chatBeforeMarkdown]" />
+      </ng-container>
+      <ng-container ngProjectAs="[chatAfterMarkdown]">
+        <ng-content select="[chatAfterMarkdown]" />
+      </ng-container>
       <ng-content />
-      <span class="chat-message__caret" aria-hidden="true"></span>
+      <ng-container ngProjectAs="[chatMarkdownCaret]">
+        <span class="chat-message__caret" aria-hidden="true"></span>
+      </ng-container>
     </div>
     @if (message()?.role === 'assistant' && message(); as msg) {
       <chat-citations [message]="msg" />
@@ -57,6 +67,7 @@ export class ChatMessageComponent {
   readonly speaker = input<string | undefined>(undefined);
 
   private readonly resolver = inject(CitationsResolverService);
+  protected readonly ownedMarkdownContext = inject(OwnedMarkdownContextDirective, { optional: true, self: true });
 
   constructor() {
     effect(() => {

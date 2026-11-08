@@ -328,3 +328,11 @@ export type {
   LangGraphScriptedRun as ɵLangGraphScriptedRun,
   AgUiScriptedRun as ɵAgUiScriptedRun,
 } from './lib/devtools/devtools-scripted-runs';
+export {
+  ChatToolActivityComponent,
+  ChatToolActivityGroupComponent,
+  toolActivityPhase,
+  type ToolActivityDelivery,
+  type ToolActivityInfo,
+  type ToolActivityPhase,
+} from './lib/primitives/chat-tool-activity/chat-tool-activity.component';

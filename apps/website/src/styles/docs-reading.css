@@ -1,7 +1,7 @@
-/* Shared narrative and API presentation, including portal menus.
- * Embedded runtimes, SDK consumers, and docs landing pages are separate.
+/* Shared docs presentation, including landing/API pages and portal menus.
+ * Embedded runtimes and SDK consumers keep their own rendering.
  */
-body:has([data-website-workspace-host][data-docs-reading]) {
+body:has([data-docs-reading]) {
   .nav-bar[data-route='docs'] [data-ui='button'][data-variant='primary'] {
     background: var(--color-accent);
     color: #fff;
@@ -13,16 +13,21 @@ body:has([data-website-workspace-host][data-docs-reading]) {
 
   /* Keep the independently scrolling navigation geometry. */
   .workspace-control-plane [data-control-plane-pane],
+  .docs-control-plane [data-control-plane-pane],
   [data-workspace-context-content] {
     background: #f6f7f9;
   }
-  .workspace-control-plane [data-control-plane-rail] {
+  .workspace-control-plane [data-control-plane-rail],
+  .docs-control-plane [data-control-plane-rail] {
     background: #fff;
   }
-  .workspace-control-plane [data-control-plane-rail-item] {
+  .workspace-control-plane [data-control-plane-rail-item],
+  .docs-control-plane [data-control-plane-rail-item] {
     border-radius: 12px;
   }
   .workspace-control-plane
+    [data-control-plane-rail-item][data-control-plane-active],
+  .docs-control-plane
     [data-control-plane-rail-item][data-control-plane-active] {
     background: #fff4d6;
     color: var(--color-accent);

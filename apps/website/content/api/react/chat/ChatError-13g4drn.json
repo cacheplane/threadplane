@@ -1,0 +1,92 @@
+{
+  "name": "ChatError",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ChatError",
+  "canonicalReference": "@threadplane/react!ChatError:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Passive, literal error notice with at most one supported recovery action.",
+  "declarations": [
+    {
+      "name": "ChatError",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ChatError:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ChatError(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ChatErrorProps",
+          "canonicalReference": "@threadplane/react!ChatErrorProps:interface",
+          "href": "/docs/api/react/chat/ChatErrorProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": " | null"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Passive, literal error notice with at most one supported recovery action.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/error.tsx",
+        "line": 19
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ error, onRetry, onCheckStatus, disabled, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/error.tsx",
+    "line": 19
+  }
+}

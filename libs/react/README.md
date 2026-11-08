@@ -173,7 +173,10 @@ returns to the trigger, and Tab from the last control continues through the page
 Escape, Close, outside pointer interaction, or focus departure dismisses it.
 Only the explicit safe “Open source” link navigates. Titles, snippets and dates
 remain literal borrowed metadata; icons and metadata are never fetched. The card
-uses the trigger's document, follows viewport/scroll changes and needs no chat
+adds a local source marker and a summary of normalized source type, hostname and
+formatted publication date above those literal details. The decorative marker
+adds no keyboard focus target. Same-ID corrections update the open summary in place.
+The card uses the trigger's document, follows viewport/scroll changes and needs no chat
 stylesheet. Generation, marker identity, removal and unmount retire its local state.
 Omitting the opt-in preserves direct links and numbered markers.
 
@@ -227,9 +230,14 @@ link and `noopener noreferrer`. Missing or blocked URLs display text. The view
 does not fetch icons, previews or metadata, parse snippets,
 subscribe or dispose anything. Markdown definition text before
 its first top-level link becomes the title, and text after it becomes the snippet,
-shared with inline citation previews. Default MessageList
-shows supplied sources after assistant answers; custom row rendering selects its
-own presentation. Styles are opt-in through `/chat/styles.css`.
+shared with inline citation previews. Default `MessageList` assistant rows pass
+their provider metadata to inline Markdown references and merge Sources with the
+same accepted Markdown snapshot. Whole provider records win exact-ID collisions;
+combined sources use stable ascending index order, including Markdown-only sources.
+Metadata-only corrections update both presentations without reparsing unchanged
+Markdown. User and system rows receive no provider metadata, and tool text remains
+literal. Custom row rendering selects its own presentation. Styles are opt-in
+through `/chat/styles.css`.
 
 `CitationCard` also accepts a required readonly core `citation` and optional
 `className` for custom compositions. Its source marker is decorative: known
@@ -264,6 +272,11 @@ Click, tap, or activate the trigger with a keyboard to inspect the supplied titl
 snippet, source type, publication text, and URL. Text stays literal; metadata and
 icons are never fetched. Allowed URLs get a separate **Open source** new-tab link
 using the shared URL policy. Missing or blocked URLs remain readable text.
+Above the literal details, a local decorative marker and source summary show the
+normalized type, hostname and formatted publication date using the same helpers as
+`CitationCard`. Missing or invalid display dates are omitted from the summary while
+the original publication text remains in the details. Hostname display does not
+approve a link. Provider images are never loaded.
 The modal focuses **Close**, contains Tab navigation including the optional link,
 and dismisses with Close, Escape, or a click outside its bounds. It restores
 focus to the available trigger when it still owns focus. Same-ID metadata updates
@@ -344,6 +357,30 @@ calls and the session error, and sends with Enter (Shift+Enter adds a line). It
 submits the trimmed draft and ignores rejected `submit`/`stop` promises; the session
 reports failures through its snapshot. A failed send does not restore the draft.
 Switching sessions resets the draft. Chat never disposes the session.
+
+`TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
+waiting-before-text presentation from a borrowed core snapshot. `active` is
+required; optional readonly `label`, `announce`, and `className` customize the
+literal label, polite atomic status announcement, and styling. Inactive renders
+nothing. `isTyping` requires running status and no messages, a last user message,
+or empty last assistant string content. Any assistant text (including whitespace),
+or a last tool/system message hides it. Default `Chat` composes it from the existing
+snapshot after `MessageList`. Set `announce={false}` when the application already
+announces submission progress. Dots are decorative CSS animation with reduced
+motion support; the label remains readable without CSS. No execution, session
+ownership, commands, subscriptions, or timers are added. This bounded text-only
+slice does not complete T23 or legacy typing/runtime parity.
+
+`ChatError` from `@threadplane/react/chat` displays a required nullable readonly
+`AgentError` as one literal accessible alert with optional detail. Explicit
+`onRetry` and `onCheckStatus` callbacks receive zero arguments and own their async
+results. Check recovery requires its callback and never falls through to retry;
+explicit `none` suppresses every action. Retry requires retryable metadata and
+its explicit callback. `disabled` retains the action without activation.
+Default `Chat` forwards supported session `checkStatus`, checks the latest error
+identity before recovery, and accepts an optional app-owned `onRetry` intent.
+It never replays submit. The native example supplies no execution recovery
+callbacks; selection Retry remains a separate selection reload.
 
 Without a `content` prop, Chat owns one message projection per session and releases
 it on unmount or session change. To keep the projection across remounts, create it

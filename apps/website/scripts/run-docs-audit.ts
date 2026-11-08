@@ -564,10 +564,12 @@ async function main() {
             );
           const apiHeading = page.locator('.api-reference-page h1');
           if (await apiHeading.count()) {
-            const symbol = await page.locator('.api-reference-detail').count();
+            const pageKind = await page.locator('.api-reference-page').getAttribute('data-api-page');
+            const codeHeading = pageKind === 'symbol' || pageKind === 'entrypoint';
             await expect(apiHeading).toHaveCSS(
               'font-size',
-              symbol ? '24px' : width < 768 ? '32px' : '44px'
+              codeHeading ? `${Math.min(32, Math.max(24, width * 0.025))}px`
+                : width < 768 ? '32px' : '44px'
             );
           }
           const steps = page.locator('.docs-workspace-article .mdx-steps-list');

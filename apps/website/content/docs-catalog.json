@@ -1,19 +1,19 @@
 [
   {
-    "id": "getting-started/introduction",
-    "title": "Introduction",
+    "id": "getting-started/quickstart",
+    "title": "Quickstart",
     "library": null,
     "section": "getting-started",
-    "slug": "introduction",
+    "slug": "quickstart",
     "order": 0,
     "variants": {
       "angular": {
-        "source": "angular/getting-started/introduction.mdx",
-        "description": "Start with the Angular guides for agent conversations, streaming, rendering, and backend integrations."
+        "source": "angular/getting-started/quickstart.mdx",
+        "description": "Install Angular chat, create a fake agent, and send your first message."
       },
       "react": {
-        "source": "react/getting-started/introduction.mdx",
-        "description": "Explore the experimental React source-build guides, session ownership, and runnable repository examples."
+        "source": "react/getting-started/quickstart.mdx",
+        "description": "Install the React source build, create a fake agent, and send your first message with Chat."
       }
     }
   },
@@ -1397,6 +1397,36 @@
       "react": {
         "source": "react/chat/components/chat-reasoning.mdx",
         "description": "Show supplied assistant reasoning in a React disclosure without taking ownership of its Markdown document."
+      }
+    }
+  },
+  {
+    "id": "chat/components/typing-indicator",
+    "title": "TypingIndicator",
+    "library": "chat",
+    "section": "components",
+    "slug": "typing-indicator",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/typing-indicator.mdx",
+        "description": "Show a controlled waiting label until the first assistant text arrives.",
+        "apiEntrypointIds": ["react/chat"]
+      }
+    }
+  },
+  {
+    "id": "chat/components/chat-error",
+    "title": "ChatError",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-error",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/chat-error.mdx",
+        "description": "Present an already classified error with explicit application-owned recovery intents.",
+        "apiEntrypointIds": ["react/chat"]
       }
     }
   },

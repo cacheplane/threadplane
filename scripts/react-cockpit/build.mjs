@@ -35,7 +35,7 @@ try {
   const app = join(consumer, appPath);
   mkdirSync(app, { recursive: true });
   mkdirSync(join(consumer, 'cockpit/shared'), { recursive: true });
-  for (const file of ['react-example.tsx', 'react-example.css'])
+  for (const file of ['react-example.tsx', 'react-example.css', 'tool-presentation.ts'])
     cpSync(join(root, 'cockpit/shared', file), join(consumer, 'cockpit/shared', file));
   cpSync(join(root, appPath, 'src'), join(app, 'src'), {
     recursive: true,

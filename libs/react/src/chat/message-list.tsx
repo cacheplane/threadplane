@@ -3,7 +3,12 @@ import { memo, useEffect, useRef, type ReactNode } from 'react';
 import type { MessageRow } from '@threadplane/content/messages';
 import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
-import { ToolObservation } from './tool-observation.js';
+import {
+  ToolActivity,
+  ToolActivityGroup,
+  toolActivityPhase,
+  type ToolActivityInfo,
+} from './tool-activity.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 
@@ -22,6 +27,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;
   readonly label?: string;
   readonly className?: string;
+  /** Opt in to one activity group per assistant message. Custom renderers keep full ownership. */
+  readonly groupRelatedTools?: boolean;
+  /** App-authored human labels; keep this function stable like renderMessage. */
+  readonly toolLabel?: (name: string) => string | undefined;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
 }
@@ -33,11 +42,28 @@ const literal = (value: unknown): string =>
 function RowView<TRow extends MessageRow>({
   row,
   renderMessage,
+  groupRelatedTools,
+  toolLabel,
 }: {
   readonly row: TRow;
   readonly renderMessage?: (row: TRow) => ReactNode;
+  readonly groupRelatedTools?: boolean;
+  readonly toolLabel?: (name: string) => string | undefined;
 }) {
   if (renderMessage) return <>{renderMessage(row)}</>;
+  const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
+    const delivery = row.message.delivery;
+    const phase = toolActivityPhase(call.status, delivery);
+    return {
+      id: call.id,
+      name: call.name,
+      label: toolLabel?.(call.name),
+      phase,
+      argumentsText: literal(call.args),
+      resultText: call.status === 'complete' ? literal(call.result) : undefined,
+      errorText: call.status === 'error' ? call.error : undefined,
+    };
+  });
   return (
     <article className={`tp-chat-message tp-chat-message--${row.role}`}>
       <p className="tp-chat-message__role">{row.role}</p>
@@ -47,25 +73,26 @@ function RowView<TRow extends MessageRow>({
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (
-        <Markdown snapshot={row.markdown} />
+        <Markdown
+          snapshot={row.markdown}
+          citations={
+            row.role === 'assistant' ? row.message.citations : undefined
+          }
+        />
       )}
-      {row.role === 'assistant' && row.message.citations && (
-        <Citations citations={row.message.citations} />
+      {row.role === 'assistant' && (
+        <Citations
+          citations={row.message.citations ?? []}
+          snapshot={row.markdown}
+        />
       )}
       {row.role !== 'tool' &&
-        row.toolCalls.map((call) => (
-          <ToolObservation
-            key={call.id}
-            name={call.name}
-            argumentsText={literal(call.args)}
-            resultText={
-              call.status === 'complete'
-                ? literal(call.result)
-                : call.status === 'error'
-                ? call.error
-                : undefined
-            }
-          />
+        (groupRelatedTools ? (
+          <ToolActivityGroup activities={activities} />
+        ) : (
+          activities.map((activity) => (
+            <ToolActivity key={activity.id} activity={activity} />
+          ))
         ))}
     </article>
   );
@@ -80,6 +107,8 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderMessage,
   label = 'Conversation',
   className,
+  groupRelatedTools,
+  toolLabel,
   children,
 }: MessageListProps<TRow>) {
   const container = useRef<HTMLDivElement>(null);
@@ -91,7 +120,8 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     if (!el) return;
     const onScroll = () => {
       const max = Math.max(0, el.scrollHeight - el.clientHeight);
-      if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1) pinned.current = false;
+      if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)
+        pinned.current = false;
       else if (max - el.scrollTop <= PIN_THRESHOLD) pinned.current = true;
       lastScrollTop.current = el.scrollTop;
     };
@@ -133,7 +163,13 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     >
       <div ref={content}>
         {rows.map((row) => (
-          <Row key={row.id} row={row} renderMessage={renderMessage} />
+          <Row
+            key={row.id}
+            row={row}
+            renderMessage={renderMessage}
+            groupRelatedTools={groupRelatedTools}
+            toolLabel={toolLabel}
+          />
         ))}
         {children}
       </div>

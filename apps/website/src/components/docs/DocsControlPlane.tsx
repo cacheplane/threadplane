@@ -164,7 +164,7 @@ export function DocsControlPlane(props: DocsControlPlaneProps) {
     `${mode} is unavailable because this page has no workspace capability.`;
 
   return (
-    <div className="docs-control-plane" data-docs-control-plane>
+    <div className="docs-control-plane" data-docs-control-plane data-docs-reading={isDocsReadingRoute(pathname) || undefined}>
       <ControlPlaneRail
         label="Docs modes"
         primary={

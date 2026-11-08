@@ -516,7 +516,7 @@ describe('reduceEvent', () => {
     }
     reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 't1' } as any, store);
     expect(store.toolCalls()[0].args).toEqual({ location: 'Paris', temperatureF: 72 });
-    expect(store.toolCalls()[0].status).toBe('complete');
+    expect(store.toolCalls()[0].status).toBe('running');
   });
 
   it('TOOL_CALL_ARGS keeps last-good args while the buffer is mid-fragment', () => {
@@ -540,11 +540,14 @@ describe('reduceEvent', () => {
     expect(store.toolCalls().find((t) => t.id === 't2')!.args).toEqual({ y: 2 });
   });
 
-  it('TOOL_CALL_END marks the matching tool call complete', () => {
+  it('TOOL_CALL_END finalizes arguments while execution remains running until its result', () => {
     const store = makeStore();
     reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'search' } as any, store);
     reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 't1' } as any, store);
+    expect(store.toolCalls()[0].status).toBe('running');
+    reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: 'false' } as any, store);
     expect(store.toolCalls()[0].status).toBe('complete');
+    expect(store.toolCalls()[0].result).toBe(false);
   });
 
   it('TOOL_CALL_RESULT sets the result on the matching call', () => {

@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 28
+        "line": 34
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ session, content, renderMessage, className, ...input }",
+          "parameterName": "{ session, content, renderMessage, className, groupRelatedTools, toolLabel, onRetry, ...input }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 28
+    "line": 34
   }
 }

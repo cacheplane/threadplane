@@ -843,7 +843,7 @@ export async function verifyReactReadiness({ retain } = {}) {
       }).trim(),
     };
     writeJson(join(temporary, 'provenance.json'), provenance);
-    const assets = readPresentation(temporary, provenance);
+    const assets = readPresentation(temporary, provenance, { profile: 'react-readiness' });
     const result = await verifyMarkdownBrowser('', {
       launch: async (url) => {
         origin = url;

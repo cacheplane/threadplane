@@ -2360,3 +2360,7 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   gap: 8px;
   padding: 8px 16px;
 }
+
+.website-workspace-fallback {
+  display: contents;
+}

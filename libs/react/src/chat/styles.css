@@ -24,8 +24,8 @@
   /* No danger token exists in design-tokens; override --tp-chat-danger to theme. */
   --tp-chat-danger: light-dark(#b42318, #ff8a80);
   --tp-chat-gap: 1rem;
-  --tp-chat-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --tp-chat-font-family: ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tp-chat-font-size-xs: 0.75rem;
   --tp-chat-font-size-sm: 0.875rem;
   --tp-chat-font-size-base: 1rem;
@@ -626,7 +626,49 @@
 }
 .tp-chat__error {
   margin: 0;
-  color: var(--tp-chat-danger);
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+.tp-chat-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  overflow-wrap: anywhere;
+}
+.tp-chat-error p {
+  margin: 0;
+  min-inline-size: 0;
+  white-space: pre-wrap;
+}
+.tp-chat-error__message {
+  flex: 1 1 auto;
+}
+.tp-chat-error__detail {
+  flex-basis: 100%;
+}
+.tp-chat-error button {
+  max-inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: inherit;
+  font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-chat-error button:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-chat-error button:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 .tp-citations {
   margin-block: 0.75rem;
@@ -887,7 +929,10 @@
 .tp-chat-popup .tp-chat-popup__panel {
   position: fixed;
   inset-inline-end: 1rem;
-  inset-block-start: calc(var(--tp-chat-viewport-top, 0px) + max(1rem, calc(var(--tp-chat-viewport-height, 100dvh) - 41rem)));
+  inset-block-start: calc(
+    var(--tp-chat-viewport-top, 0px) +
+      max(1rem, calc(var(--tp-chat-viewport-height, 100dvh) - 41rem))
+  );
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -1686,4 +1731,117 @@
   .tp-citation-card__visual--web {
     color: CanvasText;
   }
+}
+.tp-tool-activity,
+.tp-tool-activity-group {
+  min-width: 0;
+  color: var(--tp-chat-text, CanvasText);
+  font: inherit;
+}
+.tp-tool-activity__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-weight: 500;
+}
+.tp-tool-activity__phase,
+.tp-tool-activity__duration {
+  color: var(--tp-chat-muted, GrayText);
+  font-size: 12px;
+  font-weight: 400;
+}
+.tp-tool-activity summary,
+.tp-tool-activity-group summary {
+  cursor: pointer;
+  color: var(--tp-chat-muted, GrayText);
+  padding: 6px 0;
+}
+.tp-tool-activity summary:focus-visible,
+.tp-tool-activity-group summary:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, Highlight);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.tp-tool-activity-group summary > span + span {
+  margin-inline-start: 12px;
+}
+.tp-tool-activity__details {
+  margin-block: 4px 12px;
+  font-size: 12px;
+}
+.tp-tool-activity-group__details {
+  border: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  border-radius: var(--tp-chat-radius-card, 8px);
+  padding: 0;
+  margin-block: 0 12px;
+}
+.tp-tool-activity-group__details > summary { padding:8px 12px; color:var(--tp-chat-text, CanvasText); }
+.tp-tool-activity-group__details > summary > .tp-tool-activity__phase { float:inline-end; }
+.tp-tool-activity-group__items {
+  padding: 12px;
+}
+.tp-tool-activity-group__items > .tp-tool-activity + .tp-tool-activity {
+  margin-block-start: 12px;
+}
+.tp-tool-activity dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+}
+.tp-tool-activity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.tp-tool-activity pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 280px;
+  overflow: auto;
+  font: 12px/1.6 ui-monospace, monospace;
+  margin: 4px 0 12px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--tp-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c));
+}
+.tp-tool-activity__error {
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.tp-typing-indicator {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding-block: 0.5rem;
+  color: var(--tp-chat-muted, GrayText);
+  font: inherit;
+}
+.tp-typing-indicator__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.tp-typing-indicator__dots {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.15em;
+  color: currentColor;
+}
+.tp-typing-indicator__dots > span {
+  animation: tp-typing-indicator-pulse 1.2s ease-in-out infinite;
+}
+.tp-typing-indicator__dots > span:nth-child(2) { animation-delay: 0.15s; }
+.tp-typing-indicator__dots > span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes tp-typing-indicator-pulse {
+  0%, 80%, 100% { opacity: 0.4; }
+  40% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-typing-indicator__dots > span { animation: none; }
+}
+@media (forced-colors: active) {
+  .tp-typing-indicator { color: CanvasText; }
 }

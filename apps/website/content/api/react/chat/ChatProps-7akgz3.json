@@ -83,7 +83,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 22
+            "line": 24
           },
           "isReadonly": true,
           "isOptional": true
@@ -121,7 +121,85 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 19
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "groupRelatedTools",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#groupRelatedTools:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly groupRelatedTools?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['groupRelatedTools']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onRetry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#onRetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onRetry?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Explicit application-owned retry intent; Chat never replays a submission.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -172,7 +250,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 21
+            "line": 23
           },
           "isReadonly": true,
           "isOptional": true
@@ -210,20 +288,62 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 17
+            "line": 19
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "toolLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#toolLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolLabel?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['toolLabel']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 11
+        "line": 13
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 11
+    "line": 13
   }
 }

@@ -1,5 +1,20 @@
 'use client';
 export {
+  TypingIndicator,
+  isTyping,
+  type TypingIndicatorProps,
+} from './typing-indicator.js';
+export {
+  ToolActivity,
+  ToolActivityGroup,
+  toolActivityPhase,
+  type ToolActivityDelivery,
+  type ToolActivityInfo,
+  type ToolActivityPhase,
+  type ToolActivityProps,
+  type ToolActivityGroupProps,
+} from './tool-activity.js';
+export {
   Suggestions,
   type SuggestionItem,
   type SuggestionsProps,
@@ -59,6 +74,7 @@ export {
   type ApprovalCardProps,
 } from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';
+export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
 export {

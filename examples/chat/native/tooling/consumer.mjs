@@ -338,6 +338,8 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     '@threadplane/react/src/chat/citation-preview',
     '@threadplane/react/src/chat/text-transcript',
     '@threadplane/react/src/chat/suggestions',
+    '@threadplane/react/src/chat/error',
+    '@threadplane/react/src/chat/typing-indicator',
     '@threadplane/react/src/render/render-spec',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',

@@ -127,11 +127,11 @@ describe('FrameworkSelector', () => {
     state.pathname = '/';
     render(<><FrameworkSelector /><FrameworkDocsLink>Get started</FrameworkDocsLink></>);
     const link = screen.getByRole('link', { name: 'Get started' });
-    expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/introduction');
+    expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/quickstart');
     chooseFramework('react');
-    expect(link.getAttribute('href')).toBe('/docs/react/getting-started/introduction');
+    expect(link.getAttribute('href')).toBe('/docs/react/getting-started/quickstart');
     act(() => window.dispatchEvent(new StorageEvent('storage', { key: FRAMEWORK_PREFERENCE_KEY, newValue: 'angular' })));
-    expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/introduction');
+    expect(link.getAttribute('href')).toBe('/docs/angular/getting-started/quickstart');
     expect(state.push).not.toHaveBeenCalled();
   });
 
@@ -158,7 +158,7 @@ describe('FrameworkSelector', () => {
     fireEvent.click(unavailable);
     fireEvent.keyDown(unavailable, { key: 'Escape' });
     expect(screen.getByText('This topic is not available for React.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'React introduction' }).getAttribute('href')).toBe('/docs/react/getting-started/introduction');
+    expect(screen.getByRole('link', { name: 'React quickstart' }).getAttribute('href')).toBe('/docs/react/getting-started/quickstart');
     chooseFramework('react');
     expect(state.push).not.toHaveBeenCalled();
   });

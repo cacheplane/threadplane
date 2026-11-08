@@ -1,0 +1,88 @@
+{
+  "name": "ToolActivityGroup",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/ToolActivityGroup",
+  "canonicalReference": "@threadplane/react!ToolActivityGroup:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Opt-in message/turn group. Individual disclosure state follows call IDs.",
+  "declarations": [
+    {
+      "name": "ToolActivityGroup",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!ToolActivityGroup:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function ToolActivityGroup(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityGroupProps",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps:interface",
+          "href": "/docs/api/react/chat/ToolActivityGroupProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Opt-in message/turn group. Individual disclosure state follows call IDs.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/tool-activity.tsx",
+        "line": 136
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ activities, label, children, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-activity.tsx",
+    "line": 136
+  }
+}

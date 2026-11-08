@@ -1,0 +1,57 @@
+# Matched tool conversation benchmark
+
+This developer-only benchmark measures tool presentation, not model intelligence or latency. A **scripted local agent** streams real native AG-UI and AI SDK SSE events and executes allowlisted local functions against authored, fixed reference records. The source URLs identify the subjects of the records; this server does not perform live web search. Each participant receives the exact scenario prompt, arguments and results.
+
+The server records native run/thread/tool IDs beside canonical invocation IDs, prompt/argument/result SHA-256 hashes, execution counts and lifecycle timestamps. Repeated same-name calls remain distinct. A finalized argument boundary precedes tool execution; it must not be treated as execution success. Successful falsy/empty values, a real thrown tool error, Stop/disconnect fencing and a local approval gate have independent tests. The approval endpoint is a **backend contract check**; it does not prove any participant has native approval UI wired.
+
+## Reproduce
+
+Use the repository's Node 22, npm and Nx setup. Build the SDKs, then prepare consumers outside the checkout:
+
+```sh
+npx nx run-many -t build -p chat,ag-ui,react
+npx nx test tool-rendering-benchmark
+node tools/tool-rendering-benchmark/prepare.mjs /private/tmp/tool-ui-consumers
+node tools/tool-rendering-benchmark/native-contract.mjs /private/tmp/tool-ui-consumers/vendor
+```
+
+Preparation packs Angular APF libraries and the private React/native AG-UI candidate through the repository's installed-consumer helper. It installs pinned competitor dependencies in a separate consumer, with no root lockfile changes. Keep the generated lockfiles, tarballs and `sources.json` with the evidence. For before/after work, prepare two separate destinations; never reinstall the frozen before consumer from changed sources.
+
+Run these in separate terminals, using each directory as the working directory:
+
+```sh
+# Repository root
+node tools/tool-rendering-benchmark/server.mjs
+# <destination>/vendor
+node node_modules/vite/bin/vite.js --host 127.0.0.1
+# <destination>/react/consumer
+node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4811 --strictPort
+# <destination>/angular
+node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4812 --strictPort
+```
+
+Then run from the repository root:
+
+```sh
+node tools/tool-rendering-benchmark/run-live.mjs /private/tmp/tool-ui-evidence
+```
+
+The runner uses installed Chrome, actual composer/Send/Stop/New controls, native client transports and real disclosure controls. It checks canonical ledger equality across all five consumers, saves DOM transition timelines and receipts, and captures matched 1440×1000 light/dark and 1024×900 light views at DPR 1. Reports and screenshots belong outside git. The server binds only loopback and accepts browser origins only on its API port or consumer ports 4810–4812.
+
+## Participants and interpretation
+
+| Participant         | Runtime and rendering                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Threadplane Angular | Installed public Angular APF `provideAgent` + `ChatComponent`; app-authored reference labels and opt-in related grouping                                           |
+| Threadplane React   | Installed private native AG-UI session + public source-build display primitives; app-authored native transcript projection                                         |
+| assistant-ui        | Published `useAgUiRuntime`, native thread/message/composer primitives, official MIT ToolFallback source pinned by commit; host-authored button/textarea skin       |
+| CopilotKit          | Published v2 self-managed HttpAgent, CopilotChat and documented `useDefaultRenderTool()`; its registered default renderer, not a custom copy                       |
+| shadcn/ui           | Published AI SDK `useChat`/DefaultChatTransport with official MIT Trace/Collapsible registry source pinned by commit; app-authored tool-part mapping and host skin |
+
+`participants.json` pins direct packages and registry commits. `sources.json` records downloaded source URLs, hashes and the import/icon adaptations. Full generated lockfiles record native SDK/transitive versions, which can differ across participants. The shared frame controls viewport and host dimensions; it does not recreate a competitor's entire product design. These are concrete integration observations, not universal scores for every possible configuration.
+
+The vendor consumer uses AG-UI 1.0.4 for assistant-ui's native adapter and CopilotKit's own exported `HttpAgent` for its exact 1.0.2 dependency. This preserves each published constructor's type identity; do not force either adapter onto the other's SDK class. Angular/React benchmark consumers and the vendor entrypoint are checked against their installed package declarations.
+
+AG-UI expresses the error scenario as `RUN_ERROR`, whereas AI SDK supports a per-tool output error. Record that distinction. Native approval/resume is **N/A for these integrations**, not a failure of the underlying products. Never infer approval, persistence or business success from a pretty status label or from the existence of a rendered artifact.
+
+Live ChatGPT/Claude product observations use the same user goal but are a separate qualitative tier: model, backend search selection and returned data are uncontrolled. Record access limits, account state and unknown versions. Do not compare their timing or result hashes against this controlled workload.

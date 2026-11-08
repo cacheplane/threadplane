@@ -67,6 +67,52 @@ test('strict template negative proof rejects resolution failures and requires th
     );
 });
 
+for (const profile of ['a2ui-surfaces', 'render-state', 'react-readiness']) {
+  test(`explicit ${profile} reader preserves generic asset checks without Markdown inputs`, (t) => {
+    const directory = mkdtempSync(join(tmpdir(), 'separate-presentation-'));
+    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    const output = join(directory, 'consumer/presentation-output/browser');
+    mkdirSync(output, { recursive: true });
+    writeFileSync(join(output, 'index.html'), `<p>${profile}</p>`);
+    writeFileSync(join(output, 'main.js'), 'export {};');
+    const outputs = ['index.html', 'main.js'].map(path => ({
+      path: 'presentation-output/browser/' + path,
+      sha256: createHash('sha256').update(readFileSync(join(output, path))).digest('hex'),
+    }));
+    const proof = {
+      presentation: { shell: outputs[0].path, outputs, assets: [outputs[1]] },
+      frozen: outputs.map(record => ({ ...record, path: 'consumer/' + record.path })),
+    };
+    const options = { profile };
+    assert.equal(presentation.readPresentation(directory, proof, options).shell.toString(), `<p>${profile}</p>`);
+    // An untrusted proof cannot downgrade the default or an explicit Markdown caller.
+    const forged = structuredClone(proof);
+    forged.profile = profile;
+    forged.presentation.profile = profile;
+    for (const markdown of [undefined, { profile: 'markdown' }])
+      assert.throws(() => presentation.readPresentation(directory, forged, markdown), /Required default transcript input/);
+    const missing = structuredClone(proof);
+    missing.frozen.pop();
+    assert.throws(() => presentation.readPresentation(directory, missing, options), /frozen/);
+    const omitted = structuredClone(proof);
+    omitted.presentation.outputs.pop();
+    assert.throws(() => presentation.readPresentation(directory, omitted, options), /outputs/);
+    const traversal = structuredClone(proof);
+    traversal.presentation.assets[0].path = 'presentation-output/browser/../browser/main.js';
+    assert.throws(() => presentation.readPresentation(directory, traversal, options), /path/);
+    writeFileSync(join(output, 'main.js'), 'tampered');
+    assert.throws(() => presentation.readPresentation(directory, proof, options), /outputs|bytes/);
+  });
+}
+
+test('reader rejects unknown trusted profiles and retains owner-only compatibility', () => {
+  for (const profile of ['markdown', 'a2ui-surfaces', 'render-state', 'react-readiness'])
+    assert.equal(presentation.readPresentation('/not-read', {}, { profile }), undefined);
+  assert.equal(presentation.readPresentation('/not-read', {}), undefined);
+  for (const profile of ['unknown', '', null])
+    assert.throws(() => presentation.readPresentation('/not-read', {}, { profile }), /profile/);
+});
+
 test('frozen presentation requires all outputs and rejects missing, tampered and traversal records', (t) => {
   assert.equal(typeof presentation.readPresentation, 'function');
   const directory = mkdtempSync(
@@ -77,23 +123,86 @@ test('frozen presentation requires all outputs and rejects missing, tampered and
   mkdirSync(output, { recursive: true });
   writeFileSync(join(output, 'index.html'), '<html>generated</html>');
   writeFileSync(join(output, 'main.js'), 'export {};');
+  writeFileSync(join(output, 'default-transcript-chat.css'), '.tp-chat-list{}');
   const record = (path) => ({
     path: 'presentation-output/browser/' + path,
     sha256: createHash('sha256')
       .update(readFileSync(join(output, path)))
       .digest('hex'),
   });
-  const outputs = ['index.html', 'main.js'].map(record);
+  const outputs = ['default-transcript-chat.css', 'index.html', 'main.js'].map(record);
+  const stylesheetInput = {
+    path: 'node_modules/@threadplane/react/src/chat/styles.css',
+    sha256: outputs[0].sha256,
+  };
+  const installed = join(directory, 'consumer', stylesheetInput.path);
+  mkdirSync(join(installed, '..'), { recursive: true });
+  writeFileSync(installed, readFileSync(join(output, 'default-transcript-chat.css')));
   const proof = {
-    presentation: { shell: outputs[0].path, outputs, assets: [outputs[1]] },
-    frozen: outputs.map((r) => ({ ...r, path: 'consumer/' + r.path })),
+    presentation: {
+      shell: outputs[1].path,
+      outputs,
+      assets: [outputs[0], outputs[2]],
+      inputs: [
+        'presentation-default-transcript.tsx',
+        'node_modules/@threadplane/content/src/messages/create-message-content.js',
+        ...['message-list', 'citations'].map(
+          (name) => `node_modules/@threadplane/react/src/chat/${name}.js`
+        ),
+      ],
+      types: [
+        'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
+        ...['message-list', 'citations'].map(
+          (name) => `node_modules/@threadplane/react/src/chat/${name}.d.ts`
+        ),
+      ].map((path) => ({ path })),
+      inputHashes: [stylesheetInput],
+      stylesheet: { input: stylesheetInput, output: outputs[0] },
+    },
+    frozen: [...outputs, stylesheetInput].map((r) => ({ ...r, path: 'consumer/' + r.path })),
   };
   assert.equal(
     presentation.readPresentation(directory, proof).shell.toString(),
     '<html>generated</html>'
   );
+  for (const mutate of [
+    (p) => {
+      p.presentation.inputs.pop();
+    },
+    (p) => {
+      p.presentation.types.pop();
+    },
+    (p) => {
+      delete p.presentation.stylesheet;
+    },
+    (p) => {
+      p.presentation.stylesheet.input.sha256 = 'changed';
+    },
+    (p) => {
+      p.presentation.inputHashes = [];
+    },
+    (p) => {
+      p.presentation.outputs.shift();
+    },
+    (p) => {
+      p.frozen.pop();
+    },
+  ]) {
+    const malformed = structuredClone(proof);
+    mutate(malformed);
+    assert.throws(
+      () => presentation.readPresentation(directory, malformed),
+      /input|stylesheet|Stylesheet/
+    );
+    malformed.profile = 'a2ui-surfaces';
+    malformed.presentation.profile = 'a2ui-surfaces';
+    assert.throws(
+      () => presentation.readPresentation(directory, malformed, { profile: 'markdown' }),
+      /input|stylesheet|Stylesheet/
+    );
+  }
   const missing = structuredClone(proof);
-  missing.frozen.pop();
+  missing.frozen.splice(2, 1);
   assert.throws(
     () => presentation.readPresentation(directory, missing),
     /frozen/
@@ -105,12 +214,15 @@ test('frozen presentation requires all outputs and rejects missing, tampered and
     /outputs/
   );
   const traversal = structuredClone(proof);
-  traversal.presentation.assets[0].path =
+  traversal.presentation.assets[1].path =
     'presentation-output/browser/../browser/main.js';
   assert.throws(
     () => presentation.readPresentation(directory, traversal),
     /path/
   );
+  writeFileSync(installed, 'changed installed stylesheet');
+  assert.throws(() => presentation.readPresentation(directory, proof), /stylesheet bytes/);
+  writeFileSync(installed, readFileSync(join(output, 'default-transcript-chat.css')));
   writeFileSync(join(output, 'main.js'), 'tampered');
   assert.throws(
     () => presentation.readPresentation(directory, proof),

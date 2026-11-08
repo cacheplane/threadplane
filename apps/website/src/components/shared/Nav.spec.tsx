@@ -284,7 +284,7 @@ describe('Docs mobile navigation', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Docs' }));
     expect(
       within(dialog).getByRole('link', { name: /Getting started/ }).getAttribute('href'),
-    ).toBe('/docs/angular/getting-started/introduction');
+    ).toBe('/docs/angular/getting-started/quickstart');
     expect(within(dialog).queryByRole('button', { name: 'Learn' })).toBeNull();
   });
 

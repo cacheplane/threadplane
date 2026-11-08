@@ -10,6 +10,8 @@ export interface ToolCallInfo {
   name: string;
   args: unknown;
   result?: unknown;
+  /** Literal diagnostic error, independent of result. */
+  error?: unknown;
   /** Optional — present when the parent provides it. Drives the pill + default-collapsed logic. */
   status?: ToolCallStatus;
 }
@@ -99,6 +101,7 @@ export interface ToolCallInfo {
           <pre class="tcc__section-body">{{ formatJson(toolCall().result) }}</pre>
         </div>
       }
+      @if (toolCall().error !== undefined) { <div class="tcc__section"><p class="tcc__section-label">Error</p><pre class="tcc__section-body">{{ formatJson(toolCall().error) }}</pre></div> }
     </chat-trace>
   `,
 })

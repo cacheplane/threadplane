@@ -11,6 +11,8 @@ const pages = [
   'chat/components/chat-message-list',
   'chat/components/chat-popup',
   'chat/components/chat-reasoning',
+  'chat/components/chat-error',
+  'chat/components/typing-indicator',
   'chat/concepts/message-model',
   'render/getting-started/quickstart',
   'render/guides/events',

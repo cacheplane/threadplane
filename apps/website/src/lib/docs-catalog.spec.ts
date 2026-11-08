@@ -33,10 +33,20 @@ describe('explicit narrative document catalog', () => {
   });
 
   it('keeps logical identities and canonical variant destinations unique', () => {
-    expect(documentCatalog).toHaveLength(118);
+    expect(documentCatalog).toHaveLength(120);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
     const variants = getNarrativeDocuments();
-    expect(variants).toHaveLength(187);
+    expect(variants).toHaveLength(189);
+    expect(getDocumentVariant('chat/components/chat-error', 'react')).toMatchObject({
+      source: 'react/chat/components/chat-error.mdx',
+      apiEntrypointIds: ['react/chat'],
+    });
+    expect(getDocumentVariant('chat/components/chat-error', 'angular')).toBeUndefined();
+    expect(getDocumentVariant('chat/components/typing-indicator', 'react')).toMatchObject({
+      source: 'react/chat/components/typing-indicator.mdx',
+      apiEntrypointIds: ['react/chat'],
+    });
+    expect(getDocumentVariant('chat/components/typing-indicator', 'angular')).toBeUndefined();
     expect(new Set(variants.map(doc => doc.href)).size).toBe(variants.length);
     expect(new Set(variants.map(doc => doc.source)).size).toBe(variants.length);
   });
@@ -103,16 +113,18 @@ describe('explicit narrative document catalog', () => {
     }
   });
 
-  it('has honest framework landing guides independently of runnable capabilities', () => {
+  it('starts with honest build-first quickstarts independently of runnable capabilities', () => {
     for (const framework of ['angular', 'react'] as const) {
-      const doc = getDocumentVariant('getting-started/introduction', framework)!;
+      expect(getDocumentVariant('getting-started/introduction', framework)).toBeUndefined();
+      const doc = getDocumentVariant('getting-started/quickstart', framework)!;
       expect(doc.library).toBeNull();
-      expect(doc.href).toBe(`/docs/${framework}/getting-started/introduction`);
+      expect(doc.href).toBe(`/docs/${framework}/getting-started/quickstart`);
+      expect(getFrameworkDocuments(framework)[0]).toEqual(doc);
       expect(doc).not.toHaveProperty('capabilityId');
       const source = fs.readFileSync(path.join(contentRoot, doc.source), 'utf8');
       expect(source).toContain(framework === 'react'
-        ? '/docs/react/langgraph/getting-started/quickstart'
-        : '/docs/angular/langgraph/guides/streaming');
+        ? '/docs/react/langgraph/guides/streaming'
+        : '/docs/angular/langgraph/getting-started/quickstart');
       if (framework === 'react') {
         expect(source).toMatch(/private.*source.build/i);
         expect(source).not.toMatch(/npm (?:install|i) @threadplane\/react/);
@@ -131,8 +143,8 @@ describe('explicit narrative document catalog', () => {
       expect(source.indexOf('<DocsDemoVideo')).toBeLessThan(source.indexOf('<LearningWorkbench'));
       expect(source).toContain(`/docs/${framework}/langgraph/guides/streaming`);
       expect(source).toContain('fixture');
-      const introduction = getDocumentVariant('getting-started/introduction', framework)!;
-      expect(fs.readFileSync(path.join(contentRoot, introduction.source), 'utf8')).toContain(doc.href);
+      const quickstart = getDocumentVariant('getting-started/quickstart', framework)!;
+      expect(fs.readFileSync(path.join(contentRoot, quickstart.source), 'utf8')).toContain(doc.href);
     }
   });
 });
@@ -153,5 +165,5 @@ it('validates optional lesson and API associations without requiring a lesson', 
       expect([doc.scope, 'shared'], doc.href).toContain(api?.framework);
     }
   }
-  expect(getDocumentVariant('getting-started/introduction', 'react')?.lessonId).toBeUndefined();
+  expect(getDocumentVariant('getting-started/quickstart', 'react')?.lessonId).toBeUndefined();
 });

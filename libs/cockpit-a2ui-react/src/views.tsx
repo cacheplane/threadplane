@@ -241,7 +241,8 @@ export function A2uiSurface({
         />
       </Context.Provider>
       <details className="a2ui-wire">
-        <summary>Response details</summary>
+        <summary>Details</summary>
+        <p>Response source</p>
         <pre>{surface.wire}</pre>
       </details>
     </section>

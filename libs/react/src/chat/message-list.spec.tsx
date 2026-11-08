@@ -36,6 +36,145 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('resolves provider-only inline references and Markdown-only Sources from projected rows', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap([
+        msg('provider', 'Read [^p] and [^missing].', {
+          citations: [
+            { id: 'p', index: 7, title: 'Provider', url: '/provider' },
+          ],
+        }),
+        msg(
+          'markdown',
+          'Read [^m].\n\n[^m]: Markdown source [link](/markdown)\n'
+        ),
+        msg('empty', 'No sources'),
+      ])
+    );
+    const view = render(<MessageList rows={rows} />);
+    expect(
+      view
+        .getByRole('link', { name: 'Citation 7: Provider (opens in new tab)' })
+        .getAttribute('href')
+    ).toBe('/provider');
+    expect(view.getByLabelText('Unresolved citation missing').textContent).toBe(
+      '[^missing]'
+    );
+    expect(view.getAllByRole('region', { name: 'Sources' })).toHaveLength(2);
+    expect(view.getAllByRole('link', { name: 'Markdown source' })).toHaveLength(
+      1
+    );
+    expect(view.queryByRole('dialog')).toBeNull();
+    content.dispose();
+  });
+
+  it('merges Sources in stable index order and keeps unsafe provider collisions authoritative', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap([
+        msg(
+          'mixed',
+          'Read [^collision].\n\n[^collision]: [Fallback](/fallback)\n\n[^md]: Markdown only\n',
+          {
+            citations: [
+              { id: 'late', index: 9, title: 'Late' },
+              { id: 'tie-first', index: 2, title: 'Tie first' },
+              { id: 'tie-second', index: 2, title: 'Tie second' },
+              {
+                id: 'collision',
+                index: 1,
+                title: '<b>Provider</b>',
+                url: 'javascript:alert(1)',
+                snippet: '<img src=x>',
+              },
+            ],
+          }
+        ),
+      ])
+    );
+    const view = render(<MessageList rows={rows} />);
+    expect(
+      [
+        ...view
+          .getByRole('region', { name: 'Sources' })
+          .querySelectorAll('.tp-citations__title'),
+      ].map((node) => node.textContent)
+    ).toEqual([
+      '<b>Provider</b>',
+      'Tie first',
+      'Tie second',
+      'Markdown only',
+      'Late',
+    ]);
+    expect(
+      view.getByLabelText('Citation 1: <b>Provider</b>').querySelector('a')
+    ).toBeNull();
+    expect(
+      view.container.querySelector(
+        'a[href="/fallback"],a[href^="javascript:"],b,img'
+      )
+    ).toBeNull();
+    expect(view.getByText('<img src=x>')).toBeTruthy();
+    content.dispose();
+  });
+
+  it('updates same-ID metadata without replacing accepted Markdown and removes provider-only Sources', () => {
+    const content = createMessageContent();
+    const project = (title?: string) =>
+      content.project(
+        snap([
+          msg('same', 'Read [^p].', {
+            citations: title
+              ? [{ id: 'p', index: 4, title, url: '/' + title }]
+              : [],
+          }),
+        ])
+      );
+    const before = project('before');
+    const view = render(<MessageList rows={before} />);
+    const after = project('after');
+    expect(after[0].markdown).toBe(before[0].markdown);
+    view.rerender(<MessageList rows={after} />);
+    expect(
+      view
+        .getByRole('link', { name: 'Citation 4: after (opens in new tab)' })
+        .getAttribute('href')
+    ).toBe('/after');
+    expect(view.queryByText('before')).toBeNull();
+    view.rerender(<MessageList rows={project()} />);
+    expect(view.queryByRole('region', { name: 'Sources' })).toBeNull();
+    expect(view.getByLabelText('Unresolved citation p')).toBeTruthy();
+    content.dispose();
+  });
+
+  it('withholds provider metadata from nonassistant Markdown while tools and custom rows stay literal', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        ['user', 'system', 'tool'].map((role) =>
+          msg(role, 'Read [^p].\n\n[^m]: Local definition\n', {
+            role: role as Message['role'],
+            citations: [{ id: 'p', index: 1, title: 'Private provider' }],
+          })
+        )
+      )
+    );
+    const view = render(<MessageList rows={rows} />);
+    expect(view.getAllByLabelText('Unresolved citation p')).toHaveLength(2);
+    expect(view.queryByRole('region', { name: 'Sources' })).toBeNull();
+    expect(
+      view.container.querySelector('.tp-chat-message--tool pre')?.textContent
+    ).toContain('[^m]: Local definition');
+    view.rerender(
+      <MessageList
+        rows={rows}
+        renderMessage={(row) => <p>{row.message.content}</p>}
+      />
+    );
+    expect(view.container.querySelector('sup,article,.tp-markdown')).toBeNull();
+    content.dispose();
+  });
   it('follows approval-only changes while pinned and preserves a reader who scrolled up', () => {
     vi.stubGlobal('ResizeObserver', undefined);
     const rows: readonly never[] = [];
@@ -328,7 +467,7 @@ describe('MessageList', () => {
       view.container.querySelector('.tp-chat-message--tool pre')?.textContent
     ).toBe('<b>raw</b>');
     expect(view.container.querySelector('b')).toBeNull();
-    const obs = view.getAllByRole('region', { name: 'Tool observation' });
+    const obs = view.container.querySelectorAll('.tp-tool-activity');
     expect(obs).toHaveLength(1);
     expect(obs[0].textContent).toContain('lookup');
     expect(obs[0].textContent).toContain('"q": 1');
@@ -349,9 +488,11 @@ describe('MessageList', () => {
     );
     const view = render(<MessageList rows={rows} />);
     expect(
-      view.getByRole('region', { name: 'Tool observation' }).textContent
+      view.container.querySelector('.tp-tool-activity')!.textContent
     ).toContain('boom <i>bad</i>');
     expect(view.container.querySelector('i')).toBeNull();
+    expect(view.getByRole('alert').closest('details')).toBeNull();
+    expect(view.container.querySelector('details')!.open).toBe(false);
   });
 
   it('uses the default label and honours label and className', () => {

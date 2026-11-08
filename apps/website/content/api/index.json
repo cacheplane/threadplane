@@ -2434,6 +2434,26 @@
       "summary": "Lists agent checkpoints and emits replay or fork requests for their identifiers."
     },
     {
+      "name": "ChatToolActivityComponent",
+      "entrypointId": "chat",
+      "kind": "Class",
+      "href": "/docs/api/chat/ChatToolActivityComponent",
+      "canonicalReference": "@threadplane/chat!ChatToolActivityComponent:class",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Human-readable activity with literal Details and an always-mounted rich-result slot."
+    },
+    {
+      "name": "ChatToolActivityGroupComponent",
+      "entrypointId": "chat",
+      "kind": "Class",
+      "href": "/docs/api/chat/ChatToolActivityGroupComponent",
+      "canonicalReference": "@threadplane/chat!ChatToolActivityGroupComponent:class",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Opt-in group for related tools; does not group custom views or manage their lifecycle."
+    },
+    {
       "name": "ChatToolCallCardComponent",
       "entrypointId": "chat",
       "kind": "Class",
@@ -3952,6 +3972,46 @@
       "isDeprecated": false,
       "isTypeOnly": false,
       "summary": "Build the catalog spec list shipped to the model."
+    },
+    {
+      "name": "ToolActivityDelivery",
+      "entrypointId": "chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/chat/ToolActivityDelivery",
+      "canonicalReference": "@threadplane/chat!ToolActivityDelivery:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Observed response delivery facts; a pause does not establish approval."
+    },
+    {
+      "name": "ToolActivityInfo",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivityInfo",
+      "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Literal evidence and optional app-authored labels for a tool activity."
+    },
+    {
+      "name": "toolActivityPhase",
+      "entrypointId": "chat",
+      "kind": "Function",
+      "href": "/docs/api/chat/toolActivityPhase",
+      "canonicalReference": "@threadplane/chat!toolActivityPhase:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Display-only reconciliation. Completed tools retain their outcome after a later Stop."
+    },
+    {
+      "name": "ToolActivityPhase",
+      "entrypointId": "chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/chat/ToolActivityPhase",
+      "canonicalReference": "@threadplane/chat!ToolActivityPhase:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Explicit readonly presentation state, separate from execution/session ownership."
     },
     {
       "name": "ToolArgs",
@@ -5774,6 +5834,26 @@
       "summary": "Transcript, error and composer wired to an app-owned `AgentSession`."
     },
     {
+      "name": "ChatError",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ChatError",
+      "canonicalReference": "@threadplane/react!ChatError:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Passive, literal error notice with at most one supported recovery action."
+    },
+    {
+      "name": "ChatErrorProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ChatErrorProps",
+      "canonicalReference": "@threadplane/react!ChatErrorProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Displays an already classified error and explicit application-owned recovery intents."
+    },
+    {
       "name": "ChatInput",
       "entrypointId": "react/chat",
       "kind": "Variable",
@@ -5931,7 +6011,7 @@
       "canonicalReference": "@threadplane/react!CitationPreview:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Explicit source details with local presentation state and no source fetching."
+      "summary": "Explicit source details and local source summary with no source fetching."
     },
     {
       "name": "CitationPreviewProps",
@@ -6012,6 +6092,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "App-supplied search row whose unique ID is returned on selection, with title and optional subtitle."
+    },
+    {
+      "name": "isTyping",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/isTyping",
+      "canonicalReference": "@threadplane/react!isTyping:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Whether a borrowed text-only snapshot is waiting for its first assistant text."
     },
     {
       "name": "MessageAction",
@@ -6294,6 +6384,86 @@
       "summary": "Supplies ordered checkpoints, controlled selection, and an optional complete-row rendering override."
     },
     {
+      "name": "ToolActivity",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ToolActivity",
+      "canonicalReference": "@threadplane/react!ToolActivity:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Human-readable activity with opt-in literal inspection and a persistent rich-result slot."
+    },
+    {
+      "name": "ToolActivityDelivery",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/ToolActivityDelivery",
+      "canonicalReference": "@threadplane/react!ToolActivityDelivery:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Observed delivery evidence; a pause does not establish approval."
+    },
+    {
+      "name": "ToolActivityGroup",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ToolActivityGroup",
+      "canonicalReference": "@threadplane/react!ToolActivityGroup:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Opt-in message/turn group. Individual disclosure state follows call IDs."
+    },
+    {
+      "name": "ToolActivityGroupProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityGroupProps",
+      "canonicalReference": "@threadplane/react!ToolActivityGroupProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Explicit opt-in grouping for related display activities, with no execution ownership."
+    },
+    {
+      "name": "ToolActivityInfo",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityInfo",
+      "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Readonly activity evidence. Does not own execution, approval, sessions or persistence."
+    },
+    {
+      "name": "toolActivityPhase",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/toolActivityPhase",
+      "canonicalReference": "@threadplane/react!toolActivityPhase:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Resolve unresolved activity against explicit delivery facts without changing execution state."
+    },
+    {
+      "name": "ToolActivityPhase",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/ToolActivityPhase",
+      "canonicalReference": "@threadplane/react!ToolActivityPhase:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads."
+    },
+    {
+      "name": "ToolActivityProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityProps",
+      "canonicalReference": "@threadplane/react!ToolActivityProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Presentation evidence and an independently mounted rich-result/action slot."
+    },
+    {
       "name": "ToolObservation",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6312,6 +6482,26 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Literal observed text. The caller owns tool/result association and formatting."
+    },
+    {
+      "name": "TypingIndicator",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/TypingIndicator",
+      "canonicalReference": "@threadplane/react!TypingIndicator:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Readable waiting label with decorative dots and optional polite announcement."
+    },
+    {
+      "name": "TypingIndicatorProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/TypingIndicatorProps",
+      "canonicalReference": "@threadplane/react!TypingIndicatorProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Controlled waiting presentation; no session, execution or lifetime ownership."
     },
     {
       "name": "Welcome",

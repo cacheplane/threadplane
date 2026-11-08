@@ -6,9 +6,12 @@ import {
   ChatInput,
   MessageList,
   Reasoning,
-  ToolObservation,
+  ToolActivityGroup,
+  toolActivityPhase,
   type ChatInputHandle,
 } from '@threadplane/react/chat';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Pure metadata copied into the isolated consumer.
+import { exampleToolLabel } from '../../../../shared/tool-presentation';
 import { Markdown } from '@threadplane/react/markdown';
 import { RenderSpec, type RenderSpecProps } from '@threadplane/react/render';
 import type { MessageRow } from '@threadplane/content/messages';
@@ -48,9 +51,25 @@ export function renderMessage(row: MessageRow, snapshot: GenerativeUiSnapshot) {
       {row.role === 'assistant' && row.reasoning && (
         <Reasoning snapshot={row.reasoning} />
       )}
+      {calls.length > 0 && (
+        <ToolActivityGroup
+          label="Airline data activity"
+          activities={calls.map((call) => ({
+            id: call.id,
+            name: call.name,
+            label: exampleToolLabel(call.name),
+            phase: toolActivityPhase(call.status, row.message.delivery),
+            argumentsText: literal(call.args) ?? '',
+            resultText:
+              call.status === 'complete' ? literal(call.result) : undefined,
+            errorText: call.status === 'error' ? call.error : undefined,
+          }))}
+        />
+      )}
       {surface ? null : row.role === 'tool' ? (
         <details>
-          <summary>Server tool result</summary>
+          <summary>Details</summary>
+          <p>Server tool result</p>
           <pre>{row.message.content}</pre>
         </details>
       ) : (
@@ -69,30 +88,12 @@ export function renderMessage(row: MessageRow, snapshot: GenerativeUiSnapshot) {
       )}
       {surface && (
         <details>
-          <summary>Layout source</summary>
+          <summary>Details</summary>
+          <p>Layout source</p>
           <pre>{row.message.content}</pre>
         </details>
       )}
       {notice && <p role="status">{notice.text}</p>}
-      {calls.map((call) => (
-        <details key={call.id} className="tool-inspection">
-          <summary>
-            {call.name} · {call.status}
-          </summary>
-          <ToolObservation
-            name={call.name}
-            argumentsText={literal(call.args) ?? ''}
-            resultText={
-              call.status === 'complete'
-                ? literal(call.result)
-                : call.status === 'error'
-                ? call.error
-                : undefined
-            }
-            label={`Observed tool: ${call.status}`}
-          />
-        </details>
-      ))}
     </article>
   );
 }

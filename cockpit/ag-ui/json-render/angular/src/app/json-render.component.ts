@@ -1,3 +1,4 @@
+import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/ag-ui';
@@ -41,7 +42,7 @@ const WELCOME_SUGGESTIONS = [
       title="AG-UI airline dashboard"
       description="Ask for an airline dashboard, then filter the disruptions or change its layout. This example uses fixed demo data."
     >
-      <chat placeholder="Ask for an airline dashboard…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for an airline dashboard…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
         <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
@@ -53,6 +54,7 @@ const WELCOME_SUGGESTIONS = [
   `,
 })
 export class JsonRenderComponent {
+  protected readonly toolLabel = exampleToolLabel;
   protected readonly agent = injectAgent();
   protected readonly dashboardViews = dashboardViews;
   protected readonly suggestions = WELCOME_SUGGESTIONS;

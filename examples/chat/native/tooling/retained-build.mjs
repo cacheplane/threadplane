@@ -305,6 +305,8 @@ function selectedInputs(p, selected) {
       ['message-actions', 'MessageActions'],
       ['citations', 'Citations'],
       ['text-transcript', 'TextTranscript'],
+      ['error', 'ChatError'],
+      ['typing-indicator', 'TypingIndicator/isTyping'],
     ]) {
       const list = 'node_modules/@threadplane/react/src/chat/' + name;
       assert.ok(

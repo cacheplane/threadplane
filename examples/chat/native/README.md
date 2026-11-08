@@ -53,6 +53,17 @@ source card; its safe **Open source** link opens a new tab. Unsafe or missing
 destinations remain literal metadata, and unresolved references retain their
 syntax. Default Markdown rendering keeps direct links. User rows receive no citation
 metadata. Sources and parser ownership remain with the application.
+Both inline cards and explicit source modals show local decorative source markers,
+normalized type badges, hostnames and formatted dates above their original literal
+details. Installed checks cover narrow RTL previews with app stylesheets disabled,
+unchanged keyboard controls, no provider image requests, and live summary updates.
+
+The library's default `MessageList` rows use the same accepted source resolution.
+The installed Markdown presentation fixture separately verifies default rows with
+provider-only, Markdown-only and mixed sources, safe-link collision handling, and
+metadata-only corrections. This native app continues to exercise its custom row
+composition; the default-row fixture uses the installed package in an isolated
+shadow root with its actual chat stylesheet.
 
 Assistant Sources lists opt into `Citations.collapsible` and an app-owned
 `renderCard` callback. The stable callback returns a local source card composed
@@ -537,6 +548,21 @@ servers or reuse another session's directory.
   its heading adopts the returned title; the transcript and draft stay as they
   are, and a conversation missing from the list stays selected. Titles are not
   otherwise kept current. **Retry** explicitly retries a failed selection.
+
+React derives `TypingIndicator` from the ready selected runtime with `isTyping`:
+running with no messages, last user, or empty last assistant content waits for
+text. First assistant text (including whitespace), tool/system last messages,
+idle/error, or replacing the selection clears that presentation. It uses
+`announce={false}` because the existing composer submission status owns the live
+announcement. The indicator adds no commands, subscriptions, focus changes, or
+draft/lifetime ownership. This is bounded text-only waiting presentation, not
+complete typing or runtime parity.
+
+React displays the ready selected runtime's classified error through `ChatError`.
+Its message and detail are literal accessible text. This application's selection
+Retry reloads the selection; it is not execution recovery. The application exposes
+no execution retry or check-status callback, so the runtime error notice supplies
+neither action. Clearing the error or leaving the ready selection removes it.
 - **Stop** requests local cancellation and closes the local stream. It does not
   guarantee that the server run has stopped.
 - If a creation response is lost, creation is shown as unconfirmed: a server

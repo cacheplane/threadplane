@@ -11,6 +11,7 @@ import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatPopup,
+  ChatError,
   ChatSidebar,
   Citations,
   ConfirmDialog,
@@ -18,6 +19,8 @@ import {
   Reasoning,
   ThreadList,
   ToolObservation,
+  TypingIndicator,
+  isTyping,
 } from '@threadplane/react/chat';
 import type {
   ReactApplication as Application,
@@ -860,6 +863,7 @@ function Conversation({
             )}
             {selection.status === 'ready' && (
               <>
+                <ChatError error={snapshot.runtime?.error} />
                 <MessageList
                   key={selection.id}
                   rows={snapshot.messages}
@@ -867,6 +871,12 @@ function Conversation({
                   label="Conversation messages"
                   className="transcript"
                 />
+                {snapshot.runtime && (
+                  <TypingIndicator
+                    active={isTyping(snapshot.runtime)}
+                    announce={false}
+                  />
+                )}
                 {snapshot.messages.length === 0 && (
                   <p className="empty-state">
                     This conversation has no messages yet.

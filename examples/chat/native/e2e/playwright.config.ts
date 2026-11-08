@@ -35,6 +35,8 @@ export default defineConfig({
     'ordering.spec.ts',
     'drag-ordering.spec.ts',
     'delete.spec.ts',
+    'error.spec.ts',
+    'typing-indicator.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,
