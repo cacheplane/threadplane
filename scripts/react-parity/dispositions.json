@@ -2087,6 +2087,20 @@
       "reason": "Native component. Role/alignment/avatar/content slots and semantic transcript rendering."
     },
     {
+      "id": "component:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts#OwnedMarkdownBodyComponent",
+      "taskIds": ["T23", "T26"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular OnPush ownership of default markdown on the existing message-body div; no new consumer input or package export. Public Chat and markdown parity remain separately tracked."
+    },
+    {
+      "id": "component:libs/chat/src/lib/primitives/chat-message/owned-markdown-context.ts#OwnedMarkdownContextDirective",
+      "taskIds": ["T23", "T26"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular composition-to-body signal bridge for stable markdown ownership; raw message inputs and rich projections remain independent. This does not mark public Chat or markdown parity complete."
+    },
+    {
       "id": "component:libs/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts#ChatOverflowMenuComponent",
       "taskIds": [
         "T22"
@@ -10471,6 +10485,20 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts",
+      "taskIds": ["T23", "T26"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular OnPush ownership of default markdown on the existing message-body div; no new consumer input or package export. Public Chat and markdown parity remain separately tracked."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-message/owned-markdown-context.ts",
+      "taskIds": ["T23", "T26"],
+      "treatment": "internal",
+      "status": "complete",
+      "reason": "Private Angular composition-to-body signal bridge for stable markdown ownership; raw message inputs and rich projections remain independent. This does not mark public Chat or markdown parity complete."
+    },
+    {
       "id": "source:libs/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts",
       "taskIds": [
         "T22"
@@ -16498,7 +16526,7 @@
       "reason": "Private pure connected preview geometry aligns below-start, flips above and clamps to the current viewport with RTL and visual viewport offsets. It does not expose a generic React overlay primitive."
     },
     {
-      "id": "doc:apps/website/content/docs/angular/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -16748,7 +16776,7 @@
       "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
     },
     {
-      "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/react/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"

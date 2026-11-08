@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import {
   apiSymbolHref,
   type ApiEntrypoint,
@@ -61,6 +62,7 @@ export function ApiNavigation({
         return (
           <details key={entry.id} open={active}>
             <summary>
+              <ChevronRight size={14} aria-hidden="true" className="api-reference-navigation-chevron" />
               <span>{entry.importPath}</span>
             </summary>
             <Link

@@ -70,6 +70,14 @@ export const nextConfig: WithNxOptions = {
   // deletion, so every retired path lands on /privacy rather than a 404.
   redirects: async () => [
     ...apiLegacyRedirects,
+    // Framework entry guides now start with a working conversation.
+    ...(['angular', 'react'] as const).flatMap((framework) =>
+      ['/docs', '/api/markdown'].map((prefix) => ({
+        source: `${prefix}/${framework}/getting-started/introduction`,
+        destination: `${prefix}/${framework}/getting-started/quickstart`,
+        permanent: true,
+      }))
+    ),
     { source: '/docs/telemetry', destination: '/privacy', permanent: true },
     {
       source: '/docs/telemetry/:path*',

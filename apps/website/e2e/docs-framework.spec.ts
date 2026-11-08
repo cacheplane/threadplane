@@ -5,6 +5,41 @@ const angular = '/docs/angular/langgraph/guides/streaming';
 const react = '/docs/react/langgraph/guides/streaming';
 const preferenceKey = 'threadplane.docs.framework';
 
+for (const framework of ['angular', 'react'] as const) {
+  test(`${framework} starts with a build-first quickstart, then the workbench`, async ({ page, request }) => {
+    const name = framework === 'react' ? 'React' : 'Angular';
+    const quickstart = `/docs/${framework}/getting-started/quickstart`;
+    await page.goto('/docs');
+    await page.getByRole('link', { name: new RegExp(`^Start with ${name}`) }).click();
+    await expect(page).toHaveURL(quickstart);
+    await expect(page.getByRole('heading', { name: `Build your first ${name} conversation`, exact: true })).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://threadplane.ai${quickstart}`);
+    await expect(page.locator('iframe')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Quickstart', exact: true })).toHaveAttribute('aria-current', 'page');
+
+    for (const prefix of ['/docs', '/api/markdown']) {
+      const retired = await request.get(`${prefix}/${framework}/getting-started/introduction`, { maxRedirects: 0 });
+      expect(retired.status()).toBe(308);
+      expect(new URL(retired.headers()['location'], page.url()).pathname).toBe(`${prefix}/${framework}/getting-started/quickstart`);
+    }
+    const markdown = await request.get(`/api/markdown/${framework}/getting-started/quickstart`);
+    expect(markdown.ok()).toBe(true);
+    expect(await markdown.text()).toContain(`# Build your first ${name} conversation`);
+
+    const other = framework === 'react' ? 'angular' : 'react';
+    await selectFramework(page, other);
+    await expect(page).toHaveURL(`/docs/${other}/getting-started/quickstart`);
+    await selectFramework(page, framework);
+    await expect(page).toHaveURL(quickstart);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole('link', { name: 'Learn about turns', exact: true }).click();
+    await expect(page).toHaveURL(`/docs/${framework}/getting-started/workbench`);
+    await expect(page.getByRole('heading', { name: 'Watch a turn unfold.', exact: true })).toBeVisible();
+  });
+}
+
 // These tests need only the website at BASE_URL, never a running example backend.
 test('a JavaScript-disabled hard load renders the selected React article and canonical metadata', async ({ browser, baseURL }) => {
   // Next dev streams the article into a hidden Suspense segment that needs
@@ -99,18 +134,17 @@ test('missing counterparts stay unavailable with a separate introduction destina
   await expect(page.getByRole('menuitemradio', { name: /React/ })).toBeDisabled();
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-framework-selector]:visible').getByText('This topic is not available for React.')).toBeVisible();
-  const introduction = page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React introduction', exact: true });
-  await expect(introduction).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  const introduction = page.locator('[data-framework-selector]:visible').getByRole('link', { name: 'React quickstart', exact: true });
+  await expect(introduction).toHaveAttribute('href', '/docs/react/getting-started/quickstart');
   await introduction.click();
-  await expect(page).toHaveURL('/docs/react/getting-started/introduction');
-  await expect(page.getByRole('heading', { name: 'React documentation', exact: true })).toBeVisible();
+  await expect(page).toHaveURL('/docs/react/getting-started/quickstart');
+  await expect(page.getByRole('heading', { name: 'Build your first React conversation', exact: true })).toBeVisible();
 });
 
 for (const width of [1440, 390]) {
   test(`React onboarding reaches a real quickstart counterpart at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/docs/react/getting-started/introduction');
-    await page.locator('article').getByRole('link', { name: 'chat quickstart', exact: true }).click();
+    await page.goto('/docs/react/chat/getting-started/quickstart');
     await expect(page).toHaveURL('/docs/react/chat/getting-started/quickstart');
     await expect(page.getByRole('heading', { name: 'Compose your first React chat', exact: true })).toBeVisible();
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://threadplane.ai/docs/react/chat/getting-started/quickstart');
@@ -130,7 +164,7 @@ test('shared documents keep their canonical identity when guide preference chang
   await expect(page).toHaveURL(shared);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://threadplane.ai${shared}`);
   await expect(page.locator('[data-docs-framework="shared"]')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'React overview', exact: true })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  await expect(page.locator('.docs-sidebar-top-link').filter({ hasText: /^React quickstart$/ })).toHaveAttribute('href', '/docs/react/getting-started/quickstart');
 });
 
 test('storage denial retains explicit framework selection in the current tab', async ({ page }) => {
@@ -141,7 +175,7 @@ test('storage denial retains explicit framework selection in the current tab', a
   await page.goto('/docs/shared/middleware/getting-started/introduction');
   await chooseFramework(page, 'react');
   await expect(await frameworkControl(page)).toHaveAttribute('data-value', 'react');
-  await expect(page.getByRole('link', { name: 'React overview', exact: true })).toHaveAttribute('href', '/docs/react/getting-started/introduction');
+  await expect(page.locator('.docs-sidebar-top-link').filter({ hasText: /^React quickstart$/ })).toHaveAttribute('href', '/docs/react/getting-started/quickstart');
 });
 
 test('cross-tab preference changes do not navigate or relabel an open article', async ({ page, context }) => {

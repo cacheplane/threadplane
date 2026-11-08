@@ -22,7 +22,7 @@ export function preferredDocsHref(framework: DocsFramework): string {
   return docsNarrativeHref({
     scope: 'framework',
     framework,
-    slug: ['getting-started', 'introduction'],
+    slug: ['getting-started', 'quickstart'],
   });
 }
 

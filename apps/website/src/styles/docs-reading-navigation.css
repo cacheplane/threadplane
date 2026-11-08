@@ -1,7 +1,5 @@
-/* Compact navigation shared by Angular and React framework articles. */
-body:has(
-    [data-website-workspace-host][data-docs-reading]
-  ) {
+/* Compact navigation shared by the docs landing page, articles, and API reference. */
+body:has([data-docs-reading]) {
   [data-docs-control-plane-context][data-docs-navigation-compact] {
     gap: 0;
     padding: 24px 20px 40px;
@@ -116,6 +114,10 @@ body:has(
 
   [data-docs-navigation-compact] .docs-sidebar-top-links {
     margin: 20px 0 0;
+  }
+
+  [data-docs-navigation-compact] [data-docs-navigation] > .docs-sidebar-top-links:first-child {
+    margin: 0 0 24px;
   }
 
   [data-docs-navigation-compact] .docs-sidebar-top-link,
