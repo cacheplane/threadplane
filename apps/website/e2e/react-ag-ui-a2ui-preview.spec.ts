@@ -65,7 +65,7 @@ async function emptyRun(page: Page, draft = '') {
   await expect(
     frame.getByRole('heading', { name: 'Plan a flight', exact: true })
   ).toBeVisible();
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   await expect(
     frame
       .getByRole('region', { name: 'Conversation', exact: true })
@@ -248,7 +248,7 @@ test('native AG-UI A2UI accepts the supported AG-UI iframe endpoint without star
     .getByRole('button', { name: 'Close Settings', exact: true })
     .click();
   await expect(settings).toBeHidden();
-  await expect(page.frameLocator('iframe').getByRole('status')).toHaveText(
+  await expect(page.frameLocator('iframe').getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Ready.'
   );
   await page

@@ -22,7 +22,11 @@ const config = JSON.parse(
   readFileSync(join(root, 'tools/tool-rendering-benchmark/participants.json'))
 );
 mkdirSync(destination, { recursive: true });
-assert.ok(!existsSync(join(destination, 'react/consumer')) && !existsSync(join(destination, 'angular/node_modules')), 'Installed SDK consumers are frozen evidence. Choose a fresh destination.');
+assert.ok(
+  !existsSync(join(destination, 'react/consumer')) &&
+    !existsSync(join(destination, 'angular/node_modules')),
+  'Installed SDK consumers are frozen evidence. Choose a fresh destination.'
+);
 const json = (path, value) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n');
 const install = (path) =>
@@ -190,10 +194,23 @@ for (const consumer of [vendor, angular, join(reactRoot, 'consumer')]) {
     join(root, 'tools/tool-rendering-benchmark/consumers/shell.css'),
     join(consumer, 'shell.css')
   );
+  if (consumer !== vendor)
+    cpSync(
+      join(root, 'tools/tool-rendering-benchmark/consumers/tool-outcome.ts'),
+      join(consumer, 'tool-outcome.ts')
+    );
   const scenarios = Object.fromEntries(
-    ['references', 'repeated', 'falsy', 'tool-error', 'slow', 'approval'].map(
-      (id) => [id, getScenario(id)]
-    )
+    [
+      'references',
+      'repeated',
+      'falsy',
+      'tool-error',
+      'slow',
+      'approval',
+      'native-approval',
+      'partial-failure',
+      'long-mixed',
+    ].map((id) => [id, getScenario(id)])
   );
   writeFileSync(
     join(consumer, 'scenarios.mjs'),
@@ -201,8 +218,27 @@ for (const consumer of [vendor, angular, join(reactRoot, 'consumer')]) {
       JSON.stringify(scenarios) +
       ';\nexport const getScenario = id => scenarios[id];\n'
   );
-  json(join(consumer, 'tsconfig.benchmark.json'), { compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], jsx: 'react-jsx', strict: true, skipLibCheck: true, noEmit: true, allowSyntheticDefaultImports: true, allowJs: true, checkJs: false }, files: [consumer === angular ? 'main.ts' : 'main.tsx'] });
-  execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.benchmark.json'], { cwd: consumer, stdio: 'inherit' });
+  json(join(consumer, 'tsconfig.benchmark.json'), {
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'ESNext',
+      moduleResolution: 'Bundler',
+      lib: ['ES2022', 'DOM'],
+      jsx: 'react-jsx',
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+      allowSyntheticDefaultImports: true,
+      allowJs: true,
+      checkJs: false,
+    },
+    files: [consumer === angular ? 'main.ts' : 'main.tsx'],
+  });
+  execFileSync(
+    process.execPath,
+    ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.benchmark.json'],
+    { cwd: consumer, stdio: 'inherit' }
+  );
 }
 json(join(destination, 'sources.json'), provenance);
 console.log(

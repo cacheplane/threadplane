@@ -1,4 +1,4 @@
-import { exampleToolLabel } from '../../../../../shared/tool-presentation';
+import { exampleToolLabel, exampleToolOutcome } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import {
   ChatComponent,
@@ -40,7 +40,7 @@ const SUGGESTIONS = [
     >
       <button headerActions type="button" [disabled]="agent.isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
-      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask about a flight, airport, or route…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" [toolOutcome]="toolOutcome" placeholder="Ask about a flight, airport, or route…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
         <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
@@ -56,7 +56,7 @@ const SUGGESTIONS = [
       </chat>
       <div sidebar class="panel">
         <h3 class="cap">Tool Calls</h3>
-        <chat-tool-calls [agent]="agent" [groupRelated]="true" [toolLabel]="toolLabel" />
+        <chat-tool-calls [agent]="agent" [groupRelated]="true" [toolLabel]="toolLabel" [toolOutcome]="toolOutcome" />
         <div>
           <h4 class="cap">Available Tools</h4>
           <ul class="info-list">
@@ -105,6 +105,7 @@ const SUGGESTIONS = [
 // #region component
 export class ToolCallsComponent {
   protected readonly toolLabel = exampleToolLabel;
+  protected readonly toolOutcome = exampleToolOutcome;
   protected newConversation(conversation: ChatComponent): void {
     if (this.agent.isLoading()) return;
     this.agent.switchThread(null);

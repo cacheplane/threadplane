@@ -20,9 +20,12 @@ import { summarizeGroup as defaultSummarizeGroup } from './group-summary';
 import { resolveMessageToolCalls } from './resolve-message-tool-calls';
 import {
   ChatToolActivityComponent,
+  ChatToolOutcomesComponent,
   toolActivityPhase,
   type ToolActivityInfo,
+  type ToolActivityOutcome,
 } from '../chat-tool-activity/chat-tool-activity.component';
+import { activityProgress } from '../chat-tool-activity/tool-outcome';
 
 interface Group {
   key: string;
@@ -43,6 +46,7 @@ let nextChatToolCallsId = 0;
   imports: [
     NgTemplateOutlet,
     ChatToolActivityComponent,
+    ChatToolOutcomesComponent,
     ChatSubagentCardComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -112,6 +116,7 @@ let nextChatToolCallsId = 0;
         padding: 0 12px 8px;
         border-top: 1px solid var(--tplane-chat-separator);
       }
+      .tp-tool-activity__progress { color:var(--tplane-chat-text-muted); font-size:12px; margin:4px 0 8px; }
     `,
   ],
   template: `
@@ -119,17 +124,18 @@ let nextChatToolCallsId = 0;
     <chat-subagent-card [subagent]="group.subagent" />
     } @else if (!group.templateRef) {
     <!-- Default grouped strip -->
-    @let expanded = group.calls.length === 1 ||
+    @let grouped = grouping() !== 'none' && (group.calls.length > 1 || groupRelated());
+    @let expanded = !grouped ||
     expandedGroups().has(group.key);
     <div
       class="ctc__group"
-      [class.ctc__group--single]="group.calls.length === 1"
-      [attr.data-group]="group.calls.length > 1 ? true : null"
+      [class.ctc__group--single]="!grouped"
+      [attr.data-group]="grouped ? true : null"
       [attr.data-expanded]="expanded"
     >
       <button
         type="button"
-        [hidden]="group.calls.length === 1"
+        [hidden]="!grouped"
         class="ctc__group-header"
         [attr.aria-expanded]="expanded"
         [attr.aria-controls]="expanded ? groupBodyId($index) : null"
@@ -157,15 +163,19 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc)" />
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)" />
         }
       </div>
+    </div>
+      @if (grouped) {
+      <p class="tp-tool-activity__progress" role="status" aria-live="polite" aria-atomic="true">{{ progressFor(group.calls) }}</p>
+      <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
+      }
       @if (groupStatus(group.calls) === 'Failed') {
       <p role="alert">
         Some tools could not finish. Check Details before retrying.
       </p>
       }
-    </div>
     } @else if (group.templateRef) { @for (tc of group.calls; track tc.id) {
     <ng-container
       [ngTemplateOutlet]="group.templateRef.templateRef"
@@ -187,6 +197,8 @@ export class ChatToolCallsComponent {
   readonly toolLabel = input<
     ((name: string) => string | undefined) | undefined
   >(undefined);
+  /** App-authored confirmed result previews; custom tool templates keep ownership. */
+  readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
 
   /**
    * Tool names whose groups should be hidden. Used by chat compositions
@@ -340,7 +352,15 @@ export class ChatToolCallsComponent {
       error: tc.error,
     };
   }
-  protected activityFor(tc: ToolCall): ToolActivityInfo {
+  private readonly projectedActivities = computed(() => new Map(
+    this.groups().filter(group => !group.templateRef && !group.subagent)
+      .flatMap(group => group.calls.map(call => [call.id, this.projectActivity(call)] as const))
+  ));
+  protected activityFor(tc: ToolCall, withOutcome = true): ToolActivityInfo {
+    const activity = this.projectedActivities().get(tc.id) ?? this.projectActivity(tc);
+    return withOutcome ? activity : { ...activity, outcome: undefined };
+  }
+  private projectActivity(tc: ToolCall): ToolActivityInfo {
     const delivery = this.message()?.delivery;
     const phase = toolActivityPhase(tc.status, delivery);
     const literal = (value: unknown): string => {
@@ -351,7 +371,7 @@ export class ChatToolCallsComponent {
         return String(value);
       }
     };
-    return {
+    const activity: ToolActivityInfo = {
       id: tc.id,
       name: tc.name,
       label: this.toolLabel()?.(tc.name),
@@ -360,9 +380,12 @@ export class ChatToolCallsComponent {
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
       errorText: tc.error === undefined ? undefined : literal(tc.error),
     };
+    return { ...activity, outcome: this.toolOutcome()?.(activity) };
   }
+  protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map(call => this.activityFor(call)); }
+  protected progressFor(calls: readonly ToolCall[]): string { return activityProgress(this.activitiesFor(calls)); }
   protected groupStatus(calls: readonly ToolCall[]): string {
-    const phases = calls.map((call) => this.activityFor(call).phase);
+    const phases = calls.map((call) => this.activityFor(call, false).phase);
     return phases.includes('error')
       ? 'Failed'
       : phases.includes('running')

@@ -172,7 +172,7 @@ export function A2uiDemo({
             return true;
           }}
         />
-        <p role="status">{status}</p>
+        <p role="status" aria-label="Conversation status">{status}</p>
       </ExampleFooter>
     </ExampleLayout>
   );

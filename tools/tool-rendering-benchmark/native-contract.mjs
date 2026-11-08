@@ -7,7 +7,9 @@ import { createBenchmarkServer } from './server.mjs';
 import { getScenario } from './scenarios.mjs';
 
 const consumer = resolve(process.argv[2]);
-const requireConsumer = createRequire(pathToFileURL(resolve(consumer, 'package.json')));
+const requireConsumer = createRequire(
+  pathToFileURL(resolve(consumer, 'package.json'))
+);
 const { HttpAgent } = await import(
   pathToFileURL(requireConsumer.resolve('@ag-ui/client'))
 );
@@ -93,6 +95,100 @@ try {
       })
     );
   }
+  // Separate from the matched vendor workload: a protocol-native pause closes
+  // its stream, and a second request resolves the retained tool invocation.
+  for (const approved of [true, false]) {
+    const agent = new HttpAgent({
+      url: `${server.url}/ag-ui?participant=native-${approved}&scenario=native-approval`,
+    });
+    agent.addMessage({
+      id: 'user',
+      role: 'user',
+      content: getScenario('native-approval').prompt,
+    });
+    let interrupt;
+    await agent.runAgent(
+      {},
+      {
+        onRunFinishedEvent: ({ event }) => {
+          interrupt = event.outcome?.interrupts?.[0];
+        },
+      }
+    );
+    assert.ok(interrupt?.id, 'Native RUN_FINISHED carries a parsed interrupt');
+    const paused = server.receipts().at(-1);
+    assert.equal(paused.status, 'paused');
+    assert.equal(server.activeStreams(), 0);
+    await agent.runAgent({
+      resume: [
+        { interruptId: interrupt.id, status: 'resolved', payload: approved },
+      ],
+    });
+    const resumed = server.receipts().at(-1);
+    assert.equal(resumed.status, approved ? 'complete' : 'denied');
+    assert.equal(resumed.tools[0].nativeId, paused.tools[0].nativeId);
+    assert.equal(resumed.tools[0].executionCount, approved ? 1 : 0);
+    assert.equal(
+      agent.messages.filter((message) => message.role === 'tool').length,
+      1
+    );
+    console.log(
+      JSON.stringify({
+        scenario: 'native-approval',
+        approved,
+        nativeClient: '@ag-ui/client',
+        retainedToolId: true,
+      })
+    );
+  }
+  assert.equal(
+    server.savedNotes().length,
+    1,
+    'One observed local write from one explicit approval'
+  );
+  const recoveryScenario = getScenario('partial-failure');
+  const reader = new HttpAgent({
+    url: `${server.url}/ag-ui?participant=native-read&scenario=partial-failure`,
+  });
+  reader.addMessage({
+    id: 'initial-read',
+    role: 'user',
+    content: recoveryScenario.prompt,
+  });
+  await reader.runAgent();
+  const failedRead = server.receipts().at(-1);
+  assert.equal(failedRead.status, 'error');
+  const prefix = reader.messages.find(
+    (message) =>
+      message.role === 'tool' &&
+      message.toolCallId === failedRead.tools[0].nativeId
+  );
+  assert.ok(prefix, 'Successful prefix remains in native transcript');
+  reader.addMessage({
+    id: 'explicit-retry',
+    role: 'user',
+    content: recoveryScenario.retryPrompt,
+  });
+  await reader.runAgent();
+  const retriedRead = server.receipts().at(-1);
+  assert.equal(retriedRead.status, 'complete');
+  assert.equal(retriedRead.retryOf, failedRead.id);
+  assert.equal(retriedRead.tools.length, 1);
+  assert.equal(retriedRead.tools[0].canonicalId, 'read-sorted-retry');
+  assert.notEqual(retriedRead.tools[0].nativeId, failedRead.tools[1].nativeId);
+  assert.deepEqual(
+    reader.messages.find((message) => message.id === prefix.id),
+    prefix
+  );
+  assert.equal(retriedRead.promptHash, retriedRead.expectedPromptHash);
+  console.log(
+    JSON.stringify({
+      scenario: 'partial-failure',
+      nativeClient: '@ag-ui/client',
+      explicitRetry: true,
+      retainedPrefix: true,
+    })
+  );
 } finally {
   await server.close();
 }

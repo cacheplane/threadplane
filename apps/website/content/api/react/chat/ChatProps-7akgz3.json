@@ -199,7 +199,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 29
+            "line": 31
           },
           "isReadonly": true,
           "isOptional": true
@@ -331,6 +331,48 @@
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
             "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "toolOutcome",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#toolOutcome:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolOutcome?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['toolOutcome']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored confirmed result previews; execution and business confirmation remain app-owned.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 29
           },
           "isReadonly": true,
           "isOptional": true

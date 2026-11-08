@@ -14,7 +14,10 @@ test('c-tool-calls: parent dispatches lookup_flight tool, continuation surfaces 
   await expect(page.locator('chat-tool-calls').first()).toBeVisible({ timeout: 30_000 });
 
   // The shared activity retains literal technical evidence inside Details.
-  // For a single lookup_flight call (no grouping), there's exactly one card.
+  // Opted-in grouping keeps even the first call compact; its confirmed outcome
+  // remains visible before the technical call is expanded.
+  await expect(page.locator('chat .tp-tool-outcomes').first()).toContainText('UA123:');
+  await page.locator('chat .ctc__group-header:visible').first().click();
   const card = page.locator('chat-tool-activity').first();
   await expect(card).toBeVisible();
   await expect(card).toContainText('lookup_flight');
