@@ -134,7 +134,7 @@ test('untrusted saved boundaries fail closed, retain prior cards, and late held 
   const failures: any[] = [];
   for (const mode of ['checkpoint', 'task', 'title', 'structured-prefix', 'catalog', 'view', 'exact-read']) {
     await page.getByRole('button', { name: 'New conversation', exact: true }).click();
-    await expect(page.getByRole('status')).toHaveText('Ready.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
     let exact = 0;
     await page.route('**/api/**', async route => {
       const response = await route.fetch();
@@ -155,7 +155,7 @@ test('untrusted saved boundaries fail closed, retain prior cards, and late held 
     });
     await page.getByRole('button', { name: 'Try a flight request' }).click();
     await page.getByRole('textbox', { name: 'Message', exact: true }).press('Enter');
-    await expect(page.getByRole('status')).toHaveText('Start a new conversation to continue.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Start a new conversation to continue.');
     await expect(current(page)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Search flights', exact: true })).toHaveCount(0);
     failures.push({ mode, exactReads: exact });
@@ -166,7 +166,7 @@ test('untrusted saved boundaries fail closed, retain prior cards, and late held 
   await form(page); await edit(page);
   await page.route('**/state/checkpoint', route => route.fulfill({ status: 503, json: {} }));
   await current(page).getByRole('button', { name: 'Search flights', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Start a new conversation to continue.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Start a new conversation to continue.');
   await expect(earlier(page).getByLabel('Passengers', { exact: true })).toHaveValue('3');
   await expect(earlier(page).getByLabel('Passengers', { exact: true })).toBeDisabled();
   await page.unroute('**/state/checkpoint');

@@ -18,9 +18,9 @@ A traveler may see several lookups before receiving an itinerary. Each lookup ha
 
 The Run tab shows a conversation on the left and a sidebar headed "Tool Calls" on the right, with an "Available Tools" list below it naming the three aviation tools the agent can call. One welcome suggestion, "Check a flight status", asks for the status of flight UA123.
 
-The agent answers by calling `lookup_flight`, and a card named `lookup_flight` appears in the sidebar. It expands while the call is running and collapses once the result arrives; click it to read the arguments under Inputs and the flight record under Output.
+The agent answers by calling `lookup_flight`. The sidebar and transcript show “Looking up flight information,” its explicit status, and a validated flight status/gate preview when the result arrives. Open **Details** to inspect the technical name, arguments and full flight record. A failed or malformed aviation record does not receive a successful result preview.
 
-Grouping is easier to see with a second request. Ask the assistant to compare LAX and JFK: the system prompt steers it to call `get_airport_info` twice, and two consecutive calls to the same tool collapse into a single strip reading "Called get_airport_info 2 times". Click the strip to expand it and read both cards.
+Grouping is easier to see with a second request. Ask the assistant to compare LAX and JFK: two airport lookups can share a compact activity strip. Confirmed airport summaries remain outside the technical disclosure; expand the strip to inspect each distinct call. Concise counts distinguish completed, running and failed activities in a mixed group.
 
 ## How it is built
 
@@ -37,6 +37,14 @@ Three files carry the example: the graph that binds the tools and loops until th
 />
 
 These technical names identify and group calls. App-authored `toolLabel` metadata supplies readable activity labels without changing execution.
+
+### Confirmed result previews
+
+Pass a stable `toolOutcome(activity)` callback to `<chat>` or `<chat-tool-calls>` to return app-authored `{ text, sources?: [{ title, url }] }` evidence for a validated result. The readonly activity includes its explicit phase and literal result text. Inspect the tool's known schema in your application before returning an outcome; arbitrary JSON and completed delivery do not establish business or persistence success.
+
+`ChatToolActivityComponent` and `ChatToolActivityGroupComponent` accept the same metadata in `ToolActivityInfo.outcome`. Only complete activities expose previews. Group previews and deduplicated sources remain visible outside technical Details; the first three summaries and sources are visible, with the rest under **More results** and **More sources**. Source links require absolute HTTP(S) URLs without credentials. Mixed groups announce concise status counts politely without announcing raw streaming payloads.
+
+Custom tool templates retain ownership. Project approval controls outside technical Details and dispatch decisions through the current adapter interrupt generation. A failed read can offer an explicit retry while retaining the successful prefix and failed attempt. Reconcile an uncertain write before retrying it.
 
 ### The agent and tool loop
 
@@ -107,6 +115,7 @@ The component is standalone, so add it to a component's `imports` array.
 | `groupSummary`      | `((name: string, count: number) => string) \| undefined` | `undefined`  | Replaces the generic activity count.                                                                                                                                                                              |
 | `groupRelated`      | `boolean`                                                | `false`      | Allows adjacent default calls with different names to group. `grouping="none"` still disables grouping. Custom templates and subagents stay separate.                                                             |
 | `toolLabel`         | `(name: string) => string \| undefined`                  | `undefined`  | Supplies a readable label; unknown names use “Tool activity.” The technical name stays in Details.                                                                                                                |
+| `toolOutcome`       | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Supplies validated, app-authored previews and source links for default rows. Custom templates retain ownership. |
 | `excludeToolNames`  | `readonly string[]`                                      | `[]`         | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript.                                                                                                      |
 | `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]`               | `[]`         | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
 

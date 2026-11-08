@@ -21,8 +21,8 @@ async function send(page: Page, text: string) {
   await box(page).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Response saved.' })
-  ).toBeVisible();
+    page.getByRole('status', { name: 'Conversation status' })
+  ).toHaveText('Response saved.');
 }
 const errors = new WeakMap<Page, string[]>();
 test.beforeEach(async ({ page, request }) => {
@@ -85,8 +85,8 @@ test('mount is inert; four confirmed turns retain ownership and share refreshed 
   expect(await requests(request)).toEqual([]);
   await box(page).press('Enter');
   await expect(
-    page.getByRole('status').filter({ hasText: 'Response saved.' })
-  ).toBeVisible();
+    page.getByRole('status', { name: 'Conversation status' })
+  ).toHaveText('Response saved.');
   await expect(box(page)).toHaveValue('');
   await expect(boards(page)).toHaveCount(1);
   const owner = await boards(page).getAttribute('data-dashboard-spec-owner');

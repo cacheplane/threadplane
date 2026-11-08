@@ -334,5 +334,7 @@ export {
   toolActivityPhase,
   type ToolActivityDelivery,
   type ToolActivityInfo,
+  type ToolActivityOutcome,
+  type ToolActivitySource,
   type ToolActivityPhase,
 } from './lib/primitives/chat-tool-activity/chat-tool-activity.component';

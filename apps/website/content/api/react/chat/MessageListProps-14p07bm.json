@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 51
+            "line": 56
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 45
+            "line": 46
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 47
+            "line": 48
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 44
+            "line": 45
           },
           "isReadonly": true,
           "isOptional": true
@@ -248,7 +248,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 43
+            "line": 44
           },
           "isReadonly": true,
           "isOptional": true
@@ -299,7 +299,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 53
+            "line": 58
           },
           "isReadonly": true,
           "isOptional": true
@@ -335,7 +335,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 37
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": false
@@ -371,7 +371,63 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 49
+            "line": 50
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "toolOutcome",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#toolOutcome:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolOutcome?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityOutcome",
+              "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+              "href": "/docs/api/react/chat/ToolActivityOutcome"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored confirmed result previews. Keep stable; custom renderMessage retains full ownership.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 52
           },
           "isReadonly": true,
           "isOptional": true
@@ -379,7 +435,7 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 36
+        "line": 37
       },
       "typeParameters": [
         {
@@ -398,6 +454,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 36
+    "line": 37
   }
 }

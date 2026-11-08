@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getScenario } from './scenarios.mjs';
+import { getScenario, hashValue } from './scenarios.mjs';
 
 const api = await import('./server.mjs').catch(() => ({}));
 async function fixture(t, options = {}) {
@@ -239,4 +239,239 @@ test('native AI SDK text parts preserve the actual submitted prompt hash', async
   assert.equal(run.promptHash, run.expectedPromptHash);
   assert.equal(typeof run.prompt, 'string');
   assert.equal(run.prompt, getScenario('references').prompt);
+});
+
+const events = (text) =>
+  text
+    .split('\n\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line.slice(6)));
+async function pauseNative(server, participant = 'native') {
+  const response = await submit(
+    server,
+    'ag-ui',
+    participant,
+    'native-approval'
+  );
+  assert.equal(response.status, 200);
+  const wire = events(await response.text());
+  const terminal = wire.at(-1);
+  assert.equal(terminal.type, 'RUN_FINISHED');
+  assert.equal(terminal.outcome.type, 'interrupt');
+  assert.equal(typeof terminal.outcome.interrupts[0].toolCallId, 'string');
+  assert.equal(typeof terminal.outcome.interrupts[0].message, 'string');
+  assert.equal(terminal.outcome.interrupts[0].value, undefined);
+  assert.equal(server.activeStreams(), 0);
+  assert.equal(server.savedNotes().length, 0);
+  return { terminal, interruptId: terminal.outcome.interrupts[0].id };
+}
+async function resumeNative(server, participant, interruptId, overrides = {}) {
+  return submit(server, 'ag-ui', participant, 'native-approval', {
+    body: JSON.stringify({
+      ...input(participant, getScenario('native-approval').prompt),
+      runId: 'resume-' + participant,
+      resume: [{ interruptId, status: 'resolved', payload: true }],
+      ...overrides,
+    }),
+  });
+}
+test('native approval closes a paused run, then atomically consumes a retained gate exactly once', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await pauseNative(server);
+  assert.equal(server.receipts()[0].status, 'paused');
+  const responses = await Promise.all([
+    resumeNative(server, 'native', interruptId),
+    resumeNative(server, 'native', interruptId),
+  ]);
+  assert.deepEqual(responses.map((r) => r.status).sort(), [200, 409]);
+  const texts = await Promise.all(responses.map((r) => r.text()));
+  assert.ok(texts.some((text) => text.includes('TOOL_CALL_RESULT')));
+  assert.equal(server.savedNotes().length, 1);
+  const receipt = server.receipts().at(-1);
+  assert.equal(receipt.sourceRunId, server.receipts()[0].nativeRunId);
+  assert.equal(receipt.interruptId, interruptId);
+  assert.equal(receipt.tools[0].executionCount, 1);
+});
+test('native gate rejects unknown, wrong-thread, wrong-participant, implicit and reset decisions', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await pauseNative(server);
+  for (const [participant, id, changes, status] of [
+    ['native', 'unknown', {}, 410],
+    ['other', interruptId, {}, 409],
+    ['native', interruptId, { threadId: 'wrong-thread' }, 409],
+    [
+      'native',
+      interruptId,
+      { resume: [{ interruptId, status: 'resolved' }] },
+      400,
+    ],
+    [
+      'native',
+      interruptId,
+      { resume: [{ interruptId, status: 'cancelled', payload: true }] },
+      400,
+    ],
+    ['native', interruptId, { runId: 'native-native' }, 409],
+  ])
+    assert.equal(
+      (await resumeNative(server, participant, id, changes)).status,
+      status
+    );
+  await fetch(server.url + '/reset/native', { method: 'POST' });
+  assert.equal((await resumeNative(server, 'native', interruptId)).status, 410);
+  assert.equal(server.savedNotes().length, 0);
+});
+test('native cancellation completes without executing a write and consumes the gate', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await pauseNative(server);
+  const response = await resumeNative(server, 'native', interruptId, {
+    resume: [{ interruptId, status: 'cancelled' }],
+  });
+  assert.equal(response.status, 200);
+  const wire = events(await response.text());
+  assert.equal(wire.at(-1).type, 'RUN_FINISHED');
+  const result = wire.find((event) => event.type === 'TOOL_CALL_RESULT');
+  assert.ok(result, 'Cancellation resolves the original tool observation');
+  assert.equal(result.toolCallId, server.receipts()[0].tools[0].nativeId);
+  assert.deepEqual(JSON.parse(result.content), {
+    saved: false,
+    cancelled: true,
+  });
+  assert.equal(
+    wire.some((event) => event.type === 'TOOL_CALL_START'),
+    false
+  );
+  assert.equal(server.receipts().at(-1).status, 'denied');
+  assert.equal(server.receipts().at(-1).tools[0].executionCount, 0);
+  assert.equal((await resumeNative(server, 'native', interruptId)).status, 409);
+  assert.equal(server.savedNotes().length, 0);
+});
+test('native Angular boolean denial completes without a write', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await pauseNative(server);
+  const response = await resumeNative(server, 'native', interruptId, {
+    resume: [{ interruptId, status: 'resolved', payload: false }],
+  });
+  assert.equal(response.status, 200);
+  await response.text();
+  assert.equal(server.receipts().at(-1).status, 'denied');
+  assert.equal(server.savedNotes().length, 0);
+});
+test('a fresh pause supersedes the previous source-run gate', async (t) => {
+  const server = await fixture(t);
+  const old = await pauseNative(server);
+  const current = await pauseNative(server);
+  assert.notEqual(old.interruptId, current.interruptId);
+  assert.equal(
+    (await resumeNative(server, 'native', old.interruptId)).status,
+    410
+  );
+  const response = await resumeNative(server, 'native', current.interruptId);
+  await response.text();
+  assert.equal(server.savedNotes().length, 1);
+});
+test('reset after native resume admission prevents a delayed write', async (t) => {
+  const server = await fixture(t, { toolDelayMs: 200 });
+  const { interruptId } = await pauseNative(server);
+  const response = await resumeNative(server, 'native', interruptId);
+  const completed = response.text();
+  await fetch(server.url + '/reset/native', { method: 'POST' });
+  await completed;
+  assert.equal(server.savedNotes().length, 0);
+  assert.equal(server.receipts().at(-1).status, 'aborted');
+  assert.equal((await resumeNative(server, 'native', interruptId)).status, 410);
+});
+test('native resume resolves the original paused invocation without leaving an orphan call', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await pauseNative(server);
+  const nativeId = server.receipts()[0].tools[0].nativeId;
+  const response = await resumeNative(server, 'native', interruptId);
+  const wire = events(await response.text());
+  assert.equal(
+    wire.some((event) => event.type === 'TOOL_CALL_START'),
+    false
+  );
+  assert.equal(
+    wire.find((event) => event.type === 'TOOL_CALL_RESULT').toolCallId,
+    nativeId
+  );
+  assert.equal(server.receipts().at(-1).tools[0].nativeId, nativeId);
+});
+test('read-only partial failure preserves successful prefix and explicit same-thread retry uses a new call', async (t) => {
+  const server = await fixture(t);
+  for (const protocol of ['ag-ui', 'ai-sdk']) {
+    const first = await submit(server, protocol, protocol, 'partial-failure');
+    await first.text();
+    const failed = server.receipts().at(-1);
+    assert.deepEqual(
+      failed.tools.map((tool) => tool.status),
+      ['complete', 'error']
+    );
+    assert.equal(failed.status, 'error');
+    const retryPrompt = 'Retry the failed read explicitly.';
+    const retry = await submit(server, protocol, protocol, 'partial-failure', {
+      body: JSON.stringify(input(protocol, retryPrompt)),
+    });
+    assert.equal(retry.status, 200);
+    await retry.text();
+    const succeeded = server.receipts().at(-1);
+    assert.equal(succeeded.threadId, failed.threadId);
+    assert.equal(succeeded.retryOf, failed.id);
+    assert.equal(succeeded.prompt, retryPrompt);
+    assert.equal(succeeded.promptHash, hashValue(retryPrompt));
+    assert.equal(succeeded.expectedPromptHash, hashValue(retryPrompt));
+    assert.equal(succeeded.tools.length, 1);
+    assert.equal(succeeded.tools[0].canonicalId, 'read-sorted-retry');
+    assert.notEqual(succeeded.tools[0].nativeId, failed.tools[1].nativeId);
+    assert.equal(succeeded.tools[0].status, 'complete');
+    assert.equal(failed.tools[0].executionCount, 1);
+  }
+});
+test('read retry requires exact explicit intent and a retained failure in the same participant and thread', async (t) => {
+  const server = await fixture(t);
+  const retryPrompt = 'Retry the failed read explicitly.';
+  const retry = (participant, threadId, prompt = retryPrompt) =>
+    submit(server, 'ag-ui', participant, 'partial-failure', {
+      body: JSON.stringify({ ...input(participant, prompt), threadId }),
+    });
+  assert.equal((await retry('reader', 'thread-reader')).status, 400);
+  await (await submit(server, 'ag-ui', 'reader', 'partial-failure')).text();
+  assert.equal((await retry('reader', 'different-thread')).status, 400);
+  assert.equal((await retry('other-reader', 'thread-reader')).status, 400);
+  assert.equal(
+    (
+      await retry(
+        'reader',
+        'thread-reader',
+        getScenario('partial-failure').prompt
+      )
+    ).status,
+    400
+  );
+  assert.equal(
+    (await retry('reader', 'thread-reader', retryPrompt + ' please')).status,
+    400
+  );
+  assert.equal(server.receipts().length, 1);
+  const accepted = await retry('reader', 'thread-reader');
+  assert.equal(accepted.status, 200);
+  await accepted.text();
+  assert.equal(server.receipts().at(-1).tools.length, 1);
+  await fetch(server.url + '/reset/reader', { method: 'POST' });
+  assert.equal((await retry('reader', 'thread-reader')).status, 400);
+});
+test('long mixed read workload continues after a recoverable failure and retains honest mixed receipts', async (t) => {
+  const server = await fixture(t);
+  const response = await submit(server, 'ag-ui', 'long', 'long-mixed');
+  const text = await response.text();
+  const record = server.receipts()[0];
+  assert.ok(record.tools.length >= 16);
+  assert.equal(
+    record.tools.filter((tool) => tool.status === 'error').length,
+    1
+  );
+  assert.equal(record.tools.at(-1).status, 'complete');
+  assert.equal(record.status, 'partial');
+  assert.equal(events(text).at(-1).type, 'RUN_FINISHED');
+  assert.ok(record.tools.every((tool) => tool.executionCount === 1));
 });

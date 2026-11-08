@@ -56,7 +56,7 @@ function fixture(views: unknown[] = [], update = {}) {
 it('shows lazy ready native input and keeps the endpoint out of the visible UI', () => {
   const { application, ready } = fixture();
   expect(ready).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole('status').textContent).toBe('Ready.');
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe('Ready.');
   expect(
     screen.getByRole('region', { name: 'Runtime connection' }).textContent
   ).toContain('Shared runtime');
@@ -127,7 +127,7 @@ it('partial arguments stay pending and do not display an invented reading', () =
   );
   expect(screen.getByText('Waiting for weather data…')).toBeTruthy();
   expect(screen.queryByText('Sunny')).toBeNull();
-  expect(screen.getByRole('status').textContent).toBe(
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe(
     'Getting a weather reading…'
   );
 });
@@ -143,7 +143,7 @@ it('uncertain results require New and disable another Send', () => {
     canSubmit: false,
     error: 'The reading could not be confirmed.',
   });
-  expect(screen.getByRole('status').textContent).toBe(
+  expect(screen.getByRole('status', { name: 'Conversation status' }).textContent).toBe(
     'Start a new conversation to continue.'
   );
   expect(
