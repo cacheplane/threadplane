@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import type { Citation } from '@threadplane/core';
 import { markdownUrl } from '@threadplane/content/markdown';
 import { previewPosition } from './preview-position.js';
+import { CitationSourceSummary } from '../chat/internal/citation-source-summary.js';
 
 function available(target: HTMLElement) {
   const win = target.ownerDocument.defaultView;
@@ -369,6 +370,7 @@ export function InlinePreview({
             >
               Close
             </button>
+            <CitationSourceSummary citation={citation} />
             <h2>
               {citation.title ?? citation.url ?? `Source ${citation.index}`}
             </h2>

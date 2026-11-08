@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CitationPreview, Citations } from './index';
+import { formatPublished } from '@threadplane/content/messages';
 
 const citation = Object.freeze({
   id: 'a',
@@ -42,6 +43,126 @@ function open(view: ReturnType<typeof render>) {
   return { trigger, dialog: view.getByRole('dialog') };
 }
 describe('CitationPreview', () => {
+  it('adds a local normalized summary and corrects the same open panel without moving Close focus', () => {
+    const initial = Object.freeze({
+      ...citation,
+      sourceType: ' WEB ',
+      url: 'https://www.example.com/raw',
+      publishedAt: '2024-04-15T12:00:00Z',
+    });
+    const view = render(<CitationPreview citation={initial} />);
+    const { dialog } = open(view);
+    const close = within(dialog).getByRole('button', { name: 'Close' });
+    const summary = dialog.querySelector('.tp-citation-source-summary');
+    expect(summary).not.toBeNull();
+    expect(summary?.nextElementSibling).toBe(
+      within(dialog).getByRole('heading')
+    );
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__type')?.textContent
+    ).toBe('Web');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__domain')?.textContent
+    ).toBe('example.com');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__published')
+        ?.textContent
+    ).toBe(formatPublished(initial.publishedAt));
+    const marker = summary?.querySelector(
+      '.tp-citation-source-summary__visual'
+    );
+    expect(marker?.getAttribute('aria-hidden')).toBe('true');
+    expect(marker?.textContent).toBe('E');
+    expect(
+      summary?.querySelector('button,a,input,[tabindex],img,image')
+    ).toBeNull();
+    expect(
+      dialog.querySelector('dd[data-field="sourceType"]')?.textContent
+    ).toBe(' WEB ');
+    expect(
+      dialog.querySelector('dd[data-field="publishedAt"]')?.textContent
+    ).toBe(initial.publishedAt);
+    expect(dialog.querySelector('dd[data-field="url"]')?.textContent).toBe(
+      initial.url
+    );
+    const corrected = {
+      ...initial,
+      sourceType: ' custom_type ',
+      url: 'ftp://blocked.invalid/raw',
+      publishedAt: '2025-06-15T12:00:00Z',
+    };
+    view.rerender(<CitationPreview citation={corrected} />);
+    expect(view.getByRole('dialog')).toBe(dialog);
+    expect(document.activeElement).toBe(close);
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__type')?.textContent
+    ).toBe('Custom type');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__domain')?.textContent
+    ).toBe('blocked.invalid');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__published')
+        ?.textContent
+    ).toBe(formatPublished(corrected.publishedAt));
+    expect(summary?.querySelector('svg')?.getAttribute('focusable')).toBe(
+      'false'
+    );
+    expect(within(dialog).queryByRole('link')).toBeNull();
+    expect(within(dialog).getByRole('heading').textContent).toBe(initial.title);
+    expect(dialog.textContent).toContain(initial.snippet);
+    expect(dialog.querySelector('img,image,b,script')).toBeNull();
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce();
+  });
+  it.each([
+    {
+      sourceType: undefined,
+      url: undefined,
+      publishedAt: undefined,
+      type: null,
+      domain: null,
+    },
+    {
+      sourceType: '   ',
+      url: '',
+      publishedAt: 'not a date',
+      type: null,
+      domain: null,
+    },
+    {
+      sourceType: '<img src=x>',
+      url: 'javascript:evil',
+      publishedAt: 'bad',
+      type: '<img src=x>',
+      domain: null,
+    },
+  ])(
+    'omits unavailable summary values while preserving literal details: %j',
+    ({ type, domain, ...metadata }) => {
+      const view = render(
+        <CitationPreview citation={{ ...citation, ...metadata }} />
+      );
+      const { dialog } = open(view);
+      const summary = dialog.querySelector('.tp-citation-source-summary');
+      expect(summary).not.toBeNull();
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__type')
+          ?.textContent ?? null
+      ).toBe(type);
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__domain')
+          ?.textContent ?? null
+      ).toBe(domain);
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__published')
+      ).toBeNull();
+      expect(summary?.querySelector('svg')).not.toBeNull();
+      expect(dialog.querySelector('img,image,script')).toBeNull();
+      expect(within(dialog).queryByRole('link')).toBeNull();
+      expect(
+        dialog.querySelector('dd[data-field="sourceType"]')?.textContent
+      ).toBe(metadata.sourceType);
+    }
+  );
   it('contains trigger keyboard events while preserving ordinary activation and Tab defaults', () => {
     const outer = vi.fn();
     const view = render(

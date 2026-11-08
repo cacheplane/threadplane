@@ -360,6 +360,22 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(dialog).toHaveAttribute('aria-label', 'Source 2');
     await expect(dialog).toContainText('<script>literal()</script>');
     await expect(dialog).toContainText('2024-04-15T12:00:00.000Z');
+    const previewSummary = dialog.locator('.tp-citation-source-summary');
+    await expect(
+      previewSummary.locator('.tp-citation-source-summary__type')
+    ).toHaveText(sourceType);
+    await expect(
+      previewSummary.locator('.tp-citation-source-summary__domain')
+    ).toHaveText('example.com');
+    await expect(
+      previewSummary.locator('.tp-citation-source-summary__published')
+    ).toHaveText(published);
+    await expect(
+      previewSummary.locator('.tp-citation-source-summary__visual')
+    ).toHaveAttribute('aria-hidden', 'true');
+    await expect(
+      previewSummary.locator('button,a,input,[tabindex]')
+    ).toHaveCount(0);
     await expect(dialog.locator('img,script,b')).toHaveCount(0);
     const link = dialog.getByRole('link', { name: 'Open source', exact: true });
     await expect(link).toHaveAttribute(
@@ -638,6 +654,16 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         await expect(markers.nth(2)).toHaveClass(/--generic/);
         await expect(header).toHaveAccessibleName('Sources (6)');
         await expect(dialog).toHaveAttribute('aria-label', 'Source 7');
+        await expect(
+          previewSummary.locator('.tp-citation-source-summary__type')
+        ).toHaveText('Corrected type');
+        await expect(
+          previewSummary.locator('.tp-citation-source-summary__domain')
+        ).toHaveText('docs.example.org');
+        await expect(
+          previewSummary.locator('.tp-citation-source-summary__published')
+        ).toHaveText(correctedPublished);
+        await expect(close).toBeFocused();
         await expect(providerCard.locator('.tp-citations__type')).toHaveText(
           'Corrected type'
         );

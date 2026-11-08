@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c14b827a4755dbfe6ef20e65cae3d9b76f8d85bf",
+  "baselineHead": "9669ef24a6a448c26d73a64166757125e0bb36e6",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/getting-started/quickstart.mdx",
-      "apps/website/content/docs/react/getting-started/quickstart.mdx"
+      "libs/react/README.md",
+      "libs/react/src/chat/citation-preview.tsx",
+      "libs/react/src/chat/internal/citation-source-marker.tsx",
+      "libs/react/src/chat/internal/citation-source-summary.tsx",
+      "libs/react/src/markdown/inline-preview.tsx"
     ],
     "untracked": []
   },
@@ -852,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "5dbaaf824427603de57e58d9138f74da7ac4e57749aeba3b1013a072f9681755"
+      "sha256": "bc72aae32618bb06f860fc1309dbebe5aa08e7b0614b467094d54340ac292d32"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -16307,7 +16310,7 @@
       "id": "source:libs/react/src/chat/citation-preview.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citation-preview.tsx",
-      "sha256": "165f38c6df678f46e2d7032846e6247ec78c0e134d1fcb0308d3cda39342da5e"
+      "sha256": "ee2a69108bee19ea834bf07a4a3c7e0a60c985ffcd69b70e7d8f2eab71f0d993"
     },
     {
       "id": "source:libs/react/src/chat/citations.tsx",
@@ -16337,7 +16340,13 @@
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/internal/citation-source-marker.tsx",
-      "sha256": "9ae533311bf9bc2ad49cead73249c50c43ea92baf3b913c87b8fd4c66df6a6ae"
+      "sha256": "f5b7f5c1d96d3a6d868f2b5c4de8ca0a75941ec306907031c667c77edc844ff1"
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/citation-source-summary.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/citation-source-summary.tsx",
+      "sha256": "afad94aeeae151dc7cb640ee6e91b3c45100e7c164577a996051da7ff548f3ff"
     },
     {
       "id": "source:libs/react/src/chat/internal/dialog-presentation.ts",
@@ -16517,7 +16526,7 @@
       "id": "source:libs/react/src/markdown/inline-preview.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/inline-preview.tsx",
-      "sha256": "28e458a60db1edecd3926ab8dc80b85256a4ec0cff7ecc932ef7f693c8880ce3"
+      "sha256": "b20ae4a22c37da2e3c0419a1f77e92edbc52a35638185178084d08d95b82170c"
     },
     {
       "id": "source:libs/react/src/markdown/markdown-image.tsx",

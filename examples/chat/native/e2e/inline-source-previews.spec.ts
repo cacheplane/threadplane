@@ -12,6 +12,7 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
   const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const a = threadEnvelope('a', 'Conversation A'),
     b = threadEnvelope('b', 'Conversation B');
+  const sourceType = '<b>مصدر</b> ' + 'مصدرطويل'.repeat(30);
   const history = (thread: string) => ({
     method: 'POST',
     path: `/api/threads/${thread}/history`,
@@ -31,6 +32,8 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
                     index: 1,
                     title: '<b>Literal inline source</b>',
                     url: 'https://example.test/source',
+                    sourceType,
+                    publishedAt: '2024-04-15T12:00:00.000Z',
                     snippet: '<img src=x> ' + 'Long'.repeat(100),
                     iconUrl: 'https://never.invalid/icon',
                   },
@@ -135,6 +138,27 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
     await page.keyboard.press('Enter');
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText('<img src=x>');
+    const summary = dialog.locator('.tp-citation-source-summary');
+    await expect(
+      summary.locator('.tp-citation-source-summary__type')
+    ).toHaveText(sourceType);
+    await expect(
+      summary.locator('.tp-citation-source-summary__domain')
+    ).toHaveText('example.test');
+    await expect(
+      summary.locator('.tp-citation-source-summary__published')
+    ).toHaveText(
+      await page.evaluate(() =>
+        new Date('2024-04-15T12:00:00.000Z').toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+        })
+      )
+    );
+    await expect(
+      summary.locator('.tp-citation-source-summary__visual')
+    ).toHaveAttribute('aria-hidden', 'true');
+    await expect(summary.locator('button,a,input,[tabindex]')).toHaveCount(0);
     await expect(dialog.locator('img,b,script')).toHaveCount(0);
     await expect(link).toHaveAttribute('href', 'https://example.test/source');
     await page.keyboard.press('Tab');
@@ -275,10 +299,65 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
       await page.screenshot({
         path: testInfo.outputPath(`inline-preview-rtl-${width}.png`),
       });
+      // /markdown previews promise no dependency on the chat stylesheet.
+      // Disable the actual app sheets while preserving their original state.
+      const sheets = await page.evaluateHandle(() =>
+        Array.from(document.styleSheets).map((sheet) => ({
+          sheet,
+          disabled: sheet.disabled,
+        }))
+      );
+      try {
+        await sheets.evaluate((entries) =>
+          entries.forEach(({ sheet }) => {
+            sheet.disabled = true;
+          })
+        );
+        await close.focus();
+        await expect(close).toBeFocused();
+        await expect(summary).toHaveCSS('direction', 'rtl');
+        const marker = summary.locator('.tp-citation-source-summary__visual');
+        const markerBox = await marker.boundingBox();
+        assert.ok(markerBox);
+        expect(markerBox.width).toBeGreaterThan(0);
+        expect(markerBox.width).toBeLessThanOrEqual(36);
+        expect(markerBox.height).toBeLessThanOrEqual(36);
+        const iconBox = await marker.locator('svg').boundingBox();
+        assert.ok(iconBox);
+        expect(iconBox.width).toBeGreaterThan(0);
+        expect(iconBox.width).toBeLessThanOrEqual(24);
+        expect(iconBox.height).toBeLessThanOrEqual(24);
+        expect(
+          await summary.evaluate((node) => node.scrollWidth <= node.clientWidth)
+        ).toBe(true);
+        await expect(dialog.locator('button,a[href]')).toHaveCount(2);
+        await page.emulateMedia({ forcedColors: 'active' });
+        await expect(
+          summary.locator('.tp-citation-source-summary__domain')
+        ).toHaveCSS(
+          'color',
+          await dialog.evaluate((node) => getComputedStyle(node).color)
+        );
+        await page.screenshot({
+          path: testInfo.outputPath(
+            `inline-preview-no-styles-rtl-${width}.png`
+          ),
+        });
+      } finally {
+        await page.emulateMedia({ forcedColors: 'none' });
+        await sheets.evaluate((entries) =>
+          entries.forEach(({ sheet, disabled }) => {
+            sheet.disabled = disabled;
+          })
+        );
+        await sheets.dispose();
+      }
       await page.keyboard.press('Escape');
       await preserved();
     }
-    await page.setViewportSize({ width: 1280, height: 900 });
+    // The literal long-type fixture needs room above both anchor positions.
+    // Narrow viewport clamping is checked independently above.
+    await page.setViewportSize({ width: 1280, height: 1200 });
     await page
       .locator('html')
       .evaluate((node) => node.setAttribute('dir', 'ltr'));
@@ -299,6 +378,12 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
         return !!anchor && !!card && card.y + card.height <= anchor.y - 5;
       })
       .toBe(true);
+    const anchorBeforeMove = await trigger.boundingBox();
+    const cardBeforeMove = await dialog.boundingBox();
+    assert.ok(anchorBeforeMove && cardBeforeMove);
+    expect(
+      anchorBeforeMove.y - cardBeforeMove.height - 6 - 30
+    ).toBeGreaterThanOrEqual(8);
     await trigger.evaluate((node) => {
       node.style.bottom = '40px';
     });
@@ -320,6 +405,7 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
       if (original === null) node.removeAttribute('style');
       else node.setAttribute('style', original);
     }, originalStyle);
+    await page.setViewportSize({ width: 1280, height: 900 });
     await expect(dialog).toBeVisible();
     await draft.focus();
     await page.mouse.move(1, 1);
@@ -346,7 +432,9 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
     await select('a');
     await backend.steps[6].received;
     await expect(trigger).toBeVisible();
-    expect(await trigger.evaluate((node) => node.matches(':hover'))).toBe(false);
+    expect(await trigger.evaluate((node) => node.matches(':hover'))).toBe(
+      false
+    );
     await page.waitForTimeout(250);
     await expect(dialog).toHaveCount(0);
     expect(await old.evaluate((node) => node.isConnected)).toBe(false);

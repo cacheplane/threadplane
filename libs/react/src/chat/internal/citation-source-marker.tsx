@@ -18,9 +18,11 @@ const iconPaths: Record<CitationTypeIcon, string> = {
 export function CitationSourceMarker({
   citation,
   className,
+  compact = false,
 }: {
   readonly citation: Citation;
   readonly className: string;
+  readonly compact?: boolean;
 }) {
   // Never request provider images or change borrowed metadata.
   const visual = citationSourceVisual({ ...citation, iconUrl: undefined });
@@ -30,7 +32,28 @@ export function CitationSourceMarker({
       className={`${className} ${className}--${meta.tone}`}
       aria-hidden="true"
       style={
-        visual.kind === 'monogram'
+        compact
+          ? {
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: '0 0 1.5rem',
+              inlineSize: '1.5rem',
+              blockSize: '1.5rem',
+              boxSizing: 'border-box',
+              borderRadius: '0.25rem',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              lineHeight: 1,
+              ...(visual.kind === 'monogram'
+                ? {
+                    backgroundColor: 'Canvas',
+                    color: 'CanvasText',
+                    border: `1px solid ${visual.color}`,
+                  }
+                : { color: 'inherit' }),
+            }
+          : visual.kind === 'monogram'
           ? { backgroundColor: visual.color }
           : undefined
       }
@@ -44,6 +67,11 @@ export function CitationSourceMarker({
           stroke="currentColor"
           strokeWidth="1.5"
           focusable="false"
+          style={
+            compact
+              ? { inlineSize: '1rem', blockSize: '1rem', flex: 'none' }
+              : undefined
+          }
         >
           <path d={iconPaths[meta.icon]} />
         </svg>
