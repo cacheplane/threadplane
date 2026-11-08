@@ -8,6 +8,7 @@ import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 import { isTyping, TypingIndicator } from './typing-indicator.js';
+import { ScrollBubble } from './scroll-bubble.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -54,6 +55,17 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
+        renderScrollControl={(controls) =>
+          controls.pinned ? null : (
+            <ScrollBubble
+              mode={snapshot.status === 'running' ? 'streaming' : 'idle'}
+              onClick={() => {
+                controls.scrollToLatest();
+                controls.focus();
+              }}
+            />
+          )
+        }
       />
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError

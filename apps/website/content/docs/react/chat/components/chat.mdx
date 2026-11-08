@@ -19,22 +19,30 @@ import { Chat } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 
 export function Conversation({ session }: { readonly session: AgentSession }) {
-  return <Chat session={session} label="Trip message" placeholder="Ask about your trip…" />;
+  return (
+    <Chat
+      session={session}
+      label="Trip message"
+      placeholder="Ask about your trip…"
+    />
+  );
 }
 ~~~
 
-| Prop | Purpose |
-| --- | --- |
-| `session` | Required app-owned core session. |
-| `content` | Optional app-owned `MessageContent` projection. |
-| `renderMessage` | Stable callback replacing default row presentation. |
-| `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior. |
-| `className` | Additional root styling. |
-| `onRetry` | Optional application-owned zero-argument retry intent. |
+| Prop                                            | Purpose                                                |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `session`                                       | Required app-owned core session.                       |
+| `content`                                       | Optional app-owned `MessageContent` projection.        |
+| `renderMessage`                                 | Stable callback replacing default row presentation.    |
+| `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior.              |
+| `className`                                     | Additional root styling.                               |
+| `onRetry`                                       | Optional application-owned zero-argument retry intent. |
 
 Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
 
 The default [TypingIndicator](/docs/react/chat/components/typing-indicator) uses the same snapshot and subscription. It shows while running with no messages, a last user message, or an empty last assistant message; it hides on the first assistant text, including whitespace, or a last tool/system message. The polite status label appears after the transcript and before error/composer. Use explicit composition with `announce={false}` when your application already announces submission progress.
+
+When the reader scrolls upward, [ScrollBubble](/docs/react/chat/components/scroll-bubble) offers **Scroll to latest**. Its mode comes from the same snapshot status. Only an explicit activation scrolls and focuses the transcript; the existing MessageList remains the scroll owner. Token growth while unpinned preserves reader position and focus. No new Chat props, session reads, or subscriptions are required.
 
 It does not dispose the session. If you supply `content`, it also remains yours to dispose. Without supplied content, Chat manages its own message projection. Replacing the session resets the keyed composer.
 

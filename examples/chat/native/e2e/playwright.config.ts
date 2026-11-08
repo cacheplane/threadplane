@@ -37,6 +37,7 @@ export default defineConfig({
     'delete.spec.ts',
     'error.spec.ts',
     'typing-indicator.spec.ts',
+    'scroll-bubble.spec.ts',
   ],
   fullyParallel: false,
   workers: 1,

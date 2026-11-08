@@ -1,0 +1,54 @@
+{
+  "name": "ScrollBubbleMode",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ScrollBubbleMode",
+  "canonicalReference": "@threadplane/react!ScrollBubbleMode:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Presentation of a latest-activity action. The parent owns visibility.",
+  "declarations": [
+    {
+      "name": "ScrollBubbleMode",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ScrollBubbleMode:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ScrollBubbleMode = "
+        },
+        {
+          "kind": "Content",
+          "text": "'streaming' | 'idle'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Presentation of a latest-activity action. The parent owns visibility.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/scroll-bubble.tsx",
+        "line": 4
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/scroll-bubble.tsx",
+    "line": 4
+  }
+}

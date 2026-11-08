@@ -40,6 +40,75 @@
   color: var(--tp-chat-text);
   font-family: var(--tp-chat-font-family);
 }
+.tp-scroll-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  align-self: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  max-inline-size: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--tp-chat-border, currentColor);
+  border-radius: 9999px;
+  color: var(--tp-chat-text, CanvasText);
+  background: var(--tp-chat-surface, Canvas);
+  font: inherit;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-scroll-bubble > svg,
+.tp-scroll-bubble__dots {
+  flex: 0 0 auto;
+}
+.tp-scroll-bubble:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.tp-scroll-bubble:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.tp-scroll-bubble__dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.tp-scroll-bubble__dots > span {
+  inline-size: 4px;
+  block-size: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: tp-scroll-bubble-pulse 1.2s infinite alternate;
+}
+.tp-scroll-bubble__dots > span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.tp-scroll-bubble__dots > span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes tp-scroll-bubble-pulse {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-scroll-bubble__dots > span {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .tp-scroll-bubble {
+    border-color: ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+}
 .tp-chat-sr-only,
 .tp-chat-input__label,
 .tp-chat-message__role {

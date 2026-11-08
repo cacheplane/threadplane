@@ -1,4 +1,8 @@
-import { MessageList, type MessageListProps } from './index';
+import {
+  MessageList,
+  type MessageListProps,
+  type MessageListScrollControls,
+} from './index';
 import type { MessageRow } from '@threadplane/content/messages';
 const ok: MessageListProps = { rows: [] };
 // @ts-expect-error rows is required.
@@ -9,6 +13,36 @@ ok.label = 'x';
 // @ts-expect-error renderMessage receives a row, not a string.
 <MessageList rows={[]} renderMessage={(row: string) => row} />;
 void missing;
+declare const controls: MessageListScrollControls;
+const pinned: boolean = controls.pinned;
+const jumped: void = controls.scrollToLatest();
+const focused: void = controls.focus();
+// @ts-expect-error Readonly state.
+controls.pinned = false;
+// @ts-expect-error Readonly action.
+controls.scrollToLatest = () => undefined;
+// @ts-expect-error Readonly focus.
+controls.focus = () => undefined;
+// @ts-expect-error No raw element surface.
+void controls.element;
+// @ts-expect-error No arguments.
+controls.scrollToLatest(true);
+// @ts-expect-error No arguments.
+controls.focus({ preventScroll: false });
+// @ts-expect-error Readonly renderer.
+ok.renderScrollControl = () => null;
+<MessageList
+  rows={[]}
+  renderScrollControl={(value) =>
+    value.pinned ? null : <button onClick={value.scrollToLatest}>Latest</button>
+  }
+/>;
+<MessageList
+  rows={[]}
+  // @ts-expect-error Renderer receives controls.
+  renderScrollControl={(value: HTMLElement) => value.textContent}
+/>;
+void [pinned, jumped, focused];
 
 interface Tools {
   lookup: { args: { query: string }; result: { found: boolean } };

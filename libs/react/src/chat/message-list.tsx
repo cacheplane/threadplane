@@ -1,5 +1,13 @@
 'use client';
-import { memo, useEffect, useRef, type ReactNode } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { MessageRow } from '@threadplane/content/messages';
 import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
@@ -16,6 +24,13 @@ import { Citations } from './citations.js';
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
   : TRow;
+
+/** View-owned actions. Retained actions become inert when this list unmounts. */
+export interface MessageListScrollControls {
+  readonly pinned: boolean;
+  readonly scrollToLatest: () => void;
+  readonly focus: () => void;
+}
 
 /** Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows. */
 export interface MessageListProps<TRow extends MessageRow = MessageRow> {
@@ -36,6 +51,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
+  /** Render a sibling control; attach actions to explicit event handlers. */
+  readonly renderScrollControl?: (
+    controls: MessageListScrollControls
+  ) => ReactNode;
 }
 
 const PIN_THRESHOLD = 32;
@@ -117,24 +136,58 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   toolLabel,
   toolOutcome,
   children,
+  renderScrollControl,
 }: MessageListProps<TRow>) {
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  const [isPinned, setIsPinned] = useState(true);
+  const active = useRef(false);
   const lastScrollTop = useRef(0);
+  const setPinned = useCallback((value: boolean) => {
+    if (pinned.current !== value) {
+      pinned.current = value;
+      setIsPinned(value);
+    }
+  }, []);
+  const scrollToLatest = useCallback(() => {
+    const el = container.current;
+    if (!active.current || !el) return;
+    setPinned(true);
+    el.scrollTop = el.scrollHeight;
+    lastScrollTop.current = el.scrollTop;
+  }, [setPinned]);
+  const focus = useCallback(() => {
+    if (active.current) container.current?.focus({ preventScroll: true });
+  }, []);
+  const controls = useMemo<MessageListScrollControls>(
+    () => ({ pinned: isPinned, scrollToLatest, focus }),
+    [isPinned, scrollToLatest, focus]
+  );
+  useIsomorphicLayoutEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   useEffect(() => {
     const el = container.current;
     if (!el) return;
+    let listening = true;
     const onScroll = () => {
+      if (!listening || !active.current) return;
       const max = Math.max(0, el.scrollHeight - el.clientHeight);
       if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)
-        pinned.current = false;
-      else if (max - el.scrollTop <= PIN_THRESHOLD) pinned.current = true;
+        setPinned(false);
+      else if (max - el.scrollTop <= PIN_THRESHOLD) setPinned(true);
       lastScrollTop.current = el.scrollTop;
     };
     el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, []);
+    return () => {
+      listening = false;
+      el.removeEventListener('scroll', onScroll);
+    };
+  }, [setPinned]);
   useIsomorphicLayoutEffect(() => {
     const el = container.current;
     const body = content.current;
@@ -161,26 +214,29 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     }
   }, [rows, children]);
   return (
-    <div
-      ref={container}
-      role="region"
-      tabIndex={0}
-      aria-label={label}
-      className={['tp-chat-list', className].filter(Boolean).join(' ')}
-    >
-      <div ref={content}>
-        {rows.map((row) => (
-          <Row
-            key={row.id}
-            row={row}
-            renderMessage={renderMessage}
-            groupRelatedTools={groupRelatedTools}
-            toolLabel={toolLabel}
-            toolOutcome={toolOutcome}
-          />
-        ))}
-        {children}
+    <>
+      <div
+        ref={container}
+        role="region"
+        tabIndex={0}
+        aria-label={label}
+        className={['tp-chat-list', className].filter(Boolean).join(' ')}
+      >
+        <div ref={content}>
+          {rows.map((row) => (
+            <Row
+              key={row.id}
+              row={row}
+              renderMessage={renderMessage}
+              groupRelatedTools={groupRelatedTools}
+              toolLabel={toolLabel}
+              toolOutcome={toolOutcome}
+            />
+          ))}
+          {children}
+        </div>
       </div>
-    </div>
+      {renderScrollControl?.(controls)}
+    </>
   );
 }

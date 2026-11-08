@@ -549,6 +549,15 @@ servers or reuse another session's directory.
   are, and a conversation missing from the list stays selected. Titles are not
   otherwise kept current. **Retry** explicitly retries a failed selection.
 
+React renders `ScrollBubble` only when the selected keyed `MessageList` is
+unpinned. Its streaming/idle mode uses the current runtime status. Explicit
+activation calls that list's `scrollToLatest()` and `focus()` view controls,
+restoring following and moving focus to the region before the button disappears.
+Streaming while unpinned preserves reader position and draft focus. The local
+React placement keeps the sibling action within the conversation viewport;
+shared styles and composer/submission behavior are unchanged. This bounded T23
+slice adds no application commands, unread counts, or history loading.
+
 React derives `TypingIndicator` from the ready selected runtime with `isTyping`:
 running with no messages, last user, or empty last assistant content waits for
 text. First assistant text (including whitespace), tool/system last messages,
@@ -563,6 +572,7 @@ Its message and detail are literal accessible text. This application's selection
 Retry reloads the selection; it is not execution recovery. The application exposes
 no execution retry or check-status callback, so the runtime error notice supplies
 neither action. Clearing the error or leaving the ready selection removes it.
+
 - **Stop** requests local cancellation and closes the local stream. It does not
   guarantee that the server run has stopped.
 - If a creation response is lost, creation is shown as unconfirmed: a server
@@ -861,7 +871,6 @@ outside input and resize still dismiss the menu. The shorter native rail browser
 proof covers unchanged queued notification, genuine scrolling, reopening and the
 retained pin/unpin flow without retries or added timeouts.
 
-
 ### Confirmed conversation project assignment (private React T29 slice)
 
 Native full active and archived directories now compose an application-owned
@@ -893,7 +902,6 @@ already dispatched command continues; its completion cannot close a newer editor
 Focus returns only while still owned, using the stable filter when the original
 row is hidden. Compact rails remain selection-only. New conversations inherit the selected project as described below. Confirmed project deletion is described below. Shared catalogs, drag
 reordering and full T29 parity remain open.
-
 
 ### Conversation creation in the selected project (private React T29 slice)
 

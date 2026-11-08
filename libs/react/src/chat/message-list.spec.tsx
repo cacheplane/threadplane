@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode } from 'react';
+import { renderToString } from 'react-dom/server';
 import {
   streamingDelivery,
   type AgentSnapshot,
@@ -10,7 +11,7 @@ import {
   createMessageContent,
   type MessageRow,
 } from '@threadplane/content/messages';
-import { MessageList } from './index';
+import { MessageList, type MessageListScrollControls } from './index';
 
 afterEach(() => {
   cleanup();
@@ -46,6 +47,194 @@ describe('MessageList', () => {
     view.rerender(<MessageList rows={rows} toolOutcome={toolOutcome} renderMessage={() => <p>Owned view</p>} />);
     expect(view.queryByText('Reference verified')).toBeNull();
     content.dispose();
+  });
+  it('keeps precommit and SSR actions inert and follows resize only while pinned in StrictMode', () => {
+    const callbacks: (() => void)[] = [];
+    const disconnects: ReturnType<typeof vi.fn>[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(() => callback([], this as unknown as ResizeObserver));
+          disconnects.push(this.disconnect);
+        }
+        observe = vi.fn();
+        disconnect = vi.fn();
+      }
+    );
+    let latest: MessageListScrollControls | undefined;
+    const renderer = (controls: MessageListScrollControls) => {
+      latest = controls;
+      return null;
+    };
+    expect(
+      renderToString(<MessageList rows={[]} renderScrollControl={renderer} />)
+    ).toContain('role="region"');
+    latest!.scrollToLatest();
+    latest!.focus();
+    const view = render(
+      <StrictMode>
+        <MessageList rows={[]} renderScrollControl={renderer} />
+      </StrictMode>
+    );
+    const region = view.getByRole('region');
+    const focus = vi.spyOn(region, 'focus');
+    let height = 1000;
+    let viewport = 200;
+    let top = 800;
+    Object.defineProperties(region, {
+      scrollHeight: { configurable: true, get: () => height },
+      clientHeight: { configurable: true, get: () => viewport },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = Math.min(value, height - viewport);
+        },
+      },
+    });
+    expect(callbacks).toHaveLength(2);
+    expect(disconnects[0]).toHaveBeenCalledTimes(1);
+    act(callbacks[0]);
+    expect(top).toBe(800);
+    act(callbacks[1]);
+    expect(top).toBe(800);
+    fireEvent.scroll(region);
+    height = 600;
+    top = 400; // Browser clamps to the new maximum rather than user intent.
+    fireEvent.scroll(region);
+    expect(latest!.pinned).toBe(true);
+    top = 300;
+    fireEvent.scroll(region);
+    const unpinned = latest;
+    height = 1400;
+    act(callbacks[1]);
+    expect(top).toBe(300);
+    expect(latest).toBe(unpinned);
+    act(() => latest!.scrollToLatest());
+    expect(top).toBe(1200);
+    height = 1800;
+    act(callbacks[1]);
+    expect(top).toBe(1600);
+    viewport = 400;
+    act(callbacks[1]);
+    expect(top).toBe(1400);
+    expect(focus).not.toHaveBeenCalled();
+    const retained = latest!;
+    view.unmount();
+    top = 25;
+    height = 2000;
+    act(callbacks[1]);
+    retained.scrollToLatest();
+    retained.focus();
+    expect(top).toBe(25);
+    expect(focus).not.toHaveBeenCalled();
+    expect(disconnects[1]).toHaveBeenCalledTimes(1);
+  });
+  it('renders stable view controls outside the unchanged region and jumps explicitly without ResizeObserver', () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    const contexts: MessageListScrollControls[] = [];
+    const control = (controls: MessageListScrollControls) => {
+      contexts.push(controls);
+      return (
+        <button
+          onClick={() => {
+            controls.scrollToLatest();
+            controls.focus();
+          }}
+        >
+          {controls.pinned ? 'Pinned' : 'Latest'}
+        </button>
+      );
+    };
+    const rows: readonly never[] = [];
+    const view = render(
+      <MessageList rows={rows} renderScrollControl={control} className="mine" />
+    );
+    const region = view.getByRole('region', { name: 'Conversation' });
+    expect(region.getAttribute('tabindex')).toBe('0');
+    expect(region.className).toBe('tp-chat-list mine');
+    expect(region.parentElement).toBe(view.container);
+    expect(region.contains(view.getByRole('button'))).toBe(false);
+    const initial = contexts.at(-1)!;
+    const focus = vi.spyOn(region, 'focus');
+    let top = 800;
+    let height = 1000;
+    Object.defineProperties(region, {
+      clientHeight: { configurable: true, get: () => 200 },
+      scrollHeight: { configurable: true, get: () => height },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = Math.min(value, height - 200);
+        },
+      },
+    });
+    fireEvent.scroll(region);
+    top = 780;
+    fireEvent.scroll(region); // Upward intent wins even inside the 32px threshold.
+    expect(view.getByRole('button', { name: 'Latest' })).toBeTruthy();
+    const unpinned = contexts.at(-1)!;
+    expect(unpinned.pinned).toBe(false);
+    expect(unpinned.scrollToLatest).toBe(initial.scrollToLatest);
+    expect(unpinned.focus).toBe(initial.focus);
+    height = 1400;
+    view.rerender(
+      <MessageList rows={[]} renderScrollControl={control}>
+        Growing tail
+      </MessageList>
+    );
+    expect(contexts.at(-1)).toBe(unpinned);
+    expect(top).toBe(780);
+    expect(focus).not.toHaveBeenCalled();
+    fireEvent.click(view.getByRole('button', { name: 'Latest' }));
+    expect(top).toBe(1200);
+    expect(focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(document.activeElement).toBe(region);
+    expect(contexts.at(-1)!.pinned).toBe(true);
+    fireEvent.scroll(region);
+    top = 1167;
+    fireEvent.scroll(region);
+    top = 1168;
+    fireEvent.scroll(region);
+    expect(contexts.at(-1)!.pinned).toBe(true); // Inclusive 32px threshold.
+    view.rerender(
+      <MessageList rows={[]} renderScrollControl={control}>
+        Next tail
+      </MessageList>
+    );
+    expect(top).toBe(1200);
+    view.unmount();
+    top = 100;
+    unpinned.scrollToLatest();
+    unpinned.focus();
+    expect(top).toBe(100);
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('cannot operate a replacement keyed list using stale controls', () => {
+    const contexts: MessageListScrollControls[] = [];
+    const control = (value: MessageListScrollControls) => {
+      contexts.push(value);
+      return null;
+    };
+    const view = render(
+      <MessageList key="first" rows={[]} renderScrollControl={control} />
+    );
+    const old = contexts.at(-1)!;
+    view.rerender(
+      <MessageList key="second" rows={[]} renderScrollControl={control} />
+    );
+    const region = view.getByRole('region');
+    const focus = vi.spyOn(region, 'focus');
+    const set = vi.fn();
+    Object.defineProperty(region, 'scrollTop', { set });
+    old.scrollToLatest();
+    old.focus();
+    expect(set).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
+    expect(contexts.at(-1)!.scrollToLatest).not.toBe(old.scrollToLatest);
   });
   it('resolves provider-only inline references and Markdown-only Sources from projected rows', () => {
     const content = createMessageContent();

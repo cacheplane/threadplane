@@ -84,6 +84,7 @@ function fixture(t, framework) {
           'chat/suggestions.js',
           'chat/error.js',
           'chat/typing-indicator.js',
+          'chat/scroll-bubble.js',
           'chat/citation-preview.js',
           'render/render-spec.js',
         ].map((n) => 'node_modules/@threadplane/react/src/' + n)),
@@ -112,6 +113,7 @@ function fixture(t, framework) {
           'node_modules/@threadplane/react/src/chat/suggestions.d.ts',
           'node_modules/@threadplane/react/src/chat/error.d.ts',
           'node_modules/@threadplane/react/src/chat/typing-indicator.d.ts',
+          'node_modules/@threadplane/react/src/chat/scroll-bubble.d.ts',
           'node_modules/@threadplane/react/src/chat/citation-preview.d.ts',
           'node_modules/@threadplane/react/src/markdown/inline-preview.d.ts',
           'node_modules/@threadplane/react/src/markdown/preview-position.d.ts',
@@ -534,6 +536,26 @@ for (const [graph, extension] of [
     rmSync(join(f.root, 'inputs', path));
     f.save();
     assert.throws(() => readViewProof(f.root), /typing-indicator/);
+  });
+
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed ScrollBubble ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/scroll-bubble' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /scroll-bubble/);
   });
 
 for (const name of ['inline-preview', 'preview-position'])

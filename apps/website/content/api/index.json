@@ -6174,6 +6174,16 @@
       "summary": "Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows."
     },
     {
+      "name": "MessageListScrollControls",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/MessageListScrollControls",
+      "canonicalReference": "@threadplane/react!MessageListScrollControls:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "View-owned actions. Retained actions become inert when this list unmounts."
+    },
+    {
       "name": "OverflowMenu",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6272,6 +6282,36 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Presentation options for an application-owned reasoning document."
+    },
+    {
+      "name": "ScrollBubble",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ScrollBubble",
+      "canonicalReference": "@threadplane/react!ScrollBubble:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Requests an explicit jump to the latest transcript activity."
+    },
+    {
+      "name": "ScrollBubbleMode",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/ScrollBubbleMode",
+      "canonicalReference": "@threadplane/react!ScrollBubbleMode:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Presentation of a latest-activity action. The parent owns visibility."
+    },
+    {
+      "name": "ScrollBubbleProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ScrollBubbleProps",
+      "canonicalReference": "@threadplane/react!ScrollBubbleProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Passive action props; no session or scrolling owner is created."
     },
     {
       "name": "SuggestionItem",
