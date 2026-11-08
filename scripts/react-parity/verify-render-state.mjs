@@ -265,7 +265,7 @@ export async function verifyRenderState({retain,launch}={}) {
     ];
     const provenance={rootLockSha256,installation,expected,presentation,sources,frozen,node:process.version,head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim()};
     writeJson(join(temporary,'provenance.json'),provenance);
-    const assets=readPresentation(temporary,provenance);
+    const assets=readPresentation(temporary,provenance,{profile:'render-state'});
     let origin,result;
     try {
       result=await verifyMarkdownBrowser('',{

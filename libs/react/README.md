@@ -230,9 +230,14 @@ link and `noopener noreferrer`. Missing or blocked URLs display text. The view
 does not fetch icons, previews or metadata, parse snippets,
 subscribe or dispose anything. Markdown definition text before
 its first top-level link becomes the title, and text after it becomes the snippet,
-shared with inline citation previews. Default MessageList
-shows supplied sources after assistant answers; custom row rendering selects its
-own presentation. Styles are opt-in through `/chat/styles.css`.
+shared with inline citation previews. Default `MessageList` assistant rows pass
+their provider metadata to inline Markdown references and merge Sources with the
+same accepted Markdown snapshot. Whole provider records win exact-ID collisions;
+combined sources use stable ascending index order, including Markdown-only sources.
+Metadata-only corrections update both presentations without reparsing unchanged
+Markdown. User and system rows receive no provider metadata, and tool text remains
+literal. Custom row rendering selects its own presentation. Styles are opt-in
+through `/chat/styles.css`.
 
 `CitationCard` also accepts a required readonly core `citation` and optional
 `className` for custom compositions. Its source marker is decorative: known

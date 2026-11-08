@@ -126,3 +126,19 @@ fixtures cover 26 of 27 node kinds. `hard-break` is supplementary unit coverage
 only; the browser proof does not synthesize parser nodes or claim it observed that
 kind. This remains native baseline presentation, without rich math/citation
 renderers, registries or completed legacy extraction.
+
+The presentation page also mounts a separate React default-transcript fixture
+outside the comparison regions. An application-owned `createMessageContent`
+projector supplies seven rows to the installed `MessageList` without a custom
+renderer. Six fixture controls correct and remove metadata, switch custom rows,
+restore defaults, dispose the projector and unmount React. Twelve source checks
+cover provider-only and Markdown-only sources, mixed index ordering, unsafe
+provider precedence, unresolved markers, literal metadata, metadata-only updates,
+nonassistant withholding and custom renderer ownership.
+
+An open shadow root isolates the installed chat stylesheet from the existing
+Markdown comparison. Readiness waits for that stylesheet to load. Retained proof
+records its installed input and emitted asset hashes and verifies identical bytes;
+missing or changed stylesheet records are rejected. Disposing the projector leaves
+accepted rows readable until the fixture explicitly unmounts them. The existing
+owner and comparison walkthroughs retain their original controls and assertions.

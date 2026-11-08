@@ -58,6 +58,13 @@ normalized type badges, hostnames and formatted dates above their original liter
 details. Installed checks cover narrow RTL previews with app stylesheets disabled,
 unchanged keyboard controls, no provider image requests, and live summary updates.
 
+The library's default `MessageList` rows use the same accepted source resolution.
+The installed Markdown presentation fixture separately verifies default rows with
+provider-only, Markdown-only and mixed sources, safe-link collision handling, and
+metadata-only corrections. This native app continues to exercise its custom row
+composition; the default-row fixture uses the installed package in an isolated
+shadow root with its actual chat stylesheet.
+
 Assistant Sources lists opt into `Citations.collapsible` and an app-owned
 `renderCard` callback. The stable callback returns a local source card composed
 from public `CitationCard`, `CitationPreview`, and literal, optional source-type text.

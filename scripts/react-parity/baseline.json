@@ -1,25 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "918253367484d3bf6fbe6ab150756e1a541a1e7b",
+  "baselineHead": "8b85fbbd24d989f5781964e7ad9853984dbe02df",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "libs/ag-ui/src/lib/client-tools.ts",
-      "libs/ag-ui/src/lib/reducer.ts",
-      "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+      "libs/chat/eslint.config.mjs",
       "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/group-summary.ts",
-      "libs/chat/src/public-api.ts",
-      "libs/cockpit-a2ui-react/src/views.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/tool-activity.tsx"
+      "libs/chat/src/lib/primitives/chat-message/chat-message.component.ts",
+      "libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts",
+      "libs/chat/src/lib/primitives/chat-message/owned-markdown-context.ts"
     ],
     "untracked": []
   },
@@ -867,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "bc72aae32618bb06f860fc1309dbebe5aa08e7b0614b467094d54340ac292d32"
+      "sha256": "f3aae1713db69abceb2f49e34263b0b52c0177ef77d03de61995b6eae2f12f79"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -3113,7 +3101,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "sha256": "fa4d8b6cb6aa24a3c3d27f5eac1ec2642b7d31fbd44687353caf4391e03782a5"
+      "sha256": "2c603ec1e34ffe58252243eee0b5095683829adbed6c93b3658f02ff11f7d15a"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -16616,7 +16604,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "7bf2a61bff933d31cf00db7aecb765d11dcda3195ff424ccf6615cfaea0adb37"
+      "sha256": "efd5b43b253e63ab4c2ba4812f02a44c36cab045671690c283d81ad27b80f4ee"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",

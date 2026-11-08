@@ -2244,7 +2244,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-list.tsx",
-      "reason": "Native component. Message-ID ordering, custom role/type render functions, narrow subscriptions."
+      "reason": "Native component. Message-ID ordering, custom role/type render functions, narrow subscriptions. Default assistant rows now share exact accepted provider metadata and Markdown snapshots between inline references and Sources, including Markdown-only definitions, whole-provider collision preference and stable index ordering. Metadata-only corrections retain parser snapshots; custom rendering and nonassistant metadata boundaries remain intact. Installed standalone default-row browser proof supplements unchanged native custom composition."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message-list/message-template.directive.ts#MessageTemplateDirective",
@@ -2254,7 +2254,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-list.tsx",
-      "reason": "Typed message renderer prop. Replace role/type template registration with typed renderers/slots."
+      "reason": "Typed message renderer prop. Replace role/type template registration with typed renderers/slots. Default assistant rows now share exact accepted provider metadata and Markdown snapshots between inline references and Sources, including Markdown-only definitions, whole-provider collision preference and stable index ordering. Metadata-only corrections retain parser snapshots; custom rendering and nonassistant metadata boundaries remain intact. Installed standalone default-row browser proof supplements unchanged native custom composition."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message/chat-message.component.ts#ChatMessageComponent",
@@ -5424,7 +5424,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-list.tsx",
-      "reason": "Native component. Message-ID ordering, custom role/type render functions, narrow subscriptions."
+      "reason": "Native component. Message-ID ordering, custom role/type render functions, narrow subscriptions. Default assistant rows now share exact accepted provider metadata and Markdown snapshots between inline references and Sources, including Markdown-only definitions, whole-provider collision preference and stable index ordering. Metadata-only corrections retain parser snapshots; custom rendering and nonassistant metadata boundaries remain intact. Installed standalone default-row browser proof supplements unchanged native custom composition."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageRole",
@@ -6436,7 +6436,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-list.tsx",
-      "reason": "Typed message renderer prop. Replace role/type template registration with typed renderers/slots."
+      "reason": "Typed message renderer prop. Replace role/type template registration with typed renderers/slots. Default assistant rows now share exact accepted provider metadata and Markdown snapshots between inline references and Sources, including Markdown-only definitions, whole-provider collision preference and stable index ordering. Metadata-only corrections retain parser snapshots; custom rendering and nonassistant metadata boundaries remain intact. Installed standalone default-row browser proof supplements unchanged native custom composition."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#MessageTemplateType",
@@ -14638,7 +14638,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet.",
+      "reason": "Presentational message list (rows in, props only): memoized rows, literal tool text, bottom-pinned scrolling; composed by Chat and styled by the opt-in chat stylesheet. Default assistant rows now share exact accepted provider metadata and Markdown snapshots between inline references and Sources, including Markdown-only definitions, whole-provider collision preference and stable index ordering. Metadata-only corrections retain parser snapshots; custom rendering and nonassistant metadata boundaries remain intact. Installed standalone default-row browser proof supplements unchanged native custom composition.",
       "note": "Concrete authored rows and correlated tool contracts pass source and installed declaration checks; unchanged enriched rows stay memoized. Native React production scroll evidence covers pinning, scroll-up, title refresh and selection reset. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
@@ -17494,7 +17494,7 @@
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
+      "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity. Default assistant citation wiring is now described with accepted snapshots, provider collision precedence, Markdown-only Sources, stable index ordering and retained metadata-only updates. Custom rendering and nonassistant metadata boundaries remain explicit."
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",

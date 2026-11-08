@@ -481,7 +481,7 @@ export async function verifyA2uiSurfaces({ retain, launch } = {}) {
       node: process.version,
     };
     writeJson(join(temporary, 'provenance.json'), provenance);
-    const assets = readPresentation(temporary, provenance);
+    const assets = readPresentation(temporary, provenance, { profile: 'a2ui-surfaces' });
     const result = await verifyMarkdownBrowser('', {
       launch,
       presentation: assets,
