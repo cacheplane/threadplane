@@ -1,0 +1,30 @@
+---
+title: Chat Sidenav
+description: Control expanded, compact, and drawer navigation around a React conversation directory.
+---
+
+# ChatSidenav
+
+`ChatSidenav` presents conversation navigation in `expanded`, `collapsed`, or `drawer` mode. It does not fetch threads, select a conversation, or decide responsive breakpoints.
+
+The component is part of the experimental, private React source-build package.
+
+## Own the mode and visibility
+
+Supply `mode`, `open`, `onOpenChange`, and `onModeChange`. The mode-change callback requests `expanded` or `collapsed`; the application chooses when a narrow viewport requires `drawer`.
+
+Use `children` for full navigation and `collapsedContent` for compact content. Both remain mounted while their inactive region is hidden and inert. Closing a drawer preserves its children too.
+
+Labels customize the navigation, launcher, close, expand, and collapse controls. Opening a drawer focuses Close; presentation changes restore focus only when it belongs to disappearing navigation controls. Escape in an open drawer requests closure.
+
+## Add optional actions
+
+`onSearch` adds a search control. Set `searchShortcut` to enable Ctrl/Command+K, and `toggleShortcut` for Ctrl/Command+B outside drawer mode. Shortcuts respect editable targets, composition, and already handled events.
+
+`ChatSidenavScrim` is a separate controlled backdrop with `open`, `onDismiss`, and an optional accessible `label`. The application decides whether dismissal closes the drawer. This navigation is not a modal-dialog contract.
+
+## Follow the native implementation
+
+Run the [native chat application](/docs/react/chat/getting-started/installation) with `?presentation=sidenav`. Its `native-navigation.tsx` owns responsive selection, expansion preference, drawer visibility, and scrim placement. The directory and selected conversation retain their application-owned state.
+
+Import the chat stylesheet. Use [Layout modes](/docs/react/chat/guides/layout-modes) to compare navigation with popup and sidebar conversation shells.

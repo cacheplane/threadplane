@@ -1,0 +1,28 @@
+---
+title: Introduction
+description: Connect a React view to an application-owned LangGraph session and follow its immutable snapshots.
+---
+
+# LangGraph with React
+
+Connect a React view to an application-owned LangGraph session and follow its immutable snapshots. Your backend runs the graph; application code chooses when to submit, stop, replace, and dispose a session.
+
+The native React APIs are experimental, private source-build packages. `@threadplane/react` is unpublished at version `0.0.0`. These guides teach the repository implementation, not a public npm installation recipe.
+
+## Meet the three owners
+
+| Layer | Responsibility |
+| --- | --- |
+| Backend | Execute the graph, call models and tools, and store conversation history. |
+| Application | Configure the connection, own session lifetime, admit commands, and publish display state. |
+| React view | Observe with `useAgent(application)`, render rows, and forward explicit user actions. |
+
+The hook only needs `getSnapshot()` and `subscribe(notify)`. It preserves the owner's concrete snapshot type. It does not create a LangGraph connection or start a request.
+
+The [streaming example](/docs/react/langgraph/guides/streaming) supplies the complete composition: `connection.ts` wires the private backend runtime, `application.ts` owns the conversation, and `app.tsx` renders `MessageList` and `ChatInput`. Its private `createSession` seam is not a public React factory.
+
+## Choose a starting point
+
+Read [Installation](/docs/react/langgraph/getting-started/installation) to prepare a checkout, then [Quickstart](/docs/react/langgraph/getting-started/quickstart) to follow a real response. The [conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) explains turns, requests, and saved history.
+
+For application design, continue with the [agent contract](/docs/react/langgraph/concepts/agent-contract) and [state management](/docs/react/langgraph/concepts/state-management). Keep provider credentials on the server; browser runtime settings are development tooling, not a production secret store.

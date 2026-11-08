@@ -1,0 +1,34 @@
+---
+title: Lifecycle
+description: Own React session and content lifetimes independently from observation, shell visibility, and command completion.
+---
+
+# Own the conversation lifecycle
+
+A view borrows state; an application owns work. This distinction keeps hidden panels, multiple observers, and late responses from accidentally creating or destroying conversations.
+
+These contracts describe experimental, private React source-build APIs.
+
+## Choose the owner boundary
+
+An application owner can live for a page, a selected conversation, or a longer workspace. It holds the session, message-content projection, subscriptions, and pending operations appropriate to that boundary.
+
+`useAgent` only manages its own subscription. Mounting, StrictMode observation, changing the observed object, and unmounting do not submit, stop, or dispose a session.
+
+The [streaming example](/docs/react/langgraph/guides/streaming) makes ownership explicit: `application.ts` owns session and content; `app.tsx` registers cleanup for that application; `main.tsx` owns the React root and runtime bridge.
+
+## Retire work before replacing it
+
+On disposal, invalidate pending operations so obsolete callbacks cannot publish. Release session subscriptions, dispose content, clear application listeners, and await session disposal where the application requires it.
+
+Use an operation identity or cancellation boundary for asynchronous creation and submission. An old promise settling must not overwrite a newer conversation. Cancellation alone is not confirmation that remote work never began.
+
+The streaming owner makes disposal idempotent and refuses publication after retirement. Its New action disposes the previous owner before installing another one.
+
+## Keep presentation separate
+
+Closing [ChatPopup](/docs/react/chat/components/chat-popup) or [ChatSidebar](/docs/react/chat/components/chat-sidebar) retains mounted children. It is not cleanup. A draft, transcript, and active response can remain alive while hidden.
+
+If `Chat` receives app-owned `content`, it does not dispose it. Custom message views also borrow their Markdown and reasoning snapshots. Retire these owners when their conversation lifetime ends, not whenever a row renders.
+
+Treat Stop, New, view hiding, and application disposal as distinct user or owner actions. [Error handling](/docs/react/chat/guides/error-handling) explains why uncertain work must not turn into an implicit retry.

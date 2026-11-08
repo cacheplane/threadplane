@@ -1,0 +1,39 @@
+---
+title: Quickstart
+description: Follow the runnable React streaming example from connection setup through one completed response.
+---
+
+# Stream your first React response
+
+Use the [React streaming example](/docs/react/langgraph/guides/streaming) to follow one complete conversation boundary. Its **Run** and **Code** views use the same implementation.
+
+These are experimental, private source-build packages. Complete [Installation](/docs/react/langgraph/getting-started/installation) for a local checkout; the example is not a public npm installation recipe.
+
+## Send one message
+
+1. Open the streaming guide's **Run** view.
+2. Use the shared development runtime, or select your LangGraph deployment in **Runtime settings**.
+3. Send a short question and watch the answer extend in place.
+4. Wait for **Response complete** before submitting a follow-up.
+5. Use **New conversation** to replace the page-local conversation.
+
+The first Send creates a thread lazily. A successful response permits another turn. Stopped, failed, paused, interrupted, or uncertain work requires a new conversation in this deliberately narrow example; it never silently retries the old question.
+
+## Trace the implementation
+
+In the streaming guide's **Code** view, read these files in order:
+
+| File | What to follow |
+| --- | --- |
+| `connection.ts` | Runtime configuration, exact thread-creation confirmation, and private session construction with retries disabled. |
+| `application.ts` | Command admission, session observation, message projection, and immutable publication. |
+| `app.tsx` | `useAgent(application)`, supplied rows, submit/stop controls, and owner cleanup. |
+| `main.tsx` | Client root and runtime bridge startup and teardown. |
+
+The application calls `content.project` while processing session observations, then publishes `rows`. React reads those prepared rows without advancing a content owner during rendering.
+
+## Read completion correctly
+
+The core session's `submit` returns a `CompleteOutcome`. This example's application method publishes that result as `snapshot.outcome`; its own promise settlement is not the success signal. The visible answer can remain after a failed or stopped attempt.
+
+Read [Conversation turns](/docs/react/langgraph/concepts/conversation-turns) next. Add [persistence](/docs/react/langgraph/guides/persistence) only when your application also owns saved-history loading and confirmation.

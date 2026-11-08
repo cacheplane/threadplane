@@ -1,0 +1,34 @@
+---
+title: Markdown
+description: Render application-owned Markdown snapshots in React with safe links, citations, and clear parsing ownership.
+---
+
+# Render Markdown in React
+
+`Markdown` from `@threadplane/react/markdown` renders a required whole `MarkdownSnapshot`. The snapshot belongs to a content owner; the view neither parses source text nor subscribes to an owner.
+
+These are experimental, private source-build APIs.
+
+## Prepare content at the owner boundary
+
+For chat, `createMessageContent` maintains Markdown and optional reasoning documents for identified messages. The application projects a session observation and publishes prepared rows. Pass each row's `markdown` snapshot to the renderer.
+
+For a standalone document, create and update a Markdown owner in application composition, then observe it with `useAgent` or pass its snapshot directly. Unmounting the view does not dispose that owner.
+
+The [message model](/docs/react/chat/concepts/message-model) links the actual application and custom row source.
+
+## Understand the presentation policy
+
+The renderer supports semantic lists and tables, disabled task checkboxes, references, and image fallbacks. Literal HTML stays text. Math remains delimited text; this entry does not add syntax highlighting or a custom node registry.
+
+Links and images use the shared content destination policy. Blocked or absent image targets, and failed image loads, produce accessible alt-text fallbacks. A new generation resets local image state.
+
+## Supply citations deliberately
+
+Optional readonly `citations` supplies per-message metadata. Exact supplied IDs take precedence over Markdown definitions, including blocked or absent URLs. Duplicate supplied IDs throw. Unresolved IDs remain literal markers.
+
+Set `citationPreview` to opt into inline source-detail controls. Safe navigation remains a separate “Open source” link; the view never fetches source metadata or icons.
+
+For a Sources section, compose `Citations` from the chat entry using the same accepted Markdown snapshot and citation metadata. The canonical native chat demonstrates this combination.
+
+Keep both metadata and snapshots scoped to the correct message generation. See [Reasoning](/docs/react/chat/components/chat-reasoning) for another view of an owned Markdown document.

@@ -26,6 +26,13 @@
   ],
   "tags": ["scope:website", "scope:website-e2e", "type:app"],
   "targets": {
+    "whitepaper-evidence": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node --import tsx apps/website/scripts/check-whitepaper-evidence.ts"
+      }
+    },
     "learning-e2e": {
       "executor": "@nx/playwright:playwright",
       "dependsOn": [{ "projects": ["cockpit-langgraph-streaming-react"], "target": "build" }],

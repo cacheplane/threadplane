@@ -42,12 +42,13 @@ test('Markdown exports and sitemap retain each document canonical framework', as
   const markdown = await react.text();
   expect(markdown).toContain('# React streaming preview');
   expect(markdown).toContain('experimental, private source-build packages');
-  expect(markdown).toContain('/docs/angular/langgraph/concepts/conversation-turns');
+  expect(markdown).toContain('/docs/react/langgraph/concepts/conversation-turns');
+  expect(markdown).not.toContain('/docs/angular/langgraph/concepts/conversation-turns');
   const angular = await request.get('/api/markdown/angular/langgraph/guides/streaming');
   expect(angular.ok()).toBe(true);
   expect(await angular.text()).toContain('# Streaming');
   expect(await angular.text()).not.toContain('# React streaming preview');
-  const missing = await request.get('/api/markdown/react/langgraph/getting-started/installation');
+  const missing = await request.get('/api/markdown/react/langgraph/concepts/angular-signals');
   expect(missing.status()).toBe(404);
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.ok()).toBe(true);
@@ -57,4 +58,33 @@ test('Markdown exports and sitemap retain each document canonical framework', as
   expect(xml).toContain('/docs/shared/middleware/getting-started/introduction</loc>');
   expect(xml).not.toContain('/docs/langgraph/guides/streaming</loc>');
   expect(xml).not.toContain('frontend=');
+});
+
+test('new React onboarding and component guides appear in search and Markdown exports', async ({ request }) => {
+  for (const [query, href] of [
+    ['Prepare a React source build', '/docs/react/langgraph/getting-started/installation'],
+    ['Prepare React chat', '/docs/react/chat/getting-started/installation'],
+  ]) {
+    const response = await request.get(`/api/docs-search?q=${encodeURIComponent(query)}&framework=react`);
+    expect(response.ok()).toBe(true);
+    const { results } = await response.json();
+    expect(results.map((hit: { href: string }) => hit.href)).toContain(href);
+  }
+  for (const [id, heading] of [
+    ['langgraph/getting-started/installation', 'Prepare a React source build'],
+    ['langgraph/concepts/conversation-turns', 'Follow a React conversation'],
+    ['chat/components/chat-popup', 'ChatPopup'],
+    ['ag-ui/getting-started/quickstart', 'Start with AG-UI streaming'],
+    ['render/getting-started/quickstart', 'Render your first specification'],
+  ]) {
+    const exported = await request.get(`/api/markdown/react/${id}`);
+    expect(exported.ok(), id).toBe(true);
+    const text = await exported.text();
+    expect(text, id).toContain(`# ${heading}`);
+    expect(text, id).toMatch(/private.*source.build/i);
+    expect(text, id).not.toContain('/docs/angular/langgraph/concepts/conversation-turns');
+  }
+  const xml = await (await request.get('/sitemap.xml')).text();
+  expect(xml).toContain('/docs/react/langgraph/getting-started/installation</loc>');
+  expect(xml).toContain('/docs/react/chat/components/chat-popup</loc>');
 });

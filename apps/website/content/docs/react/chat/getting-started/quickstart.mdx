@@ -1,0 +1,34 @@
+---
+title: Quickstart
+description: Build a React transcript and composer around the runnable message example's application owner.
+---
+
+# Compose your first React chat
+
+Start with the [messages example](/docs/react/chat/concepts/message-model). It supplies the backend connection, application owner, content projection, and view together, so each part has a real lifetime.
+
+These APIs are experimental, private source-build packages. Follow [Installation](/docs/react/chat/getting-started/installation) to prepare the checkout.
+
+## Observe, render, and dispatch
+
+In the messages guide's **Code** view, start with `application.ts`. Its owner observes the session and projects message content before publishing the display snapshot. Next, read `app.tsx`: `useAgent` borrows that application and `MessageList` consumes the published rows.
+
+`ChatInput` receives the application's busy and admission state. Its submit and stop callbacks dispatch explicit commands. The view does not interpret a returned promise as proof that a response succeeded.
+
+The default [Chat component](/docs/react/chat/components/chat) is convenient when a core `AgentSession` supplies the desired contract. This example composes primitives because it also waits for saved-history confirmation before allowing a follow-up.
+
+## Try the flow
+
+1. Open **Run** on the messages guide and send a question.
+2. Watch one assistant row update as Markdown arrives.
+3. Wait for **Response saved**, then send a follow-up.
+4. Use **Stop** during another response and inspect the recovery notice.
+5. Choose **New conversation** to reset explicitly.
+
+Stopped, failed, uncertain, or unexpectedly paused work requires New in this example. Reset does not replay the old question.
+
+## Customize one boundary at a time
+
+Use a stable `renderMessage` callback to return your own row component. Preserve each row's identity and borrow its `markdown`, `reasoning`, and tool observations. Keep hooks inside the returned component.
+
+Import the chat stylesheet in the client entry, then use [theming](/docs/react/chat/guides/theming) for scoped appearance. Add [popup or sidebar presentation](/docs/react/chat/guides/layout-modes) around the same owned conversation. Closing a shell should not accidentally become a session-disposal policy.
