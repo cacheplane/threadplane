@@ -62,6 +62,10 @@ for (const width of [375, 1280])
     }, testInfo) => {
       const { selectedFramework } = await import('../tooling/commands.mjs');
       const framework = selectedFramework(testInfo.project.metadata.framework);
+      const toolOutputSelector =
+        framework === 'react'
+          ? '.message-tool > .tp-chat-message__body > pre'
+          : '.message-tool > pre';
       const { startProofServer, threadEnvelope } = await import(
         '../tooling/proof-server.mjs'
       );
@@ -449,7 +453,7 @@ for (const width of [375, 1280])
         await expect(page.locator('#conversation-title')).toHaveText(
           'Tool output check'
         );
-        await expect(page.locator('.message-tool > .tp-chat-message__body > pre')).toBeAttached();
+        await expect(page.locator(toolOutputSelector)).toBeAttached();
         await expect(input).toHaveValue('');
         await expect
           .poll(() =>
@@ -625,7 +629,7 @@ for (const width of [375, 1280])
         await expect
           .poll(() => transcript.evaluate((element) => element.scrollTop))
           .toBeGreaterThan(0);
-        const toolOutput = page.locator('.message-tool > .tp-chat-message__body > pre');
+        const toolOutput = page.locator(toolOutputSelector);
         await toolOutput.scrollIntoViewIfNeeded();
         await expect(toolOutput).toContainText('Long tool output:');
         await expect
