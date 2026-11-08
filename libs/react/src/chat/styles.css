@@ -626,7 +626,49 @@
 }
 .tp-chat__error {
   margin: 0;
-  color: var(--tp-chat-danger);
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+.tp-chat-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  overflow-wrap: anywhere;
+}
+.tp-chat-error p {
+  margin: 0;
+  min-inline-size: 0;
+  white-space: pre-wrap;
+}
+.tp-chat-error__message {
+  flex: 1 1 auto;
+}
+.tp-chat-error__detail {
+  flex-basis: 100%;
+}
+.tp-chat-error button {
+  max-inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: inherit;
+  font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tp-chat-error button:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-chat-error button:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 .tp-citations {
   margin-block: 0.75rem;

@@ -20,6 +20,11 @@ const missing: ChatProps = {};
 // @ts-expect-error Chat dispatches itself; onSubmit is not a Chat prop.
 <Chat session={session} onSubmit={() => undefined} />;
 const ok: ChatProps = { session };
+<Chat session={session} onRetry={() => undefined} />;
+// @ts-expect-error App retry receives no session or payload.
+<Chat session={session} onRetry={(owner: AgentSession) => undefined} />;
+// @ts-expect-error Retry intent is readonly.
+ok.onRetry = () => undefined;
 // @ts-expect-error Props are readonly.
 ok.className = 'x';
 void missing;

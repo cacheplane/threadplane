@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   streamingDelivery,
+  type AgentError,
   type AgentSession,
   type AgentSnapshot,
 } from '@threadplane/core';
@@ -93,6 +94,98 @@ function rejection() {
 }
 
 describe('Chat', () => {
+  const failure = (recovery: AgentError['recovery'] = 'retry'): AgentError =>
+    Object.freeze({
+      kind: 'server',
+      message: 'Failed',
+      detail: 'Detail',
+      retryable: true,
+      recovery,
+    });
+  it('dispatches only the explicit app retry with zero arguments', () => {
+    const { session, raw } = fakeSession({ error: failure() });
+    const retry = vi.fn();
+    const view = render(<Chat session={session} onRetry={retry} />);
+    fireEvent.click(view.getByRole('button', { name: 'Retry' }));
+    expect(retry).toHaveBeenCalledExactlyOnceWith();
+    expect(raw.submit).not.toHaveBeenCalled();
+    expect(view.getByRole('alert').classList.contains('tp-chat__error')).toBe(
+      true
+    );
+    expect(view.getByRole('alert').textContent).toContain('Detail');
+  });
+  it.each(['check', 'none'] as const)(
+    'does not fall through %s to app retry',
+    (recovery) => {
+      const { session } = fakeSession({ error: failure(recovery) });
+      const view = render(<Chat session={session} onRetry={vi.fn()} />);
+      expect(view.queryByRole('button', { name: 'Retry' })).toBeNull();
+      expect(view.queryByRole('button', { name: 'Check status' })).toBeNull();
+    }
+  );
+  it('binds supported checkStatus to its receiver and contains rejection', () => {
+    const { session } = fakeSession({ error: failure('check') });
+    const failed = rejection();
+    const check = vi.fn(function (this: AgentSession) {
+      expect(this).toBe(session);
+      return failed as never;
+    });
+    Object.assign(session, { checkStatus: check });
+    const retry = vi.fn();
+    const view = render(<Chat session={session} onRetry={retry} />);
+    fireEvent.click(view.getByRole('button', { name: 'Check status' }));
+    expect(check).toHaveBeenCalledExactlyOnceWith();
+    expect(failed.handled).toBe(true);
+    expect(retry).not.toHaveBeenCalled();
+  });
+  it.each(['retry', 'check'] as const)(
+    'guards stale %s against replaced or cleared latest error',
+    (recovery) => {
+      const { session } = fakeSession({ error: failure(recovery) });
+      const request = vi.fn(async () => undefined);
+      Object.assign(session, { checkStatus: request });
+      const view = render(<Chat session={session} onRetry={request} />);
+      const button = view.getByRole('button', {
+        name: recovery === 'check' ? 'Check status' : 'Retry',
+      });
+      const presented = session.getSnapshot();
+      for (const error of [failure(recovery), undefined]) {
+        vi.spyOn(session, 'getSnapshot').mockReturnValue({
+          ...presented,
+          error,
+        });
+        fireEvent.click(button);
+        expect(request).not.toHaveBeenCalled();
+      }
+    }
+  );
+  it('rechecks the optional capability at dispatch', () => {
+    const { session } = fakeSession({ error: failure('check') });
+    const request = vi.fn(async () => undefined);
+    Object.assign(session, { checkStatus: request });
+    const view = render(<Chat session={session} />);
+    Object.assign(session, { checkStatus: undefined });
+    fireEvent.click(view.getByRole('button', { name: 'Check status' }));
+    expect(request).not.toHaveBeenCalled();
+  });
+  it('uses only the new session and clears the notice without recovery or disposal', () => {
+    const one = fakeSession({ error: failure('check') });
+    const two = fakeSession({ error: failure('check') });
+    const first = vi.fn(async () => undefined);
+    const second = vi.fn(async () => undefined);
+    Object.assign(one.session, { checkStatus: first });
+    Object.assign(two.session, { checkStatus: second });
+    const view = render(<Chat session={one.session} />);
+    view.rerender(<Chat session={two.session} />);
+    fireEvent.click(view.getByRole('button', { name: 'Check status' }));
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledExactlyOnceWith();
+    two.set({ error: undefined });
+    expect(view.queryByRole('alert')).toBeNull();
+    view.unmount();
+    expect(one.raw.dispose).not.toHaveBeenCalled();
+    expect(two.raw.dispose).not.toHaveBeenCalled();
+  });
   it('renders streamed Markdown and submits the trimmed draft through the session', () => {
     const { session, raw, set } = fakeSession();
     const view = render(<Chat session={session} />);

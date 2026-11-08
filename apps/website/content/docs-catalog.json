@@ -1401,6 +1401,21 @@
     }
   },
   {
+    "id": "chat/components/chat-error",
+    "title": "ChatError",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-error",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/chat-error.mdx",
+        "description": "Present an already classified error with explicit application-owned recovery intents.",
+        "apiEntrypointIds": ["react/chat"]
+      }
+    }
+  },
+  {
     "id": "chat/components/chat-interrupt-panel",
     "title": "ChatInterruptPanel",
     "library": "chat",

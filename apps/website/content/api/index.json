@@ -5834,6 +5834,26 @@
       "summary": "Transcript, error and composer wired to an app-owned `AgentSession`."
     },
     {
+      "name": "ChatError",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ChatError",
+      "canonicalReference": "@threadplane/react!ChatError:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Passive, literal error notice with at most one supported recovery action."
+    },
+    {
+      "name": "ChatErrorProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ChatErrorProps",
+      "canonicalReference": "@threadplane/react!ChatErrorProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Displays an already classified error and explicit application-owned recovery intents."
+    },
+    {
       "name": "ChatInput",
       "entrypointId": "react/chat",
       "kind": "Variable",

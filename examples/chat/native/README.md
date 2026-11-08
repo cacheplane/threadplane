@@ -548,6 +548,12 @@ servers or reuse another session's directory.
   its heading adopts the returned title; the transcript and draft stay as they
   are, and a conversation missing from the list stays selected. Titles are not
   otherwise kept current. **Retry** explicitly retries a failed selection.
+
+React displays the ready selected runtime's classified error through `ChatError`.
+Its message and detail are literal accessible text. This application's selection
+Retry reloads the selection; it is not execution recovery. The application exposes
+no execution retry or check-status callback, so the runtime error notice supplies
+neither action. Clearing the error or leaving the ready selection removes it.
 - **Stop** requests local cancellation and closes the local stream. It does not
   guarantee that the server run has stopped.
 - If a creation response is lost, creation is shown as unconfirmed: a server

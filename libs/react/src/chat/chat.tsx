@@ -4,6 +4,7 @@ import type { AgentSession } from '@threadplane/core';
 import type { MessageContent, MessageRow } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
+import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 
@@ -22,6 +23,8 @@ export interface ChatProps
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
   readonly toolLabel?: MessageListProps['toolLabel'];
+  /** Explicit application-owned retry intent; Chat never replays a submission. */
+  readonly onRetry?: () => void;
 }
 
 const ignore = () => undefined;
@@ -34,6 +37,7 @@ export function Chat({
   className,
   groupRelatedTools,
   toolLabel,
+  onRetry,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
@@ -46,11 +50,25 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
       />
-      {snapshot.error && (
-        <p role="alert" className="tp-chat__error">
-          {snapshot.error.message}
-        </p>
-      )}
+      <ChatError
+        error={snapshot.error}
+        className="tp-chat__error"
+        onRetry={
+          onRetry &&
+          (() => {
+            if (session.getSnapshot().error === snapshot.error) onRetry();
+          })
+        }
+        onCheckStatus={
+          session.checkStatus &&
+          (() => {
+            const checkStatus = session.checkStatus;
+            if (checkStatus && session.getSnapshot().error === snapshot.error) {
+              checkStatus.call(session).catch(ignore);
+            }
+          })
+        }
+      />
       <ChatInput
         key={sessionKey(session)}
         {...input}

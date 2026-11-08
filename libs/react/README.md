@@ -358,6 +358,17 @@ submits the trimmed draft and ignores rejected `submit`/`stop` promises; the ses
 reports failures through its snapshot. A failed send does not restore the draft.
 Switching sessions resets the draft. Chat never disposes the session.
 
+`ChatError` from `@threadplane/react/chat` displays a required nullable readonly
+`AgentError` as one literal accessible alert with optional detail. Explicit
+`onRetry` and `onCheckStatus` callbacks receive zero arguments and own their async
+results. Check recovery requires its callback and never falls through to retry;
+explicit `none` suppresses every action. Retry requires retryable metadata and
+its explicit callback. `disabled` retains the action without activation.
+Default `Chat` forwards supported session `checkStatus`, checks the latest error
+identity before recovery, and accepts an optional app-owned `onRetry` intent.
+It never replays submit. The native example supplies no execution recovery
+callbacks; selection Retry remains a separate selection reload.
+
 Without a `content` prop, Chat owns one message projection per session and releases
 it on unmount or session change. To keep the projection across remounts, create it
 once with `createMessageContent()` from `@threadplane/content/messages` and pass it

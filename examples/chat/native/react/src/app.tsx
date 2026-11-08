@@ -11,6 +11,7 @@ import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatPopup,
+  ChatError,
   ChatSidebar,
   Citations,
   ConfirmDialog,
@@ -860,6 +861,7 @@ function Conversation({
             )}
             {selection.status === 'ready' && (
               <>
+                <ChatError error={snapshot.runtime?.error} />
                 <MessageList
                   key={selection.id}
                   rows={snapshot.messages}
