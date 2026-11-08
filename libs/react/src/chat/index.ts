@@ -1,5 +1,10 @@
 'use client';
 export {
+  TypingIndicator,
+  isTyping,
+  type TypingIndicatorProps,
+} from './typing-indicator.js';
+export {
   ToolActivity,
   ToolActivityGroup,
   toolActivityPhase,

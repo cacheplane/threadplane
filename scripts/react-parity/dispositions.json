@@ -2427,9 +2427,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/typing-indicator.tsx",
-      "reason": "Native component. Shared typing selector; accessible announcement policy distinct from token text."
+      "reason": "Controlled readonly waiting label and pure core text-only snapshot selector are composed in Chat and native React. Native keeps its existing submission announcement via announce=false. This bounded first-text slice does not complete T23 or legacy content-array/runtime parity."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts#ChatWelcomeSuggestionComponent",
@@ -5758,9 +5758,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/typing-indicator.tsx",
-      "reason": "Native component. Shared typing selector; accessible announcement policy distinct from token text."
+      "reason": "Controlled readonly waiting label and pure core text-only snapshot selector are composed in Chat and native React. Native keeps its existing submission announcement via announce=false. This bounded first-text slice does not complete T23 or legacy content-array/runtime parity."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatWelcomeComponent",
@@ -7044,7 +7044,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Pure borrowed Pick<AgentSnapshot, status|messages> projection supports running/no-messages/last-user/empty-assistant waiting only. Whitespace is content; tool/system last messages are false. Legacy message arrays and full T23 remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#isUserMessage",
@@ -10825,7 +10827,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Controlled first-text waiting label with optional polite atomic announcement. Native suppresses duplicate submission announcements. Full T23 remains open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-welcome/chat-welcome-suggestion.component.ts",
@@ -11130,7 +11134,9 @@
         "T22"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Scoped logical wrapping, currentColor dots and CSS-only animation with reduced-motion, forced-colors and no-CSS readability support the bounded first-text waiting slice. Full styling parity remains open."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-welcome.styles.ts",
@@ -17761,6 +17767,46 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/error.tsx",
       "reason": "Passive classified-error presentation with literal message/detail, explicit app-owned intents, strict check/retry/none precedence and guarded Chat composition. This bounded slice does not complete T23; extractErrorMessage remains planned."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/typing-indicator.mdx",
+      "taskIds": ["T23", "T34", "T35"],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "target": "apps/website/content/docs/react/chat/components/typing-indicator.mdx",
+      "reason": "Compiled borrowed-snapshot example documents bounded text-only waiting, controlled announcement policy and existing Chat/native composition; full T23 remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TypingIndicator",
+      "taskIds": ["T23"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Controlled first-text waiting presentation with no session ownership or commands. Full T23 remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TypingIndicatorProps",
+      "taskIds": ["T23"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Exact readonly active/label/announce/className contract for controlled first-text waiting. Full T23 remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#isTyping",
+      "taskIds": ["T23"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Pure text-only core snapshot projection with exact status/messages input and boolean result; full T23 and legacy typing/runtime parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/chat/typing-indicator.tsx",
+      "taskIds": ["T23"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/typing-indicator.tsx",
+      "reason": "Controlled first-text waiting presentation and pure borrowed selector, composed without new subscriptions or commands. Full T23 remains open."
     }
   ]
 }

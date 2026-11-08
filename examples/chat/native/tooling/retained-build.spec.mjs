@@ -276,6 +276,7 @@ function fixture(t, framework = 'react') {
         'text-transcript',
         'suggestions',
         'error',
+        'typing-indicator',
         'citation-preview',
       ]) {
         const local = 'src/chat/' + name + extension;
@@ -640,6 +641,21 @@ for (const [graph, extension] of [['compiler', '.d.ts'], ['bundler', '.js']])
     const f = fixture(t, 'react');
     delete f.provenance[graph].inputs['node_modules/@threadplane/react/src/chat/error' + extension];
     assert.throws(() => captureRetainedBuild(f.directory, f), /ChatError/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed TypingIndicator/isTyping ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/typing-indicator' + extension
+    ];
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /TypingIndicator/
+    );
   });
 
 for (const name of ['inline-preview', 'preview-position'])

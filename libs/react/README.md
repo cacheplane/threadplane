@@ -358,6 +358,19 @@ submits the trimmed draft and ignores rejected `submit`/`stop` promises; the ses
 reports failures through its snapshot. A failed send does not restore the draft.
 Switching sessions resets the draft. Chat never disposes the session.
 
+`TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
+waiting-before-text presentation from a borrowed core snapshot. `active` is
+required; optional readonly `label`, `announce`, and `className` customize the
+literal label, polite atomic status announcement, and styling. Inactive renders
+nothing. `isTyping` requires running status and no messages, a last user message,
+or empty last assistant string content. Any assistant text (including whitespace),
+or a last tool/system message hides it. Default `Chat` composes it from the existing
+snapshot after `MessageList`. Set `announce={false}` when the application already
+announces submission progress. Dots are decorative CSS animation with reduced
+motion support; the label remains readable without CSS. No execution, session
+ownership, commands, subscriptions, or timers are added. This bounded text-only
+slice does not complete T23 or legacy typing/runtime parity.
+
 `ChatError` from `@threadplane/react/chat` displays a required nullable readonly
 `AgentError` as one literal accessible alert with optional detail. Explicit
 `onRetry` and `onCheckStatus` callbacks receive zero arguments and own their async

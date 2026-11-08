@@ -30,6 +30,114 @@ const expectations = () => [
   { method: 'GET', path: '/history', body: ['history'] },
 ];
 
+test('optional SSE frame gates hold first and later text and release on server close', async (t) => {
+  const server = await startProofServer([
+    {
+      method: 'GET',
+      path: '/stream',
+      holdBody: true,
+      events: [
+        { event: 'values', data: 'first', hold: true },
+        { event: 'values', data: 'later', hold: true },
+      ],
+    },
+  ]);
+  t.after(() => server.close());
+  const response = await deadline(fetch(server.origin + '/stream'));
+  const reader = response.body.getReader();
+  const first = reader.read();
+  assert.deepEqual(
+    server.steps[0].events.map((event) => event.sent),
+    [false, false]
+  );
+  server.steps[0].events[0].release();
+  assert.equal(
+    new TextDecoder().decode((await deadline(first)).value),
+    'event: values\ndata: "first"\n\n'
+  );
+  assert.deepEqual(
+    server.steps[0].events.map((event) => event.sent),
+    [true, false]
+  );
+  server.steps[0].events[1].release();
+  assert.equal(
+    new TextDecoder().decode((await deadline(reader.read())).value),
+    'event: values\ndata: "later"\n\n'
+  );
+  server.steps[0].releaseBody();
+  assert.equal((await deadline(reader.read())).done, true);
+  assert.deepEqual(await deadline(server.steps[0].closed), { finished: true });
+  server.verify();
+});
+
+for (const cancel of ['client', 'server']) {
+  test(`pending SSE frame gate releases on ${cancel} cancellation without a stranded response`, async (t) => {
+    const server = await startProofServer([
+      {
+        method: 'GET',
+        path: '/stream',
+        holdBody: true,
+        events: [{ event: 'values', data: 'held', hold: true }],
+      },
+    ]);
+    t.after(() => server.close());
+    const controller = new AbortController();
+    const response = await deadline(
+      fetch(server.origin + '/stream', { signal: controller.signal })
+    );
+    const read = response.body.getReader().read();
+    const rejected = assert.rejects(deadline(read));
+    if (cancel === 'client') controller.abort();
+    else await deadline(server.close());
+    await rejected;
+    assert.deepEqual(await deadline(server.steps[0].closed), {
+      finished: false,
+    });
+    await deadline(server.steps[0].events[0].settled);
+    assert.equal(server.steps[0].events[0].sent, false);
+    server.verify();
+  });
+}
+
+test('held-header cancellation settles every never-sent frame before the frame loop', async (t) => {
+  const server = await startProofServer([
+    {
+      method: 'GET',
+      path: '/stream',
+      holdHeaders: true,
+      events: [{ event: 'values', data: 'held', hold: true }],
+    },
+  ]);
+  t.after(() => server.close());
+  const controller = new AbortController();
+  const request = fetch(server.origin + '/stream', {
+    signal: controller.signal,
+  });
+  const rejected = assert.rejects(request, { name: 'AbortError' });
+  await deadline(server.steps[0].received);
+  controller.abort();
+  await rejected;
+  assert.deepEqual(await deadline(server.steps[0].closed), { finished: false });
+  await deadline(server.steps[0].events[0].settled);
+  assert.equal(server.steps[0].events[0].sent, false);
+  server.verify();
+});
+
+test('server close settles frames for expectations never received', async () => {
+  const server = await startProofServer([
+    {
+      method: 'GET',
+      path: '/unused',
+      holdHeaders: true,
+      events: [{ event: 'values', data: 'held', hold: true }],
+    },
+  ]);
+  await deadline(server.close());
+  await deadline(server.steps[0].events[0].settled);
+  assert.equal(server.steps[0].events[0].sent, false);
+  assert.deepEqual(server.requests, []);
+});
+
 test('proof server sends exact SSE frames and validates a dynamic payload', async (t) => {
   const server = await startProofServer([
     {

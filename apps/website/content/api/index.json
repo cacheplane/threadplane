@@ -6094,6 +6094,16 @@
       "summary": "App-supplied search row whose unique ID is returned on selection, with title and optional subtitle."
     },
     {
+      "name": "isTyping",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/isTyping",
+      "canonicalReference": "@threadplane/react!isTyping:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Whether a borrowed text-only snapshot is waiting for its first assistant text."
+    },
+    {
       "name": "MessageAction",
       "entrypointId": "react/chat",
       "kind": "Interface",
@@ -6472,6 +6482,26 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Literal observed text. The caller owns tool/result association and formatting."
+    },
+    {
+      "name": "TypingIndicator",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/TypingIndicator",
+      "canonicalReference": "@threadplane/react!TypingIndicator:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Readable waiting label with decorative dots and optional polite announcement."
+    },
+    {
+      "name": "TypingIndicatorProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/TypingIndicatorProps",
+      "canonicalReference": "@threadplane/react!TypingIndicatorProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Controlled waiting presentation; no session, execution or lifetime ownership."
     },
     {
       "name": "Welcome",

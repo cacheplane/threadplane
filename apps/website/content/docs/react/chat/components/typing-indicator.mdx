@@ -1,0 +1,30 @@
+---
+title: TypingIndicator
+description: Show a controlled waiting label until the first assistant text arrives.
+---
+
+# TypingIndicator
+
+This experimental, private React source-build component presents a borrowed snapshot's waiting state. Import `TypingIndicator` and `isTyping` from `@threadplane/react/chat`, and import the stylesheet explicitly.
+
+~~~tsx
+import type { AgentSnapshot } from '@threadplane/core';
+import { isTyping, TypingIndicator } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function Waiting({ snapshot }: {
+  readonly snapshot: Pick<AgentSnapshot, 'status' | 'messages'>;
+}) {
+  return <TypingIndicator active={isTyping(snapshot)} />;
+}
+~~~
+
+`isTyping` returns false unless `status` is `'running'`. While running, it returns true for an empty message list, a last user message, or a last assistant message whose string `content` is empty. Any assistant text, including whitespace, hides it; last tool and system messages also hide it. Only the last message matters. This bounded selector supports core's text-only messages and never changes the snapshot or owns execution.
+
+`active` is required. When false, the component renders nothing and reserves no layout. When true, it displays the literal `label` (default **Assistant is typing**) and three decorative, accessibility-hidden dots. `className` adds root classes. All props are readonly. There are no session, owner, or command props, timers, subscriptions, automatic scrolling, or focus changes.
+
+By default, the stable label appears in one polite, atomic status region. Token text never enters that region. Set `announce={false}` when another part of the application already announces submission progress: the label stays readable, with no status or live-region semantics. The native React example uses this policy to preserve its existing composer submission announcement.
+
+The stylesheet uses optional CSS dot animation; reduced-motion preferences disable it. The label stays readable with forced colors or without CSS, and wraps in narrow and right-to-left layouts.
+
+Default [Chat](/docs/react/chat/components/chat) derives this indicator from its existing session snapshot after the message list and before its error notice and composer. This slice does not add general run-activity slots, legacy content-array support, or complete runtime/typing parity.

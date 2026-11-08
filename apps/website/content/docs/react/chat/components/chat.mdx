@@ -5,7 +5,7 @@ description: Use the React Chat component to wire a core session to a transcript
 
 # Chat
 
-`Chat` from `@threadplane/react/chat` combines `MessageList`, a session error alert, and `ChatInput` for a core `AgentSession`. It borrows that session; the application retains command and lifetime authority.
+`Chat` from `@threadplane/react/chat` combines `MessageList`, a waiting indicator, a session error alert, and `ChatInput` for a core `AgentSession`. It borrows that session; the application retains command and lifetime authority.
 
 This is an experimental, private source-build component. See [chat setup](/docs/react/chat/getting-started/installation).
 
@@ -33,6 +33,8 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 | `onRetry` | Optional application-owned zero-argument retry intent. |
 
 Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
+
+The default [TypingIndicator](/docs/react/chat/components/typing-indicator) uses the same snapshot and subscription. It shows while running with no messages, a last user message, or an empty last assistant message; it hides on the first assistant text, including whitespace, or a last tool/system message. The polite status label appears after the transcript and before error/composer. Use explicit composition with `announce={false}` when your application already announces submission progress.
 
 It does not dispose the session. If you supply `content`, it also remains yours to dispose. Without supplied content, Chat manages its own message projection. Replacing the session resets the keyed composer.
 

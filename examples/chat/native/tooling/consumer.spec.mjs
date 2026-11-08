@@ -29,6 +29,89 @@ import { selectedBuildInputRoots } from './build-workspace.mjs';
 
 const repository = fileURLToPath(new URL('../../../../', import.meta.url));
 
+test('production composition requires installed typing indicator runtime and declarations', async (t) => {
+  const consumer = mkdtempSync(join(tmpdir(), 'native-typing-composition-'));
+  t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const modules = [
+    '@threadplane/langgraph/runtime/create-session',
+    '@threadplane/react/src/use-agent',
+    '@threadplane/react/src/markdown/markdown',
+    ...[
+      'message-list',
+      'reasoning',
+      'approval-card',
+      'message-actions',
+      'citations',
+      'citation-preview',
+      'text-transcript',
+      'suggestions',
+      'error',
+      'typing-indicator',
+    ].map((name) => '@threadplane/react/src/chat/' + name),
+    '@threadplane/react/src/render/render-spec',
+    '@threadplane/content/src/markdown/create-markdown',
+    '@threadplane/content/src/messages/create-message-content',
+    '@threadplane/content/src/a2ui/create-surfaces',
+  ];
+  const sources = [
+    'application',
+    'a2ui-message-content',
+    'a2ui-trip-catalog',
+  ].map((name) => 'react/src/' + name + '.ts');
+  const types = [
+    ...sources,
+    'node_modules/@threadplane/a2ui/index.d.ts',
+    ...modules.map((name) => 'node_modules/' + name + '.d.ts'),
+  ];
+  const runtime = [
+    ...sources,
+    ...modules.map((name) => 'node_modules/' + name + '.js'),
+    ...['inline-preview', 'preview-position', 'inline-citation'].map(
+      (name) => 'node_modules/@threadplane/react/src/markdown/' + name + '.js'
+    ),
+  ];
+  for (const path of [...types, ...runtime, 'node_modules/vite/bin/vite.js']) {
+    mkdirSync(join(consumer, path, '..'), { recursive: true });
+    writeFileSync(join(consumer, path), '');
+  }
+  const output = join(consumer, 'react/dist');
+  mkdirSync(output, { recursive: true });
+  const operations = await consumerTools.productionOperations(repository);
+  const bundle = (typePaths, runtimePaths) => {
+    writeFileSync(
+      join(output, 'build-inputs.json'),
+      JSON.stringify(runtimePaths)
+    );
+    return operations.bundle({
+      consumer,
+      configuration: 'production',
+      framework: 'react',
+      profile: 'react-native-a2ui-langgraph',
+      compilation: {
+        inputs: Object.fromEntries(typePaths.map((path) => [path, 'hash'])),
+      },
+    });
+  };
+  assert.doesNotThrow(() => bundle(types, runtime));
+  const prefix = 'node_modules/@threadplane/react/src/chat/typing-indicator';
+  assert.throws(
+    () =>
+      bundle(
+        types.filter((path) => path !== prefix + '.d.ts'),
+        runtime
+      ),
+    /Installed declarations required:.*typing-indicator/
+  );
+  assert.throws(
+    () =>
+      bundle(
+        types,
+        runtime.filter((path) => path !== prefix + '.js')
+      ),
+    /Installed runtime required:.*typing-indicator/
+  );
+});
+
 test('explicit native feature selection validates framework and profile before preparation effects', async (t) => {
   assert.equal(
     consumerTools.selectedConsumerProfile('react'),
