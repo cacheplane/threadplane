@@ -1,0 +1,337 @@
+{
+  "name": "ChatMessageProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ChatMessageProps",
+  "canonicalReference": "@threadplane/react!ChatMessageProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Passive role presentation; content and controls remain consumer-owned.",
+  "declarations": [
+    {
+      "name": "ChatMessageProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ChatMessageProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ChatMessageProps "
+        }
+      ],
+      "docs": {
+        "summary": "Passive role presentation; content and controls remain consumer-owned.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "afterContent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#afterContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly afterContent?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "beforeContent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#beforeContent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly beforeContent?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "controls",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#controls:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly controls?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "role",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#role:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly role: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatMessageRole",
+              "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+              "href": "/docs/api/react/chat/ChatMessageRole"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "speaker",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#speaker:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly speaker?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/chat-message.tsx",
+        "line": 8
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-message.tsx",
+    "line": 8
+  }
+}

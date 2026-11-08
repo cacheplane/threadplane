@@ -98,13 +98,18 @@ function composition(selected, types, runtime) {
       : []),
     ...(!selected.angular ? ['@threadplane/react/src/render/render-spec'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/citations'] : []),
-    ...(!selected.angular ? ['@threadplane/react/src/chat/citation-preview'] : []),
+    ...(!selected.angular ? ['@threadplane/react/src/chat/chat-message'] : []),
+    ...(!selected.angular
+      ? ['@threadplane/react/src/chat/citation-preview']
+      : []),
     ...(!selected.angular
       ? ['@threadplane/react/src/chat/text-transcript']
       : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/suggestions'] : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/error'] : []),
-    ...(!selected.angular ? ['@threadplane/react/src/chat/typing-indicator'] : []),
+    ...(!selected.angular
+      ? ['@threadplane/react/src/chat/typing-indicator']
+      : []),
     ...(!selected.angular ? ['@threadplane/react/src/chat/scroll-bubble'] : []),
   ]) {
     assert.ok(
@@ -118,7 +123,12 @@ function composition(selected, types, runtime) {
   }
   if (!selected.angular) {
     for (const name of ['inline-preview', 'preview-position'])
-      assert.ok(runtime.includes('node_modules/@threadplane/react/src/markdown/' + name + '.js'), 'Installed view runtime missing: ' + name);
+      assert.ok(
+        runtime.includes(
+          'node_modules/@threadplane/react/src/markdown/' + name + '.js'
+        ),
+        'Installed view runtime missing: ' + name
+      );
     assert.ok(
       runtime.includes(
         'node_modules/@threadplane/react/src/markdown/inline-citation.js'

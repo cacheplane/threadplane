@@ -11,6 +11,7 @@ import { useAgent } from '@threadplane/react';
 import { Markdown } from '@threadplane/react/markdown';
 import {
   ChatPopup,
+  ChatMessage,
   ChatError,
   ChatSidebar,
   Citations,
@@ -61,14 +62,61 @@ const literal = (value: unknown) =>
 
 const Message = memo(function Message({ row }: { row: MessageContent }) {
   return (
-    <article
-      className={`message message-${row.role} tp-chat-message tp-chat-message--${row.role}`}
-      aria-label={`${row.role} message`}
+    <ChatMessage
+      role={row.role}
+      className={`message message-${row.role}`}
+      label={`${row.role} message`}
+      beforeContent={
+        row.role === 'assistant' &&
+        row.reasoning && <Reasoning snapshot={row.reasoning} />
+      }
+      afterContent={
+        <>
+          {row.role === 'assistant' && (
+            <Citations
+              collapsible
+              renderCard={renderNativeSourceCard}
+              snapshot={row.markdown}
+              citations={row.message.citations ?? []}
+            />
+          )}
+          {row.role === 'assistant' &&
+            row.a2uiTripSummaryRenders.map((prepared) => (
+              <TripSummary key={prepared.callId} prepared={prepared} />
+            ))}
+          {row.role !== 'tool' &&
+            row.toolCalls
+              .filter(
+                (call) =>
+                  !row.tripSummaries.some((card) => card.callId === call.id)
+              )
+              .map((call) => (
+                <div className="tool-observation" key={call.id}>
+                  <ToolObservation
+                    name={call.name}
+                    argumentsText={literal(call.args)}
+                    resultText={
+                      call.status === 'complete'
+                        ? literal(call.result)
+                        : call.status === 'error'
+                        ? call.error
+                        : undefined
+                    }
+                  />
+                  <p className="muted">Observed tool status: {call.status}</p>
+                </div>
+              ))}
+        </>
+      }
+      controls={
+        row.role === 'assistant' ? (
+          <CopyAnswer
+            text={row.message.content}
+            generation={row.message.delivery.generation}
+          />
+        ) : undefined
+      }
     >
-      <h3 className="role-label tp-chat-message__role">{row.role}</h3>
-      {row.role === 'assistant' && row.reasoning && (
-        <Reasoning snapshot={row.reasoning} />
-      )}
       {row.role === 'tool' ? (
         <pre>{row.message.content}</pre>
       ) : (
@@ -80,46 +128,7 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
           }
         />
       )}
-      {row.role === 'assistant' && (
-        <Citations
-          collapsible
-          renderCard={renderNativeSourceCard}
-          snapshot={row.markdown}
-          citations={row.message.citations ?? []}
-        />
-      )}
-      {row.role === 'assistant' &&
-        row.a2uiTripSummaryRenders.map((prepared) => (
-          <TripSummary key={prepared.callId} prepared={prepared} />
-        ))}
-      {row.role !== 'tool' &&
-        row.toolCalls
-          .filter(
-            (call) => !row.tripSummaries.some((card) => card.callId === call.id)
-          )
-          .map((call) => (
-            <div className="tool-observation" key={call.id}>
-              <ToolObservation
-                name={call.name}
-                argumentsText={literal(call.args)}
-                resultText={
-                  call.status === 'complete'
-                    ? literal(call.result)
-                    : call.status === 'error'
-                    ? call.error
-                    : undefined
-                }
-              />
-              <p className="muted">Observed tool status: {call.status}</p>
-            </div>
-          ))}
-      {row.role === 'assistant' && (
-        <CopyAnswer
-          text={row.message.content}
-          generation={row.message.delivery.generation}
-        />
-      )}
-    </article>
+    </ChatMessage>
   );
 });
 
