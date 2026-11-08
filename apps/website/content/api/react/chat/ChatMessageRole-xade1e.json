@@ -1,0 +1,56 @@
+{
+  "name": "ChatMessageRole",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ChatMessageRole",
+  "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The existing provider message roles, shared with core.",
+  "declarations": [
+    {
+      "name": "ChatMessageRole",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ChatMessageRole = "
+        },
+        {
+          "kind": "Reference",
+          "text": "Role",
+          "canonicalReference": "@threadplane/react!~Role:type",
+          "href": "/docs/api/core/Role"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The existing provider message roles, shared with core.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/chat-message.tsx",
+        "line": 5
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/chat-message.tsx",
+    "line": 5
+  }
+}

@@ -1,0 +1,89 @@
+---
+title: ChatMessage
+description: Compose directed message text with surrounding rich content and consumer-owned controls.
+---
+
+# ChatMessage
+
+This experimental, private React source-build component presents one message. It renders a named article, a visually hidden speaker, before/after content around a body with `dir="auto"`, and optional controls last. It creates no session or content owner.
+
+~~~tsx
+import type { MessageRow } from '@threadplane/content/messages';
+import {
+  ChatMessage,
+  MessageList,
+  Reasoning,
+  Citations,
+} from '@threadplane/react/chat';
+import { Markdown } from '@threadplane/react/markdown';
+import '@threadplane/react/chat/styles.css';
+
+export function StandaloneMessage({ onCopy }: { readonly onCopy: () => void }) {
+  return (
+    <ChatMessage
+      role="assistant"
+      speaker="Guide"
+      label="Guide answer"
+      beforeContent={<p>Message context</p>}
+      afterContent={<aside aria-label="Sources">Source details</aside>}
+      controls={
+        <button type="button" onClick={onCopy}>
+          Copy
+        </button>
+      }
+    >
+      <p>שלום עולם — content chooses its own direction.</p>
+    </ChatMessage>
+  );
+}
+
+// Stable renderer: the parent retains content parsing and action ownership.
+const renderMessage = (row: MessageRow) => (
+  <ChatMessage
+    role={row.role}
+    speaker={row.role === 'system' ? '' : undefined}
+    beforeContent={
+      row.role === 'assistant' && row.reasoning ? (
+        <Reasoning snapshot={row.reasoning} />
+      ) : undefined
+    }
+    afterContent={
+      row.role === 'assistant' ? (
+        <Citations
+          snapshot={row.markdown}
+          citations={row.message.citations ?? []}
+        />
+      ) : undefined
+    }
+  >
+    {row.role === 'tool' ? (
+      <pre>{row.message.content}</pre>
+    ) : (
+      <Markdown
+        snapshot={row.markdown}
+        citations={row.role === 'assistant' ? row.message.citations : undefined}
+      />
+    )}
+  </ChatMessage>
+);
+
+export function CustomTranscript({
+  rows,
+}: {
+  readonly rows: readonly MessageRow[];
+}) {
+  return <MessageList rows={rows} renderMessage={renderMessage} />;
+}
+~~~
+
+`ChatMessageProps` has exactly eight readonly fields: required `role`, and optional `speaker`, `label`, `children`, `beforeContent`, `afterContent`, `controls`, and `className`. `ChatMessageRole` aliases core `Role`: `user`, `assistant`, `system`, or `tool`. The default accessible article name is **ROLE message**. A custom `label` is literal text, including an empty string.
+
+The default speaker is **You:** for user messages and **Assistant:** for assistant messages. System and tool messages have no default speaker. A custom speaker is literal text followed by a colon; `speaker=""` suppresses it. CSS hides the speaker visually while keeping it available to assistive technology. The article contains its positioning, and speaker text remains readable without CSS.
+
+Children render once in `.tp-chat-message__body` with `dir="auto"`, independently of an outer RTL transcript and the speaker label. Pass Arabic, Hebrew or mixed text normally. The primitive does not parse Markdown, derive citations, or render tool results. Default MessageList and the native custom renderer retain their existing Markdown, reasoning, citation, A2UI and tool content ownership.
+
+`beforeContent` and `afterContent` render directly as article children around that body, with no added wrappers or child inspection. They accept normal ReactNodes, including null, booleans, zero and arrays. Reasoning belongs before the message text; Sources, A2UI widgets and tool activity belong after it. These slots inherit the surrounding presentation direction, so RTL cards and preview controls keep their direction while English message text remains LTR. Markdown keeps its own existing `dir="auto"` text root; with explicitly directed children, the outer body's computed direction may differ from the actual text root.
+
+`controls` accepts a ReactNode, rendered once after `afterContent` in `.tp-chat-message__controls`. Nullish and boolean values omit the wrapper; values such as `0` and arrays follow normal React semantics. Controls wrap and remain visible and keyboard reachable. The consumer owns each handler, status, disabled state and clipboard operation. Rendering, updating and unmounting do not activate controls, move focus or announce a live status.
+
+The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing row memoization, custom renderer bypass and scroll policy. Current-message state, streaming carets and previous-role behavior remain deferred; this bounded presentation slice does not complete ChatMessage or T23 parity.

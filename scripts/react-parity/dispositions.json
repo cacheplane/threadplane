@@ -2304,9 +2304,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/message.tsx",
-      "reason": "Native component. Role/alignment/avatar/content slots and semantic transcript rendering."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts#OwnedMarkdownBodyComponent",
@@ -5454,9 +5454,9 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/message.tsx",
-      "reason": "Native component. Role/alignment/avatar/content slots and semantic transcript rendering."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageListComponent",
@@ -5474,7 +5474,7 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress"
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatOverflowMenuComponent",
@@ -10710,7 +10710,7 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts",
@@ -17911,6 +17911,56 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/scroll-bubble.tsx",
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessage",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessageProps",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatMessageRole",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-message.tsx",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/chat-message.tsx",
+      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
     }
   ]
 }

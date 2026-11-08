@@ -269,6 +269,7 @@ function fixture(t, framework = 'react') {
       });
       for (const name of [
         'message-list',
+        'chat-message',
         'reasoning',
         'approval-card',
         'message-actions',
@@ -293,7 +294,11 @@ function fixture(t, framework = 'react') {
       for (const name of ['inline-preview', 'preview-position']) {
         const local = 'src/markdown/' + name + extension;
         const path = 'node_modules/@threadplane/react/' + local;
-        const sha256 = put(consumer, path, 'installed inline preview: ' + extension);
+        const sha256 = put(
+          consumer,
+          path,
+          'installed inline preview: ' + extension
+        );
         map[path] = sha256;
         artifacts['@threadplane/react'].push({ path: local, sha256 });
       }
@@ -634,13 +639,21 @@ for (const [graph, extension] of [
     delete f.provenance[graph].inputs[
       'node_modules/@threadplane/react/src/chat/citation-preview' + extension
     ];
-    assert.throws(() => captureRetainedBuild(f.directory, f), /CitationPreview/);
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /CitationPreview/
+    );
   });
 
-for (const [graph, extension] of [['compiler', '.d.ts'], ['bundler', '.js']])
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
   test(`React retention requires installed ChatError ${graph}`, (t) => {
     const f = fixture(t, 'react');
-    delete f.provenance[graph].inputs['node_modules/@threadplane/react/src/chat/error' + extension];
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/error' + extension
+    ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /ChatError/);
   });
 
@@ -671,12 +684,44 @@ for (const [graph, extension] of [
     assert.throws(() => captureRetainedBuild(f.directory, f), /ScrollBubble/);
   });
 
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed ChatMessage ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/chat-message' + extension
+    ];
+    assert.throws(() => captureRetainedBuild(f.directory, f), /ChatMessage/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention rejects forged ChatMessage ${graph} provenance`, (t) => {
+    const f = fixture(t, 'react');
+    f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/chat-message' + extension
+    ] = '0'.repeat(64);
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /hash|mismatch|bytes/i
+    );
+  });
+
 for (const name of ['inline-preview', 'preview-position'])
   for (const [graph, extension] of [['bundler', '.js']])
     test(`React retention requires installed ${name} ${graph}`, (t) => {
       const f = fixture(t, 'react');
-      delete f.provenance[graph].inputs['node_modules/@threadplane/react/src/markdown/' + name + extension];
-      assert.throws(() => captureRetainedBuild(f.directory, f), new RegExp(name));
+      delete f.provenance[graph].inputs[
+        'node_modules/@threadplane/react/src/markdown/' + name + extension
+      ];
+      assert.throws(
+        () => captureRetainedBuild(f.directory, f),
+        new RegExp(name)
+      );
     });
 
 for (const framework of ['react', 'angular']) {

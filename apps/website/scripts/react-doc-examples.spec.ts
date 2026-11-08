@@ -14,6 +14,7 @@ const pages = [
   'chat/components/chat-error',
   'chat/components/typing-indicator',
   'chat/components/scroll-bubble',
+  'chat/components/chat-message',
   'chat/concepts/message-model',
   'render/getting-started/quickstart',
   'render/guides/events',
@@ -52,7 +53,10 @@ it('compiles the exact self-contained React onboarding examples against public s
       }
     );
     expect(parsed).toBeDefined();
-    if (!parsed) throw new Error('Unable to load the React example compiler configuration');
+    if (!parsed)
+      throw new Error(
+        'Unable to load the React example compiler configuration'
+      );
     const options = {
       ...parsed.options,
       typeRoots: [join(repo, 'node_modules/@types')],

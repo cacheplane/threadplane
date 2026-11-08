@@ -77,3 +77,14 @@
   align-items: stretch;
   gap: 0;
 }
+.message-tool > .tp-chat-message__body > pre {
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--ds-surface-tinted);
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
