@@ -1401,6 +1401,21 @@
     }
   },
   {
+    "id": "chat/components/chat-message",
+    "title": "ChatMessage",
+    "library": "chat",
+    "section": "components",
+    "slug": "chat-message",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/chat-message.mdx",
+        "description": "Compose directed message text with surrounding rich content and consumer-owned controls.",
+        "apiEntrypointIds": ["react/chat"]
+      }
+    }
+  },
+  {
     "id": "chat/components/scroll-bubble",
     "title": "ScrollBubble",
     "library": "chat",

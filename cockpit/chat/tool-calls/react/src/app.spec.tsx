@@ -6,6 +6,8 @@ import type { ToolCallsSnapshot } from './application';
 vi.mock('./connection', () => ({ createConnectedApplication: vi.fn() }));
 import { ToolCallsDemo, renderMessage } from './app';
 import { createMessageContent } from '@threadplane/content/messages';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Shared authored presentation for these examples.
+import * as presentation from '../../../../shared/tool-presentation';
 const actEnvironment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
@@ -123,6 +125,9 @@ afterEach(() => {
 });
 it('seeds a read-only demo draft without creating or submitting a conversation', () => {
   const h = composition();
+  expect(
+    h.view.getByRole('status', { name: 'Conversation status' }).textContent
+  ).toBe('Ready.');
   fireEvent.click(h.view.getByRole('button', { name: 'Flight UA123' }));
   expect(h.box().value).toBe("What's the status of UA123?");
   expect(h.app.submit).not.toHaveBeenCalled();
@@ -143,6 +148,53 @@ it('preserves the draft when the owner rejects submit and keeps Stop available d
   act(() => h.update({ busy: true, activity: 'confirming' }));
   fireEvent.click(h.view.getByRole('button', { name: 'Stop' }));
   expect(h.app.stop).toHaveBeenCalledOnce();
+});
+it('distinguishes the conversation status from the polite tool progress announcement', () => {
+  const h = composition();
+  const content = createMessageContent();
+  const rows = content.project({
+    status: 'running',
+    toolCalls: [],
+    messages: [
+      {
+        id: 'request',
+        role: 'assistant',
+        content: '',
+        toolCallIds: ['lookup'],
+        delivery: { generation: 'request', phase: 'streaming' },
+      },
+    ],
+  });
+  try {
+    act(() =>
+      h.update({
+        rows,
+        busy: true,
+        activity: 'running',
+        observations: new Map([
+          [
+            'request',
+            [
+              {
+                id: 'lookup',
+                name: 'lookup_flight',
+                argumentsText: '{}',
+                phase: 'pending',
+              },
+            ],
+          ],
+        ]),
+      })
+    );
+    const status = h.view.getByRole('status', { name: 'Conversation status' });
+    expect(status.textContent).toBe('Receiving response…');
+    const progress = h.view.getByRole('status', { name: '' });
+    expect(progress).not.toBe(status);
+    expect(progress.getAttribute('aria-live')).toBe('polite');
+    expect(progress.textContent).toBe('1 pending');
+  } finally {
+    content.dispose();
+  }
 });
 it('clears the old draft on New and preserves newer typing through local cleanup', () => {
   const h = composition();
@@ -219,6 +271,139 @@ it('labels pending observed calls without claiming execution succeeded', () => {
     );
     expect(view.container.querySelector('.tp-tool-activity')!).toBeTruthy();
     expect(view.queryByText('Result')).toBeNull();
+  } finally {
+    content.dispose();
+  }
+});
+
+const flight = {
+  flight_number: 'UA123',
+  status: 'on_time',
+  gate: 'B14',
+  from: 'LAX',
+  to: 'JFK',
+};
+function outcome(
+  name: string,
+  result: unknown,
+  phase: string | undefined = 'complete'
+) {
+  const helper = (
+    presentation as unknown as {
+      exampleToolOutcome?: (activity: {
+        name: string;
+        phase?: string;
+        resultText?: string;
+      }) => { text: string } | undefined;
+    }
+  ).exampleToolOutcome;
+  expect(typeof helper).toBe('function');
+  return helper!({
+    name,
+    phase,
+    resultText: typeof result === 'string' ? result : JSON.stringify(result),
+  });
+}
+it('summarizes confirmed aviation results with authored fields and no fabricated sources', () => {
+  expect(outcome('lookup_flight', flight)).toEqual({
+    text: 'UA123: on time · Gate B14',
+  });
+  expect(outcome('lookup_flight', { ...flight, status: 'delayed' })?.text).toBe(
+    'UA123: delayed · Gate B14'
+  );
+  expect(
+    outcome('lookup_flight', { ...flight, status: 'cancelled' })?.text
+  ).toBe('UA123: cancelled · Gate B14');
+  expect(
+    outcome('get_airport_info', {
+      code: 'LAX',
+      name: 'Los Angeles International',
+    })
+  ).toEqual({ text: 'LAX: Los Angeles International' });
+  expect(
+    outcome('find_routes', { from: 'LAX', to: 'JFK', flights: [flight] })
+  ).toEqual({ text: '1 flight from LAX to JFK' });
+  expect(
+    outcome('find_routes', {
+      from: 'LAX',
+      to: 'JFK',
+      flights: [flight, { ...flight, flight_number: 'AA202' }],
+    })
+  ).toEqual({ text: '2 flights from LAX to JFK' });
+  expect(
+    outcome('find_routes', { from: 'LAX', to: 'JFK', flights: [] })
+  ).toEqual({ text: '0 flights from LAX to JFK' });
+});
+it('does not summarize pending, unknown, error or malformed aviation observations', () => {
+  for (const phase of [
+    'pending',
+    'running',
+    'error',
+    'waiting',
+    'aborted',
+    undefined,
+  ])
+    expect(
+      outcome('lookup_flight', flight, phase === undefined ? '' : phase)
+    ).toBeUndefined();
+  for (const result of [
+    '{',
+    null,
+    [],
+    { error: 'Flight not found', ...flight },
+    { ...flight, status: 'boarding' },
+    { ...flight, gate: 3 },
+    { ...flight, flight_number: '' },
+  ])
+    expect(outcome('lookup_flight', result)).toBeUndefined();
+  expect(
+    outcome('get_airport_info', { code: 'bad', name: 'Airport' })
+  ).toBeUndefined();
+  expect(
+    outcome('find_routes', { from: 'LAX', to: 'JFK', flights: [{}] })
+  ).toBeUndefined();
+  expect(
+    outcome('find_routes', {
+      from: 'LAX',
+      to: 'JFK',
+      flights: [{ ...flight, from: 'BOS' }],
+    })
+  ).toBeUndefined();
+  expect(outcome('other_tool', flight)).toBeUndefined();
+});
+it('shows a confirmed flight outcome once above the technical disclosure', () => {
+  const content = createMessageContent();
+  const row = content.project({
+    status: 'idle',
+    toolCalls: [],
+    messages: [
+      {
+        id: 'call',
+        role: 'assistant',
+        content: '',
+        toolCallIds: ['lookup'],
+        delivery: { generation: 'call', phase: 'complete', outcome: 'success' },
+      },
+    ],
+  })[0];
+  try {
+    const view = render(
+      renderMessage(row, [
+        {
+          id: 'lookup',
+          name: 'lookup_flight',
+          argumentsText: '{}',
+          phase: 'complete',
+          resultText: JSON.stringify(flight),
+        },
+      ])
+    );
+    expect(view.getAllByText('UA123: on time · Gate B14')).toHaveLength(1);
+    expect(
+      view
+        .getByText('UA123: on time · Gate B14')
+        .closest('.tp-tool-activity__details')
+    ).toBeNull();
   } finally {
     content.dispose();
   }

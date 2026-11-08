@@ -16,9 +16,11 @@ import {
   ToolActivityGroup,
   toolActivityPhase,
   type ToolActivityInfo,
+  type ToolActivityOutcome,
 } from './tool-activity.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
+import { ChatMessage } from './chat-message.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -46,6 +48,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly groupRelatedTools?: boolean;
   /** App-authored human labels; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string) => string | undefined;
+  /** App-authored confirmed result previews. Keep stable; custom renderMessage retains full ownership. */
+  readonly toolOutcome?: (
+    activity: ToolActivityInfo
+  ) => ToolActivityOutcome | undefined;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -63,17 +69,21 @@ function RowView<TRow extends MessageRow>({
   renderMessage,
   groupRelatedTools,
   toolLabel,
+  toolOutcome,
 }: {
   readonly row: TRow;
   readonly renderMessage?: (row: TRow) => ReactNode;
   readonly groupRelatedTools?: boolean;
   readonly toolLabel?: (name: string) => string | undefined;
+  readonly toolOutcome?: (
+    activity: ToolActivityInfo
+  ) => ToolActivityOutcome | undefined;
 }) {
   if (renderMessage) return <>{renderMessage(row)}</>;
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
-    return {
+    const activity: ToolActivityInfo = {
       id: call.id,
       name: call.name,
       label: toolLabel?.(call.name),
@@ -82,13 +92,34 @@ function RowView<TRow extends MessageRow>({
       resultText: call.status === 'complete' ? literal(call.result) : undefined,
       errorText: call.status === 'error' ? call.error : undefined,
     };
+    return { ...activity, outcome: toolOutcome?.(activity) };
   });
   return (
-    <article className={`tp-chat-message tp-chat-message--${row.role}`}>
-      <p className="tp-chat-message__role">{row.role}</p>
-      {row.role === 'assistant' && row.reasoning && (
-        <Reasoning snapshot={row.reasoning} />
-      )}
+    <ChatMessage
+      role={row.role}
+      beforeContent={
+        row.role === 'assistant' &&
+        row.reasoning && <Reasoning snapshot={row.reasoning} />
+      }
+      afterContent={
+        <>
+          {row.role === 'assistant' && (
+            <Citations
+              citations={row.message.citations ?? []}
+              snapshot={row.markdown}
+            />
+          )}
+          {row.role !== 'tool' &&
+            (groupRelatedTools ? (
+              <ToolActivityGroup activities={activities} />
+            ) : (
+              activities.map((activity) => (
+                <ToolActivity key={activity.id} activity={activity} />
+              ))
+            ))}
+        </>
+      }
+    >
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
       ) : (
@@ -99,21 +130,7 @@ function RowView<TRow extends MessageRow>({
           }
         />
       )}
-      {row.role === 'assistant' && (
-        <Citations
-          citations={row.message.citations ?? []}
-          snapshot={row.markdown}
-        />
-      )}
-      {row.role !== 'tool' &&
-        (groupRelatedTools ? (
-          <ToolActivityGroup activities={activities} />
-        ) : (
-          activities.map((activity) => (
-            <ToolActivity key={activity.id} activity={activity} />
-          ))
-        ))}
-    </article>
+    </ChatMessage>
   );
 }
 
@@ -128,6 +145,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   className,
   groupRelatedTools,
   toolLabel,
+  toolOutcome,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -223,6 +241,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               renderMessage={renderMessage}
               groupRelatedTools={groupRelatedTools}
               toolLabel={toolLabel}
+              toolOutcome={toolOutcome}
             />
           ))}
           {children}

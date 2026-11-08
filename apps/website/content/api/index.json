@@ -3994,6 +3994,16 @@
       "summary": "Literal evidence and optional app-authored labels for a tool activity."
     },
     {
+      "name": "ToolActivityOutcome",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivityOutcome",
+      "canonicalReference": "@threadplane/chat!ToolActivityOutcome:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+    },
+    {
       "name": "toolActivityPhase",
       "entrypointId": "chat",
       "kind": "Function",
@@ -4012,6 +4022,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Explicit readonly presentation state, separate from execution/session ownership."
+    },
+    {
+      "name": "ToolActivitySource",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivitySource",
+      "canonicalReference": "@threadplane/chat!ToolActivitySource:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolArgs",
@@ -5884,6 +5904,36 @@
       "summary": "Configures a controlled or local message draft, submission and stop callbacks, and composer labels."
     },
     {
+      "name": "ChatMessage",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/ChatMessage",
+      "canonicalReference": "@threadplane/react!ChatMessage:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "A named message article with an independently directed body and explicit controls slot."
+    },
+    {
+      "name": "ChatMessageProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ChatMessageProps",
+      "canonicalReference": "@threadplane/react!ChatMessageProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Passive role presentation; content and controls remain consumer-owned."
+    },
+    {
+      "name": "ChatMessageRole",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/ChatMessageRole",
+      "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "The existing provider message roles, shared with core."
+    },
+    {
       "name": "ChatPopup",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6474,6 +6524,16 @@
       "summary": "Readonly activity evidence. Does not own execution, approval, sessions or persistence."
     },
     {
+      "name": "ToolActivityOutcome",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityOutcome",
+      "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+    },
+    {
       "name": "toolActivityPhase",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6502,6 +6562,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Presentation evidence and an independently mounted rich-result/action slot."
+    },
+    {
+      "name": "ToolActivitySource",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivitySource",
+      "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolObservation",

@@ -2,6 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const api = await import('./scenarios.mjs').catch(() => ({}));
+test('recoverable read scenario exposes the exact explicit retry prompt for consumers', () => {
+  assert.equal(
+    api.getScenario('partial-failure').retryPrompt,
+    'Retry the failed read explicitly.'
+  );
+});
 function implementation() {
   assert.equal(
     typeof api.getScenario,

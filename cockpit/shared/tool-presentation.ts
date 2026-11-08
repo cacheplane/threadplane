@@ -15,3 +15,76 @@ export function exampleToolLabel(name: string): string | undefined {
   };
   return Object.hasOwn(labels, name) ? labels[name] : undefined;
 }
+
+/** Summaries of confirmed demo aviation data; execution and errors stay with the session. */
+export function exampleToolOutcome(activity: {
+  readonly phase?: string;
+  readonly name: string;
+  readonly resultText?: string;
+}): { readonly text: string } | undefined {
+  if (activity.phase !== 'complete' || typeof activity.resultText !== 'string')
+    return undefined;
+  let result: unknown;
+  try {
+    result = JSON.parse(activity.resultText);
+  } catch {
+    return undefined;
+  }
+  if (!record(result) || 'error' in result) return undefined;
+  if (activity.name === 'lookup_flight' && flightResult(result)) {
+    const status =
+      result['status'] === 'on_time' ? 'on time' : result['status'];
+    return {
+      text: `${result['flight_number']}: ${status} · Gate ${result['gate']}`,
+    };
+  }
+  if (
+    activity.name === 'get_airport_info' &&
+    airportCode(result['code']) &&
+    typeof result['name'] === 'string' &&
+    result['name'].trim().length > 0 &&
+    result['name'].length <= 140
+  ) {
+    return { text: `${result['code']}: ${result['name']}` };
+  }
+  if (
+    activity.name === 'find_routes' &&
+    airportCode(result['from']) &&
+    airportCode(result['to']) &&
+    Array.isArray(result['flights']) &&
+    result['flights'].every(
+      (item) =>
+        flightResult(item) &&
+        item['from'] === result['from'] &&
+        item['to'] === result['to']
+    )
+  ) {
+    const count = result['flights'].length;
+    return {
+      text: `${count} ${count === 1 ? 'flight' : 'flights'} from ${
+        result['from']
+      } to ${result['to']}`,
+    };
+  }
+  return undefined;
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function airportCode(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Z]{3}$/.test(value);
+}
+function flightResult(value: unknown): value is Record<string, unknown> {
+  return (
+    record(value) &&
+    !('error' in value) &&
+    typeof value['flight_number'] === 'string' &&
+    /^[A-Z0-9]{2,3}\d{1,4}$/.test(value['flight_number']) &&
+    ['on_time', 'delayed', 'cancelled'].includes(value['status'] as string) &&
+    typeof value['gate'] === 'string' &&
+    /^[A-Z0-9-]{1,15}$/.test(value['gate']) &&
+    airportCode(value['from']) &&
+    airportCode(value['to'])
+  );
+}

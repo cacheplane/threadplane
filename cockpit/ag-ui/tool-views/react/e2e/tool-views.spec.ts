@@ -21,7 +21,7 @@ test('actual installed SDK retains causal zero, one, batch and multiple server-t
     ['Rounds', 4, 5],
   ] as const) {
     await send(page, text);
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     count += added;
     await expect(rows(page)).toHaveCount(count);
     await expect(page.locator('[data-weather-tool]')).toHaveCount(cards);
@@ -76,7 +76,7 @@ test('actual installed SDK retains causal zero, one, batch and multiple server-t
   await expect(rows(page)).toHaveCount(0);
   expect(await (await request.get('/__requests')).json()).toEqual(before);
   await send(page, 'One');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   const after = await (await request.get('/__requests')).json();
   expect(after).toHaveLength(5);
   expect(after[4].body.messages).toHaveLength(1);
@@ -94,7 +94,7 @@ for (const mode of ['Hold args', 'Hold call', 'Hold result', 'Hold final']) {
         async () => (await (await request.get('/__lifetime')).json()).active
       )
       .toBe(true);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
       'Getting a weather reading…'
     );
     await expect(
@@ -111,7 +111,7 @@ for (const mode of ['Hold args', 'Hold call', 'Hold result', 'Hold final']) {
       mode === 'Hold result' || mode === 'Hold final' ? 1 : 0
     );
     await request.post('/__release');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     await expect(rows(page)).toHaveCount(3);
     expect(await (await request.get('/__requests')).json()).toHaveLength(1);
   });
@@ -138,7 +138,7 @@ for (const mode of ['Hold args', 'Hold call', 'Hold result', 'Hold final']) {
       await request.post('/__release');
       expect(await (await request.get('/__requests')).json()).toHaveLength(1);
       if (action === 'Stop')
-        await expect(page.getByRole('status')).toHaveText(
+        await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
           'Start a new conversation to continue.'
         );
     });
@@ -169,10 +169,10 @@ for (const mode of [
     await page.goto('/ag-ui/tool-views/react/');
     if (mode === 'Truncated prefix') {
       await send(page, 'One');
-      await expect(page.getByRole('status')).toHaveText('Response complete.');
+      await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     }
     await send(page, mode);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(page.locator('main')).not.toContainText('PRIVATE');
@@ -185,14 +185,14 @@ for (const mode of [
     await expect(rows(page)).toHaveCount(0);
     expect(await (await request.get('/__requests')).json()).toEqual(before);
     await send(page, 'Zero');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   });
 }
 test('mobile literal tool fields stay inert', async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/ag-ui/tool-views/react/');
   await send(page, 'Literal');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   await expect(page.locator('[data-weather-tool]')).toContainText(
     '<img src=x onerror=alert(1)>'
   );
@@ -240,7 +240,7 @@ test('the authored developer AG-UI target routes every request and remains priva
   for (const text of ['Alpha', 'Beta']) {
     await frame.getByLabel('Message', { exact: true }).fill(text);
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
-    await expect(frame.getByRole('status')).toHaveText('Response complete.');
+    await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   }
   const wire: { path: string; method: string; body: { threadId: string } }[] =
     await (await request.get('/__requests')).json();

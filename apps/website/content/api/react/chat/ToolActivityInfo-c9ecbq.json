@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 46
+            "line": 56
           },
           "isReadonly": true,
           "isOptional": true
@@ -96,7 +96,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 51
+            "line": 61
           },
           "isReadonly": true,
           "isOptional": true
@@ -132,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 50
+            "line": 60
           },
           "isReadonly": true,
           "isOptional": true
@@ -168,7 +168,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 48
+            "line": 58
           },
           "isReadonly": true,
           "isOptional": true
@@ -204,7 +204,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 42
+            "line": 52
           },
           "isReadonly": true,
           "isOptional": false
@@ -240,7 +240,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 44
+            "line": 54
           },
           "isReadonly": true,
           "isOptional": true
@@ -276,10 +276,48 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 43
+            "line": 53
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "outcome",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityInfo#outcome:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly outcome?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityOutcome",
+              "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+              "href": "/docs/api/react/chat/ToolActivityOutcome"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored preview, displayed only after explicit completion and outside technical Details.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 63
+          },
+          "isReadonly": true,
+          "isOptional": true
         },
         {
           "name": "phase",
@@ -314,7 +352,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 45
+            "line": 55
           },
           "isReadonly": true,
           "isOptional": true
@@ -350,7 +388,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 47
+            "line": 57
           },
           "isReadonly": true,
           "isOptional": true
@@ -358,12 +396,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 41
+        "line": 51
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 41
+    "line": 51
   }
 }

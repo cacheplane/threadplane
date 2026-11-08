@@ -232,7 +232,10 @@ function selectedInputs(p, selected) {
   if (framework === 'react') {
     for (const name of ['inline-preview', 'preview-position']) {
       const path = 'node_modules/@threadplane/react/src/markdown/' + name;
-      assert.ok(p.bundler.inputs[path + '.js'], 'Installed ' + name + ' runtime required');
+      assert.ok(
+        p.bundler.inputs[path + '.js'],
+        'Installed ' + name + ' runtime required'
+      );
     }
     const preview = 'node_modules/@threadplane/react/src/chat/citation-preview';
     assert.ok(
@@ -300,6 +303,7 @@ function selectedInputs(p, selected) {
     );
     for (const [name, title] of [
       ['message-list', 'MessageList'],
+      ['chat-message', 'ChatMessage'],
       ['reasoning', 'Reasoning'],
       ['approval-card', 'ApprovalCard'],
       ['message-actions', 'MessageActions'],

@@ -38,6 +38,7 @@ test('production composition requires installed typing indicator runtime and dec
     '@threadplane/react/src/markdown/markdown',
     ...[
       'message-list',
+      'chat-message',
       'reasoning',
       'approval-card',
       'message-actions',
@@ -112,6 +113,23 @@ test('production composition requires installed typing indicator runtime and dec
     /Installed runtime required:.*typing-indicator/
   );
   const scroll = 'node_modules/@threadplane/react/src/chat/scroll-bubble';
+  const message = 'node_modules/@threadplane/react/src/chat/chat-message';
+  assert.throws(
+    () =>
+      bundle(
+        types.filter((path) => path !== message + '.d.ts'),
+        runtime
+      ),
+    /Installed declarations required:.*chat-message/
+  );
+  assert.throws(
+    () =>
+      bundle(
+        types,
+        runtime.filter((path) => path !== message + '.js')
+      ),
+    /Installed runtime required:.*chat-message/
+  );
   assert.throws(
     () =>
       bundle(

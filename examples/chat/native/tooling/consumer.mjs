@@ -331,6 +331,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     '@threadplane/react/src/use-agent',
     '@threadplane/react/src/markdown/markdown',
     '@threadplane/react/src/chat/message-list',
+    '@threadplane/react/src/chat/chat-message',
     '@threadplane/react/src/chat/reasoning',
     '@threadplane/react/src/chat/approval-card',
     '@threadplane/react/src/chat/message-actions',
@@ -356,7 +357,12 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     );
   }
   for (const name of ['inline-preview', 'preview-position'])
-    assert.ok(runtimeInputs.includes('node_modules/@threadplane/react/src/markdown/' + name + '.js'), 'Installed ' + name + ' runtime required');
+    assert.ok(
+      runtimeInputs.includes(
+        'node_modules/@threadplane/react/src/markdown/' + name + '.js'
+      ),
+      'Installed ' + name + ' runtime required'
+    );
   assert.ok(
     runtimeInputs.includes(
       'node_modules/@threadplane/react/src/markdown/inline-citation.js'

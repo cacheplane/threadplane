@@ -265,6 +265,9 @@ import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps,
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type ChatMessageRoleContract = Assert<Equal<import('@threadplane/react/chat').ChatMessageRole, import('@threadplane/core').Role>>;
+export type ChatMessageContract = Assert<Equal<import('@threadplane/react/chat').ChatMessageProps, { readonly role: import('@threadplane/core').Role; readonly speaker?: string; readonly label?: string; readonly children?: ReactNode; readonly beforeContent?: ReactNode; readonly afterContent?: ReactNode; readonly controls?: ReactNode; readonly className?: string }>>;
+export type ChatMessageParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatMessage>, [import('@threadplane/react/chat').ChatMessageProps]>>;
 export type ScrollBubbleModeContract = Assert<Equal<import('@threadplane/react/chat').ScrollBubbleMode, 'streaming' | 'idle'>>;
 export type ScrollBubbleContract = Assert<Equal<import('@threadplane/react/chat').ScrollBubbleProps, { readonly mode: import('@threadplane/react/chat').ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
 export type ScrollBubbleParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ScrollBubble>, [import('@threadplane/react/chat').ScrollBubbleProps]>>;
@@ -432,6 +435,7 @@ export function assertSupportedExports(project, entry) {
         'ChatError',
         'TypingIndicator',
         'ScrollBubble',
+        'ChatMessage',
         'isTyping',
         'ChatPopup',
         'ChatSidebar',

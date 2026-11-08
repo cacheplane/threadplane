@@ -76,6 +76,7 @@ function fixture(t, framework) {
           'markdown/preview-position.js',
           'chat/tool-observation.js',
           'chat/message-list.js',
+          'chat/chat-message.js',
           'chat/reasoning.js',
           'chat/approval-card.js',
           'chat/message-actions.js',
@@ -109,6 +110,7 @@ function fixture(t, framework) {
       : [
           'node_modules/@threadplane/react/src/render/render-spec.d.ts',
           'node_modules/@threadplane/react/src/chat/citations.d.ts',
+          'node_modules/@threadplane/react/src/chat/chat-message.d.ts',
           'node_modules/@threadplane/react/src/chat/text-transcript.d.ts',
           'node_modules/@threadplane/react/src/chat/suggestions.d.ts',
           'node_modules/@threadplane/react/src/chat/error.d.ts',
@@ -499,19 +501,28 @@ for (const [graph, extension] of [
     if (graph === 'runtime')
       f.record.runtime = f.record.runtime.filter((p) => p !== path);
     else
-      f.record.compiler.inputs = f.record.compiler.inputs.filter((p) => p !== path);
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
     delete f.record.inputs[path];
     rmSync(join(f.root, 'inputs', path));
     f.save();
     assert.throws(() => readViewProof(f.root), /citation-preview/);
   });
 
-for (const [graph, extension] of [['runtime', '.js'], ['types', '.d.ts']])
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
   test(`React rejects missing installed ChatError ${graph}`, (t) => {
     const f = fixture(t, 'react');
     const path = 'node_modules/@threadplane/react/src/chat/error' + extension;
-    if (graph === 'runtime') f.record.runtime = f.record.runtime.filter((p) => p !== path);
-    else f.record.compiler.inputs = f.record.compiler.inputs.filter((p) => p !== path);
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
     delete f.record.inputs[path];
     rmSync(join(f.root, 'inputs', path));
     f.save();
@@ -558,13 +569,48 @@ for (const [graph, extension] of [
     assert.throws(() => readViewProof(f.root), /scroll-bubble/);
   });
 
+for (const [graph, extension] of [
+  ['runtime', '.js'],
+  ['types', '.d.ts'],
+])
+  test(`React rejects missing installed ChatMessage ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/chat-message' + extension;
+    if (graph === 'runtime')
+      f.record.runtime = f.record.runtime.filter((p) => p !== path);
+    else
+      f.record.compiler.inputs = f.record.compiler.inputs.filter(
+        (p) => p !== path
+      );
+    delete f.record.inputs[path];
+    rmSync(join(f.root, 'inputs', path));
+    f.save();
+    assert.throws(() => readViewProof(f.root), /chat-message/);
+  });
+
+for (const extension of ['.js', '.d.ts'])
+  test(`React rejects forged ChatMessage ${extension} input bytes`, (t) => {
+    const f = fixture(t, 'react');
+    const path =
+      'node_modules/@threadplane/react/src/chat/chat-message' + extension;
+    writeFileSync(join(f.root, 'inputs', path), 'forged input');
+    f.save();
+    assert.throws(() => readViewProof(f.root), /Complete view proof inventory must match/);
+  });
+
 for (const name of ['inline-preview', 'preview-position'])
   for (const [graph, extension] of [['runtime', '.js']])
     test(`React rejects missing installed ${name} ${graph}`, (t) => {
       const f = fixture(t, 'react');
-      const path = 'node_modules/@threadplane/react/src/markdown/' + name + extension;
-      if (graph === 'runtime') f.record.runtime = f.record.runtime.filter((p) => p !== path);
-      else f.record.compiler.inputs = f.record.compiler.inputs.filter((p) => p !== path);
+      const path =
+        'node_modules/@threadplane/react/src/markdown/' + name + extension;
+      if (graph === 'runtime')
+        f.record.runtime = f.record.runtime.filter((p) => p !== path);
+      else
+        f.record.compiler.inputs = f.record.compiler.inputs.filter(
+          (p) => p !== path
+        );
       delete f.record.inputs[path];
       rmSync(join(f.root, 'inputs', path));
       f.save();

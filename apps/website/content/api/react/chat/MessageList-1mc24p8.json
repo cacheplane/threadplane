@@ -78,12 +78,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 124
+        "line": 141
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ rows, renderMessage, label, className, groupRelatedTools, toolLabel, children, renderScrollControl, }",
+          "parameterName": "{ rows, renderMessage, label, className, groupRelatedTools, toolLabel, toolOutcome, children, renderScrollControl, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -120,6 +120,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 124
+    "line": 141
   }
 }

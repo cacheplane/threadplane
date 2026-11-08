@@ -1,5 +1,10 @@
 'use client';
 export {
+  ChatMessage,
+  type ChatMessageProps,
+  type ChatMessageRole,
+} from './chat-message.js';
+export {
   ScrollBubble,
   type ScrollBubbleMode,
   type ScrollBubbleProps,
@@ -15,6 +20,8 @@ export {
   toolActivityPhase,
   type ToolActivityDelivery,
   type ToolActivityInfo,
+  type ToolActivityOutcome,
+  type ToolActivitySource,
   type ToolActivityPhase,
   type ToolActivityProps,
   type ToolActivityGroupProps,

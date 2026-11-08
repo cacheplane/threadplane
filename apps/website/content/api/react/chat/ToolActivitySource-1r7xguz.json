@@ -1,0 +1,115 @@
+{
+  "name": "ToolActivitySource",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ToolActivitySource",
+  "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links.",
+  "declarations": [
+    {
+      "name": "ToolActivitySource",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolActivitySource "
+        }
+      ],
+      "docs": {
+        "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "title",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivitySource#title:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly title: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 3
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "url",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivitySource#url:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly url: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 4
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/tool-outcome.ts",
+        "line": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-outcome.ts",
+    "line": 2
+  }
+}

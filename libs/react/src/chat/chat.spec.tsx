@@ -68,6 +68,12 @@ const assistant = (id: string, content: string) =>
     content,
     delivery: streamingDelivery('g'),
   });
+it('forwards authored outcome previews through Chat without executing additional commands', () => {
+  const { session, raw } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
+  const view = render(<Chat session={session} groupRelatedTools toolOutcome={() => ({ text: 'Reference verified' })} />);
+  expect(view.getByText('Reference verified').closest('details')).toBeNull();
+  expect(raw.submit).not.toHaveBeenCalled();
+});
 const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const disposed = (content: MessageContent) =>

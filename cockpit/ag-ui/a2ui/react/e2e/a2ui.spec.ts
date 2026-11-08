@@ -91,7 +91,7 @@ test.beforeEach(async ({ page, request }) => {
   await expect(
     page.getByRole('heading', { name: 'Plan a flight', exact: true })
   ).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
 });
 test.afterEach(async ({ request }, info) => {
   const receipt = await lifetime(request),
@@ -281,7 +281,7 @@ test('Stop, fake transport error, New and held old completion cannot regain auth
     .poll(async () => (await lifetime(request)).current.holds)
     .toBe(1);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(
@@ -314,7 +314,7 @@ test('Stop, fake transport error, New and held old completion cannot regain auth
   await page
     .getByRole('textbox', { name: 'Message', exact: true })
     .press('Enter');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Start a new conversation to continue.'
   );
   expect(

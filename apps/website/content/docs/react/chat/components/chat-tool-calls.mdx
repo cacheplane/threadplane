@@ -56,13 +56,32 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 
 `MessageList` and `Chat` use readable activity by default. Pass `toolLabel` for app-authored labels and `groupRelatedTools` to opt into grouping across tool names within each assistant message. A custom `renderMessage` retains presentation ownership. Pending finalized arguments are distinct from streaming argument fragments. Unresolved calls from an aborted delivery show Stopped; paused deliveries show Waiting without claiming approval, and interrupted deliveries show an unavailable status.
 
+## Show confirmed outcomes and sources
+
+Supply `ToolActivityInfo.outcome` to preview a validated result without opening technical Details:
+
+```tsx
+<ToolActivityGroup activities={[{
+  id: 'reference-1', name: 'read_reference', label: 'Reading reference sources',
+  phase: 'complete', resultText: '{"id":"angular-signals"}',
+  outcome: {
+    text: 'Checked the Angular signals reference.',
+    sources: [{ title: 'Angular signals', url: 'https://angular.dev/guide/signals' }],
+  },
+}]} />
+```
+
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups announce concise lifecycle counts through a polite status region. Raw payload streaming stays out of that region.
+
+Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
+
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Inspect observed calls and results
 
 Choose **Run**, select **Flight UA123**, **Compare airports**, or **Find routes**, then send the draft. The graph uses a read-only aviation demo dataset through lookup_flight, get_airport_info and find_routes. A prompt suggestion fills the draft without creating a conversation or sending a request.
 
-Each tool observation appears under the assistant message that requested it. Arguments appear after the runtime exposes a complete call. A result appears only when its tool-call identity and name match the later result message. Multiple calls to the same tool remain separate, including parallel airport lookups whose results arrive in a different order.
+Each tool observation appears under the assistant message that requested it. Arguments appear after the runtime exposes a complete call. A result appears only when its tool-call identity and name match the later result message. The example's shared aviation presenter validates completed flight, airport and route records before showing a concise preview outside Details; an empty route list truthfully shows zero flights. Errors and malformed records do not receive successful previews. Multiple calls to the same tool remain separate, including parallel airport lookups whose results arrive in a different order.
 
 <ExampleCode file="cockpit/chat/tool-calls/react/src/app.tsx" />
 

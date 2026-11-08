@@ -9,7 +9,14 @@ import {
   hashValue,
 } from './scenarios.mjs';
 
-const terminal = new Set(['complete', 'error', 'aborted', 'denied']);
+const terminal = new Set([
+  'complete',
+  'partial',
+  'error',
+  'aborted',
+  'denied',
+  'paused',
+]);
 const participantName = /^[a-zA-Z0-9_-]{1,60}$/;
 const sleep = (ms, signal) =>
   new Promise((done) => {
@@ -32,6 +39,8 @@ export async function createBenchmarkServer({
   const runs = new Map();
   const notes = [];
   const streams = new Set();
+  const gates = new Map();
+  const recoveries = new Map();
   let address;
   function stop(run, reason = 'aborted') {
     if (terminal.has(run.record.status)) return;
@@ -107,6 +116,10 @@ export async function createBenchmarkServer({
             run.revoked = true;
             stop(run);
           }
+        for (const gate of gates.values())
+          if (gate.participant === participant) gate.revoked = true;
+        for (const [key, recovery] of recoveries)
+          if (recovery.participant === participant) recoveries.delete(key);
         return json(200, { reset: true });
       }
       if (url.pathname.startsWith('/approve/')) {
@@ -130,6 +143,8 @@ export async function createBenchmarkServer({
         request.headers['x-benchmark-participant'];
       if (typeof participant !== 'string' || !participantName.test(participant))
         return json(400, { error: 'Invalid participant' });
+      if ([...streams].some((run) => run.record.participant === participant))
+        return json(409, { error: 'Participant already has an active run' });
       let scenario;
       try {
         scenario = getScenario(
@@ -137,6 +152,50 @@ export async function createBenchmarkServer({
         );
       } catch {
         return json(400, { error: 'Unknown benchmark scenario' });
+      }
+      if (scenario.nativeApproval && protocol !== 'ag-ui')
+        return json(400, { error: 'Native approval requires AG-UI' });
+      const threadId =
+        typeof input.threadId === 'string'
+          ? input.threadId
+          : typeof input.id === 'string'
+          ? input.id
+          : participant;
+      let gate;
+      if (input.resume !== undefined) {
+        if (
+          !scenario.nativeApproval ||
+          !Array.isArray(input.resume) ||
+          input.resume.length !== 1
+        )
+          return json(400, { error: 'Exactly one native response required' });
+        const decision = input.resume[0];
+        if (
+          !decision ||
+          typeof decision.interruptId !== 'string' ||
+          !(
+            (decision.status === 'resolved' &&
+              typeof decision.payload === 'boolean') ||
+            (decision.status === 'cancelled' && decision.payload === undefined)
+          )
+        )
+          return json(400, {
+            error: 'Explicit approval or cancellation required',
+          });
+        gate = gates.get(decision.interruptId);
+        if (!gate || gate.revoked)
+          return json(410, { error: 'Native approval is no longer current' });
+        if (
+          gate.consumed ||
+          gate.participant !== participant ||
+          gate.threadId !== threadId ||
+          typeof input.runId !== 'string' ||
+          !input.runId ||
+          input.runId === gate.sourceRunId
+        )
+          return json(409, {
+            error: 'Native approval correlation mismatch or already consumed',
+          });
       }
       const user = Array.isArray(input.messages)
         ? input.messages.findLast((message) => message?.role === 'user')
@@ -153,35 +212,58 @@ export async function createBenchmarkServer({
               .map((part) => part.text)
               .join('')
           : undefined;
-      if (prompt !== scenario.prompt)
+      const recoveryKey = JSON.stringify([participant, threadId]);
+      const recovery = scenario.recoverableRead
+        ? recoveries.get(recoveryKey)
+        : undefined;
+      const expectedPrompt = recovery ? scenario.retryPrompt : scenario.prompt;
+      if (!gate && prompt !== expectedPrompt)
         return json(400, {
           error: 'The live user prompt does not match this scenario',
         });
-      if ([...streams].some((run) => run.record.participant === participant))
-        return json(409, { error: 'Participant already has an active run' });
+      if (!gate && scenario.nativeApproval) {
+        // A valid new explicit request supersedes an old unclaimed pause.
+        for (const old of gates.values())
+          if (
+            old.participant === participant &&
+            old.threadId === threadId &&
+            !old.consumed
+          )
+            old.revoked = true;
+      }
+      // Claim synchronously before the first streaming await. Never retry a write
+      // after an uncertain response; the consumed gate remains audit evidence.
+      if (gate) gate.consumed = true;
       const id = randomUUID();
       const nativeRunId = typeof input.runId === 'string' ? input.runId : id;
-      const threadId =
-        typeof input.threadId === 'string'
-          ? input.threadId
-          : typeof input.id === 'string'
-          ? input.id
-          : participant;
+      const calls = recovery
+        ? [{ ...scenario.calls[1], id: 'read-sorted-retry' }]
+        : scenario.calls;
       const messageId = id + '-assistant';
       const record = {
         id,
         participant,
         protocol,
         scenario: scenario.id,
-        prompt,
-        promptHash: hashValue(prompt),
-        expectedPromptHash: hashValue(scenario.prompt),
+        prompt: prompt ?? gate?.prompt,
+        promptHash: hashValue(prompt ?? gate?.prompt),
+        expectedPromptHash: hashValue(expectedPrompt),
         nativeRunId,
         threadId,
         startedAt: Date.now(),
         status: 'running',
         tools: [],
         events: [],
+        ...(gate
+          ? {
+              sourceRunId: gate.sourceRunId,
+              interruptId: gate.id,
+              approved:
+                input.resume[0].status === 'resolved' &&
+                input.resume[0].payload === true,
+            }
+          : {}),
+        ...(recovery ? { retryOf: recovery.runId } : {}),
       };
       const run = {
         record,
@@ -241,9 +323,9 @@ export async function createBenchmarkServer({
         emit({ type: 'RUN_STARTED', threadId, runId: nativeRunId });
         emit({ type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' });
       } else emit({ type: 'start', messageId });
-      for (const call of scenario.calls) {
+      for (const call of calls) {
         if (!active()) break;
-        const nativeId = id + '-' + call.id;
+        const nativeId = gate?.toolCallId ?? id + '-' + call.id;
         const tool = {
           canonicalId: call.id,
           nativeId,
@@ -253,46 +335,105 @@ export async function createBenchmarkServer({
           executionCount: 0,
         };
         record.tools.push(tool);
-        emit(
-          protocol === 'ag-ui'
-            ? {
-                type: 'TOOL_CALL_START',
-                toolCallId: nativeId,
-                toolCallName: call.name,
-                parentMessageId: messageId,
-              }
-            : {
-                type: 'tool-input-start',
-                toolCallId: nativeId,
-                toolName: call.name,
-              }
-        );
-        for (const delta of argumentFragments(call.args)) {
-          if (!active()) break;
+        if (!gate) {
           emit(
             protocol === 'ag-ui'
-              ? { type: 'TOOL_CALL_ARGS', toolCallId: nativeId, delta }
-              : {
-                  type: 'tool-input-delta',
+              ? {
+                  type: 'TOOL_CALL_START',
                   toolCallId: nativeId,
-                  inputTextDelta: delta,
+                  toolCallName: call.name,
+                  parentMessageId: messageId,
+                }
+              : {
+                  type: 'tool-input-start',
+                  toolCallId: nativeId,
+                  toolName: call.name,
                 }
           );
-          await sleep(fragmentDelayMs, run.controller.signal);
+          for (const delta of argumentFragments(call.args)) {
+            if (!active()) break;
+            emit(
+              protocol === 'ag-ui'
+                ? { type: 'TOOL_CALL_ARGS', toolCallId: nativeId, delta }
+                : {
+                    type: 'tool-input-delta',
+                    toolCallId: nativeId,
+                    inputTextDelta: delta,
+                  }
+            );
+            await sleep(fragmentDelayMs, run.controller.signal);
+          }
+          if (!active()) break;
+          tool.argsCompletedAt = Date.now();
+          tool.status = 'running';
+          emit(
+            protocol === 'ag-ui'
+              ? { type: 'TOOL_CALL_END', toolCallId: nativeId }
+              : {
+                  type: 'tool-input-available',
+                  toolCallId: nativeId,
+                  toolName: call.name,
+                  input: call.args,
+                }
+          );
         }
-        if (!active()) break;
-        tool.argsCompletedAt = Date.now();
         tool.status = 'running';
-        emit(
-          protocol === 'ag-ui'
-            ? { type: 'TOOL_CALL_END', toolCallId: nativeId }
-            : {
-                type: 'tool-input-available',
-                toolCallId: nativeId,
-                toolName: call.name,
-                input: call.args,
-              }
-        );
+        if (scenario.nativeApproval && !gate) {
+          const interruptId = nativeRunId + ':approval:' + id;
+          gates.set(interruptId, {
+            id: interruptId,
+            participant,
+            threadId,
+            sourceRunId: nativeRunId,
+            toolCallId: nativeId,
+            prompt: scenario.prompt,
+            consumed: false,
+            revoked: false,
+          });
+          tool.status = 'waiting';
+          record.interruptId = interruptId;
+          emit({ type: 'TEXT_MESSAGE_END', messageId });
+          emit({
+            type: 'RUN_FINISHED',
+            threadId,
+            runId: nativeRunId,
+            outcome: {
+              type: 'interrupt',
+              interrupts: [
+                {
+                  id: interruptId,
+                  reason: 'Approve saving the comparison note',
+                  toolCallId: nativeId,
+                  message: call.args.text,
+                },
+              ],
+            },
+          });
+          finish('paused');
+          return;
+        }
+        if (gate && !record.approved) {
+          tool.status = 'denied';
+          const cancellation = { saved: false, cancelled: true };
+          tool.cancellationHash = hashValue(cancellation);
+          tool.resultPublishedAt = Date.now();
+          emit({
+            type: 'TOOL_CALL_RESULT',
+            messageId: nativeId + '-cancelled',
+            toolCallId: nativeId,
+            role: 'tool',
+            content: JSON.stringify(cancellation),
+          });
+          emit({
+            type: 'TEXT_MESSAGE_CONTENT',
+            messageId,
+            delta: 'Saving the note was cancelled.',
+          });
+          emit({ type: 'TEXT_MESSAGE_END', messageId });
+          emit({ type: 'RUN_FINISHED', threadId, runId: nativeRunId });
+          finish('denied');
+          return;
+        }
         if (scenario.requiresApproval) {
           const decision = new Promise((resolve) => {
             run.decide = resolve;
@@ -340,6 +481,12 @@ export async function createBenchmarkServer({
         tool.executionCount++;
         let result;
         try {
+          if (scenario.recoverableRead === call.id && !recovery) {
+            recoveries.set(recoveryKey, { participant, runId: id });
+            throw new Error(
+              'Read temporarily unavailable; explicit read-only retry required'
+            );
+          }
           result = await executeTool(call.name, call.args, {
             approved: record.approved === true,
             save(text) {
@@ -351,19 +498,39 @@ export async function createBenchmarkServer({
         } catch (error) {
           tool.status = 'error';
           tool.errorHash = hashValue(error.message);
+          const recoverable =
+            scenario.continueOnError || scenario.recoverableRead;
+          if (protocol === 'ag-ui' && recoverable)
+            emit({
+              type: 'TOOL_CALL_RESULT',
+              messageId: nativeId + '-error',
+              toolCallId: nativeId,
+              role: 'tool',
+              content: JSON.stringify({
+                error: error.message,
+                recoverable: true,
+              }),
+            });
           emit(
             protocol === 'ag-ui'
-              ? {
-                  type: 'RUN_ERROR',
-                  message: error.message,
-                  code: 'BENCHMARK_TOOL_ERROR',
-                }
+              ? scenario.continueOnError
+                ? {
+                    type: 'CUSTOM',
+                    name: 'benchmark-read-error',
+                    value: { toolCallId: nativeId, message: error.message },
+                  }
+                : {
+                    type: 'RUN_ERROR',
+                    message: error.message,
+                    code: 'BENCHMARK_TOOL_ERROR',
+                  }
               : {
                   type: 'tool-output-error',
                   toolCallId: nativeId,
                   errorText: error.message,
                 }
           );
+          if (scenario.continueOnError) continue;
           if (protocol === 'ai-sdk')
             emit({ type: 'finish', finishReason: 'error' });
           finish('error');
@@ -408,7 +575,11 @@ export async function createBenchmarkServer({
         emit({ type: 'text-end', id: messageId + '-text' });
         emit({ type: 'finish' });
       }
-      finish('complete');
+      finish(
+        record.tools.some((tool) => tool.status === 'error')
+          ? 'partial'
+          : 'complete'
+      );
     } catch {
       if (!response.headersSent)
         json(400, { error: 'Invalid benchmark request' });

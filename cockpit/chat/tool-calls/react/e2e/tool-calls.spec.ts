@@ -60,7 +60,7 @@ test('page disposal aborts held history and cannot replay a turn', async ({
   await request.post('/__history/hold');
   await page.goto(base);
   await submit(page, 'Status UA123');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Confirming saved conversation…'
   );
   await page.goto('about:blank');
@@ -112,7 +112,7 @@ test('authored developer connection routes only to its configured target', async
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Status UA123');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response saved.');
+  await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Response saved.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(4);
   expect(
@@ -147,10 +147,10 @@ async function submit(page: Page, text: string) {
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
 async function saved(page: Page) {
-  await expect(page.getByRole('status')).toHaveText('Response saved.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response saved.');
 }
 async function blocked(page: Page) {
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -180,7 +180,7 @@ test('installed SDK confirms single and parallel tools on one saved conversation
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(base);
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   expect(await (await request.get('/__requests')).json()).toEqual([]);
   await submit(page, 'Status UA123');
   await saved(page);
@@ -292,7 +292,7 @@ for (const hold of ['stream', 'history']) {
     await page.goto(base);
     await submit(page, 'Status UA123');
     if (hold === 'history')
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
         'Confirming saved conversation…'
       );
     await expect(
@@ -331,7 +331,7 @@ test('failed creation never retries and New restores only local readiness', asyn
   await submit(page, 'Status UA123');
   await blocked(page);
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire.filter((item) => item.path.endsWith('/threads'))).toHaveLength(1);
   expect(
