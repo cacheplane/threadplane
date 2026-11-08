@@ -1,0 +1,29 @@
+---
+title: Introduction
+description: Compose React conversations from owned message content, explicit controls, and accessible presentation components.
+---
+
+# React chat
+
+Compose a conversation from application-owned messages and explicit controls. `@threadplane/react/chat` supplies transcript views, a composer, reasoning and source presentation, and controlled layout shells.
+
+The native React APIs are experimental, private source-build packages. `@threadplane/react` remains unpublished at `0.0.0`; these pages document repository source and runnable examples.
+
+## Choose the level of composition
+
+| Surface | Use it for |
+| --- | --- |
+| `Chat` | A core `AgentSession` with its default transcript, error, and composer wiring. |
+| `MessageList` and `ChatInput` | An application facade with its own admission, continuation, and error policy. |
+| `TextTranscript` | Explicit plain-text structural rows, including native AG-UI selections. |
+| `ChatPopup`, `ChatSidebar`, `ChatSidenav` | Controlled presentation around an application-owned conversation or directory. |
+
+The root `useAgent` entry stays headless. Import the chat stylesheet explicitly when using its presentation. Markdown is a separate entry that borrows an already owned document snapshot.
+
+## Start with one conversation
+
+Follow [Installation](/docs/react/chat/getting-started/installation) and [Quickstart](/docs/react/chat/getting-started/quickstart). Then read the [message model](/docs/react/chat/concepts/message-model) to customize rows without losing message identity.
+
+The canonical native React example combines saved conversations, navigation, tools, sources, and trip cards. The smaller [messages preview](/docs/react/chat/concepts/message-model) isolates message presentation. Each has an explicit backend and lifecycle boundary; a display component does not add those capabilities by itself.
+
+Use [Layout modes](/docs/react/chat/guides/layout-modes) for shell selection and [Error handling](/docs/react/chat/guides/error-handling) for recovery policy.

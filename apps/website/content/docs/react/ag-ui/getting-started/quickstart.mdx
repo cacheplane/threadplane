@@ -1,0 +1,37 @@
+---
+title: Quickstart
+description: Build the private React AG-UI streaming fixture and follow its native session and text projection.
+---
+
+# Start with AG-UI streaming
+
+The AG-UI streaming fixture is a complete React source example under `cockpit/ag-ui/streaming/react`. It owns a native session and displays an explicitly projected text transcript.
+
+These APIs are experimental, private source-build packages, not a public npm installation recipe. Use Node.js 22 and the root npm lockfile; React 19.2.4 is the tested runtime.
+
+~~~sh
+npm ci
+npx nx build cockpit-ag-ui-streaming-react
+npx nx test cockpit-ag-ui-streaming-react
+~~~
+
+The build prepares the private AG-UI runtime and local core, content, and React artifacts. Browser verification is available through `npx nx e2e cockpit-ag-ui-streaming-react` with the repository's fixture prerequisites.
+
+## Follow the source
+
+| File | Responsibility |
+| --- | --- |
+| `connection.ts` | Select the shared or developer AG-UI endpoint and validate the private session shape. |
+| `application.ts` | Own session lifetime, project text, and decide whether another Send is safe. |
+| `canonical-transcript.ts` | Confirm that the terminal root belongs to the admitted turn and preserves history. |
+| `app.tsx` | Observe the application and render text and explicit controls. |
+
+The default endpoint is the same-origin `/ag-ui/streaming/agent`. Runtime configuration can supply a developer endpoint. The model and provider credentials remain in the backend.
+
+## Understand one turn
+
+The first Send creates a local UUID and session lazily. The application preserves native history for confirmed follow-ups. A successful terminal root must match the owned thread and run evidence and the admitted message history.
+
+This text-only fixture refuses unsupported tools, decisions, or children instead of pretending to execute them. Stop, uncertain results, and unsupported observations require explicit recovery; there is no automatic replay or reconnect.
+
+A local UUID is not a saved-history guarantee. Continue with [Architecture](/docs/react/ag-ui/concepts/architecture), then use the separate [tool views](/docs/react/ag-ui/guides/tool-views) or [interrupts](/docs/react/ag-ui/guides/interrupts) examples for those capabilities.

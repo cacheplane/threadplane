@@ -36,7 +36,7 @@ describe('explicit narrative document catalog', () => {
     expect(documentCatalog).toHaveLength(118);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
     const variants = getNarrativeDocuments();
-    expect(variants).toHaveLength(161);
+    expect(variants).toHaveLength(187);
     expect(new Set(variants.map(doc => doc.href)).size).toBe(variants.length);
     expect(new Set(variants.map(doc => doc.source)).size).toBe(variants.length);
   });
@@ -46,8 +46,8 @@ describe('explicit narrative document catalog', () => {
       scope: 'react', source: 'react/langgraph/guides/streaming.mdx',
       href: '/docs/react/langgraph/guides/streaming',
     });
-    expect(getDocumentVariant('langgraph/getting-started/installation', 'react')).toBeUndefined();
-    expect(resolveNarrativeDocument('/docs/react/langgraph/getting-started/installation')).toBeUndefined();
+    expect(getDocumentVariant('langgraph/concepts/angular-signals', 'react')).toBeUndefined();
+    expect(resolveNarrativeDocument('/docs/react/langgraph/concepts/angular-signals')).toBeUndefined();
     expect(resolveNarrativeDocument('/docs/langgraph/guides/streaming?frontend=react')).toBeUndefined();
     expect(resolveNarrativeDocument('/docs/angular/langgraph/guides/streaming?frontend=react')?.scope).toBe('angular');
   });
@@ -69,6 +69,29 @@ describe('explicit narrative document catalog', () => {
     }
   });
 
+  it('registers the React onboarding and component counterparts without inventing runnable or Angular API associations', () => {
+    const topics = [
+      ...['introduction', 'installation', 'quickstart'].map(slug => `langgraph/getting-started/${slug}`),
+      ...['agent-contract', 'conversation-turns', 'state-management'].map(slug => `langgraph/concepts/${slug}`),
+      ...['introduction', 'installation', 'quickstart'].map(slug => `chat/getting-started/${slug}`),
+      ...['chat', 'chat-message-list', 'chat-popup', 'chat-reasoning', 'chat-sidebar', 'chat-sidenav'].map(slug => `chat/components/${slug}`),
+      ...['layout-modes', 'markdown', 'lifecycle', 'error-handling'].map(slug => `chat/guides/${slug}`),
+      ...['introduction', 'quickstart'].map(slug => `ag-ui/getting-started/${slug}`),
+      'ag-ui/concepts/architecture',
+      ...['introduction', 'quickstart'].map(slug => `render/getting-started/${slug}`),
+      ...['events', 'lifecycle'].map(slug => `render/guides/${slug}`),
+    ];
+    expect(topics).toHaveLength(26);
+    for (const topic of topics) {
+      const angular = getDocumentVariant(topic, 'angular')!;
+      const react = getDocumentVariant(topic, 'react')!;
+      expect(react, topic).toMatchObject({ id: topic, scope: 'react', order: angular.order });
+      expect(resolveNarrativeDocument(react.href), topic).toEqual(react);
+      expect(react.lessonId, topic).toBeUndefined();
+      expect(react.apiEntrypointIds, topic).toBeUndefined();
+    }
+  });
+
   it('gives every variant a real source, complete metadata and deterministic navigation order', () => {
     for (const doc of getNarrativeDocuments()) {
       expect(doc.title.trim(), doc.id).not.toBe('');
@@ -87,7 +110,9 @@ describe('explicit narrative document catalog', () => {
       expect(doc.href).toBe(`/docs/${framework}/getting-started/introduction`);
       expect(doc).not.toHaveProperty('capabilityId');
       const source = fs.readFileSync(path.join(contentRoot, doc.source), 'utf8');
-      expect(source).toContain(`/docs/${framework}/langgraph/guides/streaming`);
+      expect(source).toContain(framework === 'react'
+        ? '/docs/react/langgraph/getting-started/quickstart'
+        : '/docs/angular/langgraph/guides/streaming');
       if (framework === 'react') {
         expect(source).toMatch(/private.*source.build/i);
         expect(source).not.toMatch(/npm (?:install|i) @threadplane\/react/);

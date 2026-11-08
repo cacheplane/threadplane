@@ -1,0 +1,30 @@
+---
+title: State Management
+description: Keep session observations, application policy, and local React presentation state under clear owners.
+---
+
+# Manage React conversation state
+
+Keep three kinds of state distinct: backend observations, application policy, and local presentation. This makes a partial answer, a disabled Send button, and an open sidebar understandable without treating them as one mutable store.
+
+The React APIs are experimental, private source-build packages. The [streaming example](/docs/react/langgraph/guides/streaming) provides a concrete application owner.
+
+## Publish one coherent observation
+
+The streaming application publishes `creation`, `rows`, `busy`, `canSubmit`, `outcome`, and `error` in a single frozen snapshot. These are example application fields, not required fields of `useAgent`.
+
+On a session notification, the owner projects messages and publishes the next aggregate. Its `getSnapshot` returns that same object until a change. The view observes it and renders rows and controls from the same publication.
+
+Keep content projection in this owner. `createMessageContent` manages Markdown documents and row reuse; `content.project` advances that owned content. Publishing prepared rows avoids changing a shared projection during React rendering.
+
+## Preserve backend-specific meaning
+
+The private LangGraph session exposes a readonly `values` map. `undefined` means no current application-values map is observed; an empty object means an empty map was observed. The hook preserves this distinction and the concrete session type.
+
+Observing values does not validate their schema, write backend state, or issue additional reads. Narrow unknown application values at the application boundary before presenting them. See the [state-related runtime examples](/docs/react/langgraph/guides/memory) for an authored backend contract.
+
+## Keep local choices local
+
+Draft text, disclosure expansion, and popup visibility can belong to React. They should not implicitly submit, recreate sessions, or change conversation identity. A new owner or conversation may intentionally reset those choices; merely receiving another token should not.
+
+When replacing an owner, invalidate old asynchronous work before it can publish into the new selection. Dispose the old session and content at that owner boundary. [Lifecycle](/docs/react/chat/guides/lifecycle) describes this cleanup, while [Render state](/docs/react/render/guides/state-store) covers editable presentation data.

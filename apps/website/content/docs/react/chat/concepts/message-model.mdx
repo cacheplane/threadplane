@@ -11,21 +11,20 @@ The native React APIs on this page are experimental, private source-build packag
 
 ## Project messages before rendering rows
 
-`createMessageContent` turns session messages into reusable `MessageRow` values. `MessageList` consumes those rows and provides default presentation; `renderMessage` replaces that presentation when your application needs a custom row. Keep the projection owner for the conversation lifetime and dispose it with that owner, not each time React renders.
+`createMessageContent` turns session messages into reusable `MessageRow` values. The application advances this projection when it handles a session observation, then publishes the prepared rows in its own immutable snapshot. `MessageList` consumes those rows and provides default presentation; `renderMessage` replaces that presentation when your application needs a custom row. Keep the projection owner for the conversation lifetime and dispose it with that owner, not each time React renders.
 
 ~~~tsx
-import type { AgentSession } from '@threadplane/core';
-import type { MessageContent } from '@threadplane/content/messages';
-import { useAgent } from '@threadplane/react';
+import type { MessageRow } from '@threadplane/content/messages';
 import { MessageList } from '@threadplane/react/chat';
 
-export function Transcript({ session, content }: { session: AgentSession; content: MessageContent }) {
-  const snapshot = useAgent(session);
-  return <MessageList rows={content.project(snapshot)} label="Trip conversation" />;
+export function Transcript({ rows }: { readonly rows: readonly MessageRow[] }) {
+  return <MessageList rows={rows} label="Trip conversation" />;
 }
 ~~~
 
-The [conversation walkthrough (Angular guide)](/docs/angular/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
+The runnable example below shows the full owner-to-view connection. Its `application.ts` owns projection and cleanup; its `app.tsx` observes the application and renders published rows. Do not call a shared `content.project` from your custom row renderer or use React rendering to advance the application's content owner.
+
+The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Ask and continue
 

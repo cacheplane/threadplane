@@ -1,0 +1,46 @@
+---
+title: Conversation Turns
+description: Follow a React conversation from a user action through streaming, tools, application state, and saved history.
+---
+
+# Follow a React conversation
+
+A traveler asks for a weekend itinerary. The application submits the message, the backend streams an answer, and the view updates as observations arrive. Later, a saved conversation can restore that history.
+
+The React APIs described here are experimental, private source-build packages. The [learning workbench](/docs/react/getting-started/workbench) makes these observations inspectable without requiring a public package installation.
+
+## Name the boundaries
+
+<ConversationArchitecture />
+
+| Term | Meaning |
+| --- | --- |
+| Conversation or thread | The identity and history shared across related user turns. |
+| Turn | One user intention and the work needed to answer it, including continuations. |
+| Run | A backend execution; a turn may need more than one run. |
+| Model call | A backend request to a language model, possibly followed by tools and another model call. |
+| HTTP request | One transport operation, such as creating a thread, streaming a run, or reading history. |
+| Message | An identified user, assistant, system, or tool transcript entry. |
+| Snapshot | The owner's current immutable observation, which may include partial messages and progress. |
+
+A token is not a new turn. Several snapshots may extend one message. A tool result is not necessarily the final answer, and a closed transport does not prove backend success.
+
+## Submit once, observe many times
+
+<TurnSequence />
+
+The [streaming example](/docs/react/langgraph/guides/streaming) keeps the draft in `ChatInput`. Send calls the application owner. The owner confirms thread creation, submits to its session, projects messages, and publishes snapshots. `useAgent(application)` reads those snapshots; `MessageList` renders their prepared rows.
+
+Keep the progress indicator tied to the owner's busy state. Evaluate the response outcome separately. A fulfilled core submission may report failure, cancellation, interruption, or pause; a wrapper's fulfilled promise may only mean its handler finished.
+
+## Add tools and decisions deliberately
+
+Tools introduce another boundary: observing a call does not authorize executing it. Partial arguments remain observations until the application accepts a complete, supported call. [Client tools](/docs/react/chat/guides/client-tools) and [interrupts](/docs/react/langgraph/guides/interrupts) demonstrate explicit execution and continuation policies.
+
+Rendered UI also remains a view. A specification names registered components and supplies data; it cannot supply arbitrary JavaScript. [Render quickstart](/docs/react/render/getting-started/quickstart) starts with local authored samples.
+
+## Distinguish a visible answer from saved history
+
+A successful stream and a confirmed history read are separate evidence. The [persistence example](/docs/react/langgraph/guides/persistence) checks saved messages before permitting continuation. A page-local identifier alone is not a persistence guarantee.
+
+The canonical native React chat under `examples/chat/native/react` combines conversation selection, owned content, and trip presentation. Focused guides each demonstrate a smaller supported boundary. Use their actual contracts rather than assuming every example offers the full workflow.
