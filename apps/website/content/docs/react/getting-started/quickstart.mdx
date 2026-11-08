@@ -1,0 +1,188 @@
+---
+title: Quickstart
+description: Install the React source build, create a fake agent, and send your first message with Chat.
+---
+
+# Build your first React conversation
+
+Create a small fake agent, render it with `Chat`, and send a message. You will have a working conversation without a model key or backend. Afterward, choose whether to learn about turns or connect a real backend.
+
+## 1. Install the packages
+
+The React SDK is experimental. `@threadplane/react`, `@threadplane/core`, and `@threadplane/content` are private `0.0.0` source-build packages; they are not published npm packages. For now, build and pack them from a [Threadplane repository checkout](https://github.com/cacheplane/threadplane).
+
+Use Node.js 22.12 or newer and npm. From the repository root:
+
+```sh
+npm ci
+npx nx build react
+mkdir -p ../threadplane-packages
+npm pack ./dist/libs/core --pack-destination ../threadplane-packages
+npm pack ./dist/libs/content --pack-destination ../threadplane-packages
+npm pack ./dist/libs/react --pack-destination ../threadplane-packages
+```
+
+The build also builds React's core and content dependencies. The pack commands put three tarballs in `threadplane-packages`, beside your repository checkout.
+
+In an existing client-side React app using Vite and TypeScript, install the tarballs. These commands assume your app and `threadplane-packages` are sibling directories; adjust the paths if yours are elsewhere.
+
+```sh
+npm install react@19.2.4 react-dom@19.2.4
+npm install -D @types/react@19.2.14 @types/react-dom@19.2.3
+npm install ../threadplane-packages/threadplane-core-0.0.0.tgz ../threadplane-packages/threadplane-content-0.0.0.tgz ../threadplane-packages/threadplane-react-0.0.0.tgz
+```
+
+## 2. Create a fake agent
+
+Create `src/fake-agent.ts`. This `createFakeAgent` function belongs to your app. It implements the SDK's `AgentSession` contract; it is not an SDK factory.
+
+```ts
+import {
+  staticDelivery,
+  type AgentSession,
+  type AgentSnapshot,
+} from '@threadplane/core';
+
+export function createFakeAgent(): AgentSession {
+  let snapshot: AgentSnapshot = Object.freeze({
+    status: 'idle',
+    messages: Object.freeze([]),
+    toolCalls: Object.freeze([]),
+  });
+  const listeners = new Set<() => void>();
+  let nextId = 0;
+  let disposed = false;
+
+  return {
+    getSnapshot: () => snapshot,
+    subscribe(notify) {
+      if (disposed) return () => {};
+      listeners.add(notify);
+      return () => { listeners.delete(notify); };
+    },
+    async submit(input, options) {
+      const text = input.trim();
+      if (disposed || !text || options?.signal?.aborted) return 'aborted';
+
+      const userId = `user-${++nextId}`;
+      const assistantId = `assistant-${nextId}`;
+      snapshot = Object.freeze({
+        ...snapshot,
+        messages: Object.freeze([
+          ...snapshot.messages,
+          Object.freeze({
+            id: userId,
+            role: 'user',
+            content: text,
+            delivery: staticDelivery(userId),
+          } as const),
+          Object.freeze({
+            id: assistantId,
+            role: 'assistant',
+            content: 'Hello! This is a canned reply from your fake agent.',
+            delivery: staticDelivery(assistantId),
+          } as const),
+        ]),
+      });
+      for (const notify of listeners) notify();
+      return 'success';
+    },
+    async stop() {},
+    async dispose() {
+      disposed = true;
+      listeners.clear();
+    },
+  };
+}
+```
+
+The session keeps the same immutable snapshot until a message changes it. `subscribe` reports changes; subscribing does not start work. Each submission adds a user message and a completed assistant message immediately. There is no stream to stop, so `stop` has no work to do. Empty input, an already-aborted signal, and submissions after disposal leave the snapshot unchanged.
+
+## 3. Render the chat
+
+Replace `src/App.tsx` with:
+
+```tsx
+import type { AgentSession } from '@threadplane/core';
+import { Chat } from '@threadplane/react/chat';
+
+export default function App({ agent }: { agent: AgentSession }) {
+  return (
+    <main style={{ maxWidth: '48rem', margin: '2rem auto', padding: '1rem' }}>
+      <h1>My first conversation</h1>
+      <Chat session={agent} placeholder="Write your first message…" />
+    </main>
+  );
+}
+```
+
+`Chat` renders the transcript and composer, observes the session, and calls `submit` when you send a message. Your app owns the session and decides when to dispose it.
+
+Replace `src/main.tsx` with the bootstrap below. Keep Vite's `src/vite-env.d.ts` so TypeScript recognizes `import.meta.hot`.
+
+```tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import '@threadplane/react/chat/styles.css';
+import App from './App';
+import { createFakeAgent } from './fake-agent';
+
+const agent = createFakeAgent();
+const root = createRoot(document.getElementById('root')!);
+
+root.render(
+  <StrictMode>
+    <App agent={agent} />
+  </StrictMode>,
+);
+
+let disposed = false;
+function dispose() {
+  if (disposed) return;
+  disposed = true;
+  window.removeEventListener('pagehide', onPageHide);
+  root.unmount();
+  void agent.dispose();
+}
+
+function onPageHide(event: PageTransitionEvent) {
+  if (!event.persisted) dispose();
+}
+
+window.addEventListener('pagehide', onPageHide);
+import.meta.hot?.dispose(dispose);
+```
+
+The session is created once outside React rendering, so Strict Mode's development remounts observe the same session. When the browser puts the page in its back/forward cache, `event.persisted` keeps the root and session alive so Back can restore the conversation. The bootstrap unmounts the root and disposes the agent when the page leaves without being cached or Vite replaces this module. If you embed this chat in a larger app, put that cleanup in the code that owns its root and session.
+
+This example imports only the chat stylesheet. Remove starter demo styles if they constrain your app's layout.
+
+## 4. Send a message
+
+Start your app:
+
+```sh
+npm run dev
+```
+
+Open the local URL printed by Vite. Type **Hello** and press **Send** or **Enter**. Your message appears with **Hello! This is a canned reply from your fake agent.** Send a second message to see the conversation grow.
+
+The answer is fixed text from your own function. It makes no model or network requests, and it appears all at once. You now have the same session-to-chat boundary that a real connection can supply.
+
+## Choose your next step
+
+Each path starts from the conversation you just built.
+
+<CardGroup cols={3}>
+  <Card title="Learn about turns" href="/docs/react/getting-started/workbench">
+    Open the learning workbench to follow a recorded turn, pause streaming text,
+    and connect messages, busy state, and outcomes to the React source.
+  </Card>
+  <Card title="Connect LangGraph" href="/docs/react/langgraph/guides/streaming">
+    Replace the canned response with a LangGraph connection and stream a real
+    response into your conversation.
+  </Card>
+  <Card title="Connect AG-UI" href="/docs/react/ag-ui/reference/event-mapping">
+    Learn how AG-UI events map into the messages and state your React app observes.
+  </Card>
+</CardGroup>

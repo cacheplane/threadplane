@@ -1,6 +1,28 @@
 import { expect, test } from '@playwright/test';
+import { frameworkControl } from './fixtures/framework-controls';
 
 const quickstart = '/docs/angular/chat/getting-started/quickstart';
+
+for (const width of [390, 1440]) {
+  test(`API filtering and navigation stay usable in the docs theme at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/docs/api');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+    const filters = page.locator('.api-reference-filters');
+    await filters.getByLabel('Find an API').fill('useAgent');
+    await filters.getByLabel('Framework').selectOption('react');
+    const reference = page.locator('.api-reference-page');
+    await expect(reference.getByRole('link', { name: 'useAgent', exact: true })).toHaveAttribute('href', '/docs/api/react/useAgent');
+    await reference.getByRole('link', { name: 'useAgent', exact: true }).click();
+    await expect(page).toHaveURL('/docs/api/react/useAgent');
+    await expect(page.getByRole('heading', { level: 1, name: 'useAgent', exact: true })).toBeVisible();
+    await expect(page.locator('.api-reference-code').first()).toBeVisible();
+    await frameworkControl(page);
+    const navigation = page.getByRole('navigation', { name: 'API reference', exact: true });
+    await expect(navigation.getByRole('link', { name: 'useAgent', exact: true })).toHaveAttribute('aria-current', 'page');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+  });
+}
 
 for (const width of [320, 390, 768, 1024, 1440, 1920]) {
   test(`API and docs share a reading edge at ${width}px`, async ({ page }) => {

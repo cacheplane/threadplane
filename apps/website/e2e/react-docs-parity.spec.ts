@@ -24,7 +24,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.keyboard.press('Escape');
     await expect(picker).toBeFocused();
     const compact = page.locator('[data-docs-navigation-compact]:visible');
-    await expect(compact.getByRole('link', { name: 'React overview', exact: true })).toBeVisible();
+    await expect(compact.getByRole('link', { name: 'React quickstart', exact: true })).toBeVisible();
     await expect(compact.getByRole('button', { name: 'Reference', exact: true })).toHaveAttribute('aria-expanded', 'false');
     await expect(compact.getByRole('button', { name: 'Guides', exact: true })).toHaveAttribute('aria-expanded', 'true');
     if (width < 1024) await page.keyboard.press('Escape');

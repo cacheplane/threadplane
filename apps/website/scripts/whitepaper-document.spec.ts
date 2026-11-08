@@ -10,6 +10,7 @@ import {
   type PaperId,
 } from './whitepaper-document';
 import { FIELD_REPORT } from '../src/lib/field-report';
+import { nextConfig } from '../next.config';
 
 describe('authored whitepaper rendering', () => {
   it('keeps literal Angular tags and blank lines in code readable', () => {
@@ -102,7 +103,7 @@ describe('published whitepapers', () => {
 
   it.each(Object.keys(PAPERS) as PaperId[])(
     '%s is built from current authored content and checked examples',
-    (id) => {
+    async (id) => {
       const source = readFileSync(
         join(website, 'content/whitepapers', `${id}.md`),
         'utf8'
@@ -137,8 +138,14 @@ describe('published whitepapers', () => {
           `${id}: missing ${framework} implementation reference`
         ).toBe(true);
       }
+      const redirects = await nextConfig.redirects?.() ?? [];
       for (const [, route] of links) {
-        const contentPath = join(website, 'content', route.slice(1));
+        // Published PDFs keep their original URLs; exact permanent redirects
+        // must still lead to authored content when an entry guide moves.
+        const canonical = redirects.find(
+          redirect => redirect.source === route && redirect.permanent
+        )?.destination ?? route;
+        const contentPath = join(website, 'content', canonical.slice(1));
         expect(
           existsSync(`${contentPath}.mdx`) ||
             existsSync(join(contentPath, 'index.mdx')),
