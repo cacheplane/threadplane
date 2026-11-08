@@ -1,6 +1,8 @@
 'use client';
 
 import { useContext, useLayoutEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
+import { deferDocsLinkHandoff, hasBusyDocsLink } from './docs-link-handoff';
 import { WebsiteWorkspaceLayoutContext } from './WebsiteWorkspaceRoot';
 import {
   WebsiteWorkspaceSurface,
@@ -19,11 +21,36 @@ export function WebsiteWorkspace(props: WebsiteWorkspaceProps) {
   const tokenRef = useRef<object | null>(null);
   if (!tokenRef.current) tokenRef.current = {};
   const token = tokenRef.current;
+  const fallbackRef = useRef<HTMLDivElement>(null);
+  const didRegisterRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!layout) return undefined;
-    layout.register(token, props, WebsiteWorkspaceSurface);
-    return () => layout.unregister(token);
+    let current = true;
+    let registered = false;
+    const register = () => {
+      if (!current) return;
+      didRegisterRef.current = true;
+      registered = true;
+      layout.register(token, props, WebsiteWorkspaceSurface);
+    };
+    const host = fallbackRef.current;
+    let cancel: (() => void) | undefined;
+    if (!didRegisterRef.current && host && hasBusyDocsLink(host)) {
+      cancel = deferDocsLinkHandoff(host, () => {
+        // This task runs outside React's lifecycle. Commit before another input
+        // can start against the article that is about to be replaced.
+        if (current && host.isConnected && !hasBusyDocsLink(host))
+          flushSync(register);
+      });
+    } else {
+      register();
+    }
+    return () => {
+      current = false;
+      cancel?.();
+      if (registered) layout.unregister(token);
+    };
   }, [
     layout?.register,
     layout?.unregister,
@@ -47,5 +74,9 @@ export function WebsiteWorkspace(props: WebsiteWorkspaceProps) {
   if (layout.activeToken === token) return null;
 
   // Preserve the server-rendered article until the persistent shell registers.
-  return props.docsSlot ?? null;
+  return (
+    <div ref={fallbackRef} className="website-workspace-fallback">
+      {props.docsSlot ?? null}
+    </div>
+  );
 }

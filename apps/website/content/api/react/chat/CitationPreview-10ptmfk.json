@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!CitationPreview:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Explicit source details with local presentation state and no source fetching.",
+  "summary": "Explicit source details and local source summary with no source fetching.",
   "declarations": [
     {
       "name": "CitationPreview",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Explicit source details with local presentation state and no source fetching.",
+        "summary": "Explicit source details and local source summary with no source fetching.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -54,7 +54,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/citation-preview.tsx",
-        "line": 19
+        "line": 20
       },
       "overloadIndex": 1,
       "parameters": [
@@ -75,6 +75,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/citation-preview.tsx",
-    "line": 19
+    "line": 20
   }
 }
