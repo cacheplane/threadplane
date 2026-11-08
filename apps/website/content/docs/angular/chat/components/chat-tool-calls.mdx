@@ -4,7 +4,7 @@ description: How the tool-calls example renders an aviation agent's calls in a s
 
 # ChatToolCallsComponent
 
-`ChatToolCallsComponent` renders the tool calls an agent makes. It reads them off the agent, collapses consecutive calls to the same tool into one labeled strip, and renders everything else as a card showing the arguments and the result. The running example is an aviation assistant with three read-only tools, and it mounts the component twice: once inside the conversation through the `<chat>` composition, and once on its own in a sidebar panel.
+`ChatToolCallsComponent` renders readable tool activity with explicit lifecycle status. Technical names, call IDs, arguments, results and errors remain available in collapsed **Details**. Consecutive same-name calls group by default; grouping across names is opt-in. The aviation example mounts this component in the conversation and in a sidebar.
 
 **Selector:** `chat-tool-calls`
 
@@ -30,15 +30,23 @@ Three files carry the example: the graph that binds the tools and loops until th
 
 `ALL_TOOLS` in the example's tool module holds three LangChain tools: `lookup_flight(flight_number)`, `get_airport_info(airport_code)` and `find_routes(from_code, to_code, date_offset_days)`, each returning a dictionary from a small mock aviation dataset. Binding them to the model is what makes the model able to emit tool calls at all; the agent node then prepends the capability's prompt file and awaits the model.
 
-<ExampleCode file="graph.py" region="bind-tools" title="graph.py — binding the tools" />
+<ExampleCode
+  file="graph.py"
+  region="bind-tools"
+  title="graph.py — binding the tools"
+/>
 
-The names bound here are the names the component groups by and labels its cards with.
+These technical names identify and group calls. App-authored `toolLabel` metadata supplies readable activity labels without changing execution.
 
 ### The agent and tool loop
 
 `should_continue` looks at the last message and routes to the `tools` node whenever it carries tool calls, and the `tools` edge goes straight back to `agent`. That is the loop: the model calls a tool, `ToolNode` runs it, the result returns as a tool message, and the model is invoked again within the same user turn. A model response with no tool calls falls through to the title node instead.
 
-<ExampleCode file="graph.py" region="tool-loop" title="graph.py — the agent and tool loop" />
+<ExampleCode
+  file="graph.py"
+  region="tool-loop"
+  title="graph.py — the agent and tool loop"
+/>
 
 `compile()` is called with no checkpointer, because this graph is served by the LangGraph API server, which supplies persistence itself.
 
@@ -63,7 +71,11 @@ provideAgent({
 
 The layout is the `<chat>` composition in the main slot and a panel in the sidebar slot. The sidebar instance takes the agent and nothing else, so it renders `agent.toolCalls()`, which is every call in the thread rather than the calls of one message.
 
-<ExampleCode file="tool-calls.component.ts" region="layout" title="tool-calls.component.ts — the layout" />
+<ExampleCode
+  file="tool-calls.component.ts"
+  region="layout"
+  title="tool-calls.component.ts — the layout"
+/>
 
 The `<chat>` composition mounts the same primitive again under each assistant bubble, passing that message, so the conversation shows a turn's own calls while the sidebar accumulates all of them.
 
@@ -71,7 +83,11 @@ The `<chat>` composition mounts the same primitive again under each assistant bu
 
 The component injects the agent and submits the suggestion text when the chip is clicked. Nothing about tool calls is wired here: the component below only supplies the agent.
 
-<ExampleCode file="tool-calls.component.ts" region="component" title="tool-calls.component.ts — the component class" />
+<ExampleCode
+  file="tool-calls.component.ts"
+  region="component"
+  title="tool-calls.component.ts — the component class"
+/>
 
 ## Import
 
@@ -83,14 +99,16 @@ The component is standalone, so add it to a component's `imports` array.
 
 ## Inputs
 
-| Input | Type | Default | Description |
-|---|---|---|---|
-| `agent` | `Agent` | **Required** | The agent whose `toolCalls()` signal is rendered. |
-| `message` | `Message \| undefined` | `undefined` | Scopes rendering to one assistant message. Omit it and the whole thread's calls are rendered. |
-| `grouping` | `'auto' \| 'none'` | `'auto'` | With `'auto'`, consecutive calls to the same tool collapse into one strip. With `'none'`, every call renders on its own. |
-| `groupSummary` | `((name: string, count: number) => string) \| undefined` | `undefined` | Replaces the built-in strip label. When left undefined, the default registry below is used. |
-| `excludeToolNames` | `readonly string[]` | `[]` | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript. |
-| `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]` | `[]` | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
+| Input               | Type                                                     | Default      | Description                                                                                                                                                                                                       |
+| ------------------- | -------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent`             | `Agent`                                                  | **Required** | The agent whose `toolCalls()` signal is rendered.                                                                                                                                                                 |
+| `message`           | `Message \| undefined`                                   | `undefined`  | Scopes rendering to one assistant message. Omit it and the whole thread's calls are rendered.                                                                                                                     |
+| `grouping`          | `'auto' \| 'none'`                                       | `'auto'`     | With `'auto'`, consecutive calls to the same tool collapse into one strip. With `'none'`, every call renders on its own.                                                                                          |
+| `groupSummary`      | `((name: string, count: number) => string) \| undefined` | `undefined`  | Replaces the generic activity count.                                                                                                                                                                              |
+| `groupRelated`      | `boolean`                                                | `false`      | Allows adjacent default calls with different names to group. `grouping="none"` still disables grouping. Custom templates and subagents stay separate.                                                             |
+| `toolLabel`         | `(name: string) => string \| undefined`                  | `undefined`  | Supplies a readable label; unknown names use “Tool activity.” The technical name stays in Details.                                                                                                                |
+| `excludeToolNames`  | `readonly string[]`                                      | `[]`         | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript.                                                                                                      |
+| `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]`               | `[]`         | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
 
 The component has no outputs.
 
@@ -114,18 +132,7 @@ A group holding more than one call renders as a collapsible strip: a header butt
 
 ## Default group summaries
 
-| Tool name | Label |
-|---|---|
-| `search_*` | Searched N sites |
-| `generate_*` | Generated N items |
-| `read_*` | Read N files |
-| `write_*` | Wrote N files |
-| `list_*` | Listed N items |
-| Anything else | Called {name} N times |
-
-The nouns are singularized at a count of one, which matters when you call the summary yourself; the default strip only appears from two calls up. The aviation tools in the example match none of these prefixes, which is why two airport lookups read "Called get_airport_info 2 times".
-
-Pass `groupSummary` to replace the whole registry for one instance:
+The default is “N tool activities.” Tool-name prefixes do not prove whether a call searched sites, read files, or completed a business operation. Pass `groupSummary` for application-specific wording:
 
 ```html
 <chat-tool-calls [agent]="agent" [message]="msg" [groupSummary]="summarize" />
@@ -133,8 +140,14 @@ Pass `groupSummary` to replace the whole registry for one instance:
 
 ```typescript
 const summarize = (name: string, count: number): string =>
-  name === 'lookup_flight' ? `Looked up ${count} flights` : `${name} × ${count}`;
+  name === 'lookup_flight'
+    ? `Looked up ${count} flights`
+    : `${name} × ${count}`;
 ```
+
+The `<chat>` composition forwards `toolLabel` and `groupRelatedTools` to its per-message activity region. `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` are also available as readonly presentation primitives. Supply literal evidence and an explicit `phase`; omitted status is shown as unavailable. Their projected content stays mounted outside technical Details, so a rich result or approval control can remain visible. These primitives never execute, resume, approve, or persist work. A tool result is separate from application confirmation of saved data.
+
+For AG-UI, `TOOL_CALL_END` closes argument streaming. The adapter keeps execution running until `TOOL_CALL_RESULT`; it does not infer execution success from finalized arguments. Stopped, interrupted and paused response outcomes remain distinct.
 
 ## Per-tool templates
 
@@ -142,8 +155,15 @@ Project an `ng-template` carrying the `chatToolCallTemplate` directive to replac
 
 ```html
 <chat-tool-calls [agent]="agent" [message]="msg">
-  <ng-template chatToolCallTemplate="lookup_flight" let-call let-status="status">
-    <my-flight-card [flightNumber]="call.args.flight_number" [status]="status" />
+  <ng-template
+    chatToolCallTemplate="lookup_flight"
+    let-call
+    let-status="status"
+  >
+    <my-flight-card
+      [flightNumber]="call.args.flight_number"
+      [status]="status"
+    />
   </ng-template>
 </chat-tool-calls>
 ```
@@ -162,24 +182,33 @@ Every call the component does not hand to a template or a subagent card is rende
 
 The host is a block with a 20 pixel bottom margin. The strip reads three custom properties from the chat theme:
 
-| Variable | Applied to |
-|---|---|
-| `--tplane-chat-separator` | Strip border, and the divider above the expanded body |
-| `--tplane-chat-radius-card` | Strip corner radius |
-| `--tplane-chat-text` | Strip header text |
+| Variable                    | Applied to                                            |
+| --------------------------- | ----------------------------------------------------- |
+| `--tplane-chat-separator`   | Strip border, and the divider above the expanded body |
+| `--tplane-chat-radius-card` | Strip corner radius                                   |
+| `--tplane-chat-text`        | Strip header text                                     |
 
 Setting the variables is covered in the [theming guide](/docs/angular/chat/guides/theming).
 
 ## What's Next
 
 <CardGroup cols={2}>
-  <Card title="chatToolCallTemplate" href="/docs/angular/chat/components/chat-tool-call-template">
+  <Card
+    title="chatToolCallTemplate"
+    href="/docs/angular/chat/components/chat-tool-call-template"
+  >
     Replace the default card for one tool name.
   </Card>
-  <Card title="ChatToolCallCard" href="/docs/angular/chat/components/chat-tool-call-card">
+  <Card
+    title="ChatToolCallCard"
+    href="/docs/angular/chat/components/chat-tool-call-card"
+  >
     The card the component renders for an ungrouped call.
   </Card>
-  <Card title="ChatSubagentCard" href="/docs/angular/chat/components/chat-subagent-card">
+  <Card
+    title="ChatSubagentCard"
+    href="/docs/angular/chat/components/chat-subagent-card"
+  >
     What a call that spawned a subagent renders instead.
   </Card>
   <Card title="Theming" href="/docs/angular/chat/guides/theming">

@@ -38,7 +38,8 @@ function SavedText({ content }: { readonly content: string }) {
         <p className="a2ui-prose">{content.slice(0, at).trim()}</p>
       )}
       <details className="a2ui-wire">
-        <summary>Response details</summary>
+        <summary>Details</summary>
+        <p>Response source</p>
         <pre>{content.slice(at)}</pre>
       </details>
     </>

@@ -1,0 +1,54 @@
+{
+  "name": "ToolActivityDelivery",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ToolActivityDelivery",
+  "canonicalReference": "@threadplane/react!ToolActivityDelivery:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Observed delivery evidence; a pause does not establish approval.",
+  "declarations": [
+    {
+      "name": "ToolActivityDelivery",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ToolActivityDelivery:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolActivityDelivery = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly phase: 'streaming';\n} | {\n    readonly phase: 'complete';\n    readonly outcome: 'success' | 'error' | 'aborted' | 'interrupted' | 'paused';\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Observed delivery evidence; a pause does not establish approval.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/tool-activity.tsx",
+        "line": 14
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-activity.tsx",
+    "line": 14
+  }
+}

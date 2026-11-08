@@ -333,14 +333,14 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       const e = event as unknown as { toolCallId: string };
       // Belt and braces: apply the final accumulated args (in case the last
       // ARGS delta arrived but an intermediate state was left unparsed), then
-      // drop the buffer.
+      // drop the buffer. END closes argument streaming; execution completes at RESULT.
       const finalBuffer = store.argsBuffers?.get(e.toolCallId);
       store.argsBuffers?.delete(e.toolCallId);
       const finalArgs = finalBuffer !== undefined ? tryParseArgs(finalBuffer) : undefined;
       store.toolCalls.update((prev) =>
         prev.map((t) =>
           t.id === e.toolCallId
-            ? { ...t, status: 'complete', ...(finalArgs !== undefined ? { args: finalArgs } : {}) }
+            ? { ...t, ...(finalArgs !== undefined ? { args: finalArgs } : {}) }
             : t,
         ),
       );
@@ -353,7 +353,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
       const { result, parts } = toolResultFromContent(e.content);
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, result, ...(parts ? { parts } : {}) } : t),
+        prev.map((t) => t.id === e.toolCallId ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }
@@ -773,13 +773,13 @@ function routeSubagentContentEvent(subagentRunId: string, event: BaseEvent, stor
           ? c
           : { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, args: parsedArgs } : t)) };
       case 'TOOL_CALL_END':
-        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, status: 'complete' } : t)) };
+        return c; // Argument boundary only; execution completes at RESULT.
       case 'TOOL_CALL_RESULT': {
         // ag_ui_langgraph serialises tool results via normalize_tool_content()
         // which always returns a string — parse it the same way the parent
         // TOOL_CALL_RESULT handler does so downstream consumers get an object.
         const { result, parts } = toolResultFromContent(e['content']);
-        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, result, ...(parts ? { parts } : {}) } : t)) };
+        return { ...c, toolCalls: toolCalls.map((t) => (t['id'] === e['toolCallId'] ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t)) };
       }
       default:
         return c;

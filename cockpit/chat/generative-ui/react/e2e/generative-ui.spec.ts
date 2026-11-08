@@ -189,7 +189,7 @@ test('nonempty parent preserves prose with inspectable raw result and notice', a
       'This layout was not applied because the assistant already supplied prose. The tool result is available for inspection.'
     )
   ).toBeVisible();
-  await page.getByText('Server tool result', { exact: true }).first().click();
+  await page.locator('details').filter({ has: page.getByText('Server tool result', { exact: true }) }).locator('summary').first().click();
   await expect(
     page
       .locator('details[open] > pre')
@@ -258,7 +258,7 @@ for (const toolFault of ['failKpis', 'malformedTrend'])
     await expect(
       page.getByText('Start a new conversation to continue.', { exact: true })
     ).toBeVisible();
-    await page.getByText('Server tool result', { exact: true }).last().click();
+    await page.locator('details').filter({ has: page.getByText('Server tool result', { exact: true }) }).locator('summary').last().click();
     await expect(
       page
         .locator('details[open] > pre')

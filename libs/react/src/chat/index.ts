@@ -1,5 +1,15 @@
 'use client';
 export {
+  ToolActivity,
+  ToolActivityGroup,
+  toolActivityPhase,
+  type ToolActivityDelivery,
+  type ToolActivityInfo,
+  type ToolActivityPhase,
+  type ToolActivityProps,
+  type ToolActivityGroupProps,
+} from './tool-activity.js';
+export {
   Suggestions,
   type SuggestionItem,
   type SuggestionsProps,

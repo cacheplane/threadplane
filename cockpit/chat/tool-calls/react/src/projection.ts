@@ -6,6 +6,7 @@ export interface ToolCard {
   readonly name: string;
   readonly argumentsText: string;
   readonly resultText?: string;
+  readonly phase?: ToolCall['status'];
 }
 
 /** Associate literal observations with their one requesting assistant, never a result row. */
@@ -69,6 +70,7 @@ export function projectToolObservations(
         id: tool.id,
         name: tool.name,
         argumentsText: JSON.stringify(tool.args, null, 2),
+        phase: tool.status,
         ...(resultText === undefined ? {} : { resultText }),
       });
       cards.set(

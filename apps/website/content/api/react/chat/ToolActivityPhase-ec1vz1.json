@@ -1,0 +1,54 @@
+{
+  "name": "ToolActivityPhase",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ToolActivityPhase",
+  "canonicalReference": "@threadplane/react!ToolActivityPhase:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads.",
+  "declarations": [
+    {
+      "name": "ToolActivityPhase",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ToolActivityPhase:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolActivityPhase = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'complete' | 'error' | 'stopped' | 'waiting' | 'unknown'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/tool-activity.tsx",
+        "line": 5
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-activity.tsx",
+    "line": 5
+  }
+}

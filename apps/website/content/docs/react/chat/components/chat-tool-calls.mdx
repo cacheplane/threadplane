@@ -1,6 +1,6 @@
 ---
-title: "ChatToolCalls"
-description: "Show the lookups behind an answer without asking readers to infer them from prose."
+title: 'ChatToolCalls'
+description: 'Show the lookups behind an answer without asking readers to infer them from prose.'
 ---
 
 # React chat tool calls preview
@@ -11,18 +11,50 @@ The native React APIs on this page are experimental, private source-build packag
 
 ## Observe the call the backend already made
 
-`ToolObservation` displays application-supplied argument and result text. It does not execute tools. The example associates each observation with its requesting assistant and confirms the saved root conversation before another submission. A finalized result means the tool produced data; whether that data represents a successful business outcome remains application-specific.
+`ToolActivity` displays a readable app-authored label and explicit phase with literal technical evidence under collapsed **Details**. `ToolActivityGroup` groups related calls by their stable IDs. Rich results and approval actions belong in their `children` slot, outside the disclosure. Neither component executes, approves, resumes, or persists work. Omitted phase is shown as unavailable; output text alone does not imply success.
 
-~~~tsx
+`ToolObservation` remains the literal inspector for applications that need it. The example associates observations with the requesting assistant and confirms the saved root conversation before another submission. Tool completion and successful business or persistence outcomes remain separate.
+
+```tsx
 import { ToolObservation } from '@threadplane/react/chat';
 
-export function RouteLookup({ argumentsText, resultText }: {
+export function RouteLookup({
+  argumentsText,
+  resultText,
+}: {
   argumentsText: string;
   resultText?: string;
 }) {
-  return <ToolObservation name="find_routes" argumentsText={argumentsText} resultText={resultText} />;
+  return (
+    <ToolObservation
+      name="find_routes"
+      argumentsText={argumentsText}
+      resultText={resultText}
+    />
+  );
 }
-~~~
+```
+
+For readable activity:
+
+```tsx
+import { ToolActivityGroup } from '@threadplane/react/chat';
+
+<ToolActivityGroup
+  label="Flight information activity"
+  activities={[
+    {
+      id: 'call-1',
+      name: 'find_routes',
+      label: 'Finding flight routes',
+      phase: 'running',
+      argumentsText: '{"from_code":"LAX"}',
+    },
+  ]}
+/>;
+```
+
+`MessageList` and `Chat` use readable activity by default. Pass `toolLabel` for app-authored labels and `groupRelatedTools` to opt into grouping across tool names within each assistant message. A custom `renderMessage` retains presentation ownership. Pending finalized arguments are distinct from streaming argument fragments. Unresolved calls from an aborted delivery show Stopped; paused deliveries show Waiting without claiming approval, and interrupted deliveries show an unavailable status.
 
 The [conversation walkthrough (Angular guide)](/docs/angular/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
@@ -64,9 +96,9 @@ Moving between Code and Run preserves the mounted example and unsent draft. Relo
 
 From a Threadplane checkout with dependencies installed:
 
-~~~sh
+```sh
 npx nx build cockpit-chat-tool-calls-react
 npx nx e2e cockpit-chat-tool-calls-react
-~~~
+```
 
 The isolated build uses installed private candidate packages. Browser tests use the real SDK and a persistent compiled Python graph with deterministic providers and real saved checkpoints. The local worker and verification routes are excluded from public output. Background title generation updates metadata without entering the answer stream. Docs, Code and Run select this same React implementation; Angular remains the default.
