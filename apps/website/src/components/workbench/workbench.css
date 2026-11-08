@@ -156,6 +156,43 @@
   font-size: 11px;
   white-space: nowrap;
 }
+.tp-learn-lesson {
+  padding: 16px 20px;
+  border-top: 1px solid var(--learn-line);
+  background: var(--learn-surface);
+}
+.tp-learn-lesson .tp-learn-milestones {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 0;
+}
+.tp-learn-lesson .tp-learn-milestones button {
+  min-height: 44px;
+  padding: 8px;
+  font-size: 13px;
+}
+.tp-learn-lesson-copy {
+  margin-top: 12px;
+  max-width: 88ch;
+  font-size: 14px;
+}
+.tp-learn-lesson-copy strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.tp-learn-lesson-copy p {
+  color: var(--learn-muted);
+}
+.tp-learn-lesson-copy p + p {
+  margin-top: 4px;
+}
+@container (max-width: 680px) {
+  .tp-learn-lesson .tp-learn-milestones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .tp-learn-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
