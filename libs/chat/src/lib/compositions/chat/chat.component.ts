@@ -20,9 +20,10 @@ import type {
 import type { ClientToolExecutionGuard } from '../../client-tools/client-tool-execution-guard';
 import { createClientToolsCoordinator } from '../../client-tools/client-tools-coordinator';
 import { ChatWindowComponent } from '../../primitives/chat-window/chat-window.component';
-import { ChatMessageListComponent } from '../../primitives/chat-message-list/chat-message-list.component';
+import { ChatMessageListComponent, getMessageType } from '../../primitives/chat-message-list/chat-message-list.component';
 import { MessageTemplateDirective } from '../../primitives/chat-message-list/message-template.directive';
 import { ChatMessageComponent, type ChatMessageRole } from '../../primitives/chat-message/chat-message.component';
+import { OwnedMarkdownContextDirective, type OwnedMarkdownContext } from '../../primitives/chat-message/owned-markdown-context';
 import { ChatInputComponent } from '../../primitives/chat-input/chat-input.component';
 import { ChatTypingIndicatorComponent } from '../../primitives/chat-typing-indicator/chat-typing-indicator.component';
 import { ChatErrorComponent } from '../../primitives/chat-error/chat-error.component';
@@ -30,7 +31,6 @@ import { ChatThreadListComponent, type Thread } from '../../primitives/chat-thre
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
 import {
-  ChatStreamingMdComponent,
   markdownDocument,
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
@@ -129,7 +129,7 @@ export function isPinned(
     ChatWindowComponent, ChatMessageListComponent, MessageTemplateDirective, ChatMessageComponent,
     ChatInputComponent, ChatTypingIndicatorComponent, ChatErrorComponent,
     ChatThreadListComponent, ChatGenerativeUiComponent,
-    ChatStreamingMdComponent, ChatToolCallsComponent, ChatToolViewsComponent, A2uiSurfaceComponent,
+    OwnedMarkdownContextDirective, ChatToolCallsComponent, ChatToolViewsComponent, A2uiSurfaceComponent,
     ChatMessageActionsComponent, ChatWelcomeComponent, ChatSelectComponent, ChatReasoningComponent,
     ChatScrollBubbleComponent,
   ],
@@ -225,6 +225,8 @@ export function isPinned(
     }
   `],
   template: `
+    @let currentAgent = agent();
+    @let currentMessages = reconcileOwnedMarkdownBodies(currentAgent, currentAgent.messages());
     <ng-template #welcomeSuggestions>
       <ng-content select="[chatWelcomeSuggestions]" />
     </ng-template>
@@ -268,8 +270,6 @@ export function isPinned(
                with no links holds no other tab stop to scroll it into view. -->
           <div chatBody class="chat-scroll" #scrollContainer (scroll)="onScroll($event)"
                role="region" aria-label="Conversation" tabindex="0">
-            @let currentAgent = agent();
-            @let currentMessages = currentAgent.messages();
             @let currentActivityTemplate = activityTemplate();
             @let currentExcludedToolNames = currentActivityTemplate ? [] : excludedToolNames();
             @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
@@ -287,15 +287,18 @@ export function isPinned(
               </ng-template>
 
               <ng-template chatMessageTemplate="ai" let-message let-i="index">
-                @let content = messageContent(message);
-                @let classified = classifyMessage(content, message);
+                @let body = ownedMarkdownBodyFor(message.id);
+                @let content = body.content();
+                @let classified = body.classifier();
                 <chat-message
+                  [chatOwnedMarkdownContext]="body"
                   [role]="'assistant'"
                   [message]="message"
                   [prevRole]="previousRole(currentMessages, i)"
                   [streaming]="message.delivery.phase === 'streaming'"
                   [current]="i === currentMessages.length - 1"
                 >
+                  <ng-container ngProjectAs="[chatBeforeMarkdown]">
                   <!-- A projected chatActivityTemplate owns the reasoning +
                        tool-call region for this message. It renders at
                        message level (never inside a clipped trace body). -->
@@ -341,9 +344,8 @@ export function isPinned(
                     [handlers]="currentHandlers"
                     (events)="onClientToolEvent($event)"
                   />
-                  @if (classified.markdown(); as md) {
-                    <chat-streaming-md [document]="markdownDocumentFor(md, message)" />
-                  }
+                  </ng-container>
+                  <ng-container ngProjectAs="[chatAfterMarkdown]">
                   @if (classified.spec(); as spec) {
                     <!-- Pass ONLY the explicit consumer store (may be
                          undefined) — never the conversation-wide internal
@@ -375,6 +377,7 @@ export function isPinned(
                   @if (classified.spec() || classified.type() === 'a2ui') {
                     <details class="chat-source-details"><summary>Details</summary><p>{{ classified.type() === 'a2ui' ? 'Response source' : 'Layout source' }}</p><pre>{{ sourceText(message) }}</pre></details>
                   }
+                  </ng-container>
                   <!-- Only show message actions when there is copyable assistant
                        text. Content-less messages (a bare tool call or a subagent
                        delegation card) have nothing to copy/regenerate/rate, so the
@@ -826,6 +829,15 @@ export class ChatComponent {
     { generation: string; classifier: ContentClassifier; content?: string }
   >();
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
+  private readonly ownedMarkdownBodies = new Map<string, {
+    context: OwnedMarkdownContext;
+    classifier: ReturnType<typeof signal<ContentClassifier>>;
+    content: ReturnType<typeof signal<string>>;
+    delivery: ReturnType<typeof signal<Pick<Message, 'id' | 'delivery'>>>;
+    generation: string;
+    classifiedContent: string;
+  }>();
+  private ownedMarkdownAgent?: Agent;
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly composerDocument = inject(DOCUMENT);
@@ -919,6 +931,7 @@ export class ChatComponent {
   });
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.clearClassifiers());
     // Inject the chat lib's root CSS custom properties (--tplane-chat-bg,
     // --tplane-chat-surface, --tplane-chat-radius-input, etc.) the first
     // time any chat composition is constructed. The module-eval side
@@ -1217,6 +1230,9 @@ export class ChatComponent {
       for (const key of [...this.markdownDocuments.keys()]) {
         if (!liveIds.has(key)) this.markdownDocuments.delete(key);
       }
+      for (const key of [...this.ownedMarkdownBodies.keys()]) {
+        if (!liveIds.has(key)) this.ownedMarkdownBodies.delete(key);
+      }
       for (const key of [...this.activityContexts.keys()]) {
         if (!liveIds.has(key)) this.activityContexts.delete(key);
       }
@@ -1480,6 +1496,67 @@ export class ChatComponent {
     return false;
   }
 
+  protected reconcileOwnedMarkdownBodies(agent: Agent, messages: ReturnType<Agent['messages']>): ReturnType<Agent['messages']> {
+    // The root template invokes this before any row consumes its context.
+    // Unlike ngDoCheck, this also runs when this view refreshes independently
+    // of its parent's pre-order hooks. Do not subscribe that root template to
+    // the individual classifier or delivery signals read during reconciliation.
+    untracked(() => this.reconcileOwnedMarkdownRows(agent, messages));
+    return messages;
+  }
+
+  private reconcileOwnedMarkdownRows(agent: Agent, messages: readonly Message[]): void {
+    if (this.ownedMarkdownAgent !== agent) {
+      this.clearClassifiers();
+      this.ownedMarkdownAgent = agent;
+    }
+    // Intentionally scan content on every checked composition pass, including
+    // same-object edits. Only changed content/generation reaches the classifier;
+    // markdown documents are evaluated by the owning body view on demand.
+    const liveIds = new Set<string>();
+    for (const message of messages) {
+      if (getMessageType(message) !== 'ai') continue;
+      liveIds.add(message.id);
+      const content = messageContent(message);
+      const generation = message.delivery.generation;
+      let entry = this.ownedMarkdownBodies.get(message.id);
+      if (!entry) {
+        const classifier = signal(this.classifyMessage(content, message));
+        const contentSignal = signal(content);
+        const delivery = signal<Pick<Message, 'id' | 'delivery'>>({ id: message.id, delivery: { ...message.delivery } });
+        const document = computed(() => {
+          const markdown = classifier().markdown();
+          return markdown ? this.markdownDocumentFor(markdown, delivery()) : null;
+        });
+        entry = {
+          context: { classifier, content: contentSignal, document },
+          classifier, content: contentSignal, delivery, generation, classifiedContent: content,
+        };
+        this.ownedMarkdownBodies.set(message.id, entry);
+      } else {
+        if (entry.generation !== generation || entry.classifiedContent !== content) {
+          const classifier = this.classifyMessage(content, message);
+          entry.classifier.set(classifier);
+          entry.content.set(content);
+          // Commit the witness only after classifier.update has succeeded.
+          entry.generation = generation;
+          entry.classifiedContent = content;
+        }
+        const prior = entry.delivery();
+        if (prior.delivery.generation !== generation || prior.delivery.phase !== message.delivery.phase) {
+          entry.delivery.set({ id: message.id, delivery: { ...message.delivery } });
+        }
+      }
+    }
+    for (const key of this.ownedMarkdownBodies.keys()) {
+      if (!liveIds.has(key)) this.ownedMarkdownBodies.delete(key);
+    }
+  }
+
+  protected ownedMarkdownBodyFor(id: string): OwnedMarkdownContext {
+    return this.ownedMarkdownBodies.get(id)!.context;
+  }
+
   classifyMessage(
     content: string,
     message: Pick<Message, 'id' | 'delivery'>,
@@ -1522,6 +1599,7 @@ export class ChatComponent {
     }
     this.classifiers.clear();
     this.markdownDocuments.clear();
+    this.ownedMarkdownBodies.clear();
     this.activityContexts.clear();
   }
 
