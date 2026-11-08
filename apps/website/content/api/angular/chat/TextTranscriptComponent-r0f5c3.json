@@ -114,7 +114,7 @@
             },
             {
               "kind": "Content",
-              "text": ", \"id\" | \"role\" | \"content\">[]>"
+              "text": ", \"id\" | \"content\" | \"role\">[]>"
             },
             {
               "kind": "Content",
@@ -158,7 +158,7 @@
             "name": "messages",
             "alias": "messages",
             "required": true,
-            "type": "readonly Pick<Message, \"id\" | \"role\" | \"content\">[]"
+            "type": "readonly Pick<Message, \"id\" | \"content\" | \"role\">[]"
           }
         ],
         "outputs": []
