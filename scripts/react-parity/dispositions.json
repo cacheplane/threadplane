@@ -16678,7 +16678,7 @@
       "reason": "Private pure connected preview geometry aligns below-start, flips above and clamps to the current viewport with RTL and visual viewport offsets. It does not expose a generic React overlay primitive."
     },
     {
-      "id": "doc:apps/website/content/docs/angular/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"
@@ -16928,7 +16928,7 @@
       "reason": "Framework-aware documentation foundation only; authored React guides retain private/preview limitations and this record does not certify SDK parity."
     },
     {
-      "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/react/getting-started/quickstart.mdx",
       "taskIds": [
         "T34",
         "T35"

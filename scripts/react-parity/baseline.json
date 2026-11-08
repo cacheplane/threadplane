@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "a9919dfeb0172378a42ec2d11541f65ba2863b9f",
+  "baselineHead": "96d92f98251d273f509f49c6e0bbb8625fe25f41",
   "sourceState": {
     "modified": [
-      "libs/ag-ui/src/lib/client-tools.ts"
+      "apps/website/content/docs/angular/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/getting-started/quickstart.mdx"
     ],
     "untracked": []
   },
@@ -2726,10 +2727,10 @@
       "sha256": "04ed87a5b97dc21b06910b5a11bde38642055b08dfac23bff3f66983313a2c7e"
     },
     {
-      "id": "doc:apps/website/content/docs/angular/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/angular/getting-started/quickstart.mdx",
       "kind": "doc",
-      "path": "apps/website/content/docs/angular/getting-started/introduction.mdx",
-      "sha256": "0cf38bac2f36e21e6c88cde67348bae5be57d3dbb65115d53241340927b3c1bf"
+      "path": "apps/website/content/docs/angular/getting-started/quickstart.mdx",
+      "sha256": "992bf5a0f31e28ebf95f7fc86d9f0edcb3f14d83067d1370c9c1ea0eb098b6c1"
     },
     {
       "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
@@ -3230,10 +3231,10 @@
       "sha256": "4041b49eff566b5403939fb1d6579e528815b1fd497906e4d99a8f55cdace99d"
     },
     {
-      "id": "doc:apps/website/content/docs/react/getting-started/introduction.mdx",
+      "id": "doc:apps/website/content/docs/react/getting-started/quickstart.mdx",
       "kind": "doc",
-      "path": "apps/website/content/docs/react/getting-started/introduction.mdx",
-      "sha256": "72d9a0d656604123425c6b5ee2774892b9e58d42f8b410d8b8a871c54b5b776e"
+      "path": "apps/website/content/docs/react/getting-started/quickstart.mdx",
+      "sha256": "381bb29fcb75e83657027c9aa9480b99f425f6301c945d381a7dfd546db1f6a3"
     },
     {
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",

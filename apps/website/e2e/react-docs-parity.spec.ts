@@ -24,7 +24,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.keyboard.press('Escape');
     await expect(picker).toBeFocused();
     const compact = page.locator('[data-docs-navigation-compact]:visible');
-    await expect(compact.getByRole('link', { name: 'React overview', exact: true })).toBeVisible();
+    await expect(compact.getByRole('link', { name: 'React quickstart', exact: true })).toBeVisible();
     await expect(compact.getByRole('button', { name: 'Reference', exact: true })).toHaveAttribute('aria-expanded', 'false');
     await expect(compact.getByRole('button', { name: 'Guides', exact: true })).toHaveAttribute('aria-expanded', 'true');
     if (width < 1024) await page.keyboard.press('Escape');
@@ -36,7 +36,7 @@ for (const width of [320, 390, 768, 1440]) {
   });
 }
 
-test('framework switching keeps the shared reading layout and resets it on a shared page', async ({ page }) => {
+test('framework switching and shared pages keep the docs reading theme', async ({ page }) => {
   await page.goto(route);
   const surface = page.locator('[data-workspace-desktop-navigation] [data-control-plane-pane]');
   await expect(surface).toHaveCSS('background-color', 'rgb(246, 247, 249)');
@@ -48,5 +48,6 @@ test('framework switching keeps the shared reading layout and resets it on a sha
   await page.goto('/docs/choosing-an-adapter');
   await expect(page.locator('h1')).toBeVisible();
   await expect(page.locator('[data-website-workspace-host][data-docs-reading]')).toHaveCount(0);
-  await expect(page.locator('[data-docs-navigation-compact]')).toHaveCount(0);
+  await expect(page.locator('[data-docs-control-plane][data-docs-reading]')).toHaveCount(1);
+  await expect(page.locator('[data-docs-navigation-compact]')).toHaveCount(1);
 });

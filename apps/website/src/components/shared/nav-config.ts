@@ -109,7 +109,7 @@ const DOCS: NavPanel = {
           label: 'Getting started',
           frameworkEntry: true,
           description: 'An agent on screen in ten minutes',
-          href: '/docs/angular/getting-started/introduction',
+          href: '/docs/angular/getting-started/quickstart',
           icon: Rocket,
           ctaId: 'docs_quick_start',
         },

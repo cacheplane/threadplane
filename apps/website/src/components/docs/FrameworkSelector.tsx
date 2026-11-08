@@ -151,7 +151,7 @@ export function FrameworkSelector({
             data-workspace-navigation-link
             className="underline"
           >
-            {candidate === 'react' ? 'React' : 'Angular'} introduction
+            {candidate === 'react' ? 'React' : 'Angular'} quickstart
           </Link>
         </div>
       ))}

@@ -23,6 +23,17 @@ describe('website next.config rewrites', () => {
  * them — has to land somewhere real rather than 404.
  */
 describe('website next.config redirects', () => {
+  it.each(['angular', 'react'])('redirects retired %s introduction HTML and Markdown to quickstart', async (framework) => {
+    const redirects = await config.redirects!();
+    for (const prefix of ['/docs', '/api/markdown']) {
+      const source = `${prefix}/${framework}/getting-started/introduction`;
+      expect(redirects.find(rule => rule.source === source)).toMatchObject({
+        source,
+        destination: `${prefix}/${framework}/getting-started/quickstart`,
+        permanent: true,
+      });
+    }
+  });
   const retired = [
     '/docs/telemetry',
     '/docs/telemetry/:path*',

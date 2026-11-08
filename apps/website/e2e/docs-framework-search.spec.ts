@@ -20,7 +20,7 @@ test('search limits default results to the selected framework and shared materia
 });
 
 test('the React search dialog labels broader results and opens the canonical React topic', async ({ page }) => {
-  await page.goto('/docs/react/getting-started/introduction');
+  await page.goto('/docs/react/getting-started/quickstart');
   await page.getByRole('button', { name: 'Search docs', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Search documentation' });
   await dialog.getByRole('combobox', { name: 'Search documentation...' }).fill('streaming');

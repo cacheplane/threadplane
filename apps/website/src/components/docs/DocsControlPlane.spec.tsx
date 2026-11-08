@@ -50,17 +50,17 @@ describe('DocsControlPlane', () => {
     route.pathname = '/docs/react/ag-ui/guides/interrupts';
     const { container } = render(<DocsContextContent activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" scope="react" />);
     expect(container.querySelector('[data-docs-navigation-compact]')).not.toBeNull();
-    expect(screen.getByRole('link', { name: 'React overview' }).getAttribute('href')).toBe('/docs/react/getting-started/introduction');
+    expect(screen.getByRole('link', { name: 'React quickstart' }).getAttribute('href')).toBe('/docs/react/getting-started/quickstart');
     expect(screen.getByRole('button', { name: 'Reference', exact: true }).getAttribute('aria-expanded')).toBe('false');
     expect(screen.getByRole('button', { name: 'Guides', exact: true }).getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('link', { name: 'Interrupts', exact: true }).getAttribute('aria-current')).toBe('page');
   });
-  it.each(['angular', 'react'] as const)('marks the %s introduction as the current featured page', framework => {
-    route.pathname = `/docs/${framework}/getting-started/introduction`;
-    render(<DocsContextContent activeLibrary={null} activeSection="getting-started" activeSlug="introduction" scope={framework} />);
-    const introduction = screen.getByRole('link', { name: 'Introduction' });
-    expect(introduction.getAttribute('aria-current')).toBe('page');
-    expect(introduction.hasAttribute('data-active')).toBe(true);
+  it.each(['angular', 'react'] as const)('marks the %s quickstart as the current featured page', framework => {
+    route.pathname = `/docs/${framework}/getting-started/quickstart`;
+    render(<DocsContextContent activeLibrary={null} activeSection="getting-started" activeSlug="quickstart" scope={framework} />);
+    const quickstart = screen.getByRole('link', { name: 'Quickstart' });
+    expect(quickstart.getAttribute('aria-current')).toBe('page');
+    expect(quickstart.hasAttribute('data-active')).toBe(true);
   });
   it('keeps shared migrations last and collapsed until requested', () => {
     const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
@@ -535,12 +535,13 @@ describe('DocsContextContent', () => {
     expect(screen.getByRole('link', { name: 'Open live demo' }).textContent).toBe('Open live demo');
   });
 
-  it.each(['/docs/choosing-an-adapter', '/docs/examples'])('preserves the existing context structure outside reading pages (%s)', pathname => {
+  it.each(['/docs', '/docs/choosing-an-adapter', '/docs/api'])('uses the compact docs navigation beyond framework articles (%s)', pathname => {
     route.pathname = pathname;
     const { container } = render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
-    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
-    expect(screen.getByRole('navigation', { name: 'Featured documentation' })).toBeTruthy();
-    expect(container.querySelector('[data-docs-navigation-compact]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Learn' })).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'More documentation' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Framework' })).toBeTruthy();
+    expect(container.querySelector('[data-docs-navigation-compact]')).not.toBeNull();
   });
 
   it.each(['/docs/shared/middleware/getting-started/introduction', '/docs/api'])('uses compact navigation for shared and API reading (%s)', pathname => {
