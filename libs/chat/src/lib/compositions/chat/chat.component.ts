@@ -1,7 +1,7 @@
 // libs/chat/src/lib/compositions/chat/chat.component.ts
 import {
   Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, contentChildren, effect, signal, untracked, viewChild,
-  ElementRef, DestroyRef, inject, Injector, runInInjectionContext, DOCUMENT,
+  ElementRef, DestroyRef, inject, Injector, runInInjectionContext, DOCUMENT, ChangeDetectorRef, type EffectRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
@@ -55,6 +55,18 @@ import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from 
 import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext } from './chat-run-activity-template.directive';
 import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from './chat-interrupt-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
+
+interface OwnedMarkdownPresentation {
+  content: string;
+  type: ReturnType<ContentClassifier['type']>;
+  spec: ReturnType<ContentClassifier['spec']>;
+  surfaces: ReturnType<ContentClassifier['a2uiSurfaces']>;
+  surfaceStates: ReturnType<ContentClassifier['a2uiSurfaceStates']>;
+}
+
+interface OwnedMarkdownRowContext extends OwnedMarkdownContext {
+  presentation: OwnedMarkdownPresentation;
+}
 
 /**
  * Internal helper: WritableSignals backing the readonly ChatLifecycle surface
@@ -290,8 +302,8 @@ export function isPinned(
 
               <ng-template chatMessageTemplate="ai" let-message let-i="index">
                 @let body = ownedMarkdownBodyFor(message.id);
-                @let content = body.content();
-                @let classified = body.classifier();
+                @let presentation = ownedMarkdownPresentationFor(message.id);
+                @let content = presentation.content;
                 <chat-message
                   [chatOwnedMarkdownContext]="body"
                   [role]="'assistant'"
@@ -349,7 +361,7 @@ export function isPinned(
                   />
                   </ng-container>
                   <ng-container ngProjectAs="[chatAfterMarkdown]">
-                  @if (classified.spec(); as spec) {
+                  @if (presentation.spec; as spec) {
                     <!-- Pass ONLY the explicit consumer store (may be
                          undefined) — never the conversation-wide internal
                          fallback. Without a consumer store, render-spec
@@ -365,11 +377,11 @@ export function isPinned(
                       (events)="onSpecEvent($event, i)"
                     />
                   }
-                  @if (classified.type() === 'a2ui' && views(); as catalog) {
-                    @for (entry of classified.a2uiSurfaces() | keyvalue; track entry.key) {
+                  @if (presentation.type === 'a2ui' && views(); as catalog) {
+                    @for (entry of presentation.surfaces | keyvalue; track entry.key) {
                       <a2ui-surface
                         [surface]="entry.value"
-                        [state]="classified.a2uiSurfaceStates().get(entry.key)"
+                        [state]="presentation.surfaceStates.get(entry.key)"
                         [catalog]="catalog"
                         [handlers]="currentHandlers"
                         (action)="onA2uiAction($event)"
@@ -377,8 +389,8 @@ export function isPinned(
                       />
                     }
                   }
-                  @if (classified.spec() || classified.type() === 'a2ui') {
-                    <details class="chat-source-details"><summary>Details</summary><p>{{ classified.type() === 'a2ui' ? 'Response source' : 'Layout source' }}</p><pre>{{ sourceText(message) }}</pre></details>
+                  @if (presentation.spec || presentation.type === 'a2ui') {
+                    <details class="chat-source-details"><summary>Details</summary><p>{{ presentation.type === 'a2ui' ? 'Response source' : 'Layout source' }}</p><pre>{{ sourceText(message) }}</pre></details>
                   }
                   </ng-container>
                   <!-- Only show message actions when there is copyable assistant
@@ -835,16 +847,18 @@ export class ChatComponent {
   >();
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
   private readonly ownedMarkdownBodies = new Map<string, {
-    context: OwnedMarkdownContext;
+    context: OwnedMarkdownRowContext;
     classifier: ReturnType<typeof signal<ContentClassifier>>;
     content: ReturnType<typeof signal<string>>;
     delivery: ReturnType<typeof signal<Pick<Message, 'id' | 'delivery'>>>;
     generation: string;
     classifiedContent: string;
+    bridge?: EffectRef;
   }>();
   private ownedMarkdownAgent?: Agent;
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly changeDetector = inject(ChangeDetectorRef, { optional: true });
   private readonly composerDocument = inject(DOCUMENT);
   // Resolved against the component's own `providers` in normal use. The fallback
   // is for tests that construct ChatComponent via `new` inside a bare injection
@@ -1228,6 +1242,7 @@ export class ChatComponent {
       } catch { return; }
       for (const key of [...this.classifiers.keys()]) {
         if (!liveIds.has(key)) {
+          this.removeOwnedMarkdownBody(key);
           this.classifiers.get(key)?.classifier.dispose();
           this.classifiers.delete(key);
         }
@@ -1236,7 +1251,7 @@ export class ChatComponent {
         if (!liveIds.has(key)) this.markdownDocuments.delete(key);
       }
       for (const key of [...this.ownedMarkdownBodies.keys()]) {
-        if (!liveIds.has(key)) this.ownedMarkdownBodies.delete(key);
+        if (!liveIds.has(key)) this.removeOwnedMarkdownBody(key);
       }
       for (const key of [...this.activityContexts.keys()]) {
         if (!liveIds.has(key)) this.activityContexts.delete(key);
@@ -1534,10 +1549,22 @@ export class ChatComponent {
           return markdown ? this.markdownDocumentFor(markdown, delivery()) : null;
         });
         entry = {
-          context: { classifier, content: contentSignal, document },
+          context: {
+            classifier, content: contentSignal, document,
+            presentation: this.ownedMarkdownPresentation(content, classifier()),
+          },
           classifier, content: contentSignal, delivery, generation, classifiedContent: content,
         };
         this.ownedMarkdownBodies.set(message.id, entry);
+        const row = entry;
+        // Embedded row views share their ancestor's reactive consumer. Keep
+        // per-row signal dependencies here instead of enrolling every row in
+        // that consumer. The body component still tracks its own document.
+        entry.bridge = effect(() => {
+          if (this.refreshOwnedMarkdownPresentation(row.context, row.content(), row.classifier())) {
+            this.changeDetector?.markForCheck();
+          }
+        }, { injector: this.injector, manualCleanup: true });
       } else {
         if (entry.generation !== generation || entry.classifiedContent !== content) {
           const classifier = this.classifyMessage(content, message);
@@ -1551,15 +1578,45 @@ export class ChatComponent {
         if (prior.delivery.generation !== generation || prior.delivery.phase !== message.delivery.phase) {
           entry.delivery.set({ id: message.id, delivery: { ...message.delivery } });
         }
+        // Normal message updates already check this template. Commit first so
+        // the scheduled bridge does not mark it again for the same snapshot.
+        this.refreshOwnedMarkdownPresentation(entry.context, content, entry.classifier());
       }
     }
     for (const key of this.ownedMarkdownBodies.keys()) {
-      if (!liveIds.has(key)) this.ownedMarkdownBodies.delete(key);
+      if (!liveIds.has(key)) this.removeOwnedMarkdownBody(key);
     }
+  }
+
+  private ownedMarkdownPresentation(content: string, classifier: ContentClassifier): OwnedMarkdownPresentation {
+    return {
+      content, type: classifier.type(), spec: classifier.spec(),
+      surfaces: classifier.a2uiSurfaces(), surfaceStates: classifier.a2uiSurfaceStates(),
+    };
+  }
+
+  private refreshOwnedMarkdownPresentation(context: OwnedMarkdownRowContext, content: string, classifier: ContentClassifier): boolean {
+    const next = this.ownedMarkdownPresentation(content, classifier);
+    const prior = context.presentation;
+    if (prior.content === next.content && prior.type === next.type && prior.spec === next.spec
+      && prior.surfaces === next.surfaces && prior.surfaceStates === next.surfaceStates) return false;
+    Object.assign(prior, next);
+    return true;
+  }
+
+  private removeOwnedMarkdownBody(id: string): void {
+    this.ownedMarkdownBodies.get(id)?.bridge?.destroy();
+    this.ownedMarkdownBodies.delete(id);
   }
 
   protected ownedMarkdownBodyFor(id: string): OwnedMarkdownContext {
     return this.ownedMarkdownBodies.get(id)!.context;
+  }
+
+  protected ownedMarkdownPresentationFor(id: string): OwnedMarkdownPresentation {
+    const row = this.ownedMarkdownBodies.get(id);
+    if (!row) throw new Error('Owned markdown presentation is unavailable');
+    return row.context.presentation;
   }
 
   classifyMessage(
@@ -1599,12 +1656,12 @@ export class ChatComponent {
   }
 
   clearClassifiers(): void {
+    for (const key of this.ownedMarkdownBodies.keys()) this.removeOwnedMarkdownBody(key);
     for (const [, entry] of this.classifiers) {
       entry.classifier.dispose();
     }
     this.classifiers.clear();
     this.markdownDocuments.clear();
-    this.ownedMarkdownBodies.clear();
     this.activityContexts.clear();
   }
 
