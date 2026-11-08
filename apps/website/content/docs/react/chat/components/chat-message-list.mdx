@@ -44,4 +44,6 @@ The list follows updates while pinned at the bottom. Scrolling upward releases t
 
 Give the list a constrained height through the surrounding layout and import the chat stylesheet. The component owns scrolling presentation only. It does not mark a response successful, authorize a tool, or load older history.
 
+Optional `renderScrollControl(controls)` renders a sibling after the unchanged region. The readonly controls expose `pinned`, `scrollToLatest()` and `focus()`; attach them to explicit event handlers. The first restores pinned following and directly scrolls to the bottom, and the second focuses the current region with `preventScroll: true`. Context identity stays stable while pinned stays unchanged, and retained methods are inert before commit and after unmount. See [ScrollBubble](/docs/react/chat/components/scroll-bubble) for a compiled composition example. The callback never enters memoized row props or changes row inference.
+
 See [Reasoning](/docs/react/chat/components/chat-reasoning) and [Markdown](/docs/react/chat/guides/markdown) for the borrowed content views.

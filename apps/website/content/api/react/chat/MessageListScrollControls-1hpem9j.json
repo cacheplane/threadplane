@@ -1,0 +1,151 @@
+{
+  "name": "MessageListScrollControls",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/MessageListScrollControls",
+  "canonicalReference": "@threadplane/react!MessageListScrollControls:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "View-owned actions. Retained actions become inert when this list unmounts.",
+  "declarations": [
+    {
+      "name": "MessageListScrollControls",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MessageListScrollControls:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageListScrollControls "
+        }
+      ],
+      "docs": {
+        "summary": "View-owned actions. Retained actions become inert when this list unmounts.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "focus",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListScrollControls#focus:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly focus: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "pinned",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListScrollControls#pinned:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly pinned: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "scrollToLatest",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListScrollControls#scrollToLatest:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly scrollToLatest: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 30
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/message-list.tsx",
+        "line": 28
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-list.tsx",
+    "line": 28
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "name": "ScrollBubbleProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ScrollBubbleProps",
+  "canonicalReference": "@threadplane/react!ScrollBubbleProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Passive action props; no session or scrolling owner is created.",
+  "declarations": [
+    {
+      "name": "ScrollBubbleProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ScrollBubbleProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ScrollBubbleProps "
+        }
+      ],
+      "docs": {
+        "summary": "Passive action props; no session or scrolling owner is created.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ScrollBubbleProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/scroll-bubble.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ScrollBubbleProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/scroll-bubble.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ScrollBubbleProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/scroll-bubble.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "mode",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ScrollBubbleProps#mode:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly mode: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ScrollBubbleMode",
+              "canonicalReference": "@threadplane/react!ScrollBubbleMode:type",
+              "href": "/docs/api/react/chat/ScrollBubbleMode"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/scroll-bubble.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onClick",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ScrollBubbleProps#onClick:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onClick: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/scroll-bubble.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/scroll-bubble.tsx",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/scroll-bubble.tsx",
+    "line": 7
+  }
+}

@@ -94,6 +94,54 @@ function rejection() {
 }
 
 describe('Chat', () => {
+  it('offers a latest action from existing status without commands or draft changes and focuses only on activation', () => {
+    const { session, raw, set } = fakeSession({
+      messages: [assistant('a', 'Answer')],
+    });
+    const subscribe = vi.spyOn(session, 'subscribe');
+    const view = render(<Chat session={session} />);
+    const region = view.getByRole('region', { name: 'Conversation' });
+    const draft = box(view);
+    fireEvent.change(draft, { target: { value: 'Kept draft' } });
+    draft.focus();
+    const focus = vi.spyOn(region, 'focus');
+    let top = 0;
+    Object.defineProperties(region, {
+      scrollHeight: { configurable: true, get: () => 1000 },
+      clientHeight: { configurable: true, get: () => 200 },
+      scrollTop: {
+        configurable: true,
+        get: () => top,
+        set: (value) => {
+          top = Math.min(value, 800);
+        },
+      },
+    });
+    expect(view.queryByRole('button', { name: 'Scroll to latest' })).toBeNull();
+    top = 800;
+    fireEvent.scroll(region);
+    top = 100;
+    fireEvent.scroll(region);
+    expect(view.getByRole('button', { name: 'Scroll to latest' })).toBeTruthy();
+    set({ status: 'running', messages: [assistant('a', 'Answer grows')] });
+    const button = view.getByRole('button', {
+      name: 'Scroll to latest, response in progress',
+    });
+    expect(top).toBe(100);
+    expect(document.activeElement).toBe(draft);
+    expect(draft.value).toBe('Kept draft');
+    expect(focus).not.toHaveBeenCalled();
+    button.focus();
+    fireEvent.click(button);
+    expect(top).toBe(800);
+    expect(document.activeElement).toBe(region);
+    expect(focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(view.queryByRole('button', { name: /Scroll to latest/ })).toBeNull();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(raw.submit).not.toHaveBeenCalled();
+    expect(raw.stop).not.toHaveBeenCalled();
+    expect(raw.dispose).not.toHaveBeenCalled();
+  });
   it('projects waiting from its existing subscription through first text, next turn, Stop and replacement', () => {
     const one = fakeSession({ status: 'running' });
     const subscribe = vi.spyOn(one.session, 'subscribe');
