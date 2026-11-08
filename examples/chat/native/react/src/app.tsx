@@ -16,6 +16,7 @@ import {
   Citations,
   ConfirmDialog,
   MessageList,
+  ScrollBubble,
   Reasoning,
   ThreadList,
   ToolObservation,
@@ -870,6 +871,22 @@ function Conversation({
                   renderMessage={renderMessage}
                   label="Conversation messages"
                   className="transcript"
+                  renderScrollControl={(controls) =>
+                    controls.pinned ? null : (
+                      <ScrollBubble
+                        className="native-scroll-bubble"
+                        mode={
+                          snapshot.runtime?.status === 'running'
+                            ? 'streaming'
+                            : 'idle'
+                        }
+                        onClick={() => {
+                          controls.scrollToLatest();
+                          controls.focus();
+                        }}
+                      />
+                    )
+                  }
                 />
                 {snapshot.runtime && (
                   <TypingIndicator

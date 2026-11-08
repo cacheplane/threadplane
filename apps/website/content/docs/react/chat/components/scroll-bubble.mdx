@@ -1,0 +1,59 @@
+---
+title: ScrollBubble
+description: Offer an explicit return to latest activity through the existing transcript owner.
+---
+
+# ScrollBubble
+
+This experimental, private React source-build component is a passive button. Its parent owns visibility and handles the action. `MessageList` supplies optional view controls while keeping its existing scrolling policy and region DOM.
+
+~~~tsx
+import type { MessageRow } from '@threadplane/content/messages';
+import {
+  MessageList,
+  ScrollBubble,
+  type ScrollBubbleMode,
+} from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function Transcript({
+  rows,
+  mode,
+}: {
+  readonly rows: readonly MessageRow[];
+  readonly mode: ScrollBubbleMode;
+}) {
+  return (
+    <MessageList
+      rows={rows}
+      renderScrollControl={(controls) =>
+        controls.pinned ? null : (
+          <ScrollBubble
+            mode={mode}
+            onClick={() => {
+              controls.scrollToLatest();
+              controls.focus();
+            }}
+          />
+        )
+      }
+    />
+  );
+}
+
+export function LatestAction({ onLatest }: { readonly onLatest: () => void }) {
+  return <ScrollBubble mode="idle" onClick={onLatest} />;
+}
+~~~
+
+`mode` (`'streaming' | 'idle'`) and the zero-argument `onClick` callback are required. Optional `disabled`, `label`, and `className` customize the action; all props are readonly. The visible default text is **Scroll to latest**. The accessible name adds **response in progress** while streaming. A custom label is used literally for both visible text and the accessible name. Artwork is decorative, with no live region. Disabled buttons do not activate. Mounting, updating mode, and unmounting invoke no actions and change no focus.
+
+`renderScrollControl` returns content after the existing region, outside its transcript content, with no extra wrapper. Its readonly `MessageListScrollControls` contains exactly `pinned`, `scrollToLatest()`, and `focus()`. The context stays stable while pin state stays unchanged; the methods retain their identities for that mounted list. Attach methods to explicit event handlers. Calling them before commit or after unmount does nothing, and retained controls cannot operate a replacement keyed list.
+
+`scrollToLatest()` explicitly restores the pin and directly scrolls the current region to its bottom. `focus()` focuses that region with `preventScroll: true`. Calling both in the click handler preserves keyboard focus when the control disappears. Neither operation runs automatically when a control appears, mode changes, or tokens arrive.
+
+MessageList remains the sole scroll owner: upward intent releases the pin, including within the existing 32-pixel threshold; approaching the bottom restores it. Rows, children, and observed resize changes follow only while pinned. Row/child following and explicit actions also work without ResizeObserver. Give the surrounding layout a constrained height and room for the sibling control; no scroll container or positioning wrapper is added for you.
+
+Default [Chat](/docs/react/chat/components/chat) uses its existing snapshot status for mode and shows the control only while unpinned. The native React example uses the selected keyed MessageList with its current runtime status. The button creates no session, subscriptions, timers, execution commands, scrolling controller, or automatic focus. The stylesheet supplies a minimum 44-pixel target, wrapping, focus indication, forced-color support and reduced-motion dots; the action remains readable without CSS.
+
+This bounded T23 slice covers the explicit latest action. Unread counters, older-history loading, scroll anchoring redesign, and full T23 parity remain outside its scope.
