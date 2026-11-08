@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createFrameworkPreferenceStore, FRAMEWORK_PREFERENCE_KEY, frameworkForPath } from './framework-preference';
+import { createFrameworkPreferenceStore, FRAMEWORK_PREFERENCE_KEY, frameworkForPath, preferredDocsHref } from './framework-preference';
 
 beforeEach(() => window.localStorage.clear());
 
 describe('framework preference', () => {
+  it.each(['angular', 'react'] as const)('starts %s at its quickstart', (framework) => {
+    expect(preferredDocsHref(framework)).toBe(`/docs/${framework}/getting-started/quickstart`);
+  });
   it('has a stable Angular server default and rejects invalid stored values', () => {
     localStorage.setItem(FRAMEWORK_PREFERENCE_KEY, 'vue');
     const store = createFrameworkPreferenceStore();

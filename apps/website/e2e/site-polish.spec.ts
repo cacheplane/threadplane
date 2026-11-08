@@ -78,6 +78,6 @@ for (const width of [320, 375, 768, 1440, 1920]) {
     ).toHaveAttribute('href', '/docs/react/getting-started/quickstart');
     await expect(
       footer.getByRole('link', { name: 'Angular guide', exact: true })
-    ).toHaveAttribute('href', '/docs/angular/getting-started/introduction');
+    ).toHaveAttribute('href', '/docs/angular/getting-started/quickstart');
   });
 }

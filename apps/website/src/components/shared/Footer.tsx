@@ -340,12 +340,12 @@ export function Footer({
               Chat
             </Link>
             <Link
-              href="/docs/angular/getting-started/introduction"
+              href="/docs/angular/getting-started/quickstart"
               className="transition-colors footer-link"
               onClick={() =>
                 trackFooterCta(
                   'Angular guide',
-                  '/docs/angular/getting-started/introduction'
+                  '/docs/angular/getting-started/quickstart'
                 )
               }
             >

@@ -110,7 +110,7 @@ export default function DocsLandingPage() {
                 </p>
                 <div className="docs-entry-actions">
                   <Button
-                    href="/docs/angular/getting-started/introduction"
+                    href="/docs/angular/getting-started/quickstart"
                     variant="primary"
                     trailingIcon="↗"
                   >
@@ -129,7 +129,7 @@ export default function DocsLandingPage() {
                 </p>
                 <div className="docs-entry-actions">
                   <Button
-                    href="/docs/react/getting-started/introduction"
+                    href="/docs/react/getting-started/quickstart"
                     variant="primary"
                     trailingIcon="↗"
                   >

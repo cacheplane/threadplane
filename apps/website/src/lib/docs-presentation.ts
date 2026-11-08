@@ -1,4 +1,9 @@
-/** Narrative and generated reference pages share presentation, never embedded SDK runtimes. */
+/** Framework articles omit their redundant framework and article breadcrumbs. */
+export function isFrameworkDocsRoute(path: string | null | undefined): boolean {
+  return /^\/docs\/(angular|react)\//.test(path ?? '');
+}
+
+/** The docs theme also covers the landing page, shared guides, and API reference. */
 export function isDocsReadingRoute(path: string | null | undefined): boolean {
-  return /^\/docs\/(?:(?:angular|react|shared)\/|api(?:\/|$))/.test(path ?? '');
+  return /^\/docs(?:\/|$)/.test(path ?? '');
 }

@@ -59,7 +59,7 @@ export async function ApiReferencePage({
   ];
   const docsSlot = (
     <div className="docs-workspace-article">
-      <div className="api-reference-page">
+      <div className="api-reference-page" data-api-page={symbol ? 'symbol' : entrypoint ? 'entrypoint' : 'index'}>
         {symbol && entrypoint ? (
           <ApiSymbolView symbol={symbol} entrypoint={entrypoint} />
         ) : (

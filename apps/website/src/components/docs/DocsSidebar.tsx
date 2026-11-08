@@ -283,6 +283,7 @@ export function DocsNavigation({
   const migrations = libraries.find(candidate => candidate.id === 'chat')?.sections.find(section => section.id === 'migrations');
   const pathname = usePathname();
   const compact = isDocsReadingRoute(pathname);
+  const supportingAtEnd = compact && Boolean(activeLibrary);
 
   const supportingLinks = (
       <nav
@@ -293,7 +294,7 @@ export function DocsNavigation({
           data-active={pathname === preferredDocsHref(framework) || undefined}
           aria-current={pathname === preferredDocsHref(framework) ? 'page' : undefined}
           data-docs-navlink data-workspace-navigation-link>
-          {compact && activeLibrary ? `${framework === 'react' ? 'React' : 'Angular'} overview` : 'Introduction'}
+          {compact && activeLibrary ? `${framework === 'react' ? 'React' : 'Angular'} quickstart` : 'Quickstart'}
         </Link>
         <Link
           href={resolveHref(`/docs/${framework}/getting-started/workbench`)}
@@ -333,7 +334,7 @@ export function DocsNavigation({
 
   return (
     <div data-docs-navigation>
-      {!compact && supportingLinks}
+      {!supportingAtEnd && supportingLinks}
 
       <LibraryDropdown framework={framework} activeLibrary={activeLibrary} compact={compact} onNavigate={onNavigate} resolveHref={resolveHref} />
 
@@ -369,7 +370,7 @@ export function DocsNavigation({
           resolveHref={resolveHref}
         />
       ) : null}
-      {compact && supportingLinks}
+      {supportingAtEnd && supportingLinks}
     </div>
   );
 }

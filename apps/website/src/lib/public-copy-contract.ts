@@ -87,7 +87,7 @@ export const NON_INDEXED_PUBLIC_ROUTES: readonly string[] = [
   '/robots.txt',
   '/api/markdown/angular/langgraph/getting-started/introduction',
   '/api/markdown/angular/ag-ui/concepts/architecture',
-  '/api/markdown/react/getting-started/introduction',
+  '/api/markdown/react/getting-started/quickstart',
   '/api/markdown/shared/middleware/getting-started/introduction',
 ];
 

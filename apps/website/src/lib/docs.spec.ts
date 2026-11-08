@@ -74,12 +74,16 @@ describe('framework narrative loader', () => {
       expect(doc.body, id).toMatch(/private.*source.build/);
       expect(doc.body, id).not.toMatch(/provideAgent|injectAgent|npm (?:install|i) @threadplane\/react/);
     }
-    for (const entry of ['getting-started/introduction', 'getting-started/workbench']) {
-      const body = getDocByPath(`/docs/react/${entry}`)!.body;
-      expect(body).toContain('/docs/react/langgraph/getting-started/installation');
-      expect(body).toContain('/docs/react/langgraph/getting-started/quickstart');
-      expect(body).toContain('/docs/react/chat/getting-started/quickstart');
-    }
+    const quickstart = getDocByPath('/docs/react/getting-started/quickstart')!.body;
+    expect(quickstart).toContain('createFakeAgent');
+    expect(quickstart).toContain('<Chat session={agent}');
+    expect(quickstart).toContain('/docs/react/getting-started/workbench');
+    expect(quickstart).toContain('/docs/react/langgraph/guides/streaming');
+    expect(quickstart).toContain('/docs/react/ag-ui/reference/event-mapping');
+    const workbench = getDocByPath('/docs/react/getting-started/workbench')!.body;
+    expect(workbench).toContain('/docs/react/langgraph/getting-started/installation');
+    expect(workbench).toContain('/docs/react/langgraph/getting-started/quickstart');
+    expect(workbench).toContain('/docs/react/chat/getting-started/quickstart');
   });
 
   it('keeps React conversation links in React and teaches prepared message rows', () => {

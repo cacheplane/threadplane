@@ -739,7 +739,7 @@ export function libraryIntroPath(
   return (
     getFrameworkDocuments(framework).find(
       (document) => document.library === library
-    )?.href ?? `/docs/${framework}/getting-started/introduction`
+    )?.href ?? `/docs/${framework}/getting-started/quickstart`
   );
 }
 
