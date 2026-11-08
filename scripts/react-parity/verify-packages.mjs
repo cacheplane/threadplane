@@ -265,6 +265,10 @@ import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps,
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
+export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
+export type TypingIndicatorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').TypingIndicator>, [import('@threadplane/react/chat').TypingIndicatorProps]>>;
+export type IsTypingParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').isTyping>, [Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>]>>;
+export type IsTypingResultContract = Assert<Equal<ReturnType<typeof import('@threadplane/react/chat').isTyping>, boolean>>;
 export type ChatErrorContract = Assert<Equal<import('@threadplane/react/chat').ChatErrorProps, { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string }>>;
 export type ChatErrorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatError>[0], import('@threadplane/react/chat').ChatErrorProps>>;
 export type ChatRetryContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'onRetry'>, { readonly onRetry?: () => void }>>;
@@ -421,6 +425,8 @@ export function assertSupportedExports(project, entry) {
         'ApprovalCard',
         'Chat',
         'ChatError',
+        'TypingIndicator',
+        'isTyping',
         'ChatPopup',
         'ChatSidebar',
         'ChatSidenav',
@@ -458,14 +464,15 @@ export function assertSupportedExports(project, entry) {
       'content/render-state': ['createRenderState'],
     }[project] ?? [];
   // React entries may export forwardRef/memo components, which are $$typeof objects.
-  const supported = (value) =>
+  const supported = (value, name) =>
     typeof value === 'function' ||
     (project.startsWith('react') &&
+      name !== 'isTyping' &&
       value !== null &&
       typeof value === 'object' &&
       typeof value.$$typeof === 'symbol');
   for (const name of expected)
-    if (!supported(entry[name]))
+    if (!supported(entry[name], name))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
     ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&

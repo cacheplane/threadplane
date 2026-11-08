@@ -1809,3 +1809,39 @@
   font-size: 13px;
   margin: 8px 0;
 }
+
+.tp-typing-indicator {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding-block: 0.5rem;
+  color: var(--tp-chat-muted, GrayText);
+  font: inherit;
+}
+.tp-typing-indicator__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.tp-typing-indicator__dots {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.15em;
+  color: currentColor;
+}
+.tp-typing-indicator__dots > span {
+  animation: tp-typing-indicator-pulse 1.2s ease-in-out infinite;
+}
+.tp-typing-indicator__dots > span:nth-child(2) { animation-delay: 0.15s; }
+.tp-typing-indicator__dots > span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes tp-typing-indicator-pulse {
+  0%, 80%, 100% { opacity: 0.4; }
+  40% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-typing-indicator__dots > span { animation: none; }
+}
+@media (forced-colors: active) {
+  .tp-typing-indicator { color: CanvasText; }
+}

@@ -18,21 +18,36 @@ function deferred() {
  * @param {Array<{ method: string, path: string, payload?: unknown, status?: number,
  * body?: unknown, holdHeaders?: boolean, holdBody?: boolean, disconnect?: boolean,
  * concurrentGroup?: string, assertPayload?: (payload: unknown) => void,
- * events?: Array<{ event: string, data: unknown }> }>} expectations
+ * events?: Array<{ event: string, data: unknown, hold?: boolean }> }>} expectations
  */
 export async function startProofServer(expectations = []) {
   const requests = [];
   const failures = [];
+  let closing;
   const steps = expectations.map((expected) => {
     const received = deferred();
     const closed = deferred();
     const headers = deferred();
     const headersSent = deferred();
     const body = deferred();
+    const events = (expected.events ?? []).map((frame) => {
+      const gate = deferred();
+      const settled = deferred();
+      if (!frame.hold) gate.resolve(undefined);
+      return {
+        frame,
+        gate: gate.promise,
+        release: () => gate.resolve(undefined),
+        sent: false,
+        settled: settled.promise,
+        settle: () => settled.resolve(undefined),
+      };
+    });
     if (!expected.holdHeaders) headers.resolve(undefined);
     if (!expected.holdBody) body.resolve(undefined);
     return {
       expected,
+      events,
       received: received.promise,
       closed: closed.promise,
       headersSent: headersSent.promise,
@@ -69,9 +84,15 @@ export async function startProofServer(expectations = []) {
       payload: undefined,
     };
     requests.push(observation);
-    response.once('close', () =>
-      step?.close({ finished: response.writableFinished })
-    );
+    response.once('close', () => {
+      step?.close({ finished: response.writableFinished });
+      step?.releaseHeaders();
+      step?.releaseBody();
+      for (const event of step?.events ?? []) {
+        event.release();
+        event.settle();
+      }
+    });
     try {
       const chunks = [];
       for await (const chunk of request) chunks.push(chunk);
@@ -99,11 +120,22 @@ export async function startProofServer(expectations = []) {
       response.flushHeaders();
       step.sentHeaders(undefined);
       if (step.expected.events) {
-        for (const { event, data } of step.expected.events)
-          response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        for (const frame of step.events) {
+          // Default frames retain their synchronous write behavior. Only an
+          // explicitly held test frame yields to a release or response close.
+          if (frame.frame.hold) await frame.gate;
+          if (!closing && !response.destroyed) {
+            const { event, data } = frame.frame;
+            response.write(
+              `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+            );
+            frame.sent = true;
+          }
+          frame.settle();
+        }
       }
       await step.body;
-      if (response.destroyed) return;
+      if (closing || response.destroyed) return;
       response.end(
         step.expected.events
           ? undefined
@@ -132,14 +164,19 @@ export async function startProofServer(expectations = []) {
       assert.equal(remaining.length, 0, 'Every expectation consumed');
     },
     async close() {
+      if (closing) return closing;
+      closing = once(server, 'close');
       for (const step of steps) {
         step.releaseHeaders();
         step.releaseBody();
+        for (const event of step.events) {
+          event.release();
+          event.settle();
+        }
       }
-      const closed = once(server, 'close');
       server.close();
       server.closeAllConnections();
-      await closed;
+      await closing;
     },
   };
 }

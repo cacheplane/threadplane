@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d890e88198fce00351aed417ee67591a45215337",
+  "baselineHead": "285127e18f57c7e45fe8b502f1e818347124af36",
   "sourceState": {
     "modified": [
       "apps/website/content/docs/react/chat/components/chat.mdx",
-      "apps/website/content/docs/react/chat/guides/error-handling.mdx",
       "libs/react/README.md",
       "libs/react/src/chat/chat.tsx",
       "libs/react/src/chat/index.ts",
       "libs/react/src/chat/styles.css"
     ],
     "untracked": [
-      "apps/website/content/docs/react/chat/components/chat-error.mdx",
-      "libs/react/src/chat/error.tsx"
+      "apps/website/content/docs/react/chat/components/typing-indicator.mdx",
+      "libs/react/src/chat/typing-indicator.tsx"
     ]
   },
   "scope": {
@@ -859,7 +858,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "c6ba9ee94819d111585aa52ea3a37612eda6cba24c07b1577df33ae0f1f97042"
+      "sha256": "f722f27408e46b8c934eaf72792c1951fd20f751589e588be2eacae6da099002"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -877,7 +876,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "8efc3e15db620a6a9d6a64e07a29689b6ae5877a184c877d8869f7a85c889173"
+      "sha256": "9b192a4d5fdd0487b7813d0b1a7f20b96c8536e61b69148e20c4daa365b7661b"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3159,7 +3158,13 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat.mdx",
-      "sha256": "6189cf678656a8bcd7303ecc0eb17675cc8d19b1e3a790d4397ea9991ebf300d"
+      "sha256": "3bee509a64ad4cc57803a703c6acde473a834a75a78ecf2989ee2c699926d1e5"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/typing-indicator.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/typing-indicator.mdx",
+      "sha256": "93adda4c4bc39678a10ca3c4898e5c2972ca9a9b25f1fb2fefa1bc3d39370355"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/concepts/message-model.mdx",
@@ -11154,7 +11159,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "Chat",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, onRetry, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, onRetry, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
         }
       ]
     },
@@ -12041,6 +12046,34 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#TypingIndicator",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TypingIndicator",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/typing-indicator.tsx",
+          "symbol": "TypingIndicator",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function TypingIndicator({ active, label = 'Assistant is typing', announce = true, className, }: TypingIndicatorProps) {\n    if (!active)\n        return null;\n    return (<div className={['tp-typing-indicator', className].filter(Boolean).join(' ')} role={announce ? 'status' : undefined} aria-live={announce ? 'polite' : undefined} aria-atomic={announce ? true : undefined}>\n      <span className=\"tp-typing-indicator__label\">{label}</span>\n      <span className=\"tp-typing-indicator__dots\">\n        <span aria-hidden=\"true\">·</span>\n        <span aria-hidden=\"true\">·</span>\n        <span aria-hidden=\"true\">·</span>\n      </span>\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TypingIndicatorProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "TypingIndicatorProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/typing-indicator.tsx",
+          "symbol": "TypingIndicatorProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface TypingIndicatorProps {\n    readonly active: boolean;\n    readonly label?: string;\n    readonly announce?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Welcome",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -12093,6 +12126,20 @@
           "symbol": "WelcomeSuggestionProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface WelcomeSuggestionProps {\n    readonly label: string;\n    readonly value: string;\n    readonly onSelect: (value: string) => void;\n    readonly description?: string;\n    readonly icon?: ReactNode;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#isTyping",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "isTyping",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/typing-indicator.tsx",
+          "symbol": "isTyping",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function isTyping(snapshot: Pick<AgentSnapshot, 'status' | 'messages'>): boolean {\n    if (snapshot.status !== 'running')\n        return false;\n    const last = snapshot.messages.at(-1);\n    return (!last ||\n        last.role === 'user' ||\n        (last.role === 'assistant' && last.content.length === 0));\n}"
         }
       ]
     },
@@ -16558,7 +16605,7 @@
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "a285b745517bd0f10b246cb9ca13c39edecc08c22a92fc47ea0a65598647de01"
+      "sha256": "4fda20b8994e4c46a6acdf9e703c9aa29d7368073232617d1ca6a0e3cdaac64b"
     },
     {
       "id": "source:libs/react/src/chat/citation-card.tsx",
@@ -16600,7 +16647,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "ff76b5e94924a825eec1280918eea1c7efddd9590ea7816e0df0a964dd165b1f"
+      "sha256": "30ef02bcb17470223893a089cd0d672c01bf626dcd98dbb48b2951e64e3d4dd5"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -16715,6 +16762,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/tool-observation.tsx",
       "sha256": "61c2e0223409d9f2a64f6b8e1ddb6ad795d5a45891c2f8788533d236b2f694c6"
+    },
+    {
+      "id": "source:libs/react/src/chat/typing-indicator.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/typing-indicator.tsx",
+      "sha256": "dec83c7ca3aae4aa375c42047161d3b7949feff07b9bd6384d43c6686ebe497a"
     },
     {
       "id": "source:libs/react/src/chat/welcome-suggestion.tsx",

@@ -276,7 +276,11 @@ export interface CitationsProps { readonly citations: readonly import('@threadpl
 export declare function Citations(props: CitationsProps): unknown;
 export interface ChatErrorProps { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string; }
 export declare function ChatError(props: ChatErrorProps): unknown;
+export interface TypingIndicatorProps { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string; }
+export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
+export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
 export interface ChatProps { readonly onRetry?: () => void; }`;
+  writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
   const compile = text => {
@@ -312,7 +316,7 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     assert.ok(declaration.slice(start, end).includes(before), `mutation target ${name}: ${before}`);
     return declaration.slice(0, start) + declaration.slice(start, end).replace(before, after) + declaration.slice(end);
   };
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps']) {
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps']) {
     assert.match(compile(declaration.replaceAll(name, `Missing${name}`)), new RegExp(name));
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: any')), /false.*true/, `${name} parameter must not be any`);
     assert.match(compile(declaration.replace(`props: ${name}`, 'props: unknown')), /false.*true/, `${name} parameter must be exact`);
@@ -349,16 +353,34 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     ['ChatErrorProps', 'onCheckStatus', '() => void', true],
     ['ChatErrorProps', 'disabled', 'boolean', true],
     ['ChatErrorProps', 'className', 'string', true],
+    ['TypingIndicatorProps', 'active', 'boolean', false],
+    ['TypingIndicatorProps', 'label', 'string', true],
+    ['TypingIndicatorProps', 'announce', 'boolean', true],
+    ['TypingIndicatorProps', 'className', 'string', true],
   ]) {
     const field = `readonly ${property}${optional ? '?' : ''}: ${type};`;
     for (const after of ['', field.replace('readonly ', ''), field.replace(`${property}${optional ? '?' : ''}:`, `${property}${optional ? '' : '?'}:`), field.replace(type, type.startsWith('(') ? '(value: number) => void' : 'any')]) {
       assert.match(compile(mutateInterface(name, field, after)), /false.*true/, `${name}: ${field} → ${after}`);
     }
   }
-  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps'])
+  for (const name of ['WelcomeProps', 'WelcomeSuggestionProps', 'SuggestionsProps', 'SuggestionItem', 'CitationCardProps', 'CitationPreviewProps', 'CitationsProps', 'ChatErrorProps', 'TypingIndicatorProps'])
     assert.match(compile(mutateInterface(name, ' }', ' readonly unexpected?: string; }')), /false.*true/, `${name} rejects extra props`);
   assert.match(compile(declaration.replaceAll('ChatProps', 'MissingChatProps')), /ChatProps/);
   assert.match(compile(declaration.replace('export declare function ChatError(props: ChatErrorProps): unknown;', '')), /ChatError/);
+  assert.match(compile(declaration.replace('export declare function TypingIndicator(props: TypingIndicatorProps): unknown;', '')), /TypingIndicator/);
+  const selector = "export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;";
+  assert.match(compile(declaration.replace(selector, '')), /isTyping/);
+  for (const mutation of [
+    selector.replace("Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>", 'any'),
+    selector.replace("Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>", 'unknown'),
+    selector.replace("Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>", "import('@threadplane/core').AgentSnapshot"),
+    selector.replace("'status' | 'messages'", "'messages'"),
+    selector.replace('snapshot:', 'snapshot?:'),
+    selector.replace('): boolean', ', owner: object): boolean'),
+    selector.replace('): boolean', '): any'),
+    selector.replace('): boolean', '): true'),
+    selector.replace('): boolean', '): boolean | undefined'),
+  ]) assert.match(compile(declaration.replace(selector, mutation)), /false.*true/, `exact selector: ${mutation}`);
   for (const [name, before, after] of [
     ['ChatErrorProps', "import('@threadplane/core').AgentError | null | undefined", "import('@threadplane/core').AgentError | undefined"],
     ['ChatErrorProps', "import('@threadplane/core').AgentError | null | undefined", "import('@threadplane/core').AgentError | null"],
@@ -810,13 +832,15 @@ test('React chat requires its real supported export', () => {
   supported.ToolActivityGroup = component;
   supported.toolActivityPhase = component;
   supported.ChatError = component;
+  supported.TypingIndicator = component;
+  supported.isTyping = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
     assert.throws(() => packageVerifier.assertSupportedExports('react/chat', rest), new RegExp(`missing supported contract ${name}$`));
   }
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', supported));
-  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError']) {
+  for (const name of ['Welcome', 'WelcomeSuggestion', 'Suggestions', 'CitationCard', 'CitationPreview', 'ChatError', 'TypingIndicator', 'isTyping']) {
     for (const value of [undefined, null, {}, 'component'])
       assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, [name]: value }), new RegExp(`missing supported contract ${name}$`));
   }
@@ -824,6 +848,7 @@ test('React chat requires its real supported export', () => {
   const forwarded = { $$typeof: Symbol.for('react.forward_ref'), render: component };
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: forwarded }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, ChatInput: {} }), /ChatInput/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, isTyping: forwarded }), /isTyping/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
 test('React render requires exactly the pure RenderSpec runtime export', () => {

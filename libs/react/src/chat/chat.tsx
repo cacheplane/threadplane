@@ -7,6 +7,7 @@ import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList, type MessageListProps } from './message-list.js';
+import { isTyping, TypingIndicator } from './typing-indicator.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -50,6 +51,7 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
       />
+      <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
         error={snapshot.error}
         className="tp-chat__error"

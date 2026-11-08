@@ -94,6 +94,52 @@ function rejection() {
 }
 
 describe('Chat', () => {
+  it('projects waiting from its existing subscription through first text, next turn, Stop and replacement', () => {
+    const one = fakeSession({ status: 'running' });
+    const subscribe = vi.spyOn(one.session, 'subscribe');
+    const view = render(<Chat session={one.session} />);
+    expect(view.getByRole('status').textContent).toContain(
+      'Assistant is typing'
+    );
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    one.set({ messages: [assistant('a', '')] });
+    expect(view.getByRole('status')).toBeTruthy();
+    one.set({ messages: [assistant('a', 'First token')] });
+    expect(view.queryByRole('status')).toBeNull();
+    one.set({ messages: [assistant('a', 'First token later')] });
+    expect(view.queryByRole('status')).toBeNull();
+    one.set({
+      messages: [
+        {
+          id: 'u',
+          role: 'user',
+          content: 'Next',
+          delivery: streamingDelivery('u'),
+        },
+      ],
+    });
+    expect(view.getByRole('status')).toBeTruthy();
+    fireEvent.click(view.getByRole('button', { name: 'Stop' }));
+    expect(one.raw.stop).toHaveBeenCalledExactlyOnceWith();
+    one.set({ status: 'idle' });
+    expect(view.queryByRole('status')).toBeNull();
+    one.set({ status: 'error' });
+    expect(view.queryByRole('status')).toBeNull();
+    one.set({ status: 'running' });
+    expect(view.getByRole('status')).toBeTruthy();
+    const two = fakeSession();
+    view.rerender(<Chat session={two.session} />);
+    expect(view.queryByRole('status')).toBeNull();
+    one.set({ status: 'running', messages: [] });
+    expect(view.queryByRole('status')).toBeNull();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(one.raw.submit).not.toHaveBeenCalled();
+    expect(two.raw.submit).not.toHaveBeenCalled();
+    expect(two.raw.stop).not.toHaveBeenCalled();
+    expect(one.raw.dispose).not.toHaveBeenCalled();
+    expect(two.raw.dispose).not.toHaveBeenCalled();
+  });
   const failure = (recovery: AgentError['recovery'] = 'retry'): AgentError =>
     Object.freeze({
       kind: 'server',

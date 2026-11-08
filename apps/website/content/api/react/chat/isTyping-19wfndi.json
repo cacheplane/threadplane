@@ -1,0 +1,88 @@
+{
+  "name": "isTyping",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/isTyping",
+  "canonicalReference": "@threadplane/react!isTyping:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Whether a borrowed text-only snapshot is waiting for its first assistant text.",
+  "declarations": [
+    {
+      "name": "isTyping",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!isTyping:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function isTyping(snapshot: "
+        },
+        {
+          "kind": "Reference",
+          "text": "Pick",
+          "canonicalReference": "!Pick:type"
+        },
+        {
+          "kind": "Content",
+          "text": "<"
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentSnapshot",
+          "canonicalReference": "@threadplane/react!~AgentSnapshot:type",
+          "href": "/docs/api/core/AgentSnapshot"
+        },
+        {
+          "kind": "Content",
+          "text": ", 'status' | 'messages'>"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "boolean"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Whether a borrowed text-only snapshot is waiting for its first assistant text.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/typing-indicator.tsx",
+        "line": 5
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "snapshot",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/typing-indicator.tsx",
+    "line": 5
+  }
+}

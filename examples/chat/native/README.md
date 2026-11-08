@@ -549,6 +549,15 @@ servers or reuse another session's directory.
   are, and a conversation missing from the list stays selected. Titles are not
   otherwise kept current. **Retry** explicitly retries a failed selection.
 
+React derives `TypingIndicator` from the ready selected runtime with `isTyping`:
+running with no messages, last user, or empty last assistant content waits for
+text. First assistant text (including whitespace), tool/system last messages,
+idle/error, or replacing the selection clears that presentation. It uses
+`announce={false}` because the existing composer submission status owns the live
+announcement. The indicator adds no commands, subscriptions, focus changes, or
+draft/lifetime ownership. This is bounded text-only waiting presentation, not
+complete typing or runtime parity.
+
 React displays the ready selected runtime's classified error through `ChatError`.
 Its message and detail are literal accessible text. This application's selection
 Retry reloads the selection; it is not execution recovery. The application exposes

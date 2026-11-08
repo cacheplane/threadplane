@@ -19,6 +19,8 @@ import {
   Reasoning,
   ThreadList,
   ToolObservation,
+  TypingIndicator,
+  isTyping,
 } from '@threadplane/react/chat';
 import type {
   ReactApplication as Application,
@@ -869,6 +871,12 @@ function Conversation({
                   label="Conversation messages"
                   className="transcript"
                 />
+                {snapshot.runtime && (
+                  <TypingIndicator
+                    active={isTyping(snapshot.runtime)}
+                    announce={false}
+                  />
+                )}
                 {snapshot.messages.length === 0 && (
                   <p className="empty-state">
                     This conversation has no messages yet.

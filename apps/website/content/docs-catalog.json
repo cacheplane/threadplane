@@ -1401,6 +1401,21 @@
     }
   },
   {
+    "id": "chat/components/typing-indicator",
+    "title": "TypingIndicator",
+    "library": "chat",
+    "section": "components",
+    "slug": "typing-indicator",
+    "order": 58,
+    "variants": {
+      "react": {
+        "source": "react/chat/components/typing-indicator.mdx",
+        "description": "Show a controlled waiting label until the first assistant text arrives.",
+        "apiEntrypointIds": ["react/chat"]
+      }
+    }
+  },
+  {
     "id": "chat/components/chat-error",
     "title": "ChatError",
     "library": "chat",
