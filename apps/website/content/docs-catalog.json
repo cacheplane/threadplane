@@ -27,11 +27,11 @@
     "variants": {
       "angular": {
         "source": "angular/getting-started/workbench.mdx",
-        "description": "Inspect a streamed trip response, replay application observations, and connect them to the Angular streaming example."
+        "description": "Learn how messages, streamed responses, and turn outcomes fit together, then follow them into your Angular app."
       },
       "react": {
         "source": "react/getting-started/workbench.mdx",
-        "description": "Inspect a streamed trip response, replay application observations, and connect them to the React streaming example."
+        "description": "Learn how messages, streamed responses, and turn outcomes fit together, then follow them into your React app."
       }
     }
   },

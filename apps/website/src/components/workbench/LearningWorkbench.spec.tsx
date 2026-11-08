@@ -70,6 +70,35 @@ afterEach(() => {
 });
 
 describe('learning inspector', () => {
+  it('preserves literal backslash-newline text in live historical messages', () => {
+    const text = 'First\\nSecond';
+    render(
+      <LearningWorkbench
+        framework="react"
+        recording={{
+          ...recording,
+          frames: recording.frames.map((frame, index) =>
+            index === 1
+              ? { ...frame, messages: [{ id: 'a', role: 'assistant', text }] }
+              : frame
+          ),
+        }}
+        live={{
+          cursor: 1,
+          following: false,
+          onSeek: vi.fn(),
+          onReturn: vi.fn(),
+          conversation: <iframe title="Live application" />,
+        }}
+      />
+    );
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Recorded conversation messages' })
+      ).getByText(text).textContent
+    ).toBe(text);
+  });
+
   it('seeks a requested teaching moment and pauses playback without remounting', () => {
     const view = render(
       <LearningWorkbench framework="react" recording={recording} />

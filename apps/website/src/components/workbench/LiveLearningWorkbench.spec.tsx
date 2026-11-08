@@ -91,10 +91,8 @@ it('keeps the recorded session selected and its playhead when inspecting source,
   });
   const first = within(workbenches[0]);
   const session = first.getByRole('group', { name: 'Example session' });
-  expect(within(session).getAllByRole('button')).toHaveLength(2);
-  const recorded = within(session).getByRole('button', {
-    name: 'Recorded example',
-  });
+  expect(within(session).getAllByRole('button')).toHaveLength(1);
+  expect(first.queryByRole('button', { name: 'Recorded example' })).toBeNull();
   const source = first.getByRole('button', { name: 'View example source' });
   const otherSource = within(workbenches[1]).getByRole('button', {
     name: 'View example source',
@@ -102,10 +100,15 @@ it('keeps the recorded session selected and its playhead when inspecting source,
   expect(source.getAttribute('aria-controls')).not.toBe(
     otherSource.getAttribute('aria-controls')
   );
+  fireEvent.click(first.getByRole('button', { name: 'Inspect data' }));
+  const initial = Number(
+    (first.getByRole('slider', { name: 'Observation' }) as HTMLInputElement)
+      .value
+  );
   fireEvent.click(first.getByRole('button', { name: 'Next observation' }));
   source.focus();
   fireEvent.click(source);
-  expect(recorded.getAttribute('aria-pressed')).toBe('true');
+  expect(first.getByText('Lesson source')).toBeTruthy();
   expect(source.getAttribute('aria-expanded')).toBe('true');
   const region = first.getByRole('region', { name: 'Example source' });
   expect(region.id).toBe(source.getAttribute('aria-controls'));
@@ -118,7 +121,7 @@ it('keeps the recorded session selected and its playhead when inspecting source,
   expect(
     (first.getByRole('slider', { name: 'Observation' }) as HTMLInputElement)
       .value
-  ).toBe('1');
+  ).toBe(String(initial + 1));
 });
 
 it('returns from source during a busy live call without losing historical position or the iframe', () => {
@@ -143,6 +146,9 @@ it('returns from source during a busy live call without losing historical positi
     bridge.options!.onInspection(observation(2, true));
   });
   fireEvent.click(screen.getByRole('button', { name: 'Previous observation' }));
+  fireEvent.click(
+    screen.getByText('Connect observations to source', { selector: 'summary' })
+  );
   const opener = screen.getByRole('button', {
     name: 'View source',
     exact: true,

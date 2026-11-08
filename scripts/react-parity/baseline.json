@@ -1,18 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "285127e18f57c7e45fe8b502f1e818347124af36",
+  "baselineHead": "04cc9030e2e347c5e34bf4136a44214808d04e20",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "apps/website/content/docs/angular/getting-started/quickstart.mdx",
+      "apps/website/content/docs/angular/getting-started/workbench.mdx",
+      "apps/website/content/docs/react/getting-started/quickstart.mdx",
+      "apps/website/content/docs/react/getting-started/workbench.mdx"
     ],
-    "untracked": [
-      "apps/website/content/docs/react/chat/components/typing-indicator.mdx",
-      "libs/react/src/chat/typing-indicator.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -2756,13 +2752,13 @@
       "id": "doc:apps/website/content/docs/angular/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/quickstart.mdx",
-      "sha256": "992bf5a0f31e28ebf95f7fc86d9f0edcb3f14d83067d1370c9c1ea0eb098b6c1"
+      "sha256": "d9ec5c03e8321e900c8ee50c28c0812fb3a14e63adda8f5c42fa3f5a19d78832"
     },
     {
       "id": "doc:apps/website/content/docs/angular/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/getting-started/workbench.mdx",
-      "sha256": "aa1c1efa89bc9b386e16b8a6ade2377948900d7e2dd87771bad33c495ae04013"
+      "sha256": "1463be55e69150df482d6b81ff4dcbc0372cd84fc7b405832e694d2d12b2cdd8"
     },
     {
       "id": "doc:apps/website/content/docs/angular/langgraph/concepts/agent-architecture.mdx",
@@ -3272,13 +3268,13 @@
       "id": "doc:apps/website/content/docs/react/getting-started/quickstart.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/quickstart.mdx",
-      "sha256": "381bb29fcb75e83657027c9aa9480b99f425f6301c945d381a7dfd546db1f6a3"
+      "sha256": "940d0386e47ac9b96ec736124d027e3c8f15d4b6513fc41d81463ff6fe13f44c"
     },
     {
       "id": "doc:apps/website/content/docs/react/getting-started/workbench.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/getting-started/workbench.mdx",
-      "sha256": "a740be7f9270944de4656186f3fa1d74a9808aa9a378c1e2e1427ff8bb8b5457"
+      "sha256": "c2eef1c386c477b3f96fa6ac9e16e83d5d3aff12759f00626a0df253d5a678f4"
     },
     {
       "id": "doc:apps/website/content/docs/react/langgraph/concepts/agent-contract.mdx",

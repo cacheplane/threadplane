@@ -21,7 +21,7 @@ describe('workbench layout preferences', () => {
   it('uses bounded finite values and defaults missing or invalid fields', () => {
     expect(DEFAULT_WORKBENCH_LAYOUT).toEqual({
       split: 44,
-      height: 520,
+      height: 400,
       files: 190,
     });
     expect(
@@ -124,7 +124,7 @@ describe('workbench layout preferences', () => {
     });
     expect(result.current.layout).toEqual({
       split: 60,
-      height: 520,
+      height: 400,
       files: 240,
     });
     expect(write).not.toHaveBeenCalled();
