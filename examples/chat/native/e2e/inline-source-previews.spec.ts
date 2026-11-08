@@ -355,7 +355,9 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
       await page.keyboard.press('Escape');
       await preserved();
     }
-    await page.setViewportSize({ width: 1280, height: 900 });
+    // The literal long-type fixture needs room above both anchor positions.
+    // Narrow viewport clamping is checked independently above.
+    await page.setViewportSize({ width: 1280, height: 1200 });
     await page
       .locator('html')
       .evaluate((node) => node.setAttribute('dir', 'ltr'));
@@ -376,6 +378,12 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
         return !!anchor && !!card && card.y + card.height <= anchor.y - 5;
       })
       .toBe(true);
+    const anchorBeforeMove = await trigger.boundingBox();
+    const cardBeforeMove = await dialog.boundingBox();
+    assert.ok(anchorBeforeMove && cardBeforeMove);
+    expect(
+      anchorBeforeMove.y - cardBeforeMove.height - 6 - 30
+    ).toBeGreaterThanOrEqual(8);
     await trigger.evaluate((node) => {
       node.style.bottom = '40px';
     });
@@ -397,6 +405,7 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
       if (original === null) node.removeAttribute('style');
       else node.setAttribute('style', original);
     }, originalStyle);
+    await page.setViewportSize({ width: 1280, height: 900 });
     await expect(dialog).toBeVisible();
     await draft.focus();
     await page.mouse.move(1, 1);
