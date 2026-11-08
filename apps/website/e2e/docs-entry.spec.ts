@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 test('mobile React entry keeps scoped search reachable', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto('/docs/react/getting-started/quickstart');
+  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await page
     .getByRole('button', { name: 'Search the docs', exact: true })
     .click();
@@ -20,12 +21,13 @@ test('React quickstart leads to usable source-build guides', async ({
   await page.goto('/docs/react/getting-started/quickstart');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('React');
   await expect(page.locator('main')).toContainText('source-build');
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
-    'content',
-    /noindex/
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://threadplane.ai/docs/react/getting-started/quickstart'
   );
+  await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
   const guide = page.getByRole('link', {
-    name: 'React streaming guide',
+    name: 'Connect LangGraph',
     exact: true,
   });
   await expect(guide).toHaveAttribute(

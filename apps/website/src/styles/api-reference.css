@@ -223,7 +223,7 @@
 .api-reference-navigation > a {
   display: block;
   min-height: 40px;
-  padding: 10px 12px;
+  padding: 12px;
   color: var(--color-text-muted);
   border-radius: 8px;
   text-decoration: none;
@@ -237,7 +237,7 @@
   align-items: flex-start;
   gap: 8px;
   min-height: 40px;
-  padding: 10px 8px;
+  padding: 12px 8px;
   border-radius: 8px;
   font: 500 13px/20px var(--font-mono);
   list-style: none;
@@ -264,7 +264,7 @@
 .api-reference-navigation details > a {
   display: block;
   min-height: 36px;
-  margin-left: 14px;
+  margin-left: 16px;
   padding: 8px 12px;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
