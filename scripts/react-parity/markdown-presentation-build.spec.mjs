@@ -67,6 +67,52 @@ test('strict template negative proof rejects resolution failures and requires th
     );
 });
 
+for (const profile of ['a2ui-surfaces', 'render-state', 'react-readiness']) {
+  test(`explicit ${profile} reader preserves generic asset checks without Markdown inputs`, (t) => {
+    const directory = mkdtempSync(join(tmpdir(), 'separate-presentation-'));
+    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    const output = join(directory, 'consumer/presentation-output/browser');
+    mkdirSync(output, { recursive: true });
+    writeFileSync(join(output, 'index.html'), `<p>${profile}</p>`);
+    writeFileSync(join(output, 'main.js'), 'export {};');
+    const outputs = ['index.html', 'main.js'].map(path => ({
+      path: 'presentation-output/browser/' + path,
+      sha256: createHash('sha256').update(readFileSync(join(output, path))).digest('hex'),
+    }));
+    const proof = {
+      presentation: { shell: outputs[0].path, outputs, assets: [outputs[1]] },
+      frozen: outputs.map(record => ({ ...record, path: 'consumer/' + record.path })),
+    };
+    const options = { profile };
+    assert.equal(presentation.readPresentation(directory, proof, options).shell.toString(), `<p>${profile}</p>`);
+    // An untrusted proof cannot downgrade the default or an explicit Markdown caller.
+    const forged = structuredClone(proof);
+    forged.profile = profile;
+    forged.presentation.profile = profile;
+    for (const markdown of [undefined, { profile: 'markdown' }])
+      assert.throws(() => presentation.readPresentation(directory, forged, markdown), /Required default transcript input/);
+    const missing = structuredClone(proof);
+    missing.frozen.pop();
+    assert.throws(() => presentation.readPresentation(directory, missing, options), /frozen/);
+    const omitted = structuredClone(proof);
+    omitted.presentation.outputs.pop();
+    assert.throws(() => presentation.readPresentation(directory, omitted, options), /outputs/);
+    const traversal = structuredClone(proof);
+    traversal.presentation.assets[0].path = 'presentation-output/browser/../browser/main.js';
+    assert.throws(() => presentation.readPresentation(directory, traversal, options), /path/);
+    writeFileSync(join(output, 'main.js'), 'tampered');
+    assert.throws(() => presentation.readPresentation(directory, proof, options), /outputs|bytes/);
+  });
+}
+
+test('reader rejects unknown trusted profiles and retains owner-only compatibility', () => {
+  for (const profile of ['markdown', 'a2ui-surfaces', 'render-state', 'react-readiness'])
+    assert.equal(presentation.readPresentation('/not-read', {}, { profile }), undefined);
+  assert.equal(presentation.readPresentation('/not-read', {}), undefined);
+  for (const profile of ['unknown', '', null])
+    assert.throws(() => presentation.readPresentation('/not-read', {}, { profile }), /profile/);
+});
+
 test('frozen presentation requires all outputs and rejects missing, tampered and traversal records', (t) => {
   assert.equal(typeof presentation.readPresentation, 'function');
   const directory = mkdtempSync(
@@ -146,6 +192,12 @@ test('frozen presentation requires all outputs and rejects missing, tampered and
     mutate(malformed);
     assert.throws(
       () => presentation.readPresentation(directory, malformed),
+      /input|stylesheet|Stylesheet/
+    );
+    malformed.profile = 'a2ui-surfaces';
+    malformed.presentation.profile = 'a2ui-surfaces';
+    assert.throws(
+      () => presentation.readPresentation(directory, malformed, { profile: 'markdown' }),
       /input|stylesheet|Stylesheet/
     );
   }

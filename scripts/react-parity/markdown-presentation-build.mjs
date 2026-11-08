@@ -272,9 +272,7 @@ export class NegativeHost { readonly value = 'not a snapshot'; }\n`
   };
 }
 
-export function readPresentation(directory, provenance) {
-  if (!provenance.presentation) return undefined; // Historical owner-only proofs.
-  const proof = provenance.presentation;
+function assertDefaultTranscript(base, proof, provenance) {
   const required = [
     ['inputs', 'presentation-default-transcript.tsx'],
     ...['message-list', 'citations'].flatMap((name) => [
@@ -322,7 +320,6 @@ export function readPresentation(directory, provenance) {
       ),
       'Stylesheet hash inventory required'
     );
-  const base = realpathSync(join(directory, 'consumer'));
   const installedStylesheet = realpathSync(join(base, proof.stylesheet.input.path));
   assert.ok(installedStylesheet.startsWith(base + '/node_modules/@threadplane/react/'), 'Installed stylesheet path escapes retained package');
   assert.equal(
@@ -334,6 +331,19 @@ export function readPresentation(directory, provenance) {
     record.path === 'consumer/' + proof.stylesheet.input.path &&
     record.sha256 === proof.stylesheet.input.sha256
   ), 'Installed stylesheet input requires frozen record');
+}
+
+// The trusted verifier chooses its fixture scope; retained metadata cannot
+// downgrade Markdown's installed default-transcript and stylesheet requirements.
+export function readPresentation(directory, provenance, { profile = 'markdown' } = {}) {
+  assert.ok(
+    ['markdown', 'a2ui-surfaces', 'render-state', 'react-readiness'].includes(profile),
+    'Unknown presentation reader profile: ' + profile
+  );
+  if (!provenance.presentation) return undefined; // Historical owner-only proofs.
+  const proof = provenance.presentation;
+  const base = realpathSync(join(directory, 'consumer'));
+  if (profile === 'markdown') assertDefaultTranscript(base, proof, provenance);
   const safePath = (path) => {
     assert.ok(
       typeof path === 'string' &&
