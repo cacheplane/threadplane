@@ -1,7 +1,14 @@
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMarkdown } from '@threadplane/content/markdown';
 import { Markdown } from './markdown.js';
+import { formatPublished } from '@threadplane/content/messages';
 const snapshot = (generation = 'a') =>
   createMarkdown({
     generation,
@@ -29,6 +36,143 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('inline previews', () => {
+  it('adds a bounded local summary without a stylesheet and updates the same panel with Close still focused', () => {
+    const initial = Object.freeze({
+      ...source,
+      sourceType: ' WEB ',
+      url: 'https://www.example.com/raw',
+      publishedAt: '2024-04-15T12:00:00Z',
+      iconUrl: 'https://images.invalid/icon',
+    });
+    const current = snapshot();
+    const v = render(
+      <Markdown snapshot={current} citations={[initial]} citationPreview />
+    );
+    fireEvent.click(v.getAllByRole('button')[0]);
+    const panel = v.getByRole('dialog');
+    const close = within(panel).getByRole('button', { name: 'Close' });
+    act(() => close.focus());
+    const summary = panel.querySelector<HTMLElement>(
+      '.tp-citation-source-summary'
+    );
+    expect(summary).not.toBeNull();
+    expect(summary?.nextElementSibling).toBe(
+      within(panel).getByRole('heading')
+    );
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__type')?.textContent
+    ).toBe('Web');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__domain')?.textContent
+    ).toBe('example.com');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__published')
+        ?.textContent
+    ).toBe(formatPublished(initial.publishedAt));
+    expect(summary?.style.flexWrap).toBe('wrap');
+    expect(summary?.style.minWidth).toBe('0px');
+    expect(summary?.style.overflowWrap).toBe('anywhere');
+    expect(summary?.style.color).toBe('inherit');
+    const marker = summary?.querySelector<HTMLElement>(
+      '.tp-citation-source-summary__visual'
+    );
+    expect(marker?.getAttribute('aria-hidden')).toBe('true');
+    expect(marker?.textContent).toBe('E');
+    expect(marker?.style.inlineSize).toBe('1.5rem');
+    expect(marker?.style.blockSize).toBe('1.5rem');
+    expect(marker?.style.color).toBe('canvastext');
+    expect(marker?.style.backgroundColor).toBe('canvas');
+    expect(
+      summary?.querySelector('button,a,input,[tabindex],img,image')
+    ).toBeNull();
+    expect(
+      Array.from(panel.querySelectorAll('dd')).map((node) => node.textContent)
+    ).toEqual([
+      '3',
+      initial.snippet,
+      initial.sourceType,
+      initial.publishedAt,
+      initial.url,
+    ]);
+    const corrected = {
+      ...initial,
+      sourceType: ' custom_type ',
+      url: 'ftp://blocked.invalid/raw',
+      publishedAt: '2025-06-15T12:00:00Z',
+    };
+    v.rerender(
+      <Markdown snapshot={current} citations={[corrected]} citationPreview />
+    );
+    expect(v.getByRole('dialog')).toBe(panel);
+    expect(document.activeElement).toBe(close);
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__type')?.textContent
+    ).toBe('Custom type');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__domain')?.textContent
+    ).toBe('blocked.invalid');
+    expect(
+      summary?.querySelector('.tp-citation-source-summary__published')
+        ?.textContent
+    ).toBe(formatPublished(corrected.publishedAt));
+    const svg = summary?.querySelector('svg');
+    expect(svg?.getAttribute('focusable')).toBe('false');
+    expect(svg?.style.inlineSize).toBe('1rem');
+    expect(svg?.style.blockSize).toBe('1rem');
+    expect(within(panel).queryByRole('link')).toBeNull();
+    expect(within(panel).getByRole('heading').textContent).toBe(initial.title);
+    expect(panel.textContent).toContain(initial.snippet);
+    expect(panel.querySelector('img,image,b,script')).toBeNull();
+  });
+  it.each([
+    {
+      sourceType: undefined,
+      url: undefined,
+      publishedAt: undefined,
+      type: null,
+    },
+    { sourceType: '   ', url: '', publishedAt: 'not a date', type: null },
+    {
+      sourceType: '<img src=x>',
+      url: 'javascript:evil',
+      publishedAt: 'bad',
+      type: '<img src=x>',
+    },
+  ])(
+    'omits unavailable summary values and preserves raw details: %j',
+    ({ type, ...metadata }) => {
+      const v = render(
+        <Markdown
+          snapshot={snapshot()}
+          citations={[{ ...source, ...metadata }]}
+          citationPreview
+        />
+      );
+      fireEvent.click(v.getAllByRole('button')[0]);
+      const panel = v.getByRole('dialog');
+      const summary = panel.querySelector('.tp-citation-source-summary');
+      expect(summary).not.toBeNull();
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__type')
+          ?.textContent ?? null
+      ).toBe(type);
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__domain')
+      ).toBeNull();
+      expect(
+        summary?.querySelector('.tp-citation-source-summary__published')
+      ).toBeNull();
+      expect(summary?.querySelector('svg')).not.toBeNull();
+      expect(panel.querySelector('img,image,script')).toBeNull();
+      expect(within(panel).queryByRole('link')).toBeNull();
+      if (metadata.sourceType !== undefined)
+        expect(
+          Array.from(panel.querySelectorAll('dd')).map(
+            (node) => node.textContent
+          )
+        ).toContain(metadata.sourceType);
+    }
+  );
   it('opts in resolved markers, renders literal metadata and safe navigation in a body portal', () => {
     const v = setup();
     const trigger = v.getAllByRole('button', {

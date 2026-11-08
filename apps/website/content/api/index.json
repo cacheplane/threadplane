@@ -5931,7 +5931,7 @@
       "canonicalReference": "@threadplane/react!CitationPreview:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Explicit source details with local presentation state and no source fetching."
+      "summary": "Explicit source details and local source summary with no source fetching."
     },
     {
       "name": "CitationPreviewProps",

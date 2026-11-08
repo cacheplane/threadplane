@@ -53,6 +53,10 @@ source card; its safe **Open source** link opens a new tab. Unsafe or missing
 destinations remain literal metadata, and unresolved references retain their
 syntax. Default Markdown rendering keeps direct links. User rows receive no citation
 metadata. Sources and parser ownership remain with the application.
+Both inline cards and explicit source modals show local decorative source markers,
+normalized type badges, hostnames and formatted dates above their original literal
+details. Installed checks cover narrow RTL previews with app stylesheets disabled,
+unchanged keyboard controls, no provider image requests, and live summary updates.
 
 Assistant Sources lists opt into `Citations.collapsible` and an app-owned
 `renderCard` callback. The stable callback returns a local source card composed

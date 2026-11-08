@@ -173,7 +173,10 @@ returns to the trigger, and Tab from the last control continues through the page
 Escape, Close, outside pointer interaction, or focus departure dismisses it.
 Only the explicit safe “Open source” link navigates. Titles, snippets and dates
 remain literal borrowed metadata; icons and metadata are never fetched. The card
-uses the trigger's document, follows viewport/scroll changes and needs no chat
+adds a local source marker and a summary of normalized source type, hostname and
+formatted publication date above those literal details. The decorative marker
+adds no keyboard focus target. Same-ID corrections update the open summary in place.
+The card uses the trigger's document, follows viewport/scroll changes and needs no chat
 stylesheet. Generation, marker identity, removal and unmount retire its local state.
 Omitting the opt-in preserves direct links and numbered markers.
 
@@ -264,6 +267,11 @@ Click, tap, or activate the trigger with a keyboard to inspect the supplied titl
 snippet, source type, publication text, and URL. Text stays literal; metadata and
 icons are never fetched. Allowed URLs get a separate **Open source** new-tab link
 using the shared URL policy. Missing or blocked URLs remain readable text.
+Above the literal details, a local decorative marker and source summary show the
+normalized type, hostname and formatted publication date using the same helpers as
+`CitationCard`. Missing or invalid display dates are omitted from the summary while
+the original publication text remains in the details. Hostname display does not
+approve a link. Provider images are never loaded.
 The modal focuses **Close**, contains Tab navigation including the optional link,
 and dismisses with Close, Escape, or a click outside its bounds. It restores
 focus to the available trigger when it still owns focus. Same-ID metadata updates

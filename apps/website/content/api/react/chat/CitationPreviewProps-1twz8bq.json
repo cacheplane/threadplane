@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citation-preview.tsx",
-            "line": 14
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": false
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/citation-preview.tsx",
-            "line": 15
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -106,12 +106,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/citation-preview.tsx",
-        "line": 13
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/citation-preview.tsx",
-    "line": 13
+    "line": 14
   }
 }
