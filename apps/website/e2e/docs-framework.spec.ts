@@ -110,6 +110,9 @@ for (const width of [1440, 390]) {
   test(`React onboarding reaches a real quickstart counterpart at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/docs/react/getting-started/introduction');
+    // Desktop navigation mounts during hydration and moves the article. Start
+    // the pointer gesture after the shell's published readiness boundary.
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     await page.locator('article').getByRole('link', { name: 'chat quickstart', exact: true }).click();
     await expect(page).toHaveURL('/docs/react/chat/getting-started/quickstart');
     await expect(page.getByRole('heading', { name: 'Compose your first React chat', exact: true })).toBeVisible();
