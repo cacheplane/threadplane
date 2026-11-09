@@ -228,6 +228,42 @@ describe('reduceEvent', () => {
       .toBe(secondReplacement?.delivery.generation);
   });
 
+  const flightSnapshot = (toolMessage: Record<string, unknown>) => ({
+    type: 'MESSAGES_SNAPSHOT',
+    messages: [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [{ id: 't1', type: 'function', function: { name: 'lookup_flight', arguments: '{"flight_number":"UA999"}' } }],
+      },
+      { role: 'tool', id: 'm2', toolCallId: 't1', ...toolMessage },
+    ],
+  }) as any;
+
+  it('maps a snapshot tool message error to a failed call', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+
+    expect(store.toolCalls().find(t => t.id === 't1')).toMatchObject({
+      status: 'error',
+      error: 'Flight UA999 not found',
+      result: { error: 'Flight UA999 not found' },
+    });
+  });
+
+  it('keeps a snapshot tool call complete when its tool message has no error', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({ content: '{"status":"on time"}' }), store);
+
+    const call = store.toolCalls().find(t => t.id === 't1');
+    expect(call?.status).toBe('complete');
+    expect(call).not.toHaveProperty('error');
+  });
+
   it('preserves an omitted current assistant so later deltas still apply', () => {
     const store = makeStore();
     reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1' } as any, store);
