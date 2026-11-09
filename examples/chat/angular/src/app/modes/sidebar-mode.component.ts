@@ -55,10 +55,15 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
      * applies its right-margin push to this background when the panel
      * opens. Sized to fill the visible area below the toolbar. */
     .sidebar-mode__background {
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 24px 16px 96px;
     }
+    .sidebar-mode__background > app-mode-promo { flex: none; margin-block: auto; }
   `],
 })
 export class SidebarMode {
