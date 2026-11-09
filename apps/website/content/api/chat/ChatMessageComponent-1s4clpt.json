@@ -97,7 +97,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-message/chat-message.component.ts",
-            "line": 86
+            "line": 92
           },
           "isStatic": false,
           "isReadonly": true,
