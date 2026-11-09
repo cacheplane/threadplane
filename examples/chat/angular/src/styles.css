@@ -90,6 +90,80 @@ html[data-color-scheme="light"] {
  * uses the lib's :host defaults, so no override block is needed.
  */
 
+/* Demo-owned decision and recovery surfaces keep touch targets and spacing
+ * consistent with the shell without changing consumer chat themes. */
+html[data-color-scheme] .chat-interrupt-region {
+  box-sizing: border-box;
+  padding-inline: var(--tplane-chat-edge-pad, 16px);
+}
+html[data-color-scheme] :is(.chat-popup__close, .chat-sidebar__close) {
+  width: 44px;
+  height: 44px;
+}
+html[data-color-scheme] :is(.chat-popup__close, .chat-sidebar__close):focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 2px;
+}
+html[data-color-scheme] .chat-interrupt-panel {
+  padding: 16px;
+  border-color: var(--demo-control-border);
+  border-radius: 12px;
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__eyebrow {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__dot { display: none; }
+html[data-color-scheme] .chat-interrupt-panel__body {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__actions { gap: 8px; }
+html[data-color-scheme] .chat-interrupt-panel .btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: background 150ms ease, color 150ms ease;
+}
+html[data-color-scheme] .chat-interrupt-panel .btn:hover { transform: none; }
+html[data-color-scheme] .chat-interrupt-panel .btn-primary {
+  background: var(--demo-control-yellow);
+  color: var(--demo-control-ink);
+}
+html[data-color-scheme] .chat-interrupt-panel .btn-primary:hover { background: #ffda79; }
+html[data-color-scheme] .chat-interrupt-panel :is(.btn-secondary, .btn-text) {
+  color: var(--demo-control-text);
+  border-color: var(--demo-control-border);
+}
+html[data-color-scheme] .chat-interrupt-panel :is(.btn-secondary, .btn-text):hover {
+  background: var(--demo-control-bg);
+}
+html[data-color-scheme] .chat-interrupt-panel .btn:focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 2px;
+}
+html[data-color-scheme] .chat-error {
+  gap: 12px;
+  padding: 16px;
+  line-height: 1.5;
+}
+html[data-color-scheme] .chat-error__msg { flex: 1 1 180px; }
+html[data-color-scheme] :is(.chat-error__retry, .chat-error__check) {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
 html[data-theme='default-light'] {
   --a2ui-primary: #4f8df5;
   --a2ui-on-primary: #ffffff;

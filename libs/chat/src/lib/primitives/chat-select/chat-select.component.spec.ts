@@ -2,6 +2,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ChatSelectComponent, type ChatSelectOption } from './chat-select.component';
+import { ChatPopupComponent } from '../../compositions/chat-popup/chat-popup.component';
+import { ChatSidebarComponent } from '../../compositions/chat-sidebar/chat-sidebar.component';
 
 const OPTS: readonly ChatSelectOption[] = [
   { value: 'a', label: 'Alpha' },
@@ -134,6 +136,43 @@ describe('ChatSelectComponent', () => {
     t.dispatchEvent(evt);
     fixture.detectChanges();
     expect(menu()).toBeNull();
+  });
+
+  describe.each([
+    ['popup', ChatPopupComponent],
+    ['sidebar', ChatSidebarComponent],
+  ] as const)('inside a %s', (_name, Surface) => {
+    it.each(['menu', 'trigger'] as const)(
+      'dismisses the select before the parent when Escape starts on the %s',
+      (escapeFrom) => {
+        // Use the real surface's window listener. The menu is portaled to the
+        // body, so both menu and trigger events must stop before reaching it.
+        const surface = TestBed.runInInjectionContext(() => new Surface());
+        surface.openWindow();
+        fixture.detectChanges();
+        trigger().focus();
+        trigger().click();
+        fixture.detectChanges();
+        expect(menu()).not.toBeNull();
+
+        const target = escapeFrom === 'menu' ? optionEls()[0] : trigger();
+        target.focus();
+        target.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'Escape', bubbles: true, cancelable: true,
+        }));
+        fixture.detectChanges();
+
+        expect(menu()).toBeNull();
+        expect(surface.open()).toBe(true);
+        expect(document.activeElement).toBe(trigger());
+
+        trigger().dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'Escape', bubbles: true, cancelable: true,
+        }));
+        fixture.detectChanges();
+        expect(surface.open()).toBe(false);
+      },
+    );
   });
 
   it('disables the trigger when [disabled]=true', () => {

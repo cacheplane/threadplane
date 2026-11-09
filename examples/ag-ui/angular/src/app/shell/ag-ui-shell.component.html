@@ -1,57 +1,70 @@
 <div class="ag-ui-shell">
   <div class="ag-ui-shell__toolbar" role="toolbar" aria-label="Demo controls">
-    <div class="ag-ui-shell__segmented" aria-label="Mode">
-      @for (option of modeOptions; track option.value) {
-        <button
-          type="button"
-          class="ag-ui-shell__segmented-button"
-          [class.is-active]="mode() === option.value"
-          [attr.aria-pressed]="mode() === option.value"
-          [attr.title]="appMode() === 'on' && option.value === 'embed' ? 'Embed turns App mode off' : null"
-          (click)="onModeChange(option.value)"
-        >{{ option.label }}</button>
-      }
+    <div class="ag-ui-shell__navigation">
+      <div class="ag-ui-shell__segmented" aria-label="Mode">
+        @for (option of modeOptions; track option.value) {
+          <button
+            type="button"
+            class="ag-ui-shell__segmented-button"
+            [class.is-active]="mode() === option.value"
+            [attr.aria-pressed]="mode() === option.value"
+            [attr.title]="appMode() === 'on' && option.value === 'embed' ? 'Embed turns App mode off' : null"
+            (click)="onModeChange(option.value)"
+          >{{ option.label }}</button>
+        }
+      </div>
+
+      <button type="button" class="ag-ui-shell__settings-toggle" aria-label="Demo settings" title="Demo settings"
+        aria-controls="ag-ui-settings" [attr.aria-expanded]="settingsOpen()" (click)="settingsOpen.set(!settingsOpen())">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h7m4 0h5M4 17h3m4 0h9" /><circle cx="13" cy="7" r="2" /><circle cx="9" cy="17" r="2" />
+        </svg>
+      </button>
     </div>
 
-    <button
-      type="button"
-      class="ag-ui-shell__app-toggle"
-      [class.is-on]="appMode() === 'on'"
-      [attr.aria-pressed]="appMode() === 'on'"
-      [disabled]="!hasMapsKey"
-      [attr.title]="hasMapsKey ? null : 'Set GOOGLE_MAPS_API_KEY to enable'"
-      (click)="onAppModeChange(appMode() === 'on' ? 'off' : 'on')"
-    >
-      <span class="ag-ui-shell__app-toggle-icon" aria-hidden="true">map</span>
-      <span class="ag-ui-shell__app-toggle-label">App mode</span>
-      <span class="ag-ui-shell__app-toggle-thumb" aria-hidden="true"></span>
-    </button>
+    <div class="ag-ui-shell__settings" id="ag-ui-settings" role="group" aria-label="Demo settings"
+      [attr.data-open]="settingsOpen()" (focusin)="settingsOpen.set(true)">
 
-    <div class="ag-ui-shell__field ag-ui-shell__field--first" data-field="model">
-      <chat-select [options]="modelOptions()" [value]="model()" menuLabel="Model" (valueChange)="onModelChange($event)" />
-    </div>
-    <div class="ag-ui-shell__field" data-field="effort">
-      <chat-select [options]="effortOptions()" [value]="effort()" menuLabel="Effort" (valueChange)="onEffortChange($event)" />
-    </div>
-    <div class="ag-ui-shell__field" data-field="genui">
-      <chat-select [options]="genUiOptions()" [value]="genUiMode()" menuLabel="Gen UI" (valueChange)="onGenUiModeChange($event)" />
-    </div>
-    <div class="ag-ui-shell__field" data-field="theme">
-      <chat-select [options]="themeOptions()" [value]="theme()" menuLabel="Theme" (valueChange)="onThemeChange($event)" />
-    </div>
+      <button
+        type="button"
+        class="ag-ui-shell__app-toggle"
+        [class.is-on]="appMode() === 'on'"
+        [attr.aria-pressed]="appMode() === 'on'"
+        [disabled]="!hasMapsKey"
+        [attr.title]="hasMapsKey ? null : 'Set GOOGLE_MAPS_API_KEY to enable'"
+        (click)="onAppModeChange(appMode() === 'on' ? 'off' : 'on')"
+      >
+        <span class="ag-ui-shell__app-toggle-icon" aria-hidden="true">map</span>
+        <span class="ag-ui-shell__app-toggle-label">App mode</span>
+        <span class="ag-ui-shell__app-toggle-thumb" aria-hidden="true"></span>
+      </button>
 
-    <button
-      type="button"
-      class="ag-ui-shell__theme-toggle ag-ui-shell__theme-toggle--toolbar"
-      [attr.aria-label]="colorScheme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-      (click)="onColorSchemeChange(colorScheme() === 'dark' ? 'light' : 'dark')"
-    >
-      @if (colorScheme() === 'dark') {
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      } @else {
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      }
-    </button>
+      <div class="ag-ui-shell__field" data-field="model">
+        <chat-select panelClass="demo-controls-menu" [options]="modelOptions()" [value]="model()" menuLabel="Model" (valueChange)="onModelChange($event)" />
+      </div>
+      <div class="ag-ui-shell__field" data-field="effort">
+        <chat-select panelClass="demo-controls-menu" [options]="effortOptions()" [value]="effort()" menuLabel="Effort" (valueChange)="onEffortChange($event)" />
+      </div>
+      <div class="ag-ui-shell__field" data-field="genui">
+        <chat-select panelClass="demo-controls-menu" [options]="genUiOptions()" [value]="genUiMode()" menuLabel="Gen UI" (valueChange)="onGenUiModeChange($event)" />
+      </div>
+      <div class="ag-ui-shell__field" data-field="theme">
+        <chat-select panelClass="demo-controls-menu" [options]="themeOptions()" [value]="theme()" menuLabel="Theme" (valueChange)="onThemeChange($event)" />
+      </div>
+
+      <button
+        type="button"
+        class="ag-ui-shell__theme-toggle"
+        [attr.aria-label]="colorScheme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+        (click)="onColorSchemeChange(colorScheme() === 'dark' ? 'light' : 'dark')"
+      >
+        @if (colorScheme() === 'dark') {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        } @else {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        }
+      </button>
+    </div>
   </div>
 
   @if (appMode() === 'on') {
@@ -65,22 +78,12 @@
       <app-itinerary-panel class="ag-ui-shell__itinerary-overlay" />
       <div class="ag-ui-shell__main">
         <router-outlet />
-        @if (agent.interrupt && agent.interrupt()) {
-          <div class="ag-ui-shell__interrupt-panel" role="region" aria-label="Approval required">
-            <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
-          </div>
-        }
       </div>
     </div>
   } @else {
     <div class="ag-ui-shell__body">
       <div class="ag-ui-shell__main">
         <router-outlet />
-        @if (agent.interrupt && agent.interrupt()) {
-          <div class="ag-ui-shell__interrupt-panel" role="region" aria-label="Approval required">
-            <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
-          </div>
-        }
       </div>
     </div>
   }

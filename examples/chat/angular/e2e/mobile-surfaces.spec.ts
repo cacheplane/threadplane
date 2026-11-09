@@ -161,6 +161,9 @@ for (const mode of ['popup', 'sidebar']) {
     if (mode === 'popup') await launcher.click();
     const close = page.getByRole('button', { name: 'Close chat', exact: true });
     await close.click({ trial: true });
+    const closeBounds = await close.boundingBox();
+    expect(closeBounds?.width).toBeGreaterThanOrEqual(44);
+    expect(closeBounds?.height).toBeGreaterThanOrEqual(44);
     const draft = page.getByRole('textbox', {
       name: 'Type a message',
       exact: true,
@@ -178,9 +181,11 @@ for (const mode of ['popup', 'sidebar']) {
       };
     });
     expect(geometry.height, JSON.stringify(geometry)).toBeGreaterThan(0);
-    await draft.fill('A mobile draft with several wrapped lines. '.repeat(6));
+    const draftText = 'A mobile draft with several wrapped lines. '.repeat(6).trimEnd();
+    await draft.fill(draftText);
     await page.evaluate(() => {
-      const viewport = visualViewport!;
+      const viewport = visualViewport;
+      if (!viewport) throw new Error('Visual viewport is unavailable');
       Object.defineProperty(viewport, 'height', {
         configurable: true,
         value: 377,
@@ -201,9 +206,7 @@ for (const mode of ['popup', 'sidebar']) {
     await close.click();
     await expect(launcher).toBeFocused();
     await launcher.click();
-    await expect(draft).toHaveValue(
-      'A mobile draft with several wrapped lines. '.repeat(6)
-    );
+    await expect(draft).toHaveValue(draftText);
     await expect(close).toBeFocused();
   });
 }

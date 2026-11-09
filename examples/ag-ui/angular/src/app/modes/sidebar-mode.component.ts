@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatSidebarComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatSidebarComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent, a2uiBasicCatalog } from '@threadplane/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { MapCanvasComponent } from '../map-canvas.component';
 import { AppModePromoComponent } from './app-mode-promo.component';
@@ -8,7 +8,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 @Component({
   selector: 'sidebar-mode',
   standalone: true,
-  imports: [ChatSidebarComponent, MapCanvasComponent, AppModePromoComponent, WelcomeSuggestionsComponent],
+  imports: [ChatSidebarComponent, MapCanvasComponent, AppModePromoComponent, WelcomeSuggestionsComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <chat-sidebar
@@ -22,6 +22,9 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
       [pushContent]="true"
       (selectedModelChange)="shell.onModelChange($event)"
     >
+      <ng-template chatInterruptTemplate let-agent>
+        <chat-interrupt-panel [agent]="agent" (action)="shell.onInterruptAction($event)" />
+      </ng-template>
       <!-- In App mode the map IS the main content — projected into the sidebar's
            flex content slot so it fills the area left of the drawer (no absolute
            positioning / occupy-var inset in the shell). Plain sidebar mode
@@ -45,10 +48,15 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
      * height); [pushContent] applies the right-margin push for the open drawer. */
     .sidebar-mode__map { display: block; height: 100%; }
     .sidebar-mode__background {
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 24px 16px 96px;
     }
+    .sidebar-mode__background > app-mode-promo { flex: none; margin-block: auto; }
   `],
 })
 export class SidebarMode {

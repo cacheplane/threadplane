@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatPopupComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatPopupComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent, a2uiBasicCatalog } from '@threadplane/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 import { AppModePromoComponent } from './app-mode-promo.component';
@@ -7,14 +7,11 @@ import { AppModePromoComponent } from './app-mode-promo.component';
 @Component({
   selector: 'popup-mode',
   standalone: true,
-  imports: [ChatPopupComponent, WelcomeSuggestionsComponent, AppModePromoComponent],
+  imports: [ChatPopupComponent, WelcomeSuggestionsComponent, AppModePromoComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="popup-mode__background">
-      <!-- The chat is a floating launcher here, so the area behind it markets
-           App mode (same hero as sidebar mode). App mode forces sidebar, so in
-           popup mode it is effectively always off — gate it the same way for
-           symmetry with sidebar mode. -->
+      <!-- The floating chat leaves room for the App-mode promo or map. -->
       @if (shell.appMode() !== 'on') {
         <app-mode-promo
           [hasMapsKey]="shell.hasMapsKey"
@@ -31,16 +28,24 @@ import { AppModePromoComponent } from './app-mode-promo.component';
       [showModelPicker]="false"
       (selectedModelChange)="shell.onModelChange($event)"
     >
+      <ng-template chatInterruptTemplate let-agent>
+        <chat-interrupt-panel [agent]="agent" (action)="shell.onInterruptAction($event)" />
+      </ng-template>
       <welcome-suggestions chatWelcomeSuggestions [appModeOn]="shell.appMode() === 'on'" (selected)="send($event)" />
     </chat-popup>
   `,
   styles: [`
     :host { display: block; flex: 1; min-height: 0; }
     .popup-mode__background {
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 24px 16px 96px;
     }
+    .popup-mode__background > app-mode-promo { flex: none; margin-block: auto; }
   `],
 })
 export class PopupMode {

@@ -1,6 +1,10 @@
 :host {
   display: block;
-  height: 100dvh;
+  position: fixed;
+  top: var(--demo-viewport-top, 0px);
+  left: 0;
+  width: 100%;
+  height: var(--demo-viewport-height, 100dvh);
 }
 
 .ag-ui-shell {
@@ -8,75 +12,71 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Publish the toolbar height as a CSS var so fixed-position overlays
-   * (chat-sidenav, chat-sidebar panel) can clear it. */
-  --demo-toolbar-height: 51px;
-}
-
-.ag-ui-shell__hamburger {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  background: transparent;
-  color: var(--tplane-chat-text);
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.ag-ui-shell__hamburger:hover {
-  background: var(--tplane-chat-surface-alt);
+  /* Fixed sidebar panels clear the toolbar's measured border box. */
+  --demo-toolbar-height: 0px;
 }
 
 .ag-ui-shell__main {
   flex: 1;
   min-height: 0;
-  transition: padding-left 200ms ease;
-  padding-left: 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.ag-ui-shell__main[data-sidenav-mode="expanded"] {
-  padding-left: var(--tplane-chat-sidenav-width-expanded, 280px);
-}
-.ag-ui-shell__main[data-sidenav-mode="collapsed"] {
-  padding-left: var(--tplane-chat-sidenav-width-collapsed, 56px);
-}
-@media (max-width: 767px) {
-  .ag-ui-shell__main[data-sidenav-mode] { padding-left: 0; }
-}
-
 .ag-ui-shell__toolbar {
   flex: 0 0 auto;
-  min-height: 48px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  row-gap: 6px;
-  gap: 10px;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--tplane-chat-separator);
-  background: color-mix(in srgb, var(--tplane-chat-bg) 94%, transparent);
-  color: var(--tplane-chat-text);
+  gap: 12px 24px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--demo-control-border);
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
   font-family: inherit;
-  font-size: var(--tplane-chat-font-size-sm);
+  font-size: 13px;
   box-sizing: border-box;
-  /* Toolbar establishes its own stacking context so the chat-select
-   * dropdown menus (z-index 10 inside the primitive) render above the
-   * chat content's scroll/transform stacking contexts below. */
+  /* Dropdowns sit above page content, while open chat surfaces retain
+   * reachable close controls when they cover the toolbar on phones. */
   position: relative;
-  z-index: 50;
-  /* No overflow-x: that would clip absolutely-positioned dropdown menus.
-   * flex-wrap handles narrow viewports by wrapping fields to a new row. */
+  z-index: calc(var(--tplane-chat-z-overlay-content, 30) - 1);
 }
 
-/* Push every field after Mode to the right of the toolbar. */
-.ag-ui-shell__field--first {
+.ag-ui-shell__navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ag-ui-shell__settings {
+  display: grid;
+  grid-template-columns: auto repeat(4, minmax(0, 1fr)) auto;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: 880px;
+  justify-self: end;
+}
+.ag-ui-shell__settings-toggle {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--demo-control-border);
+  border-radius: 12px;
+  color: var(--demo-control-text);
+  background: var(--demo-control-bg);
+  cursor: pointer;
+}
+.ag-ui-shell__settings-toggle:hover { background: var(--demo-control-surface); }
+.ag-ui-shell__settings-toggle[aria-expanded='true'] {
+  background: var(--demo-control-selected-bg);
+  color: var(--demo-control-selected-text);
 }
 
 .ag-ui-shell__segmented {
@@ -84,138 +84,105 @@
   align-items: center;
   gap: 2px;
   padding: 2px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--tplane-chat-text) 14%, transparent);
-  background: color-mix(in srgb, var(--tplane-chat-text) 4%, transparent);
+  border-radius: 14px;
+  border: 1px solid var(--demo-control-border);
+  background: var(--demo-control-surface);
   flex: 0 0 auto;
 }
 
 .ag-ui-shell__segmented-button {
   font: inherit;
-  color: var(--tplane-chat-text);
-}
-
-.ag-ui-shell__segmented-button {
+  color: var(--demo-control-text);
   border: 0;
   background: transparent;
-  border-radius: 6px;
-  min-height: 28px;
-  padding: 0 10px;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 12px;
   cursor: pointer;
 }
 
 .ag-ui-shell__segmented-button.is-active {
-  background: var(--tplane-chat-text);
-  color: var(--tplane-chat-bg);
+  background: var(--demo-control-yellow);
+  color: var(--demo-control-ink);
+  font-weight: 600;
 }
 
 .ag-ui-shell__field {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--tplane-chat-text-muted);
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .ag-ui-shell__segmented-button:hover:not(.is-active) {
-  background: color-mix(in srgb, var(--tplane-chat-text) 8%, transparent);
+  background: color-mix(in srgb, var(--demo-control-text) 8%, transparent);
 }
 
-/* (Removed the manual toolbar menu-flip workaround: chat-select now portals its
- * menu through the connected-overlay primitive, which auto-flips downward when
- * there's no room above — so top-toolbar selects open downward on their own,
- * and the host-scoped ::ng-deep rule no longer reaches the portaled menu.) */
-
-
-.ag-ui-shell__interrupt-panel {
-  position: fixed;
-  left: 50%;
-  bottom: calc(80px + var(--ag-ui-shell-interrupt-offset, 0px));
-  transform: translateX(-50%);
-  z-index: 999;
-  width: min(640px, calc(100vw - 32px));
-  max-width: min(640px, calc(100vw - 32px));
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
-  border-radius: var(--tplane-chat-radius-card, 10px);
+.ag-ui-shell__field ::ng-deep chat-select {
+  display: block;
+  min-width: 0;
 }
-
-.ag-ui-shell__subagents {
-  position: fixed;
-  left: 50%;
-  bottom: 96px;
-  transform: translateX(-50%);
-  z-index: 997;
-  width: min(640px, calc(100vw - 32px));
-  display: flex;
-  flex-direction: column;
+.ag-ui-shell__field ::ng-deep .chat-select__trigger {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  justify-content: space-between;
   gap: 8px;
+  border: 1px solid var(--demo-control-border);
+  border-radius: 12px;
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
+  font-size: 13px;
+}
+.ag-ui-shell__field ::ng-deep .chat-select__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ag-ui-shell__field ::ng-deep .chat-select__trigger:hover {
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
 }
 
 .ag-ui-shell__theme-toggle {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   border: 0;
   background: transparent;
-  color: var(--tplane-chat-text-muted);
+  color: var(--demo-control-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .ag-ui-shell__theme-toggle:hover {
-  background: var(--tplane-chat-surface-alt);
-  color: var(--tplane-chat-text);
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
 }
 
-/* The toolbar is full-width at the top of the page. Fixed-position
- * chrome (chat-sidenav, chat-sidebar panel) lives at top:0 by default
- * — push them down by the toolbar height so they don't render
- * underneath. Scoped to .ag-ui-shell so the chat library's own
- * positioning is unchanged for consumers without a top toolbar. */
-.ag-ui-shell ::ng-deep chat-sidenav {
-  top: var(--demo-toolbar-height);
-  /* chat-sidenav has `height: 100%` on :host plus position: fixed + bottom: 0.
-   * With our top override the explicit height "wins" and the sidenav extends
-   * past the viewport (top + 100% > 100vh). Constrain the height to the
-   * viewport minus the toolbar. */
-  height: calc(100% - var(--demo-toolbar-height));
-}
-/* Keep the sidebar panel below the toolbar. The toolbar has the higher z-index
- * for portaled select menus, so a top-aligned panel leaves its close button
- * visually present but intercepted by toolbar controls. */
-.ag-ui-shell ::ng-deep .chat-sidebar__panel {
-  top: var(--demo-toolbar-height);
-}
-.ag-ui-shell__theme-toggle--toolbar { margin-left: auto; }
-
-/* Non-App-mode body: the routed chat fills the area below the toolbar.
- * The itinerary lives only in App mode now, as the floating map overlay. */
-.ag-ui-shell__body { flex: 1 1 auto; min-height: 0; display: flex; }
-.ag-ui-shell__body > .ag-ui-shell__main { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-
+/* App-mode toggle: pill button in the toolbar. Enabled only when a Google
+ * Maps key is configured (App mode renders the map cockpit). */
 .ag-ui-shell__app-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--tplane-chat-separator);
-  background: transparent;
-  color: var(--tplane-chat-text-muted);
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--demo-control-border);
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
   cursor: pointer;
   font: inherit;
-  font-size: var(--tplane-chat-font-size-sm);
+  font-size: 13px;
   flex: 0 0 auto;
 }
 .ag-ui-shell__app-toggle:disabled {
-  opacity: 0.4;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .ag-ui-shell__app-toggle.is-on {
-  color: var(--tplane-chat-on-primary);
-  background: var(--tplane-chat-primary);
-  border-color: var(--tplane-chat-primary);
+  color: var(--demo-control-ink);
+  background: var(--demo-control-yellow);
+  border-color: var(--demo-control-yellow);
 }
 .ag-ui-shell__app-toggle-icon {
   font-family: 'Material Symbols Outlined', sans-serif;
@@ -227,10 +194,35 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--tplane-chat-text-muted);
+  background: currentColor;
 }
 .ag-ui-shell__app-toggle.is-on .ag-ui-shell__app-toggle-thumb {
-  background: var(--tplane-chat-on-primary);
+  background: currentColor;
+}
+
+.ag-ui-shell__toolbar button:focus-visible,
+.ag-ui-shell__theme-toggle:focus-visible,
+.ag-ui-shell__field ::ng-deep .chat-select__trigger:focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 3px;
+}
+@media (max-width: 1099px) {
+  .ag-ui-shell__toolbar { grid-template-columns: minmax(0, 1fr); }
+  .ag-ui-shell__settings { max-width: none; }
+}
+@media (max-width: 767px) {
+  .ag-ui-shell__toolbar { padding: 8px 12px; gap: 8px; }
+  .ag-ui-shell__settings-toggle { display: inline-flex; }
+  .ag-ui-shell__settings {
+    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ag-ui-shell__settings[data-open='true'] { display: grid; }
+  .ag-ui-shell__settings > .ag-ui-shell__app-toggle {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .ag-ui-shell__segmented-button { padding-inline: 8px; }
 }
 
 /* App-mode layout: full-bleed map with the itinerary panel floating as an
@@ -243,7 +235,8 @@
 }
 /* Popup mode only: the map is the full-bleed backdrop with the chat bubble
    floating over it. (Sidebar mode renders the map inside the chat-sidebar's
-   flex content slot instead — see SidebarMode — so it gets its column there.) */
+   flex content slot instead — see SidebarMode, Task 12 — so it gets its
+   column there.) */
 .ag-ui-shell__map {
   position: absolute;
   inset: 0;
@@ -266,4 +259,14 @@
   z-index: 5;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.ag-ui-shell__body { flex: 1 1 auto; min-height: 0; display: flex; }
+/* A desktop sidebar shares the page with the toolbar. Mobile surfaces cover
+ * the viewport and keep their own close controls above the demo controls. */
+@media (min-width: 769px) {
+  .ag-ui-shell ::ng-deep .chat-sidebar__panel {
+    top: calc(var(--demo-viewport-top, 0px) + var(--demo-toolbar-height));
+    height: calc(var(--demo-viewport-height, 100dvh) - var(--demo-toolbar-height));
+  }
 }

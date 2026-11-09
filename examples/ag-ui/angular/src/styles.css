@@ -17,10 +17,59 @@ html, body {
 html {
   --demo-page-bg: #0f1116;
   --demo-page-text: #e6e9ef;
+  /* Demo-owned controls follow the website palette without changing chat or
+   * generated content themes. Portaled toolbar menus inherit these too. */
+  --demo-control-bg: #15253e;
+  --demo-control-surface: #20314a;
+  --demo-control-text: #edf2fa;
+  --demo-control-muted: #b7c2d3;
+  --demo-control-border: #42526a;
+  --demo-control-focus: #f6c453;
+  --demo-control-yellow: #f6c453;
+  --demo-control-ink: #102747;
+  --demo-control-selected-bg: #3c3422;
+  --demo-control-selected-text: #ffda79;
 }
 html[data-color-scheme="light"] {
   --demo-page-bg: #ffffff;
   --demo-page-text: #1c1c1c;
+  --demo-control-bg: #ffffff;
+  --demo-control-surface: #f6f7f9;
+  --demo-control-text: #102747;
+  --demo-control-muted: #536174;
+  --demo-control-border: #dce1e8;
+  --demo-control-focus: #102747;
+  --demo-control-selected-bg: #fff4d6;
+  --demo-control-selected-text: #102747;
+}
+
+/* Toolbar selects use the library's connected portal unchanged. This class
+ * is assigned only by DemoShell, so chat composer menus retain their theme. */
+.demo-controls-menu.chat-select__overlay .chat-select__menu {
+  min-width: min(200px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  border-color: var(--demo-control-border);
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
+  overscroll-behavior: contain;
+}
+.demo-controls-menu.chat-select__overlay .chat-select__option {
+  min-height: 44px;
+  justify-content: center;
+  color: var(--demo-control-text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.demo-controls-menu.chat-select__overlay .chat-select__option:is(:hover, :focus-visible) {
+  background: var(--demo-control-surface);
+}
+.demo-controls-menu.chat-select__overlay .chat-select__option.is-active {
+  background: var(--demo-control-selected-bg);
+  color: var(--demo-control-selected-text);
+}
+.demo-controls-menu.chat-select__overlay .chat-select__option:focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: -2px;
 }
 
 /*
@@ -31,6 +80,80 @@ html[data-color-scheme="light"] {
  * complexity of importing them dynamically. Default ('default-dark')
  * uses the lib's :host defaults, so no override block is needed.
  */
+
+/* Demo-owned decision and recovery surfaces keep touch targets and spacing
+ * consistent with the shell without changing consumer chat themes. */
+html[data-color-scheme] .chat-interrupt-region {
+  box-sizing: border-box;
+  padding-inline: var(--tplane-chat-edge-pad, 16px);
+}
+html[data-color-scheme] :is(.chat-popup__close, .chat-sidebar__close) {
+  width: 44px;
+  height: 44px;
+}
+html[data-color-scheme] :is(.chat-popup__close, .chat-sidebar__close):focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 2px;
+}
+html[data-color-scheme] .chat-interrupt-panel {
+  padding: 16px;
+  border-color: var(--demo-control-border);
+  border-radius: 12px;
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__eyebrow {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__dot { display: none; }
+html[data-color-scheme] .chat-interrupt-panel__body {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: var(--demo-control-text);
+}
+html[data-color-scheme] .chat-interrupt-panel__actions { gap: 8px; }
+html[data-color-scheme] .chat-interrupt-panel .btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: background 150ms ease, color 150ms ease;
+}
+html[data-color-scheme] .chat-interrupt-panel .btn:hover { transform: none; }
+html[data-color-scheme] .chat-interrupt-panel .btn-primary {
+  background: var(--demo-control-yellow);
+  color: var(--demo-control-ink);
+}
+html[data-color-scheme] .chat-interrupt-panel .btn-primary:hover { background: #ffda79; }
+html[data-color-scheme] .chat-interrupt-panel :is(.btn-secondary, .btn-text) {
+  color: var(--demo-control-text);
+  border-color: var(--demo-control-border);
+}
+html[data-color-scheme] .chat-interrupt-panel :is(.btn-secondary, .btn-text):hover {
+  background: var(--demo-control-bg);
+}
+html[data-color-scheme] .chat-interrupt-panel .btn:focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 2px;
+}
+html[data-color-scheme] .chat-error {
+  gap: 12px;
+  padding: 16px;
+  line-height: 1.5;
+}
+html[data-color-scheme] .chat-error__msg { flex: 1 1 180px; }
+html[data-color-scheme] :is(.chat-error__retry, .chat-error__check) {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
 
 html[data-theme='default-light'] {
   --a2ui-primary: #4f8df5;
@@ -92,8 +215,3 @@ html[data-theme='material-light'] {
   --a2ui-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.14);
   --a2ui-elevation-5: 0 16px 32px rgba(0, 0, 0, 0.16);
 }
-
-.ag-ui-demo { display: flex; flex-direction: column; height: 100dvh; }
-.ag-ui-demo__header { padding: 12px 16px; border-bottom: 1px solid var(--tp-border, #e5e7eb); }
-.ag-ui-demo__header h1 { margin: 0; font-size: 1.1rem; }
-.ag-ui-demo__header p { margin: 2px 0 0; font-size: 0.85rem; opacity: 0.7; }.ag-ui-demo__chat { flex: 1 1 auto; min-height: 0; }

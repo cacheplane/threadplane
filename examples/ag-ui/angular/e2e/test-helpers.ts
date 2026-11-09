@@ -72,7 +72,7 @@ export async function activeThreadIdFromUrl(
  *
  * After PR #444 dropped the visible label text from the toolbar, the
  * fields are now identified by stable `data-field` attributes on the
- * `.demo-shell__field` wrapper. The label argument is mapped to the
+ * `.ag-ui-shell__field` wrapper. The label argument is mapped to the
  * matching attribute value so call sites stay unchanged.
  */
 const LABEL_TO_FIELD: Record<string, string> = {
@@ -89,7 +89,7 @@ function labelToFieldAttr(label: string): string {
 export function toolbarSelect(page: Page, label: string): Locator {
   const field = labelToFieldAttr(label);
   return page
-    .locator(`.demo-shell__field[data-field="${field}"]`)
+    .locator(`.ag-ui-shell__field[data-field="${field}"]`)
     .locator('chat-select .chat-select__trigger');
 }
 

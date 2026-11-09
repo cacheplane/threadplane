@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ChatSelectComponent } from '@threadplane/chat';
 import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
-import { FEATURED_SUGGESTIONS, MORE_SUGGESTIONS, ITINERARY_SUGGESTIONS } from './welcome-suggestions';
+import { suggestionsForAppMode } from './welcome-suggestions';
 
-describe('WelcomeSuggestionsComponent', () => {
+describe('LangGraph welcome suggestions', () => {
   let fx: ComponentFixture<WelcomeSuggestionsComponent>;
 
   beforeEach(() => {
@@ -12,93 +14,68 @@ describe('WelcomeSuggestionsComponent', () => {
     fx.detectChanges();
   });
 
-  it('renders exactly one featured chip', () => {
-    const chips = fx.nativeElement.querySelectorAll('chat-welcome-suggestion');
-    expect(chips.length).toBe(1);
+  function featured(): HTMLButtonElement {
+    return fx.nativeElement.querySelector('.welcome-suggestions__featured');
+  }
+
+  function catalog(): ChatSelectComponent {
+    return fx.debugElement.query(By.directive(ChatSelectComponent)).componentInstance;
+  }
+
+  it('shows the featured label and description without requiring hover', () => {
+    const prompt = suggestionsForAppMode(false).featured;
+    expect(featured().textContent).toContain(prompt.label);
+    expect(featured().textContent).toContain(prompt.description);
+    expect(featured().getAttribute('aria-label')).toBe(prompt.label);
+    expect(featured().getAttribute('aria-description')).toBe(prompt.description);
   });
 
-  it('renders the first featured suggestion as the chip', () => {
-    const label = fx.nativeElement.querySelector(
-      'chat-welcome-suggestion .chat-welcome-suggestion__label',
-    ) as HTMLElement;
-    expect(label.textContent?.trim()).toBe(FEATURED_SUGGESTIONS[0].label);
+  it('submits the exact curated value when the description is clicked', () => {
+    const values: string[] = [];
+    fx.componentInstance.selected.subscribe(value => values.push(value));
+    const description = featured().querySelector<HTMLElement>('.welcome-suggestions__description');
+    if (!description) throw new Error('Featured prompt description is missing');
+    description.click();
+    expect(values).toEqual([suggestionsForAppMode(false).featured.value]);
   });
 
-  it('renders the overflow chat-select with "More prompts" placeholder', () => {
-    const select = fx.nativeElement.querySelector('chat-select');
-    expect(select).toBeTruthy();
-    const trigger = select.querySelector('.chat-select__trigger') as HTMLElement;
-    expect(trigger.textContent).toContain('More prompts');
-  });
-
-  it('merges FEATURED_SUGGESTIONS[1..] + MORE_SUGGESTIONS into dropdown options (appModeOn=false)', () => {
-    const opts = fx.componentInstance['moreOptions']() as { value: string; label: string }[];
-    const expectedLen = FEATURED_SUGGESTIONS.length - 1 + MORE_SUGGESTIONS.length;
-    expect(opts.length).toBe(expectedLen);
-    expect(opts[0].label).toBe(FEATURED_SUGGESTIONS[1].label);
-    expect(opts[0].value).toBe(FEATURED_SUGGESTIONS[1].value);
-    const moreStart = FEATURED_SUGGESTIONS.length - 1;
-    expect(opts[moreStart].label).toBe(MORE_SUGGESTIONS[0].label);
-  });
-
-  it('features the trip-planning starters when appModeOn is true', () => {
+  it('changes the featured prompt and complete catalog for App mode', () => {
     fx.componentRef.setInput('appModeOn', true);
     fx.detectChanges();
-    // Featured chip becomes the first itinerary prompt.
-    const label = fx.nativeElement.querySelector(
-      'chat-welcome-suggestion .chat-welcome-suggestion__label',
-    ) as HTMLElement;
-    expect(label.textContent?.trim()).toBe(ITINERARY_SUGGESTIONS[0].label);
-    // The remaining itinerary prompts lead the "More prompts" set, followed by
-    // this demo's existing capability prompts (preserved, not replaced).
-    const opts = fx.componentInstance['moreOptions']() as { value: string; label: string }[];
-    expect(opts[0].label).toBe(ITINERARY_SUGGESTIONS[1].label);
-    const labels = opts.map((o) => o.label);
-    expect(labels).toContain(FEATURED_SUGGESTIONS[0].label);
-    expect(labels).toContain(MORE_SUGGESTIONS[0].label);
+    const suggestions = suggestionsForAppMode(true);
+    expect(featured().textContent).toContain(suggestions.featured.label);
+    expect(catalog().options()).toEqual(
+      suggestions.more.map(({ value, label, description }) => ({ value, label, description }))
+    );
   });
 
-  it('emits (selected) with the featured value when the chip is clicked', () => {
-    let captured: string | null = null;
-    fx.componentInstance.selected.subscribe((v) => (captured = v));
-    const chipBtn = fx.nativeElement.querySelector(
-      'chat-welcome-suggestion button',
-    ) as HTMLButtonElement;
-    chipBtn.click();
-    expect(captured).toBe(FEATURED_SUGGESTIONS[0].value);
+  it('preserves all remaining prompt labels, descriptions, and submitted values', () => {
+    expect(catalog().options()).toEqual(
+      suggestionsForAppMode(false).more.map(({ value, label, description }) => ({ value, label, description }))
+    );
+    const values: string[] = [];
+    fx.componentInstance.selected.subscribe(value => values.push(value));
+    const value = catalog().options()[0].value;
+    catalog().value.set(value);
+    expect(values).toEqual([value]);
   });
 
-  // JSDOM does not cascade ::ng-deep overrides from Angular component <style>
-  // tags, so we assert against the component's compiled styles string instead
-  // of relying on getComputedStyle — same approach used for border-width above.
-  it('widens the More prompts dropdown menu in the component styles', () => {
-    const cls: any = WelcomeSuggestionsComponent;
-    const styles = ((cls['ɵcmp'] as { styles?: string[] })?.styles ?? []).join(' ');
-    expect(styles).toMatch(/chat-select__menu[^}]*min-width:\s*320px/);
-    expect(styles).toMatch(/chat-select__menu[^}]*max-width:\s*480px/);
+  it('keeps More prompts as an accessible dropdown', () => {
+    const trigger: HTMLButtonElement = fx.nativeElement.querySelector('chat-select button');
+    expect(trigger.textContent).toContain('More prompts');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(catalog().menuLabel()).toBe('More demo prompts');
   });
 
-  it('overrides the More prompts trigger to match the featured chip styling', () => {
-    // The component's styles block must include ::ng-deep overrides for the
-    // chat-select trigger so it visually matches chat-welcome-suggestion.
-    // We assert by inspecting the component's stringified styles via the
-    // DOM: the trigger should compute to chip-equivalent padding/border.
-    const trigger = fx.nativeElement.querySelector(
-      '.welcome-suggestions__row chat-select .chat-select__trigger',
-    ) as HTMLElement;
-    expect(trigger).toBeTruthy();
-    const cs = getComputedStyle(trigger);
-    // 10px 16px padding (chip)
-    expect(cs.paddingTop).toBe('10px');
-    expect(cs.paddingBottom).toBe('10px');
-    expect(cs.paddingLeft).toBe('16px');
-    expect(cs.paddingRight).toBe('16px');
-    // 1px border (chip has a border; default trigger has none).
-    // JSDOM 29 does not cascade border-width from <style> tags so we assert
-    // the source instead of getComputedStyle — the CSS must declare a border.
-    const componentStyles = (fx.componentInstance.constructor as { ɵcmp?: { styles?: string[] } }).ɵcmp?.styles?.join(' ') ?? '';
-    expect(componentStyles).toMatch(/border:\s*1px\s+solid/);
-    // pill radius (chip)
-    expect(cs.borderRadius).toBe('9999px');
+  it('uses a curated featured override and ignores unrecognized ids', () => {
+    fx.componentRef.setInput('featuredId', 'approve-before-a-destructive');
+    fx.detectChanges();
+    expect(featured().textContent).toContain(
+      suggestionsForAppMode(false, 'approve-before-a-destructive').featured.label
+    );
+    fx.componentRef.setInput('featuredId', 'not-a-prompt');
+    fx.detectChanges();
+    expect(featured().textContent).toContain(suggestionsForAppMode(false).featured.label);
+    expect(fx.nativeElement.textContent).not.toContain('not-a-prompt');
   });
 });

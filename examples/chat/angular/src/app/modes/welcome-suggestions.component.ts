@@ -1,35 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import {
-  ChatWelcomeSuggestionComponent,
-  ChatSelectComponent,
-  type ChatSelectOption,
-} from '@threadplane/chat';
+import { ChatSelectComponent, type ChatSelectOption } from '@threadplane/chat';
 import { suggestionsForAppMode } from './welcome-suggestions';
 
-/**
- * Demo-side composition that renders the welcome-state suggestion surface
- * as a single featured chip + a "More prompts" dropdown for everything
- * else. The featured chip is `FEATURED_SUGGESTIONS[0]` — consumer
- * controls which prompt is featured by ordering the array.
- *
- * Output `(selected)` fires with the suggestion's `value` for BOTH chip
- * clicks and dropdown picks — consumers wire it directly to
- * `agent.submit({ message: $event })` for auto-send semantics.
- */
+/** A readable featured prompt and the complete prompt catalog in a menu. */
 @Component({
   selector: 'welcome-suggestions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChatWelcomeSuggestionComponent, ChatSelectComponent],
+  imports: [ChatSelectComponent],
   template: `
     <div class="welcome-suggestions__row">
-      <chat-welcome-suggestion
+      <button
+        type="button"
         class="welcome-suggestions__featured"
-        [label]="featuredOne().label"
-        [value]="featuredOne().value"
-        [description]="featuredOne().description"
-        (selected)="selected.emit($event)"
-      />
+        [attr.aria-label]="featuredOne().label"
+        [attr.aria-description]="featuredOne().description"
+        (click)="selected.emit(featuredOne().value)"
+      >
+        <span class="welcome-suggestions__copy">
+          <span class="welcome-suggestions__label">{{ featuredOne().label }}</span>
+          <span class="welcome-suggestions__description">{{ featuredOne().description }}</span>
+        </span>
+        <svg class="welcome-suggestions__arrow" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14m-6-6 6 6-6 6" />
+        </svg>
+      </button>
       <chat-select
         [options]="moreOptions()"
         placeholder="More prompts"
@@ -39,78 +36,105 @@ import { suggestionsForAppMode } from './welcome-suggestions';
       />
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        padding: 0 12px;
-        box-sizing: border-box;
-      }
-      .welcome-suggestions__row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        max-width: 100%;
-      }
-      .welcome-suggestions__featured {
-        flex: 1 1 0;
-        min-width: 0;
-        max-width: 380px;
-        overflow: hidden;
-      }
-      /* chat-welcome-suggestion host is display: inline-block by default
-       * (sizes to content). At narrow viewports this lets the inner
-       * button overflow the wrapper and get clipped at the wrapper's
-       * right edge ("hard right border"). Force block sizing here so
-       * the host follows the wrapper's flex-shrunk width and the
-       * label inside ellipsizes. */
-      .welcome-suggestions__featured ::ng-deep chat-welcome-suggestion {
-        display: block;
-        width: 100%;
-      }
-      .welcome-suggestions__featured ::ng-deep .chat-welcome-suggestion {
-        width: 100%;
-      }
-      .welcome-suggestions__featured ::ng-deep .chat-welcome-suggestion__label {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-        flex: 1 1 auto;
-      }
-      /* Make the "More prompts" dropdown match the featured chip visually.
-         Scoped to .welcome-suggestions__row so the model picker (also
-         chat-select, elsewhere) is untouched. */
-      .welcome-suggestions__row ::ng-deep chat-select .chat-select__trigger {
-        height: auto;
-        padding: 10px 16px;
-        background: var(--tplane-chat-surface);
-        color: var(--tplane-chat-text);
-        border: 1px solid var(--tplane-chat-separator);
-        border-radius: 9999px;
-        font-size: var(--tplane-chat-font-size-sm);
-      }
-      .welcome-suggestions__row ::ng-deep chat-select .chat-select__trigger:hover:not(:disabled) {
-        background: var(--tplane-chat-surface-alt);
-        border-color: var(--tplane-chat-text-muted);
-        color: var(--tplane-chat-text);
-      }
-      /* The menu portals to a body-level CDK overlay pane, so it's no longer a
-         descendant of <chat-select>. Target the overlay panelClass instead.
-         ::ng-deep here intentionally emits a global rule (the pane is outside
-         this component's view). */
-      ::ng-deep .welcome-suggestions__menu-panel .chat-select__menu {
-        min-width: 320px;
-        max-width: 480px;
-        width: max-content;
-      }
-      .welcome-suggestions__row > chat-select {
-        flex: 0 0 auto;
-      }
-    `,
-  ],
+  styles: [`
+    :host {
+      display: block;
+      width: min(100%, 480px);
+      padding: 0 12px;
+      box-sizing: border-box;
+    }
+    .welcome-suggestions__row {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+    }
+    .welcome-suggestions__featured {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      box-sizing: border-box;
+      padding: 16px;
+      border: 1px solid var(--demo-control-border);
+      border-radius: 12px;
+      background: var(--demo-control-surface);
+      color: var(--demo-control-text);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .welcome-suggestions__copy { display: grid; gap: 4px; min-width: 0; flex: 1; }
+    .welcome-suggestions__label {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    .welcome-suggestions__description {
+      color: var(--demo-control-muted);
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .welcome-suggestions__arrow { width: 18px; height: 18px; flex: 0 0 18px; }
+    .welcome-suggestions__featured:hover { border-color: var(--demo-control-muted); }
+    .welcome-suggestions__featured:focus-visible {
+      outline: 2px solid var(--demo-control-focus);
+      outline-offset: 3px;
+    }
+    .welcome-suggestions__row > chat-select { max-width: 100%; }
+    .welcome-suggestions__row ::ng-deep .chat-select__trigger {
+      min-height: 44px;
+      height: auto;
+      box-sizing: border-box;
+      padding: 8px 16px;
+      border: 1px solid var(--demo-control-border);
+      border-radius: 8px;
+      background: var(--demo-control-bg);
+      color: var(--demo-control-text);
+      font-size: 13px;
+    }
+    .welcome-suggestions__row ::ng-deep .chat-select__trigger:hover:not(:disabled) {
+      background: var(--demo-control-surface);
+      color: var(--demo-control-text);
+    }
+    .welcome-suggestions__row ::ng-deep .chat-select__trigger:focus-visible {
+      outline: 2px solid var(--demo-control-focus);
+      outline-offset: 3px;
+    }
+    /* The menu is portaled outside this component; the class scopes only this catalog. */
+    ::ng-deep .welcome-suggestions__menu-panel .chat-select__menu {
+      width: min(400px, calc(100vw - 32px));
+      min-width: 0;
+      max-width: calc(100vw - 32px);
+      max-height: min(360px, calc(100dvh - 32px));
+      border-color: var(--demo-control-border);
+      background: var(--demo-control-bg);
+      overscroll-behavior: contain;
+    }
+    ::ng-deep .welcome-suggestions__menu-panel .chat-select__option {
+      min-height: 44px;
+      padding: 12px;
+      color: var(--demo-control-text);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    ::ng-deep .welcome-suggestions__menu-panel .chat-select__option-desc {
+      color: var(--demo-control-muted);
+      line-height: 1.5;
+    }
+    ::ng-deep .welcome-suggestions__menu-panel .chat-select__option:is(:hover, :focus-visible) {
+      background: var(--demo-control-surface);
+    }
+    ::ng-deep .welcome-suggestions__menu-panel .chat-select__option:focus-visible {
+      outline: 2px solid var(--demo-control-focus);
+      outline-offset: -2px;
+    }
+  `],
 })
 export class WelcomeSuggestionsComponent {
   readonly selected = output<string>();

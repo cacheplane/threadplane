@@ -155,6 +155,7 @@ export class ChatSelectComponent {
     if (this.disabled()) return;
     if (e.key === 'Escape' && this.open()) {
       e.preventDefault();
+      e.stopPropagation();
       this.open.set(false);
       return;
     }
@@ -168,6 +169,7 @@ export class ChatSelectComponent {
   protected onMenuKeydown(e: KeyboardEvent): void {
     if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       this.open.set(false);
       this.queryTrigger()?.focus();
       return;

@@ -1,16 +1,20 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  afterNextRender,
+  computed,
+  DestroyRef,
   DOCUMENT,
+  ElementRef,
   effect,
   inject,
   signal,
   untracked,
 } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectAgent } from '@threadplane/ag-ui';
 import {
-  ChatInterruptPanelComponent,
   ChatSelectComponent,
   type InterruptAction,
 } from '@threadplane/chat';
@@ -39,7 +43,7 @@ const DEFAULTS = {
   selector: 'ag-ui-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, ChatSelectComponent, ChatInterruptPanelComponent, ItineraryPanelComponent, MapCanvasComponent],
+  imports: [RouterOutlet, ChatSelectComponent, ItineraryPanelComponent, MapCanvasComponent],
   templateUrl: './ag-ui-shell.component.html',
   styleUrl: './ag-ui-shell.component.css',
   providers: [PalettePersistence],
@@ -47,6 +51,7 @@ const DEFAULTS = {
 export class AgUiShell {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   protected readonly persistence = inject(PalettePersistence);
 
   // ── Knob signals: URL > localStorage > default ───────────────────────────
@@ -65,8 +70,11 @@ export class AgUiShell {
   readonly genUiMode = signal<string>(this.urlKnob('genui') ?? this.persistence.read('genUiMode') ?? DEFAULTS.genui);
   readonly theme = signal<string>(this.urlKnob('theme') ?? this.persistence.read('theme') ?? DEFAULTS.theme);
   readonly colorScheme = signal<'light' | 'dark'>(
-    ((this.urlKnob('scheme') ?? this.persistence.read('colorScheme')) as 'light' | 'dark' | null) ?? DEFAULTS.scheme,
+    this.initialColorScheme(),
   );
+  protected readonly settingsOpen = signal(false);
+  private readonly viewportWidth = signal(this.document.defaultView?.innerWidth ?? 1440);
+  readonly showInlineModelPicker = computed(() => this.viewportWidth() >= 768);
   readonly appMode = signal<'on' | 'off'>(this.initialAppMode());
   readonly hasMapsKey = (environment.googleMapsApiKey as string).length > 0;
 
@@ -103,6 +111,15 @@ export class AgUiShell {
     const raw = (this.urlKnob('appmode') ?? this.persistence.read('appMode')) as 'on' | 'off' | null;
     if (raw !== 'on') return 'off';
     return this.locationMode() === 'embed' ? 'off' : 'on';
+  }
+
+  private initialColorScheme(): 'light' | 'dark' {
+    const scheme = this.urlKnob('scheme');
+    if (scheme === 'light' || scheme === 'dark') return scheme;
+    const theme = this.urlKnob('theme');
+    if (theme === 'default-light') return 'light';
+    if (theme === 'default-dark') return 'dark';
+    return (this.persistence.read('colorScheme') as 'light' | 'dark' | null) ?? DEFAULTS.scheme;
   }
 
   // ── Select options (canonical lists) ─────────────────────────────────────
@@ -161,10 +178,51 @@ export class AgUiShell {
   })();
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
+    const win = this.document.defaultView;
+    if (win) {
+      const resize = () => {
+        const settings = this.host.querySelector('.ag-ui-shell__settings');
+        // A portaled menu can own focus while its trigger crosses the mobile
+        // breakpoint. Keep the trigger visible until the user closes settings.
+        if (settings?.contains(this.document.activeElement) || settings?.querySelector('[aria-expanded="true"]')) {
+          this.settingsOpen.set(true);
+        }
+        this.viewportWidth.set(win.innerWidth);
+      };
+      win.addEventListener('resize', resize);
+      destroyRef.onDestroy(() => win.removeEventListener('resize', resize));
+    }
+    afterNextRender(() => {
+      const shell = this.host.querySelector<HTMLElement>('.ag-ui-shell');
+      const toolbar = this.host.querySelector<HTMLElement>('.ag-ui-shell__toolbar');
+      if (!shell || !toolbar) return;
+      const measure = () => shell.style.setProperty('--demo-toolbar-height', `${toolbar.getBoundingClientRect().height}px`);
+      measure();
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(measure);
+      observer.observe(toolbar, { box: 'border-box' });
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+    const viewport = win?.visualViewport;
+    if (viewport) {
+      const resize = () => {
+        if (viewport.scale !== 1) return;
+        this.host.style.setProperty('--demo-viewport-height', `${viewport.height}px`);
+        this.host.style.setProperty('--demo-viewport-top', `${viewport.offsetTop}px`);
+      };
+      resize();
+      viewport.addEventListener('resize', resize);
+      viewport.addEventListener('scroll', resize);
+      destroyRef.onDestroy(() => {
+        viewport.removeEventListener('resize', resize);
+        viewport.removeEventListener('scroll', resize);
+      });
+    }
     // Routed mode components read the shared wrapped agent via
     // `inject(AgUiShell).agent` — no token needed.
     // Keep mode() in sync with navigation.
-    this.router.events.subscribe(() => {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe(() => {
       const m = this.parseMode(this.router.url);
       if (m !== this.mode()) this.mode.set(m);
     });
@@ -239,16 +297,29 @@ export class AgUiShell {
   onModelChange(v: string): void { this.model.set(v); this.persistence.write('model', v); }
   protected onEffortChange(v: string): void { this.effort.set(v); this.persistence.write('effort', v); }
   protected onGenUiModeChange(v: string): void { this.genUiMode.set(v); this.persistence.write('genUiMode', v); }
-  protected onThemeChange(v: string): void { this.theme.set(v); this.persistence.write('theme', v); }
+  protected onThemeChange(v: string): void {
+    this.theme.set(v);
+    this.persistence.write('theme', v);
+    if (v === 'default-light' || v === 'default-dark') {
+      const scheme = v === 'default-light' ? 'light' : 'dark';
+      this.colorScheme.set(scheme);
+      this.persistence.write('colorScheme', scheme);
+    }
+  }
   protected onColorSchemeChange(v: 'light' | 'dark' | string): void {
     if (v !== 'light' && v !== 'dark') return;
     this.colorScheme.set(v);
     this.persistence.write('colorScheme', v);
+    if (this.theme() === 'default-light' || this.theme() === 'default-dark') {
+      const theme = v === 'light' ? 'default-light' : 'default-dark';
+      this.theme.set(theme);
+      this.persistence.write('theme', theme);
+    }
   }
 
   /** Same four-action vocabulary as the canonical shell; resumes via
    *  AG-UI's submit({ resume }) path (forwardedProps.command.resume). */
-  protected async onInterruptAction(action: InterruptAction): Promise<void> {
+  async onInterruptAction(action: InterruptAction): Promise<void> {
     const interrupt = this.agent.interrupt?.();
     if (!interrupt) return;
     let resume: unknown;
