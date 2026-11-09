@@ -1,6 +1,26 @@
 import { expect, test } from '@playwright/test';
 import { openDemo, selectToolbarOption, toolbarSelect } from './test-helpers';
 
+test('mobile embed keeps a useful composer width and selects its model through settings', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await openDemo(page);
+  const input = page.getByRole('textbox', { name: 'Type a message', exact: true });
+  await expect(input).toBeVisible();
+  await expect.poll(async () => (await input.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(140);
+  await input.fill('Keep this draft while resizing');
+  await page.getByRole('button', { name: 'Demo settings', exact: true }).click();
+  await selectToolbarOption(page, 'Model', 'gpt-5-nano');
+  await expect(toolbarSelect(page, 'Model')).toContainText('gpt-5-nano');
+  await page.getByRole('button', { name: 'Demo settings', exact: true }).click();
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await expect(page.locator('embed-mode chat-input chat-select .chat-select__trigger')).toBeVisible();
+  await expect(page.locator('embed-mode chat-input chat-select .chat-select__trigger')).toContainText('gpt-5-nano');
+  await expect(input).toHaveValue('Keep this draft while resizing');
+  await page.setViewportSize({ width: 320, height: 640 });
+  await expect(page.locator('embed-mode chat-input chat-select')).toHaveCount(0);
+  await expect(input).toHaveValue('Keep this draft while resizing');
+});
+
 test('mobile settings preserve the selected theme and leave room for conversations', async ({
   page,
 }) => {

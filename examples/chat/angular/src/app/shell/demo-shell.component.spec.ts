@@ -500,6 +500,23 @@ describe('DemoShell — URL knob hydration', () => {
     expect(stored.theme).toBeUndefined();
   });
 
+  it.each([
+    ['theme=default-light', 'default-light', 'light'],
+    ['theme=default-dark', 'default-dark', 'dark'],
+    ['color=light', 'default-light', 'light'],
+    ['theme=default-light&color=dark', 'default-dark', 'dark'],
+    ['theme=material-light', 'material-light', 'dark'],
+  ])('pairs URL %s without persisting either theme or scheme', async (query, theme, scheme) => {
+    const stored = JSON.stringify({ theme: 'default-dark', colorScheme: 'dark', model: 'gpt-5-nano' });
+    localStorage.setItem('threadplane-chat-demo:palette', stored);
+    await TestBed.inject(Router).navigateByUrl(`/embed?${query}`);
+    const fixture = TestBed.createComponent(DemoShell);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.theme()).toBe(theme);
+    expect(fixture.componentInstance.colorScheme()).toBe(scheme);
+    expect(localStorage.getItem('threadplane-chat-demo:palette')).toBe(stored);
+  });
+
   it('drops default knob values from URL on change-to-default', async () => {
     const router = TestBed.inject(Router);
     await router.navigateByUrl('/embed?model=gpt-5-nano');

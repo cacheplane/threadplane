@@ -292,7 +292,6 @@ export class DemoShell {
         const next = scheme === 'light' ? 'default-light' : 'default-dark';
         if (currentTheme !== next) {
           this.theme.set(next);
-          this.persistence.write('theme', next);
         }
       }
     });
@@ -535,6 +534,9 @@ export class DemoShell {
   private readonly viewportWidth = signal<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1440,
   );
+
+  /** Narrow composers use the same model control in the demo settings. */
+  readonly showInlineModelPicker = computed(() => this.viewportWidth() >= 768);
 
   /**
    * User's chosen desktop sidenav mode. Persisted across reloads.
@@ -813,8 +815,13 @@ export class DemoShell {
     if (theme !== null && theme !== this.theme()) this.theme.set(theme);
 
     const color = params.get('color');
-    if ((color === 'light' || color === 'dark') && color !== this.colorScheme()) {
-      this.colorScheme.set(color);
+    // A default preset implies its page scheme unless the URL explicitly
+    // supplies color. Hydration changes signals only, never saved preferences.
+    const scheme = color === 'light' || color === 'dark' ? color
+      : theme === 'default-light' ? 'light'
+      : theme === 'default-dark' ? 'dark' : null;
+    if (scheme !== null && scheme !== this.colorScheme()) {
+      this.colorScheme.set(scheme);
     }
 
     const project = params.get('project');
@@ -844,6 +851,11 @@ export class DemoShell {
   protected onThemeChange(next: string): void {
     this.theme.set(next);
     this.persistence.write('theme', next);
+    if (next === 'default-light' || next === 'default-dark') {
+      const scheme = next === 'default-light' ? 'light' : 'dark';
+      this.colorScheme.set(scheme);
+      this.persistence.write('colorScheme', scheme);
+    }
     this.writeKnobsToUrl();
   }
 
@@ -851,6 +863,11 @@ export class DemoShell {
     if (next !== 'light' && next !== 'dark') return;
     this.colorScheme.set(next);
     this.persistence.write('colorScheme', next);
+    if (this.theme() === 'default-light' || this.theme() === 'default-dark') {
+      const theme = next === 'light' ? 'default-light' : 'default-dark';
+      this.theme.set(theme);
+      this.persistence.write('theme', theme);
+    }
     this.writeKnobsToUrl();
   }
 
