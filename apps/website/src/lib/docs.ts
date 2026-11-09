@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { Metadata } from 'next';
-import { type DocsPage, getLibraryConfig } from './docs-config';
+import { type DocsPage, getLibraryConfig, specialDocsPages } from './docs-config';
 import {
   getDocumentVariant,
   getNarrativeDocuments,
@@ -169,6 +169,16 @@ function readDocument(
 /** Canonical paths select their exact source; legacy paths and missing variants return null. */
 export function getDocByPath(pathname: string): ResolvedDoc | null {
   return readDocument(resolveNarrativeDocument(pathname));
+}
+
+/** Neutral pages share one registered source between their article and Markdown export. */
+export function getSpecialDocByPath(pathname: string) {
+  const page = specialDocsPages.find((candidate) => candidate.path === pathname);
+  if (!page) return null;
+  const filePath = path.join(resolveContentDir(), page.contentPath);
+  if (!fs.existsSync(filePath)) return null;
+  const content = fs.readFileSync(filePath, 'utf8');
+  return { ...page, content, body: stripFrontmatter(content) };
 }
 
 /** Internal identity lookup, not a public legacy-route compatibility layer. */

@@ -51,6 +51,11 @@
   min-height: 100%;
 }
 
+/* Preserve native disclosure state without adding a box around the article. */
+.docs-disclosure-handoff {
+  display: contents;
+}
+
 /* The global nav remains fixed above the unified workspace. The host owns the
  * remaining viewport, including footer suppression and the single scroll root
  * inside the active workspace panel. */
@@ -847,8 +852,8 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
@@ -1547,8 +1552,8 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   padding: 0;
   border: 1px solid var(--color-border);
@@ -1825,15 +1830,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   background: var(--color-surface-dim);
 }
 
-/* The 28px copy button remains absolutely positioned inside .mdx-pre-wrap.
- * Its pseudo-element expands the hit area to 44px; absolute positioning
- * already establishes the containing block, so no relative reset is needed. */
-.mdx-pre-copy::before {
-  content: '';
-  position: absolute;
-  inset: -8px;
-}
-
 /* The tab bar scrolls sideways instead of wrapping or clipping on narrow
  * screens. */
 .mdx-tabs-bar {
@@ -1859,83 +1855,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
 }
 
 /* Unified sidebar control plane */
-.docs-control-plane {
-  display: none;
-  position: sticky;
-  top: var(--nav-h);
-  align-self: flex-start;
-  width: 328px;
-  height: calc(100vh - var(--nav-h));
-  flex: 0 0 328px;
-  border-right: 1px solid var(--color-border);
-  background: var(--color-surface);
-  overflow: hidden;
-}
-@media (min-width: 64rem) {
-  .docs-control-plane { display: flex; }
-}
-.docs-control-plane [data-control-plane-rail] {
-  width: 56px;
-  flex: 0 0 56px;
-  padding: var(--space-3) var(--space-1);
-  border-right: 1px solid var(--color-border);
-  background: var(--color-surface-dim);
-  display: flex;
-  flex-direction: column;
-}
-.docs-control-plane [data-control-plane-rail-group] {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.docs-control-plane [data-control-plane-rail-group="utilities"] { margin-top: auto; }
-.docs-control-plane [data-control-plane-rail-item] {
-  position: relative;
-  min-height: 48px;
-  padding: var(--space-2) 2px;
-  border: 0;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--color-text-muted);
-  background: transparent;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
-}
-.docs-control-plane [data-control-plane-rail-item]:hover {
-  color: var(--color-text-primary);
-  background: var(--color-surface);
-}
-.docs-control-plane [data-control-plane-rail-item][data-control-plane-active] {
-  color: var(--color-accent);
-  background: var(--color-accent-surface);
-}
-.docs-control-plane [data-control-plane-rail-label] {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 600;
-}
-.docs-control-plane [data-control-plane-rail-icon] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.docs-control-plane [data-control-plane-rail-icon] > svg {
-  width: 18px;
-  height: 18px;
-}
-.docs-control-plane [data-control-plane-pane] {
-  width: 272px;
-  height: 100%;
-  min-width: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 [data-docs-control-plane-context] {
   display: flex;
   flex-direction: column;
@@ -1989,6 +1908,84 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
 }
 [data-docs-control-plane-context] [data-control-plane-section-content] {
   padding: 2px 0 8px;
+}
+/* Shared selections work in both the navigation pane and standalone filters. */
+.docs-select {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  align-content: start;
+  font-family: var(--font-sans);
+}
+.docs-select > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.docs-select-trigger,
+.docs-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+.docs-select-trigger {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+}
+.docs-select-trigger > span,
+.docs-select-item > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.docs-select-trigger > svg,
+.docs-select-item > svg { flex: none; }
+.docs-select-trigger[aria-expanded='true'] > svg { transform: rotate(180deg); }
+.docs-select-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  max-height: min(320px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+}
+.docs-select-item { border-radius: 8px; }
+.docs-select-item[aria-checked='true'] {
+  background: var(--color-accent-surface);
+  font-weight: 600;
+}
+.docs-select-trigger:hover,
+.docs-select-item:not([aria-checked='true']):is(:hover, :focus-visible) { background: var(--color-surface-dim); }
+.docs-select-trigger:focus-visible,
+.docs-select-item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+@media (forced-colors: active) {
+  .docs-select-trigger,
+  .docs-select-menu { border-color: CanvasText; }
+  .docs-select-item[aria-checked='true'] {
+    color: HighlightText;
+    background: Highlight;
+  }
 }
 .docs-sidebar-library { position: relative; margin: 2px 8px var(--space-3); }
 .docs-sidebar-lib-trigger {
@@ -2113,7 +2110,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   color: var(--color-text-primary);
   background: var(--color-surface-dim);
 }
-.docs-control-plane [data-control-plane-tooltip],
 [data-docs-control-plane-context] [data-control-plane-tooltip] {
   position: absolute;
   z-index: 60;
@@ -2132,17 +2128,11 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   visibility: hidden;
   transition: opacity 120ms ease, visibility 120ms ease;
 }
-.docs-control-plane [data-control-plane-rail-item] [data-control-plane-tooltip] {
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-}
 [data-docs-control-plane-context] [data-control-plane-action] [data-control-plane-tooltip] {
   left: 50%;
   bottom: calc(100% + 6px);
   transform: translateX(-50%);
 }
-.docs-control-plane [data-control-plane-rail-item]:is(:hover, :focus-visible) [data-control-plane-tooltip],
 [data-docs-control-plane-context] [data-control-plane-action]:is(:hover, :focus-visible) [data-control-plane-tooltip] {
   opacity: 1;
   visibility: visible;
@@ -2154,7 +2144,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   padding: var(--space-3) 12px 24px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .docs-control-plane *,
   [data-docs-control-plane-context] *,
   .docs-page-actions *,
   .nav-mobile-overlay,
@@ -2285,21 +2274,16 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
 .docs-page-actions-heading:focus-visible { background: var(--color-surface-dim); }
 .docs-page-actions-trigger:focus-visible,
 [data-docs-control-plane-context] button:focus-visible,
-[data-docs-control-plane-context] a:focus-visible,
-.docs-control-plane [data-control-plane-rail-item]:focus-visible {
+[data-docs-control-plane-context] a:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
 @media (forced-colors: active) {
-  .docs-control-plane,
-  .docs-control-plane [data-control-plane-rail],
-  .docs-control-plane [data-control-plane-pane],
   [data-docs-control-plane-context] {
     color: CanvasText;
     background: Canvas;
     border-color: CanvasText;
   }
-  .docs-control-plane [data-control-plane-rail-item],
   [data-docs-control-plane-context] [data-control-plane-section-trigger],
   [data-docs-control-plane-context] [data-control-plane-action],
   .docs-sidebar-lib-trigger,
@@ -2311,11 +2295,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
     color: CanvasText;
     background: Canvas;
   }
-  .docs-control-plane [data-control-plane-rail-item][data-control-plane-active] {
-    border-color: Highlight;
-    color: HighlightText;
-    background: Highlight;
-  }
   .docs-sidebar-lib-menu,
   .docs-page-actions-menu {
     border: 1px solid CanvasText;
@@ -2323,7 +2302,6 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
     background: Canvas;
     box-shadow: none;
   }
-  .docs-control-plane [data-control-plane-rail-item]:is(:hover, :focus-visible),
   [data-docs-control-plane-context] [data-control-plane-action]:is(:hover, :focus-visible),
   .docs-sidebar-lib-item:is(:hover, :focus-visible),
   .docs-page-actions-item:is(:hover, :focus-visible),
@@ -2334,8 +2312,7 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   }
   .docs-page-actions-trigger:focus-visible,
   [data-docs-control-plane-context] button:focus-visible,
-  [data-docs-control-plane-context] a:focus-visible,
-  .docs-control-plane [data-control-plane-rail-item]:focus-visible {
+  [data-docs-control-plane-context] a:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
     box-shadow: none;

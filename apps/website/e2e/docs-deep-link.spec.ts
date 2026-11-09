@@ -9,18 +9,9 @@ import { test, expect, type Page } from '@playwright/test';
  * failure mode is silent — the page renders perfectly, just at the top — so
  * nothing but a positional assertion catches it.
  *
- * Two page kinds scroll through different machinery and both are guarded here:
- *
- *   - A non-workspace docs page (`/docs/choosing-an-adapter`) scrolls the
- *     document. `html`'s `scroll-padding-top` (global.css) clears the fixed
- *     nav, so the heading lands just below it.
- *   - A workspace docs page (`/docs/[library]/[section]/[slug]`) does not.
- *     `html:has([data-website-workspace-host])` is `overflow: hidden`
- *     (styles/docs.css) and the only scroller is `.docs-workspace-article`
- *     inside the shell — which the shell mounts during hydration, throwing
- *     away whatever fragment scroll the browser had already performed on the
- *     document. `WebsiteWorkspaceSurface` re-applies it; without that the
- *     heading is stranded thousands of pixels below the reading pane.
+ * Both neutral and framework docs use the same workspace scroller. Hydration
+ * transfers the server-rendered article from the document into that pane;
+ * WebsiteWorkspaceSurface must restore the original fragment after the transfer.
  *
  * Note for anyone debugging a red run by hand: on a *cold* `next dev` server
  * the first request for a route compiles it, `load` fires before the document
@@ -49,19 +40,14 @@ interface DeepLinkTarget {
  */
 async function findDeepLinkTarget(
   page: Page,
-  route: string,
-  scrollRootSelector: string | null
+  route: string
 ): Promise<DeepLinkTarget> {
   await page.goto(route);
-  if (scrollRootSelector) {
-    // Before the shell hydrates, `.docs-workspace-article` is server-rendered
-    // straight into the page and is not yet a scroller — measuring it then
-    // yields a scroll range that has nothing to do with the one under test.
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-hydrated',
-      'true'
-    );
-  }
+  // Before hydration, the server-rendered article is not yet a scroll pane.
+  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+    'data-hydrated',
+    'true'
+  );
   await expect(page.locator('.docs-toc-link').first()).toBeVisible();
   // The rail is not the article. Under `next dev` the article streams in
   // after the shell (see `MdxRenderer`), first into a hidden holding element,
@@ -79,14 +65,12 @@ async function findDeepLinkTarget(
     )
     .toBe(true);
 
-  const target = await page.evaluate((selector) => {
-    const root = selector
-      ? document.querySelector<HTMLElement>(selector)
-      : document.documentElement;
+  const target = await page.evaluate(() => {
+    const root = document.querySelector<HTMLElement>('.docs-workspace-article');
     if (!root) return null;
-    const rootTop = selector ? root.getBoundingClientRect().top : 0;
-    const rootScroll = selector ? root.scrollTop : window.scrollY;
-    const viewport = selector ? root.clientHeight : window.innerHeight;
+    const rootTop = root.getBoundingClientRect().top;
+    const rootScroll = root.scrollTop;
+    const viewport = root.clientHeight;
     const maxScroll = root.scrollHeight - viewport;
 
     let deepest: { id: string; offset: number } | null = null;
@@ -105,7 +89,7 @@ async function findDeepLinkTarget(
       }
     }
     return deepest;
-  }, scrollRootSelector);
+  });
 
   expect(target, `no reachable off-screen rail heading on ${route}`).not.toBe(
     null
@@ -126,95 +110,100 @@ async function hardLoad(page: Page, url: string): Promise<void> {
 }
 
 test.describe('docs deep links', () => {
-  test('a hard load with a heading fragment reaches the heading (non-workspace page)', async ({
-    page,
-  }) => {
-    const route = '/docs/choosing-an-adapter';
-    await page.setViewportSize({ width: 1280, height: 900 });
-    const target = await findDeepLinkTarget(page, route, null);
-
-    await hardLoad(page, `${route}#${target.id}`);
-
-    // The heading's distance below the bottom edge of the fixed nav.
-    // `scroll-padding-top: calc(var(--nav-h) + 16px)` (global.css) puts it at
-    // that 16px gutter; the band absorbs sub-pixel nav geometry without
-    // admitting a page that simply never scrolled.
-    const gapBelowNav = () =>
-      page.evaluate((id) => {
-        const heading = document.getElementById(id);
-        const nav = document.querySelector('[data-site-navigation]');
-        // A heading still in React's hidden streaming holder has no boxes and
-        // reads as top 0, which would pass the poll before anything scrolled.
-        if (!heading || !nav || heading.getClientRects().length === 0) {
-          return null;
-        }
-        return Math.round(
-          heading.getBoundingClientRect().top -
-            nav.getBoundingClientRect().bottom
-        );
-      }, target.id);
-
-    // `scroll-behavior: smooth` animates the jump, so poll rather than sample.
-    // The window is generous because a loaded `next dev` server can be slow to
-    // stream the document; it only ever buys time for the *correct* resting
-    // place, so a page that lands somewhere else still fails.
-    await expect
-      .poll(gapBelowNav, {
-        message: 'heading never came to rest below the fixed nav',
-        timeout: 15_000,
-      })
-      .toBeLessThanOrEqual(32);
-
-    // ...and it stopped below the nav rather than behind it.
-    expect(await gapBelowNav()).toBeGreaterThanOrEqual(0);
-  });
-
-  test('a hard load with a heading fragment reaches the heading (workspace page)', async ({
-    page,
-  }) => {
-    const route = '/docs/angular/langgraph/guides/streaming';
-    await page.setViewportSize({ width: 1280, height: 900 });
-    const target = await findDeepLinkTarget(
+  for (const route of [
+    '/docs/choosing-an-adapter',
+    '/docs/angular/langgraph/guides/streaming',
+  ]) {
+    test(`a hard load with a heading fragment reaches the workspace heading (${route})`, async ({
       page,
-      route,
-      '.docs-workspace-article'
-    );
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      const target = await findDeepLinkTarget(page, route);
 
-    await hardLoad(page, `${route}#${target.id}`);
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-hydrated',
-      'true'
-    );
+      await hardLoad(page, `${route}#${target.id}`);
+      await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+        'data-hydrated',
+        'true'
+      );
 
-    // The reading pane is the scroller here, so the heading comes to rest at
-    // its top edge — exactly where clicking the same rail link puts it.
+      // The reading pane is the scroller here, so the heading comes to rest at
+      // its top edge — exactly where clicking the same rail link puts it.
+      await expect
+        .poll(
+          () =>
+            page.evaluate((id) => {
+              const heading = document.getElementById(id);
+              const article = document.querySelector('.docs-workspace-article');
+              if (!heading || !article || heading.getClientRects().length === 0)
+                return Number.POSITIVE_INFINITY;
+              // Absolute distance: overshooting the heading (landing it above
+              // the pane, off screen) is as broken as never reaching it.
+              return Math.abs(
+                Math.round(
+                  heading.getBoundingClientRect().top -
+                    article.getBoundingClientRect().top
+                )
+              );
+            }, target.id),
+          {
+            message:
+              'heading never came to rest at the top of the reading pane',
+            timeout: 15_000,
+          }
+        )
+        .toBeLessThanOrEqual(8);
+
+      // ...and the pane genuinely scrolled to get there.
+      const articleScrollTop = await page
+        .locator('.docs-workspace-article')
+        .evaluate((element) => element.scrollTop);
+      expect(articleScrollTop).toBeGreaterThan(0);
+    });
+  }
+
+  test('soft navigation to adapter guidance retains the shell and scrolls headings inside it', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const route = '/docs/choosing-an-adapter';
+    const target = await findDeepLinkTarget(page, route);
+    await page.goto('/docs');
+    const shell = page.locator('[data-workspace-shell]');
+    await expect(shell).toHaveAttribute('data-hydrated', 'true');
+    await shell.evaluate((element) =>
+      element.setAttribute('data-lifetime-check', 'original')
+    );
+    await page
+      .getByRole('link', { name: 'Choosing an adapter', exact: true })
+      .click();
+    await expect(page).toHaveURL(route);
+    await expect(shell).toHaveAttribute('data-lifetime-check', 'original');
+    await expect(
+      page.locator('.docs-workspace-article .docs-toc')
+    ).toBeVisible();
+    await expect(page.locator(`article [id="${target.id}"]`)).toBeVisible();
+    await page.locator(`.docs-toc-link[href="#${target.id}"]`).click();
     await expect
-      .poll(
-        () =>
-          page.evaluate((id) => {
-            const heading = document.getElementById(id);
-            const article = document.querySelector('.docs-workspace-article');
-            if (!heading || !article) return null;
-            // Absolute distance: overshooting the heading (landing it above
-            // the pane, off screen) is as broken as never reaching it.
-            return Math.abs(
-              Math.round(
-                heading.getBoundingClientRect().top -
-                  article.getBoundingClientRect().top
-              )
-            );
-          }, target.id),
-        {
-          message: 'heading never came to rest at the top of the reading pane',
-          timeout: 15_000,
-        }
+      .poll(() =>
+        page.evaluate((id) => {
+          const heading = document.getElementById(id);
+          const root = document.querySelector('.docs-workspace-article');
+          if (!heading || !root || !heading.getClientRects().length)
+            return Number.POSITIVE_INFINITY;
+          return Math.abs(
+            heading.getBoundingClientRect().top -
+              root.getBoundingClientRect().top
+          );
+        }, target.id)
       )
       .toBeLessThanOrEqual(8);
-
-    // ...and the pane genuinely scrolled to get there.
-    const articleScrollTop = await page
-      .locator('.docs-workspace-article')
-      .evaluate((element) => element.scrollTop);
-    expect(articleScrollTop).toBeGreaterThan(0);
+    await expect(
+      page.locator(`.docs-toc-link[href="#${target.id}"]`)
+    ).toHaveAttribute('data-active', 'true');
+    expect(
+      await page
+        .locator('.docs-workspace-article')
+        .evaluate((element) => element.scrollTop)
+    ).toBeGreaterThan(0);
   });
 });

@@ -93,9 +93,37 @@ test.describe('DocsTOC rail', () => {
   test('the library-neutral adapter page gets the same rail', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/docs/choosing-an-adapter');
-    await expect(page.locator('.docs-toc')).toBeVisible();
+    await expectWorkspaceReady(page);
+    await expect(page.locator('.docs-workspace-article .docs-toc')).toBeVisible();
     expect(await page.locator('.docs-toc-link').count()).toBeGreaterThan(3);
   });
+});
+
+test.describe('neutral docs workspace navigation', () => {
+  for (const route of ['/docs', '/docs/choosing-an-adapter']) {
+    test(`offers the shared mobile drawer and search handoff on ${route}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(route);
+      await expectWorkspaceReady(page);
+      await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-navigation-layout', 'toolbar');
+      await expect(page.locator('[data-docs-control-plane]')).toHaveCount(0);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      const trigger = page.getByRole('button', { name: 'Open navigation', exact: true });
+      await expect(trigger).toHaveCount(1);
+      await trigger.click();
+      const drawer = page.getByRole('dialog', { name: 'Documentation control plane', exact: true });
+      await expect(drawer).toBeVisible();
+      await expect(drawer.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+      await expect(drawer.getByRole('button', { name: 'Choose a library' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(drawer).not.toBeVisible();
+      await expect(trigger).toBeFocused();
+      await trigger.click();
+      await drawer.getByRole('button', { name: 'Search docs', exact: true }).click();
+      await expect(drawer).not.toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Search documentation' })).toBeVisible();
+    });
+  }
 });
 
 test.describe('docs shell layout', () => {

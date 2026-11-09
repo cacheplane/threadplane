@@ -4,12 +4,15 @@ import {
   DOCUMENT,
   DestroyRef,
   ElementRef,
+  afterNextRender,
+  afterRenderEffect,
   computed,
   effect,
   signal,
   inject,
   untracked,
 } from '@angular/core';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -129,6 +132,7 @@ export function isConflict(err: unknown): boolean {
   standalone: true,
   imports: [
     RouterOutlet,
+    CdkTrapFocus,
     ChatSidenavComponent,
     ChatSidenavScrimComponent,
     ChatHistorySearchPaletteComponent,
@@ -174,6 +178,7 @@ export class DemoShell {
   private readonly router = inject(Router);
   private readonly persistence = inject(PalettePersistence);
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   protected readonly threadsSvc = inject(LangGraphThreadsAdapter);
   protected readonly projectsSvc = inject(ProjectsService);
   private readonly telemetry = inject(ThreadplaneTelemetryService);
@@ -199,7 +204,55 @@ export class DemoShell {
   private lastSyncedItinerary = '';
 
   constructor() {
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const host = this.host;
+    const destroyRef = inject(DestroyRef);
+    // The persistent drawer is modal only on narrow screens (or in App mode).
+    // Keep its focus lifecycle local to the demo; search temporarily takes over.
+    let previousDrawer = false;
+    let previousPalette = false;
+    let previousMode = this.sidenavMode();
+    afterRenderEffect(() => {
+      const mode = this.sidenavMode();
+      const drawer = mode === 'drawer' && this.drawerOpen();
+      const palette = this.paletteOpen();
+      const nav = host.querySelector<HTMLElement>('chat-sidenav');
+      const focus = (selector: string) => host.querySelector<HTMLElement>(selector)?.focus();
+      if (!palette) {
+        if (previousPalette) {
+          const opener = this.searchOpener;
+          if (opener?.isConnected && !opener.closest('[inert]')) opener.focus();
+          else focus(mode === 'drawer' && !drawer ? '.demo-shell__hamburger' : 'chat-sidenav [aria-label="Search conversations"]');
+          this.searchOpener = null;
+        } else if (drawer && !previousDrawer) {
+          focus('chat-sidenav [aria-label="Close conversations"]');
+        } else if (previousDrawer && !drawer) {
+          focus(mode === 'drawer' ? '.demo-shell__hamburger' : 'chat-sidenav [aria-label="New chat"]');
+        } else if (mode === 'drawer' && previousMode !== 'drawer' && nav?.contains(this.document.activeElement)) {
+          focus('.demo-shell__hamburger');
+        }
+      }
+      previousDrawer = drawer;
+      previousPalette = palette;
+      previousMode = mode;
+    });
+    effect(() => {
+      if (this.sidenavMode() !== 'drawer') this.drawerOpen.set(false);
+    });
+    afterNextRender(() => {
+      const shell = host.querySelector<HTMLElement>('.demo-shell');
+      const toolbar = host.querySelector<HTMLElement>('.demo-shell__toolbar');
+      if (!shell || !toolbar) return;
+      // The toolbar wraps with the viewport and selected labels. Fixed
+      // navigation must clear its actual border box, including the divider.
+      const measure = () => shell.style.setProperty(
+        '--demo-toolbar-height', `${toolbar.getBoundingClientRect().height}px`,
+      );
+      measure();
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(measure);
+      observer.observe(toolbar, { box: 'border-box' });
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
     const viewport = host.ownerDocument.defaultView?.visualViewport;
     if (viewport) {
       const resize = () => {
@@ -239,7 +292,6 @@ export class DemoShell {
         const next = scheme === 'light' ? 'default-light' : 'default-dark';
         if (currentTheme !== next) {
           this.theme.set(next);
-          this.persistence.write('theme', next);
         }
       }
     });
@@ -457,8 +509,18 @@ export class DemoShell {
    *  load — drawer mode is a transient UI state, not a persisted preference. */
   protected readonly drawerOpen = signal<boolean>(false);
 
+  /** Mobile-only disclosure; desktop settings stay visible through CSS. */
+  protected readonly settingsOpen = signal(false);
+
   /** Whether the Cmd+K search palette is open. */
   protected readonly paletteOpen = signal<boolean>(false);
+  private searchOpener: HTMLElement | null = null;
+  protected readonly drawerModalOpen = computed(() =>
+    this.sidenavMode() === 'drawer' && this.drawerOpen() && !this.paletteOpen(),
+  );
+  protected readonly conversationModalOpen = computed(() =>
+    this.drawerModalOpen() || this.paletteOpen(),
+  );
 
   /** Current palette query. Two-way bound. */
   protected readonly searchQuery = signal<string>('');
@@ -472,6 +534,9 @@ export class DemoShell {
   private readonly viewportWidth = signal<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1440,
   );
+
+  /** Narrow composers use the same model control in the demo settings. */
+  readonly showInlineModelPicker = computed(() => this.viewportWidth() >= 768);
 
   /**
    * User's chosen desktop sidenav mode. Persisted across reloads.
@@ -750,8 +815,13 @@ export class DemoShell {
     if (theme !== null && theme !== this.theme()) this.theme.set(theme);
 
     const color = params.get('color');
-    if ((color === 'light' || color === 'dark') && color !== this.colorScheme()) {
-      this.colorScheme.set(color);
+    // A default preset implies its page scheme unless the URL explicitly
+    // supplies color. Hydration changes signals only, never saved preferences.
+    const scheme = color === 'light' || color === 'dark' ? color
+      : theme === 'default-light' ? 'light'
+      : theme === 'default-dark' ? 'dark' : null;
+    if (scheme !== null && scheme !== this.colorScheme()) {
+      this.colorScheme.set(scheme);
     }
 
     const project = params.get('project');
@@ -781,6 +851,11 @@ export class DemoShell {
   protected onThemeChange(next: string): void {
     this.theme.set(next);
     this.persistence.write('theme', next);
+    if (next === 'default-light' || next === 'default-dark') {
+      const scheme = next === 'default-light' ? 'light' : 'dark';
+      this.colorScheme.set(scheme);
+      this.persistence.write('colorScheme', scheme);
+    }
     this.writeKnobsToUrl();
   }
 
@@ -788,6 +863,11 @@ export class DemoShell {
     if (next !== 'light' && next !== 'dark') return;
     this.colorScheme.set(next);
     this.persistence.write('colorScheme', next);
+    if (this.theme() === 'default-light' || this.theme() === 'default-dark') {
+      const theme = next === 'light' ? 'default-light' : 'default-dark';
+      this.theme.set(theme);
+      this.persistence.write('theme', theme);
+    }
     this.writeKnobsToUrl();
   }
 
@@ -826,6 +906,16 @@ export class DemoShell {
     this.onThreadSelected(threadId);
     this.paletteOpen.set(false);
     this.searchQuery.set('');
+  }
+
+  protected onSearchOpened(): void {
+    if (this.paletteOpen()) return;
+    // Safari does not focus clicked buttons. In the modal drawer, always
+    // return to Search rather than whichever navigation element kept focus.
+    this.searchOpener = this.drawerModalOpen()
+      ? this.host.querySelector<HTMLElement>('chat-sidenav [aria-label="Search conversations"]')
+      : this.document.activeElement as HTMLElement | null;
+    this.paletteOpen.set(true);
   }
 
   /** Create a new thread via the backend and switch to it. */

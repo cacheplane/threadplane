@@ -17,6 +17,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
       [views]="catalog"
       [modelOptions]="shell.modelOptions()"
       [selectedModel]="shell.model()"
+      [showModelPicker]="shell.showInlineModelPicker()"
       (selectedModelChange)="shell.onModelChange($event)"
     >
       <ng-template chatInterruptTemplate let-agent>

@@ -17,13 +17,39 @@ interface ModalProps {
   frameClassName?: string;
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, summary, [tabindex]:not([tabindex="-1"])';
+
+function isTabStop(element: HTMLElement) {
+  if (element.tabIndex < 0 || element.closest('[hidden], [inert]'))
+    return false;
+  for (
+    let parent: HTMLElement | null = element;
+    parent;
+    parent = parent.parentElement
+  ) {
+    const style = getComputedStyle(parent);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    if (parent instanceof HTMLDetailsElement && !parent.open) {
+      const summary = parent.querySelector(':scope > summary');
+      if (!summary?.contains(element)) return false;
+    }
+  }
+  return true;
+}
 
 /**
  * Minimal modal: role=dialog, focus trap, Esc, backdrop click, body scroll
  * lock, focus restore. Extracted from DemoModal (2026-09-02).
  */
-export function Modal({ open, onClose, label, labelledBy, children, frameClassName }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  label,
+  labelledBy,
+  children,
+  frameClassName,
+}: ModalProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -35,14 +61,24 @@ export function Modal({ open, onClose, label, labelledBy, children, frameClassNa
     closeBtnRef.current?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key !== 'Tab') return;
-      const f = frameRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+      const f = Array.from(
+        frameRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []
+      ).filter(isTabStop);
       if (!f || f.length === 0) return;
       const first = f[0];
       const last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -58,12 +94,22 @@ export function Modal({ open, onClose, label, labelledBy, children, frameClassNa
     <div
       role="dialog"
       aria-modal="true"
-      {...(labelledBy ? { 'aria-labelledby': labelledBy } : { 'aria-label': label })}
+      {...(labelledBy
+        ? { 'aria-labelledby': labelledBy }
+        : { 'aria-label': label })}
       data-ui="modal"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div ref={frameRef} data-ui="modal-frame" className={frameClassName}>
-        <button ref={closeBtnRef} type="button" onClick={onClose} aria-label="Close" data-ui="modal-close">
+        <button
+          ref={closeBtnRef}
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          data-ui="modal-close"
+        >
           &#215;
         </button>
         {children}

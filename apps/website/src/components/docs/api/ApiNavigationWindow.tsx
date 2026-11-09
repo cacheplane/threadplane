@@ -217,7 +217,9 @@ export function ApiNavigationWindow({
               ? `${libraries.length} libraries`
               : panel.kind === 'imports'
               ? `${panel.library.entries.length} imports`
-              : `${exports.length} exports`}
+              : `${exports.length} ${
+                  exports.length === 1 ? 'export' : 'exports'
+                }`}
           </p>
         </header>
         {panel.kind === 'exports' && (

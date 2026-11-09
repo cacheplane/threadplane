@@ -1,20 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import {
-  BookOpen,
-  Braces,
-  Code2,
-  ExternalLink,
-  Play,
-  Search,
-} from 'lucide-react';
+import { ExternalLink, Search } from 'lucide-react';
 import {
   ControlPlaneActionBar,
   ControlPlaneIconButton,
-  ControlPlanePane,
-  ControlPlaneRail,
-  ControlPlaneRailItem,
   ControlPlaneSection,
   useControlPlanePreferences,
 } from '@threadplane/ui-react';
@@ -38,15 +28,6 @@ export interface DocsControlPlaneProps {
   activeSlug: string;
   /** Generated reference navigation, used by both the desktop pane and mobile sheet. */
   apiContext?: ApiNavigationProps;
-  /**
-   * Where the Run rail item goes on a page that has no example of its own.
-   *
-   * Only the docs index supplies this. Run normally means "run the example on
-   * this page", and a docs-only page correctly has none — but the index is not
-   * a capability page at all, so the canonical example is the only meaningful
-   * target. Absent, Run stays disabled.
-   */
-  runHref?: string;
 }
 
 const dispatchSearch = () =>
@@ -153,50 +134,6 @@ export function DocsContextContent({
           </ControlPlaneActionBar>
         </ControlPlaneSection>
       ) : null}
-    </div>
-  );
-}
-
-export function DocsControlPlane(props: DocsControlPlaneProps) {
-  const pathname = usePathname();
-  const currentPath = props.apiContext?.activeHref ?? props.currentPath ?? pathname;
-  const disabledReason = (mode: 'Run' | 'Code' | 'API') =>
-    `${mode} is unavailable because this page has no workspace capability.`;
-
-  return (
-    <div className="docs-control-plane" data-docs-control-plane data-docs-reading={isDocsReadingRoute(pathname) || undefined}>
-      <ControlPlaneRail
-        label="Docs modes"
-        primary={
-          <>
-            <ControlPlaneRailItem
-              label="Docs"
-              icon={<BookOpen size={18} aria-hidden="true" />}
-              href={currentPath}
-              active
-            />
-            <ControlPlaneRailItem
-              label="Run"
-              icon={<Play size={18} aria-hidden="true" />}
-              href={props.runHref ?? '/docs/examples'}
-            />
-            <ControlPlaneRailItem
-              label="Code"
-              icon={<Code2 size={18} aria-hidden="true" />}
-              disabled
-              disabledReason={disabledReason('Code')}
-            />
-            <ControlPlaneRailItem
-              label="API"
-              icon={<Braces size={18} aria-hidden="true" />}
-              href="/docs/api"
-            />
-          </>
-        }
-      />
-      <ControlPlanePane label="Docs context">
-        <DocsContextContent {...props} />
-      </ControlPlanePane>
     </div>
   );
 }

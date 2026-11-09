@@ -41,12 +41,13 @@ const CONTRACTS: StyleContract[] = [
     },
   },
   {
-    file: 'docs.css',
-    selector: '.docs-control-plane',
-    why: 'In a flex row an un-aligned sticky child stretches to the article\'s full height, so its own height cap never applies and internal scrolling silently stops working.',
+    file: '../../../../libs/workspace-react/src/styles/workspace.css',
+    selector: '.workspace-control-plane',
+    why: 'The live navigation fills the bounded workspace grid instead of following the article height. Its full-height grid keeps the rail and independently scrolling pane inside the viewport.',
     requires: {
-      position: /position:\s*sticky/,
-      'align-self': /align-self:\s*flex-start/,
+      display: /display:\s*grid/,
+      height: /height:\s*100%/,
+      'min-width': /min-width:\s*0/,
     },
   },
   {
@@ -84,8 +85,8 @@ const CONTRACTS: StyleContract[] = [
     },
   },
   {
-    file: 'docs.css',
-    selector: '.docs-control-plane [data-control-plane-pane]',
+    file: '../../../../libs/workspace-react/src/styles/workspace.css',
+    selector: '.workspace-control-plane [data-control-plane-pane]',
     why: 'The pane holds the whole docs nav in a fixed-height column. Without its own scrolling the lower sections are unreachable on short viewports.',
     requires: {
       'overflow-y': /overflow-y:\s*auto/,
@@ -357,6 +358,12 @@ function mediaBlock(css: string, query: string): string {
 }
 
 describe('style contracts', () => {
+  it('does not restore the retired docs rail beside the workspace navigation', () => {
+    for (const file of ['docs.css', 'docs-reading.css', 'pages.css']) {
+      expect(loadStylesheet(file), file).not.toMatch(/\.docs-control-plane(?![\w-])/);
+    }
+  });
+
   for (const contract of CONTRACTS) {
     describe(`${contract.file} ${contract.selector}`, () => {
       const declarations = declarationsFor(loadStylesheet(contract.file), contract.selector);
@@ -448,25 +455,13 @@ describe('style contracts', () => {
     const phone = mediaBlock(css, '(max-width: 767px)');
 
     /**
-     * The stage box, not the image, is what `object-fit: cover` crops against.
-     * The phone poster is a 390x906 capture, so the stage has to hold 65:151
-     * below the breakpoint; at the desktop 1200/720 it would letterbox the
-     * portrait frame down to a two-line sliver. This replaces a `4 / 5` +
-     * `object-position: 40% top` pair that existed only to crop the DESKTOP
-     * capture into something readable, which sliced the right edge off every
-     * line of prose.
-     *
-     * The ratio has moved twice as the recorded walkthrough's streamed backup
-     * table changed height — 3:5 (390x650), then 195:263 (390x526), now 65:151
-     * (390x906). It is NOT a free parameter: below 768px this ratio also sizes
-     * the LIVE autoplaying iframe, and the height is measured from the replay's
-     * own block boundaries so the poster's top edge lands in a gap between
-     * messages. Change it only together with the recorder's viewport and
-     * POSTER_MOBILE_W/H in HeroDemo.tsx; see
-     * examples/chat/angular/e2e/record-hero-poster-mobile.record.ts.
+     * Match the 390x988 capture (shipped 585x1482) so cover crops nothing.
+     * The height places the transcript's top edge in the gap above the backup
+     * table with the current replay chrome. Keep the stage, recorder viewport,
+     * and HeroDemo.tsx dimensions synchronized.
      */
     it('holds the phone poster ratio below the breakpoint', () => {
-      expect(declarationsFor(phone, '.hero-demo-stage')).toMatch(/aspect-ratio:\s*65\s*\/\s*151/);
+      expect(declarationsFor(phone, '.hero-demo-stage')).toMatch(/aspect-ratio:\s*195\s*\/\s*494/);
     });
 
     it('keeps the desktop stage at the desktop capture ratio', () => {

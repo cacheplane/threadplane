@@ -59,29 +59,94 @@ const index: ApiIndex = {
 };
 afterEach(cleanup);
 
+function choose(label: string, option: string) {
+  fireEvent.click(screen.getByRole('button', { name: label, exact: true }));
+  fireEvent.click(
+    screen.getByRole('menuitemradio', { name: option, exact: true })
+  );
+}
+
 describe('API reference UI', () => {
-  it('clears an unavailable kind when switching framework scope', () => {
+  it('starts with compact entrypoint cards, including empty unpublished packages', () => {
+    const { container } = render(
+      <ApiIndexView index={{ ...index, symbols: [] }} />
+    );
+    expect(screen.getByRole('status').textContent).toContain('2 entrypoints');
+    expect(
+      container.querySelectorAll('.api-reference-entrypoint-card')
+    ).toHaveLength(2);
+    expect(
+      screen
+        .getByRole('link', { name: '@threadplane/react/chat' })
+        .getAttribute('href')
+    ).toBe('/docs/api/react/chat');
+    expect(screen.getByText('Unpublished')).toBeTruthy();
+    expect(screen.queryByText('v0.0.0')).toBeNull();
+    expect(screen.getByText('v0.3.3')).toBeTruthy();
+    expect(screen.getAllByText('0 exports')).toHaveLength(2);
+    expect(screen.getAllByText(/Conversation components/)).toHaveLength(2);
+  });
+
+  it('filters entrypoint cards by scope, then searches exports and clears back to that scope', () => {
     render(<ApiIndexView index={index} />);
-    fireEvent.change(screen.getByLabelText('Kind'), {
-      target: { value: 'Class' },
-    });
-    fireEvent.change(screen.getByLabelText('Framework'), {
-      target: { value: 'react' },
+    choose('Framework', 'React');
+    expect(
+      screen.queryByRole('link', { name: '@threadplane/chat' })
+    ).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Find an API'), {
+      target: { value: 'Chat' },
     });
     expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
-    expect((screen.getByLabelText('Kind') as HTMLSelectElement).value).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByRole('status').textContent).toContain('1 entrypoint');
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
+  });
+
+  it('keeps package routes as symbol lists and preserves the package when clearing', () => {
+    render(<ApiIndexView index={index} entrypointId="chat" />);
+    expect(screen.getByRole('link', { name: 'ChatComponent' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Find an API'), {
+      target: { value: 'missing' },
+    });
+    expect(screen.getByText('No APIs match these filters.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByRole('link', { name: 'ChatComponent' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
+  });
+
+  it('shows exports for an import or kind selection without a name query', () => {
+    render(<ApiIndexView index={index} />);
+    choose('Import path', '@threadplane/react/chat');
+    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'ChatComponent' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    choose('Kind', 'Class');
+    expect(screen.getByRole('link', { name: 'ChatComponent' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
+  });
+  it('clears an unavailable kind when switching framework scope', () => {
+    render(<ApiIndexView index={index} />);
+    choose('Kind', 'Class');
+    choose('Framework', 'React');
+    expect(
+      screen.getByRole('link', { name: '@threadplane/react/chat' })
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Kind' }).textContent).toContain(
+      'All kinds'
+    );
   });
   it('clears an incompatible import when the framework changes', () => {
     render(<ApiIndexView index={index} />);
-    fireEvent.change(screen.getByLabelText('Import path'), {
-      target: { value: 'chat' },
-    });
-    fireEvent.change(screen.getByLabelText('Framework'), {
-      target: { value: 'react' },
-    });
-    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
+    choose('Import path', '@threadplane/chat');
+    choose('Framework', 'React');
     expect(
-      screen.queryByRole('option', { name: '@threadplane/chat' })
+      screen.getByRole('link', { name: '@threadplane/react/chat' })
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Import path' }));
+    expect(
+      screen.queryByRole('menuitemradio', { name: '@threadplane/chat' })
     ).toBeNull();
   });
 
@@ -95,8 +160,12 @@ describe('API reference UI', () => {
       target: { value: 'missing' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'ChatComponent' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: '@threadplane/react/chat' })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: '@threadplane/chat' })
+    ).toBeTruthy();
   });
 
   it('drills into one navigation window at a time and restores the originating button on Back', () => {
@@ -182,6 +251,7 @@ describe('API reference UI', () => {
     expect(document.activeElement).toBe(
       screen.getByRole('searchbox', { name: 'Filter exports' })
     );
+    expect(screen.getByText('1 export')).toBeTruthy();
   });
   it('supports list keys without consuming text-editing keys and leaves branch navigation in the drawer', () => {
     const onNavigate = vi.fn();
@@ -273,8 +343,9 @@ describe('API reference UI', () => {
 
   it('filters by framework and name while keeping deprecated development symbols visible', () => {
     render(<ApiIndexView index={index} />);
-    fireEvent.change(screen.getByLabelText('Framework'), {
-      target: { value: 'react' },
+    choose('Framework', 'React');
+    fireEvent.change(screen.getByLabelText('Find an API'), {
+      target: { value: 'Chat' },
     });
     expect(screen.queryByRole('link', { name: 'ChatComponent' })).toBeNull();
     expect(

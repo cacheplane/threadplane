@@ -6,6 +6,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { WebsiteWorkspaceProps } from './WebsiteWorkspaceSurface';
@@ -80,6 +81,82 @@ afterEach(() => {
 });
 
 describe('initial docs article handoff', () => {
+  it('restores a disclosure when the remounted article content arrives later', async () => {
+    const { Harness } = layout();
+    let mounts = 0;
+    let reveal: (() => void) | undefined;
+    function Article() {
+      const [ready, setReady] = useState(() => ++mounts === 1);
+      reveal = () => setReady(true);
+      return ready ? (
+        <details
+          ref={(node) => {
+            if (node && mounts === 1) node.open = true;
+          }}
+        >
+          <summary>Delayed install</summary>
+          <p>npm install example</p>
+        </details>
+      ) : null;
+    }
+    render(
+      <Harness>
+        <WebsiteWorkspace {...props} docsSlot={<Article />} />
+      </Harness>
+    );
+    expect(screen.queryByText('Delayed install')).toBeNull();
+    act(() => reveal?.());
+    await waitFor(() =>
+      expect(screen.getByText('Delayed install').closest('details')?.open).toBe(
+        true
+      )
+    );
+  });
+
+  it.each([false, true])(
+    'preserves the visitor disclosure state from default open=%s only once',
+    (defaultOpen) => {
+      const { Harness } = layout();
+      let original: HTMLDetailsElement | null = null;
+      const docsSlot = (
+        <article>
+          <details
+            open={defaultOpen}
+            ref={(node) => {
+              if (node && !original) {
+                original = node;
+                node.open = !defaultOpen;
+              }
+            }}
+          >
+            <summary>Install command</summary>
+            <p>npm install example</p>
+          </details>
+        </article>
+      );
+      const view = render(
+        <Harness>
+          <WebsiteWorkspace {...props} docsSlot={docsSlot} />
+        </Harness>
+      );
+      const disclosure = screen.getByText('Install command').closest('details');
+      expect(disclosure).not.toBe(original);
+      expect(disclosure?.open).toBe(!defaultOpen);
+      if (!disclosure) throw new Error('Missing installed disclosure');
+      act(() => {
+        disclosure.open = defaultOpen;
+      });
+      view.rerender(
+        <Harness>
+          <WebsiteWorkspace {...props} docsSlot={docsSlot} contextTrail={[]} />
+        </Harness>
+      );
+      expect(screen.getByText('Install command').closest('details')?.open).toBe(
+        defaultOpen
+      );
+    }
+  );
+
   it('retains a focused fallback anchor and native activation until focus leaves', () => {
     vi.useFakeTimers();
     const { Harness, register } = layout();

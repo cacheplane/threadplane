@@ -43,10 +43,15 @@ import { AppModePromoComponent } from './app-mode-promo.component';
   styles: [`
     :host { display: block; flex: 1; min-height: 0; }
     .popup-mode__background {
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 24px 16px 96px;
     }
+    .popup-mode__background > app-mode-promo { flex: none; margin-block: auto; }
   `],
 })
 export class PopupMode {

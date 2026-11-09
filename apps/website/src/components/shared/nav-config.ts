@@ -86,7 +86,7 @@ const LIBRARIES: NavPanel = {
   footer: {
     lead: 'Not sure which one?',
     label: 'Choosing an adapter',
-    description: 'The four libraries side by side',
+    description: 'Choose how your agents connect',
     href: '/docs/choosing-an-adapter',
     icon: Compass,
     ctaId: 'libraries_choosing_an_adapter',
@@ -115,7 +115,7 @@ const DOCS: NavPanel = {
         },
         {
           label: 'Choosing an adapter',
-          description: 'The four libraries side by side',
+          description: 'Choose how your agents connect',
           href: '/docs/choosing-an-adapter',
           icon: Compass,
           ctaId: 'docs_choosing_an_adapter',
@@ -141,7 +141,7 @@ const DOCS: NavPanel = {
         },
         {
           label: 'API reference',
-          description: 'injectAgent, provideAgent, transports',
+          description: 'Angular, React, and shared TypeScript APIs',
           href: '/docs/api',
           icon: Braces,
           ctaId: 'docs_api_reference',
