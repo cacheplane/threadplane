@@ -55,7 +55,7 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   ) => ReactNode;
   readonly label?: string;
   readonly className?: string;
-  /** Opt in to one activity group per assistant message. Custom renderers keep full ownership. */
+  /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
   /** App-authored human labels; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string) => string | undefined;
@@ -162,7 +162,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderMessage,
   label = 'Conversation',
   className,
-  groupRelatedTools,
+  groupRelatedTools = true,
   toolLabel,
   toolOutcome,
   children,

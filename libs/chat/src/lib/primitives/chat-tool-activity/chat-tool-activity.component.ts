@@ -11,6 +11,8 @@ import {
   outcomeSources,
   type ToolActivityOutcome,
 } from './tool-outcome';
+import { activitySummary } from './activity-summary';
+import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
 export type { ToolActivityOutcome, ToolActivitySource } from './tool-outcome';
 
 /** Explicit readonly presentation state, separate from execution/session ownership. */
@@ -81,18 +83,17 @@ summary { cursor:pointer; color:var(--tplane-chat-text-muted); padding:6px 0; li
 summary:focus-visible { outline:2px solid var(--tplane-chat-primary); outline-offset:3px; border-radius:4px; }
 summary > span + span { margin-inline-start:12px; }
 .tp-tool-activity__details { margin-block:4px 12px; font-size:12px; }
-.tp-tool-activity-group__details { border:1px solid var(--tplane-chat-separator); border-radius:var(--tplane-chat-radius-card,8px); padding:0; margin-block:0 12px; }
-.tp-tool-activity-group__details > summary { display:flex; align-items:center; gap:8px; padding:8px 12px; color:var(--tplane-chat-text); list-style:none; }
+.tp-tool-activity-group__details { padding:0; margin-block:0 12px; min-inline-size:0; }
+.tp-tool-activity-group__details > summary { display:flex; flex-wrap:nowrap; align-items:center; gap:8px; min-height:32px; min-inline-size:0; padding:4px 0; color:var(--tplane-chat-text); list-style:none; }
 .tp-tool-activity-group__details > summary::-webkit-details-marker { display:none; }
 .tp-tool-activity-group__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
 .tp-tool-activity-group__details[open] > summary::before { transform:rotate(45deg); }
-.tp-tool-activity-group__details > summary > .tp-tool-activity__phase { margin-inline-start:auto; }
+.tp-tool-activity-group__details > summary > span + span { margin-inline-start:0; }
 .tp-tool-activity-group__items { padding:12px; }
 .tp-tool-activity-group__items chat-tool-activity + chat-tool-activity { margin-block-start:12px; }
 dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; } dd { margin:0; overflow-wrap:anywhere; }
 pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; font:12px/1.6 var(--tplane-chat-font-mono); margin:4px 0 12px; padding:8px; border-radius:6px; background:var(--tplane-chat-surface-alt); }
 .tp-tool-activity__error { color:var(--tplane-chat-error,#b42318); font-size:13px; margin:8px 0; }
-.tp-tool-activity__progress { color:var(--tplane-chat-text-muted); font-size:12px; margin:4px 0 8px; }
 .tp-tool-outcomes { margin-block:8px 16px; overflow-wrap:anywhere; }
 .tp-tool-outcomes p { margin:4px 0; }
 .tp-tool-outcomes ul { display:flex; flex-wrap:wrap; gap:8px 16px; padding:0; list-style:none; margin:8px 0; }
@@ -216,22 +217,24 @@ export class ChatToolActivityComponent {
   standalone: true,
   imports: [ChatToolActivityComponent, ChatToolOutcomesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [CHAT_HOST_TOKENS, styles],
+  styles: [CHAT_HOST_TOKENS, styles, ACTIVITY_SUMMARY_STYLES],
   template: ` <section
     class="tp-tool-activity-group"
     [attr.data-phase]="phase()"
+    [attr.data-active]="summary().active"
   >
     @if (activities().length) {
     <details class="tp-tool-activity-group__details">
       <summary>
-        <span>{{
-          label() ??
-            activities().length +
-              (activities().length === 1
-                ? ' tool activity'
-                : ' tool activities')
+        <span
+          class="tp-tool-activity__label"
+          [attr.data-active]="summary().active"
+          >{{ summary().label }}</span
+        >
+        @if (summary().cue) {<span class="tp-tool-activity__cue">{{
+          summary().cue
         }}</span
-        ><span class="tp-tool-activity__phase">{{ phaseLabel() }}</span>
+        >}
       </summary>
       <div class="tp-tool-activity-group__items">
         @for (activity of activities(); track activity.id) {
@@ -242,9 +245,9 @@ export class ChatToolActivityComponent {
       role="status"
       aria-live="polite"
       aria-atomic="true"
-      class="tp-tool-activity__progress"
+      class="tp-tool-activity__status"
     >
-      {{ progress() }}
+      {{ summary().status }}
     </p>
     <chat-tool-outcomes [activities]="activities()" />
     } @if (failed()) {
@@ -262,23 +265,12 @@ export class ChatToolActivityGroupComponent {
   readonly activities = input.required<readonly ToolActivityInfo[]>();
   readonly label = input<string>();
   readonly progress = computed(() => activityProgress(this.activities()));
+  readonly summary = computed(() =>
+    activitySummary(this.activities(), this.label())
+  );
   readonly failed = computed(() =>
     this.activities().some((item) => item.phase === 'error')
   );
-  readonly phase = computed<ToolActivityPhase>(() =>
-    this.failed()
-      ? 'error'
-      : this.activities().some((item) => item.phase === 'running')
-      ? 'running'
-      : this.activities().some((item) => item.phase === 'waiting')
-      ? 'waiting'
-      : this.activities().some((item) => item.phase === 'pending')
-      ? 'pending'
-      : this.activities().some((item) => item.phase === 'stopped')
-      ? 'stopped'
-      : this.activities().every((item) => item.phase === 'complete')
-      ? 'complete'
-      : 'unknown'
-  );
+  readonly phase = computed(() => this.summary().phase);
   readonly phaseLabel = computed(() => labels[this.phase()]);
 }

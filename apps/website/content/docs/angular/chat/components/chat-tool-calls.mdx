@@ -4,7 +4,7 @@ description: How the tool-calls example renders an aviation agent's calls in a s
 
 # ChatToolCallsComponent
 
-`ChatToolCallsComponent` renders readable tool activity with explicit lifecycle status. Technical names, call IDs, arguments, results and errors remain available in collapsed **Details**. Consecutive same-name calls group by default; grouping across names is opt-in. The aviation example mounts this component in the conversation and in a sidebar.
+`ChatToolCallsComponent` renders readable tool activity in a compact, initially collapsed row. Technical names, call IDs, arguments, results and errors remain available in **Details**. Adjacent built-in calls group across names by default; custom templates and subagent cards retain their own boundaries. The aviation example mounts this component in the conversation and in a sidebar.
 
 **Selector:** `chat-tool-calls`
 
@@ -111,9 +111,9 @@ The component is standalone, so add it to a component's `imports` array.
 | ------------------- | -------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent`             | `Agent`                                                  | **Required** | The agent whose `toolCalls()` signal is rendered.                                                                                                                                                                 |
 | `message`           | `Message \| undefined`                                   | `undefined`  | Scopes rendering to one assistant message. Omit it and the whole thread's calls are rendered.                                                                                                                     |
-| `grouping`          | `'auto' \| 'none'`                                       | `'auto'`     | With `'auto'`, consecutive calls to the same tool collapse into one strip. With `'none'`, every call renders on its own.                                                                                          |
+| `grouping`          | `'auto' \| 'none'`                                       | `'auto'`     | With `'auto'`, consecutive built-in calls use the compact activity row. With `'none'`, every call renders on its own.                                                                                          |
 | `groupSummary`      | `((name: string, count: number) => string) \| undefined` | `undefined`  | Replaces the generic activity count.                                                                                                                                                                              |
-| `groupRelated`      | `boolean`                                                | `false`      | Allows adjacent default calls with different names to group. `grouping="none"` still disables grouping. Custom templates and subagents stay separate.                                                             |
+| `groupRelated`      | `boolean`                                                | `true`       | Groups adjacent built-in calls across tool names, including a single call. Set `false` for same-name grouping only. `grouping="none"` disables grouping. Custom templates and subagents stay separate.                                                             |
 | `toolLabel`         | `(name: string) => string \| undefined`                  | `undefined`  | Supplies a readable label; unknown names use “Tool activity.” The technical name stays in Details.                                                                                                                |
 | `toolOutcome`       | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Supplies validated, app-authored previews and source links for default rows. Custom templates retain ownership. |
 | `excludeToolNames`  | `readonly string[]`                                      | `[]`         | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript.                                                                                                      |
@@ -133,15 +133,21 @@ A non-assistant message falls back to the full list, so pass the message only wh
 
 ## Grouping
 
-With `grouping` at `'auto'`, the component walks the calls in order and appends a call to the previous group when the names match. Grouping is adjacency-based, so `search_web`, `read_file`, `search_web` produces three groups rather than two.
+With `grouping` at `'auto'` and `groupRelated` at its default `true`, adjacent built-in calls share one activity row across tool names. Custom templates and subagent cards keep their own boundaries. Grouping remains local to the message or calls supplied to this component.
 
-A group holding more than one call renders as a collapsible strip: a header button carrying the summary label and a chevron, collapsed on first render, expanding to the individual cards when clicked. A group holding a single call renders that card directly, with no strip around it.
+The borderless row starts collapsed, including for a single call. Opening it reveals individual calls and their technical Details. A row opened by the user remains open as calls arrive or settle. Confirmed results, source links and approval controls stay outside the collapsed technical subtree.
+
+Set `[groupRelated]="false"` to retain same-name adjacency grouping: `search_web`, `read_file`, `search_web` then produces three separate activities. Under that opt-out, a single call renders directly and consecutive calls of the same name still group. Set `grouping="none"` to disable grouping entirely.
 
 `excludeToolNames` is applied before grouping, so an excluded name cannot break a group in two.
 
 ## Default group summaries
 
-The default is “N tool activities.” Tool-name prefixes do not prove whether a call searched sites, read files, or completed a business operation. Pass `groupSummary` for application-specific wording:
+While a tool is running, the row shows its application-provided `toolLabel` with a subtle text shimmer, falling back to **Running tools…**. Explicitly completed calls settle to **Used 4 tools**, with the appropriate count. There is no additional completion-count subline. A tool count does not establish a successful business operation or persisted write.
+
+Queued, paused, stopped and unavailable activity uses static wording. **Tool activity paused** does not imply approval. A failed call can coexist with running work; the activity row preserves a static failure cue while actual work remains active. Reduced motion and forced colors use readable static text. Meaningful state changes remain available in a polite status region without raw payloads or timer ticks.
+
+Tool-name prefixes do not prove whether a call searched sites, read files, or completed a business operation. Pass `groupSummary` for application-specific wording; explicit summary overrides retain precedence:
 
 ```html
 <chat-tool-calls [agent]="agent" [message]="msg" [groupSummary]="summarize" />
@@ -154,7 +160,7 @@ const summarize = (name: string, count: number): string =>
     : `${name} × ${count}`;
 ```
 
-The `<chat>` composition forwards `toolLabel` and `groupRelatedTools` to its per-message activity region. `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` are also available as readonly presentation primitives. Supply literal evidence and an explicit `phase`; omitted status is shown as unavailable. Their projected content stays mounted outside technical Details, so a rich result or approval control can remain visible. These primitives never execute, resume, approve, or persist work. A tool result is separate from application confirmation of saved data.
+The `<chat>` composition defaults `groupRelatedTools` to `true` and forwards it with `toolLabel` to its per-message activity region. Set `[groupRelatedTools]="false"` to retain same-name grouping. `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` are also available as readonly presentation primitives. Supply literal evidence and an explicit `phase`; omitted status is shown as unavailable. Their projected content stays mounted outside technical Details, so a rich result or approval control can remain visible. These primitives never execute, resume, approve, or persist work. A tool result is separate from application confirmation of saved data.
 
 For AG-UI, `TOOL_CALL_END` closes argument streaming. The adapter keeps execution running until `TOOL_CALL_RESULT`; it does not infer execution success from finalized arguments. Stopped, interrupted and paused response outcomes remain distinct.
 
@@ -183,19 +189,21 @@ The template context is the `ToolCall` as `$implicit` and its status as `status`
 
 When the agent exposes a subagent whose `toolCallId` matches a call, that call renders as a `<chat-subagent-card>` instead of a tool-call card, and it never joins a group on either side. Adapters key their subagent map differently, so the match is made on the subagent's `toolCallId` field rather than the map key.
 
-## The card each call renders
+## The activity inside the row
 
-Every call the component does not hand to a template or a subagent card is rendered by `ChatToolCallCardComponent`: the tool name, a status pill, an Inputs section holding the arguments, and an Output section that appears only once a result exists. A card whose status is `running` or `error` expands itself; a completed one stays collapsed until it is clicked. See [ChatToolCallCard](/docs/angular/chat/components/chat-tool-call-card) for its own inputs.
+Calls without a custom template or subagent card use `ChatToolActivityComponent` inside the group's disclosure. Each activity retains its readable label, explicit phase, and technical **Details**. The outer row starts collapsed and preserves the user's expansion choice through running and settled states. An error explanation and application-owned rich results remain outside the collapsed group.
+
+[ChatToolCallCard](/docs/angular/chat/components/chat-tool-call-card) remains available for applications that explicitly choose its separate card presentation.
 
 ## Styling
 
-The host is a block with a 20 pixel bottom margin. The strip reads three custom properties from the chat theme:
+The host is a block with a 20 pixel bottom margin. The default activity row has no border or card background and reads these properties from the chat theme:
 
 | Variable                    | Applied to                                            |
 | --------------------------- | ----------------------------------------------------- |
-| `--tplane-chat-separator`   | Strip border, and the divider above the expanded body |
-| `--tplane-chat-radius-card` | Strip corner radius                                   |
-| `--tplane-chat-text`        | Strip header text                                     |
+| `--tplane-chat-text-muted` | Quiet activity text and shimmer base                  |
+| `--tplane-chat-text`       | Activity text and shimmer highlight                   |
+| `--tplane-chat-primary`    | Keyboard focus indicator                              |
 
 Setting the variables is covered in the [theming guide](/docs/angular/chat/guides/theming).
 
@@ -212,7 +220,7 @@ Setting the variables is covered in the [theming guide](/docs/angular/chat/guide
     title="ChatToolCallCard"
     href="/docs/angular/chat/components/chat-tool-call-card"
   >
-    The card the component renders for an ungrouped call.
+    An optional standalone card for a custom tool presentation.
   </Card>
   <Card
     title="ChatSubagentCard"

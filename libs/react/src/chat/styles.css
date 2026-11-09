@@ -1895,16 +1895,26 @@
   font-size: 12px;
 }
 .tp-tool-activity-group__details {
-  border: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
-  border-radius: var(--tp-chat-radius-card, 8px);
+  min-inline-size: 0;
   padding: 0;
   margin-block: 0 12px;
 }
-.tp-tool-activity-group__details > summary { display:flex; align-items:center; gap:8px; padding:8px 12px; color:var(--tp-chat-text, CanvasText); list-style:none; }
+.tp-tool-activity-group__details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  min-inline-size: 0;
+  padding: 4px 0;
+  color: var(--tp-chat-text, CanvasText);
+  list-style: none;
+}
 .tp-tool-activity-group__details > summary::-webkit-details-marker { display:none; }
 .tp-tool-activity-group__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
 .tp-tool-activity-group__details[open] > summary::before { transform:rotate(45deg); }
-.tp-tool-activity-group__details > summary > .tp-tool-activity__phase { margin-inline-start:auto; }
+.tp-tool-activity-group__details > summary > span + span {
+  margin-inline-start: 0;
+}
 .tp-tool-activity-group__items {
   padding: 12px;
 }
@@ -1936,7 +1946,60 @@
   font-size: 13px;
   margin: 8px 0;
 }
-.tp-tool-activity__progress { color:var(--tp-chat-muted); font-size:12px; margin:4px 0 8px; }
+.tp-tool-activity__label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-tool-activity__cue {
+  flex: none;
+  white-space: nowrap;
+  color: var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0))));
+  font-size: 12px;
+}
+.tp-tool-activity__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    @keyframes tp-tool-activity-shimmer {
+      from {
+        background-position: 200% 0;
+      }
+      to {
+        background-position: -200% 0;
+      }
+    }
+    .tp-tool-activity__label[data-active='true'] {
+      background-image: linear-gradient(
+        100deg,
+        var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))) 35%,
+        var(--tp-chat-text, CanvasText) 50%,
+        var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))) 65%
+      );
+      background-size: 200% 100%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: tp-tool-activity-shimmer 2.4s linear infinite;
+    }
+  }
+}
+@media (forced-colors: active) {
+  .tp-tool-activity__label,
+  .tp-tool-activity__cue {
+    color: CanvasText;
+  }
+}
 .tp-tool-outcomes { margin-block:8px 16px; overflow-wrap:anywhere; }
 .tp-tool-outcomes p { margin:4px 0; }
 .tp-tool-outcomes ul { display:flex; flex-wrap:wrap; gap:8px 16px; padding:0; list-style:none; margin:8px 0; }

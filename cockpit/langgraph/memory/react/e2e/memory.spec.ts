@@ -30,7 +30,7 @@ test('shows a streamed reply before held extraction publishes facts', async ({
     .toBe(true);
   await request.post('/__release');
   await expect(facts(page)).toContainText('Mira');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
 });
 
 test('recalls and corrects facts in one confirmed thread with distinct physical runs', async ({
@@ -107,10 +107,10 @@ for (const text of ['Malformed', 'Absent']) {
     await expect(facts(page)).toContainText('Mira');
     await send(page, text, false);
     await expect(facts(page)).toContainText('No facts yet.');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
     await send(page, 'Recall', false);
     await expect(transcript(page)).toContainText('No facts remembered.');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   });
 }
 
@@ -119,7 +119,7 @@ test('unexpected pause blocks text and never guesses a resume command', async ({
   request,
 }) => {
   await send(page, 'Pause');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -145,7 +145,7 @@ test('duplicate send admits one run and Stop releases held extraction', async ({
     });
   await expect(transcript(page)).toContainText('Memory reply');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect
     .poll(async () => (await (await request.get('/__lifetime')).json()).active)
     .toBe(false);
@@ -238,7 +238,7 @@ test('uses developer bridge headers while keeping credentials out of the body', 
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Remember Mira');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.every(

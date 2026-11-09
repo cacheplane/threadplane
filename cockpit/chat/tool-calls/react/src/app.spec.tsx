@@ -191,7 +191,9 @@ it('distinguishes the conversation status from the polite tool progress announce
     const progress = h.view.getByRole('status', { name: '' });
     expect(progress).not.toBe(status);
     expect(progress.getAttribute('aria-live')).toBe('polite');
-    expect(progress.textContent).toBe('1 pending');
+    expect(progress.textContent).toBe('Flight information activity. 1 pending.');
+    expect(progress.classList.contains('tp-tool-activity__status')).toBe(true);
+    expect(progress.closest('details')).toBeNull();
   } finally {
     content.dispose();
   }

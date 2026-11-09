@@ -795,7 +795,7 @@
             }
           ],
           "docs": {
-            "summary": "Opt in to grouping related default tool rows across names per assistant message.",
+            "summary": "Group built-in tool rows across names per assistant message; false retains adjacent same-name grouping.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

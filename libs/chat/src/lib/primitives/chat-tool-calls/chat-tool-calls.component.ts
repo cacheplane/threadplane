@@ -16,7 +16,6 @@ import type { Agent, Message, ToolCall, Subagent } from '../../agent';
 import type { ToolCallInfo } from '../../compositions/chat-tool-call-card/chat-tool-call-card.component';
 import { ChatSubagentCardComponent } from '../../compositions/chat-subagent-card/chat-subagent-card.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
-import { summarizeGroup as defaultSummarizeGroup } from './group-summary';
 import { resolveMessageToolCalls } from './resolve-message-tool-calls';
 import {
   ChatToolActivityComponent,
@@ -25,7 +24,8 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from '../chat-tool-activity/chat-tool-activity.component';
-import { activityProgress } from '../chat-tool-activity/tool-outcome';
+import { activitySummary } from '../chat-tool-activity/activity-summary';
+import { ACTIVITY_SUMMARY_STYLES } from '../chat-tool-activity/activity-summary-styles';
 
 interface Group {
   key: string;
@@ -51,23 +51,24 @@ let nextChatToolCallsId = 0;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
+    ACTIVITY_SUMMARY_STYLES,
     `
       :host {
         display: block;
         margin-bottom: 20px;
       }
       .ctc__group {
-        border: 1px solid var(--tplane-chat-separator);
-        border-radius: var(--tplane-chat-radius-card);
         margin: 0 0 4px;
+        min-inline-size: 0;
       }
       .ctc__group-header {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         width: 100%;
-        min-height: 24px;
-        padding: 8px 12px;
+        min-height: 32px;
+        min-inline-size: 0;
+        padding: 4px 0;
         background: transparent;
         border: 0;
         font: inherit;
@@ -81,14 +82,10 @@ let nextChatToolCallsId = 0;
         border-radius: var(--tplane-chat-radius-card);
       }
       .ctc__group-chevron {
+        flex: none;
         width: 10px;
         height: 10px;
         transition: transform 120ms ease;
-      }
-      .ctc__group-status {
-        margin-inline-start: auto;
-        font-size: 12px;
-        color: var(--tplane-chat-text-muted);
       }
       .ctc__group-body[hidden] {
         display: none;
@@ -114,9 +111,7 @@ let nextChatToolCallsId = 0;
       }
       .ctc__group-body {
         padding: 0 12px 8px;
-        border-top: 1px solid var(--tplane-chat-separator);
       }
-      .tp-tool-activity__progress { color:var(--tplane-chat-text-muted); font-size:12px; margin:4px 0 8px; }
     `,
   ],
   template: `
@@ -125,6 +120,7 @@ let nextChatToolCallsId = 0;
     } @else if (!group.templateRef) {
     <!-- Default grouped strip -->
     @let grouped = grouping() !== 'none' && (group.calls.length > 1 || groupRelated());
+    @let summary = summaryFor(group.name, group.calls);
     @let expanded = !grouped ||
     expandedGroups().has(group.key);
     <div
@@ -153,8 +149,15 @@ let nextChatToolCallsId = 0;
         >
           <path d="M4 2l4 4-4 4" />
         </svg>
-        <span>{{ summarize(group.name, group.calls.length) }}</span>
-        <span class="ctc__group-status">{{ groupStatus(group.calls) }}</span>
+        <span
+          class="tp-tool-activity__label"
+          [attr.data-active]="summary.active"
+          >{{ summary.label }}</span
+        >
+        @if (summary.cue) {<span class="tp-tool-activity__cue">{{
+          summary.cue
+        }}</span
+        >}
       </button>
       <div
         class="ctc__group-body"
@@ -168,10 +171,10 @@ let nextChatToolCallsId = 0;
       </div>
     </div>
       @if (grouped) {
-      <p class="tp-tool-activity__progress" role="status" aria-live="polite" aria-atomic="true">{{ progressFor(group.calls) }}</p>
+      <p class="tp-tool-activity__status" role="status" aria-live="polite" aria-atomic="true">{{ summary.status }}</p>
       <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
       }
-      @if (groupStatus(group.calls) === 'Failed') {
+      @if (summary.phase === 'error') {
       <p role="alert">
         Some tools could not finish. Check Details before retrying.
       </p>
@@ -191,8 +194,8 @@ export class ChatToolCallsComponent {
   readonly groupSummary = input<
     ((name: string, count: number) => string) | undefined
   >(undefined);
-  /** Opt in to grouping related default tool rows across names; none still disables grouping. */
-  readonly groupRelated = input(false);
+  /** Group default tool rows across names; false retains adjacent same-name grouping. None disables all grouping. */
+  readonly groupRelated = input(true);
   /** App-owned readable labels. Technical names remain in Details. */
   readonly toolLabel = input<
     ((name: string) => string | undefined) | undefined
@@ -338,8 +341,11 @@ export class ChatToolCallsComponent {
     return `chat-tool-calls-${this.instanceId}-group-${index}`;
   }
 
-  protected summarize(name: string, count: number): string {
-    return (this.groupSummary() ?? defaultSummarizeGroup)(name, count);
+  protected summaryFor(name: string, calls: readonly ToolCall[]) {
+    return activitySummary(
+      this.activitiesFor(calls),
+      this.groupSummary()?.(name, calls.length)
+    );
   }
 
   protected toToolCallInfo(tc: ToolCall): ToolCallInfo {
@@ -382,22 +388,5 @@ export class ChatToolCallsComponent {
     };
     return { ...activity, outcome: this.toolOutcome()?.(activity) };
   }
-  protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map(call => this.activityFor(call)); }
-  protected progressFor(calls: readonly ToolCall[]): string { return activityProgress(this.activitiesFor(calls)); }
-  protected groupStatus(calls: readonly ToolCall[]): string {
-    const phases = calls.map((call) => this.activityFor(call, false).phase);
-    return phases.includes('error')
-      ? 'Failed'
-      : phases.includes('running')
-      ? 'Running'
-      : phases.includes('waiting')
-      ? 'Waiting'
-      : phases.includes('stopped')
-      ? 'Stopped'
-      : phases.includes('pending')
-      ? 'Pending'
-      : phases.every((phase) => phase === 'complete')
-      ? 'Complete'
-      : 'Status unavailable';
-  }
+  protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map((call) => this.activityFor(call)); }
 }

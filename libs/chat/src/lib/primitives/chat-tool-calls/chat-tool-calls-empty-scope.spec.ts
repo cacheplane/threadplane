@@ -22,7 +22,7 @@ import { staticDelivery, streamingDelivery, type Message, type Subagent, type To
         <span data-template="wildcard">{{ version() }}:{{ call.id }}</span>
       </ng-template>
     }
-    <chat-tool-calls [agent]="agent()" [message]="message()" [grouping]="grouping()"
+    <chat-tool-calls [agent]="agent()" [message]="message()" [grouping]="grouping()" [groupRelated]="false"
       [excludeToolNames]="excluded()" [toolCallTemplates]="suppliedTemplates()">
       @if (ownTemplate()) {
         <ng-template chatToolCallTemplate="search_web" let-call>
