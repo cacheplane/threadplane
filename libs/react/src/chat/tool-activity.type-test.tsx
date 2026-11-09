@@ -4,6 +4,7 @@ import {
   type ToolActivityInfo,
   type ToolActivityProps,
 } from './index';
+import type { ToolActivityOutcome } from './tool-outcome';
 const info: ToolActivityInfo = {
   id: 'call',
   name: 'query',
@@ -29,6 +30,11 @@ const structured: ToolActivityInfo = {
   // @ts-expect-error Technical payloads are literal strings.
   argumentsText: {},
 };
+const legacyOutcome: ToolActivityOutcome = { text: 'ok' };
+const failedOutcome: ToolActivityOutcome = { status: 'failed', text: 'x' };
+// @ts-expect-error Only succeeded or failed statuses are allowed.
+const badOutcome: ToolActivityOutcome = { status: 'error', text: 'x' };
+
 export const contracts = [
   <ToolActivity activity={info} />,
   <ToolActivityGroup activities={[info]}>
@@ -37,4 +43,7 @@ export const contracts = [
   command,
   session,
   structured,
+  legacyOutcome,
+  failedOutcome,
+  badOutcome,
 ];

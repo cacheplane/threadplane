@@ -7,6 +7,7 @@ import {
   type ToolActivityPhase,
   type ToolActivityDelivery,
 } from './index';
+import { confirmedOutcomes, outcomeSources, resolveToolOutcome } from './tool-outcome';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Shared readonly Angular/React test conformance data, excluded from production packages.
 import { phases } from '../../../../fixtures/tool-activity/phases';
 afterEach(cleanup);
@@ -356,5 +357,41 @@ describe('ToolActivityGroup', () => {
         .getAllByRole('alert')
         .some((alert) => alert.closest('details') === null)
     ).toBe(true);
+  });
+});
+
+describe('resolveToolOutcome', () => {
+  it('marks a complete call failed from an app-declared outcome', () => {
+    const r = resolveToolOutcome(
+      { id: 'b', name: 'read', phase: 'complete', resultText: '{"recoverable":true}' },
+      { status: 'failed', text: 'Reference B is unavailable.' }
+    );
+    expect(r.phase).toBe('error');
+    expect(r.errorSummary).toBe('Reference B is unavailable.');
+    expect(r.resultText).toBe('{"recoverable":true}');
+    expect(r.errorText).toBeUndefined();
+  });
+  it('never overrides a non-complete phase', () => {
+    for (const phase of ['error', 'stopped', 'waiting', 'pending', 'running', 'unknown'] as const) {
+      const r = resolveToolOutcome(
+        { id: 'x', name: 't', phase, errorText: 'boom' },
+        { status: 'failed', text: 'nope' }
+      );
+      expect(r.phase).toBe(phase);
+      expect(r.errorSummary).toBeUndefined();
+    }
+  });
+  it('treats a missing status as succeeded', () => {
+    expect(
+      resolveToolOutcome({ id: 'a', name: 't', phase: 'complete' }, { text: 'ok' }).phase
+    ).toBe('complete');
+  });
+  it('keeps failed outcomes out of confirmedOutcomes but keeps their sources', () => {
+    const failed = resolveToolOutcome(
+      { id: 'b', name: 't', phase: 'complete' },
+      { status: 'failed', text: 'x', sources: [{ title: 'B', url: 'https://example.com/b' }] }
+    );
+    expect(confirmedOutcomes([failed])).toEqual([]);
+    expect(outcomeSources([failed]).map((s) => s.url)).toEqual(['https://example.com/b']);
   });
 });
