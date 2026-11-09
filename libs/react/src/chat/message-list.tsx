@@ -75,7 +75,7 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly groupRelatedTools?: boolean;
   /** App-authored human labels; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string) => string | undefined;
-  /** App-authored confirmed result previews. Keep stable; custom renderMessage retains full ownership. */
+  /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;

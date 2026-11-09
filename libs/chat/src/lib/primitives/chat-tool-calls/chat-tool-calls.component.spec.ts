@@ -952,6 +952,26 @@ describe('ChatToolCallsComponent — app-declared tool failures and result slot'
     expect(rowB.querySelector('details')!.textContent).toContain('"recoverable": true');
   });
 
+  it.each([
+    ['a single call with groupRelated off', ['ok'], false, 'auto', 'c0'],
+    ['grouping none', ['ok', { recoverable: true, error: 'x' }], true, 'none', 'c1'],
+  ] as const)('ungrouped failure (%s) shows exactly one alert with the failure text', (_, results, groupRelated, grouping, failedId) => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', mockAgent({ toolCalls: calls(results) }));
+    fixture.componentRef.setInput('groupRelated', groupRelated);
+    fixture.componentRef.setInput('grouping', grouping);
+    fixture.componentRef.setInput('toolOutcome', (activity: ToolActivityInfo): ToolActivityOutcome | undefined =>
+      activity.id === failedId ? { status: 'failed', text: 'Reference B is unavailable.' } : undefined
+    );
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const alerts = root.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent!.trim()).toBe('Reference B is unavailable.');
+    expect(root.textContent).not.toContain('Some tools could not finish');
+  });
+
   it('a throwing toolOutcome leaves the call complete', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { root } = setup(['ok', 'ok2'], (h) => {

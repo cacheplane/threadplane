@@ -197,8 +197,8 @@ let nextChatToolCallsId = 0;
         }
       </div>
       }
-      }
       @if (summary.phase === 'error') {
+      <!-- Ungrouped rows already show their own alert; only a group adds one. -->
       <div role="alert" class="tp-tool-activity__error">
         @for (text of failureSummariesFor(group.calls); track text) {
         <p>{{ text }}</p>
@@ -206,6 +206,7 @@ let nextChatToolCallsId = 0;
         <p>Some tools could not finish. Check Details before retrying.</p>
         }
       </div>
+      }
       }
     } @else if (group.templateRef) { @for (tc of group.calls; track tc.id) {
     <ng-container
@@ -228,7 +229,7 @@ export class ChatToolCallsComponent {
   readonly toolLabel = input<
     ((name: string) => string | undefined) | undefined
   >(undefined);
-  /** App-authored confirmed result previews; custom tool templates keep ownership. */
+  /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
 
   /**

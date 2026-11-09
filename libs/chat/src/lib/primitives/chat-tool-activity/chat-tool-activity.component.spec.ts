@@ -444,3 +444,78 @@ describe('settled failure copy', () => {
     ).toEqual(['Some tools could not finish. Check Details before retrying.']);
   });
 });
+
+describe('primitives given a failed outcome directly', () => {
+  const failedFlight: ToolActivityInfo = {
+    id: 'f1',
+    name: 'lookup_flight',
+    phase: 'complete',
+    resultText: '{"error":"Flight UA999 not found"}',
+    outcome: { status: 'failed', text: "Flight UA999 isn't in this dataset." },
+  };
+  it('shows a failed row with the app-authored failure copy', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', failedFlight);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity')?.getAttribute('data-phase')).toBe('error');
+    expect(root.querySelector('.tp-tool-activity__phase')?.textContent).toBe('Failed');
+    const alerts = root.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent!.trim()).toBe("Flight UA999 isn't in this dataset.");
+    expect(root.textContent).not.toContain('Complete');
+  });
+  it('counts the failure in the group label and live region', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      { id: 'a', name: 'get_airport_info', phase: 'complete' },
+      failedFlight,
+    ]);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity__label')?.textContent!.trim()).toBe(
+      'Used 2 tools · 1 failed'
+    );
+    expect(root.querySelector('[role="status"]')?.textContent!.trim()).toBe(
+      'Used 2 tools · 1 failed. 1 complete · 1 failed.'
+    );
+    const groupAlerts = Array.from(root.querySelectorAll('[role="alert"]')).filter(
+      (el) => el.closest('details') === null
+    );
+    expect(groupAlerts).toHaveLength(1);
+    expect(groupAlerts[0].textContent!.trim()).toBe("Flight UA999 isn't in this dataset.");
+  });
+});
+
+describe('empty failure copy', () => {
+  it('falls back to no summary when the failed text is blank', () => {
+    const r = resolveToolOutcome(
+      { id: 'b', name: 't', phase: 'complete' },
+      { status: 'failed', text: '   ' }
+    );
+    expect(r.phase).toBe('error');
+    expect(r.errorSummary).toBeUndefined();
+  });
+  it('trims surrounding whitespace from failure copy', () => {
+    expect(
+      resolveToolOutcome(
+        { id: 'b', name: 't', phase: 'complete' },
+        { status: 'failed', text: '  Reference B is unavailable. ' }
+      ).errorSummary
+    ).toBe('Reference B is unavailable.');
+  });
+  it('shows the generic row copy for a blank failed outcome', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', {
+      id: 'b',
+      name: 't',
+      phase: 'complete',
+      outcome: { status: 'failed', text: '' },
+    });
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[role="alert"]')?.textContent!.trim()).toBe(
+      'This tool could not finish. Check Details before retrying.'
+    );
+  });
+});

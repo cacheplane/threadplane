@@ -24,7 +24,7 @@ export interface ChatProps
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
   readonly toolLabel?: MessageListProps['toolLabel'];
-  /** App-authored confirmed result previews; execution and business confirmation remain app-owned. */
+  /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable. */
   readonly renderToolResult?: MessageListProps['renderToolResult'];

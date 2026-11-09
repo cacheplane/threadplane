@@ -544,6 +544,26 @@ describe('MessageList', () => {
       );
       content.dispose();
     });
+    it('ungrouped failure shows exactly one alert with the failure text', () => {
+      const { content, rows } = project([
+        'ok',
+        { recoverable: true, error: 'x' },
+      ]);
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools={false}
+          toolOutcome={failB}
+        />
+      );
+      const alerts = view.getAllByRole('alert');
+      expect(alerts).toHaveLength(1);
+      expect(alerts[0].textContent).toBe('Reference B is unavailable.');
+      expect(view.container.textContent).not.toContain(
+        'Some tools could not finish'
+      );
+      content.dispose();
+    });
     it('a throwing toolOutcome leaves the call complete', () => {
       const { content, rows } = project(['ok', 'ok2']);
       const error = vi

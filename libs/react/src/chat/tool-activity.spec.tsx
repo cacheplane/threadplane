@@ -5,6 +5,7 @@ import {
   ToolActivity,
   ToolActivityGroup,
   toolActivityPhase,
+  type ToolActivityInfo,
   type ToolActivityPhase,
   type ToolActivityDelivery,
 } from './index';
@@ -440,8 +441,10 @@ describe('settled failure copy', () => {
       .getAllByRole('alert')
       .filter((el) => el.closest('details') === null);
     expect(alerts).toHaveLength(1);
-    const paragraphs = alerts[0].tagName === 'P' ? [alerts[0]] : alerts[0].querySelectorAll('p');
+    expect(alerts[0].tagName).toBe('DIV');
+    const paragraphs = alerts[0].querySelectorAll(':scope > p');
     expect(paragraphs).toHaveLength(1);
+    expect(paragraphs[0].textContent).toBe('Reference B is unavailable.');
     expect(alerts[0].textContent).toBe('Reference B is unavailable.');
     expect(view.container.textContent).not.toContain('Some tools could not finish');
   });
@@ -455,6 +458,85 @@ describe('settled failure copy', () => {
     expect(alerts).toHaveLength(1);
     expect(alerts[0].textContent).toBe(
       'Some tools could not finish. Check Details before retrying.'
+    );
+  });
+});
+
+describe('primitives given a failed outcome directly', () => {
+  const failedFlight: ToolActivityInfo = {
+    id: 'f1',
+    name: 'lookup_flight',
+    phase: 'complete',
+    resultText: '{"error":"Flight UA999 not found"}',
+    outcome: { status: 'failed', text: "Flight UA999 isn't in this dataset." },
+  };
+  it('shows a failed row with the app-authored failure copy', () => {
+    const view = render(<ToolActivity activity={failedFlight} />);
+    const row = view.container.querySelector('.tp-tool-activity')!;
+    expect(row.getAttribute('data-phase')).toBe('error');
+    expect(
+      view.container.querySelector('.tp-tool-activity__phase')?.textContent
+    ).toBe('Failed');
+    expect(view.getByRole('alert').textContent).toBe(
+      "Flight UA999 isn't in this dataset."
+    );
+    expect(view.container.textContent).not.toContain('Complete');
+  });
+  it('counts the failure in the group label and live region', () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          { id: 'a', name: 'get_airport_info', phase: 'complete' },
+          failedFlight,
+        ]}
+      />
+    );
+    expect(
+      view.container.querySelector('.tp-tool-activity__label')?.textContent
+    ).toBe('Used 2 tools · 1 failed');
+    expect(view.getByRole('status').textContent).toBe(
+      'Used 2 tools · 1 failed. 1 complete · 1 failed.'
+    );
+    const groupAlert = view
+      .getAllByRole('alert')
+      .filter((el) => el.closest('details') === null);
+    expect(groupAlert).toHaveLength(1);
+    expect(groupAlert[0].textContent).toBe(
+      "Flight UA999 isn't in this dataset."
+    );
+  });
+});
+
+describe('empty failure copy', () => {
+  it('falls back to no summary when the failed text is blank', () => {
+    const r = resolveToolOutcome(
+      { id: 'b', name: 't', phase: 'complete' },
+      { status: 'failed', text: '   ' }
+    );
+    expect(r.phase).toBe('error');
+    expect(r.errorSummary).toBeUndefined();
+  });
+  it('trims surrounding whitespace from failure copy', () => {
+    expect(
+      resolveToolOutcome(
+        { id: 'b', name: 't', phase: 'complete' },
+        { status: 'failed', text: '  Reference B is unavailable. ' }
+      ).errorSummary
+    ).toBe('Reference B is unavailable.');
+  });
+  it('shows the generic row copy for a blank failed outcome', () => {
+    const view = render(
+      <ToolActivity
+        activity={{
+          id: 'b',
+          name: 't',
+          phase: 'complete',
+          outcome: { status: 'failed', text: '' },
+        }}
+      />
+    );
+    expect(view.getByRole('alert').textContent).toBe(
+      'This tool could not finish. Check Details before retrying.'
     );
   });
 });

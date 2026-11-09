@@ -9,6 +9,7 @@ import {
   activityProgress,
   confirmedOutcomes,
   outcomeSources,
+  resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome';
 import { activitySummary, failureSummaries } from './activity-summary';
@@ -203,7 +204,10 @@ export class ChatToolOutcomesComponent {
   </section>`,
 })
 export class ChatToolActivityComponent {
-  readonly activity = input.required<ToolActivityInfo>();
+  // Direct primitive use gets the same failed-outcome display as projected rows.
+  readonly activity = input.required<ToolActivityInfo, ToolActivityInfo>({
+    transform: (activity) => resolveToolOutcome(activity, activity.outcome),
+  });
   readonly phase = computed(() => this.activity().phase ?? 'unknown');
   readonly phaseLabel = computed(() => labels[this.phase()]);
   readonly duration = computed(() => {
@@ -266,7 +270,16 @@ export class ChatToolActivityGroupComponent {
   protected withoutOutcome(activity: ToolActivityInfo): ToolActivityInfo {
     return { ...activity, outcome: undefined };
   }
-  readonly activities = input.required<readonly ToolActivityInfo[]>();
+  // Resolve once so the label, cue, live region and rows agree on each phase.
+  readonly activities = input.required<
+    readonly ToolActivityInfo[],
+    readonly ToolActivityInfo[]
+  >({
+    transform: (activities) =>
+      activities.map((activity) =>
+        resolveToolOutcome(activity, activity.outcome)
+      ),
+  });
   readonly label = input<string>();
   readonly progress = computed(() => activityProgress(this.activities()));
   readonly summary = computed(() =>

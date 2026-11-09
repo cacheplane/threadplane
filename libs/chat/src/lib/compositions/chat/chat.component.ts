@@ -657,7 +657,7 @@ export class ChatComponent {
   readonly groupRelatedTools = input(true);
   /** App-authored readable labels; technical names remain in Details. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
-  /** App-authored confirmed outcome previews for default tool rendering. */
+  /** App-authored confirmed outcome previews for default tool rendering; return `status: 'failed'` to show a completed call as failed. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
 
   protected sourceText(message: Message): string {

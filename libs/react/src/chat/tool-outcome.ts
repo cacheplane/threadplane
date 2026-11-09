@@ -63,13 +63,21 @@ export function outcomeSources(
       }
     });
 }
-/** Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads. */
+/**
+ * Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.
+ * Idempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.
+ */
 export function resolveToolOutcome(
   activity: ToolActivityInfo,
   outcome: ToolActivityOutcome | undefined
 ): ToolActivityInfo {
   if (activity.phase === 'complete' && outcome?.status === 'failed') {
-    return { ...activity, phase: 'error', errorSummary: outcome.text, outcome };
+    return {
+      ...activity,
+      phase: 'error',
+      errorSummary: outcome.text.trim() || undefined,
+      outcome,
+    };
   }
   return { ...activity, outcome };
 }
