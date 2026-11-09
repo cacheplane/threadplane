@@ -2511,7 +2511,7 @@
       "canonicalReference": "@threadplane/chat!ChatToolResultTemplateDirective:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Registers an app-owned result or action template for default tool rows.\nThe template renders outside the technical Details, once per matching\ncall, with the resolved `ToolActivityInfo`. A literal \"*\" matches any tool\nname without a specific template; a name match wins over \"*\". Tools that\nhave a `chatToolCallTemplate` keep that full replacement, and result\ntemplates do not apply to them.\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatToolResultTemplate=\"read_reference\" let-activity>\n      @if (activity.phase === 'error') { <button>Retry</button> }\n    </ng-template>\n  </chat>\n```"
+      "summary": "Registers an app-owned result or action template for default tool rows.\nThe template renders outside the technical Details, once per matching\ncall, with the resolved `ToolActivityInfo`. A literal \"*\" matches any tool\nname without a specific template; a name match wins over \"*\". Tools that\nhave a `chatToolCallTemplate` keep that full replacement, and result\ntemplates do not apply to them. Name the call in any control, because a\nbare \"Retry\" below a collapsed group does not say which call it acts on.\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatToolResultTemplate=\"read_reference\" let-activity>\n      @if (activity.phase === 'error') {\n        <button type=\"button\" (click)=\"retryRead(activity.id)\">Retry reference read</button>\n      }\n    </ng-template>\n  </chat>\n```"
     },
     {
       "name": "ChatToolViewsComponent",

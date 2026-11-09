@@ -160,10 +160,10 @@ export class ChatToolOutcomesComponent {
   template: ` <section
     class="tp-tool-activity"
     [attr.data-phase]="phase()"
-    [attr.data-tool-id]="activity().id"
+    [attr.data-tool-id]="resolved().id"
   >
     <div class="tp-tool-activity__heading">
-      <span>{{ activity().label ?? 'Tool activity' }}</span
+      <span>{{ resolved().label ?? 'Tool activity' }}</span
       ><span class="tp-tool-activity__phase">{{ phaseLabel() }}</span
       >@if (duration() !== undefined) {
       <span class="tp-tool-activity__duration">{{ duration() }}ms</span> }
@@ -171,7 +171,7 @@ export class ChatToolOutcomesComponent {
     @if (phase() === 'error') {
     <p role="alert" class="tp-tool-activity__error">
       {{
-        activity().errorSummary ??
+        resolved().errorSummary ??
           'This tool could not finish. Check Details before retrying.'
       }}
     </p>
@@ -181,37 +181,39 @@ export class ChatToolOutcomesComponent {
       <dl>
         <dt>Tool</dt>
         <dd>
-          <code>{{ activity().name }}</code>
+          <code>{{ resolved().name }}</code>
         </dd>
         <dt>Call ID</dt>
         <dd>
-          <code>{{ activity().id }}</code>
+          <code>{{ resolved().id }}</code>
         </dd>
       </dl>
-      @if (activity().argumentsText !== undefined) {
+      @if (resolved().argumentsText !== undefined) {
       <p>Arguments</p>
-      <pre>{{ activity().argumentsText }}</pre>
-      } @if (activity().resultText !== undefined) {
+      <pre>{{ resolved().argumentsText }}</pre>
+      } @if (resolved().resultText !== undefined) {
       <p>Result</p>
-      <pre>{{ activity().resultText }}</pre>
-      } @if (activity().errorText !== undefined) {
+      <pre>{{ resolved().resultText }}</pre>
+      } @if (resolved().errorText !== undefined) {
       <p>Error</p>
-      <pre>{{ activity().errorText }}</pre>
+      <pre>{{ resolved().errorText }}</pre>
       }
     </details>
-    <chat-tool-outcomes [activities]="[activity()]" />
+    <chat-tool-outcomes [activities]="[resolved()]" />
     <ng-content />
   </section>`,
 })
 export class ChatToolActivityComponent {
-  // Direct primitive use gets the same failed-outcome display as projected rows.
-  readonly activity = input.required<ToolActivityInfo, ToolActivityInfo>({
-    transform: (activity) => resolveToolOutcome(activity, activity.outcome),
+  readonly activity = input.required<ToolActivityInfo>();
+  /** Direct primitive use gets the same failed-outcome display as projected rows. */
+  protected readonly resolved = computed(() => {
+    const activity = this.activity();
+    return resolveToolOutcome(activity, activity.outcome);
   });
-  readonly phase = computed(() => this.activity().phase ?? 'unknown');
+  readonly phase = computed(() => this.resolved().phase ?? 'unknown');
   readonly phaseLabel = computed(() => labels[this.phase()]);
   readonly duration = computed(() => {
-    const ms = this.activity().durationMs;
+    const ms = this.resolved().durationMs;
     return ms !== undefined && Number.isFinite(ms) && ms >= 0 ? ms : undefined;
   });
 }
@@ -227,7 +229,7 @@ export class ChatToolActivityComponent {
     [attr.data-phase]="phase()"
     [attr.data-active]="summary().active"
   >
-    @if (activities().length) {
+    @if (resolved().length) {
     <details class="tp-tool-activity-group__details">
       <summary>
         <span
@@ -241,7 +243,7 @@ export class ChatToolActivityComponent {
         >}
       </summary>
       <div class="tp-tool-activity-group__items">
-        @for (activity of activities(); track activity.id) {
+        @for (activity of resolved(); track activity.id) {
         <chat-tool-activity [activity]="withoutOutcome(activity)" /> }
       </div>
     </details>
@@ -253,7 +255,7 @@ export class ChatToolActivityComponent {
     >
       {{ summary().status }}
     </p>
-    <chat-tool-outcomes [activities]="activities()" />
+    <chat-tool-outcomes [activities]="resolved()" />
     } @if (failed()) {
     <div role="alert" class="tp-tool-activity__error">
       @for (text of failureSummaries(); track text) {
@@ -270,26 +272,23 @@ export class ChatToolActivityGroupComponent {
   protected withoutOutcome(activity: ToolActivityInfo): ToolActivityInfo {
     return { ...activity, outcome: undefined };
   }
-  // Resolve once so the label, cue, live region and rows agree on each phase.
-  readonly activities = input.required<
-    readonly ToolActivityInfo[],
-    readonly ToolActivityInfo[]
-  >({
-    transform: (activities) =>
-      activities.map((activity) =>
-        resolveToolOutcome(activity, activity.outcome)
-      ),
-  });
+  readonly activities = input.required<readonly ToolActivityInfo[]>();
+  /** Resolved once so the label, cue, live region and rows agree on each phase. */
+  protected readonly resolved = computed(() =>
+    this.activities().map((activity) =>
+      resolveToolOutcome(activity, activity.outcome)
+    )
+  );
   readonly label = input<string>();
-  readonly progress = computed(() => activityProgress(this.activities()));
+  readonly progress = computed(() => activityProgress(this.resolved()));
   readonly summary = computed(() =>
-    activitySummary(this.activities(), this.label())
+    activitySummary(this.resolved(), this.label())
   );
   readonly failed = computed(() =>
-    this.activities().some((item) => item.phase === 'error')
+    this.resolved().some((item) => item.phase === 'error')
   );
   readonly failureSummaries = computed(() =>
-    failureSummaries(this.activities())
+    failureSummaries(this.resolved())
   );
   readonly phase = computed(() => this.summary().phase);
   readonly phaseLabel = computed(() => labels[this.phase()]);

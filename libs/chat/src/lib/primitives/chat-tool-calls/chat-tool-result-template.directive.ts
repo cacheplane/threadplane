@@ -13,12 +13,15 @@ export interface ChatToolResultTemplateContext {
  * call, with the resolved `ToolActivityInfo`. A literal "*" matches any tool
  * name without a specific template; a name match wins over "*". Tools that
  * have a `chatToolCallTemplate` keep that full replacement, and result
- * templates do not apply to them.
+ * templates do not apply to them. Name the call in any control, because a
+ * bare "Retry" below a collapsed group does not say which call it acts on.
  *
  * ```html
  *   <chat [agent]="agent">
  *     <ng-template chatToolResultTemplate="read_reference" let-activity>
- *       @if (activity.phase === 'error') { <button>Retry</button> }
+ *       @if (activity.phase === 'error') {
+ *         <button type="button" (click)="retryRead(activity.id)">Retry reference read</button>
+ *       }
  *     </ng-template>
  *   </chat>
  * ```

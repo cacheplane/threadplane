@@ -44,22 +44,12 @@
             },
             {
               "kind": "Reference",
-              "text": "InputSignalWithTransform",
-              "canonicalReference": "@angular/core!InputSignalWithTransform:interface"
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
             },
             {
               "kind": "Content",
               "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "ToolActivityInfo",
-              "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
-              "href": "/docs/api/chat/ToolActivityInfo"
-            },
-            {
-              "kind": "Content",
-              "text": ", "
             },
             {
               "kind": "Reference",
@@ -89,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 208
+            "line": 207
           },
           "isStatic": false,
           "isReadonly": true,
@@ -135,7 +125,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 213
+            "line": 215
           },
           "isStatic": false,
           "isReadonly": true,
@@ -191,7 +181,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 211
+            "line": 213
           },
           "isStatic": false,
           "isReadonly": true,
@@ -237,7 +227,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 212
+            "line": 214
           },
           "isStatic": false,
           "isReadonly": true,
