@@ -22,12 +22,30 @@ describe('generate runtime parent origins', () => {
       'https://threadplane.ai',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
       'http://localhost:4308',
       'http://127.0.0.1:4308',
       'https://website-pr-123.vercel.app',
       'https://website-pr-456.vercel.app',
     ]);
     expect(policy.cspFrameAncestors).toEqual(policy.childAllowedParentOrigins);
+  });
+
+  it('permits exact port 3001 parents in the CSP without broadening local embedding', () => {
+    const policy = generateRuntimeParentOriginPolicy(source, []);
+    const frameAncestors = policy.deploymentHeaders['Content-Security-Policy']
+      .split('; ')
+      .find((directive) => directive.startsWith('frame-ancestors '))
+      ?.split(' ')
+      .slice(1);
+
+    expect(frameAncestors).toContain('http://localhost:3001');
+    expect(frameAncestors).toContain('http://127.0.0.1:3001');
+    expect(frameAncestors).toEqual(policy.childAllowedParentOrigins);
+    expect(frameAncestors).not.toContain('http://localhost:3002');
+    expect(frameAncestors).not.toContain('http://127.0.0.1:3002');
+    expect(frameAncestors?.some((origin) => origin.includes('*'))).toBe(false);
   });
 
   it('deduplicates preview origins already present in the base source', () => {
@@ -41,6 +59,8 @@ describe('generate runtime parent origins', () => {
       'https://threadplane.ai',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
       'http://localhost:4308',
       'http://127.0.0.1:4308',
       'https://website-pr-123.vercel.app',

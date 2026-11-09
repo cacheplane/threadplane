@@ -594,7 +594,7 @@ async function main() {
               const apiNav = page.locator('.api-reference-navigation:visible');
               await expect(apiNav).toBeVisible();
               for (const link of await apiNav
-                .locator('a:visible, summary:visible')
+                .locator('a:visible, button:visible')
                 .all())
                 expect(
                   (await link.boundingBox())?.height
@@ -632,11 +632,15 @@ async function main() {
           }
           if (width === 1440) {
             const nav = page.locator('[data-workspace-desktop-navigation]');
-            const selectedFramework = await nav
-              .locator('[data-framework-control]')
-              .getAttribute('data-value');
             const apiNavigation = nav.locator('.api-reference-navigation');
-            if (await apiNavigation.count()) {
+            const isApiNavigation = (await apiNavigation.count()) > 0;
+            const selectedFramework = isApiNavigation
+              ? null
+              : await nav
+                  .locator('[data-framework-control]')
+                  .getAttribute('data-value');
+            if (isApiNavigation) {
+              await expect(nav.locator('[data-api-scope]')).toBeVisible();
               await expect(apiNavigation).toBeVisible();
               await expect(
                 apiNavigation.locator('[aria-current="page"]')

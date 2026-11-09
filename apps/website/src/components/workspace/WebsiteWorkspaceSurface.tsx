@@ -374,7 +374,7 @@ export function WebsiteWorkspaceSurface({
 
   const renderContextHeader = useCallback<WorkspaceContextPaneRenderer>(
     ({ onNavigate }) =>
-      docsContext ? (
+      docsContext && !docsContext.apiContext ? (
         <FrameworkSelector
           scope={docsContext.scope}
           documentId={docsContext.documentId}

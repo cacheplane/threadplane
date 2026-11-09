@@ -123,7 +123,7 @@ export function DocsContextContent({
         <kbd className="docs-control-plane-search-kbd" aria-hidden="true">⌘K</kbd>
       </button>
 
-      {frameworkSelector ?? (showFrameworkSelector && <FrameworkSelector scope={scope} documentId={documentId} targets={frameworkTargets} onNavigate={onNavigate} />)}
+      {!apiContext && (frameworkSelector ?? (showFrameworkSelector && <FrameworkSelector scope={scope} documentId={documentId} targets={frameworkTargets} onNavigate={onNavigate} />))}
 
       {compact ? navigation : (
         <ControlPlaneSection

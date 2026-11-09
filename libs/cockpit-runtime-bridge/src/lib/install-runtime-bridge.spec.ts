@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type InspectionFrame } from './inspection';
+import { GENERATED_RUNTIME_PARENT_ORIGINS } from './generated-runtime-parent-origins';
 import {
   installRuntimeBridge,
   type RuntimeBridgeEnvironment,
@@ -621,6 +622,40 @@ describe('runtime configuration child state machine', () => {
     });
     expect(parentPostMessage).not.toHaveBeenCalled();
   });
+
+  it.each(['http://localhost:3001', 'http://127.0.0.1:3001'])(
+    'announces the configuration bridge to the local review parent %s',
+    (origin) => {
+      const { environment, parentPostMessage } =
+        createConfigurationEnvironment({ referrer: `${origin}/agents` });
+      const bridge = installRuntimeBridge(environment, {
+        allowedParentOrigins: GENERATED_RUNTIME_PARENT_ORIGINS,
+      });
+
+      expect(parentPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'tplane:runtime-child-ready', version: 2 }),
+        origin
+      );
+      bridge.dispose();
+    }
+  );
+
+  it.each(['http://localhost:3002', 'http://127.0.0.1:3002'])(
+    'does not announce the configuration bridge to an unlisted local port %s',
+    async (origin) => {
+      const { environment, parentPostMessage } =
+        createConfigurationEnvironment({ referrer: `${origin}/agents` });
+      const bridge = installRuntimeBridge(environment, {
+        allowedParentOrigins: GENERATED_RUNTIME_PARENT_ORIGINS,
+      });
+
+      await expect(bridge.awaitConfiguration()).resolves.toEqual({
+        status: 'default',
+      });
+      expect(parentPostMessage).not.toHaveBeenCalled();
+      bridge.dispose();
+    }
+  );
 
   it('uses the default immediately for an unrecognized embed and ignores configuration', async () => {
     const { configure, environment, parentPostMessage } =

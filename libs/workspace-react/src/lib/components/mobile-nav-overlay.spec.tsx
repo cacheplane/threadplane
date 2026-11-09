@@ -420,6 +420,21 @@ describe('MobileNavOverlay', () => {
     }
   );
 
+  it('waits for the shell to release inert before restoring reduced-motion focus', () => {
+    stubReducedMotion(true);
+    const result = renderOverlay();
+    const trigger = result.triggerRef.current;
+    if (!trigger) throw new Error('Expected the shell trigger');
+    trigger.setAttribute('inert', '');
+    const focus = vi.spyOn(trigger, 'focus');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(focus).not.toHaveBeenCalled();
+    trigger.removeAttribute('inert');
+    act(() => vi.advanceTimersByTime(16));
+    expect(focus).toHaveBeenCalledOnce();
+  });
+
   it('completes destination-panel navigation synchronously with reduced motion', () => {
     stubReducedMotion(true);
     const result = renderOverlay();

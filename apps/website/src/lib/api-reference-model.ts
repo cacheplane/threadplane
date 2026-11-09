@@ -1,6 +1,13 @@
 /** Browser-safe contract shared by API Extractor generation and the website. */
 export type ApiFramework = 'angular' | 'react' | 'shared' | 'backend';
 
+/** Framework adapters also depend on the shared and backend contracts. */
+export function matchesApiFramework(framework: ApiFramework | undefined, scope = 'all'): boolean {
+  return !scope || scope === 'all' || framework === scope ||
+    ((scope === 'angular' || scope === 'react') &&
+      (framework === 'shared' || framework === 'backend'));
+}
+
 export interface ApiEntrypoint {
   id: string;
   importPath: string;
@@ -199,11 +206,7 @@ export function filterApiSymbols<
           .includes(query)) &&
       (!filters.entrypoint || symbol.entrypointId === filters.entrypoint) &&
       (!filters.kind || symbol.kind === filters.kind) &&
-      (!filters.framework ||
-        filters.framework === 'all' ||
-        framework === filters.framework ||
-        ((filters.framework === 'angular' || filters.framework === 'react') &&
-          (framework === 'shared' || framework === 'backend')))
+      matchesApiFramework(framework, filters.framework)
     );
   });
 }

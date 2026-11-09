@@ -59,7 +59,10 @@ export async function ApiReferencePage({
   ];
   const docsSlot = (
     <div className="docs-workspace-article">
-      <div className="api-reference-page" data-api-page={symbol ? 'symbol' : entrypoint ? 'entrypoint' : 'index'}>
+      <div
+        className="api-reference-page"
+        data-api-page={symbol ? 'symbol' : entrypoint ? 'entrypoint' : 'index'}
+      >
         {symbol && entrypoint ? (
           <ApiSymbolView symbol={symbol} entrypoint={entrypoint} />
         ) : (
@@ -91,6 +94,7 @@ export async function ApiReferencePage({
               <p>This reserved entrypoint has no exported declarations.</p>
             ) : null}
             <ApiIndexView
+              standalone
               key={entrypoint?.id ?? 'all'}
               index={index}
               entrypointId={entrypoint?.id}
@@ -133,8 +137,13 @@ export async function ApiReferencePage({
           activeSlug: segments.at(-1) ?? '',
           apiContext: {
             entrypoints: index.entrypoints,
-            symbols: index.symbols.filter(
-              (item) => item.entrypointId === entrypoint?.id
+            symbols: index.symbols.map(
+              ({ name, entrypointId, href, isDeprecated }) => ({
+                name,
+                entrypointId,
+                href,
+                isDeprecated,
+              })
             ),
             activeHref: pathname,
           },

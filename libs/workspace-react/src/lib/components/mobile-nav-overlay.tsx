@@ -243,7 +243,12 @@ export function MobileNavOverlay({
     if (state !== 'closed' || closeIntentRef.current.kind === 'none') {
       return undefined;
     }
-    if (prefersReducedMotionRef.current) {
+    // Presence changes release the shell's inert state in the next commit.
+    // Even without animation, focusing an inert trigger now silently fails.
+    if (
+      prefersReducedMotionRef.current &&
+      !triggerRefRef.current?.current?.closest('[inert]')
+    ) {
       completePostClose();
       return undefined;
     }

@@ -172,6 +172,9 @@ for (const width of [320, 375, 768, 1024, 1440, 1920]) {
         // exempting the toolbar/sidebar from the spacing audit altogether.
         const compact = '[data-docs-navigation-compact]';
         const opticalSpacing: [string, Record<string, number>][] = [
+          // The windowed API sidebar reserves more room for its scrollable exports.
+          [`${compact}:has(.api-reference-navigation) .docs-control-plane-search-trigger`, { 'margin-bottom': 12 }],
+          [`${compact} .api-scope-picker .docs-sidebar-library`, { 'margin-bottom': 0 }],
           [`${compact} .docs-control-plane-search-trigger`, { 'padding-top': 10, 'padding-bottom': 10, 'margin-bottom': 22 }],
           [`${compact} [data-framework-selector] > label, ${compact} .docs-sidebar-picker-label`, { 'margin-bottom': 6, 'margin-left': 3 }],
           [`${compact} .docs-sidebar-lib-trigger`, { 'padding-top': 10, 'padding-bottom': 10 }],

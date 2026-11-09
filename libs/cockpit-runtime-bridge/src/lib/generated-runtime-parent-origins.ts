@@ -4,6 +4,8 @@ export const GENERATED_RUNTIME_PARENT_ORIGINS = Object.freeze([
   "https://threadplane.ai",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
   "http://localhost:4308",
   "http://127.0.0.1:4308"
 ] as const);
