@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 198
+        "line": 200
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ activities, label, children, }",
+          "parameterName": "{ activities, label, renderResult, children, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 198
+    "line": 200
   }
 }

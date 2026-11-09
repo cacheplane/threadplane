@@ -293,7 +293,7 @@
             {
               "kind": "Reference",
               "text": "ToolActivityOutcome",
-              "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+              "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
               "href": "/docs/api/react/chat/ToolActivityOutcome"
             },
             {

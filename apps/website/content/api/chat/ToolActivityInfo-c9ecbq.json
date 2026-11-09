@@ -293,7 +293,7 @@
             {
               "kind": "Reference",
               "text": "ToolActivityOutcome",
-              "canonicalReference": "@threadplane/chat!ToolActivityOutcome:interface",
+              "canonicalReference": "@threadplane/chat!ToolActivityOutcome:type",
               "href": "/docs/api/chat/ToolActivityOutcome"
             },
             {

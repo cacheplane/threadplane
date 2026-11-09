@@ -199,7 +199,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 30
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -242,6 +242,48 @@
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
             "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderToolResult",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#renderToolResult:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderToolResult?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['renderToolResult']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 30
           },
           "isReadonly": true,
           "isOptional": true

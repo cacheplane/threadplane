@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 195
+            "line": 197
           },
           "isReadonly": true,
           "isOptional": true
@@ -144,6 +144,57 @@
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
             "line": 194
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderResult",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#renderResult:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderResult?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned per-call result or action, rendered outside the collapsed group; null or undefined omits the call.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 196
           },
           "isReadonly": true,
           "isOptional": true

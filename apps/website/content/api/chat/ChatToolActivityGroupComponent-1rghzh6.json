@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 265
+            "line": 269
           },
           "isStatic": false,
           "isReadonly": true,
@@ -125,7 +125,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 271
+            "line": 275
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "failureSummaries",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolActivityGroupComponent#failureSummaries:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly failureSummaries: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly string[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+            "line": 278
           },
           "isStatic": false,
           "isReadonly": true,
@@ -171,7 +217,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 266
+            "line": 270
           },
           "isStatic": false,
           "isReadonly": true,
@@ -227,7 +273,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 274
+            "line": 281
           },
           "isStatic": false,
           "isReadonly": true,
@@ -273,7 +319,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 275
+            "line": 282
           },
           "isStatic": false,
           "isReadonly": true,
@@ -319,7 +365,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 267
+            "line": 271
           },
           "isStatic": false,
           "isReadonly": true,
@@ -375,7 +421,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 268
+            "line": 272
           },
           "isStatic": false,
           "isReadonly": true,
