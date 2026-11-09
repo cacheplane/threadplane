@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
-import React from 'react';
+import React, { act } from 'react';
+import { hydrateRoot, type Root } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -82,7 +84,7 @@ describe('SiteFooter', () => {
     ).toBe(true);
   });
 
-  it.each(['/', '/pricing', '/blog/some-post', '/docs-adjacent'])(
+  it.each(['/', '/index', '/pricing', '/blog/some-post', '/docs-adjacent'])(
     'renders the marketing footer on %s',
     (route) => {
       pathname.current = route;
@@ -111,24 +113,56 @@ describe('SiteFooter', () => {
     }
   );
 
-  it('hands the server-owned policy through to the footer newsletter form', () => {
-    pathname.current = '/pricing';
+  it.each(['/pricing', '/index-adjacent', '/index/other'])(
+    'hands the server-owned policy through to the footer newsletter form on %s',
+    (route) => {
+      pathname.current = route;
 
-    render(<SiteFooter formPolicy={formPolicy} />);
+      render(<SiteFooter formPolicy={formPolicy} />);
 
-    const disclosure = screen.getByText(formPolicy.disclosures.newsletter);
-    expect(
-      screen
-        .getByRole('button', { name: /subscribe/i })
-        .getAttribute('aria-describedby')
-    ).toBe(disclosure.id);
-  });
+      const disclosure = screen.getByText(formPolicy.disclosures.newsletter);
+      expect(
+        screen
+          .getByRole('button', { name: /subscribe/i })
+          .getAttribute('aria-describedby')
+      ).toBe(disclosure.id);
+    }
+  );
 
-  it('hides the newsletter form on the homepage, whose field report form is the one form', () => {
-    pathname.current = '/';
-    render(<SiteFooter formPolicy={formPolicy} />);
-    expect(screen.queryByRole('button', { name: /subscribe/i })).toBeNull();
-    expect(screen.queryByText(formPolicy.disclosures.newsletter)).toBeNull();
-    expect(document.querySelector('footer')).not.toBeNull();
+  it.each(['/', '/index'])(
+    'hides the newsletter form on homepage alias %s, whose field report form is the one form',
+    (route) => {
+      pathname.current = route;
+      render(<SiteFooter formPolicy={formPolicy} />);
+      expect(screen.queryByRole('button', { name: /subscribe/i })).toBeNull();
+      expect(screen.queryByText(formPolicy.disclosures.newsletter)).toBeNull();
+      expect(document.querySelector('footer')).not.toBeNull();
+    }
+  );
+
+  it('hydrates the internal /index homepage as public / without a markup mismatch', async () => {
+    pathname.current = '/index';
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(<SiteFooter formPolicy={formPolicy} />);
+    document.body.appendChild(container);
+    const recoverableErrors: unknown[] = [];
+    let root: Root | undefined;
+
+    try {
+      pathname.current = '/';
+      await act(async () => {
+        root = hydrateRoot(container, <SiteFooter formPolicy={formPolicy} />, {
+          onRecoverableError: (error) => recoverableErrors.push(error),
+        });
+      });
+
+      expect(recoverableErrors).toEqual([]);
+      expect(container.querySelector('footer')).not.toBeNull();
+      expect(container.querySelector('.footer-signup')).toBeNull();
+      expect(container.textContent).not.toContain(formPolicy.disclosures.newsletter);
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+    }
   });
 });

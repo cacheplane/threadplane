@@ -51,6 +51,11 @@
   min-height: 100%;
 }
 
+/* Preserve native disclosure state without adding a box around the article. */
+.docs-disclosure-handoff {
+  display: contents;
+}
+
 /* The global nav remains fixed above the unified workspace. The host owns the
  * remaining viewport, including footer suppression and the single scroll root
  * inside the active workspace panel. */
@@ -1927,7 +1932,7 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--color-accent);
   font: inherit;
   font-size: 14px;

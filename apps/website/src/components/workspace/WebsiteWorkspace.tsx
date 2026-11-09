@@ -3,6 +3,11 @@
 import { useContext, useLayoutEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { deferDocsLinkHandoff, hasBusyDocsLink } from './docs-link-handoff';
+import {
+  captureDocsDisclosures,
+  DocsDisclosureHandoff,
+  type DocsDisclosureSnapshot,
+} from './DocsDisclosureHandoff';
 import { WebsiteWorkspaceLayoutContext } from './WebsiteWorkspaceRoot';
 import {
   WebsiteWorkspaceSurface,
@@ -23,6 +28,10 @@ export function WebsiteWorkspace(props: WebsiteWorkspaceProps) {
   const token = tokenRef.current;
   const fallbackRef = useRef<HTMLDivElement>(null);
   const didRegisterRef = useRef(false);
+  const disclosureHandoffRef = useRef<{
+    routePath: string;
+    snapshot: DocsDisclosureSnapshot;
+  } | null>(null);
 
   useLayoutEffect(() => {
     if (!layout) return undefined;
@@ -30,9 +39,29 @@ export function WebsiteWorkspace(props: WebsiteWorkspaceProps) {
     let registered = false;
     const register = () => {
       if (!current) return;
+      if (!didRegisterRef.current && host) {
+        const snapshot = captureDocsDisclosures(host);
+        if (snapshot)
+          disclosureHandoffRef.current = {
+            routePath: props.routePath,
+            snapshot,
+          };
+      }
+      const handoff = disclosureHandoffRef.current;
+      const registration =
+        handoff?.routePath === props.routePath
+          ? {
+              ...props,
+              docsSlot: (
+                <DocsDisclosureHandoff snapshot={handoff.snapshot}>
+                  {props.docsSlot}
+                </DocsDisclosureHandoff>
+              ),
+            }
+          : props;
       didRegisterRef.current = true;
       registered = true;
-      layout.register(token, props, WebsiteWorkspaceSurface);
+      layout.register(token, registration, WebsiteWorkspaceSurface);
     };
     const host = fallbackRef.current;
     let cancel: (() => void) | undefined;

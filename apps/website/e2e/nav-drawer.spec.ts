@@ -142,17 +142,28 @@ test.describe('mobile nav drawer', () => {
     await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
   });
 
-  test('opens pre-pushed to the docs level on /docs', async ({ page }) => {
+  test('opens workspace documentation navigation on /docs', async ({ page }) => {
     await page.goto('/docs');
-    await page.getByRole('button', { name: 'Open menu' }).click();
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
+    const trigger = page.getByRole('button', { name: 'Open navigation', exact: true });
+    await trigger.click();
 
-    const drawer = dialog(page);
+    const drawer = page.getByRole('dialog', { name: 'Documentation control plane', exact: true });
     await expect(drawer).toBeVisible();
-    await expect(drawer.getByRole('button', { name: 'Back to menu' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Framework', exact: true })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Choose a library' })).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Search docs' })).toBeVisible();
 
-    // It opened at the docs level, not the root list of site triggers.
+    // Documentation has its own workspace drawer rather than the site menu.
     await expect(drawer.getByRole('button', { name: 'Libraries' })).toHaveCount(0);
     await expect(drawer.getByRole('button', { name: 'Solutions' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await drawer.getByRole('button', { name: 'Search docs' }).click();
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Search documentation' })).toBeVisible();
   });
 });

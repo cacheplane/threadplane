@@ -331,96 +331,55 @@ test.describe('workspace shell', () => {
     }
   });
 
-  test('docs-only /docs/choosing-an-adapter links to examples and APIs', async ({
-    page,
-  }) => {
-    const path = '/docs/choosing-an-adapter';
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(path);
+  for (const path of ['/docs/choosing-an-adapter', '/docs']) {
+    test(`docs-only ${path} opens examples and APIs within the shared workspace`, async ({ page }) => {
+      const panel = (mode: 'Docs' | 'Run' | 'API') =>
+        page.getByRole('region', { name: `${mode} workspace panel`, exact: true });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(path);
+      await expectMode(page, 'Docs');
+      await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-kind', 'docs-only');
+      const docsHeading = await panel('Docs').getByRole('heading', { level: 1 }).innerText();
+      await expect(page.locator('[data-docs-control-plane]')).toHaveCount(0);
+      for (const mode of ['Code'] as const) {
+        const control = modeButton(page, mode);
+        await expect(control).toHaveAttribute('aria-disabled', 'true');
+        await expect(control).toHaveAccessibleDescription(
+          new RegExp(
+            `${mode} is unavailable because this page has no workspace capability`,
+            'i'
+          )
+        );
+        await expect(control).not.toHaveAttribute('href', /.+/);
+        await expect(control).not.toHaveAttribute('target', /.+/);
+        await control.focus();
+        await expect(control).toBeFocused();
+        await control.click({ force: true });
+        await expect(page).toHaveURL(path);
+        await expectMode(page, 'Docs');
+      }
+      await expect(page.getByRole('button', { name: 'Search docs', exact: true })).toBeVisible();
+      await modeButton(page, 'Run').click();
+      await expectMode(page, 'Run');
+      await expect(page).toHaveURL(`${path}?mode=run`);
+      await expect(panel('Run').getByRole('heading', { name: 'See it in action.' })).toBeVisible();
+      await expect(panel('Run').locator('a.docs-example-card').first()).toBeVisible();
+      await expect(panel('Run').locator('a.docs-example-card').first()).toHaveAttribute('href', /\/docs\/.+\?mode=run/);
 
-    const controlPlane = page.locator('[data-docs-control-plane]');
-    await expect(controlPlane).toBeVisible();
-    await expect(controlPlane.getByRole('link', { name: 'Run', exact: true })).toHaveAttribute('href', '/docs/examples');
-    await expect(controlPlane.getByRole('link', { name: 'API', exact: true })).toHaveAttribute('href', '/docs/api');
-    for (const mode of ['Code'] as const) {
-      const control = controlPlane.getByRole('button', {
-        name: mode,
-        exact: true,
-      });
-      await expect(control).toHaveAttribute('aria-disabled', 'true');
-      await expect(control).toHaveAccessibleDescription(
-        new RegExp(
-          `${mode} is unavailable because this page has no workspace capability`,
-          'i'
-        )
-      );
-      await expect(control).not.toHaveAttribute('href', /.+/);
-      await expect(control).not.toHaveAttribute('target', /.+/);
-      await control.focus();
-      await expect(control).toBeFocused();
-      await control.click({ force: true });
+      await modeButton(page, 'API').click();
+      await expectMode(page, 'API');
+      await expect(page).toHaveURL(`${path}?mode=api`);
+      await expect(panel('API').getByRole('heading', { name: 'API reference', exact: true })).toBeVisible();
+      const packageLink = panel('API').locator('.api-reference-entrypoint-card h2 a').first();
+      await expect(packageLink).toBeVisible();
+      await expect(packageLink).toHaveAttribute('href', /\/docs\/api\/.+/);
+
+      await modeButton(page, 'Docs').click();
+      await expectMode(page, 'Docs');
       await expect(page).toHaveURL(path);
-    }
-    await expect(
-      controlPlane.getByRole('button', { name: 'Search docs' })
-    ).toBeVisible();
-  });
-
-  test('docs-only /docs links Run to the example directory and API to generated reference', async ({
-    page,
-  }) => {
-    const path = '/docs';
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(path);
-
-    const controlPlane = page.locator('[data-docs-control-plane]');
-    await expect(controlPlane).toBeVisible();
-
-    await expect(controlPlane.getByRole('link', { name: 'API', exact: true })).toHaveAttribute('href', '/docs/api');
-    for (const mode of ['Code'] as const) {
-      const control = controlPlane.getByRole('button', {
-        name: mode,
-        exact: true,
-      });
-      await expect(control).toHaveAttribute('aria-disabled', 'true');
-      await expect(control).toHaveAccessibleDescription(
-        new RegExp(
-          `${mode} is unavailable because this page has no workspace capability`,
-          'i'
-        )
-      );
-      await expect(control).not.toHaveAttribute('href', /.+/);
-      await expect(control).not.toHaveAttribute('target', /.+/);
-    }
-
-    await expect(
-      controlPlane.getByRole('button', { name: 'Search docs' })
-    ).toBeVisible();
-
-    const run = controlPlane.getByRole('link', { name: 'Run', exact: true });
-    await expect(run).toHaveAttribute(
-      'href',
-      '/docs/examples'
-    );
-    // Match the destination document; hydration can also update history.
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.request().isNavigationRequest() &&
-          response.request().frame() === page.mainFrame() &&
-          response.url() ===
-            new URL(
-              '/docs/examples',
-              page.url()
-            ).href
-      ),
-      run.click(),
-    ]);
-    expect(response.status()).toBe(200);
-    await expect(page).toHaveURL('/docs/examples');
-    await expectMode(page, 'Run');
-    await expect(page.getByRole('heading', { name: 'See it in action.' })).toBeVisible();
-  });
+      await expect(panel('Docs').getByRole('heading', { level: 1 })).toHaveText(docsHeading, { useInnerText: true });
+    });
+  }
 
   test('serves the formerly workspace-only capabilities as docs pages with Run available', async ({
     page,
@@ -724,7 +683,8 @@ test.describe('workspace shell', () => {
       .click();
     await expect(page).toHaveURL('/docs/choosing-an-adapter');
     await expect(dialog).toHaveCount(0);
-    await expect(page.locator('main h1').first()).toBeFocused();
+    await expectMode(page, 'Docs');
+    await expect(visiblePanel(page, 'Docs')).toBeFocused();
   });
 
   test('keeps section navigation and visible Search in mapped and unmapped mobile Docs context', async ({

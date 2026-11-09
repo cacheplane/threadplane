@@ -17,5 +17,7 @@ import { Footer } from './Footer';
 export function SiteFooter({ formPolicy }: { formPolicy: PublicFormPolicy }) {
   const pathname = usePathname();
   if (pathname === '/docs' || pathname?.startsWith('/docs/')) return null;
-  return <Footer formPolicy={formPolicy} showNewsletter={pathname !== '/'} />;
+  // Production can render / as /index; both must hydrate the same footer.
+  const isHomepage = pathname === '/' || pathname === '/index';
+  return <Footer formPolicy={formPolicy} showNewsletter={!isHomepage} />;
 }
