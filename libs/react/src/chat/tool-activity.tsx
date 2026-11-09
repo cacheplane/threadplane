@@ -202,6 +202,13 @@ export function ToolActivityGroup({
 }: ToolActivityGroupProps) {
   const summary = activitySummary(activities, label);
   const failed = summary.phase === 'error';
+  const failureSummaries = [
+    ...new Set(
+      activities.flatMap((item) =>
+        item.phase === 'error' && item.errorSummary ? [item.errorSummary] : []
+      )
+    ),
+  ];
   return (
     <section
       className="tp-tool-activity-group"
@@ -243,9 +250,13 @@ export function ToolActivityGroup({
       )}
       <ToolOutcomes activities={activities} />
       {failed && (
-        <p role="alert" className="tp-tool-activity__error">
-          Some tools could not finish. Check Details before retrying.
-        </p>
+        <div role="alert" className="tp-tool-activity__error">
+          {failureSummaries.length > 0 ? (
+            failureSummaries.map((text) => <p key={text}>{text}</p>)
+          ) : (
+            <p>Some tools could not finish. Check Details before retrying.</p>
+          )}
+        </div>
       )}
       {children}
     </section>

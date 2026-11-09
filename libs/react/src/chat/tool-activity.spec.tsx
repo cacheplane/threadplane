@@ -1,5 +1,6 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { activitySummary } from './activity-summary';
 import {
   ToolActivity,
   ToolActivityGroup,
@@ -201,7 +202,7 @@ describe('ToolActivityGroup', () => {
     ['stopped', 'Tool activity stopped'],
     ['unknown', 'Tool status unavailable'],
     ['complete', 'Used 1 tool'],
-    ['error', 'Tool activity failed'],
+    ['error', 'Used 1 tool · 1 failed'],
   ] as const)('summarizes %s in one collapsed row', (phase, expected) => {
     const view = render(
       <ToolActivityGroup
@@ -393,5 +394,67 @@ describe('resolveToolOutcome', () => {
     );
     expect(confirmedOutcomes([failed])).toEqual([]);
     expect(outcomeSources([failed]).map((s) => s.url)).toEqual(['https://example.com/b']);
+  });
+});
+
+describe('settled failure copy', () => {
+  it('labels a settled mixed group with its failure count', () => {
+    const s = activitySummary([
+      { id: 'a', name: 't', phase: 'complete' },
+      { id: 'b', name: 't', phase: 'error' },
+    ]);
+    expect(s.label).toBe('Used 2 tools · 1 failed');
+    expect(s.status).toBe('Used 2 tools · 1 failed. 1 complete · 1 failed.');
+  });
+  it('keeps the failed label while work is still waiting', () => {
+    expect(
+      activitySummary([
+        { id: 'a', name: 't', phase: 'error' },
+        { id: 'b', name: 't', phase: 'waiting' },
+      ]).label
+    ).toBe('Tool activity failed');
+  });
+  it('uses a single-tool noun', () => {
+    expect(
+      activitySummary([{ id: 'a', name: 't', phase: 'error' }]).label
+    ).toBe('Used 1 tool · 1 failed');
+  });
+  it('lets an app caption win and still cues Failed', () => {
+    const s = activitySummary(
+      [{ id: 'a', name: 't', phase: 'error' }],
+      'Reading references'
+    );
+    expect(s.label).toBe('Reading references');
+    expect(s.cue).toContain('Failed');
+  });
+  it('shows de-duplicated failure copy in the group alert', () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          { id: 'a', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+          { id: 'b', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+        ]}
+      />
+    );
+    const alerts = view
+      .getAllByRole('alert')
+      .filter((el) => el.closest('details') === null);
+    expect(alerts).toHaveLength(1);
+    const paragraphs = alerts[0].tagName === 'P' ? [alerts[0]] : alerts[0].querySelectorAll('p');
+    expect(paragraphs).toHaveLength(1);
+    expect(alerts[0].textContent).toBe('Reference B is unavailable.');
+    expect(view.container.textContent).not.toContain('Some tools could not finish');
+  });
+  it('falls back to the generic group alert when no summary exists', () => {
+    const view = render(
+      <ToolActivityGroup activities={[{ id: 'a', name: 't', phase: 'error' }]} />
+    );
+    const alerts = view
+      .getAllByRole('alert')
+      .filter((el) => el.closest('details') === null);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent).toBe(
+      'Some tools could not finish. Check Details before retrying.'
+    );
   });
 });
