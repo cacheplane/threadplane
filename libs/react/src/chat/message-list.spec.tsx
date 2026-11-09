@@ -489,6 +489,174 @@ describe('MessageList', () => {
     expect(toolOutcome).not.toHaveBeenCalled();
     content.dispose();
   });
+  describe('app-declared tool failures', () => {
+    const calls = (results: readonly unknown[]): AgentSnapshot['toolCalls'] =>
+      results.map((result, i) => ({
+        id: `c${i}`,
+        name: 'read_reference',
+        args: {},
+        status: 'complete' as const,
+        result,
+      })) as AgentSnapshot['toolCalls'];
+    const project = (results: readonly unknown[]) => {
+      const content = createMessageContent();
+      const rows = content.project(
+        snap(
+          [
+            msg('a', 'Answer', {
+              toolCallIds: results.map((_, i) => `c${i}`),
+            }),
+          ],
+          calls(results)
+        )
+      );
+      return { content, rows };
+    };
+    const failB = (activity: { id: string }) =>
+      activity.id === 'c1'
+        ? { status: 'failed' as const, text: 'Reference B is unavailable.' }
+        : undefined;
+    it('partial failure shows one Complete and one Failed row', () => {
+      const { content, rows } = project([
+        'ok',
+        { recoverable: true, error: 'x' },
+      ]);
+      const view = render(
+        <MessageList rows={rows} groupRelatedTools toolOutcome={failB} />
+      );
+      expect(view.getByText('Used 2 tools · 1 failed')).toBeTruthy();
+      expect(view.getByRole('status').textContent).toBe(
+        'Used 2 tools · 1 failed. 1 complete · 1 failed.'
+      );
+      expect(
+        view.container.querySelector('.tp-tool-activity-group > [role="alert"]')
+          ?.textContent
+      ).toBe('Reference B is unavailable.');
+      const rowB = view.container.querySelector('[data-tool-id="c1"]');
+      expect(rowB?.getAttribute('data-phase')).toBe('error');
+      expect(
+        view.container
+          .querySelector('[data-tool-id="c0"]')
+          ?.getAttribute('data-phase')
+      ).toBe('complete');
+      expect(rowB?.querySelector('details')?.textContent).toContain(
+        '"recoverable": true'
+      );
+      content.dispose();
+    });
+    it('a throwing toolOutcome leaves the call complete', () => {
+      const { content, rows } = project(['ok', 'ok2']);
+      const error = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools
+          toolOutcome={(activity) => {
+            if (activity.id === 'c1') throw new Error('boom');
+            return undefined;
+          }}
+        />
+      );
+      expect(view.getByText('Used 2 tools')).toBeTruthy();
+      expect(
+        [...view.container.querySelectorAll('.tp-tool-activity')].map((el) =>
+          el.getAttribute('data-phase')
+        )
+      ).toEqual(['complete', 'complete']);
+      expect(error).toHaveBeenCalledTimes(1);
+      error.mockRestore();
+      content.dispose();
+    });
+    it('falsy literal results stay complete', () => {
+      const literals = [false, 0, '', [], null];
+      const { content, rows } = project(literals);
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools
+          toolOutcome={() => undefined}
+        />
+      );
+      expect(view.getByText('Used 5 tools')).toBeTruthy();
+      const results = [
+        ...view.container.querySelectorAll('.tp-tool-activity'),
+      ].map(
+        (el) => el.querySelector('details pre:nth-of-type(2)')?.textContent
+      );
+      expect(results).toEqual(['false', '0', '', '[]', 'null']);
+      content.dispose();
+    });
+    it('renderToolResult renders outside the collapsed group', () => {
+      const { content, rows } = project([
+        'ok',
+        { recoverable: true, error: 'x' },
+      ]);
+      const seen: string[] = [];
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools
+          toolOutcome={failB}
+          renderToolResult={(activity) => {
+            seen.push(`${activity.id}:${activity.phase}`);
+            return activity.phase === 'error' ? (
+              <button type="button">Retry B</button>
+            ) : null;
+          }}
+        />
+      );
+      const details = view.container.querySelector(
+        '.tp-tool-activity-group__details'
+      ) as HTMLDetailsElement;
+      expect(details.open).toBe(false);
+      const buttons = view.getAllByRole('button', { name: 'Retry B' });
+      expect(buttons).toHaveLength(1);
+      expect(details.contains(buttons[0])).toBe(false);
+      expect(
+        buttons[0].closest('[data-tool-id]')?.getAttribute('data-tool-id')
+      ).toBe('c1');
+      expect(buttons[0].closest('.tp-tool-activity__results')).toBeTruthy();
+      expect(seen).toContain('c1:error');
+      expect(seen).toContain('c0:complete');
+      content.dispose();
+    });
+    it('renders no results container when the slot returns nothing', () => {
+      const { content, rows } = project(['ok']);
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools
+          renderToolResult={() => null}
+        />
+      );
+      expect(
+        view.container.querySelector('.tp-tool-activity__results')
+      ).toBeNull();
+      content.dispose();
+    });
+    it('renderToolResult renders as ToolActivity children when ungrouped', () => {
+      const { content, rows } = project(['ok', 'bad']);
+      const view = render(
+        <MessageList
+          rows={rows}
+          groupRelatedTools={false}
+          toolOutcome={failB}
+          renderToolResult={(activity) =>
+            activity.phase === 'error' ? (
+              <button type="button">Retry B</button>
+            ) : null
+          }
+        />
+      );
+      const button = view.getByRole('button', { name: 'Retry B' });
+      expect(
+        button.closest('.tp-tool-activity')?.getAttribute('data-tool-id')
+      ).toBe('c1');
+      content.dispose();
+    });
+  });
   it('keeps precommit and SSR actions inert and follows resize only while pinned in StrictMode', () => {
     const callbacks: (() => void)[] = [];
     const disconnects: ReturnType<typeof vi.fn>[] = [];

@@ -18,6 +18,7 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from './tool-activity.js';
+import { resolveToolOutcome } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -78,6 +79,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  /** App-owned rich result or action for one tool call, rendered outside technical Details. Keep stable like renderMessage; custom renderMessage retains full ownership. */
+  readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -87,6 +90,29 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
 }
 
 const PIN_THRESHOLD = 32;
+declare const process:
+  | { readonly env: { readonly NODE_ENV?: string } }
+  | undefined;
+/** A throwing app hook must not break the transcript; the call keeps its core phase. */
+function safeOutcome(
+  toolOutcome: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined,
+  activity: ToolActivityInfo
+): ToolActivityOutcome | undefined {
+  try {
+    return toolOutcome(activity);
+  } catch (error) {
+    if (
+      typeof process === 'undefined' ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      console.error(
+        'toolOutcome threw; the tool call keeps its core phase.',
+        error
+      );
+    }
+    return undefined;
+  }
+}
 const literal = (value: unknown): string =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
@@ -98,6 +124,7 @@ function RowView<TRow extends MessageRow>({
   groupRelatedTools,
   toolLabel,
   toolOutcome,
+  renderToolResult,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -111,6 +138,7 @@ function RowView<TRow extends MessageRow>({
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -128,7 +156,10 @@ function RowView<TRow extends MessageRow>({
       resultText: call.status === 'complete' ? literal(call.result) : undefined,
       errorText: call.status === 'error' ? call.error : undefined,
     };
-    return { ...activity, outcome: toolOutcome?.(activity) };
+    return resolveToolOutcome(
+      activity,
+      toolOutcome ? safeOutcome(toolOutcome, activity) : undefined
+    );
   });
   return (
     <ChatMessage
@@ -150,10 +181,15 @@ function RowView<TRow extends MessageRow>({
           )}
           {row.role !== 'tool' &&
             (groupRelatedTools ? (
-              <ToolActivityGroup activities={activities} />
+              <ToolActivityGroup
+                activities={activities}
+                renderResult={renderToolResult}
+              />
             ) : (
               activities.map((activity) => (
-                <ToolActivity key={activity.id} activity={activity} />
+                <ToolActivity key={activity.id} activity={activity}>
+                  {renderToolResult?.(activity)}
+                </ToolActivity>
               ))
             ))}
         </>
@@ -185,6 +221,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   groupRelatedTools = true,
   toolLabel,
   toolOutcome,
+  renderToolResult,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -283,6 +320,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               groupRelatedTools={groupRelatedTools}
               toolLabel={toolLabel}
               toolOutcome={toolOutcome}
+              renderToolResult={renderToolResult}
             />
           ))}
           {children}

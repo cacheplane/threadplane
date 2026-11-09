@@ -192,12 +192,15 @@ function ToolOutcomes({
 export interface ToolActivityGroupProps {
   readonly activities: readonly ToolActivityInfo[];
   readonly label?: string;
+  /** App-owned per-call result or action, rendered outside the collapsed group; null or undefined omits the call. */
+  readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;
   readonly children?: ReactNode;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
 export function ToolActivityGroup({
   activities,
   label,
+  renderResult,
   children,
 }: ToolActivityGroupProps) {
   const summary = activitySummary(activities, label);
@@ -209,6 +212,18 @@ export function ToolActivityGroup({
       )
     ),
   ];
+  const results = renderResult
+    ? activities.flatMap((activity) => {
+        const result = renderResult(activity);
+        return result === null || result === undefined
+          ? []
+          : [
+              <div key={activity.id} data-tool-id={activity.id}>
+                {result}
+              </div>,
+            ];
+      })
+    : [];
   return (
     <section
       className="tp-tool-activity-group"
@@ -249,6 +264,9 @@ export function ToolActivityGroup({
         </p>
       )}
       <ToolOutcomes activities={activities} />
+      {results.length > 0 && (
+        <div className="tp-tool-activity__results">{results}</div>
+      )}
       {failed && (
         <div role="alert" className="tp-tool-activity__error">
           {failureSummaries.length > 0 ? (

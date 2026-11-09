@@ -6,7 +6,7 @@ import {
 } from './index';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { ReactNode } from 'react';
-import type { ChatMessageRole } from './index';
+import type { ChatMessageRole, ToolActivityInfo } from './index';
 const ok: MessageListProps = { rows: [] };
 declare const context: MessageListRowContext;
 const current: boolean = context.current;
@@ -139,3 +139,12 @@ const authoredProps: MessageListProps<AuthoredRow> = {
   }}
 />;
 <MessageList {...authoredProps} />;
+
+export type RenderToolResultContract = Assert<
+  Equal<
+    Pick<MessageListProps, 'renderToolResult'>,
+    {
+      readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
+    }
+  >
+>;
