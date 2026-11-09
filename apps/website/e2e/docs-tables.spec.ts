@@ -45,12 +45,14 @@ async function splitWords(page: Page, selector: string): Promise<string[]> {
   });
 }
 
-const MATRIX = 'table[data-shape="matrix"]';
+// Measure the registered article, not its temporary server/streaming copy.
+const MATRIX = '[data-website-workspace-host][data-workspace-route="/docs/choosing-an-adapter"] table[data-shape="matrix"]';
 
 test.describe('Docs tables', () => {
   test('desktop: the runtime matrix splits no words', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/docs/choosing-an-adapter');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     await expect(page.locator(MATRIX)).toBeVisible();
     expect(await splitWords(page, MATRIX)).toEqual([]);
   });
@@ -58,10 +60,13 @@ test.describe('Docs tables', () => {
   test('phone: the runtime matrix stacks into cards without scrolling sideways', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/docs/choosing-an-adapter');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
     const matrix = page.locator(MATRIX);
     await expect(matrix).toBeVisible();
 
-    expect(await matrix.evaluate((t) => getComputedStyle(t.querySelector('tbody tr')!).display)).toBe('block');
+    // The workspace can replace the server-rendered article during hydration.
+    // Re-resolve the row while asserting its style rather than read a detached row.
+    await expect(matrix.locator('tbody tr').first()).toHaveCSS('display', 'block');
     const overflow = await matrix.evaluate((t) => {
       const scroller = t.parentElement!;
       return scroller.scrollWidth - scroller.clientWidth;
