@@ -59,6 +59,8 @@ export function InlinePreview({
   const cancel = () => {
     clearTimeout(timers.current.open);
     clearTimeout(timers.current.close);
+    timers.current.open = undefined;
+    timers.current.close = undefined;
   };
   const ownsFocus = () => {
     const active = trigger.current?.ownerDocument.activeElement;
@@ -81,10 +83,22 @@ export function InlinePreview({
     suppressed.current = false;
     setOpen(true);
   };
-  const leave = () => {
-    clearTimeout(timers.current.open);
+  const hover = (event: React.PointerEvent<HTMLButtonElement>) => {
     clearTimeout(timers.current.close);
+    timers.current.close = undefined;
+    if (
+      event.pointerType !== 'touch' &&
+      event.currentTarget.ownerDocument.defaultView?.matchMedia?.(
+        '(hover: hover) and (pointer: fine)'
+      ).matches &&
+      timers.current.open === undefined
+    )
+      timers.current.open = setTimeout(activate, 120);
+  };
+  const leave = () => {
+    cancel();
     timers.current.close = setTimeout(() => {
+      timers.current.close = undefined;
       if (!ownsFocus()) setOpen(false);
     }, 200);
   };
@@ -286,16 +300,11 @@ export function InlinePreview({
             }
           }}
           onPointerEnter={(event) => {
-            clearTimeout(timers.current.close);
-            if (
-              event.pointerType !== 'touch' &&
-              event.currentTarget.ownerDocument.defaultView?.matchMedia?.(
-                '(hover: hover) and (pointer: fine)'
-              ).matches
-            ) {
-              clearTimeout(timers.current.open);
-              timers.current.open = setTimeout(activate, 120);
-            }
+            // Layout can expose a stationary pointer after explicit dismissal.
+            if (!suppressed.current) hover(event);
+          }}
+          onPointerMove={(event) => {
+            if (suppressed.current) hover(event);
           }}
           onPointerLeave={leave}
           onKeyDown={keydown}

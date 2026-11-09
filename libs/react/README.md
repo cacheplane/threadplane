@@ -344,19 +344,62 @@ host locale and timezone. Compose `CitationCard` to reuse the default local visu
 without changing the literal metadata shown by `CitationPreview`.
 
 `MessageActions` renders a named group of explicitly authored native buttons.
-Supply readonly actions with unique `id`, string `label`, argumentless `onSelect`
-and optional `disabled`. Root `disabled`, `label` and `className` are optional;
-empty actions render nothing. The app owns clipboard writes, async feedback,
-ratings and regeneration commands. Mounting or updating the view invokes no action.
-Callbacks may return promises; the app must handle their completion and errors.
+`MessageAction` has exactly six readonly fields: required unique `id`, literal
+string `label` and argumentless `onSelect`, plus optional `disabled`, `icon` and
+`iconOnly`. `MessageActionsProps` retains four readonly fields: required `actions`
+and optional `disabled`, `label` and `className`. Group and action disabled states
+default to false; either disables the native button. The default group label is
+`Message actions`; empty actions render nothing.
+
+`icon` accepts app-authored decorative, noninteractive ReactNode content.
+`iconOnly` defaults to false; only `true` with a supplied icon enables compact
+presentation. Exactly `null`, `undefined` and booleans omit the icon and fall back
+to the visible label, even with `iconOnly: true`. Zero, strings (including empty
+strings), arrays (including empty arrays), fragments and components that render
+nothing follow normal ReactNode semantics. The library does not inspect children;
+compact callers must supply a visible, noninteractive glyph.
+
+Icons render inside an `aria-hidden` wrapper. The literal string label always
+provides the button's accessible name. With the opt-in chat stylesheet, compact
+actions visually hide that label, use at least 36px square targets and size direct
+SVG glyphs to 16px. The compact button's native `title` is the same literal label,
+independently of CSS. Without the stylesheet, both icon and label remain visible
+in normal DOM presentation. Text-only and icon-plus-label actions keep visible labels.
+
+The app owns clipboard writes, pending state, async feedback and errors; it must
+handle promise completion and rejection itself. No ratings or regeneration
+commands are supplied. Rendering, updating and unmounting invoke no action.
+Compatible same-ID updates and reordering retain each native button and its focus
+where native disabled behavior permits; activation calls the current argumentless
+callback. This private feature does not complete T28 or establish public release parity.
 
 ```tsx
 import { MessageActions } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
 
-<MessageActions
-  actions={[{ id: 'copy', label: 'Copy answer', onSelect: () => void copyAnswer() }]}
-  disabled={copyPending}
-/>;
+export function CopyAction({ onCopy, disabled = false }: {
+  readonly onCopy: () => void;
+  readonly disabled?: boolean;
+}) {
+  return (
+    <MessageActions
+      actions={[{
+        id: 'copy',
+        label: 'Copy answer',
+        onSelect: onCopy,
+        iconOnly: true,
+        icon: (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+          </svg>
+        ),
+      }]}
+      disabled={disabled}
+    />
+  );
+}
 ```
 
 `ApprovalCard` is an inline, named region with an app-authored body and explicit

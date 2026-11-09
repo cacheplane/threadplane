@@ -30,6 +30,20 @@ function setup() {
     </>
   );
 }
+function mockHover(matches = true) {
+  vi.stubGlobal('matchMedia', () => ({ matches }));
+  // jsdom lacks PointerEvent; preserve pointerType for the touch guard.
+  vi.stubGlobal(
+    'PointerEvent',
+    class extends MouseEvent {
+      readonly pointerType: string;
+      constructor(type: string, init: PointerEventInit = {}) {
+        super(type, init);
+        this.pointerType = init.pointerType ?? '';
+      }
+    }
+  );
+}
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -262,6 +276,119 @@ describe('inline previews', () => {
     expect(v.getByRole('dialog').textContent).toContain('Updated');
     expect(v.queryByRole('link', { name: 'Open source' })).toBeNull();
     v.rerender(<Markdown snapshot={snapshot('b')} citationPreview />);
+    expect(v.queryByRole('dialog')).toBeNull();
+  });
+  it.each(['Escape', 'Close'])(
+    'keeps %s dismissal through stationary boundary events until fresh pointer movement',
+    (dismissal) => {
+      vi.useFakeTimers();
+      mockHover();
+      const v = setup();
+      const trigger = v.getAllByRole('button')[0];
+      act(() => trigger.focus());
+      const close = v.getByRole('button', { name: 'Close' });
+      act(() => close.focus());
+      if (dismissal === 'Escape') fireEvent.keyDown(close, { key: 'Escape' });
+      else fireEvent.click(close);
+      expect(document.activeElement).toBe(trigger);
+      expect(v.queryByRole('dialog')).toBeNull();
+      // A stationary pointer can cross boundaries as the portal changes layout.
+      for (let i = 0; i < 3; i++) {
+        fireEvent.pointerLeave(trigger, { pointerType: 'mouse' });
+        fireEvent.pointerEnter(trigger, { pointerType: 'mouse' });
+        act(() => vi.advanceTimersByTime(150));
+        expect(v.queryByRole('dialog')).toBeNull();
+      }
+      fireEvent.focus(trigger);
+      expect(v.queryByRole('dialog')).toBeNull();
+      fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+      act(() => vi.advanceTimersByTime(60));
+      fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+      act(() => vi.advanceTimersByTime(59));
+      fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+      expect(v.queryByRole('dialog')).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      expect(v.getByRole('dialog')).toBeTruthy();
+    }
+  );
+  it.each([
+    'departure',
+    'blur',
+    'hidden',
+    'outside pointer',
+    'generation',
+    'unmount',
+  ])(
+    'cancels movement reopening on %s and allows a later fresh hover',
+    (retirement) => {
+      vi.useFakeTimers();
+      mockHover();
+      const v = setup();
+      const trigger = v.getAllByRole('button')[0];
+      act(() => trigger.focus());
+      fireEvent.keyDown(trigger, { key: 'Escape' });
+      fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+      act(() => vi.advanceTimersByTime(60));
+      expect(vi.getTimerCount()).toBe(1);
+      if (retirement === 'departure') fireEvent.pointerLeave(trigger);
+      else if (retirement === 'blur') fireEvent(window, new Event('blur'));
+      else if (retirement === 'hidden') {
+        vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+        fireEvent(document, new Event('visibilitychange'));
+        vi.restoreAllMocks();
+      } else if (retirement === 'outside pointer')
+        fireEvent.pointerDown(document.body);
+      else if (retirement === 'generation')
+        v.rerender(
+          <Markdown
+            snapshot={snapshot('b')}
+            citations={[source]}
+            citationPreview
+          />
+        );
+      else v.unmount();
+      if (retirement === 'unmount') expect(vi.getTimerCount()).toBe(0);
+      act(() => vi.advanceTimersByTime(500));
+      expect(v.queryByRole('dialog')).toBeNull();
+      if (retirement !== 'unmount') {
+        const current = v.getAllByRole('button')[0];
+        fireEvent.pointerEnter(current, { pointerType: 'mouse' });
+        fireEvent.pointerMove(current, { pointerType: 'mouse' });
+        act(() => vi.advanceTimersByTime(120));
+        expect(v.getByRole('dialog')).toBeTruthy();
+      }
+    }
+  );
+  it.each(['click', 'Enter', ' '])(
+    'allows immediate explicit %s activation after dismissal',
+    (activation) => {
+      vi.useFakeTimers();
+      const v = setup();
+      const trigger = v.getAllByRole('button')[0];
+      act(() => trigger.focus());
+      fireEvent.keyDown(trigger, { key: 'Escape' });
+      if (activation !== 'click') {
+        expect(fireEvent.keyDown(trigger, { key: activation })).toBe(true);
+        expect(fireEvent.keyUp(trigger, { key: activation })).toBe(true);
+      }
+      // Native button activation supplies click after the permitted key events.
+      fireEvent.click(trigger);
+      expect(v.getByRole('dialog')).toBeTruthy();
+    }
+  );
+  it.each([
+    { pointerType: 'touch', matches: true },
+    { pointerType: 'mouse', matches: false },
+  ])('keeps dismissed movement inert for %j', ({ pointerType, matches }) => {
+    vi.useFakeTimers();
+    mockHover(matches);
+    const v = setup();
+    const trigger = v.getAllByRole('button')[0];
+    act(() => trigger.focus());
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+    fireEvent.pointerEnter(trigger, { pointerType });
+    fireEvent.pointerMove(trigger, { pointerType });
+    act(() => vi.advanceTimersByTime(500));
     expect(v.queryByRole('dialog')).toBeNull();
   });
 });

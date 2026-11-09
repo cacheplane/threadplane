@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4b6ac1a125113591c7abe096318716558ac6d826",
+  "baselineHead": "b3d7b2b5e2e22928c7fa3f8ccd81ca17a9289df8",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "apps/website/content/docs/react/chat/components/chat.mdx",
       "libs/react/README.md",
-      "libs/react/src/chat/styles.css"
+      "libs/react/src/chat/message-actions.tsx",
+      "libs/react/src/chat/styles.css",
+      "libs/react/src/markdown/inline-preview.tsx"
     ],
     "untracked": []
   },
@@ -855,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "762f19cfc7767d02cdd7196117fc57b06468256648587f257d2cbc1a51de4432"
+      "sha256": "71be6dc1a45bd656079a88397d350ba147d1d34cc3128700f390fb892260951c"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -873,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "eac8a70357efb8668739855d852300d7fd2b3e9b8b2b90b5ab4249d48073c184"
+      "sha256": "b2848146e7ae4d1c11c413e6f16e17ff9e132986810434a6028135aae7898460"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3123,7 +3123,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "sha256": "94108127aaf06e848012b75e099e0f132756d59c81337db13095c4a571a37cd2"
+      "sha256": "67a402dc5115468070ad879c3b04ada4fa2d8b305ac2cb7a3c7dae373d905a57"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -11626,7 +11626,7 @@
           "path": "libs/react/src/chat/message-actions.tsx",
           "symbol": "MessageAction",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageAction {\n    readonly id: string;\n    readonly label: string;\n    readonly onSelect: () => void;\n    readonly disabled?: boolean;\n}"
+          "signature": "export interface MessageAction {\n    readonly id: string;\n    readonly label: string;\n    readonly onSelect: () => void;\n    readonly disabled?: boolean;\n    readonly icon?: ReactNode;\n    readonly iconOnly?: boolean;\n}"
         }
       ]
     },
@@ -11640,7 +11640,7 @@
           "path": "libs/react/src/chat/message-actions.tsx",
           "symbol": "MessageActions",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageActions({ actions, disabled = false, label = 'Message actions', className, }: MessageActionsProps) {\n    if (!actions.length)\n        return null;\n    return (<div role=\"group\" aria-label={label} className={['tp-message-actions', className].filter(Boolean).join(' ')}>\n      {actions.map((action) => (<button key={action.id} type=\"button\" className=\"tp-message-actions__action\" disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n          {action.label}\n        </button>))}\n    </div>);\n}"
+          "signature": "export function MessageActions({ actions, disabled = false, label = 'Message actions', className, }: MessageActionsProps) {\n    if (!actions.length)\n        return null;\n    return (<div role=\"group\" aria-label={label} className={['tp-message-actions', className].filter(Boolean).join(' ')}>\n      {actions.map((action) => {\n            const hasIcon = action.icon != null && typeof action.icon !== 'boolean';\n            const iconOnly = action.iconOnly === true && hasIcon;\n            return (<button key={action.id} type=\"button\" className={[\n                    'tp-message-actions__action',\n                    iconOnly && 'tp-message-actions__action--icon-only',\n                ]\n                    .filter(Boolean)\n                    .join(' ')} title={iconOnly ? action.label : undefined} disabled={disabled || action.disabled} onClick={() => {\n                    if (!disabled && !action.disabled)\n                        action.onSelect();\n                }}>\n            {hasIcon && (<span className=\"tp-message-actions__icon\" aria-hidden=\"true\">\n                {action.icon}\n              </span>)}\n            <span className=\"tp-message-actions__label\">{action.label}</span>\n          </button>);\n        })}\n    </div>);\n}"
         }
       ]
     },
@@ -16906,7 +16906,7 @@
       "id": "source:libs/react/src/chat/message-actions.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-actions.tsx",
-      "sha256": "76ff674493087f4211b01b48d5389ba3efbcdccfcc0ccb78c90004d350e9995d"
+      "sha256": "6c2b8d497e65cb75941e189ca2c67f6fb10f450af9695d296de559e76b94fa85"
     },
     {
       "id": "source:libs/react/src/chat/message-list.tsx",
@@ -17080,7 +17080,7 @@
       "id": "source:libs/react/src/markdown/inline-preview.tsx",
       "kind": "source",
       "path": "libs/react/src/markdown/inline-preview.tsx",
-      "sha256": "b20ae4a22c37da2e3c0419a1f77e92edbc52a35638185178084d08d95b82170c"
+      "sha256": "10c4d1a3b7e908d7fb16f85519fd654e9097dc6208ba73c6d426fe3552db79b8"
     },
     {
       "id": "source:libs/react/src/markdown/markdown-image.tsx",

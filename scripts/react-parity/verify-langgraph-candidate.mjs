@@ -324,8 +324,10 @@ export default { ...base, plugins: [...base.plugins, { name: 'candidate-provenan
     'installed message spacing through wrappers and explicit precedence in LTR/RTL';
   const controlsScenario =
     'installed assistant controls reveal through hover focus current and device media';
+  const iconsScenario =
+    'installed message action icons with opt-in styles and native app-owned commands';
   assert.equal(
-    scenarios.filter((scenario) => scenario !== spacingScenario && scenario !== controlsScenario).length,
+    scenarios.filter((scenario) => scenario !== spacingScenario && scenario !== controlsScenario && scenario !== iconsScenario).length,
     27,
     'All original scenarios remain required'
   );
@@ -339,6 +341,12 @@ export default { ...base, plugins: [...base.plugins, { name: 'candidate-provenan
     kind === 'react' ? 1 : 0,
     'Message controls scenario is required exactly once for React only'
   );
+  assert.equal(
+    scenarios.filter((scenario) => scenario === iconsScenario).length,
+    kind === 'react' ? 1 : 0,
+    'Message action icon scenario is required exactly once for React only'
+  );
+  assert.equal(scenarios.length, kind === 'react' ? 30 : 27);
   return {
     kind,
     directory: relative(temporary, directory),

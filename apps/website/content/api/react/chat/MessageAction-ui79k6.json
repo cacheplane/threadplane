@@ -60,7 +60,80 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-actions.tsx",
-            "line": 8
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "icon",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#icon:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly icon?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored noninteractive decorative content; nullish and boolean values omit the icon.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "iconOnly",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageAction#iconOnly:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly iconOnly?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Visually hides the label with opt-in styles when true and an icon is supplied.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-actions.tsx",
+            "line": 14
           },
           "isReadonly": true,
           "isOptional": true
@@ -96,7 +169,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-actions.tsx",
-            "line": 5
+            "line": 7
           },
           "isReadonly": true,
           "isOptional": false
@@ -132,7 +205,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-actions.tsx",
-            "line": 6
+            "line": 8
           },
           "isReadonly": true,
           "isOptional": false
@@ -168,7 +241,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-actions.tsx",
-            "line": 7
+            "line": 9
           },
           "isReadonly": true,
           "isOptional": false
@@ -176,12 +249,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-actions.tsx",
-        "line": 4
+        "line": 6
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/message-actions.tsx",
-    "line": 4
+    "line": 6
   }
 }

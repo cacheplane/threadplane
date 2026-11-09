@@ -2276,7 +2276,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/message-actions.tsx",
-      "reason": "Private authored MessageActions group dogfooded through app-owned copy with exact answer text, pending and clipboard outcome. Ratings, regeneration and full legacy parity remain separate."
+      "reason": "Private authored MessageActions group adds app-authored decorative icons and explicit compact presentation, dogfooded through app-owned copy with exact answer text, pending and clipboard outcome. Literal labels, native buttons and current argumentless callbacks remain intact. Ratings, regeneration, full T28 and public release parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts#ChatMessageListComponent",
@@ -5446,7 +5446,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-actions.tsx",
-      "reason": "Native component. Copy/rate/regenerate target identity, clipboard outcome and custom action slots."
+      "reason": "Private React native-button presentation now supports app-authored decorative icons and explicit compact labels, with app-owned copy dogfood. Automatic copy/rate/regenerate commands, richer custom action slots, full legacy parity and public release remain separate."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageComponent",
@@ -14278,7 +14278,7 @@
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity. Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open.",
+      "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity. Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open. MessageActions documentation now covers six readonly action fields, unchanged four group fields, decorative noninteractive ReactNodes, exact absent-icon semantics, opt-in compact styling and real no-CSS labels, with a local SVG copy example and app-owned async errors. Full T28 and public release parity remain open.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
@@ -14300,7 +14300,7 @@
       ],
       "treatment": "infrastructure",
       "status": "in-progress",
-      "reason": "Opt-in chat stylesheet exported as @threadplane/react/chat/styles.css; scoped .tp-chat* classes with --tp-chat-* properties falling back to --ds-* tokens.",
+      "reason": "Opt-in chat stylesheet exported as @threadplane/react/chat/styles.css; scoped .tp-chat* classes with --tp-chat-* properties falling back to --ds-* tokens. Scoped message-action styling adds icon alignment, 16px direct SVG glyphs, at least 36px compact targets and a visually hidden accessible label; native focus outlines, disabled behavior and existing assistant controls reveal policy remain intact.",
       "note": "Shipped by the build assets and package exports; verify-packages.mjs validates the stylesheet export as a static asset whose file exists in the packed tarball (it is not imported by the consumer probe). Visual parity with the Angular chat theme is not claimed."
     },
     {
@@ -15471,7 +15471,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private authored action group with installed native copy dogfood; callbacks and clipboard feedback belong to the app."
+      "reason": "Private authored action group with decorative icon and explicit compact presentation, literal accessible labels and CSS-independent compact title. Absent icons fall back to visible labels; without chat CSS both icon and label remain visible. Native button identity and current argumentless callbacks are retained; clipboard and feedback remain app-owned. Full T28 and public release parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageAction",
@@ -15480,7 +15480,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Readonly explicit action IDs, string labels, argumentless callbacks and authoritative disabled state."
+      "reason": "Exactly six readonly fields: required id, literal string label and argumentless onSelect, plus optional disabled, decorative noninteractive ReactNode icon and boolean iconOnly. Compact defaults false and requires a supplied icon; only null, undefined and booleans are absent. Other ReactNodes remain app-owned without child inspection."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageActionsProps",
@@ -15489,7 +15489,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Readonly authored collection and group presentation props; no inferred backend commands."
+      "reason": "The same four readonly authored collection and group presentation fields remain actions, disabled, label and className; icons are optional per-action fields. No raw DOM props or inferred backend commands are added."
     },
     {
       "id": "source:libs/react/src/chat/message-actions.tsx",
@@ -15498,7 +15498,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Pure native button group with explicit activation and controlled disabled state; no clipboard, timers, session ownership or local rating state."
+      "reason": "Pure keyed native button group with decorative aria-hidden icons, explicit compact presentation, literal labels and markup title, absent-icon label fallback and real no-CSS icon-plus-label presentation. Explicit activation uses current argumentless callbacks and controlled disabled state; clipboard, async feedback, errors and commands remain app-owned. No child introspection, timers, session ownership or local rating state is added."
     },
     {
       "id": "entry:libs/content/src/json/index.ts",
@@ -16758,7 +16758,7 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "reason": "Private Markdown source card with local mounted state, 120/200ms fine-pointer timing, keyboard/touch activation, nonmodal focus navigation, safe literal metadata and owner-document portal cleanup. Native assistant rows dogfood the installed runtime; full T26 citation display remains open."
+      "reason": "Private Markdown source card with local mounted state, 120/200ms fine-pointer timing, keyboard/touch activation, nonmodal focus navigation, safe literal metadata and owner-document portal cleanup. Native assistant rows dogfood the installed runtime; full T26 citation display remains open. Escape/Close dismissal prevents reopening from restored focus and stationary-pointer boundary events; fresh eligible pointer movement starts one non-restarting 120ms timer, canceled on departure/retirement/unmount, while explicit activation remains immediate and preview interaction adds no I/O."
     },
     {
       "id": "source:libs/react/src/markdown/preview-position.ts",
@@ -17930,7 +17930,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. The opt-in stylesheet reveals direct assistant controls on article hover, focus-within or current state, and always at widths up to 768px or with no hover support. It reserves layout space and keyboard access, uses a 200ms opacity transition disabled with reduced motion, and does not suppress streaming controls. Without CSS, controls use normal DOM presentation. Callbacks, clipboard writes, status and disabled state remain app-owned; non-assistant, standalone MessageActions and nested rich controls retain existing behavior. Full ChatMessage/T23 parity remains deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. The opt-in stylesheet reveals direct assistant controls on article hover, focus-within or current state, and always at widths up to 768px or with no hover support. It reserves layout space and keyboard access, uses a 200ms opacity transition disabled with reduced motion, and does not suppress streaming controls. Without CSS, controls use normal DOM presentation. Callbacks, clipboard writes, status and disabled state remain app-owned; non-assistant, standalone MessageActions and nested rich controls retain existing behavior. Full ChatMessage/T23 parity remains deferred. The existing compiled example now composes a local decorative copy SVG through MessageActions; added documentation covers six readonly action fields, unchanged four group fields, exact absent-icon semantics, literal accessible labels and CSS-independent title, opt-in compact styling and real no-CSS presentation. Clipboard, async feedback and errors remain application-owned; full T28 and public release parity remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessage",
