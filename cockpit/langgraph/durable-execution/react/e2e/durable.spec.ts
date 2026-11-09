@@ -55,7 +55,7 @@ test('saves completed nodes while held, then replaces intermediate drafts with t
     page.getByRole('button', { name: 'New conversation' })
   ).toBeDisabled();
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(checkpoints(page)).toContainText('Generate — complete');
   await expect(transcript(page)).not.toContainText('Analysis draft');
   await expect(transcript(page)).not.toContainText('Plan draft');
@@ -74,7 +74,7 @@ test('second requests reuse one UUID and ignore the previous generate checkpoint
   request,
 }) => {
   await send(page, 'First');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await request.post('/__hold-start');
   await send(page, 'Second', false);
   await expect
@@ -83,7 +83,7 @@ test('second requests reuse one UUID and ignore the previous generate checkpoint
   await expect(checkpoints(page)).toContainText('Analyze — pending');
   await expect(checkpoints(page)).toContainText('Generate — pending');
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await wire(request),
     streams = runs(entries);
   expect(streams).toHaveLength(2);
@@ -94,11 +94,11 @@ test('second requests reuse one UUID and ignore the previous generate checkpoint
   const reads = entries.filter((entry) => entry.method === 'GET');
   expect(new Set(reads.map((entry) => entry.path)).size).toBe(2);
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page).getByRole('article')).toHaveCount(0);
   await expect(checkpoints(page)).toContainText('Generate — pending');
   await send(page, 'Third', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   expect(
     (await wire(request)).filter((entry) => entry.path.endsWith('/threads'))
   ).toHaveLength(2);
@@ -107,7 +107,7 @@ test('a current marked terminal root can arrive without intermediate observation
   page,
 }) => {
   await send(page, 'Final only');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(checkpoints(page)).toContainText('Analyze — complete');
   await expect(checkpoints(page)).toContainText('Generate — complete');
 });
@@ -124,7 +124,7 @@ for (const text of [
     request,
   }) => {
     await send(page, text);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -145,13 +145,13 @@ test('Stop releases a held pipeline run and fences its later final result', asyn
     .poll(async () => (await (await request.get('/__lifetime')).json()).active)
     .toBe(false);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await expect(checkpoints(page)).not.toContainText('Generate — complete');
   expect(runs(await wire(request))).toHaveLength(1);
   await page.getByRole('button', { name: 'New conversation' }).click();
   await send(page, 'New request', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await wire(request);
   expect(
     entries.filter((entry) => entry.path.endsWith('/threads'))
@@ -187,7 +187,7 @@ test('developer credentials stay in SDK headers on creation, streaming and recon
   await frame
     .getByRole('button', { name: 'Check status', exact: true })
     .click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await wire(request);
   expect(
     entries.filter((entry) => entry.path.endsWith('/history'))
@@ -214,7 +214,7 @@ test('explicit reconciliation reads the exact retained turn without creating or 
   ).toHaveLength(1);
   await request.post('/__publish-final');
   await page.getByRole('button', { name: 'Check status' }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(transcript(page).getByRole('article')).toHaveCount(2);
   await expect(checkpoints(page)).toContainText('Generate — complete');
   const entries = await wire(request);
@@ -250,7 +250,7 @@ test('a conclusive history with a wrong marker cannot enable text', async ({
   await uncertain(page);
   await request.post('/__publish-wrong-marker');
   await page.getByRole('button', { name: 'Check status' }).click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -291,7 +291,7 @@ for (const action of ['Stop', 'pagehide'])
     await request.post('/__publish-final');
     await request.post('/__hold-history');
     await page.getByRole('button', { name: 'Check status' }).click();
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Checking saved outcome…'
     );
     await expect(
@@ -312,7 +312,7 @@ for (const action of ['Stop', 'pagehide'])
       .toBe(false);
     await request.post('/__release');
     if (action === 'Stop') {
-      await expect(page.getByRole('status')).toContainText('Stopped');
+      await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
       await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
       await expect(
         page.getByRole('button', { name: 'Check status' })
@@ -325,7 +325,7 @@ test('a known physical run with an unknown outcome offers only a read-only statu
   request,
 }) => {
   await send(page, 'Known uncertain');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'The outcome is uncertain. Check its saved status.'
   );
   // While the exact run is still in flight, close and check read its status
@@ -336,7 +336,7 @@ test('a known physical run with an unknown outcome offers only a read-only statu
     entries.filter((entry) => entry.path.endsWith('/history'))
   ).toHaveLength(0);
   await page.getByRole('button', { name: 'Check status' }).click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'The outcome is uncertain. Check its saved status.'
   );
   entries = await wire(request);
@@ -349,7 +349,7 @@ test('a known physical run with an unknown outcome offers only a read-only statu
   await request.post('/__finish-run');
   await request.post('/__publish-final');
   await page.getByRole('button', { name: 'Check status' }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(transcript(page).getByRole('article')).toHaveCount(2);
   await expect(checkpoints(page)).toContainText('Generate — complete');
   entries = await wire(request);
@@ -365,7 +365,7 @@ test('uncertain creation cannot construct a run or replay', async ({
 }) => {
   await request.post('/__fail-create');
   await send(page, 'First');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByRole('alert')).toHaveText(
@@ -381,7 +381,7 @@ test('unsupported tool references cannot grant completion authority', async ({
   page,
 }) => {
   await send(page, 'Unknown tool');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -394,7 +394,7 @@ test('literal checkpoint and transcript panels fit a narrow screen', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await send(page, '<script>fictional project</script>');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(transcript(page)).toContainText(
     '<script>fictional project</script>'
   );

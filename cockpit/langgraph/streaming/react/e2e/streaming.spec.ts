@@ -62,7 +62,7 @@ test('does not retry uncertain conversation creation', async ({
   await page.getByRole('button', { name: 'New conversation' }).click();
   await page.getByLabel('Message', { exact: true }).fill('Second');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
 });
 
 test('streams actual SDK requests, settles content, and keeps one conversation', async ({
@@ -79,13 +79,13 @@ test('streams actual SDK requests, settles content, and keeps one conversation',
     page.getByRole('button', { name: 'Stop', exact: true })
   ).toBeVisible();
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(
     page.getByRole('region', { name: 'Conversation' })
   ).toContainText('Live partial complete');
   await page.getByLabel('Message', { exact: true }).fill('Second');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.filter((entry: { path: string }) => entry.path === '/api/threads')
@@ -109,7 +109,7 @@ test('Stop ends execution without replay and New conversation permits explicit f
     page.getByRole('region', { name: 'Conversation' })
   ).toContainText('Live partial');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect(
     page.getByRole('button', { name: 'Send', exact: true })
   ).toBeDisabled();
@@ -119,7 +119,7 @@ test('Stop ends execution without replay and New conversation permits explicit f
   ).toBeDisabled();
   await page.getByLabel('Message', { exact: true }).fill('Second');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.filter((entry: { path: string }) =>
@@ -172,7 +172,7 @@ test('accepts an embedded developer target through the existing neutral bridge',
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Second');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (
     await request.get('http://127.0.0.1:4600/__requests')
   ).json();

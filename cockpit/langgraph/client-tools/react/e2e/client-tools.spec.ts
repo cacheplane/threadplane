@@ -15,7 +15,7 @@ async function proof(request: APIRequestContext): Promise<WireRequest[]> {
 const streams = (entries: WireRequest[]) => entries.filter((entry) => entry.path.endsWith('/runs/stream'));
 test('executes simulated weather then follows up in the same confirmed thread with all five tools', async ({ page, request }) => {
   await send(page, 'Weather');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(page.getByRole('region', { name: 'Conversation' })).toContainText('Browser result received.');
   const entries = await proof(request), runs = streams(entries);
   expect(runs).toHaveLength(2);
@@ -29,7 +29,7 @@ test('executes simulated weather then follows up in the same confirmed thread wi
 });
 test('publishes a finalized literal weather card and its normal shown acknowledgement', async ({ page, request }) => {
   await send(page, 'Card');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('<script>Portland</script>');
   expect(await page.locator('script').filter({ hasText: 'Portland' }).count()).toBe(0);
   const runs = streams(await proof(request));
@@ -44,7 +44,7 @@ test('persists a standalone snapshot result without another model run and waits 
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'New conversation' })).toBeDisabled();
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await proof(request);
   expect(streams(entries)).toHaveLength(1);
   const write = entries.find((entry) => entry.path.endsWith('/state'))!;
@@ -54,7 +54,7 @@ test('persists a standalone snapshot result without another model run and waits 
 });
 test('mixed snapshot and normal tools follow up as one batch with exact result identities', async ({ page, request }) => {
   await send(page, 'Mixed');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await proof(request), runs = streams(entries);
   expect(runs).toHaveLength(2);
   expect(entries.filter((entry) => entry.path.endsWith('/state'))).toHaveLength(0);
@@ -67,7 +67,7 @@ test('identical parallel bookings independently confirm and cancel before one fo
   await expect(page.getByText('Confirmed', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Cancel booking' }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(page.getByText('Cancelled', { exact: true })).toBeVisible();
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
@@ -80,19 +80,19 @@ for (const text of ['Bookings', 'Slow']) test(`Stop during ${text} revokes handl
   await send(page, text);
   await expect(page.getByRole('region', { name: 'Conversation' })).toContainText(text === 'Slow' ? 'slow_status_check' : 'confirm_booking');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Confirm booking' })).toHaveCount(0);
   await page.waitForTimeout(3200);
   expect(streams(await proof(request))).toHaveLength(1);
   await page.getByRole('button', { name: 'New conversation' }).click();
   await send(page, 'Weather', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   expect((await proof(request)).filter((entry) => entry.path === '/api/threads')).toHaveLength(2);
 });
 test('invalid authored arguments produce a terminal error result explained by model follow-up', async ({ page, request }) => {
   await send(page, 'Malformed');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
   expect(runs[1].body.input!.messages[0].content).toContain('Invalid tool arguments.');
@@ -100,14 +100,14 @@ test('invalid authored arguments produce a terminal error result explained by mo
 });
 for (const text of ['Unknown', 'Pause']) test(`${text} requires reset without effects or follow-up`, async ({ page, request }) => {
   await send(page, text);
-  await expect(page.getByRole('status')).toContainText('new conversation');
+  await expect(page.locator('footer').getByRole('status')).toContainText('new conversation');
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   expect(streams(await proof(request))).toHaveLength(1);
 });
 test('an uncertain snapshot write is not replayed and requires reset', async ({ page, request }) => {
   await request.post('/__fail-state');
   await send(page, 'Snapshot');
-  await expect(page.getByRole('status')).toContainText('new conversation');
+  await expect(page.locator('footer').getByRole('status')).toContainText('new conversation');
   expect((await proof(request)).filter((entry) => entry.path.endsWith('/state'))).toHaveLength(1);
   expect(streams(await proof(request))).toHaveLength(1);
 });
@@ -119,7 +119,7 @@ test('partial streamed arguments cannot publish a panel or acknowledge a tool be
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('No weather panels yet.');
   expect(streams(await proof(request))).toHaveLength(1);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('Portland');
   expect(streams(await proof(request))).toHaveLength(2);
 });
@@ -135,7 +135,7 @@ test('page exit aborts pending browser decisions without a model continuation', 
 
 test('a slow status handler completes normally and follows up once', async ({ page, request }) => {
   await send(page, 'Slow');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
   expect(runs[1].body.input!.messages[0]).toMatchObject({ tool_call_id: 'slow-1', content: '{"label":"status check","status":"complete"}' });
@@ -144,7 +144,7 @@ test('a slow status handler completes normally and follows up once', async ({ pa
 test('literal weather and booking panels fit a narrow screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await send(page, 'Card');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(page.getByRole('region', { name: 'Weather panels' }).locator('dl')).toHaveCSS('display', 'block');
   await send(page, 'Bookings', false);
   await expect(page.getByRole('button', { name: 'Confirm booking' })).toHaveCount(2);
@@ -153,7 +153,7 @@ test('literal weather and booking panels fit a narrow screen', async ({ page }) 
 
 test('ambiguous thread creation never dispatches or retries and protects diagnostics', async ({ page, request }) => {
   await request.post('/__fail-create'); await send(page, 'Weather');
-  await expect(page.getByRole('status')).toContainText('new conversation');
+  await expect(page.locator('footer').getByRole('status')).toContainText('new conversation');
   await expect(page.getByRole('alert')).toHaveText('The LangGraph request failed.');
   await expect(page.locator('body')).not.toContainText('PRIVATE');
   expect((await proof(request)).filter((entry) => entry.path === '/api/threads')).toHaveLength(1);
@@ -162,9 +162,9 @@ test('ambiguous thread creation never dispatches or retries and protects diagnos
 
 test('successful weather turns reuse the thread with distinct server tool invocation identities', async ({ page, request }) => {
   await send(page, 'Weather');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await send(page, 'Weather', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await proof(request), runs = streams(entries);
   expect(runs).toHaveLength(4);
   expect(new Set(runs.map((entry) => entry.path)).size).toBe(1);
@@ -192,7 +192,7 @@ test('an embedded developer target sends credentials only in SDK headers', async
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Snapshot');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await proof(request);
   expect(entries).toHaveLength(4);
   expect(entries.every((entry) => entry.path.startsWith('/developer-api/') && entry.key === 'TEST_DEVELOPER_KEY')).toBe(true);

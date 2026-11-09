@@ -39,7 +39,7 @@ test('conditional research and direct turns preserve parent history on one confi
   request,
 }) => {
   await send(page, 'Research first');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(boundary(page)).toContainText(
     'Nested — research boundary confirmed.'
   );
@@ -50,7 +50,7 @@ test('conditional research and direct turns preserve parent history on one confi
   await expect(transcript(page)).not.toContainText('needs_research');
   await expect(transcript(page).getByRole('article')).toHaveCount(2);
   await send(page, 'Hello', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(boundary(page)).toContainText(
     'Direct — no child observed for this turn.'
   );
@@ -60,7 +60,7 @@ test('conditional research and direct turns preserve parent history on one confi
   );
   await expect(transcript(page).getByRole('article')).toHaveCount(4);
   await send(page, 'Research again', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(boundary(page)).toContainText(
     'Nested — research boundary confirmed.'
   );
@@ -89,7 +89,7 @@ test('a new admission clears the old route before its router runs', async ({
   request,
 }) => {
   await send(page, 'Research first');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await request.post('/__hold-start');
   await send(page, 'Hello', false);
   await expect
@@ -101,7 +101,7 @@ test('a new admission clears the old route before its router runs', async ({
     'No child stream observed for this turn.'
   );
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(boundary(page)).toContainText(
     'Direct — no child observed for this turn.'
   );
@@ -122,7 +122,7 @@ test('an observed child does not imply a completed route while held', async ({
     path: testInfo.outputPath('subgraphs-held-desktop.png'),
   });
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await page.screenshot({
     path: testInfo.outputPath('subgraphs-final-desktop.png'),
   });
@@ -144,7 +144,7 @@ for (const text of [
     request,
   }) => {
     await send(page, text);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(boundary(page)).toContainText('Current route unconfirmed.');
@@ -173,7 +173,7 @@ for (const action of ['Stop', 'pagehide'])
       .toBe(false);
     await request.post('/__release');
     if (action === 'Stop') {
-      await expect(page.getByRole('status')).toContainText('Stopped');
+      await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
       await expect(boundary(page)).not.toContainText(
         'Nested — research boundary confirmed.'
       );
@@ -181,7 +181,7 @@ for (const action of ['Stop', 'pagehide'])
       await expect(transcript(page).getByRole('article')).toHaveCount(0);
       expect(runs(await wire(request))).toHaveLength(1);
       await send(page, 'Hello', false);
-      await expect(page.getByRole('status')).toHaveText('Response complete.');
+      await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
       const entries = await wire(request);
       expect(
         entries.filter((entry) => entry.path.endsWith('/threads'))
@@ -197,9 +197,9 @@ test('New is lazy and clears the parent and child panels', async ({
   request,
 }) => {
   await send(page, 'Research first');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page).getByRole('article')).toHaveCount(0);
   await expect(boundary(page)).toContainText('Awaiting the current route.');
   await expect(children(page)).toContainText(
@@ -209,7 +209,7 @@ test('New is lazy and clears the parent and child panels', async ({
     (await wire(request)).filter((entry) => entry.path.endsWith('/threads'))
   ).toHaveLength(1);
   await send(page, 'Research again', false);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await wire(request);
   expect(
     entries.filter((entry) => entry.path.endsWith('/threads'))
@@ -222,7 +222,7 @@ test('failed creation does not dispatch or replay a run', async ({
 }) => {
   await request.post('/__fail-create');
   await send(page, 'Research first');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   await expect(page.getByRole('alert')).toHaveText(
@@ -240,7 +240,7 @@ test('literal boundary text and full namespace fit a narrow screen', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await send(page, 'Literal');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(boundary(page)).toContainText('<script>private topic</script>');
   await expect(boundary(page)).toContainText('<img src=x onerror=alert(1)>');
   expect(await boundary(page).locator('script, img').count()).toBe(0);
@@ -276,7 +276,7 @@ test('developer credentials remain SDK headers for creation, stream and status',
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Research first');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries = await wire(request);
   expect(
     entries.every(

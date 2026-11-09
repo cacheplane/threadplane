@@ -21,10 +21,10 @@ test('installed SDK preserves canonical history on the confirmed UUID and create
   await page.goto('/langgraph/deployment-runtime/react/');
   expect(await (await request.get('/__requests')).json()).toEqual([]);
   await send(page, 'Alpha');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('article')).toHaveCount(2);
   await send(page, 'Beta');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('article')).toHaveCount(4);
   await expect(conversation(page)).toContainText('Reply to Alpha');
   await expect(conversation(page)).toContainText('Reply to Beta');
@@ -41,7 +41,7 @@ test('installed SDK preserves canonical history on the confirmed UUID and create
   await expect(conversation(page).locator('article')).toHaveCount(0);
   expect(await (await request.get('/__requests')).json()).toEqual(before);
   await send(page, 'Gamma');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('article')).toHaveCount(2);
   await expect(conversation(page)).not.toContainText('Alpha');
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -67,7 +67,7 @@ test('held incremental content settles to one canonical answer without duplicate
     page.getByRole('button', { name: 'New conversation' })
   ).toBeDisabled();
   await request.post('/__release');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('article')).toHaveCount(2);
   await expect(conversation(page)).toContainText('Reply to Hold');
   await expect(conversation(page)).not.toContainText('Live partial');
@@ -90,10 +90,10 @@ for (const text of [
     await page.goto('/langgraph/deployment-runtime/react/');
     if (text === 'Truncated prefix' || text === 'Old pair') {
       await send(page, 'Alpha');
-      await expect(page.getByRole('status')).toHaveText('Response complete.');
+      await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
     }
     await send(page, text);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -106,7 +106,7 @@ for (const text of [
     ).toHaveLength(text === 'Truncated prefix' || text === 'Old pair' ? 2 : 1);
     await page.getByRole('button', { name: 'New conversation' }).click();
     await send(page, 'Recovered');
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
     await expect(conversation(page).locator('article')).toHaveCount(2);
   });
 }
@@ -117,7 +117,7 @@ test('creation failure stays lazy and does not retry or expose the response', as
   await request.post('/__fail-create');
   await page.goto('/langgraph/deployment-runtime/react/');
   await send(page, 'Alpha');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -151,7 +151,7 @@ test('developer target credentials travel only in SDK headers and the runtime la
   ).toContainText('Developer runtime');
   await frame.getByLabel('Message', { exact: true }).fill('Alpha');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries: Wire[] = await (await request.get('/__requests')).json();
   expect(entries).toHaveLength(3);
   expect(
@@ -179,7 +179,7 @@ for (const exit of ['Stop', 'pagehide']) {
     expect((await (await request.get('/__lifetime')).json()).active).toBe(true);
     if (exit === 'Stop') {
       await page.getByRole('button', { name: 'Stop', exact: true }).click();
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.locator('footer').getByRole('status')).toHaveText(
         'Start a new conversation to continue.'
       );
     } else {
@@ -207,7 +207,7 @@ test('literal messages and all controls fit a narrow viewport', async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/langgraph/deployment-runtime/react/');
   await send(page, '<script>fictional literal</script>');
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page)).toContainText(
     '<script>fictional literal</script>'
   );

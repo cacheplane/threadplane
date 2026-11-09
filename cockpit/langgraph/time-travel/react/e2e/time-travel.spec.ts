@@ -7,7 +7,7 @@ const transcript = (page: Page) =>
 async function send(page: Page, text: string) {
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
 }
 type Wire = {
   path: string;
@@ -37,7 +37,7 @@ test('fork adopts A rather than B and retained continuation ignores a competing 
   await expect(transcript(page)).toContainText('Answer to B');
   await page.getByLabel('Message', { exact: true }).fill('C');
   await page.getByRole('button', { name: 'Fork selected checkpoint' }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(transcript(page).getByRole('article')).toHaveCount(4);
   await expect(transcript(page)).toContainText('Answer to A');
   await expect(transcript(page)).toContainText('Answer to C');
@@ -93,7 +93,7 @@ test('explicit secondary history refresh after a fork cannot redirect primary ex
 }) => {
   await prepareFork(page);
   await fork(page);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await request.post('/__advance-tip');
   await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
   await expect(
@@ -145,7 +145,7 @@ test('metadata eligibility does not replace mandatory completed-source preflight
   await prepareFork(page);
   await request.post('/__unsafe-source');
   await fork(page);
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -178,7 +178,7 @@ test('Stop during exact source preparation issues no fork POST and New creates o
     2
   );
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page).getByRole('article')).toHaveCount(0);
   wire = await (await request.get('/__requests')).json();
   expect(wire.filter((row) => row.path.endsWith('/threads'))).toHaveLength(1);
@@ -220,7 +220,7 @@ test('failed readonly history is protected and safe primary can continue', async
   await expect(page.getByRole('alert')).toHaveText(
     'The checkpoint page was not refreshed.'
   );
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await send(page, 'B');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire.filter((row) => row.path.endsWith('/runs/stream'))).toHaveLength(
@@ -269,7 +269,7 @@ for (const text of [
   }) => {
     await prepareFork(page);
     await fork(page, text);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -289,7 +289,7 @@ test('ambiguous creation is protected without a second request', async ({
   await page.goto('/langgraph/time-travel/react/');
   await page.getByLabel('Message', { exact: true }).fill('A');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -347,14 +347,14 @@ test('developer credentials remain SDK headers for creation, stream and status',
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('A');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await frame
     .getByRole('button', { name: 'Refresh saved checkpoints' })
     .click();
   await frame.getByRole('button', { name: 'Select checkpoint 1' }).click();
   await frame.getByLabel('Message', { exact: true }).fill('C');
   await frame.getByRole('button', { name: 'Fork selected checkpoint' }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const entries: Wire[] = await (await request.get('/__requests')).json();
   expect(
     entries.every(
@@ -383,7 +383,7 @@ test('full checkpoint maps survive exact source reads, fork POST and retained co
   await request.post('/__mapped-checkpoints');
   await prepareFork(page);
   await fork(page);
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await send(page, 'D');
   const entries: Wire[] = await (await request.get('/__requests')).json();
   const runs = entries.filter((row) => row.path.endsWith('/runs/stream'));

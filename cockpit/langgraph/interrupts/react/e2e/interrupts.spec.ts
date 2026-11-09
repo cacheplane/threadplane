@@ -79,7 +79,7 @@ for (const [label, response, final] of [
     ).toHaveCount(0);
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
     await page.getByRole('button', { name: label }).click();
-    await expect(page.getByRole('status')).toHaveText('Response complete.');
+    await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
     await expect(
       page.getByRole('region', { name: 'Conversation' })
     ).toContainText(final);
@@ -138,13 +138,13 @@ test('held decision blocks duplicate clicks and Stop requires explicit fresh wor
     element.click();
     element.click();
   });
-  await expect(page.getByRole('status')).toHaveText('Sending decision…');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Sending decision…');
   await expect(
     page.getByRole('button', { name: 'New conversation' })
   ).toBeDisabled();
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect
     .poll(async () => (await (await request.get('/__lifetime')).json()).active)
     .toBe(false);
@@ -153,7 +153,7 @@ test('held decision blocks duplicate clicks and Stop requires explicit fresh wor
     proof.filter((entry: { body: { command?: unknown } }) => entry.body.command)
   ).toHaveLength(1);
   await request.post('/__release');
-  await expect(page.getByRole('status')).toContainText('Stopped');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByLabel('Message', { exact: true })).toBeEnabled();
   await page.getByLabel('Message', { exact: true }).fill('Refund');
@@ -173,7 +173,7 @@ for (const text of ['Unknown', 'Malformed', 'Multiple']) {
     request,
   }) => {
     await pause(page, text);
-    await expect(page.getByRole('status')).toHaveText(
+    await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(
@@ -253,7 +253,7 @@ test('uses developer bridge headers while keeping credentials out of the body', 
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await frame.getByRole('button', { name: 'Decline refund' }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.every(

@@ -8,13 +8,13 @@ const transcript = (page: Page) =>
 async function send(page: Page, text: string) {
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Response complete.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
 }
 async function two(page: Page) {
   await page.goto('/langgraph/persistence/react/');
   await send(page, 'Remember Avery likes tea');
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await send(page, 'Remember Blair likes coffee');
 }
 type Wire = {
@@ -32,7 +32,7 @@ test('loads saved A/B histories and recalls the selected confirmed UUID without 
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page)).toContainText('Avery likes tea');
   await expect(transcript(page)).not.toContainText('Blair');
   let wire: Wire[] = await (await request.get('/__requests')).json();
@@ -50,7 +50,7 @@ test('loads saved A/B histories and recalls the selected confirmed UUID without 
   await page
     .getByRole('button', { name: 'Conversation 2', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page)).toContainText('Blair likes coffee');
   await expect(transcript(page)).not.toContainText('Avery');
   wire = await (await request.get('/__requests')).json();
@@ -75,7 +75,7 @@ test('selection reads changed server history instead of cached rows; selecting t
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page)).toContainText(
     'Server correction: Avery likes cocoa.'
   );
@@ -93,7 +93,7 @@ test('new draft keeps confirmed entries, creates lazily, and reload has an empty
 }) => {
   await two(page);
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page).locator('article')).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Conversation 1', exact: true })
@@ -120,7 +120,7 @@ test('held history blocks competing commands; Stop quarantines only the selected
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Loading saved conversation…'
   );
   await expect(transcript(page).locator('article')).toHaveCount(0);
@@ -132,7 +132,7 @@ test('held history blocks competing commands; Stop quarantines only the selected
     page.getByRole('button', { name: 'Conversation 2', exact: true })
   ).toBeDisabled();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Stopped.');
+  await expect(page.locator('footer').getByRole('status')).toContainText('Stopped.');
   await request.post('/__release');
   await expect(
     page.getByRole('button', {
@@ -144,7 +144,7 @@ test('held history blocks competing commands; Stop quarantines only the selected
   await page
     .getByRole('button', { name: 'Conversation 2', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page)).toContainText('Blair');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(
@@ -162,7 +162,7 @@ for (const mode of ['fail', 'pause'])
     await page
       .getByRole('button', { name: 'Conversation 1', exact: true })
       .click();
-    await expect(page.getByRole('status')).toContainText('new conversation');
+    await expect(page.locator('footer').getByRole('status')).toContainText('new conversation');
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
     await expect(
       page.getByRole('button', {
@@ -187,7 +187,7 @@ test('pagehide releases a held history read', async ({ page, request }) => {
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Loading saved conversation…'
   );
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
@@ -207,7 +207,7 @@ test('an authoritative empty history clears previous rows', async ({
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('footer').getByRole('status')).toHaveText('Ready.');
   await expect(transcript(page).locator('article')).toHaveCount(0);
   await expect(page.getByLabel('Message', { exact: true })).toBeEnabled();
 });
@@ -279,18 +279,18 @@ test('uses developer bridge headers while keeping credentials out of the body', 
     .getByLabel('Message', { exact: true })
     .fill('Remember Avery likes tea');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await frame.getByRole('button', { name: 'New conversation' }).click();
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Ready.');
   await frame
     .getByLabel('Message', { exact: true })
     .fill('Remember Blair likes coffee');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await frame
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
-  await expect(frame.getByRole('status')).toHaveText('Ready.');
+  await expect(frame.locator('footer').getByRole('status')).toHaveText('Ready.');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.filter((entry: { path: string }) => entry.path.endsWith('/history'))
