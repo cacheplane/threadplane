@@ -17961,6 +17961,36 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
       "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-tool-activity/activity-summary-styles.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/styles.css",
+      "reason": "Internal compact activity summary presentation. Scoped tests verify truthful lifecycle labels, independent active and paused/error cues, and collapsed defaults; execution and approval ownership remain with the application. This does not certify whole-framework parity."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/activity-summary.ts",
+      "reason": "Internal compact activity summary presentation. Scoped tests verify truthful lifecycle labels, independent active and paused/error cues, and collapsed defaults; execution and approval ownership remain with the application. This does not certify whole-framework parity."
+    },
+    {
+      "id": "source:libs/react/src/chat/activity-summary.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/activity-summary.ts",
+      "reason": "Internal compact activity summary presentation. Scoped tests verify truthful lifecycle labels, independent active and paused/error cues, and collapsed defaults; execution and approval ownership remain with the application. This does not certify whole-framework parity."
     }
   ]
 }
