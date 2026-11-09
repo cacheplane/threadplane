@@ -352,8 +352,10 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // which always returns a string. Parse it so downstream consumers
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
       const { result, parts } = toolResultFromContent(e.content);
+      // A snapshot tool-message error is the authority; a late result carries
+      // no error field and must not downgrade an already failed call.
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t),
+        prev.map((t) => t.id === e.toolCallId && t.status !== 'error' ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }

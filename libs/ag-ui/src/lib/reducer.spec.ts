@@ -296,6 +296,21 @@ describe('reduceEvent', () => {
     expect(store.toolCalls().find(t => t.id === 't1')).toBe(before);
   });
 
+  it('keeps a snapshot-failed call failed when a late TOOL_CALL_RESULT arrives', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+    const failed = store.toolCalls().find(t => t.id === 't1');
+    expect(failed?.status).toBe('error');
+
+    reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: '{"error":"Flight UA999 not found"}' } as any, store);
+
+    expect(store.toolCalls().find(t => t.id === 't1')?.status).toBe('error');
+    expect(store.toolCalls().find(t => t.id === 't1')).toBe(failed);
+  });
+
   it('keeps a snapshot tool call complete when its tool message has no error', () => {
     const store = makeStore();
     reduceEvent(flightSnapshot({ content: '{"status":"on time"}' }), store);
