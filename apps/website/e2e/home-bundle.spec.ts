@@ -74,6 +74,8 @@ test.describe('homepage bundle', () => {
   });
 
   test('the homepage preloads the shared heading and body face', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
     // Read the live DOM, not the server HTML: under `next dev` React injects
     // the font preloads into <head> during hydration, while a production build
     // writes them into the HTML. The DOM has them either way.
@@ -101,6 +103,7 @@ test.describe('homepage bundle', () => {
         return `${family} ${style}`;
       });
     });
+    expect(errors, 'the homepage hydrates without runtime errors').toEqual([]);
     expect(faces.sort()).toEqual([...EXPECTED_PRELOADS].sort());
   });
 
