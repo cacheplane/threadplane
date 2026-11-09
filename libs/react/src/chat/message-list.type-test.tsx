@@ -2,9 +2,42 @@ import {
   MessageList,
   type MessageListProps,
   type MessageListScrollControls,
+  type MessageListRowContext,
 } from './index';
 import type { MessageRow } from '@threadplane/content/messages';
+import type { ReactNode } from 'react';
 const ok: MessageListProps = { rows: [] };
+declare const context: MessageListRowContext;
+const current: boolean = context.current;
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B
+  ? 1
+  : 2
+  ? true
+  : false;
+type Assert<T extends true> = T;
+export type RowContextContract = Assert<
+  Equal<MessageListRowContext, { readonly current: boolean }>
+>;
+export type DefaultRendererContract = Assert<
+  Equal<
+    Pick<MessageListProps, 'renderMessage'>,
+    {
+      readonly renderMessage?: (
+        row: MessageRow,
+        context: MessageListRowContext
+      ) => ReactNode;
+    }
+  >
+>;
+// @ts-expect-error Positional context is readonly.
+context.current = false;
+// @ts-expect-error Context has no session ownership.
+void context.session;
+<MessageList
+  rows={authoredRows}
+  renderMessage={(row, context) => (context.current ? row.summary : row.id)}
+/>;
+void current;
 // @ts-expect-error rows is required.
 const missing: MessageListProps = {};
 // @ts-expect-error Props are readonly.

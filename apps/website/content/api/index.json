@@ -6204,6 +6204,16 @@
       "summary": "Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows."
     },
     {
+      "name": "MessageListRowContext",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/MessageListRowContext",
+      "canonicalReference": "@threadplane/react!MessageListRowContext:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Positional presentation context: current is true only for the final supplied row."
+    },
+    {
       "name": "MessageListScrollControls",
       "entrypointId": "react/chat",
       "kind": "Interface",

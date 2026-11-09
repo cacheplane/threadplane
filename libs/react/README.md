@@ -2,12 +2,17 @@
 
 `@threadplane/react/chat` includes passive `ChatMessage` composition: a required
 readonly core role, optional literal speaker/label, independently directed body,
-passive before/after content slots, and consumer-owned controls. All eight props
+passive before/after content slots, current/streaming flags, and consumer-owned controls. All ten props
 are readonly. Rich chrome outside the body keeps its surrounding direction.
 The default MessageList and native custom renderer
 use it without changing content ownership or scrolling. See the
 [ChatMessage guide](../../apps/website/content/docs/react/chat/components/chat-message.mdx).
-Current/streaming state and carets remain deferred; full T23 parity remains open.
+Both flags default to false. A current streaming assistant shows one decorative
+caret inside its body. `MessageList` supplies `current` only for the final supplied
+row and derives `streaming` from message delivery. A stable
+`renderMessage(row, context)` receives readonly `MessageListRowContext.current`;
+one-argument renderers remain supported. `Chat` forwards the same callback contract.
+Previous-role behavior, automatic control reveal, and full T23 parity remain open.
 
 Private, unpublished React binding for app-owned sessions. The root exports
 `useAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)` methods

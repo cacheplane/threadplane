@@ -12,6 +12,7 @@ import { createReactApplication } from './application';
 import { applicationFixture } from './application-fixture';
 import { App } from './app';
 import { createMarkdown } from '@threadplane/content/markdown';
+import { streamingDelivery } from '@threadplane/core';
 
 afterEach(() => {
   cleanup();
@@ -48,7 +49,18 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
         },
       })),
     };
-    const observed = { ...application, getSnapshot: () => composed };
+    const streaming = {
+      ...composed,
+      messages: composed.messages.map((row) => ({
+        ...row,
+        message: {
+          ...row.message,
+          delivery: streamingDelivery(row.message.delivery.generation),
+        },
+      })),
+    };
+    let presented: typeof composed = streaming;
+    const observed = { ...application, getSnapshot: () => presented };
     const before = { ...fixture.counters };
     const view = render(
       <StrictMode>
@@ -59,6 +71,10 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
     expect(article.classList.contains('message-assistant')).toBe(true);
     const body = article.querySelector('.tp-chat-message__body');
     expect(body?.getAttribute('dir')).toBe('auto');
+    expect(article.getAttribute('data-current')).toBe('true');
+    expect(article.getAttribute('data-streaming')).toBe('true');
+    expect(body?.querySelectorAll('.tp-chat-message__caret')).toHaveLength(1);
+    expect(body?.lastElementChild?.getAttribute('aria-hidden')).toBe('true');
     expect(article.querySelectorAll('.tp-chat-message__speaker')).toHaveLength(
       1
     );
@@ -88,14 +104,65 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
     );
     expect(body?.contains(button)).toBe(false);
     expect(writeText).not.toHaveBeenCalled();
+    const last = streaming.messages[streaming.messages.length - 1];
+    for (const role of ['user', 'system', 'tool'] as const) {
+      presented = {
+        ...streaming,
+        messages: [
+          ...streaming.messages,
+          {
+            ...last,
+            id: `final-${role}`,
+            role,
+            message: { ...last.message, id: `final-${role}`, role },
+          },
+        ],
+      };
+      view.rerender(
+        <StrictMode>
+          <App application={observed} />
+        </StrictMode>
+      );
+      expect(article.getAttribute('data-current')).toBe('false');
+      expect(article.getAttribute('data-streaming')).toBe('true');
+      const final = view.getByRole('article', { name: `${role} message` });
+      expect(final.getAttribute('data-current')).toBe('true');
+      expect(final.getAttribute('data-streaming')).toBe('true');
+      expect(
+        view.container.querySelectorAll('.tp-chat-message__caret')
+      ).toHaveLength(0);
+      expect(within(article).getByRole('button', { name: 'Copy answer' })).toBe(
+        button
+      );
+    }
+    presented = streaming;
+    view.rerender(
+      <StrictMode>
+        <App application={observed} />
+      </StrictMode>
+    );
+    expect(article.getAttribute('data-current')).toBe('true');
+    expect(body?.querySelectorAll('.tp-chat-message__caret')).toHaveLength(1);
     const draft = view.getByRole('textbox', { name: 'Message' });
     draft.focus();
+    presented = composed;
     view.rerender(
       <StrictMode>
         <App application={observed} />
       </StrictMode>
     );
     expect(document.activeElement).toBe(draft);
+    expect(article.getAttribute('data-streaming')).toBe('false');
+    expect(body?.querySelectorAll('.tp-chat-message__caret')).toHaveLength(0);
+    expect(view.getByRole('article', { name: 'assistant message' })).toBe(
+      article
+    );
+    expect(thinking?.nextElementSibling).toBe(body);
+    expect(body?.nextElementSibling).toBe(sources);
+    expect(sources.nextElementSibling).toBe(trip);
+    expect(article.lastElementChild?.className).toBe(
+      'tp-chat-message__controls'
+    );
     fireEvent.click(button);
     await act(async () => undefined);
     expect(writeText.mock.calls).toEqual([['Answer']]);

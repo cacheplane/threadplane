@@ -1,7 +1,6 @@
 'use client';
-import type { ReactNode } from 'react';
 import type { AgentSession } from '@threadplane/core';
-import type { MessageContent, MessageRow } from '@threadplane/content/messages';
+import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { ChatError } from './error.js';
@@ -21,7 +20,7 @@ export interface ChatProps
   /** App-owned projection; reused across remounts and never disposed by Chat. */
   readonly content?: MessageContent;
   /** Must be referentially stable; see `MessageListProps.renderMessage`. */
-  readonly renderMessage?: (row: MessageRow) => ReactNode;
+  readonly renderMessage?: MessageListProps['renderMessage'];
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
   readonly toolLabel?: MessageListProps['toolLabel'];

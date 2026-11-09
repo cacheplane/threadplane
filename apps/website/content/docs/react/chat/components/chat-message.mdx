@@ -14,6 +14,7 @@ import {
   MessageList,
   Reasoning,
   Citations,
+  type MessageListRowContext,
 } from '@threadplane/react/chat';
 import { Markdown } from '@threadplane/react/markdown';
 import '@threadplane/react/chat/styles.css';
@@ -38,9 +39,11 @@ export function StandaloneMessage({ onCopy }: { readonly onCopy: () => void }) {
 }
 
 // Stable renderer: the parent retains content parsing and action ownership.
-const renderMessage = (row: MessageRow) => (
+const renderMessage = (row: MessageRow, context: MessageListRowContext) => (
   <ChatMessage
     role={row.role}
+    current={context.current}
+    streaming={row.message.delivery.phase === 'streaming'}
     speaker={row.role === 'system' ? '' : undefined}
     beforeContent={
       row.role === 'assistant' && row.reasoning ? (
@@ -76,7 +79,9 @@ export function CustomTranscript({
 }
 ~~~
 
-`ChatMessageProps` has exactly eight readonly fields: required `role`, and optional `speaker`, `label`, `children`, `beforeContent`, `afterContent`, `controls`, and `className`. `ChatMessageRole` aliases core `Role`: `user`, `assistant`, `system`, or `tool`. The default accessible article name is **ROLE message**. A custom `label` is literal text, including an empty string.
+`ChatMessageProps` has exactly ten readonly fields: required `role`, and optional `current`, `streaming`, `speaker`, `label`, `children`, `beforeContent`, `afterContent`, `controls`, and `className`. `ChatMessageRole` aliases core `Role`: `user`, `assistant`, `system`, or `tool`. The default accessible article name is **ROLE message**. A custom `label` is literal text, including an empty string.
+
+`current` and `streaming` default to false and appear as literal `data-current` and `data-streaming` article attributes. Only an assistant with both flags true renders one empty, `aria-hidden` caret span after children inside the independently directed body, including when the body has no text. The 8px dot pulses, stays visible with reduced motion, and uses solid system text color in forced colors. It adds no live announcement or session subscription. Default MessageList derives streaming from `delivery.phase === 'streaming'`; every complete outcome removes the caret.
 
 The default speaker is **You:** for user messages and **Assistant:** for assistant messages. System and tool messages have no default speaker. A custom speaker is literal text followed by a colon; `speaker=""` suppresses it. CSS hides the speaker visually while keeping it available to assistive technology. The article contains its positioning, and speaker text remains readable without CSS.
 
@@ -86,4 +91,4 @@ Children render once in `.tp-chat-message__body` with `dir="auto"`, independentl
 
 `controls` accepts a ReactNode, rendered once after `afterContent` in `.tp-chat-message__controls`. Nullish and boolean values omit the wrapper; values such as `0` and arrays follow normal React semantics. Controls wrap and remain visible and keyboard reachable. The consumer owns each handler, status, disabled state and clipboard operation. Rendering, updating and unmounting do not activate controls, move focus or announce a live status.
 
-The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing row memoization, custom renderer bypass and scroll policy. Current-message state, streaming carets and previous-role behavior remain deferred; this bounded presentation slice does not complete ChatMessage or T23 parity.
+The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing row memoization, custom renderer bypass and scroll policy. Its readonly `MessageListRowContext.current` identifies the final supplied row, even when that row is user, system or tool. Stable one-argument renderers remain compatible, and Chat forwards the same two-argument contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred.
