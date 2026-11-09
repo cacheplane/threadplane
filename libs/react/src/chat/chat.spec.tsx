@@ -68,6 +68,35 @@ const assistant = (id: string, content: string) =>
     content,
     delivery: streamingDelivery('g'),
   });
+it('forwards previous-role context to custom Chat renderers as the transcript changes', () => {
+  const { session, raw, set } = fakeSession({
+    messages: [
+      assistant('a', 'Answer'),
+      { ...assistant('u', 'Next'), role: 'user' },
+    ],
+  });
+  const renderMessage: NonNullable<
+    import('./index').ChatProps['renderMessage']
+  > = (row, context) => (
+    <p data-testid={row.id} data-prev-role={context.prevRole}>
+      {row.message.content}
+    </p>
+  );
+  const view = render(<Chat session={session} renderMessage={renderMessage} />);
+  expect(view.getByTestId('a').hasAttribute('data-prev-role')).toBe(false);
+  expect(view.getByTestId('u').getAttribute('data-prev-role')).toBe(
+    'assistant'
+  );
+  set({
+    messages: [
+      { ...assistant('a', 'Answer'), role: 'system' },
+      { ...assistant('u', 'Next'), role: 'user' },
+    ],
+  });
+  expect(view.getByTestId('u').getAttribute('data-prev-role')).toBe('system');
+  expect(raw.submit).not.toHaveBeenCalled();
+  expect(raw.stop).not.toHaveBeenCalled();
+});
 it('forwards authored outcome previews through Chat without executing additional commands', () => {
   const { session, raw } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
   const view = render(<Chat session={session} toolOutcome={() => ({ text: 'Reference verified' })} />);

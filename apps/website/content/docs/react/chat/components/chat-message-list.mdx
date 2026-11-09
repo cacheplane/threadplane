@@ -21,16 +21,40 @@ This private source-build view borrows already prepared rows:
 
 ~~~tsx
 import type { MessageRow } from '@threadplane/content/messages';
-import { MessageList } from '@threadplane/react/chat';
+import {
+  ChatMessage,
+  MessageList,
+  type MessageListRowContext,
+} from '@threadplane/react/chat';
 
 export function Transcript({ rows }: { readonly rows: readonly MessageRow[] }) {
   return <MessageList rows={rows} label="Trip conversation" />;
+}
+
+// Stable custom renderer showing literal text instead of the default rich view.
+const renderMessage = (row: MessageRow, context: MessageListRowContext) => (
+  <ChatMessage
+    role={row.role}
+    prevRole={context.prevRole}
+    current={context.current}
+    streaming={row.message.delivery.phase === 'streaming'}
+  >
+    <pre>{row.message.content}</pre>
+  </ChatMessage>
+);
+
+export function CustomTranscript({ rows }: { readonly rows: readonly MessageRow[] }) {
+  return <MessageList rows={rows} renderMessage={renderMessage} />;
 }
 ~~~
 
 The default renderer displays role labels, Markdown, assistant reasoning, resolved sources, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row, context)` callback replaces that entire presentation; it must explicitly include anything you want to retain. Existing one-argument callbacks remain compatible, and generic row inference preserves authored fields.
 
-The exported `MessageListRowContext` has one readonly boolean field, `current`. It is true exactly for the final supplied row, regardless of role. The default [ChatMessage](/docs/react/chat/components/chat-message) receives that flag and `streaming` from `row.message.delivery.phase === 'streaming'`; only a current streaming assistant shows a decorative caret. Historical streaming rows and final non-assistant rows have no caret. Appending, removing or reordering rows updates the positional flag. With unchanged row references and stable callbacks, unrelated historical rows retain memoized rendering. Custom rendering bypasses default labels, outcomes and Markdown work, and owns forwarding both flags.
+The exported `MessageListRowContext` has two readonly fields: required boolean `current` and optional `prevRole: ChatMessageRole`. `current` is true exactly for the final supplied row, regardless of role. `prevRole` is `rows[index - 1]?.role`: the immediately preceding projected row's role, including system and tool rows, rather than its message payload role. The first row receives undefined. The default [ChatMessage](/docs/react/chat/components/chat-message) receives both values and `streaming` from `row.message.delivery.phase === 'streaming'`; only a current streaming assistant shows a decorative caret. Historical streaming rows and final non-assistant rows have no caret.
+
+Appending, removing or reordering rows updates this positional context. Replacing a preceding immutable row with a different projected role rerenders the following row even if the following row reference is retained. Appending rerenders the former final row because `current` changes. With unchanged row references and stable callbacks, unrelated historical rows retain memoized rendering. Each of the ten current/previous-role combinations shares a frozen context object, so retained contexts never change. Custom rendering bypasses default labels, outcomes and Markdown work, and owns forwarding `prevRole`, `current` and delivery-derived `streaming`, as in the custom literal-text example above.
+
+Undefined `prevRole` omits the article attribute. Explicit assistant-to-user context preserves the stylesheet's 1.5rem spacing through wrappers; omitted context keeps the adjacent-sibling fallback, while explicit other roles override it. Existing assistant `:first-child` spacing remains DOM-dependent. Automatic control reveal and full T23 parity remain open.
 
 Default assistant rows pass their provider citations to inline Markdown references and merge Sources with the same accepted Markdown snapshot. Whole provider records win exact-ID collisions, including missing or blocked URLs; Markdown-only sources are included. Combined Sources use stable ascending index order. Metadata-only corrections update both views while preserving unchanged Markdown snapshots.
 

@@ -1,5 +1,11 @@
 import {
   MessageList,
+  Chat,
+  ChatMessage,
+  type ChatProps,
+  type ChatMessageProps,
+  type ChatMessageRole,
+  type MessageListRowContext,
   Citations,
   type CitationsProps,
   MessageActions,
@@ -18,6 +24,59 @@ import {
 } from '@threadplane/react/chat';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { MarkdownSnapshot } from '@threadplane/content/markdown';
+import type { AgentSession, Role } from '@threadplane/core';
+import type { ReactNode } from 'react';
+
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends
+  (<T>() => T extends B ? 1 : 2) ? true : false;
+type Assert<T extends true> = T;
+export type InstalledRoleContract = Assert<Equal<ChatMessageRole, Role>>;
+export type InstalledMessageContract = Assert<Equal<ChatMessageProps, {
+  readonly role: Role;
+  readonly prevRole?: ChatMessageRole;
+  readonly current?: boolean;
+  readonly streaming?: boolean;
+  readonly speaker?: string;
+  readonly label?: string;
+  readonly children?: ReactNode;
+  readonly beforeContent?: ReactNode;
+  readonly afterContent?: ReactNode;
+  readonly controls?: ReactNode;
+  readonly className?: string;
+}>>;
+export type InstalledContextContract = Assert<Equal<MessageListRowContext, {
+  readonly current: boolean;
+  readonly prevRole?: ChatMessageRole;
+}>>;
+export type InstalledMessageParameterContract = Assert<Equal<
+  Parameters<typeof ChatMessage>, [ChatMessageProps]
+>>;
+export type InstalledChatRendererContract = Assert<Equal<
+  ChatProps['renderMessage'], MessageListProps['renderMessage']
+>>;
+
+const context: MessageListRowContext = { current: false };
+const messageProps: ChatMessageProps = { role: 'user', prevRole: undefined };
+<ChatMessage {...messageProps} />;
+for (const prevRole of ['user', 'assistant', 'system', 'tool'] as const) {
+  <ChatMessage role="user" prevRole={prevRole} />;
+  const roleContext: MessageListRowContext = { current: true, prevRole };
+  void roleContext;
+}
+// @ts-expect-error Installed previous role is readonly.
+messageProps.prevRole = 'assistant';
+// @ts-expect-error Installed row context is readonly.
+context.prevRole = 'assistant';
+// @ts-expect-error Installed previous role is closed.
+<ChatMessage role="user" prevRole="developer" />;
+// @ts-expect-error Installed row context previous role is closed.
+const invalidContext: MessageListRowContext = { current: true, prevRole: 'developer' };
+void invalidContext;
+declare const session: AgentSession;
+<Chat session={session} renderMessage={(row) => row.id} />;
+<Chat session={session} renderMessage={(row, context) => (
+  <ChatMessage role={row.role} current={context.current} prevRole={context.prevRole} />
+)} />;
 
 interface Tools {
   weather: { args: { city: string }; result: { temperature: number } };
@@ -106,6 +165,16 @@ const props: MessageListProps<WeatherRow> = {
     ),
 };
 <MessageList {...props} />;
+<MessageList rows={rows} renderMessage={(row, context) => {
+  const summary: string = row.summary;
+  const previous: ChatMessageRole | undefined = context.prevRole;
+  // @ts-expect-error Context remains readonly in enriched callbacks.
+  context.prevRole = 'user';
+  return <ChatMessage role={row.role} current={context.current} prevRole={previous}>{summary}</ChatMessage>;
+}} />;
+<MessageList rows={[]} renderMessage={(row, context) => (
+  <ChatMessage role={row.role} current={context.current} prevRole={context.prevRole} />
+)} />;
 <MessageList
   rows={rows}
   renderScrollControl={(controls) => (controls.pinned ? null : 'Latest')}

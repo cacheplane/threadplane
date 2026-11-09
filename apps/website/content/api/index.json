@@ -6211,7 +6211,7 @@
       "canonicalReference": "@threadplane/react!MessageListRowContext:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Positional presentation context: current is true only for the final supplied row."
+      "summary": "Each supplied row's final-row flag and immediately preceding projected row role."
     },
     {
       "name": "MessageListScrollControls",

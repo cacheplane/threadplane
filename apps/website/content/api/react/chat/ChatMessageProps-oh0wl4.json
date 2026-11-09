@@ -61,7 +61,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 16
+            "line": 18
           },
           "isReadonly": true,
           "isOptional": true
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 15
+            "line": 17
           },
           "isReadonly": true,
           "isOptional": true
@@ -135,7 +135,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 14
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -171,7 +171,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 18
+            "line": 20
           },
           "isReadonly": true,
           "isOptional": true
@@ -208,7 +208,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 17
+            "line": 19
           },
           "isReadonly": true,
           "isOptional": true
@@ -244,7 +244,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 10
+            "line": 12
           },
           "isReadonly": true,
           "isOptional": true
@@ -280,7 +280,45 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 13
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "prevRole",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#prevRole:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly prevRole?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatMessageRole",
+              "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+              "href": "/docs/api/react/chat/ChatMessageRole"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Immediately preceding supplied row role; undefined omits data-prev-role.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": true
@@ -354,7 +392,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 12
+            "line": 14
           },
           "isReadonly": true,
           "isOptional": true
@@ -390,7 +428,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 11
+            "line": 13
           },
           "isReadonly": true,
           "isOptional": true

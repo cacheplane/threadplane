@@ -498,7 +498,8 @@
   font-size: var(--tp-chat-font-size-base);
   line-height: var(--tp-chat-line-height-tight);
 }
-.tp-chat-message--assistant + .tp-chat-message--user {
+.tp-chat-message--user[data-prev-role='assistant'],
+.tp-chat-message--assistant + .tp-chat-message--user:not([data-prev-role]) {
   margin-block-start: 1.5rem;
 }
 .tp-chat-message--user .tp-markdown {

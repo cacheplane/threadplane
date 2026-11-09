@@ -6,6 +6,7 @@ import {
 } from './index';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { ReactNode } from 'react';
+import type { ChatMessageRole } from './index';
 const ok: MessageListProps = { rows: [] };
 declare const context: MessageListRowContext;
 const current: boolean = context.current;
@@ -16,8 +17,25 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B
   : false;
 type Assert<T extends true> = T;
 export type RowContextContract = Assert<
-  Equal<MessageListRowContext, { readonly current: boolean }>
+  Equal<
+    MessageListRowContext,
+    { readonly current: boolean; readonly prevRole?: ChatMessageRole }
+  >
 >;
+const firstContext: MessageListRowContext = { current: false };
+const undefinedContext: MessageListRowContext = {
+  current: true,
+  prevRole: undefined,
+};
+const previous: ChatMessageRole | undefined = context.prevRole;
+// @ts-expect-error Previous role is readonly.
+context.prevRole = 'user';
+const invalidContext: MessageListRowContext = {
+  current: false,
+  // @ts-expect-error Previous role must use a supported provider role.
+  prevRole: 'developer',
+};
+void [firstContext, undefinedContext, previous, invalidContext];
 export type DefaultRendererContract = Assert<
   Equal<
     Pick<MessageListProps, 'renderMessage'>,
@@ -35,7 +53,9 @@ context.current = false;
 void context.session;
 <MessageList
   rows={authoredRows}
-  renderMessage={(row, context) => (context.current ? row.summary : row.id)}
+  renderMessage={(row, context) =>
+    context.current ? row.summary : context.prevRole ?? row.id
+  }
 />;
 void current;
 // @ts-expect-error rows is required.

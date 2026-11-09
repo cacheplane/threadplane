@@ -53,6 +53,11 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
       )}`,
     })),
   ];
+  const submittedFrames = ['human', 'ai', 'human'].map((type) => ({
+    id: '',
+    type,
+    content: 'Continue',
+  }));
   const history = (id: string) => ({
     method: 'POST',
     path: `/api/threads/${id}/history`,
@@ -90,12 +95,13 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
         'First streamed answer',
         'First streamed answer and later text',
         'First streamed answer and later text followed at latest',
-      ].map((content) => ({
+      ].map((content, index) => ({
         event: 'values',
         hold: true,
         data: {
           messages: [
             ...saved,
+            submittedFrames[index],
             {
               id: 'reply',
               type: 'ai',
@@ -111,6 +117,7 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
         expect(id).toMatch(
           /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
         );
+        for (const message of submittedFrames) message.id = id;
         expect(payload).toEqual({
           assistant_id: 'assistant',
           input: {
@@ -241,6 +248,28 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await completeUpwardScroll(() => list.press('Home'), 0);
     const messages = list.locator('.tp-chat-message');
     await expect(messages).toHaveCount(saved.length);
+    const roleNames = saved.map((message) =>
+      message.type === 'ai'
+        ? 'assistant'
+        : message.type === 'human'
+        ? 'user'
+        : message.type
+    );
+    for (let index = 0; index < saved.length; index++) {
+      if (index === 0)
+        await expect(messages.nth(index)).not.toHaveAttribute('data-prev-role');
+      else
+        await expect(messages.nth(index)).toHaveAttribute(
+          'data-prev-role',
+          roleNames[index - 1]
+        );
+    }
+    const marginInRem = (article: Locator) =>
+      article.evaluate(
+        (element) =>
+          parseFloat(getComputedStyle(element).marginBlockStart) /
+          parseFloat(getComputedStyle(document.documentElement).fontSize)
+      );
     for (const role of ['system', 'user', 'assistant', 'tool']) {
       const articles = list.getByRole('article', {
         name: `${role} message`,
@@ -268,6 +297,7 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
           .filter({ hasText: /^مرحبا بالعالم$/ }),
       });
     await expect(user).toHaveCount(1);
+    expect(await marginInRem(user)).toBe(0.5);
     const answer = list
       .getByRole('article', { name: 'assistant message', exact: true })
       .first();
@@ -385,6 +415,11 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await expect(
       list.getByRole('article', { name: 'user message', exact: true })
     ).toHaveCount(2);
+    const submittedUser = list
+      .getByRole('article', { name: 'user message', exact: true })
+      .last();
+    await expect(submittedUser).toHaveAttribute('data-prev-role', 'assistant');
+    expect(await marginInRem(submittedUser)).toBe(1.5);
     await input.fill('Preserved draft');
     await bottom(list);
     await list.hover();
@@ -415,8 +450,16 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     );
     await expect(caret).toHaveCSS('width', '8px');
     await expect(caret).toHaveCSS('height', '8px');
+    await expect(caret.locator('../..')).toHaveAttribute(
+      'data-prev-role',
+      'user'
+    );
     backend.steps[3].events[1].release();
     await expect(list).toContainText('and later text');
+    await expect(caret.locator('../..')).toHaveAttribute(
+      'data-prev-role',
+      'assistant'
+    );
     expect((await geometry(list)).top).toBe(before);
     await expect(input).toBeFocused();
     await expect(input).toHaveValue('Preserved draft');

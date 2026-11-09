@@ -7,6 +7,8 @@ export type ChatMessageRole = Role;
 /** Passive role presentation; content and controls remain consumer-owned. */
 export interface ChatMessageProps {
   readonly role: ChatMessageRole;
+  /** Immediately preceding supplied row role; undefined omits data-prev-role. */
+  readonly prevRole?: ChatMessageRole;
   readonly current?: boolean;
   readonly streaming?: boolean;
   readonly speaker?: string;
@@ -21,6 +23,7 @@ export interface ChatMessageProps {
 /** A named message article with an independently directed body and explicit controls slot. */
 export function ChatMessage({
   role,
+  prevRole,
   current = false,
   streaming = false,
   speaker = role === 'user' ? 'You' : role === 'assistant' ? 'Assistant' : '',
@@ -37,6 +40,7 @@ export function ChatMessage({
         .filter(Boolean)
         .join(' ')}
       aria-label={label}
+      data-prev-role={prevRole}
       data-current={String(current)}
       data-streaming={String(streaming)}
     >

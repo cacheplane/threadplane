@@ -20,19 +20,34 @@ import {
 } from './tool-activity.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
-import { ChatMessage } from './chat-message.js';
+import { ChatMessage, type ChatMessageRole } from './chat-message.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
   : TRow;
 
-/** Positional presentation context: current is true only for the final supplied row. */
+/** Each supplied row's final-row flag and immediately preceding projected row role. */
 export interface MessageListRowContext {
+  /** True exactly for the final supplied row, regardless of role. */
   readonly current: boolean;
+  /** Role of rows[index - 1], or undefined for the first supplied row. */
+  readonly prevRole?: ChatMessageRole;
 }
 
-const CURRENT_ROW: MessageListRowContext = Object.freeze({ current: true });
-const HISTORICAL_ROW: MessageListRowContext = Object.freeze({ current: false });
+function createRowContexts(
+  current: boolean
+): Readonly<Record<ChatMessageRole | 'first', MessageListRowContext>> {
+  return {
+    first: Object.freeze({ current, prevRole: undefined }),
+    user: Object.freeze({ current, prevRole: 'user' }),
+    assistant: Object.freeze({ current, prevRole: 'assistant' }),
+    system: Object.freeze({ current, prevRole: 'system' }),
+    tool: Object.freeze({ current, prevRole: 'tool' }),
+  };
+}
+
+const CURRENT_ROW_CONTEXTS = createRowContexts(true);
+const HISTORICAL_ROW_CONTEXTS = createRowContexts(false);
 
 /** View-owned actions. Retained actions become inert when this list unmounts. */
 export interface MessageListScrollControls {
@@ -78,6 +93,7 @@ const literal = (value: unknown): string =>
 function RowView<TRow extends MessageRow>({
   row,
   current,
+  prevRole,
   renderMessage,
   groupRelatedTools,
   toolLabel,
@@ -85,6 +101,7 @@ function RowView<TRow extends MessageRow>({
 }: {
   readonly row: TRow;
   readonly current: boolean;
+  readonly prevRole?: ChatMessageRole;
   readonly renderMessage?: (
     row: TRow,
     context: MessageListRowContext
@@ -95,8 +112,10 @@ function RowView<TRow extends MessageRow>({
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
 }) {
-  if (renderMessage)
-    return <>{renderMessage(row, current ? CURRENT_ROW : HISTORICAL_ROW)}</>;
+  if (renderMessage) {
+    const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
+    return <>{renderMessage(row, contexts[prevRole ?? 'first'])}</>;
+  }
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
@@ -114,6 +133,7 @@ function RowView<TRow extends MessageRow>({
   return (
     <ChatMessage
       role={row.role}
+      prevRole={prevRole}
       current={current}
       streaming={row.message.delivery.phase === 'streaming'}
       beforeContent={
@@ -258,6 +278,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               key={row.id}
               row={row}
               current={index === rows.length - 1}
+              prevRole={rows[index - 1]?.role}
               renderMessage={renderMessage}
               groupRelatedTools={groupRelatedTools}
               toolLabel={toolLabel}
