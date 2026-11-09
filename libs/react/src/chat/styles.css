@@ -427,6 +427,38 @@
   margin-block-start: 0.5rem;
   min-inline-size: 0;
 }
+.tp-chat-message__caret {
+  display: inline-block;
+  inline-size: 8px;
+  block-size: 8px;
+  margin-inline-start: 0.25rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    var(--tp-chat-text, CanvasText),
+    var(--tp-chat-muted, CanvasText)
+  );
+  opacity: 1;
+  animation: tp-chat-message-pulse 1.2s infinite alternate;
+}
+@keyframes tp-chat-message-pulse {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-chat-message__caret {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .tp-chat-message__caret {
+    background: CanvasText;
+    box-shadow: none;
+  }
+}
 .tp-chat-message--assistant {
   margin-block-start: 1.5rem;
   padding-inline: 0.25rem 0.75rem;

@@ -1,8 +1,18 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "7b8bb8059dd857a8cfb96aeebc6e055a610252d4",
+  "baselineHead": "f74de8a3643d8c19ff60fb5bfdc7d985958aaf29",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
+      "apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "apps/website/content/docs/react/chat/components/chat.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/chat-message.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/styles.css"
+    ],
     "untracked": []
   },
   "scope": {
@@ -849,7 +859,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "361738ed5631011270183a27384f40058d0c1af4b5af8676405d6dc417b4eac7"
+      "sha256": "f50a5cf4e22d50d14df5c6ee0c0cded9b4e9a2edacbf9a0db52d4227fac88739"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -867,7 +877,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "dd3d43129e232d9bfeff4c79a5d623179e8e3811061c46b8f4826949a08d12aa"
+      "sha256": "340f461214b7285febd3887d2b3cd83c30dcb688fde2cf2bb5eea68e744285d3"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3111,13 +3121,13 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "sha256": "4cdbb5dc9c55fa83f00ddbd991efea483781f2bf510b48d6c7d08977119553ba"
+      "sha256": "0e0ff89a80948eb63a82136c87ff09f0c2447f65e8e5a7693a979c98603c8d9f"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "sha256": "999745be4107a19fdfb9888e38614ace50d7a28171277e6ee663f6978a9b27de"
+      "sha256": "9107f04f363243add26e38321907ca8ff5c3b8ac457f4fd4e70da743890dc7a8"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -3165,7 +3175,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat.mdx",
-      "sha256": "3a5925d98bf4c1835bc54f2587928eaba34f8ac07267397f9f5ba27c7ce3adf8"
+      "sha256": "ec799b0d9ae4681ae779cd3efd63ce30f9c8a7bf62f92e6719775b43ea9d4f13"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/scroll-bubble.mdx",
@@ -11284,7 +11294,7 @@
           "path": "libs/react/src/chat/chat-message.tsx",
           "symbol": "ChatMessage",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ChatMessage({ role, speaker = role === 'user' ? 'You' : role === 'assistant' ? 'Assistant' : '', label = `${role} message`, children, beforeContent, afterContent, controls, className, }: ChatMessageProps) {\n    return (<article className={['tp-chat-message', `tp-chat-message--${role}`, className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label}>\n      {speaker !== '' && (<span className=\"tp-chat-message__speaker\">{speaker}:</span>)}\n      {beforeContent}\n      <div className=\"tp-chat-message__body\" dir=\"auto\">\n        {children}\n      </div>\n      {afterContent}\n      {controls != null && typeof controls !== 'boolean' && (<div className=\"tp-chat-message__controls\">{controls}</div>)}\n    </article>);\n}"
+          "signature": "export function ChatMessage({ role, current = false, streaming = false, speaker = role === 'user' ? 'You' : role === 'assistant' ? 'Assistant' : '', label = `${role} message`, children, beforeContent, afterContent, controls, className, }: ChatMessageProps) {\n    return (<article className={['tp-chat-message', `tp-chat-message--${role}`, className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} data-current={String(current)} data-streaming={String(streaming)}>\n      {speaker !== '' && (<span className=\"tp-chat-message__speaker\">{speaker}:</span>)}\n      {beforeContent}\n      <div className=\"tp-chat-message__body\" dir=\"auto\">\n        {children}\n        {role === 'assistant' && current && streaming && (<span className=\"tp-chat-message__caret\" aria-hidden=\"true\"/>)}\n      </div>\n      {afterContent}\n      {controls != null && typeof controls !== 'boolean' && (<div className=\"tp-chat-message__controls\">{controls}</div>)}\n    </article>);\n}"
         }
       ]
     },
@@ -11298,7 +11308,7 @@
           "path": "libs/react/src/chat/chat-message.tsx",
           "symbol": "ChatMessageProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ChatMessageProps {\n    readonly role: ChatMessageRole;\n    readonly speaker?: string;\n    readonly label?: string;\n    readonly children?: ReactNode;\n    readonly beforeContent?: ReactNode;\n    readonly afterContent?: ReactNode;\n    readonly controls?: ReactNode;\n    readonly className?: string;\n}"
+          "signature": "export interface ChatMessageProps {\n    readonly role: ChatMessageRole;\n    readonly current?: boolean;\n    readonly streaming?: boolean;\n    readonly speaker?: string;\n    readonly label?: string;\n    readonly children?: ReactNode;\n    readonly beforeContent?: ReactNode;\n    readonly afterContent?: ReactNode;\n    readonly controls?: ReactNode;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -11354,7 +11364,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "ChatProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: (row: MessageRow) => ReactNode;\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly onRetry?: () => void;\n}"
+          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: MessageListProps['renderMessage'];\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly onRetry?: () => void;\n}"
         }
       ]
     },
@@ -11662,7 +11672,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row) => (<Row key={row.id} row={row} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row, index) => (<Row key={row.id} row={row} current={index === rows.length - 1} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
         }
       ]
     },
@@ -11676,7 +11686,21 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>, context: MessageListRowContext) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageListRowContext",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageListRowContext",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-list.tsx",
+          "symbol": "MessageListRowContext",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageListRowContext {\n    readonly current: boolean;\n}"
         }
       ]
     },
@@ -16772,7 +16796,7 @@
       "id": "source:libs/react/src/chat/chat-message.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat-message.tsx",
-      "sha256": "01a64d234edf3fe9d5dd14ad164e38112a3a3abf68633727b151c99079313b99"
+      "sha256": "066faa2bee61ed4115dfcfb63ae01dd2fecc1ee0abd82f245bf7ce4101da3ab1"
     },
     {
       "id": "source:libs/react/src/chat/chat-popup.tsx",
@@ -16802,7 +16826,7 @@
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "dd77dceb70cd9ba24b2124c1ce75439e41600fc082df68905401b9904c554108"
+      "sha256": "34fd2f028f957504682f1e5896972d075ddd5a70e2a777f1112571f0ed0999cd"
     },
     {
       "id": "source:libs/react/src/chat/citation-card.tsx",
@@ -16844,7 +16868,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "9d2b2158ceda69d710ceb9a387f1bd42f6b71b93b7bf174fdeb7d6ed328d994a"
+      "sha256": "5c33771aeab78b605d0ad18664f491f16b83e68ec0e98337357fdbe39d97e4b4"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -16892,7 +16916,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "63ef8d889396e7fff97eae3bb3231ec04d7c41ea763bb2b2e3f764a9e0b3f7a6"
+      "sha256": "1959b39defebad3db86807142ef242786a5c7e9db08a60797814402815a5c4c0"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",

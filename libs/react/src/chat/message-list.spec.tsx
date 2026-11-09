@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import {
   streamingDelivery,
+  completeDelivery,
   type AgentSnapshot,
   type Message,
 } from '@threadplane/core';
@@ -39,10 +40,13 @@ const snap = (
 describe('MessageList', () => {
   it('groups built-in calls by default, including a single call, and honors explicit opt-out and custom rendering', () => {
     const content = createMessageContent();
-    const project = (count: number) =>
+    const project = (count: number, withTrailingUser = false) =>
       content.project(
         snap(
-          [msg('a', 'Answer', { toolCallIds: ['a', 'b'].slice(0, count) })],
+          [
+            msg('a', 'Answer', { toolCallIds: ['a', 'b'].slice(0, count) }),
+            ...(withTrailingUser ? [msg('u', 'Next', { role: 'user' })] : []),
+          ],
           [
             { id: 'a', name: 'lookup', args: {}, status: 'running' },
             {
@@ -77,6 +81,27 @@ describe('MessageList', () => {
       view.container.querySelector('.tp-tool-activity-group__details')
     ).toBe(details);
     expect(details.open).toBe(true);
+    expect(
+      view.container.querySelectorAll('.tp-chat-message__caret')
+    ).toHaveLength(1);
+    view.rerender(
+      <MessageList
+        rows={project(2, true)}
+        toolLabel={() => 'Checking references'}
+      />
+    );
+    expect(
+      view.container.querySelector('.tp-tool-activity-group__details')
+    ).toBe(details);
+    expect(details.open).toBe(true);
+    expect(
+      view
+        .getByRole('article', { name: 'assistant message' })
+        .getAttribute('data-current')
+    ).toBe('false');
+    expect(
+      view.container.querySelectorAll('.tp-chat-message__caret')
+    ).toHaveLength(0);
     view.rerender(<MessageList rows={project(2)} groupRelatedTools={false} />);
     expect(view.container.querySelector('.tp-tool-activity-group')).toBeNull();
     expect(view.container.querySelectorAll('.tp-tool-activity')).toHaveLength(
@@ -92,6 +117,129 @@ describe('MessageList', () => {
       view.container.querySelector('.tp-tool-activity,.tp-tool-activity-group')
     ).toBeNull();
     expect(view.getByRole('button', { name: 'Custom tools' })).toBeTruthy();
+    content.dispose();
+  });
+  for (const outcome of [
+    'success',
+    'error',
+    'aborted',
+    'interrupted',
+    'paused',
+  ] as const) {
+    it(`removes the current caret for complete delivery outcome ${outcome}`, () => {
+      const content = createMessageContent();
+      const view = render(
+        <MessageList rows={content.project(snap([msg('a', 'Answer')]))} />
+      );
+      expect(
+        view.container.querySelectorAll('.tp-chat-message__caret')
+      ).toHaveLength(1);
+      view.rerender(
+        <MessageList
+          rows={content.project(
+            snap([
+              msg('a', 'Answer', { delivery: completeDelivery('g', outcome) }),
+            ])
+          )}
+        />
+      );
+      expect(
+        view.container.querySelectorAll('.tp-chat-message__caret')
+      ).toHaveLength(0);
+      expect(view.getByRole('article').getAttribute('data-streaming')).toBe(
+        'false'
+      );
+      content.dispose();
+    });
+  }
+  it('tracks the final supplied row through append, removal and reorder without rerendering unchanged history', () => {
+    const content = createMessageContent();
+    const [a, b, c] = content.project(
+      snap([msg('a', 'A'), msg('b', 'B'), msg('c', 'C')])
+    );
+    const counts = new Map<string, number>();
+    const renderMessage = (
+      row: MessageRow,
+      context: { readonly current: boolean }
+    ) => {
+      counts.set(row.id, (counts.get(row.id) ?? 0) + 1);
+      return (
+        <p data-testid={row.id} data-current={String(context.current)}>
+          {row.message.content}
+        </p>
+      );
+    };
+    const view = render(
+      <MessageList rows={[a, b]} renderMessage={renderMessage} />
+    );
+    expect(view.getByTestId('b').getAttribute('data-current')).toBe('true');
+    view.rerender(
+      <MessageList rows={[a, b, c]} renderMessage={renderMessage} />
+    );
+    expect(counts.get('a')).toBe(1);
+    expect(counts.get('b')).toBe(2);
+    expect(view.getByTestId('b').getAttribute('data-current')).toBe('false');
+    expect(view.getByTestId('c').getAttribute('data-current')).toBe('true');
+    view.rerender(<MessageList rows={[a, b]} renderMessage={renderMessage} />);
+    expect(view.getByTestId('b').getAttribute('data-current')).toBe('true');
+    view.rerender(<MessageList rows={[b, a]} renderMessage={renderMessage} />);
+    expect(view.getByTestId('b').getAttribute('data-current')).toBe('false');
+    expect(view.getByTestId('a').getAttribute('data-current')).toBe('true');
+    content.dispose();
+  });
+  for (const role of ['user', 'system', 'tool'] as const) {
+    it(`shows a caret only for a final streaming assistant, clearing it for final ${role}`, () => {
+      const content = createMessageContent();
+      const rows = content.project(
+        snap([msg('a', 'Historical'), msg('b', '')])
+      );
+      const view = render(<MessageList rows={rows} />);
+      expect(
+        view.container.querySelectorAll('.tp-chat-message__caret')
+      ).toHaveLength(1);
+      expect(view.getAllByRole('article')[0].getAttribute('data-current')).toBe(
+        'false'
+      );
+      const final = content.project(snap([msg('u', 'Final', { role })]))[0];
+      view.rerender(<MessageList rows={[...rows, final]} />);
+      expect(
+        view.container.querySelectorAll('.tp-chat-message__caret')
+      ).toHaveLength(0);
+      expect(
+        view
+          .getByRole('article', { name: `${role} message` })
+          .getAttribute('data-current')
+      ).toBe('true');
+      content.dispose();
+    });
+  }
+  it('passes positional context through a custom renderer before accessing default presentation inputs', () => {
+    const content = createMessageContent();
+    const row = content.project(snap([msg('a', 'Answer')]))[0];
+    const custom = {
+      ...row,
+      get markdown(): MessageRow['markdown'] {
+        throw new Error('Default Markdown work');
+      },
+    };
+    const toolLabel = vi.fn();
+    const toolOutcome = vi.fn();
+    const view = render(
+      <MessageList
+        rows={[custom]}
+        toolLabel={toolLabel}
+        toolOutcome={toolOutcome}
+        renderMessage={(value, context) => (
+          <p>
+            {value.id}:{String(context.current)}
+          </p>
+        )}
+      />
+    );
+    expect(view.getByText('a:true')).toBeTruthy();
+    expect(toolLabel).not.toHaveBeenCalled();
+    expect(toolOutcome).not.toHaveBeenCalled();
+    expect(view.container.querySelector('article')).toBeNull();
     content.dispose();
   });
   it('keeps reasoning before and Sources/tool chrome after the independently directed text body', () => {

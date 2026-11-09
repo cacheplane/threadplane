@@ -70,6 +70,7 @@ export {
 export {
   MessageList,
   type MessageListProps,
+  type MessageListRowContext,
   type MessageListScrollControls,
 } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';

@@ -396,8 +396,25 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await expect(streaming).toBeVisible();
     await expect(input).toBeFocused();
     const before = (await geometry(list)).top;
+    const caret = list.locator('.tp-chat-message__caret');
+    await expect(caret).toHaveCount(0);
     backend.steps[3].events[0].release();
     await expect(list).toContainText('First streamed answer');
+    await expect(caret).toHaveCount(1);
+    await expect(caret).toBeVisible();
+    await expect(caret).toHaveAttribute('aria-hidden', 'true');
+    await expect(caret).toHaveText('');
+    await expect(caret.locator('..')).toHaveClass('tp-chat-message__body');
+    await expect(caret.locator('../..')).toHaveAttribute(
+      'data-current',
+      'true'
+    );
+    await expect(caret.locator('../..')).toHaveAttribute(
+      'data-streaming',
+      'true'
+    );
+    await expect(caret).toHaveCSS('width', '8px');
+    await expect(caret).toHaveCSS('height', '8px');
     backend.steps[3].events[1].release();
     await expect(list).toContainText('and later text');
     expect((await geometry(list)).top).toBe(before);
@@ -411,6 +428,23 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
       forcedColors: 'active',
       reducedMotion: 'reduce',
     });
+    await expect(caret).toBeVisible();
+    await expect(caret).toHaveCSS('animation-name', 'none');
+    await expect(caret).toHaveCSS('opacity', '1');
+    await expect(caret).toHaveCSS('background-image', 'none');
+    await expect(caret).toHaveCSS('box-shadow', 'none');
+    expect(
+      await caret.evaluate((element) => {
+        const probe = document.createElement('span');
+        probe.style.color = 'CanvasText';
+        element.parentElement!.append(probe);
+        const matches =
+          getComputedStyle(element).backgroundColor ===
+          getComputedStyle(probe).color;
+        probe.remove();
+        return matches;
+      })
+    ).toBe(true);
     await contained(streaming);
     expect(await direction(user)).toBe('rtl');
     expect(await direction(answer)).toBe('rtl');
@@ -600,6 +634,7 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await expect(page.locator('.submission-status')).toHaveText(
       'Response complete.'
     );
+    await expect(caret).toHaveCount(0);
     await expect(input).toHaveValue('Preserved draft');
     await bottom(list);
     await completeUpwardScroll(() => list.press('Home'), 0);

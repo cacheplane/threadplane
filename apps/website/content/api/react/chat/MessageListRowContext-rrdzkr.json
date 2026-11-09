@@ -1,0 +1,79 @@
+{
+  "name": "MessageListRowContext",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/MessageListRowContext",
+  "canonicalReference": "@threadplane/react!MessageListRowContext:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Positional presentation context: current is true only for the final supplied row.",
+  "declarations": [
+    {
+      "name": "MessageListRowContext",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MessageListRowContext:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageListRowContext "
+        }
+      ],
+      "docs": {
+        "summary": "Positional presentation context: current is true only for the final supplied row.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "current",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListRowContext#current:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly current: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 31
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/message-list.tsx",
+        "line": 30
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-list.tsx",
+    "line": 30
+  }
+}

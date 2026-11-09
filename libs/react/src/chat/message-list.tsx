@@ -26,6 +26,14 @@ type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
   : TRow;
 
+/** Positional presentation context: current is true only for the final supplied row. */
+export interface MessageListRowContext {
+  readonly current: boolean;
+}
+
+const CURRENT_ROW: MessageListRowContext = Object.freeze({ current: true });
+const HISTORICAL_ROW: MessageListRowContext = Object.freeze({ current: false });
+
 /** View-owned actions. Retained actions become inert when this list unmounts. */
 export interface MessageListScrollControls {
   readonly pinned: boolean;
@@ -41,7 +49,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * outside the component or wrap it in `useCallback`); a new function each
    * render defeats row memoization and re-renders every row.
    */
-  readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>) => ReactNode;
+  readonly renderMessage?: (
+    row: NoInfer<RenderRow<TRow>>,
+    context: MessageListRowContext
+  ) => ReactNode;
   readonly label?: string;
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
@@ -66,20 +77,26 @@ const literal = (value: unknown): string =>
 
 function RowView<TRow extends MessageRow>({
   row,
+  current,
   renderMessage,
   groupRelatedTools,
   toolLabel,
   toolOutcome,
 }: {
   readonly row: TRow;
-  readonly renderMessage?: (row: TRow) => ReactNode;
+  readonly current: boolean;
+  readonly renderMessage?: (
+    row: TRow,
+    context: MessageListRowContext
+  ) => ReactNode;
   readonly groupRelatedTools?: boolean;
   readonly toolLabel?: (name: string) => string | undefined;
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
 }) {
-  if (renderMessage) return <>{renderMessage(row)}</>;
+  if (renderMessage)
+    return <>{renderMessage(row, current ? CURRENT_ROW : HISTORICAL_ROW)}</>;
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
@@ -97,6 +114,8 @@ function RowView<TRow extends MessageRow>({
   return (
     <ChatMessage
       role={row.role}
+      current={current}
+      streaming={row.message.delivery.phase === 'streaming'}
       beforeContent={
         row.role === 'assistant' &&
         row.reasoning && <Reasoning snapshot={row.reasoning} />
@@ -234,10 +253,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
         className={['tp-chat-list', className].filter(Boolean).join(' ')}
       >
         <div ref={content}>
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <Row
               key={row.id}
               row={row}
+              current={index === rows.length - 1}
               renderMessage={renderMessage}
               groupRelatedTools={groupRelatedTools}
               toolLabel={toolLabel}
