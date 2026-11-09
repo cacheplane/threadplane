@@ -11,7 +11,7 @@ The native React APIs on this page are experimental, private source-build packag
 
 ## Observe the call the backend already made
 
-`ToolActivity` displays a readable app-authored label and explicit phase with literal technical evidence under collapsed **Details**. `ToolActivityGroup` groups related calls by their stable IDs. Rich results and approval actions belong in their `children` slot, outside the disclosure. Neither component executes, approves, resumes, or persists work. Omitted phase is shown as unavailable; output text alone does not imply success.
+`ToolActivity` displays a readable app-authored label and explicit phase with literal technical evidence under collapsed **Details**. `ToolActivityGroup` collects related calls into one borderless, initially collapsed activity row. Rich results and approval actions belong in their `children` slot, outside the disclosure. Neither component executes, approves, resumes, or persists work. Omitted phase is shown as unavailable; output text alone does not imply success.
 
 `ToolObservation` remains the literal inspector for applications that need it. The example associates observations with the requesting assistant and confirms the saved root conversation before another submission. Tool completion and successful business or persistence outcomes remain separate.
 
@@ -41,7 +41,6 @@ For readable activity:
 import { ToolActivityGroup } from '@threadplane/react/chat';
 
 <ToolActivityGroup
-  label="Flight information activity"
   activities={[
     {
       id: 'call-1',
@@ -54,7 +53,15 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 />;
 ```
 
-`MessageList` and `Chat` use readable activity by default. Pass `toolLabel` for app-authored labels and `groupRelatedTools` to opt into grouping across tool names within each assistant message. A custom `renderMessage` retains presentation ownership. Pending finalized arguments are distinct from streaming argument fragments. Unresolved calls from an aborted delivery show Stopped; paused deliveries show Waiting without claiming approval, and interrupted deliveries show an unavailable status.
+`MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel` for app-authored activity wording, or `groupRelatedTools={false}` to render separate activities. A custom `renderMessage` retains presentation ownership.
+
+While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
+
+An explicit `ToolActivityGroup` `label` overrides the automatic summary wording. Omit it to follow the active call's human label.
+
+Queued, paused, stopped and unavailable states keep static wording. **Tool activity paused** does not imply approval; the application owns approval-specific wording and controls. A failed call can coexist with running work, so the row retains a static failure cue while the active label shimmers. Reduced motion and forced colors use readable static text. A polite status region preserves meaningful state updates without announcing raw payloads or timer ticks.
+
+Pending finalized arguments are distinct from streaming argument fragments. Unresolved calls from an aborted delivery show Stopped; paused deliveries remain paused without claiming approval, and interrupted deliveries show an unavailable status.
 
 ## Show confirmed outcomes and sources
 
@@ -71,7 +78,7 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 }]} />
 ```
 
-Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups announce concise lifecycle counts through a polite status region. Raw payload streaming stays out of that region.
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 

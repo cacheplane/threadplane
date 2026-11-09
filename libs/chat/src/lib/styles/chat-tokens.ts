@@ -293,6 +293,7 @@ export const REDUCED_MOTION_LOOP_SELECTORS: readonly string[] = [
   '.chat-message__caret',
   '.chat-reasoning__pulse',
   '.chat-trace__label',
+  ".tp-tool-activity__label[data-active='true']",
   '.chat-genui-skeleton__row',
   '.a2ui-default-fallback__row',
   '.chat-history-search-palette__skeleton-row',

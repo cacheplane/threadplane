@@ -104,7 +104,7 @@ describe('ToolCallsComponent — toolCalls computed', () => {
   standalone: true,
   imports: [ChatToolCallsComponent, ChatToolCallTemplateDirective],
   template: `
-    <chat-tool-calls [agent]="agent" [grouping]="grouping">
+    <chat-tool-calls [agent]="agent" [grouping]="grouping" [groupRelated]="groupRelated">
       @if (registerSearchWeb) {
         <ng-template chatToolCallTemplate="search_web" let-call>
           <span data-tpl="search_web">{{ call.name }}-{{ call.id }}</span>
@@ -121,6 +121,7 @@ describe('ToolCallsComponent — toolCalls computed', () => {
 class GroupingHost {
   agent!: Agent;
   grouping: 'auto' | 'none' = 'auto';
+  groupRelated = false;
   registerSearchWeb = false;
   registerWildcard = false;
 }
@@ -142,7 +143,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.detectChanges();
     const strips = fixture.nativeElement.querySelectorAll('[data-group="true"]');
     expect(strips.length).toBe(1);
-    expect(strips[0].textContent).toContain('3 tool activities');
+    expect(strips[0].textContent).toContain('Used 3 tools');
   });
 
   it('does not group when names differ', () => {
@@ -160,6 +161,22 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     const cards = fixture.nativeElement.querySelectorAll('chat-tool-activity');
     expect(cards.length).toBe(3);
   });
+
+  it('keeps custom templates between separate compact built-in groups', () => {
+    const fixture = TestBed.createComponent(GroupingHost);
+    fixture.componentInstance.groupRelated = true;
+    fixture.componentInstance.registerSearchWeb = true;
+    fixture.componentInstance.agent = mockAgent({ toolCalls: [
+      { id: 'a', name: 'read_file', args: {}, status: 'running' },
+      { id: 'custom', name: 'search_web', args: {}, status: 'running' },
+      { id: 'b', name: 'read_file', args: {}, status: 'running' },
+    ] });
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelectorAll('[data-group="true"]')).toHaveLength(2);
+    expect(root.querySelector('[data-tpl="search_web"]')!.closest('.ctc__group')).toBeNull();
+  });
+
 
   it('does not group when [grouping]="none"', () => {
     const fixture = TestBed.createComponent(GroupingHost);
@@ -559,7 +576,7 @@ describe('ChatToolCallsComponent — group header disclosure semantics', () => {
     expect(css).toMatch(
       /\.ctc__group-header(\[[^\]]*\])?:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--tplane-chat-primary\)/,
     );
-    expect(css).toMatch(/\.ctc__group-header(\[[^\]]*\])?\s*\{[^}]*min-height:\s*24px/);
+    expect(css).toMatch(/\.ctc__group-header(\[[^\]]*\])?\s*\{[^}]*min-height:\s*32px/);
   });
 });
 
@@ -621,6 +638,63 @@ describe('ChatToolCallsComponent — [toolCallTemplates] input', () => {
 });
 
 describe('ChatToolCallsComponent — readable activity evidence', () => {
+  it('defaults to one collapsed cross-name group and preserves label overrides and mixed active cues', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const agent = mockAgent({
+      toolCalls: [{ id: 'a', name: 'read', args: {}, status: 'running' }],
+    });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('toolLabel', () => 'Checking references');
+    fixture.detectChanges();
+    const header: HTMLButtonElement =
+      fixture.nativeElement.querySelector('.ctc__group-header');
+    expect(header.hidden).toBe(false);
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+    expect(header.textContent!.trim()).toBe('Checking references');
+    expect(
+      fixture.nativeElement.querySelector('.tp-tool-activity__progress')
+    ).toBeNull();
+    agent.toolCalls.update((calls) => [
+      ...calls,
+      {
+        id: 'b',
+        name: 'save',
+        args: {},
+        status: 'error',
+        error: 'private diagnostic',
+      },
+    ]);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-group="true"]')
+    ).toHaveLength(1);
+    expect(header.querySelector('.tp-tool-activity__cue')!.textContent).toBe(
+      'Failed'
+    );
+    expect(
+      header
+        .querySelector('.tp-tool-activity__label')!
+        .getAttribute('data-active')
+    ).toBe('true');
+    fixture.componentRef.setInput('groupSummary', () => 'Preparing report');
+    fixture.detectChanges();
+    expect(header.querySelector('.tp-tool-activity__label')!.textContent).toBe(
+      'Preparing report'
+    );
+    expect(header.querySelector('.tp-tool-activity__cue')!.textContent).toBe(
+      'Failed'
+    );
+    const status = fixture.nativeElement.querySelector('[role="status"]');
+    expect(status.classList.contains('tp-tool-activity__status')).toBe(true);
+    expect(status.closest('[hidden]')).toBeNull();
+    fixture.componentRef.setInput('groupRelated', false);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-group="true"]')
+    ).toHaveLength(0);
+  });
+
   it('projects authored outcomes once per call instead of invoking app callbacks for status counting', () => {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);

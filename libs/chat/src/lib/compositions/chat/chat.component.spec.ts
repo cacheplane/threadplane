@@ -78,6 +78,18 @@ describe('markdownDocument', () => {
 });
 
 describe('ChatComponent', () => {
+  it('defaults to collapsed built-in activity and forwards an explicit opt-out', () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({ messages: [{ id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'success') }], toolCalls: [{ id: 'c', name: 'lookup', args: {}, status: 'complete', result: false }] });
+    fixture.componentRef.setInput('agent', agent); fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const header = root.querySelector('.ctc__group-header') as HTMLButtonElement;
+    expect(header.hidden).toBe(false);
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+    expect(header.textContent!.trim()).toBe('Used 1 tool');
+    fixture.componentRef.setInput('groupRelatedTools', false); fixture.detectChanges();
+    expect(root.querySelector('[data-group="true"]')).toBeNull();
+  });
   it('forwards authored outcomes into default grouped tool rendering', () => {
     const fixture = TestBed.createComponent(ChatComponent);
     const agent = mockAgent({ messages: [{ id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c', 'd'], delivery: completeDelivery('g', 'success') }], toolCalls: ['c', 'd'].map(id => ({ id, name: 'lookup', args: {}, status: 'complete' as const, result: 'ok' })) });

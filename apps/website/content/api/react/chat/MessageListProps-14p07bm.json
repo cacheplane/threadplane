@@ -141,7 +141,7 @@
             }
           ],
           "docs": {
-            "summary": "Opt in to one activity group per assistant message. Custom renderers keep full ownership.",
+            "summary": "Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

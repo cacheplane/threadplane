@@ -70,7 +70,10 @@ const assistant = (id: string, content: string) =>
   });
 it('forwards authored outcome previews through Chat without executing additional commands', () => {
   const { session, raw } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
-  const view = render(<Chat session={session} groupRelatedTools toolOutcome={() => ({ text: 'Reference verified' })} />);
+  const view = render(<Chat session={session} toolOutcome={() => ({ text: 'Reference verified' })} />);
+  const details = view.container.querySelector('.tp-tool-activity-group__details') as HTMLDetailsElement;
+  expect(details).toBeTruthy();
+  expect(details.open).toBe(false);
   expect(view.getByText('Reference verified').closest('details')).toBeNull();
   expect(raw.submit).not.toHaveBeenCalled();
 });

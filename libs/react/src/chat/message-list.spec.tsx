@@ -37,6 +37,63 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('groups built-in calls by default, including a single call, and honors explicit opt-out and custom rendering', () => {
+    const content = createMessageContent();
+    const project = (count: number) =>
+      content.project(
+        snap(
+          [msg('a', 'Answer', { toolCallIds: ['a', 'b'].slice(0, count) })],
+          [
+            { id: 'a', name: 'lookup', args: {}, status: 'running' },
+            {
+              id: 'b',
+              name: 'save',
+              args: {},
+              status: 'complete',
+              result: false,
+            },
+          ].slice(0, count) as AgentSnapshot['toolCalls']
+        )
+      );
+    const view = render(
+      <MessageList rows={project(1)} toolLabel={() => 'Checking references'} />
+    );
+    const details = view.container.querySelector(
+      '.tp-tool-activity-group__details'
+    ) as HTMLDetailsElement;
+    expect(details).toBeTruthy();
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')!.textContent).toBe(
+      'Checking references'
+    );
+    details.open = true;
+    view.rerender(
+      <MessageList rows={project(2)} toolLabel={() => 'Checking references'} />
+    );
+    expect(
+      view.container.querySelectorAll('.tp-tool-activity-group')
+    ).toHaveLength(1);
+    expect(
+      view.container.querySelector('.tp-tool-activity-group__details')
+    ).toBe(details);
+    expect(details.open).toBe(true);
+    view.rerender(<MessageList rows={project(2)} groupRelatedTools={false} />);
+    expect(view.container.querySelector('.tp-tool-activity-group')).toBeNull();
+    expect(view.container.querySelectorAll('.tp-tool-activity')).toHaveLength(
+      2
+    );
+    view.rerender(
+      <MessageList
+        rows={project(2)}
+        renderMessage={() => <button>Custom tools</button>}
+      />
+    );
+    expect(
+      view.container.querySelector('.tp-tool-activity,.tp-tool-activity-group')
+    ).toBeNull();
+    expect(view.getByRole('button', { name: 'Custom tools' })).toBeTruthy();
+    content.dispose();
+  });
   it('keeps reasoning before and Sources/tool chrome after the independently directed text body', () => {
     const content = createMessageContent();
     const rows = content.project(
@@ -64,7 +121,7 @@ describe('MessageList', () => {
     const body = article.querySelector('.tp-chat-message__body');
     const reasoning = article.querySelector('.tp-reasoning');
     const sources = view.getByRole('region', { name: 'Sources' });
-    const tool = article.querySelector('.tp-tool-activity');
+    const tool = article.querySelector('.tp-tool-activity-group');
     expect(body?.textContent).toBe('مرحبا');
     expect(reasoning?.parentElement).toBe(article);
     expect(reasoning?.nextElementSibling).toBe(body);
@@ -798,7 +855,11 @@ describe('MessageList', () => {
       view.container.querySelector('.tp-tool-activity')!.textContent
     ).toContain('boom <i>bad</i>');
     expect(view.container.querySelector('i')).toBeNull();
-    expect(view.getByRole('alert').closest('details')).toBeNull();
+    expect(
+      view
+        .getAllByRole('alert')
+        .some((alert) => alert.closest('details') === null)
+    ).toBe(true);
     expect(view.container.querySelector('details')!.open).toBe(false);
   });
 

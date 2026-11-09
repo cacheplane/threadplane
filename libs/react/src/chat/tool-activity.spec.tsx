@@ -193,6 +193,101 @@ describe('ToolActivity', () => {
   });
 });
 describe('ToolActivityGroup', () => {
+  it.each([
+    ['running', 'Checking references'],
+    ['pending', 'Waiting to run tools'],
+    ['waiting', 'Tool activity paused'],
+    ['stopped', 'Tool activity stopped'],
+    ['unknown', 'Tool status unavailable'],
+    ['complete', 'Used 1 tool'],
+    ['error', 'Tool activity failed'],
+  ] as const)('summarizes %s in one collapsed row', (phase, expected) => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          {
+            id: 'a',
+            name: 'private_lookup',
+            label: 'Checking references',
+            phase,
+            resultText: '{"approved":true}',
+          },
+        ]}
+      />
+    );
+    const details = view.container.querySelector('details')!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')!.textContent).toBe(expected);
+    expect(
+      view.container.querySelector('.tp-tool-activity__progress')
+    ).toBeNull();
+    const status = view.getByRole('status');
+    expect(status.classList.contains('tp-tool-activity__status')).toBe(true);
+    expect(status.closest('details')).toBeNull();
+    expect(status.textContent).toContain(expected);
+    expect(status.textContent).not.toContain('approved');
+    expect(
+      view.container
+        .querySelector('.tp-tool-activity-group')!
+        .getAttribute('data-active')
+    ).toBe(String(phase === 'running'));
+  });
+  it('keeps active wording and static mixed-state cues with custom caption precedence', () => {
+    const activities = [
+      {
+        id: 'a',
+        name: 'lookup',
+        phase: 'running' as const,
+        label: 'Reading references',
+      },
+      { id: 'b', name: 'save', phase: 'error' as const },
+      { id: 'c', name: 'wait', phase: 'waiting' as const },
+    ];
+    const view = render(<ToolActivityGroup activities={activities} />);
+    const summary = view.container.querySelector('summary')!;
+    expect(summary.querySelector('.tp-tool-activity__label')!.textContent).toBe(
+      'Reading references'
+    );
+    expect(summary.querySelector('.tp-tool-activity__cue')!.textContent).toBe(
+      'Failed · Paused'
+    );
+    expect(view.container.querySelector('[data-active="true"]')).toBeTruthy();
+    view.rerender(
+      <ToolActivityGroup activities={activities} label="Preparing report" />
+    );
+    expect(summary.querySelector('.tp-tool-activity__label')!.textContent).toBe(
+      'Preparing report'
+    );
+    expect(
+      summary.querySelector('.tp-tool-activity__cue')!.textContent
+    ).toContain('Failed');
+  });
+  it('uses a safe running fallback and only reports all-explicit completion', () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          { id: 'a', name: 'raw_name', phase: 'running', label: '   ' },
+        ]}
+      />
+    );
+    expect(view.container.querySelector('summary')!.textContent).toBe(
+      'Running tools…'
+    );
+    view.rerender(
+      <ToolActivityGroup
+        activities={Array.from({ length: 4 }, (_, i) => ({
+          id: String(i),
+          name: 'raw',
+          phase: 'complete',
+        }))}
+      />
+    );
+    expect(view.container.querySelector('summary')!.textContent).toBe(
+      'Used 4 tools'
+    );
+    view.rerender(<ToolActivityGroup activities={[]} />);
+    expect(view.container.querySelector('details,[role="status"]')).toBeNull();
+  });
   it.each(['pending', 'stopped'] as const)(
     'retains an explicit %s group outcome',
     (phase) => {
@@ -218,6 +313,8 @@ describe('ToolActivityGroup', () => {
     const inner = view.container.querySelectorAll('details')[1];
     outer.open = true;
     inner.open = true;
+    const inspection = inner.querySelector('summary')!;
+    inspection.focus();
     const filter = view.getByRole('textbox');
     view.rerender(
       <ToolActivityGroup activities={[b, a]} label="Preparing dashboard">
@@ -226,9 +323,27 @@ describe('ToolActivityGroup', () => {
     );
     expect(view.container.querySelectorAll('details')[2]).toBe(inner);
     expect(inner.open).toBe(true);
+    expect(outer.open).toBe(true);
+    expect(document.activeElement).toBe(inspection);
+    view.rerender(
+      <ToolActivityGroup
+        activities={[
+          { ...b, phase: 'complete' },
+          a,
+          { id: 'c', name: 'read', phase: 'complete' },
+        ]}
+        label="Preparing dashboard"
+      >
+        <input aria-label="Dashboard filter" />
+      </ToolActivityGroup>
+    );
+    expect(outer.open).toBe(true);
+    expect(inner.open).toBe(true);
+    expect(view.getByRole('textbox')).toBe(filter);
+    expect(document.activeElement).toBe(inspection);
     outer.open = false;
     expect(filter.closest('details')).toBeNull();
-    expect(view.getAllByText('Running').length).toBeGreaterThan(0);
+    expect(view.getAllByText('Complete').length).toBeGreaterThan(0);
   });
   it('keeps group failure recovery visible without opening inspection', () => {
     const view = render(

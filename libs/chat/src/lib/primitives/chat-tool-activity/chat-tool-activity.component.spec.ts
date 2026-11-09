@@ -33,6 +33,96 @@ class Host {
   activities = signal<readonly ToolActivityInfo[]>([]);
 }
 describe('tool activity', () => {
+  it.each([
+    ['running', 'Checking references'],
+    ['pending', 'Waiting to run tools'],
+    ['waiting', 'Tool activity paused'],
+    ['stopped', 'Tool activity stopped'],
+    ['unknown', 'Tool status unavailable'],
+    ['complete', 'Used 1 tool'],
+    ['error', 'Tool activity failed'],
+  ] as const)('summarizes %s in one collapsed row', (phase, expected) => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      {
+        id: 'a',
+        name: 'private_lookup',
+        label: 'Checking references',
+        phase,
+        resultText: '{"approved":true}',
+      },
+    ]);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('details')!.open).toBe(false);
+    expect(root.querySelector('summary')!.textContent!.trim()).toBe(expected);
+    expect(root.querySelector('.tp-tool-activity__progress')).toBeNull();
+    const status = root.querySelector('[role="status"]')!;
+    expect(status.classList.contains('tp-tool-activity__status')).toBe(true);
+    expect(status.closest('details')).toBeNull();
+    expect(status.textContent).toContain(expected);
+    expect(status.textContent).not.toContain('approved');
+    expect(root.querySelector('section')!.getAttribute('data-active')).toBe(
+      String(phase === 'running')
+    );
+  });
+  it('retains real active wording alongside static failed and neutral paused cues, including custom captions', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      {
+        id: 'a',
+        name: 'lookup',
+        label: 'Reading references',
+        phase: 'running',
+      },
+      { id: 'b', name: 'save', phase: 'error' },
+      { id: 'c', name: 'wait', phase: 'waiting' },
+    ]);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity__label')!.textContent).toBe(
+      'Reading references'
+    );
+    expect(root.querySelector('.tp-tool-activity__cue')!.textContent).toBe(
+      'Failed · Paused'
+    );
+    expect(root.querySelector('[data-active="true"]')).toBeTruthy();
+    fixture.componentRef.setInput('label', 'Preparing report');
+    fixture.detectChanges();
+    expect(root.querySelector('.tp-tool-activity__label')!.textContent).toBe(
+      'Preparing report'
+    );
+    expect(root.querySelector('.tp-tool-activity__cue')!.textContent).toContain(
+      'Failed'
+    );
+  });
+  it('uses a safe fallback, settles only explicitly complete calls, and omits empty activity', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      { id: 'a', name: 'raw_name', phase: 'running', label: '  ' },
+    ]);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('summary').textContent.trim()
+    ).toBe('Running tools…');
+    fixture.componentRef.setInput(
+      'activities',
+      Array.from({ length: 4 }, (_, i) => ({
+        id: String(i),
+        name: 'raw',
+        phase: 'complete',
+      }))
+    );
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('summary').textContent.trim()
+    ).toBe('Used 4 tools');
+    fixture.componentRef.setInput('activities', []);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('details,[role="status"]')
+    ).toBeNull();
+  });
   it('shows confirmed outcomes and safe deduplicated sources outside collapsed inspection', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.componentInstance.activities.set([
@@ -216,11 +306,26 @@ describe('tool activity', () => {
       'chat-tool-activity-group'
     );
     const inner = group.querySelectorAll('details')[1];
+    const outer = group.querySelector('details');
+    outer.open = true;
     inner.open = true;
+    const inspection = inner.querySelector('summary');
+    inspection.focus();
     fixture.componentInstance.activities.set([b, a]);
     fixture.detectChanges();
     expect(group.querySelectorAll('details')[2]).toBe(inner);
     expect(inner.open).toBe(true);
+    expect(outer.open).toBe(true);
+    expect(document.activeElement).toBe(inspection);
+    fixture.componentInstance.activities.set([
+      { ...b, phase: 'complete' },
+      a,
+      { id: 'c', name: 'read', phase: 'complete' },
+    ]);
+    fixture.detectChanges();
+    expect(outer.open).toBe(true);
+    expect(inner.open).toBe(true);
+    expect(document.activeElement).toBe(inspection);
     expect(group.querySelector('button').closest('details')).toBeNull();
   });
 });

@@ -644,8 +644,8 @@ export class ChatComponent {
    * `activityTemplate` is present.
    */
   readonly toolCallTemplates = contentChildren(ChatToolCallTemplateDirective);
-  /** Opt in to grouping related default tool rows across names per assistant message. */
-  readonly groupRelatedTools = input(false);
+  /** Group built-in tool rows across names per assistant message; false retains adjacent same-name grouping. */
+  readonly groupRelatedTools = input(true);
   /** App-authored readable labels; technical names remain in Details. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
   /** App-authored confirmed outcome previews for default tool rendering. */

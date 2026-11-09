@@ -39,7 +39,7 @@
       "members": [],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-        "line": 17
+        "line": 19
       },
       "typeTokenRange": {
         "startIndex": 1,
@@ -49,6 +49,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-    "line": 17
+    "line": 19
   }
 }

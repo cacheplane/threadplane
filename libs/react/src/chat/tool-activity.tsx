@@ -1,11 +1,11 @@
 'use client';
 import type { ReactNode } from 'react';
 import {
-  activityProgress,
   confirmedOutcomes,
   outcomeSources,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
+import { activitySummary } from './activity-summary.js';
 export type {
   ToolActivityOutcome,
   ToolActivitySource,
@@ -200,35 +200,26 @@ export function ToolActivityGroup({
   label,
   children,
 }: ToolActivityGroupProps) {
-  const failed = activities.some((item) => item.phase === 'error');
-  const running = activities.some((item) => item.phase === 'running');
-  const phase = failed
-    ? 'error'
-    : running
-    ? 'running'
-    : activities.some((item) => item.phase === 'waiting')
-    ? 'waiting'
-    : activities.some((item) => item.phase === 'pending')
-    ? 'pending'
-    : activities.some((item) => item.phase === 'stopped')
-    ? 'stopped'
-    : activities.every((item) => item.phase === 'complete')
-    ? 'complete'
-    : 'unknown';
+  const summary = activitySummary(activities, label);
+  const failed = summary.phase === 'error';
   return (
-    <section className="tp-tool-activity-group" data-phase={phase}>
+    <section
+      className="tp-tool-activity-group"
+      data-phase={summary.phase}
+      data-active={summary.active}
+    >
       {activities.length > 0 && (
         <details className="tp-tool-activity-group__details">
           <summary>
-            <span>
-              {label ??
-                `${activities.length} tool ${
-                  activities.length === 1 ? 'activity' : 'activities'
-                }`}
+            <span
+              className="tp-tool-activity__label"
+              data-active={summary.active}
+            >
+              {summary.label}
             </span>
-            <span className="tp-tool-activity__phase" aria-hidden="true">
-              {labels[phase]}
-            </span>
+            {summary.cue && (
+              <span className="tp-tool-activity__cue">{summary.cue}</span>
+            )}
           </summary>
           <div className="tp-tool-activity-group__items">
             {activities.map((activity) => (
@@ -245,9 +236,9 @@ export function ToolActivityGroup({
           role="status"
           aria-live="polite"
           aria-atomic="true"
-          className="tp-tool-activity__progress"
+          className="tp-tool-activity__status"
         >
-          {activityProgress(activities)}
+          {summary.status}
         </p>
       )}
       <ToolOutcomes activities={activities} />
