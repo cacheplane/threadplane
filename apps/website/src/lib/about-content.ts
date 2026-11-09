@@ -16,7 +16,7 @@
  */
 
 export const ABOUT_INTRO =
-  "I'm Brian Love, an agentic software architect building developer tooling for fullstack AI-powered web applications. Threadplane is the framework I build and maintain for agent UI in Angular: durable threads, interrupts, subagents, planning, memory, and generative UI.";
+  "I'm Brian Love, an agentic software architect building developer tooling for fullstack AI-powered web applications. Threadplane is the framework I build and maintain for agent UI in Angular and React: durable threads, interrupts, subagents, planning, memory, and generative UI.";
 
 export const ABOUT_HISTORY_HEADING = 'How I got here';
 

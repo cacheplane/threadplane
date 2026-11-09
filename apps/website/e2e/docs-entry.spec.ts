@@ -48,17 +48,57 @@ test('copying an Angular install command keeps the docs hub open', async ({
 }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/docs');
-  await page.locator('.docs-entry-install summary').first().click();
-  const copy = page.locator('.docs-entry-install').first().getByRole('button');
+  // Hydration replaces the server fallback with the interactive workspace.
+  // Open the disclosure on that stable tree, then verify copying preserves it.
+  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+  const install = page.locator('.docs-entry-install').first();
+  await install.locator('summary').click();
+  await expect(install).toHaveAttribute('open', '');
+  const copy = install.getByRole('button');
+  await expect(copy).toBeVisible();
   expect(await copy.evaluate((button) => button.closest('a') === null)).toBe(
     true
   );
   await copy.click();
   await expect(page).toHaveURL(/\/docs$/);
   await expect(copy).toHaveAttribute('aria-label', 'Copied');
+  await expect(install).toHaveAttribute('open', '');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     'npm i @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
   );
+});
+
+test('an install disclosure opened before hydration stays open and can copy', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  let releaseScripts: () => void = () => undefined;
+  const scriptsReady = new Promise<void>((resolve) => { releaseScripts = resolve; });
+  await page.route('**/_next/**', async (route) => {
+    if (route.request().resourceType() === 'script') await scriptsReady;
+    await route.continue();
+  });
+  try {
+    await page.goto('/docs', { waitUntil: 'commit' });
+    const fallback = page.locator('.website-workspace-fallback');
+    await expect(fallback).toBeVisible();
+    await expect(page.locator('[data-workspace-shell]')).toHaveCount(0);
+    const initialInstall = fallback.locator('.docs-entry-install').first();
+    await initialInstall.locator('summary').click();
+    await expect(initialInstall).toHaveAttribute('open', '');
+    releaseScripts();
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(fallback).toHaveCount(0);
+    const install = page.getByRole('region', { name: 'Docs workspace panel', exact: true }).locator('.docs-entry-install').first();
+    await expect(install).toHaveAttribute('open', '');
+    const copy = install.getByRole('button');
+    await copy.click();
+    await expect(copy).toHaveAttribute('aria-label', 'Copied');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'npm i @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
+    );
+    await expect(install).toHaveAttribute('open', '');
+  } finally {
+    releaseScripts();
+  }
 });
 
 for (const width of [320, 375, 768, 1440]) {

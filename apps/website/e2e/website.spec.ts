@@ -269,9 +269,15 @@ test('docs landing page shows framework, backend, and surface cards', async ({ p
   for (const title of await titles.all()) await expect(title).toBeVisible();
 });
 
-test('docs landing page carries the control plane', async ({ page }) => {
+test('docs landing page carries the shared workspace toolbar', async ({ page }) => {
   await page.goto('/docs');
-  await expect(page.getByRole('navigation', { name: 'Docs modes' })).toBeVisible();
+  await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
+  const modes = page.getByRole('navigation', { name: 'Documentation modes', exact: true });
+  await expect(modes).toBeVisible();
+  for (const mode of ['Docs', 'Run', 'Code', 'API']) {
+    await expect(modes.locator(`[data-workspace-toolbar-mode="${mode}"]`)).toBeVisible();
+  }
+  await expect(modes.getByRole('button', { name: 'Docs', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Choose a library' })).toBeVisible();
 });
 

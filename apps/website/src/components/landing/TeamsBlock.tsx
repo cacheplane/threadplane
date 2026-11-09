@@ -30,7 +30,7 @@ export function TeamsBlock({ formPolicy }: { formPolicy: PublicFormPolicy }) {
             <h2 id="field-report-heading" className="teams-heading">
               Free preflight briefing for agentic UI
             </h2>
-            <p className="home-report-description">What breaks between a demo and production—and how to prepare. A {FIELD_REPORT.pages}-page field report for teams building agent interfaces with Angular.</p>
+            <p className="home-report-description">What breaks between a demo and production—and how to prepare. A {FIELD_REPORT.pages}-page field report for teams building agent interfaces with Angular and React.</p>
             <WhitePaperForm
               paper="overview"
               formPolicy={formPolicy}

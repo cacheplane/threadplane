@@ -154,8 +154,10 @@ for (const width of [320, 375, 768, 1024, 1440, 1920]) {
       }
       await page.evaluate(() => document.fonts.ready);
       if (route === '/docs/api') {
-        const filters = page.locator('.api-reference-filters input, .api-reference-filters select');
-        expect(await filters.count()).toBeGreaterThan(1);
+        const filterToggle = page.locator('.api-reference-filters').getByRole('button', { name: /^Filters/ });
+        if (await filterToggle.isVisible()) await filterToggle.click();
+        const filters = page.locator('.api-reference-filters input, .api-reference-filters .docs-select-trigger');
+        await expect(filters).toHaveCount(4);
         for (const control of await filters.all()) {
           await expect(control).toHaveCSS('height', '44px');
         }

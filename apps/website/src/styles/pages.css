@@ -258,29 +258,6 @@
   max-width: 760px;
 }
 
-/* Docs shell — shared by all three /docs routes.
- *
- * Both defects the migration flagged here are now closed. The hardcoded
- * `paddingTop: 80` became `var(--nav-h)`, and the nav-height coupling behind it
- * was fixed at the source in chrome.css (the variable was missing its
- * 768–1023px step). `min-height: 100vh` and this padding do not stack, because
- * global.css sets `box-sizing: border-box` on everything.
- *
- * The article's `overflow-x-hidden` utility is gone rather than moved here. It
- * was redundant — global.css already clips the body — and it was the same
- * mistake that rule's comment warns about: `overflow-x: hidden` computes
- * `overflow-y: auto`, so it made every docs article a scroll container. All 123
- * docs URLs were measured at 375px with it removed; none overflow. Wide code
- * blocks and tables scroll inside their own `overflow-x: auto` containers,
- * which is where the containment belongs. */
-.docs-shell-page {
-  background: var(--color-canvas);
-  padding-top: var(--nav-h);
-}
-.docs-shell-body {
-  background: var(--color-surface);
-}
-
 /* About page — app/about/page.tsx */
 .about-section-inner {
   max-width: 720px;

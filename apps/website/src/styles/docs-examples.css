@@ -6,6 +6,7 @@
   font-family: var(--font-sans);
 }
 .docs-examples h1 {
+  color: var(--color-accent);
   font-size: clamp(32px, 3vw, 44px);
   line-height: 1.12;
   letter-spacing: -0.04em;
@@ -31,8 +32,7 @@
   min-width: 0;
   font-size: 13px;
 }
-.docs-examples-filters input,
-.docs-examples-filters select {
+.docs-examples-filters input {
   width: 100%;
   min-width: 0;
   height: 44px;
@@ -66,6 +66,7 @@
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
 }
+.docs-examples h2 { color: var(--color-accent); }
 .docs-example-card:hover {
   background: #fff9e9;
   border-color: #e9dbb5;

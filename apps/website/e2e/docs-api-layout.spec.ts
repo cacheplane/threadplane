@@ -120,7 +120,12 @@ for (const width of [390, 1440]) {
     await filters.getByLabel('Find an API').fill('useAgent');
     if (width < 768)
       await filters.getByRole('button', { name: /^Filters/ }).click();
-    await filters.getByLabel('Framework').selectOption('react');
+    await filters
+      .getByRole('button', { name: 'Framework', exact: true })
+      .click();
+    await filters
+      .getByRole('menuitemradio', { name: 'React', exact: true })
+      .click();
     await expect(page).toHaveURL(/apiFramework=react/);
     const reference = page.locator('.api-reference-page');
     await expect(
@@ -167,7 +172,11 @@ test('API scope stays synchronized through the workspace registrar, refresh and 
   const framework = page
     .locator('.api-reference-filters')
     .getByLabel('Framework', { exact: true });
-  await framework.selectOption('react');
+  await framework.click();
+  await page
+    .locator('.api-reference-filters')
+    .getByRole('menuitemradio', { name: 'React', exact: true })
+    .click();
   await expect(page.locator('[data-api-scope]')).toHaveAttribute(
     'data-api-scope',
     'react'
@@ -176,22 +185,22 @@ test('API scope stays synchronized through the workspace registrar, refresh and 
   await page
     .getByRole('menuitemradio', { name: 'Angular', exact: true })
     .click();
-  await expect(framework).toHaveValue('angular');
+  await expect(framework).toHaveText('Angular');
   await expect(page).toHaveURL(/keep=yes&apiFramework=angular#reference/);
   await page.goBack();
-  await expect(framework).toHaveValue('react');
+  await expect(framework).toHaveText('React');
   await expect(page.locator('[data-api-scope]')).toHaveAttribute(
     'data-api-scope',
     'react'
   );
   await page.goForward();
-  await expect(framework).toHaveValue('angular');
+  await expect(framework).toHaveText('Angular');
   await page.reload();
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
     'data-hydrated',
     'true'
   );
-  await expect(framework).toHaveValue('angular');
+  await expect(framework).toHaveText('Angular');
   await expect(page.locator('[data-api-scope]')).toHaveAttribute(
     'data-api-scope',
     'angular'
@@ -211,14 +220,17 @@ test('mobile API filters disclose accessibly and preserve the selected scope', a
   const toggle = filters.getByRole('button', { name: /^Filters/ });
   await expect(filters.getByLabel('Framework', { exact: true })).toBeHidden();
   const firstResult = await page
-    .locator('.api-reference-package')
+    .locator('.api-reference-entrypoint-card')
     .first()
     .boundingBox();
   if (!firstResult) throw new Error('Missing first API result');
   expect(firstResult.y).toBeLessThan(844);
   await toggle.focus();
   await page.keyboard.press('Enter');
-  await filters.getByLabel('Framework', { exact: true }).selectOption('react');
+  await filters.getByRole('button', { name: 'Framework', exact: true }).click();
+  await filters
+    .getByRole('menuitemradio', { name: 'React', exact: true })
+    .click();
   await toggle.click();
   await expect(filters.getByLabel('Framework', { exact: true })).toBeHidden();
   await expect(toggle).toBeFocused();

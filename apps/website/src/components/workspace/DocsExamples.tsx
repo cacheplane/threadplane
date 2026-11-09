@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { DocsExample } from '../../lib/docs-examples';
+import { DocsSelect } from '../docs/DocsSelect';
 import { AngularMark, ReactMark } from '../ui/FrameworkMarks';
 
 export function DocsExamples({
@@ -48,34 +49,30 @@ export function DocsExamples({
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <label>
-            Framework
-            <select
-              value={selectedFramework}
-              onChange={(event) =>
-                setFramework(event.target.value as typeof framework)
-              }
-            >
-              <option value="all">All frameworks</option>
-              <option value="angular">Angular</option>
-              <option value="react">React</option>
-            </select>
-          </label>
-          <label>
-            Library
-            <select
-              value={library}
-              onChange={(event) => setLibrary(event.target.value)}
-            >
-              <option value="all">All libraries</option>
-              {libraries.map((item) => (
-                <option key={item} value={item}>
-                  {examples.find((example) => example.library === item)
-                    ?.libraryLabel ?? item}
-                </option>
-              ))}
-            </select>
-          </label>
+          <DocsSelect
+            label="Framework"
+            value={selectedFramework}
+            onChange={setFramework}
+            options={[
+              { value: 'all', label: 'All frameworks' },
+              { value: 'angular', label: 'Angular' },
+              { value: 'react', label: 'React' },
+            ]}
+          />
+          <DocsSelect
+            label="Library"
+            value={library}
+            onChange={setLibrary}
+            options={[
+              { value: 'all', label: 'All libraries' },
+              ...libraries.map((item) => ({
+                value: item,
+                label:
+                  examples.find((example) => example.library === item)
+                    ?.libraryLabel ?? item,
+              })),
+            ]}
+          />
         </div>
         <p className="docs-examples-count" role="status">
           {filtered.length} {filtered.length === 1 ? 'example' : 'examples'}
