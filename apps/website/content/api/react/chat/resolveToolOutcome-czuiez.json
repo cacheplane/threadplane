@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!resolveToolOutcome:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.",
+  "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.",
   "declarations": [
     {
       "name": "resolveToolOutcome",
@@ -53,7 +53,7 @@
         }
       ],
       "docs": {
-        "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.",
+        "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -65,7 +65,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 67
+        "line": 70
       },
       "overloadIndex": 1,
       "parameters": [
@@ -94,6 +94,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 67
+    "line": 70
   }
 }

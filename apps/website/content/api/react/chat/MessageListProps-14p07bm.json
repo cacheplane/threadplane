@@ -476,7 +476,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored confirmed result previews. Keep stable; custom renderMessage retains full ownership.",
+            "summary": "App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

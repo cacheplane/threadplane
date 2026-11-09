@@ -3771,7 +3771,7 @@
       "canonicalReference": "@threadplane/chat!resolveToolOutcome:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads."
+      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy."
     },
     {
       "name": "Role",
@@ -6361,7 +6361,7 @@
       "canonicalReference": "@threadplane/react!resolveToolOutcome:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads."
+      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy."
     },
     {
       "name": "ScrollBubble",

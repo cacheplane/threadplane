@@ -393,7 +393,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored confirmed result previews; execution and business confirmation remain app-owned.",
+            "summary": "App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

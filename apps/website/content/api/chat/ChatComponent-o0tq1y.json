@@ -2545,7 +2545,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored confirmed outcome previews for default tool rendering.",
+            "summary": "App-authored confirmed outcome previews for default tool rendering; return `status: 'failed'` to show a completed call as failed.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
