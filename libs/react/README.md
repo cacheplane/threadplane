@@ -1,8 +1,8 @@
 # @threadplane/react
 
 `@threadplane/react/chat` includes passive `ChatMessage` composition: a required
-readonly core role, optional literal speaker/label, independently directed body,
-passive before/after content slots, current/streaming flags, and consumer-owned controls. All ten props
+readonly core role, optional previous-row role and literal speaker/label, independently directed body,
+passive before/after content slots, current/streaming flags, and consumer-owned controls. All eleven props
 are readonly. Rich chrome outside the body keeps its surrounding direction.
 The default MessageList and native custom renderer
 use it without changing content ownership or scrolling. See the
@@ -10,9 +10,18 @@ use it without changing content ownership or scrolling. See the
 Both flags default to false. A current streaming assistant shows one decorative
 caret inside its body. `MessageList` supplies `current` only for the final supplied
 row and derives `streaming` from message delivery. A stable
-`renderMessage(row, context)` receives readonly `MessageListRowContext.current`;
+`renderMessage(row, context)` receives readonly `MessageListRowContext.current` and
+optional `prevRole`, derived from the immediately preceding supplied projected row;
 one-argument renderers remain supported. `Chat` forwards the same callback contract.
-Previous-role behavior, automatic control reveal, and full T23 parity remain open.
+Custom renderers forward `prevRole`, `current` and delivery-derived `streaming` to
+`ChatMessage`. The first row has undefined `prevRole`, which omits `data-prev-role`.
+Explicit assistant-to-user context gives 1.5rem block-start spacing through wrappers;
+omitted context keeps the adjacent-sibling fallback. Explicit other roles override
+that fallback. Existing assistant `:first-child` spacing remains DOM-dependent.
+The ten current/previous-role context combinations share stable frozen objects;
+changing a predecessor's projected role updates the following row even when its
+immutable row reference is retained. Automatic control reveal and full T23 parity
+remain open.
 
 Private, unpublished React binding for app-owned sessions. The root exports
 `useAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)` methods

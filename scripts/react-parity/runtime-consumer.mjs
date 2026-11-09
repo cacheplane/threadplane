@@ -424,6 +424,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
   cpSync(join(fixture, app), join(destination, app));
   writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
+    (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
     `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
   if (kind === 'angular') {
     const configPath = join(consumer, 'angular.json');
@@ -434,6 +435,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
   }
   if (kind === 'react') {
+    cpSync(join(fixture, 'react-message-spacing.tsx'), join(destination, 'react-message-spacing.tsx'));
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
     cpSync(join(fixture, 'react-confirm-dialog.tsx'), join(destination, 'react-confirm-dialog.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
@@ -885,6 +887,85 @@ export async function runContextMenuScenarios(page, url) {
   console.log('Installed React row contexts: original pointer/keyboard requests, viewport/RTL placement, live point and focus identity, invoker Escape/Tab, exact commands and anchor suppression passed.');
 }
 
+async function runMessageSpacingScenarios(page, server) {
+  const counters = () => ({
+    runs: server.requests.length,
+    history: server.historyRequests.length,
+    joins: server.joinRequests.length,
+    status: server.statusRequests.length,
+    threads: server.threads.requests.length,
+    checkpoints: server.checkpoints.requests.length,
+  });
+  const before = counters();
+  await page.goto(`${server.url}/?message-spacing`);
+  await expect(
+    page.getByRole('heading', { name: 'Installed message spacing' })
+  ).toBeVisible();
+  const margin = async (article, rem) => {
+    await expect(article).toHaveCount(1);
+    expect(
+      await article.evaluate(
+        (element) =>
+          parseFloat(getComputedStyle(element).marginBlockStart) /
+          parseFloat(getComputedStyle(document.documentElement).fontSize)
+      )
+    ).toBe(rem);
+  };
+  for (const direction of ['ltr', 'rtl']) {
+    const region = page.getByRole('region', {
+      name: `Spacing ${direction}`,
+      exact: true,
+    });
+    await expect(region).toHaveCSS('direction', direction);
+    const wrapped = region.getByRole('region', {
+      name: `Wrapped ${direction}`,
+      exact: true,
+    });
+    await expect(wrapped.locator('[data-spacing-wrapper]')).toHaveCount(8);
+    for (const prevRole of ['assistant', 'user', 'system', 'tool']) {
+      const article = wrapped.getByRole('article', {
+        name: `following-${prevRole}`,
+        exact: true,
+      });
+      await expect(article).toHaveAttribute('data-prev-role', prevRole);
+      await margin(article, prevRole === 'assistant' ? 1.5 : 0.5);
+      const explicit = region.getByRole('article', {
+        name: `Explicit ${prevRole}`,
+        exact: true,
+      });
+      await expect(explicit).toHaveAttribute('data-prev-role', prevRole);
+      await margin(explicit, prevRole === 'assistant' ? 1.5 : 0.5);
+    }
+    const first = region
+      .getByRole('region', { name: `First ${direction}`, exact: true })
+      .getByRole('article');
+    await expect(first).not.toHaveAttribute('data-prev-role');
+    await margin(first, 0.5);
+    await margin(
+      region
+        .getByRole('region', { name: `Default ${direction}`, exact: true })
+        .getByRole('article', { name: 'user message', exact: true }),
+      1.5
+    );
+    const fallback = region.getByRole('article', {
+      name: 'Missing context',
+      exact: true,
+    });
+    await expect(fallback).not.toHaveAttribute('data-prev-role');
+    await margin(fallback, 1.5);
+  }
+  await page
+    .getByRole('button', { name: 'Dispose spacing owner', exact: true })
+    .click();
+  await expect(page.getByTestId('spacing-owner')).toHaveText('disposed');
+  await expect(page.getByRole('article')).toHaveCount(0);
+  assert.deepEqual(
+    counters(),
+    before,
+    'spacing mount, projection and explicit disposal create no backend requests'
+  );
+}
+
 export async function runRuntimeScenarios(directory, kind) {
   const server = await serveRuntimeConsumer(directory);
   let browser;
@@ -1199,6 +1280,8 @@ export async function runRuntimeScenarios(directory, kind) {
     completed.push(...await runThreadScenarios(page, server));
     completed.push(...await runCheckpointScenarios(page, server));
     if (/react/i.test(kind)) {
+      await runMessageSpacingScenarios(page, server);
+      completed.push('installed message spacing through wrappers and explicit precedence in LTR/RTL');
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);

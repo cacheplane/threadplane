@@ -7,6 +7,44 @@ import * as chat from './index';
 afterEach(cleanup);
 
 describe('ChatMessage', () => {
+  for (const prevRole of ['user', 'assistant', 'system', 'tool'] as const) {
+    it(`exposes literal previous role ${prevRole} without changing passive content`, () => {
+      const view = render(
+        <chat.ChatMessage
+          role="assistant"
+          prevRole={prevRole}
+          current
+          streaming
+          controls={0}
+        >
+          <b>Body</b>
+        </chat.ChatMessage>
+      );
+      const article = view.getByRole('article');
+      expect(article.getAttribute('data-prev-role')).toBe(prevRole);
+      expect(article.getAttribute('data-current')).toBe('true');
+      expect(article.getAttribute('data-streaming')).toBe('true');
+      expect(article.querySelector('b')?.textContent).toBe('Body');
+      expect(article.querySelectorAll('.tp-chat-message__caret')).toHaveLength(
+        1
+      );
+      expect(article.lastElementChild?.textContent).toBe('0');
+    });
+  }
+  it('omits previous role when missing or explicitly undefined, including after updates', () => {
+    const view = render(<chat.ChatMessage role="user" />);
+    expect(view.getByRole('article').hasAttribute('data-prev-role')).toBe(
+      false
+    );
+    view.rerender(<chat.ChatMessage role="user" prevRole="assistant" />);
+    expect(view.getByRole('article').getAttribute('data-prev-role')).toBe(
+      'assistant'
+    );
+    view.rerender(<chat.ChatMessage role="user" prevRole={undefined} />);
+    expect(view.getByRole('article').hasAttribute('data-prev-role')).toBe(
+      false
+    );
+  });
   for (const role of ['assistant', 'user', 'system', 'tool'] as const) {
     for (const current of [undefined, false, true]) {
       for (const streaming of [undefined, false, true]) {

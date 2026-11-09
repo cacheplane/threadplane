@@ -283,10 +283,10 @@ export type ScrollBubbleMode = 'streaming' | 'idle';
 export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
 export type ChatMessageRole = import('@threadplane/core').Role;
-export interface ChatMessageProps { readonly role: ChatMessageRole; readonly current?: boolean; readonly streaming?: boolean; readonly speaker?: string; readonly label?: string; readonly children?: import('react').ReactNode; readonly beforeContent?: import('react').ReactNode; readonly afterContent?: import('react').ReactNode; readonly controls?: import('react').ReactNode; readonly className?: string; }
+export interface ChatMessageProps { readonly role: ChatMessageRole; readonly prevRole?: ChatMessageRole; readonly current?: boolean; readonly streaming?: boolean; readonly speaker?: string; readonly label?: string; readonly children?: import('react').ReactNode; readonly beforeContent?: import('react').ReactNode; readonly afterContent?: import('react').ReactNode; readonly controls?: import('react').ReactNode; readonly className?: string; }
 export declare function ChatMessage(props: ChatMessageProps): unknown;
 export interface MessageListScrollControls { readonly pinned: boolean; readonly scrollToLatest: () => void; readonly focus: () => void; }
-export interface MessageListRowContext { readonly current: boolean; }
+export interface MessageListRowContext { readonly current: boolean; readonly prevRole?: ChatMessageRole; }
 export interface MessageListProps { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: MessageListRowContext) => import('react').ReactNode; readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
 export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; }`;
@@ -334,15 +334,35 @@ export interface ChatProps { readonly onRetry?: () => void; readonly renderMessa
   }
   for (const parameter of ['any', 'unknown', 'ChatMessageProps, extra: string'])
     assert.match(compile(declaration.replace('props: ChatMessageProps', `props: ${parameter}`)), /false.*true/);
+  for (const contract of ['ChatMessageProps', 'MessageListRowContext']) {
+    const start = declaration.indexOf(`export interface ${contract} {`);
+    const end = declaration.indexOf('\nexport ', start);
+    const part = declaration.slice(start, end);
+    const before = 'readonly prevRole?: ChatMessageRole;';
+    assert.ok(part.includes(before));
+    for (const after of [
+      '',
+      "readonly prevRole?: 'assistant';",
+      'readonly prevRole?: string;',
+      'readonly prevRole?: any;',
+      'readonly prevRole?: unknown;',
+      'readonly prevRole: ChatMessageRole;',
+      'prevRole?: ChatMessageRole;',
+      "readonly prevRole?: ChatMessageRole | 'developer';",
+      'readonly prevRole?: ChatMessageRole; readonly nextRole?: ChatMessageRole;',
+    ]) {
+      assert.match(compile(declaration.slice(0, start) + part.replace(before, after) + declaration.slice(end)), /false.*true/, `${contract}: ${after || 'omitted prevRole'}`);
+    }
+  }
   for (const after of ['current: boolean;', 'readonly current?: boolean;', 'readonly current: string;', 'readonly current: any;', 'readonly current: boolean; readonly owner: object;']) {
     assert.match(compile(declaration.replace('MessageListRowContext { readonly current: boolean;', `MessageListRowContext { ${after}`)), /false.*true/, after);
   }
-  assert.match(compile(declaration.replace('export interface MessageListRowContext { readonly current: boolean; }', '')), /MessageListRowContext/);
+  assert.match(compile(declaration.replace('export interface MessageListRowContext { readonly current: boolean; readonly prevRole?: ChatMessageRole; }', '')), /MessageListRowContext/);
   assert.match(compile(declaration.replace(', context: MessageListRowContext', '')), /false.*true/);
   assert.match(compile(declaration.replace("readonly renderMessage?: MessageListProps['renderMessage'];", "readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow) => import('react').ReactNode;")), /false.*true/);
   assert.match(compile(declaration.replaceAll('ChatMessageProps', 'MissingChatMessageProps')), /ChatMessageProps/);
   assert.match(compile(declaration.replace('export declare function ChatMessage(props: ChatMessageProps): unknown;', '')), /ChatMessage/);
-  for (const role of ["'assistant'", 'any', 'string'])
+  for (const role of ["'assistant'", 'any', 'string', 'unknown', "import('@threadplane/core').Role | 'developer'"])
     assert.match(compile(declaration.replace("export type ChatMessageRole = import('@threadplane/core').Role;", `export type ChatMessageRole = ${role};`)), /false.*true/);
   assert.match(compile(declaration.replaceAll('SuggestionsProps', 'MissingSuggestionsProps')), /SuggestionsProps/);
   assert.match(compile(declaration.replaceAll('SuggestionItem', 'MissingSuggestionItem')), /SuggestionItem/);

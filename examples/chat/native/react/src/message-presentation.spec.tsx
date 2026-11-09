@@ -72,6 +72,7 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
     const body = article.querySelector('.tp-chat-message__body');
     expect(body?.getAttribute('dir')).toBe('auto');
     expect(article.getAttribute('data-current')).toBe('true');
+    expect(article.hasAttribute('data-prev-role')).toBe(false);
     expect(article.getAttribute('data-streaming')).toBe('true');
     expect(body?.querySelectorAll('.tp-chat-message__caret')).toHaveLength(1);
     expect(body?.lastElementChild?.getAttribute('aria-hidden')).toBe('true');
@@ -127,6 +128,7 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
       expect(article.getAttribute('data-streaming')).toBe('true');
       const final = view.getByRole('article', { name: `${role} message` });
       expect(final.getAttribute('data-current')).toBe('true');
+      expect(final.getAttribute('data-prev-role')).toBe('assistant');
       expect(final.getAttribute('data-streaming')).toBe('true');
       expect(
         view.container.querySelectorAll('.tp-chat-message__caret')
@@ -175,5 +177,49 @@ it('composes native rich content once inside ChatMessage with consumer-owned cop
   } finally {
     application.dispose();
     reasoning.dispose();
+  }
+});
+
+it('updates native previous-role primitives when only the preceding immutable row changes', async () => {
+  const fixture = applicationFixture();
+  const application = createReactApplication(fixture.options);
+  try {
+    application.start();
+    await waitFor(() =>
+      expect(application.getSnapshot().selection.status).toBe('ready')
+    );
+    const snapshot = application.getSnapshot();
+    const preceding = snapshot.messages[0];
+    const following = { ...preceding, id: 'following', role: 'user' as const };
+    let presented = { ...snapshot, messages: [preceding, following] };
+    const observed = { ...application, getSnapshot: () => presented };
+    const before = { ...fixture.counters };
+    const view = render(
+      <StrictMode>
+        <App application={observed} />
+      </StrictMode>
+    );
+    const article = view.getByRole('article', { name: 'user message' });
+    expect(article.getAttribute('data-prev-role')).toBe('assistant');
+    for (const role of ['system', 'tool', 'user', 'assistant'] as const) {
+      presented = {
+        ...snapshot,
+        messages: [{ ...preceding, role }, following],
+      };
+      expect(presented.messages[1]).toBe(following);
+      view.rerender(
+        <StrictMode>
+          <App application={observed} />
+        </StrictMode>
+      );
+      const articles = view.getAllByRole('article');
+      expect(articles[1]).toBe(article);
+      expect(article.getAttribute('data-prev-role')).toBe(role);
+    }
+    expect(fixture.counters.commands).toBe(before.commands);
+    view.unmount();
+    expect(fixture.counters.disposals).toBe(before.disposals);
+  } finally {
+    application.dispose();
   }
 });

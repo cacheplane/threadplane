@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!MessageListRowContext:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Positional presentation context: current is true only for the final supplied row.",
+  "summary": "Each supplied row's final-row flag and immediately preceding projected row role.",
   "declarations": [
     {
       "name": "MessageListRowContext",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Positional presentation context: current is true only for the final supplied row.",
+        "summary": "Each supplied row's final-row flag and immediately preceding projected row role.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -48,7 +48,7 @@
             }
           ],
           "docs": {
-            "summary": "",
+            "summary": "True exactly for the final supplied row, regardless of role.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -60,10 +60,48 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 31
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "prevRole",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListRowContext#prevRole:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly prevRole?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatMessageRole",
+              "canonicalReference": "@threadplane/react!ChatMessageRole:type",
+              "href": "/docs/api/react/chat/ChatMessageRole"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Role of rows[index - 1], or undefined for the first supplied row.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 34
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {

@@ -12,7 +12,12 @@ import {
   createMessageContent,
   type MessageRow,
 } from '@threadplane/content/messages';
-import { MessageList, type MessageListScrollControls } from './index';
+import {
+  MessageList,
+  type MessageListScrollControls,
+  type MessageListRowContext,
+  type ChatMessageRole,
+} from './index';
 
 afterEach(() => {
   cleanup();
@@ -38,6 +43,130 @@ const snap = (
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
 describe('MessageList', () => {
+  it('derives default previous-role attributes from supplied projected rows, including mismatched payload roles', () => {
+    const content = createMessageContent();
+    const base = content.project(
+      snap(['a', 'b', 'c', 'd', 'e'].map((id) => msg(id, id)))
+    );
+    const roles = ['user', 'assistant', 'system', 'tool', 'user'] as const;
+    const rows = base.map((row, index) =>
+      Object.freeze({ ...row, role: roles[index] })
+    );
+    expect(rows[0].message.role).toBe('assistant');
+    const view = render(<MessageList rows={rows} />);
+    const articles = view.getAllByRole('article');
+    expect(
+      articles.map((article) => article.getAttribute('data-prev-role'))
+    ).toEqual([null, 'user', 'assistant', 'system', 'tool']);
+    expect(
+      articles.map((article) => article.getAttribute('data-current'))
+    ).toEqual(['false', 'false', 'false', 'false', 'true']);
+    content.dispose();
+  });
+  it('updates positional previous roles across append, removal, reorder and immutable preceding-role replacement', () => {
+    const content = createMessageContent();
+    const [a, b, c] = content.project(
+      snap([
+        msg('a', 'A', { role: 'user' }),
+        msg('b', 'B'),
+        msg('c', 'C', { role: 'system' }),
+      ])
+    );
+    const counts = new Map<string, number>();
+    const retained: MessageListRowContext[] = [];
+    const renderMessage = (row: MessageRow, context: MessageListRowContext) => {
+      counts.set(row.id, (counts.get(row.id) ?? 0) + 1);
+      retained.push(context);
+      return (
+        <p
+          data-testid={row.id}
+          data-prev-role={context.prevRole}
+          data-current={String(context.current)}
+        >
+          {row.id}
+        </p>
+      );
+    };
+    const view = render(
+      <MessageList rows={[a, b]} renderMessage={renderMessage} />
+    );
+    const first = retained[0];
+    const oldFinal = retained[1];
+    expect(view.getByTestId('a').hasAttribute('data-prev-role')).toBe(false);
+    expect(view.getByTestId('b').getAttribute('data-prev-role')).toBe('user');
+    view.rerender(
+      <MessageList rows={[a, b, c]} renderMessage={renderMessage} />
+    );
+    expect(counts.get('a')).toBe(1);
+    expect(counts.get('b')).toBe(2);
+    expect(view.getByTestId('b').getAttribute('data-current')).toBe('false');
+    expect(view.getByTestId('c').getAttribute('data-prev-role')).toBe(
+      'assistant'
+    );
+    view.rerender(<MessageList rows={[a, c]} renderMessage={renderMessage} />);
+    expect(counts.get('a')).toBe(1);
+    expect(view.getByTestId('c').getAttribute('data-prev-role')).toBe('user');
+    view.rerender(<MessageList rows={[c, a]} renderMessage={renderMessage} />);
+    expect(view.getByTestId('c').hasAttribute('data-prev-role')).toBe(false);
+    expect(view.getByTestId('a').getAttribute('data-prev-role')).toBe('system');
+    const replaced = Object.freeze({ ...c, role: 'tool' as const });
+    view.rerender(
+      <MessageList rows={[replaced, a]} renderMessage={renderMessage} />
+    );
+    expect(view.getByTestId('a').getAttribute('data-prev-role')).toBe('tool');
+    expect(first).toEqual({ current: false, prevRole: undefined });
+    expect(oldFinal).toEqual({ current: true, prevRole: 'user' });
+    content.dispose();
+  });
+  it('reuses ten frozen contexts across rows and list instances without changing retained values', () => {
+    const content = createMessageContent();
+    const [preceding, target, trailing] = content.project(
+      snap([msg('preceding', 'P'), msg('target', 'T'), msg('trailing', 'End')])
+    );
+    const contexts = new Map<string, MessageListRowContext>();
+    const renderMessage = (row: MessageRow, context: MessageListRowContext) => {
+      if (row.id !== 'target') return null;
+      const key = `${context.current}/${context.prevRole}`;
+      expect(Object.isFrozen(context)).toBe(true);
+      expect(Object.keys(context).sort()).toEqual(['current', 'prevRole']);
+      const previous = contexts.get(key);
+      if (previous) expect(context).toBe(previous);
+      else contexts.set(key, context);
+      return null;
+    };
+    const roles: readonly (ChatMessageRole | undefined)[] = [
+      undefined,
+      'user',
+      'assistant',
+      'system',
+      'tool',
+    ];
+    for (let pass = 0; pass < 2; pass++) {
+      const view = render(
+        <MessageList rows={[]} renderMessage={renderMessage} />
+      );
+      for (const current of [false, true]) {
+        for (const role of roles) {
+          const rows = [
+            ...(role === undefined
+              ? []
+              : [Object.freeze({ ...preceding, role })]),
+            target,
+            ...(current ? [] : [trailing]),
+          ];
+          view.rerender(
+            <MessageList rows={rows} renderMessage={renderMessage} />
+          );
+        }
+      }
+      view.unmount();
+    }
+    expect(contexts.size).toBe(10);
+    expect(new Set(contexts.values()).size).toBe(10);
+    for (const [key, context] of contexts)
+      expect(`${context.current}/${context.prevRole}`).toBe(key);
+    content.dispose();
+  });
   it('groups built-in calls by default, including a single call, and honors explicit opt-out and custom rendering', () => {
     const content = createMessageContent();
     const project = (count: number, withTrailingUser = false) =>

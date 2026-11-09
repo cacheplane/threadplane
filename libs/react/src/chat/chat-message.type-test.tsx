@@ -17,6 +17,7 @@ export type PropsContract = Assert<
     ChatMessageProps,
     {
       readonly role: Role;
+      readonly prevRole?: Role;
       readonly current?: boolean;
       readonly streaming?: boolean;
       readonly speaker?: string;
@@ -33,6 +34,16 @@ export type ParameterContract = Assert<
   Equal<Parameters<typeof ChatMessage>, [ChatMessageProps]>
 >;
 const props: ChatMessageProps = { role: 'assistant' };
+const explicitUndefined: ChatMessageProps = {
+  role: 'user',
+  prevRole: undefined,
+};
+void explicitUndefined;
+// @ts-expect-error Previous role is readonly.
+props.prevRole = 'assistant';
+// @ts-expect-error Previous role must use a supported provider role.
+<ChatMessage role="user" prevRole="developer" />;
+<ChatMessage role="user" prevRole="assistant" />;
 // @ts-expect-error Props are readonly.
 props.current = true;
 // @ts-expect-error Props are readonly.

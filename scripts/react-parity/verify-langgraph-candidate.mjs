@@ -320,7 +320,18 @@ export default { ...base, plugins: [...base.plugins, { name: 'candidate-provenan
     'Actual installed core used'
   );
   const scenarios = await runRuntimeScenarios(directory, `Candidate ${kind}`);
-  assert.equal(scenarios.length, 27, 'All original scenarios remain required');
+  const spacingScenario =
+    'installed message spacing through wrappers and explicit precedence in LTR/RTL';
+  assert.equal(
+    scenarios.filter((scenario) => scenario !== spacingScenario).length,
+    27,
+    'All original scenarios remain required'
+  );
+  assert.equal(
+    scenarios.filter((scenario) => scenario === spacingScenario).length,
+    kind === 'react' ? 1 : 0,
+    'Message spacing scenario is required exactly once for React only'
+  );
   return {
     kind,
     directory: relative(temporary, directory),

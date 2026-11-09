@@ -43,7 +43,9 @@ export type RenderMessageContract = Assert<
 >;
 <Chat
   session={session}
-  renderMessage={(row, context) => (context.current ? row.id : null)}
+  renderMessage={(row, context) =>
+    context.current ? row.id : context.prevRole ?? null
+  }
 />;
 export type CompactContentContract = Assert<
   Equal<

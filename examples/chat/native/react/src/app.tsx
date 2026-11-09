@@ -64,14 +64,17 @@ const literal = (value: unknown) =>
 const Message = memo(function Message({
   row,
   current,
+  prevRole,
 }: {
   row: MessageContent;
   current: boolean;
+  prevRole: MessageListRowContext['prevRole'];
 }) {
   return (
     <ChatMessage
       role={row.role}
       current={current}
+      prevRole={prevRole}
       streaming={row.message.delivery.phase === 'streaming'}
       className={`message message-${row.role}`}
       label={`${row.role} message`}
@@ -142,7 +145,7 @@ const Message = memo(function Message({
 });
 
 const renderMessage = (row: MessageContent, context: MessageListRowContext) => (
-  <Message row={row} current={context.current} />
+  <Message row={row} current={context.current} prevRole={context.prevRole} />
 );
 
 function ConversationSurface({

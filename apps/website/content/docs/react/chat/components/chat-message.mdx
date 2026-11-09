@@ -42,6 +42,7 @@ export function StandaloneMessage({ onCopy }: { readonly onCopy: () => void }) {
 const renderMessage = (row: MessageRow, context: MessageListRowContext) => (
   <ChatMessage
     role={row.role}
+    prevRole={context.prevRole}
     current={context.current}
     streaming={row.message.delivery.phase === 'streaming'}
     speaker={row.role === 'system' ? '' : undefined}
@@ -79,7 +80,9 @@ export function CustomTranscript({
 }
 ~~~
 
-`ChatMessageProps` has exactly ten readonly fields: required `role`, and optional `current`, `streaming`, `speaker`, `label`, `children`, `beforeContent`, `afterContent`, `controls`, and `className`. `ChatMessageRole` aliases core `Role`: `user`, `assistant`, `system`, or `tool`. The default accessible article name is **ROLE message**. A custom `label` is literal text, including an empty string.
+`ChatMessageProps` has exactly eleven readonly fields: required `role`, and optional `prevRole`, `current`, `streaming`, `speaker`, `label`, `children`, `beforeContent`, `afterContent`, `controls`, and `className`. `ChatMessageRole` aliases core `Role`: `user`, `assistant`, `system`, or `tool`. The default accessible article name is **ROLE message**. A custom `label` is literal text, including an empty string.
+
+`prevRole` describes the immediately preceding supplied projected row, including user, assistant, system and tool rows. It is undefined for the first row; omitted or explicitly undefined values omit `data-prev-role`. With the chat stylesheet, a user message with `prevRole="assistant"` receives 1.5rem block-start spacing even through wrappers. Explicit other roles keep ordinary 0.5rem spacing and override physical assistant adjacency. Without context, adjacent assistant and user articles retain the existing 1.5rem fallback. This fixes that transition only: existing assistant `:first-child` rules still depend on DOM structure.
 
 `current` and `streaming` default to false and appear as literal `data-current` and `data-streaming` article attributes. Only an assistant with both flags true renders one empty, `aria-hidden` caret span after children inside the independently directed body, including when the body has no text. The 8px dot pulses, stays visible with reduced motion, and uses solid system text color in forced colors. It adds no live announcement or session subscription. Default MessageList derives streaming from `delivery.phase === 'streaming'`; every complete outcome removes the caret.
 
@@ -91,4 +94,4 @@ Children render once in `.tp-chat-message__body` with `dir="auto"`, independentl
 
 `controls` accepts a ReactNode, rendered once after `afterContent` in `.tp-chat-message__controls`. Nullish and boolean values omit the wrapper; values such as `0` and arrays follow normal React semantics. Controls wrap and remain visible and keyboard reachable. The consumer owns each handler, status, disabled state and clipboard operation. Rendering, updating and unmounting do not activate controls, move focus or announce a live status.
 
-The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing row memoization, custom renderer bypass and scroll policy. Its readonly `MessageListRowContext.current` identifies the final supplied row, even when that row is user, system or tool. Stable one-argument renderers remain compatible, and Chat forwards the same two-argument contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred.
+The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing custom renderer bypass and scroll policy. Its readonly `MessageListRowContext.current` identifies the final supplied row, even when that row is user, system or tool; optional readonly `prevRole` comes from `rows[index - 1]?.role`, rather than the message payload or DOM. The ten positional combinations reuse frozen context objects. Replacing a preceding immutable row with a different projected role updates the following row even if its own reference is unchanged; unrelated historical rows remain memoized. Appending also rerenders the former final row because `current` changes. Stable one-argument renderers remain compatible, and Chat forwards the same two-argument contract. Automatic control reveal and full ChatMessage/T23 parity remain deferred.

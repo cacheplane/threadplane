@@ -2306,7 +2306,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts#OwnedMarkdownBodyComponent",
@@ -5456,7 +5456,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageListComponent",
@@ -17930,7 +17930,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessage",
@@ -17940,7 +17940,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessageProps",
@@ -17950,7 +17950,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessageRole",
@@ -17960,7 +17960,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "source:libs/react/src/chat/chat-message.tsx",
@@ -17970,7 +17970,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
+      "reason": "Eleven readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies frozen readonly current/prevRole context from the final-row position and immediately preceding projected row role; default and stable custom renderers forward primitive context, and Chat forwards the callback contract. Explicit assistant-to-user spacing works through wrappers, omitted context retains sibling fallback, and explicit other roles override it; assistant :first-child rules remain DOM-dependent. This bounded previous-role slice is complete; automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-tool-activity/activity-summary-styles.ts",

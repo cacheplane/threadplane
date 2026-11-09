@@ -28,6 +28,10 @@ test('shared view preparation copies the complete views without composing a priv
   assert.equal(existsSync(join(consumer, 'runtime-entry.d.ts')), false, 'no surrogate declarations');
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
+  const entry = readFileSync(join(consumer, 'main.tsx'), 'utf8');
+  assert.match(entry, /^if \(new URLSearchParams\(location.search\).has\('message-spacing'\)\)/);
+  assert.ok(entry.indexOf("import('./react-message-spacing')") < entry.indexOf("import('./react-app')"));
+  assert.equal(readFileSync(join(consumer, 'react-message-spacing.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/react-message-spacing.tsx', 'utf8'));
   const contextView = readFileSync(join(consumer, 'react-overflow-menu.tsx'), 'utf8');
   assert.equal(contextView, readFileSync('fixtures/react-parity/runtime/react-overflow-menu.tsx', 'utf8'));
   assert.match(contextView, /<ThreadList/);

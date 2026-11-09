@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/chat-message.tsx",
-        "line": 22
+        "line": 24
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ role, current, streaming, speaker, label, children, beforeContent, afterContent, controls, className, }",
+          "parameterName": "{ role, prevRole, current, streaming, speaker, label, children, beforeContent, afterContent, controls, className, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/chat-message.tsx",
-    "line": 22
+    "line": 24
   }
 }
