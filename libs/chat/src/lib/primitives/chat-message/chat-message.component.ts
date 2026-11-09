@@ -1,5 +1,5 @@
 // libs/chat/src/lib/primitives/chat-message/chat-message.component.ts
-import { Component, ChangeDetectionStrategy, input, computed, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed, effect, inject, untracked } from '@angular/core';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_MESSAGE_STYLES } from '../../styles/chat-message.styles';
 import { ChatCitationsComponent } from '../chat-citations/chat-citations.component';
@@ -22,10 +22,10 @@ const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You'
   styles: [CHAT_HOST_TOKENS, CHAT_MESSAGE_STYLES],
   providers: [CitationsResolverService],
   host: {
-    '[attr.data-role]': 'role()',
-    '[attr.data-current]': 'currentStr()',
-    '[attr.data-streaming]': 'streamingStr()',
-    '[attr.data-prev-role]': 'prevRole() ?? null',
+    '[attr.data-role]': 'hostValue(role)',
+    '[attr.data-current]': 'hostValue(currentStr)',
+    '[attr.data-streaming]': 'hostValue(streamingStr)',
+    '[attr.data-prev-role]': 'hostValue(prevRole) ?? null',
   },
   template: `
     @if (speakerText(); as speaker) {
@@ -82,6 +82,12 @@ export class ChatMessageComponent {
 
   readonly currentStr = computed(() => String(this.current()));
   readonly streamingStr = computed(() => String(this.streaming()));
+
+  // Angular input writes already schedule this view and its host bindings.
+  // Host reads must not enroll each row's inputs in a shared ancestor consumer.
+  protected hostValue<T>(read: () => T): T {
+    return untracked(read);
+  }
 
   readonly bodyClass = computed(() => {
     switch (this.role()) {
