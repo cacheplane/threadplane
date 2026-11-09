@@ -18,11 +18,14 @@ for (const width of [375, 1440]) {
     await expect(page.locator('iframe')).toHaveCount(0);
     const directory = page.locator('.docs-examples');
     await expect(
-      directory.getByRole('combobox', { name: 'Framework', exact: true })
-    ).toHaveValue('angular');
+      directory.getByRole('button', { name: 'Framework', exact: true })
+    ).toHaveText('Angular');
     await directory
-      .getByRole('combobox', { name: 'Library', exact: true })
-      .selectOption('ag-ui');
+      .getByRole('button', { name: 'Library', exact: true })
+      .click();
+    await directory
+      .getByRole('menuitemradio', { name: 'AG-UI', exact: true })
+      .click();
     await directory.getByLabel('Find an example').fill('interrupts');
     await expect(directory.locator('.docs-example-card')).toHaveCount(1);
     await expect(directory.locator('.docs-example-card')).toHaveAttribute(
@@ -33,8 +36,8 @@ for (const width of [375, 1440]) {
     await expect(directory.getByText('No examples match.')).toBeVisible();
     await directory.getByRole('button', { name: 'Show all examples' }).click();
     await expect(
-      directory.getByRole('combobox', { name: 'Framework', exact: true })
-    ).toHaveValue('all');
+      directory.getByRole('button', { name: 'Framework', exact: true })
+    ).toHaveText('All frameworks');
     await page.locator('[data-workspace-toolbar-mode="API"]').click();
     await expect(
       page.getByRole('heading', { name: 'API reference', exact: true })
@@ -133,11 +136,15 @@ test('standalone directory starts in Run and links to runnable examples', async 
   );
   const directory = page.locator('.docs-examples');
   await directory
-    .getByRole('combobox', { name: 'Framework', exact: true })
-    .selectOption('angular');
+    .getByRole('button', { name: 'Framework', exact: true })
+    .click();
   await directory
-    .getByRole('combobox', { name: 'Library', exact: true })
-    .selectOption('ag-ui');
+    .getByRole('menuitemradio', { name: 'Angular', exact: true })
+    .click();
+  await directory.getByRole('button', { name: 'Library', exact: true }).click();
+  await directory
+    .getByRole('menuitemradio', { name: 'AG-UI', exact: true })
+    .click();
   await directory.getByLabel('Find an example').fill('interrupts');
   await directory.locator('.docs-example-card').click();
   await expect(page).toHaveURL(new RegExp(`${interrupts}\\?mode=run$`));
@@ -162,7 +169,7 @@ for (const [route, framework] of [
     await expect(
       page
         .locator('.docs-examples')
-        .getByRole('combobox', { name: 'Framework', exact: true })
-    ).toHaveValue(framework);
+        .getByRole('button', { name: 'Framework', exact: true })
+    ).toHaveText(framework === 'angular' ? 'Angular' : 'React');
   });
 }

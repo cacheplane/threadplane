@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Suspense, useEffect, useId, useRef, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+import { DocsSelect } from '../DocsSelect';
+import { apiEntrypointDescription } from '../../../lib/api-entrypoint-descriptions';
 import {
   apiSymbolHref,
   filterApiSymbols,
@@ -20,6 +22,7 @@ interface ApiIndexProps {
   index: ApiIndex;
   entrypointId?: string;
   standalone?: boolean;
+  defaultView?: 'entrypoints' | 'symbols';
 }
 
 /** Searchable SDK index; deprecated and unpublished declarations stay visible. */
@@ -45,6 +48,7 @@ function StandaloneApiIndex(props: ApiIndexProps) {
 function ApiIndexContent({
   index,
   entrypointId,
+  defaultView = 'entrypoints',
   scope,
   onScopeChange,
 }: ApiIndexProps & {
@@ -123,6 +127,14 @@ function ApiIndexContent({
     entrypoint: effectiveEntrypoint,
     kind: effectiveKind,
   });
+  const showSymbols = Boolean(
+    defaultView === 'symbols' ||
+      entrypointId ||
+      query.trim() ||
+      effectiveEntrypoint ||
+      effectiveKind
+  );
+  const resultCount = showSymbols ? symbols.length : entries.length;
   return (
     <div className="api-reference-index">
       <div className="api-reference-filters">
@@ -156,56 +168,39 @@ function ApiIndexContent({
           className="api-reference-secondary-filters"
           data-open={filtersOpen}
         >
-          <label>
-            <span id={`${filtersId}-framework`}>Framework</span>
-            <select
-              aria-labelledby={`${filtersId}-framework`}
-              value={framework}
-              onChange={(event) =>
-                changeFramework(event.target.value as ApiScope)
-              }
-            >
-              {API_SCOPES.filter(
-                (item) =>
-                  item.value === 'all' ||
-                  index.entrypoints.some(
-                    (entry) => entry.framework === item.value
-                  )
-              ).map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span id={`${filtersId}-import`}>Import path</span>
-            <select
-              aria-labelledby={`${filtersId}-import`}
-              value={effectiveEntrypoint}
-              onChange={(event) => setEntrypoint(event.target.value)}
-            >
-              <option value="">All imports</option>
-              {entries.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.importPath}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span id={`${filtersId}-kind`}>Kind</span>
-            <select
-              aria-labelledby={`${filtersId}-kind`}
-              value={effectiveKind}
-              onChange={(event) => setKind(event.target.value)}
-            >
-              <option value="">All kinds</option>
-              {kinds.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
+          <DocsSelect
+            label="Framework"
+            value={framework}
+            onChange={changeFramework}
+            options={API_SCOPES.filter(
+              (item) =>
+                item.value === 'all' ||
+                index.entrypoints.some(
+                  (entry) => entry.framework === item.value
+                )
+            )}
+          />
+          <DocsSelect
+            label="Import path"
+            value={effectiveEntrypoint}
+            onChange={setEntrypoint}
+            options={[
+              { value: '', label: 'All imports' },
+              ...entries.map((entry) => ({
+                value: entry.id,
+                label: entry.importPath,
+              })),
+            ]}
+          />
+          <DocsSelect
+            label="Kind"
+            value={effectiveKind}
+            onChange={setKind}
+            options={[
+              { value: '', label: 'All kinds' },
+              ...kinds.map((item) => ({ value: item, label: item })),
+            ]}
+          />
         </div>
       </div>
       <div className="api-reference-results-toolbar">
@@ -214,7 +209,14 @@ function ApiIndexContent({
           role="status"
           aria-live="polite"
         >
-          {symbols.length} {symbols.length === 1 ? 'API' : 'APIs'}
+          {resultCount}{' '}
+          {showSymbols
+            ? resultCount === 1
+              ? 'API'
+              : 'APIs'
+            : resultCount === 1
+            ? 'entrypoint'
+            : 'entrypoints'}
           {framework !== 'all'
             ? ` · ${API_SCOPES.find((item) => item.value === framework)?.label}`
             : ''}
@@ -225,51 +227,92 @@ function ApiIndexContent({
           </button>
         ) : null}
       </div>
-      {symbols.length === 0 ? (
+      {showSymbols && symbols.length === 0 ? (
         <div className="api-reference-empty">
           <p>No APIs match these filters.</p>
           <p>Try another name or clear the search and filters.</p>
         </div>
       ) : null}
-      {entries.map((entry) => {
-        const items = symbols.filter(
-          (symbol) => symbol.entrypointId === entry.id
-        );
-        if (items.length === 0) return null;
-        return (
-          <section className="api-reference-package" key={entry.id}>
-            <header>
-              <h2>
-                <Link href={apiSymbolHref(entry.id)}>{entry.importPath}</Link>
-              </h2>
-              <span className="api-reference-badge">{entry.framework}</span>
-              {entry.status === 'development' ? (
-                <span className="api-reference-badge" data-status="development">
-                  Unpublished
-                </span>
-              ) : (
-                <span className="api-reference-version">v{entry.version}</span>
-              )}
-            </header>
-            <ul className="api-reference-symbols">
-              {items.map((symbol) => (
-                <li key={symbol.href}>
-                  <Link href={symbol.href}>{symbol.name}</Link>
-                  <span className="api-reference-badge">{symbol.kind}</span>
-                  {symbol.isDeprecated ? (
+      {!showSymbols ? (
+        <div className="api-reference-entrypoint-grid">
+          {entries.map((entry) => {
+            const count = index.symbols.filter(
+              (symbol) => symbol.entrypointId === entry.id
+            ).length;
+            return (
+              <section className="api-reference-entrypoint-card" key={entry.id}>
+                <h2>
+                  <Link href={apiSymbolHref(entry.id)}>{entry.importPath}</Link>
+                </h2>
+                <p>{apiEntrypointDescription(entry)}</p>
+                <div className="api-reference-entrypoint-meta">
+                  <span className="api-reference-badge">{entry.framework}</span>
+                  {entry.status === 'development' ? (
                     <span
                       className="api-reference-badge"
-                      data-status="deprecated"
+                      data-status="development"
                     >
-                      Deprecated
+                      Unpublished
                     </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+                  ) : (
+                    <span className="api-reference-version">
+                      v{entry.version}
+                    </span>
+                  )}
+                  <span>
+                    {count} {count === 1 ? 'export' : 'exports'}
+                  </span>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : null}
+      {showSymbols &&
+        entries.map((entry) => {
+          const items = symbols.filter(
+            (symbol) => symbol.entrypointId === entry.id
+          );
+          if (items.length === 0) return null;
+          return (
+            <section className="api-reference-package" key={entry.id}>
+              <header>
+                <h2>
+                  <Link href={apiSymbolHref(entry.id)}>{entry.importPath}</Link>
+                </h2>
+                <span className="api-reference-badge">{entry.framework}</span>
+                {entry.status === 'development' ? (
+                  <span
+                    className="api-reference-badge"
+                    data-status="development"
+                  >
+                    Unpublished
+                  </span>
+                ) : (
+                  <span className="api-reference-version">
+                    v{entry.version}
+                  </span>
+                )}
+              </header>
+              <ul className="api-reference-symbols">
+                {items.map((symbol) => (
+                  <li key={symbol.href}>
+                    <Link href={symbol.href}>{symbol.name}</Link>
+                    <span className="api-reference-badge">{symbol.kind}</span>
+                    {symbol.isDeprecated ? (
+                      <span
+                        className="api-reference-badge"
+                        data-status="deprecated"
+                      >
+                        Deprecated
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
     </div>
   );
 }

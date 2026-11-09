@@ -13,21 +13,16 @@ body:has([data-docs-reading]) {
 
   /* Keep the independently scrolling navigation geometry. */
   .workspace-control-plane [data-control-plane-pane],
-  .docs-control-plane [data-control-plane-pane],
   [data-workspace-context-content] {
     background: #f6f7f9;
   }
-  .workspace-control-plane [data-control-plane-rail],
-  .docs-control-plane [data-control-plane-rail] {
+  .workspace-control-plane [data-control-plane-rail] {
     background: #fff;
   }
-  .workspace-control-plane [data-control-plane-rail-item],
-  .docs-control-plane [data-control-plane-rail-item] {
+  .workspace-control-plane [data-control-plane-rail-item] {
     border-radius: 12px;
   }
   .workspace-control-plane
-    [data-control-plane-rail-item][data-control-plane-active],
-  .docs-control-plane
     [data-control-plane-rail-item][data-control-plane-active] {
     background: #fff4d6;
     color: var(--color-accent);
@@ -350,8 +345,8 @@ body:has([data-docs-reading]) {
     border-radius: 0 0 16px 16px;
   }
   .docs-workspace-article .mdx-pre-copy {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     color: #e0e7f0;
     background: #23344f;

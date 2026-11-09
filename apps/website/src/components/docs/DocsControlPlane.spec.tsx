@@ -9,7 +9,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocsControlPlane, DocsContextContent } from './DocsControlPlane';
+import { DocsContextContent } from './DocsControlPlane';
 import { docsConfig } from '../../lib/docs-config';
 import { declarationsFor } from '../../styles/style-contract';
 
@@ -45,7 +45,7 @@ beforeEach(() => {
   track.mockClear();
 });
 
-describe('DocsControlPlane', () => {
+describe('DocsContextContent', () => {
   it('uses compact React navigation with framework-correct overview and collapsed inactive sections', () => {
     route.pathname = '/docs/react/ag-ui/guides/interrupts';
     const { container } = render(<DocsContextContent activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" scope="react" />);
@@ -161,61 +161,16 @@ describe('DocsControlPlane', () => {
     expect(docsCss).not.toMatch(/\[data-control-plane-environment-/);
   });
 
-  it('offers Run and API destinations while Code requires an example', () => {
-    render(
-      <DocsControlPlane
-        activeLibrary={null}
-        activeSection=""
-        activeSlug=""
-      />
-    );
-
-    const rail = screen.getByRole('navigation', { name: 'Docs modes' });
-    expect(rail).toBeTruthy();
-    expect(
-      screen.getByRole('link', { name: 'Docs' }).getAttribute('aria-current')
-    ).toBe('page');
-    expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe('/docs/examples');
-    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
-    for (const mode of ['Code'] as const) {
-      const control = screen.getByRole('button', {
-        name: mode,
-        description: `${mode} is unavailable because this page has no workspace capability.`,
-      });
-      expect(control.getAttribute('aria-disabled')).toBe('true');
-      expect(control.getAttribute('href')).toBeNull();
-      fireEvent.click(control);
-    }
-    expect(track).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Activity' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
-  });
-
-  it('renders Lucide rail and action icons with the accepted stroke', () => {
-    render(
-      <DocsControlPlane
-        activeLibrary="langgraph"
-        activeSection="guides"
-        activeSlug="streaming"
-      />
-    );
-
-    const rail = screen.getByRole('navigation', { name: 'Docs modes' });
-    const icons = [
-      ...rail.querySelectorAll('[data-control-plane-rail-icon] svg.lucide'),
-      screen.getByRole('button', { name: 'Search docs' }).querySelector('svg'),
-    ];
-    expect(icons).toHaveLength(5);
-    for (const icon of icons) {
-      expect(icon?.getAttribute('stroke-width')).toBe('2');
-    }
+  it('renders the search action icon with the accepted stroke', () => {
+    render(<DocsContextContent activeLibrary="langgraph" activeSection="guides" activeSlug="streaming" />);
+    expect(screen.getByRole('button', { name: 'Search docs' }).querySelector('svg')?.getAttribute('stroke-width')).toBe('2');
   });
 
   it('leads with search instead of restating the breadcrumb', () => {
     const listener = vi.fn();
     document.addEventListener('keydown', listener);
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -239,7 +194,7 @@ describe('DocsControlPlane', () => {
 
   it('drops the Actions bar when search was its only member', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -253,7 +208,7 @@ describe('DocsControlPlane', () => {
 
   it('connects nested Learn disclosures to their controlled content', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -270,7 +225,7 @@ describe('DocsControlPlane', () => {
 
   it('stacks the adapter title and tagline on separate lines', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -294,7 +249,7 @@ describe('DocsControlPlane', () => {
 
   it('splits the menu into labelled adapter and library groups', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -326,7 +281,7 @@ describe('DocsControlPlane', () => {
 
   it('renders menu entries as real links with the current one checked', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -349,7 +304,7 @@ describe('DocsControlPlane', () => {
 
   it('caps the open menu to the space left below the trigger', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -367,7 +322,7 @@ describe('DocsControlPlane', () => {
 
   it('supports keyboard entry and dismissal for the library menu', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary="langgraph"
         activeSection="guides"
         activeSlug="streaming"
@@ -395,7 +350,7 @@ describe('DocsControlPlane', () => {
   });
 
   it('opens on the selected library and supports title typeahead', () => {
-    render(<DocsControlPlane activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" />);
+    render(<DocsContextContent activeLibrary="ag-ui" activeSection="guides" activeSlug="interrupts" />);
     fireEvent.click(screen.getByRole('button', { name: 'AG-UI' }));
     const selected = screen.getByRole('menuitemradio', { name: /AG-UI/ });
     expect(document.activeElement).toBe(selected);
@@ -407,58 +362,10 @@ describe('DocsControlPlane', () => {
   });
 });
 
-describe('DocsControlPlane — library-neutral', () => {
-  it('offers examples and generated APIs from the adapter comparison page', () => {
-    render(
-      <DocsControlPlane
-        activeLibrary={null}
-        activeSection=""
-        activeSlug=""
-      />,
-    );
-
-    expect(screen.getByRole('link', { name: 'Run' }).getAttribute('href')).toBe('/docs/examples');
-    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
-    for (const mode of ['Code'] as const) {
-      const control = screen.getByRole('button', {
-        name: mode,
-        description: `${mode} is unavailable because this page has no workspace capability.`,
-      });
-      expect(control.getAttribute('href')).toBeNull();
-      fireEvent.click(control);
-    }
-    expect(track).not.toHaveBeenCalled();
-  });
-
-  it('sends Run to the default example when the index supplies one', () => {
-    render(
-      <DocsControlPlane
-        activeLibrary={null}
-        activeSection=""
-        activeSlug=""
-        runHref="/docs/angular/langgraph/guides/streaming?mode=run"
-      />,
-    );
-
-    // href turns the rail item into an <a>, so it is a link, not a button.
-    expect(
-      screen.getByRole('link', { name: 'Run' }).getAttribute('href'),
-    ).toBe('/docs/angular/langgraph/guides/streaming?mode=run');
-
-    expect(screen.getByRole('link', { name: 'API' }).getAttribute('href')).toBe('/docs/api');
-    for (const mode of ['Code'] as const) {
-      expect(
-        screen.getByRole('button', {
-          name: mode,
-          description: `${mode} is unavailable because this page has no workspace capability.`,
-        }).getAttribute('href'),
-      ).toBeNull();
-    }
-  });
-
+describe('DocsContextContent — library-neutral', () => {
   it('offers search on a library-neutral page too', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary={null}
         activeSection=""
         activeSlug=""
@@ -471,7 +378,7 @@ describe('DocsControlPlane — library-neutral', () => {
 
   it('offers an unselected picker and no section tree', () => {
     render(
-      <DocsControlPlane
+      <DocsContextContent
         activeLibrary={null}
         activeSection=""
         activeSlug=""

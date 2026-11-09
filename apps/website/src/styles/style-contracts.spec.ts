@@ -41,12 +41,13 @@ const CONTRACTS: StyleContract[] = [
     },
   },
   {
-    file: 'docs.css',
-    selector: '.docs-control-plane',
-    why: 'In a flex row an un-aligned sticky child stretches to the article\'s full height, so its own height cap never applies and internal scrolling silently stops working.',
+    file: '../../../../libs/workspace-react/src/styles/workspace.css',
+    selector: '.workspace-control-plane',
+    why: 'The live navigation fills the bounded workspace grid instead of following the article height. Its full-height grid keeps the rail and independently scrolling pane inside the viewport.',
     requires: {
-      position: /position:\s*sticky/,
-      'align-self': /align-self:\s*flex-start/,
+      display: /display:\s*grid/,
+      height: /height:\s*100%/,
+      'min-width': /min-width:\s*0/,
     },
   },
   {
@@ -84,8 +85,8 @@ const CONTRACTS: StyleContract[] = [
     },
   },
   {
-    file: 'docs.css',
-    selector: '.docs-control-plane [data-control-plane-pane]',
+    file: '../../../../libs/workspace-react/src/styles/workspace.css',
+    selector: '.workspace-control-plane [data-control-plane-pane]',
     why: 'The pane holds the whole docs nav in a fixed-height column. Without its own scrolling the lower sections are unreachable on short viewports.',
     requires: {
       'overflow-y': /overflow-y:\s*auto/,
@@ -357,6 +358,12 @@ function mediaBlock(css: string, query: string): string {
 }
 
 describe('style contracts', () => {
+  it('does not restore the retired docs rail beside the workspace navigation', () => {
+    for (const file of ['docs.css', 'docs-reading.css', 'pages.css']) {
+      expect(loadStylesheet(file), file).not.toMatch(/\.docs-control-plane(?![\w-])/);
+    }
+  });
+
   for (const contract of CONTRACTS) {
     describe(`${contract.file} ${contract.selector}`, () => {
       const declarations = declarationsFor(loadStylesheet(contract.file), contract.selector);

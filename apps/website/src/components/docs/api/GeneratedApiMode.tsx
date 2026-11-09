@@ -39,7 +39,11 @@ export function GeneratedApiMode({ docsPath }: { docsPath: string }) {
             <Link href="/docs/api">Browse all packages ↗</Link>
           </p>
         ) : null}
-        <ApiIndexView key={docsPath} index={scopedIndex} />
+        <ApiIndexView
+          key={docsPath}
+          index={scopedIndex}
+          defaultView={document?.library ? 'symbols' : 'entrypoints'}
+        />
       </article>
     </div>
   );

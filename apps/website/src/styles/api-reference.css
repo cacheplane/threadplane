@@ -76,7 +76,7 @@
 .api-reference-actions a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 16px;
   border-radius: 999px;
   background: var(--api-reference-surface);
@@ -196,21 +196,6 @@
 .api-scope-picker {
   padding: 8px 0;
 }
-[data-docs-control-plane-context][data-docs-navigation-compact]
-  .api-scope-picker
-  .docs-sidebar-library {
-  margin: 0;
-}
-.api-scope-picker > label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-.api-scope-picker .docs-sidebar-lib-trigger {
-  width: 100%;
-}
 .api-reference-filters label {
   display: flex;
   flex-direction: column;
@@ -220,8 +205,7 @@
   color: var(--color-text-primary);
   min-width: 0;
 }
-.api-reference-filters input,
-.api-reference-filters select {
+.api-reference-filters input {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -250,6 +234,40 @@
   background: #f6f7f9;
   padding: 24px;
   margin-block: 24px;
+}
+.api-reference-entrypoint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+.api-reference-entrypoint-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: var(--api-reference-surface);
+}
+.api-reference-page .api-reference-entrypoint-card h2 {
+  margin: 0 0 12px;
+  font-size: 19px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.api-reference-entrypoint-card p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.api-reference-entrypoint-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 .api-reference-package header {
   display: flex;
@@ -429,6 +447,14 @@
   color: var(--color-text-primary);
   font: inherit;
   font-size: 13px;
+}
+.api-navigation-search:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.api-reference-navigation .api-navigation-search input:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 .api-navigation-search input::-webkit-search-cancel-button {
   display: none;

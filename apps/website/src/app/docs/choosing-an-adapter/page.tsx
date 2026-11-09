@@ -1,13 +1,13 @@
-import fs from 'fs';
-import path from 'path';
 import { notFound } from 'next/navigation';
-import { DocsControlPlane } from '../../../components/docs/DocsControlPlane';
-import { DocsSearch } from '../../../components/docs/DocsSearch';
+import { WebsiteWorkspace } from '../../../components/workspace/WebsiteWorkspace';
+import { getWebsiteWorkspacePage } from '../../../lib/workspace-page';
+import { DocsPageHeader } from '../../../components/docs/DocsPageHeader';
+import { PageActions } from '../../../components/docs/PageActions';
 import { MdxRenderer } from '../../../components/docs/MdxRenderer';
 import { DocsTOC } from '../../../components/docs/DocsTOC';
 import { createPageMetadata } from '../../../lib/site-metadata';
 import { extractHeadings } from '../../../lib/extract-headings';
-import { stripFrontmatter } from '../../../lib/docs';
+import { getSpecialDocByPath } from '../../../lib/docs';
 import '../../../styles/docs-entry.css';
 
 const PAGE_TITLE = 'Choosing an adapter';
@@ -19,46 +19,32 @@ export const metadata = createPageMetadata({
   type: 'website',
 });
 
-function resolveContentFile(): string | null {
-  const candidates = [
-    path.join(
-      process.cwd(),
-      'apps',
-      'website',
-      'content',
-      'docs',
-      'choosing-an-adapter',
-      'index.mdx'
-    ),
-    path.join(
-      process.cwd(),
-      'content',
-      'docs',
-      'choosing-an-adapter',
-      'index.mdx'
-    ),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
+export default async function ChoosingAnAdapterPage() {
+  const doc = getSpecialDocByPath('/docs/choosing-an-adapter');
+  if (!doc) notFound();
 
-export default function ChoosingAnAdapterPage() {
-  const filePath = resolveContentFile();
-  if (!filePath) notFound();
-
-  const source = stripFrontmatter(fs.readFileSync(filePath, 'utf8'));
+  const source = doc.body;
   const headings = extractHeadings(source);
+  const workspace = await getWebsiteWorkspacePage({
+    docsPath: '/docs/choosing-an-adapter',
+    title: PAGE_TITLE,
+  });
 
-  return (
-    <div className="flex min-h-screen docs-shell-page">
-      <DocsSearch />
-      {/* This page is deliberately library-neutral: it is the page that helps
-       * you pick one, so the picker opens with nothing selected. */}
-      <DocsControlPlane activeLibrary={null} activeSection="" activeSlug="" />
-      <div className="flex-1 flex min-w-0 docs-shell-body docs-entry-reading">
+  const docsSlot = (
+    <div className="docs-workspace-article docs-entry-reading">
+      <div className="flex min-w-0 docs-article-layout">
         <div className="flex-1 min-w-0">
+          <div className="px-4 sm:px-6 md:px-12 md:max-w-3xl pt-6">
+            <DocsPageHeader
+              actions={
+                <PageActions
+                  documentPath="choosing-an-adapter"
+                  source={doc.contentPath}
+                  headings={headings}
+                />
+              }
+            />
+          </div>
           <article
             aria-label={PAGE_TITLE}
             className="flex-1 py-8 px-4 sm:px-6 md:px-12 md:max-w-3xl"
@@ -66,12 +52,23 @@ export default function ChoosingAnAdapterPage() {
             <MdxRenderer source={source} docsPath="/docs/choosing-an-adapter" />
           </article>
         </div>
-        {/* This page carries as many headings as any library page, so it gets
-         * the same rail. It stays library-neutral, so it takes no breadcrumb
-         * or page header — both are keyed to a library it deliberately
-         * has not picked. */}
         <DocsTOC headings={headings} />
       </div>
     </div>
+  );
+  return (
+    <WebsiteWorkspace
+      {...workspace}
+      routePath="/docs/choosing-an-adapter"
+      docsSlot={docsSlot}
+      contextTrail={[{ label: 'Docs', href: '/docs' }, { label: PAGE_TITLE }]}
+      docsContext={{
+        scope: 'shared',
+        currentPath: '/docs/choosing-an-adapter',
+        activeLibrary: null,
+        activeSection: '',
+        activeSlug: '',
+      }}
+    />
   );
 }
