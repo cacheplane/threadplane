@@ -70,7 +70,8 @@ const toolOutcome = (activity: ToolActivityInfo): ToolActivityOutcome | undefine
 };
 ```
 
-A failed call shows as failed, its `text` becomes the error explanation, and the settled group reads **Used 3 tools · 1 failed**.
+A failed call shows as failed, its `text` becomes the error explanation, and a settled group counts it.
+For example, a group of three calls with one failure reads **Used 3 tools · 1 failed**.
 Values such as `false`, `0`, `""`, `[]` and `null` are literal results, not failures.
 Returning `undefined` keeps the call as it was.
 Only a call that completed can be marked failed, so a running or stopped call is never rewritten.
@@ -79,7 +80,8 @@ This changes what is shown, not what the model receives.
 The model still sees the original tool result.
 If a tool should tell the model that it failed, set the error flag your protocol provides on the tool message.
 The cost is that you maintain a decoder per tool, and a decoder that drifts from the tool's real schema shows the wrong state.
-`resolveToolOutcome(activity, outcome)` is exported if you render activities yourself and want the same resolution.
+`ChatToolActivityComponent` and `ChatToolActivityGroupComponent` apply the same resolution to a failed outcome you pass them directly.
+`resolveToolOutcome(activity, outcome)` is exported if you render activities with your own markup and want the same resolution.
 
 ### Add content to one call
 
@@ -89,7 +91,7 @@ Project an `ng-template` carrying `chatToolResultTemplate` into `<chat>` or `<ch
 <chat [agent]="agent" [toolOutcome]="toolOutcome">
   <ng-template chatToolResultTemplate="lookup_flight" let-activity>
     @if (activity.phase === 'error') {
-      <button (click)="retryLookup(activity.id)">Try another flight</button>
+      <button type="button" (click)="retryLookup(activity.id)">Retry flight lookup</button>
     }
   </ng-template>
 </chat>
@@ -97,6 +99,7 @@ Project an `ng-template` carrying `chatToolResultTemplate` into `<chat>` or `<ch
 
 The context is the resolved `ToolActivityInfo` as `$implicit`, after `toolOutcome` ran, so a declared failure arrives with `phase: 'error'`.
 Its content renders outside **Details** and is shown below a collapsed group.
+Below a collapsed group, name the call in the control, such as **Retry UA999 lookup**, because a bare **Retry** does not say which call it acts on.
 A literal `"*"` matches any tool without a template of its own, and a name match wins over it.
 A tool with a `chatToolCallTemplate` keeps that full replacement, and result templates do not apply to it.
 The slot only displays what you render.

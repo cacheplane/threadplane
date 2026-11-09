@@ -82,6 +82,8 @@ Only explicitly complete activities expose outcome previews. Related groups show
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 
+The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
+
 ## Declare a failed result
 
 A tool can finish delivery and still report that it failed.
@@ -107,7 +109,8 @@ function toolOutcome(activity: ToolActivityInfo): ToolActivityOutcome | undefine
 }
 ```
 
-A failed call shows as failed, its `text` becomes the error explanation, and the settled group reads **Used 3 tools · 1 failed**.
+A failed call shows as failed, its `text` becomes the error explanation, and a settled group counts it.
+For example, a group of three calls with one failure reads **Used 3 tools · 1 failed**.
 Values such as `false`, `0`, `""`, `[]` and `null` are literal results, not failures.
 Returning `undefined` keeps the call as it was.
 Only a call that completed can be marked failed, so a running or stopped call is never rewritten.
@@ -116,31 +119,56 @@ This changes what is shown, not what the model receives.
 The model still sees the original tool result.
 If a tool should tell the model that it failed, set the error flag your protocol provides on the tool message.
 The cost is that you maintain a decoder per tool, and a decoder that drifts from the tool's real schema shows the wrong state.
-`resolveToolOutcome(activity, outcome)` is exported if you render activities yourself and want the same resolution.
+`ToolActivity` and `ToolActivityGroup` apply the same resolution to a failed outcome you pass them directly.
+`resolveToolOutcome(activity, outcome)` is exported if you render activities with your own markup and want the same resolution.
 
 ## Add content to one call
 
 Pass `renderToolResult` to `MessageList` or `Chat` to add content to a single call's row, such as a retry button or a rich result.
 
 ```tsx
-<Chat
-  agent={agent}
-  toolOutcome={toolOutcome}
-  renderToolResult={(activity) =>
-    activity.name === 'lookup_flight' && activity.phase === 'error' ? (
-      <button onClick={() => retryLookup(activity.id)}>Try another flight</button>
-    ) : null
-  }
-/>
+import { useCallback } from 'react';
+import type { AgentSession } from '@threadplane/core';
+import { Chat, type ToolActivityInfo } from '@threadplane/react/chat';
+
+export function FlightChat({
+  session,
+  retryLookup,
+}: {
+  readonly session: AgentSession;
+  readonly retryLookup: (callId: string) => void;
+}) {
+  const renderToolResult = useCallback(
+    (activity: ToolActivityInfo) =>
+      activity.name === 'lookup_flight' && activity.phase === 'error' ? (
+        <button type="button" onClick={() => retryLookup(activity.id)}>
+          Retry flight lookup
+        </button>
+      ) : null,
+    [retryLookup]
+  );
+  return (
+    <Chat
+      session={session}
+      toolOutcome={toolOutcome}
+      renderToolResult={renderToolResult}
+    />
+  );
+}
 ```
+
+`toolOutcome` is the module-level decoder from the previous section, so both callbacks stay stable across renders.
 
 The callback receives the resolved activity, after `toolOutcome` ran, so a declared failure arrives with `phase: 'error'`.
 Its content renders outside **Details** and is shown below a collapsed group.
+Below a collapsed group, name the call in the control, such as **Retry UA999 lookup**, because a bare **Retry** does not say which call it acts on.
 The slot only displays what you return.
 It does not run, approve or retry anything, so the handler you pass owns that work.
 Return `null` for calls that need nothing extra.
 
-The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
+When you render `ToolActivityGroup` yourself, pass the same kind of callback as its `renderResult` prop.
+It receives each resolved activity, and a `null` or `undefined` return adds nothing for that call.
+For a single `ToolActivity`, pass the content as its `children` instead.
 
 ## Inspect observed calls and results
 
