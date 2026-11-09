@@ -200,30 +200,24 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
     `
       :host { display: block; height: 100%; }
       .hero { position: relative; display: flex; flex-direction: column; height: 100%; }
-      .hero__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 16px 20px; font: 13px/1.5 system-ui, sans-serif; border-bottom: 1px solid var(--demo-control-border); color: var(--demo-control-text); background: var(--demo-control-bg); }
-      .hero__url { color: var(--demo-control-muted); }
-      .hero__pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--demo-control-surface); color: var(--demo-control-muted); }
-      .hero__pill[data-live='true'] { color: var(--demo-control-text); }
-      .hero__dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .hero__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; font: 12px/1.3 system-ui, sans-serif; border-bottom: 1px solid rgba(128,128,128,.25); }
+      .hero__url { opacity: .6; }
+      .hero__pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; border: 1px solid #b5731a; color: #b5731a; }
+      .hero__pill[data-live='true'] { border-color: #2f6f4f; color: #2f6f4f; }
+      .hero__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
       .hero__surface { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
       .hero__surface > chat { flex: 1; min-height: 0; }
       .hero[data-replay-only] .hero__surface { pointer-events: none; }
       .hero__interrupt { padding: 8px 12px 0; }
-      .hero__banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; padding: 12px 20px; font: 13px/1.6 system-ui, sans-serif; color: var(--demo-control-text); background: var(--demo-control-surface); border-bottom: 1px solid var(--demo-control-border); }
-      .hero__link { min-height: 44px; border: 1px solid var(--demo-control-border); border-radius: 12px; padding: 10px 14px; color: var(--demo-control-text); background: var(--demo-control-bg); cursor: pointer; font: inherit; font-weight: 600; }
+      .hero__banner { margin: 0; padding: 8px 12px; font: 13px/1.4 system-ui, sans-serif; background: rgba(47,111,79,.08); border-bottom: 1px solid rgba(47,111,79,.3); }
+      .hero__link { margin-left: 8px; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
       /* In normal flow, NOT absolutely positioned: floating it over the surface
          put it on top of the streaming answer at 768px and on top of the empty
          welcome copy at 390px, and it half-covered the composer's send button. */
-      .hero__take { flex: none; align-self: center; min-height: 44px; margin: 12px 20px 16px; padding: 10px 20px; border-radius: 12px; border: 1px solid transparent; background: var(--demo-control-yellow); color: var(--demo-control-ink); font: 600 14px/1.5 system-ui, sans-serif; cursor: pointer; }
-      .hero__take:hover { background: #ffda79; }
-      .hero__link:hover { background: var(--demo-control-surface); }
-      .hero__take:focus-visible, .hero__link:focus-visible { outline: 2px solid var(--demo-control-focus); outline-offset: 3px; }
-      @media (max-width: 539px) {
-        .hero__bar, .hero__banner { padding: 12px; }
-        .hero__take { margin: 12px; }
-      }
+      .hero__take { flex: none; align-self: center; margin: 8px 12px 12px; padding: 8px 14px; border-radius: 999px; border: 0; background: #111; color: #fff; font: 600 13px/1 system-ui, sans-serif; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+      .hero__take:focus-visible, .hero__link:focus-visible { outline: 2px solid var(--tplane-chat-text); outline-offset: 3px; }
       @media (forced-colors: active) {
-        .hero__take, .hero__link { border-color: ButtonText; }
+        .hero__take, .hero__link { border: 1px solid ButtonText; }
         .hero__take:focus-visible, .hero__link:focus-visible { outline-color: Highlight; }
       }
     `,

@@ -1,17 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { openDemo, selectToolbarOption, toolbarSelect } from './test-helpers';
 
-test('mobile embed keeps a useful composer width and selects its model through settings', async ({ page }) => {
+test('mobile embed keeps a useful composer width and selects its model through the toolbar', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await openDemo(page);
   const input = page.getByRole('textbox', { name: 'Type a message', exact: true });
   await expect(input).toBeVisible();
   await expect.poll(async () => (await input.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(140);
   await input.fill('Keep this draft while resizing');
-  await page.getByRole('button', { name: 'Demo settings', exact: true }).click();
   await selectToolbarOption(page, 'Model', 'gpt-5-nano');
   await expect(toolbarSelect(page, 'Model')).toContainText('gpt-5-nano');
-  await page.getByRole('button', { name: 'Demo settings', exact: true }).click();
   await page.setViewportSize({ width: 1200, height: 800 });
   await expect(page.locator('embed-mode chat-input chat-select .chat-select__trigger')).toBeVisible();
   await expect(page.locator('embed-mode chat-input chat-select .chat-select__trigger')).toContainText('gpt-5-nano');
@@ -21,31 +19,18 @@ test('mobile embed keeps a useful composer width and selects its model through s
   await expect(input).toHaveValue('Keep this draft while resizing');
 });
 
-test('mobile settings preserve the selected theme and leave room for conversations', async ({
+test('mobile toolbar controls preserve the selected theme and leave room for conversations', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await openDemo(page);
-  const settings = page.getByRole('button', {
-    name: 'Demo settings',
-    exact: true,
-  });
-  await expect(settings).toHaveAttribute('aria-expanded', 'false');
-  await expect(toolbarSelect(page, 'Theme')).toBeHidden();
-  await settings.click();
-  await expect(settings).toHaveAttribute('aria-expanded', 'true');
   for (const field of ['Model', 'Effort', 'Gen UI', 'Theme']) {
     await expect(toolbarSelect(page, field)).toBeVisible();
   }
   await selectToolbarOption(page, 'Theme', 'Material light');
   await expect(toolbarSelect(page, 'Theme')).toHaveText(/Material light/);
-  await settings.click();
-  await expect(toolbarSelect(page, 'Theme')).toBeHidden();
   await page.reload();
-  await expect(settings).toHaveAttribute('aria-expanded', 'false');
-  await settings.click();
   await expect(toolbarSelect(page, 'Theme')).toHaveText(/Material light/);
-  await settings.click();
   await page
     .getByRole('button', { name: 'Open conversations', exact: true })
     .click();
@@ -141,7 +126,8 @@ for (const { width, blockIconFont } of [
     );
     expect(actionBox.height).toBeGreaterThanOrEqual(44);
     expect(actionBox.y).toBeGreaterThanOrEqual(0);
-    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(640);
+    // Scrolling rounds to device pixels while bounding boxes retain fractions.
+    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(641);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth)
     ).toBeLessThanOrEqual(width);
@@ -178,7 +164,7 @@ for (const mode of ['popup', 'sidebar']) {
       };
     });
     expect(geometry.height, JSON.stringify(geometry)).toBeGreaterThan(0);
-    await draft.fill('A mobile draft with several wrapped lines. '.repeat(6));
+    await draft.fill('A mobile draft with several wrapped lines. '.repeat(6).trimEnd());
     await page.evaluate(() => {
       const viewport = visualViewport!;
       Object.defineProperty(viewport, 'height', {
@@ -202,7 +188,7 @@ for (const mode of ['popup', 'sidebar']) {
     await expect(launcher).toBeFocused();
     await launcher.click();
     await expect(draft).toHaveValue(
-      'A mobile draft with several wrapped lines. '.repeat(6)
+      'A mobile draft with several wrapped lines. '.repeat(6).trimEnd()
     );
     await expect(close).toBeFocused();
   });

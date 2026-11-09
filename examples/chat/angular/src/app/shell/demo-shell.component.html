@@ -1,103 +1,75 @@
 <div class="demo-shell">
   <div class="demo-shell__toolbar" role="toolbar" aria-label="Demo controls" [attr.inert]="conversationModalOpen() ? '' : null">
-    <div class="demo-shell__navigation">
-      @if (sidenavMode() === 'drawer') {
+    @if (sidenavMode() === 'drawer') {
+      <button
+        type="button"
+        class="demo-shell__hamburger"
+        aria-label="Open conversations"
+        aria-controls="demo-conversations"
+        [attr.aria-expanded]="drawerOpen()"
+        (click)="toggleSidenav()"
+      >☰</button>
+    }
+    <div class="demo-shell__segmented" aria-label="Mode">
+      @for (option of modeOptions; track option.value) {
         <button
           type="button"
-          class="demo-shell__hamburger"
-          aria-label="Open conversations"
-          aria-controls="demo-conversations"
-          [attr.aria-expanded]="drawerOpen()"
-          (click)="toggleSidenav()"
-        >☰</button>
+          class="demo-shell__segmented-button"
+          [class.is-active]="mode() === option.value"
+          [attr.aria-pressed]="mode() === option.value"
+          (click)="onModeChange(option.value)"
+        >{{ option.label }}</button>
       }
-      <div class="demo-shell__segmented" aria-label="Mode">
-        @for (option of modeOptions; track option.value) {
-          <button
-            type="button"
-            class="demo-shell__segmented-button"
-            [class.is-active]="mode() === option.value"
-            [attr.aria-pressed]="mode() === option.value"
-            (click)="onModeChange(option.value)"
-          >{{ option.label }}</button>
-        }
-      </div>
-      <button
-        type="button"
-        class="demo-shell__settings-toggle"
-        aria-label="Demo settings"
-        title="Demo settings"
-        aria-controls="demo-settings"
-        [attr.aria-expanded]="settingsOpen()"
-        (click)="settingsOpen.set(!settingsOpen())"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
-          <path d="M4 7h7m4 0h5M4 17h3m4 0h9" />
-          <circle cx="13" cy="7" r="2" />
-          <circle cx="9" cy="17" r="2" />
-        </svg>
-      </button>
     </div>
-    <div
-      class="demo-shell__settings"
-      id="demo-settings"
-      role="group"
-      aria-label="Demo settings"
-      [attr.data-open]="settingsOpen()"
-      (focusin)="settingsOpen.set(true)"
+
+    <button
+      type="button"
+      class="demo-shell__app-toggle"
+      [class.is-on]="appMode() === 'on'"
+      [attr.aria-pressed]="appMode() === 'on'"
+      [disabled]="!hasMapsKey"
+      [attr.title]="hasMapsKey ? null : 'Set GOOGLE_MAPS_API_KEY to enable'"
+      (click)="onAppModeChange(appMode() === 'on' ? 'off' : 'on')"
     >
-      <button
-        type="button"
-        class="demo-shell__app-toggle"
-        [class.is-on]="appMode() === 'on'"
-        [attr.aria-pressed]="appMode() === 'on'"
-        [disabled]="!hasMapsKey"
-        [attr.title]="hasMapsKey ? null : 'Set GOOGLE_MAPS_API_KEY to enable'"
-        (click)="onAppModeChange(appMode() === 'on' ? 'off' : 'on')"
-      >
-        <span class="demo-shell__app-toggle-icon" aria-hidden="true">map</span>
-        <span class="demo-shell__app-toggle-label">App mode</span>
-        <span class="demo-shell__app-toggle-thumb" aria-hidden="true"></span>
-      </button>
-      <div class="demo-shell__field" data-field="model">
-        <chat-select
-          panelClass="demo-controls-menu"
-          [options]="modelOptions()"
-          [value]="model()"
-          menuLabel="Model"
-          (valueChange)="onModelChange($event)"
-        />
-      </div>
+      <span class="demo-shell__app-toggle-icon" aria-hidden="true">map</span>
+      <span class="demo-shell__app-toggle-label">App mode</span>
+      <span class="demo-shell__app-toggle-thumb" aria-hidden="true"></span>
+    </button>
 
-      <div class="demo-shell__field" data-field="effort">
-        <chat-select
-          panelClass="demo-controls-menu"
-          [options]="effortOptions()"
-          [value]="effort()"
-          menuLabel="Effort"
-          (valueChange)="onEffortChange($event)"
-        />
-      </div>
+    <div class="demo-shell__field demo-shell__field--first" data-field="model">
+      <chat-select
+        [options]="modelOptions()"
+        [value]="model()"
+        menuLabel="Model"
+        (valueChange)="onModelChange($event)"
+      />
+    </div>
 
-      <div class="demo-shell__field" data-field="genui">
-        <chat-select
-          panelClass="demo-controls-menu"
-          [options]="genUiOptions()"
-          [value]="genUiMode()"
-          menuLabel="Gen UI"
-          (valueChange)="onGenUiModeChange($event)"
-        />
-      </div>
+    <div class="demo-shell__field" data-field="effort">
+      <chat-select
+        [options]="effortOptions()"
+        [value]="effort()"
+        menuLabel="Effort"
+        (valueChange)="onEffortChange($event)"
+      />
+    </div>
 
-      <div class="demo-shell__field" data-field="theme">
-        <chat-select
-          panelClass="demo-controls-menu"
-          [options]="themeOptions()"
-          [value]="theme()"
-          menuLabel="Theme"
-          (valueChange)="onThemeChange($event)"
-        />
-      </div>
+    <div class="demo-shell__field" data-field="genui">
+      <chat-select
+        [options]="genUiOptions()"
+        [value]="genUiMode()"
+        menuLabel="Gen UI"
+        (valueChange)="onGenUiModeChange($event)"
+      />
+    </div>
+
+    <div class="demo-shell__field" data-field="theme">
+      <chat-select
+        [options]="themeOptions()"
+        [value]="theme()"
+        menuLabel="Theme"
+        (valueChange)="onThemeChange($event)"
+      />
     </div>
   </div>
 
