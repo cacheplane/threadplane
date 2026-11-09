@@ -509,8 +509,6 @@ export class DemoShell {
    *  load — drawer mode is a transient UI state, not a persisted preference. */
   protected readonly drawerOpen = signal<boolean>(false);
 
-  /** Mobile-only disclosure; desktop settings stay visible through CSS. */
-  protected readonly settingsOpen = signal(false);
 
   /** Whether the Cmd+K search palette is open. */
   protected readonly paletteOpen = signal<boolean>(false);
@@ -535,7 +533,7 @@ export class DemoShell {
     typeof window !== 'undefined' ? window.innerWidth : 1440,
   );
 
-  /** Narrow composers use the same model control in the demo settings. */
+  /** Narrow composers use the same model control in the toolbar. */
   readonly showInlineModelPicker = computed(() => this.viewportWidth() >= 768);
 
   /**

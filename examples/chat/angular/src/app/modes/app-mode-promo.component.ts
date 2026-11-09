@@ -68,10 +68,10 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       box-sizing: border-box;
       width: min(780px, 100%);
       margin: 0 auto;
-      border-radius: 16px;
+      border-radius: var(--tplane-chat-radius-card, 12px);
       overflow: hidden;
-      background: var(--demo-control-bg);
-      border: 1px solid var(--demo-control-border);
+      background: #0e1626;
+      border: 1px solid var(--tplane-chat-separator, rgba(255, 255, 255, 0.12));
       animation: promo-rise 320ms ease both;
     }
     .promo__img {
@@ -80,37 +80,41 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     .promo__caption {
       display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
       padding: 16px 20px;
-      border-top: 1px solid var(--demo-control-border);
+      background: rgba(8, 15, 28, 0.96);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
     .promo__copy { flex: 1 1 320px; min-width: 0; }
     .promo__eyebrow {
       display: inline-flex; align-items: center; gap: 6px;
-      background: var(--demo-control-selected-bg); color: var(--demo-control-selected-text);
+      background: rgba(37, 99, 235, 0.18); color: #93b4f5;
       font-size: 12px; padding: 3px 10px; border-radius: 8px; margin-bottom: 9px;
     }
-    .promo__title { font-size: 20px; font-weight: 600; color: var(--demo-control-text); line-height: 1.3; margin: 0 0 4px; }
-    .promo__subtitle { font-size: 13px; color: var(--demo-control-muted); line-height: 1.5; margin: 0 0 12px; }
+    .promo__title { font-size: 20px; font-weight: 600; color: #f2f5fb; line-height: 1.3; margin: 0 0 4px; }
+    .promo__subtitle { font-size: 13px; color: #9aa6bd; line-height: 1.5; margin: 0 0 12px; }
     .promo__pills { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
     .promo__pill {
       display: inline-flex; align-items: center; gap: 6px;
-      background: var(--demo-control-surface); border: 1px solid var(--demo-control-border);
-      color: var(--demo-control-text); font-size: 12px; padding: 5px 10px; border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #c2cbdc; font-size: 12px; padding: 5px 10px; border-radius: 8px;
     }
     .promo__action { min-width: 0; max-width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .promo__cta {
       display: inline-flex; align-items: center; gap: 8px;
       box-sizing: border-box; max-width: 100%;
       min-height: 44px;
-      background: var(--demo-control-yellow); color: var(--demo-control-ink);
+      background: var(--tplane-chat-primary, #2563eb); color: var(--tplane-chat-on-primary, #fff);
       border: none; font: inherit; font-size: 14px; font-weight: 600;
       padding: 11px 18px; border-radius: 8px; cursor: pointer;
     }
     .promo__cta-icon { width: 18px; height: 18px; flex: 0 0 18px; }
     .promo__cta-label { min-width: 0; overflow-wrap: anywhere; }
     .promo__cta:disabled { opacity: 0.5; cursor: not-allowed; }
-    .promo__cta:focus-visible { outline: 2px solid var(--demo-control-focus); outline-offset: 2px; }
+    .promo__cta:focus-visible { outline: 2px solid #f2f5fb; outline-offset: 2px; }
+    @media (forced-colors: active) {
+      .promo__cta:focus-visible { outline-color: Highlight; }
+    }
     .promo__cta:hover:not(:disabled) { filter: brightness(1.08); }
-    .promo__note { font-size: 12px; color: var(--demo-control-muted); margin: 0; overflow-wrap: anywhere; }
+    .promo__note { font-size: 12px; color: #9aa6bd; margin: 0; overflow-wrap: anywhere; }
     .promo__note code { font-family: var(--tplane-chat-font-mono, monospace); }
     .promo__icon { font-family: 'Material Symbols Outlined', sans-serif; font-size: 18px; line-height: 1; }
     .promo__icon--sm { font-size: 15px; }
