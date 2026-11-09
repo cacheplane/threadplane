@@ -1,5 +1,5 @@
 import { test } from './fixtures';
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 
 test('installed React message actions copy only explicit answer text without conversation commands', async ({
   page,
@@ -9,8 +9,7 @@ test('installed React message actions copy only explicit answer text without con
   const { startProofServer, threadEnvelope } = await import(
     '../tooling/proof-server.mjs'
   );
-  const { startCheckedServer } =
-    await import('../tooling/retained-build.mjs');
+  const { startCheckedServer } = await import('../tooling/retained-build.mjs');
   const answer =
     '**Exact answer**\n\n<script>literal()</script>\n\n[Link](https://example.com)';
   const saved = [
@@ -128,19 +127,93 @@ test('installed React message actions copy only explicit answer text without con
     expect(await writes()).toEqual([]);
     const draft = page.getByLabel('Message', { exact: true });
     await draft.fill('Preserved draft');
+    const article = list
+      .getByRole('article', {
+        name: 'assistant message',
+        exact: true,
+      })
+      .filter({
+        has: page.getByRole('button', { name: 'Copy answer', exact: true }),
+      });
+    const controls = article.locator(':scope > .tp-chat-message__controls');
+    await expect(article).not.toHaveAttribute('data-current', 'true');
+    expect(
+      await page.evaluate(
+        () => matchMedia('(min-width: 769px) and (hover: hover)').matches
+      )
+    ).toBe(true);
+    await page.mouse.move(0, 0);
+    await expect(draft).toBeFocused();
+    expect(
+      await article.evaluate((el) => el.matches(':hover, :focus-within'))
+    ).toBe(false);
+    await expect(controls).toHaveCSS('opacity', '0');
+    await expect(controls).toHaveCSS('pointer-events', 'none');
+    const mountedControls = await controls.elementHandle();
+    const mountedCopy = await copy.elementHandle();
+    // Pointer/focus actions can scroll the transcript. With feedback unchanged,
+    // reveal preserves intrinsic dimensions and offsets within the message.
+    const messageBounds = (target: Locator) =>
+      target.evaluate((el) => {
+        const message = el.closest('article')!.getBoundingClientRect();
+        const bounds = el.getBoundingClientRect();
+        return {
+          x: bounds.x - message.x,
+          y: bounds.y - message.y,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      });
+    const restBounds = await messageBounds(controls);
+    const copyBounds = await messageBounds(copy);
+    await article.hover();
+    await expect(controls).toHaveCSS('opacity', '1');
+    await expect(controls).toHaveCSS('pointer-events', 'auto');
+    expect(await messageBounds(controls)).toEqual(restBounds);
+    expect(await messageBounds(copy)).toEqual(copyBounds);
+    expect(await writes()).toEqual([]);
+    await page.mouse.move(0, 0);
+    await expect(controls).toHaveCSS('opacity', '0');
     await copy.focus();
+    await expect(copy).toBeFocused();
+    await expect(controls).toHaveCSS('opacity', '1');
+    await expect(controls).toHaveCSS('pointer-events', 'auto');
+    expect(await messageBounds(copy)).toEqual(copyBounds);
+    expect(await writes()).toEqual([]);
+    const stableControls = async () => {
+      expect(
+        await controls.evaluate(
+          (el, original) => el === original,
+          mountedControls
+        )
+      ).toBe(true);
+      expect(
+        await copy.evaluate((el, original) => el === original, mountedCopy)
+      ).toBe(true);
+      await expect(controls).toHaveCSS('opacity', '1');
+      await expect(controls).toHaveCSS('pointer-events', 'auto');
+    };
     await page.keyboard.press('Enter');
     await expect(copy).toBeDisabled();
+    await article.hover();
+    await expect(
+      list.getByText('Copying answer…', { exact: true })
+    ).toBeVisible();
+    await stableControls();
     await copy.evaluate((button) => {
       (button as HTMLButtonElement).click();
       (button as HTMLButtonElement).click();
     });
     expect(await writes()).toEqual([answer]);
     await settle(true);
+    // Disabled controls follow ordinary browser focus behavior. Re-reveal the
+    // historical article to inspect the application's feedback when necessary.
+    await article.hover();
     await expect(
       list.getByText('Answer copied.', { exact: true })
     ).toBeVisible();
     await expect(copy).toBeEnabled();
+    await stableControls();
     await expect(draft).toHaveValue('Preserved draft');
     await expect(
       page.getByRole('heading', { name: 'Conversation A', exact: true })
@@ -148,10 +221,13 @@ test('installed React message actions copy only explicit answer text without con
     await copy.focus();
     await page.keyboard.press('Space');
     await expect(copy).toBeDisabled();
+    await stableControls();
     await settle(false);
+    await article.hover();
     await expect(
       list.getByText('Could not copy answer.', { exact: true })
     ).toBeVisible();
+    await stableControls();
     expect(await writes()).toEqual([answer, answer]);
     await copy.click();
     await expect(copy).toBeDisabled();
@@ -178,6 +254,7 @@ test('installed React message actions copy only explicit answer text without con
         value: undefined,
       })
     );
+    await article.hover();
     await copy.click();
     await expect(
       list.getByText('Could not copy answer.', { exact: true })

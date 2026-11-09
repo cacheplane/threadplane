@@ -322,8 +322,10 @@ export default { ...base, plugins: [...base.plugins, { name: 'candidate-provenan
   const scenarios = await runRuntimeScenarios(directory, `Candidate ${kind}`);
   const spacingScenario =
     'installed message spacing through wrappers and explicit precedence in LTR/RTL';
+  const controlsScenario =
+    'installed assistant controls reveal through hover focus current and device media';
   assert.equal(
-    scenarios.filter((scenario) => scenario !== spacingScenario).length,
+    scenarios.filter((scenario) => scenario !== spacingScenario && scenario !== controlsScenario).length,
     27,
     'All original scenarios remain required'
   );
@@ -331,6 +333,11 @@ export default { ...base, plugins: [...base.plugins, { name: 'candidate-provenan
     scenarios.filter((scenario) => scenario === spacingScenario).length,
     kind === 'react' ? 1 : 0,
     'Message spacing scenario is required exactly once for React only'
+  );
+  assert.equal(
+    scenarios.filter((scenario) => scenario === controlsScenario).length,
+    kind === 'react' ? 1 : 0,
+    'Message controls scenario is required exactly once for React only'
   );
   return {
     kind,

@@ -1,14 +1,12 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "396f2b6dc1a320b858d369241b9e55ca62191ccd",
+  "baselineHead": "4b6ac1a125113591c7abe096318716558ac6d826",
   "sourceState": {
     "modified": [
       "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "apps/website/content/docs/react/chat/components/chat-message.mdx",
       "apps/website/content/docs/react/chat/components/chat.mdx",
       "libs/react/README.md",
-      "libs/react/src/chat/chat-message.tsx",
-      "libs/react/src/chat/message-list.tsx",
       "libs/react/src/chat/styles.css"
     ],
     "untracked": []
@@ -857,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "e17b968f12d9f145e46577bd4bf2100c3eead2ea5157c2f4d09b0364b21fdf31"
+      "sha256": "762f19cfc7767d02cdd7196117fc57b06468256648587f257d2cbc1a51de4432"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -875,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "216837366ef1c65605c09dfea9a6c72246694bd5994aa6c82c5e01f4b218176e"
+      "sha256": "eac8a70357efb8668739855d852300d7fd2b3e9b8b2b90b5ab4249d48073c184"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3119,13 +3117,13 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message-list.mdx",
-      "sha256": "eee407072f0593861f9c2a18e1f085f83b0d9e4570318f7da6b905851864010f"
+      "sha256": "047ed674ce26fd3bb4da499046dc66300d77e1adfec76f0beb3332ed52ad139f"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "sha256": "c92bfe34971a6469a02e3c98666cd1a1645e4c002ec9e77a10e883363d5e1a85"
+      "sha256": "94108127aaf06e848012b75e099e0f132756d59c81337db13095c4a571a37cd2"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -3173,7 +3171,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat.mdx",
-      "sha256": "344524e2b7b186602f750cfe8d8721f03c4815b8866392f716186c591c099e7c"
+      "sha256": "d1a2c7449ffc25c8dfda7f6bfd9cce4ff423678e2712c8af7e3531987b91785d"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/scroll-bubble.mdx",

@@ -31,7 +31,12 @@ export default defineConfig(({ mode }) => ({
   root,
   envDir: false,
   esbuild: { jsx: 'automatic' },
-  server: { proxy: createApiProxy(process.env.NATIVE_PROXY_ORIGIN) },
+  server: {
+    proxy: createApiProxy(process.env.NATIVE_PROXY_ORIGIN),
+    // macOS notifications can miss newly mirrored directories and their assets.
+    // Poll on macOS so those additions converge; use notifications elsewhere.
+    watch: { useFsEvents: false, usePolling: process.platform === 'darwin' },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
