@@ -85,7 +85,7 @@ describe('HeroDemo', () => {
    * matching source, and an <img> that came first would win every time), and
    * the media query has to stay on the same 768px boundary as the stage's
    * portrait ratio in landing.css. Those two are the whole coupling, and both
-   * are tied to the phone poster's 390x906 geometry: the poster is served
+   * are tied to the phone poster's 390x988 geometry: the poster is served
    * exactly where the stage is portrait, so `object-fit: cover` crops nothing.
    * MIN_AUTOPLAY_WIDTH used to be a third leg and is not one any more —
    * autoplay is width-independent and this boundary says nothing about it.
@@ -101,12 +101,10 @@ describe('HeroDemo', () => {
     expect(HERO_POSTER_MOBILE).not.toBe(HERO_POSTER);
     expect(source.getAttribute('media')).toBe('(max-width: 767px)');
     expect(HERO_POSTER_MOBILE_MEDIA).toBe('(max-width: 767px)');
-    // 585x1359 — the 65:151 phone capture (390x906 at the 1.5x ship scale), so
-    // `object-fit: cover` crops nothing. Moves with the recorder's viewport and
-    // the `.hero-demo-stage` ratio in landing.css; see that recorder's header
-    // for how 906 is measured from the replay's own block boundaries.
+    // The 390x988 capture ships at 1.5x, matching the 195:494 stage ratio.
+    // The recorder's top-edge guard keeps the backup table wholly in frame.
     expect(source.getAttribute('width')).toBe('585');
-    expect(source.getAttribute('height')).toBe('1359');
+    expect(source.getAttribute('height')).toBe('1482');
     expect([...picture.children].map((el) => el.tagName)).toEqual(['SOURCE', 'IMG']);
   });
 
@@ -115,21 +113,9 @@ describe('HeroDemo', () => {
    * lost file would ship a hero with a broken image and nothing would fail
    * until someone looked at the page.
    *
-   * The phone poster's budget is ABSOLUTE, not a comparison against the desktop
-   * poster. It was written as `mobile <= desktop` first, on the reasoning that a
-   * phone downloads one instead of the other, and that coupling was wrong: both
-   * files are re-recorded together, so re-recording the walkthrough shrank the
-   * desktop capture 38.1KB -> 33.0KB and failed the phone poster for content it
-   * does not contain. The phone poster is not justified on bytes anyway. Below
-   * 768px `.hero-demo-stage` is `aspect-ratio: 65 / 151` with `object-fit:
-   * cover`, so the 1200x720 desktop capture covering that portrait box shows
-   * about 26% of its own width — the phone poster exists because that crop is
-   * unusable, and it would still be worth shipping if it cost slightly more.
-   *
-   * The ceiling is what the recorder actually budgeted against when it chose to
-   * ship 1.5x rather than 2x ("2x would cost ~51KB"): the mid-30s KB. Raise it
-   * only with a reason, and never by simply pasting in whatever the file now
-   * weighs — the point is to notice a poster that got expensive.
+   * Mobile uses its own measured 195:494 frame to keep the backup table
+   * legible. Its 36KB budget is independent of the desktop poster's size:
+   * lower encoding quality and inspect the text before raising that ceiling.
    */
   const HERO_POSTER_MOBILE_MAX_BYTES = 36_000;
 

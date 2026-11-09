@@ -14,17 +14,17 @@
   height: 100%;
   /* Publish the toolbar height as a CSS var so fixed-position overlays
    * (chat-sidenav, chat-sidebar panel) can clear it. */
-  --demo-toolbar-height: 51px;
+  --demo-toolbar-height: 0px;
 }
 
 .demo-shell__hamburger {
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 0;
   background: transparent;
-  color: var(--tplane-chat-text);
-  border-radius: 8px;
+  color: var(--demo-control-text);
+  border-radius: 12px;
   font-size: 18px;
   cursor: pointer;
   display: inline-flex;
@@ -32,7 +32,7 @@
   justify-content: center;
 }
 .demo-shell__hamburger:hover {
-  background: var(--tplane-chat-surface-alt);
+  background: var(--demo-control-surface);
 }
 
 .demo-shell__main {
@@ -56,30 +56,58 @@
 
 .demo-shell__toolbar {
   flex: 0 0 auto;
-  min-height: 48px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  row-gap: 6px;
-  gap: 10px;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--tplane-chat-separator);
-  background: color-mix(in srgb, var(--tplane-chat-bg) 94%, transparent);
-  color: var(--tplane-chat-text);
+  gap: 12px 24px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--demo-control-border);
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
   font-family: inherit;
-  font-size: var(--tplane-chat-font-size-sm);
+  font-size: 13px;
   box-sizing: border-box;
   /* Dropdowns sit above page content, while open chat surfaces retain
    * reachable close controls when they cover the toolbar on phones. */
   position: relative;
   z-index: calc(var(--tplane-chat-z-overlay-content, 30) - 1);
-  /* No overflow-x: that would clip absolutely-positioned dropdown menus.
-   * flex-wrap handles narrow viewports by wrapping fields to a new row. */
 }
 
-/* Push every field after Mode to the right of the toolbar. */
-.demo-shell__field--first {
+.demo-shell__navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.demo-shell__settings {
+  display: grid;
+  grid-template-columns: auto repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: 880px;
+  justify-self: end;
+}
+.demo-shell__settings-toggle {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--demo-control-border);
+  border-radius: 12px;
+  color: var(--demo-control-text);
+  background: var(--demo-control-bg);
+  cursor: pointer;
+}
+.demo-shell__settings-toggle:hover { background: var(--demo-control-surface); }
+.demo-shell__settings-toggle[aria-expanded='true'] {
+  background: var(--demo-control-selected-bg);
+  color: var(--demo-control-selected-text);
 }
 
 .demo-shell__segmented {
@@ -87,64 +115,78 @@
   align-items: center;
   gap: 2px;
   padding: 2px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--tplane-chat-text) 14%, transparent);
-  background: color-mix(in srgb, var(--tplane-chat-text) 4%, transparent);
+  border-radius: 14px;
+  border: 1px solid var(--demo-control-border);
+  background: var(--demo-control-surface);
   flex: 0 0 auto;
 }
 
 .demo-shell__segmented-button {
   font: inherit;
-  color: var(--tplane-chat-text);
-}
-
-.demo-shell__segmented-button {
+  color: var(--demo-control-text);
   border: 0;
   background: transparent;
-  border-radius: 6px;
-  min-height: 28px;
-  padding: 0 10px;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 12px;
   cursor: pointer;
 }
 
 .demo-shell__segmented-button.is-active {
-  background: var(--tplane-chat-text);
-  color: var(--tplane-chat-bg);
+  background: var(--demo-control-yellow);
+  color: var(--demo-control-ink);
+  font-weight: 600;
 }
 
 .demo-shell__field {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--tplane-chat-text-muted);
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .demo-shell__segmented-button:hover:not(.is-active) {
-  background: color-mix(in srgb, var(--tplane-chat-text) 8%, transparent);
+  background: color-mix(in srgb, var(--demo-control-text) 8%, transparent);
 }
 
-/* (Removed the manual toolbar menu-flip workaround: chat-select now portals its
- * menu through the connected-overlay primitive, which auto-flips downward when
- * there's no room above — so top-toolbar selects open downward on their own,
- * and the host-scoped ::ng-deep rule no longer reaches the portaled menu.) */
-
+.demo-shell__field ::ng-deep chat-select {
+  display: block;
+  min-width: 0;
+}
+.demo-shell__field ::ng-deep .chat-select__trigger {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--demo-control-border);
+  border-radius: 12px;
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
+  font-size: 13px;
+}
+.demo-shell__field ::ng-deep .chat-select__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.demo-shell__field ::ng-deep .chat-select__trigger:hover {
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
+}
 
 .demo-shell__theme-toggle {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   border: 0;
   background: transparent;
-  color: var(--tplane-chat-text-muted);
+  color: var(--demo-control-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .demo-shell__theme-toggle:hover {
-  background: var(--tplane-chat-surface-alt);
-  color: var(--tplane-chat-text);
+  background: var(--demo-control-surface);
+  color: var(--demo-control-text);
 }
 
 /* The toolbar is full-width at the top of the page. Fixed-position
@@ -153,12 +195,12 @@
  * underneath. Scoped to .demo-shell so the chat library's own
  * positioning is unchanged for consumers without a top toolbar. */
 .demo-shell ::ng-deep chat-sidenav {
-  top: var(--demo-toolbar-height);
+  top: calc(var(--demo-viewport-top, 0px) + var(--demo-toolbar-height));
   /* chat-sidenav has `height: 100%` on :host plus position: fixed + bottom: 0.
    * With our top override the explicit height "wins" and the sidenav extends
    * past the viewport (top + 100% > 100vh). Constrain the height to the
    * viewport minus the toolbar. */
-  height: calc(100% - var(--demo-toolbar-height));
+  height: calc(var(--demo-viewport-height, 100dvh) - var(--demo-toolbar-height));
 }
 /* App-mode toggle: pill button in the toolbar. Enabled only when a Google
  * Maps key is configured (App mode renders the map cockpit). */
@@ -166,24 +208,25 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--tplane-chat-separator);
-  background: transparent;
-  color: var(--tplane-chat-text-muted);
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--demo-control-border);
+  background: var(--demo-control-bg);
+  color: var(--demo-control-text);
   cursor: pointer;
   font: inherit;
-  font-size: var(--tplane-chat-font-size-sm);
+  font-size: 13px;
   flex: 0 0 auto;
 }
 .demo-shell__app-toggle:disabled {
-  opacity: 0.4;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .demo-shell__app-toggle.is-on {
-  color: var(--tplane-chat-on-primary);
-  background: var(--tplane-chat-primary);
-  border-color: var(--tplane-chat-primary);
+  color: var(--demo-control-ink);
+  background: var(--demo-control-yellow);
+  border-color: var(--demo-control-yellow);
 }
 .demo-shell__app-toggle-icon {
   font-family: 'Material Symbols Outlined', sans-serif;
@@ -195,10 +238,38 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--tplane-chat-text-muted);
+  background: currentColor;
 }
 .demo-shell__app-toggle.is-on .demo-shell__app-toggle-thumb {
-  background: var(--tplane-chat-on-primary);
+  background: currentColor;
+}
+
+.demo-shell__toolbar button:focus-visible,
+.demo-shell__theme-toggle:focus-visible,
+.demo-shell__field ::ng-deep .chat-select__trigger:focus-visible {
+  outline: 2px solid var(--demo-control-focus);
+  outline-offset: 3px;
+}
+@media (max-width: 1099px) {
+  .demo-shell__toolbar { grid-template-columns: minmax(0, 1fr); }
+  .demo-shell__settings { max-width: none; }
+}
+@media (max-width: 767px) {
+  .demo-shell__toolbar { padding: 8px 12px; gap: 8px; }
+  .demo-shell__settings-toggle { display: inline-flex; }
+  .demo-shell__settings {
+    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .demo-shell__settings[data-open='true'] { display: grid; }
+  .demo-shell__settings > .demo-shell__app-toggle {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .demo-shell__segmented-button { padding-inline: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-shell__main { transition: none; }
 }
 
 /* App-mode layout: full-bleed map with the itinerary panel floating as an

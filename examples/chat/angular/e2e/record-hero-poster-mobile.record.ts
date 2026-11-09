@@ -1,100 +1,22 @@
 /**
- * NOT a test. Captures the phone-width companion to
- * `record-hero-poster.record.ts`: the same walkthrough beat rendered at phone
- * dimensions, rather than cropped out of the 1200x720 desktop capture.
+ * Capture the phone companion to the desktop hero poster at the first streamed
+ * reply, after the scripted approval. Wait for the complete first answer during
+ * the replay's two-second hold, with fonts already loaded. The still excludes
+ * the scripted cursor and inert control; immediate empty-composer and absent-
+ * A2UI guards before and after capture keep it on this beat.
  *
- * Beat: the FIRST STREAMED REPLY, the same beat as the desktop poster, so
- * crossing the 768px breakpoint swaps the source without changing the story.
- * The approval-interrupt beat was the other candidate and was rejected twice
- * over: at phone height the panel slices the user's prompt bubble behind it,
- * and a still of a live Accept / Edit / Respond dialog invites taps that do
- * nothing.
+ * Framing follows the replay's block boundaries. With the current replay
+ * chrome at 390x906, the backup table measured y=29..383 and the scroll edge
+ * was y=96: the frame sliced 67px from the table. The preceding user message
+ * ended at y=5. Increasing the capture height to 988 adds 82px above the
+ * bottom-pinned transcript, placing that user ending at 87 and the table at
+ * 111..465, with the edge in the gap. The top-edge guard verifies that framing.
  *
- * The wait is about the scripted cursor, not the text. Until the resumed answer
- * finishes and HOLD_AFTER_ANSWER_MS elapses the cursor stays parked where it
- * pressed Accept, which at phone width drops the arrowhead onto the
- * `delete_backups` tool chip. It then glides to the composer for CURSOR_MOVE_MS
- * and typing starts the moment it arrives, so the only clean frame is mid-glide:
- * cursor en route, composer still empty. Measured against the 2026-09-05
- * recording by sampling the DOM every 250ms after the panel detaches: parked
- * until ~4.6s, gliding until ~5.3s, typing from ~5.4s, send at ~8.5s. 5000ms
- * is late in the glide, past the answer text and above the composer. Runs drift
- * by up to a second, so if a capture shows
- * the arrowhead back on the chip, re-run rather than retune. (7400ms landed
- * AFTER the second prompt had been sent, which the assertions below cannot
- * catch: the composer has cleared again by then.) The desktop recorder keeps
- * its own value because its Accept spot is empty space. Re-measure whenever
- * `public/hero-replay.json` changes.
- *
- * THE HEIGHT BUDGET IS DERIVED FROM THE REPLAY, not chosen. The timeline is
- * pinned to the BOTTOM, so the frame's top edge — the top of the chat's own
- * scroll container, NOT y=0 — falls wherever (capture height) puts it, and it
- * must land in a GAP between blocks or the poster opens mid-block. Growing the
- * capture height therefore reveals more ABOVE; the bottom of the story (answer,
- * composer, "Take control ↗") stays put at every height.
- *
- * The windows below were MEASURED from the DOM at h=866, AFTER the responsive
- * backup table landed (the `@media (max-width: 479px)` block in
- * `examples/chat/angular/src/app/backup-table.component.ts`, which stacks each
- * backup into a two-line block instead of a four-line-wrapped row and took the
- * table from 583px to 268px tall). They are NOT projections, and they must be
- * re-measured if EITHER that table layout OR `public/hero-replay.json` changes.
- *
- * The four `chat-message` boxes, in viewport coordinates at h=866 (the edge
- * sits at y=62 and does NOT move with the height):
- *
- *   user prompt                 -54 ..  10
- *   list_backups result table    34 .. 388
- *   `delete_backups` chip       412 .. 455
- *   "Deleted 3 backups (...)"   479 .. 705
- *
- * Because the timeline is bottom-pinned, raising h by Δ shifts every box down
- * by Δ while the edge stays at 62, so a candidate height h clears the edge iff
- * 62 falls in a gap once shifted — i.e. h = 928 - e for an edge position e in
- * the h=866 coordinates above. That gives:
- *
- *   h ∈ (449, 473)   edge in the gap below the `delete_backups` chip
- *   h ∈ (516, 540)   edge in the gap below the table
- *   h ∈ (894, 918)   edge in the gap ABOVE the table  ← this one
- *   h ≥ 983         edge above the user's prompt too (whole conversation)
- *
- * 906 is the middle of the third window: Δ=40 puts the prompt's bottom at 50,
- * wholly above the edge and so cleanly scrolled out, and the table's top at 74,
- * clear below it. It frames the WHOLE backup table — the result the approval
- * beat is about. 906 is even, so it halves to an integer at the 1.5x ship
- * scale.
- *
- * Be honest about what this height buys, because it is ONE number serving two
- * goals that do not actually agree. The poster needs its top edge in a gap, so
- * the capture height is forced. The same ratio then sizes the live autoplaying
- * iframe below 768px, and there a taller box is not straightforwardly better:
- * at 375px the stage is ~773px starting at y=550, so it runs ~511px past an
- * 812px fold and only ~34% of it is ever on screen unscrolled. The honest
- * justification for 906 is POSTER FRAMING. The live stage is along for the
- * ride, because `object-fit: cover` is only a no-op while the two ratios match.
- *
- * (526, the middle of the second window, also framed cleanly and kept the live
- * stage nearer the fold; it was rejected for shrinking the live viewport 19%.
- * If the fold ever matters more than framing the whole table, that is the trade
- * to revisit — and decoupling the poster's capture ratio from the stage's would
- * dissolve the conflict entirely, at the cost of a real `cover` crop.)
- *
- * 650 was the budget until the approval tools became executable (#1011). That
- * commit replaced a short prose answer with a run that streams a backup TABLE,
- * and 650 straddled that table's bottom edge — the poster shipped opening on a
- * table cut through horizontally, with its path column wrapped to four lines.
- * The old rule of thumb ("the answer's opening line has to fit on ONE line at
- * 390px") no longer decides anything on its own. The guard in the test body
- * fails loudly with the measured numbers when it drifts again.
- *
- * Geometry: 390 is the phone design width the reviews already use. The ratio is
- * therefore 390:906, which reduces to 65:151 — `.hero-demo-stage` below 768px
- * and POSTER_MOBILE_W/H in HeroDemo.tsx carry the same pair so `object-fit:
- * cover` still crops nothing, and all three must move together. The frame is
- * captured at deviceScaleFactor 2 for crisp glyph rasterisation and shipped
- * resized to 585x1359 (1.5x, and 585:1359 is the same 65:151): the poster is
- * displayed ~348 CSS px wide on a phone, and 2x would cost far more against the
- * desktop poster's ~32KB.
+ * Capture at 390x988 with deviceScaleFactor 2 and ship at 585x1482 (1.5x).
+ * The matching ratio is 195:494 in HeroDemo.tsx and landing.css. Change all
+ * three together when measured replay geometry changes. This ratio also
+ * sizes the live mobile iframe; the extra height serves poster framing.
+ * Keep the mobile image within the existing 36,000-byte budget.
  *
  *   npx playwright test --config examples/chat/angular/e2e/record-hero.config.ts record-hero-poster-mobile
  */
@@ -108,28 +30,33 @@ const OUT = resolve(
 );
 const SHIP_WIDTH = 585;
 
-test.use({ viewport: { width: 390, height: 906 }, deviceScaleFactor: 2 });
+test.use({ viewport: { width: 390, height: 988 }, deviceScaleFactor: 2 });
 
 test('capture mobile hero poster', async ({ page }) => {
   await page.goto('/hero');
+  await expect(page.locator('.hero__take')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
   // The scripted cursor types prompt 1, sends, and the replay pauses on the
   // approval interrupt; the script then presses Accept.
   const interruptPanel = page.locator('chat-interrupt-panel');
   await interruptPanel.waitFor({ timeout: 60_000 });
   await interruptPanel.waitFor({ state: 'detached', timeout: 60_000 });
-  await page.waitForTimeout(5000);
+  const answer = page.locator('[data-hero-surface] chat-message[data-role="assistant"]').last();
+  await expect(answer).toContainText('and any others not older than 90 days.');
+  await expect(answer).toHaveAttribute('data-streaming', 'false');
   // Guards the beat: `.hero__take` ships in normal flow, and a composer with
   // the next prompt already typed into it means the wait has drifted late. The
   // a2ui check catches a capture that drifted PAST typing into the second run,
   // where the composer has cleared again and would satisfy the check above.
   await expect(page.locator('.hero__take')).toBeVisible();
-  await expect(page.locator('[data-hero-surface] textarea')).toHaveValue('');
-  await expect(page.locator('a2ui-surface')).toHaveCount(0);
+  expect(await page.locator('[data-hero-surface] textarea').inputValue()).toBe('');
+  expect(await page.locator('a2ui-surface').count()).toBe(0);
+  expect(await page.locator('[data-hero-surface] chat-message[data-role="user"]').count()).toBe(1);
   // Guards the TOP EDGE, which none of the checks above can see. The clipping
   // edge is NOT the viewport's y=0: the timeline lives in its own scroll
   // container (`.chat-scroll` in libs/chat's chat composition), whose top sits
-  // below the `.hero__bar` at about y=62. A block scrolled off the top is
-  // clipped there, so a message with a positive y can still be sliced.
+  // below the `.hero__bar` at y=96 with the current chrome. Blocks scroll out
+  // there, so a message with a positive y can still be sliced.
   // A message that is wholly above that edge (the user's prompt, which may
   // legitimately scroll out of frame) is fine; a message that STRADDLES it is
   // the defect — the poster then opens mid-table or mid-sentence.
@@ -167,17 +94,21 @@ test('capture mobile hero poster', async ({ page }) => {
         `TOGETHER — see this file's header.`,
     );
   }
+  // The website supplies the real Play/Takeover control. Exclude its inert
+  // recorded counterpart while preserving exactly the guarded frame geometry.
+  const takeover = page.locator('.hero__take');
+  const takeoverBox = await takeover.boundingBox();
+  await takeover.evaluate((element) => { element.style.visibility = 'hidden'; });
+  await page.locator('hero-cursor').evaluate((element) => { element.style.visibility = 'hidden'; });
+  await expect(takeover).toBeHidden();
+  expect(await takeover.boundingBox()).toEqual(takeoverBox);
   const png = await page.screenshot({ type: 'png', fullPage: false });
-  // quality 40, not the 55 this used to ship at. Going from a 526-tall capture
-  // to 906 added ~72% more pixels and pushed q55 to 39,016 bytes, over the
-  // 36,000-byte assertion in apps/website/src/components/landing/HeroDemo.spec.tsx.
-  // Measured from one capture, single-encode: q55 39,050 / q50 37,880 /
-  // q45 36,394 / q40 34,094 / q35 32,264. q45 still misses the budget by ~400
-  // bytes; q40 clears it with ~1.9KB of headroom and is indistinguishable from
-  // q55 at 1:1 in the densest text (the table's monospace ids and s3 paths),
-  // let alone at the ~348 CSS px the poster is actually displayed at. Lower the
-  // quality before raising that budget: this poster is the LCP element on
-  // phones, and mobile autoplay was justified partly on LCP not regressing.
+  // A capture that crosses into the next prompt must not replace the asset.
+  expect(await page.locator('[data-hero-surface] textarea').inputValue()).toBe('');
+  expect(await page.locator('a2ui-surface').count()).toBe(0);
+  expect(await page.locator('[data-hero-surface] chat-message[data-role="user"]').count()).toBe(1);
+  // Quality 40 keeps this capture below the 36KB mobile poster budget.
+  // Inspect the text if a future capture needs a lower encoding quality.
   await sharp(png).resize({ width: SHIP_WIDTH }).webp({ quality: 40, effort: 6 }).toFile(OUT);
   console.log(`wrote ${OUT}`);
 });

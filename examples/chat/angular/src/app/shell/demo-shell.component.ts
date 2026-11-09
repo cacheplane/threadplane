@@ -4,6 +4,7 @@ import {
   DOCUMENT,
   DestroyRef,
   ElementRef,
+  afterNextRender,
   computed,
   effect,
   signal,
@@ -200,6 +201,22 @@ export class DemoShell {
 
   constructor() {
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const shell = host.querySelector<HTMLElement>('.demo-shell');
+      const toolbar = host.querySelector<HTMLElement>('.demo-shell__toolbar');
+      if (!shell || !toolbar) return;
+      // The toolbar wraps with the viewport and selected labels. Fixed
+      // navigation must clear its actual border box, including the divider.
+      const measure = () => shell.style.setProperty(
+        '--demo-toolbar-height', `${toolbar.getBoundingClientRect().height}px`,
+      );
+      measure();
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(measure);
+      observer.observe(toolbar, { box: 'border-box' });
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
     const viewport = host.ownerDocument.defaultView?.visualViewport;
     if (viewport) {
       const resize = () => {
@@ -456,6 +473,9 @@ export class DemoShell {
   /** Whether the threads drawer is open. Always starts closed on a fresh
    *  load — drawer mode is a transient UI state, not a persisted preference. */
   protected readonly drawerOpen = signal<boolean>(false);
+
+  /** Mobile-only disclosure; desktop settings stay visible through CSS. */
+  protected readonly settingsOpen = signal(false);
 
   /** Whether the Cmd+K search palette is open. */
   protected readonly paletteOpen = signal<boolean>(false);
