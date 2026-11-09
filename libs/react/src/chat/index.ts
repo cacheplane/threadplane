@@ -14,6 +14,7 @@ export {
   isTyping,
   type TypingIndicatorProps,
 } from './typing-indicator.js';
+export { resolveToolOutcome } from './tool-outcome.js';
 export {
   ToolActivity,
   ToolActivityGroup,

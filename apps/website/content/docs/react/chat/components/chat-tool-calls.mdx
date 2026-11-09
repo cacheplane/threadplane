@@ -55,7 +55,7 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 
 `MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel` for app-authored activity wording, or `groupRelatedTools={false}` to render separate activities. A custom `renderMessage` retains presentation ownership.
 
-While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
+While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. When some calls failed it reads **Used 4 tools · 1 failed**. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
 
 An explicit `ToolActivityGroup` `label` overrides the automatic summary wording. Omit it to follow the active call's human label.
 
@@ -81,6 +81,64 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
+
+## Declare a failed result
+
+A tool can finish delivery and still report that it failed.
+`lookup_flight` returns `{"error": "Flight UA999 not found in dataset"}` for an unknown flight, and the call still completes.
+By default the row stays complete, because the library does not guess what a payload means.
+
+Decode the tool's declared schema in `toolOutcome` and return `status: 'failed'` only for its declared error shape.
+
+```tsx
+import type { ToolActivityInfo, ToolActivityOutcome } from '@threadplane/react/chat';
+
+function toolOutcome(activity: ToolActivityInfo): ToolActivityOutcome | undefined {
+  if (activity.name !== 'lookup_flight' || !activity.resultText) return undefined;
+  try {
+    const result = JSON.parse(activity.resultText);
+    if (typeof result?.error === 'string') {
+      return { status: 'failed', text: result.error };
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+```
+
+A failed call shows as failed, its `text` becomes the error explanation, and the settled group reads **Used 3 tools · 1 failed**.
+Values such as `false`, `0`, `""`, `[]` and `null` are literal results, not failures.
+Returning `undefined` keeps the call as it was.
+Only a call that completed can be marked failed, so a running or stopped call is never rewritten.
+
+This changes what is shown, not what the model receives.
+The model still sees the original tool result.
+If a tool should tell the model that it failed, set the error flag your protocol provides on the tool message.
+The cost is that you maintain a decoder per tool, and a decoder that drifts from the tool's real schema shows the wrong state.
+`resolveToolOutcome(activity, outcome)` is exported if you render activities yourself and want the same resolution.
+
+## Add content to one call
+
+Pass `renderToolResult` to `MessageList` or `Chat` to add content to a single call's row, such as a retry button or a rich result.
+
+```tsx
+<Chat
+  agent={agent}
+  toolOutcome={toolOutcome}
+  renderToolResult={(activity) =>
+    activity.name === 'lookup_flight' && activity.phase === 'error' ? (
+      <button onClick={() => retryLookup(activity.id)}>Try another flight</button>
+    ) : null
+  }
+/>
+```
+
+The callback receives the resolved activity, after `toolOutcome` ran, so a declared failure arrives with `phase: 'error'`.
+Its content renders outside **Details** and is shown below a collapsed group.
+The slot only displays what you return.
+It does not run, approve or retry anything, so the handler you pass owns that work.
+Return `null` for calls that need nothing extra.
 
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
