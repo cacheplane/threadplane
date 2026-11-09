@@ -1073,7 +1073,13 @@ describe('ChatToolCallsComponent — app-declared tool failures and result slot'
       h.outcome = outcome;
     });
     const before = outcome.mock.calls.length;
+    const root = fixture.nativeElement as HTMLElement;
+    // Toggling a signal the template reads re-renders the OnPush view
+    // without changing the tool calls.
+    (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
     fixture.detectChanges();
+    expect(root.querySelector('.ctc__group-header')!.getAttribute('aria-expanded')).toBe('true');
+    (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(outcome.mock.calls.length).toBe(before);
   });
