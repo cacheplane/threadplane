@@ -36,6 +36,7 @@ import {
 } from '../../streaming/streaming-markdown.component';
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
 import type { ToolActivityInfo, ToolActivityOutcome } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
+import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-result-template.directive';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
@@ -286,6 +287,7 @@ export function isPinned(
             @let currentActivityTemplate = activityTemplate();
             @let currentExcludedToolNames = currentActivityTemplate ? [] : excludedToolNames();
             @let currentToolCallTemplates = currentActivityTemplate ? [] : toolCallTemplates();
+            @let currentToolResultTemplates = currentActivityTemplate ? [] : toolResultTemplates();
             @let currentGroupRelatedTools = groupRelatedTools();
             @let currentToolLabel = toolLabel();
             @let currentToolOutcome = toolOutcome();
@@ -346,6 +348,7 @@ export function isPinned(
                       [message]="message"
                       [excludeToolNames]="currentExcludedToolNames"
                       [toolCallTemplates]="currentToolCallTemplates"
+                      [toolResultTemplates]="currentToolResultTemplates"
                       [groupRelated]="currentGroupRelatedTools"
                       [toolLabel]="currentToolLabel"
                       [toolOutcome]="currentToolOutcome"
@@ -644,6 +647,12 @@ export class ChatComponent {
    * `activityTemplate` is present.
    */
   readonly toolCallTemplates = contentChildren(ChatToolCallTemplateDirective);
+  /**
+   * Per-tool-name result or action templates projected as
+   * `<ng-template chatToolResultTemplate>`, forwarded like `toolCallTemplates`.
+   * Unused while an `activityTemplate` is present.
+   */
+  readonly toolResultTemplates = contentChildren(ChatToolResultTemplateDirective);
   /** Group built-in tool rows across names per assistant message; false retains adjacent same-name grouping. */
   readonly groupRelatedTools = input(true);
   /** App-authored readable labels; technical names remain in Details. */
