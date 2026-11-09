@@ -240,7 +240,8 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
   writeFileSync(join(core, 'index.d.ts'), 'export interface Citation { readonly id: string; readonly index: number; readonly title?: string; readonly url?: string; readonly snippet?: string; readonly sourceType?: string; readonly publishedAt?: string; readonly iconUrl?: string; } export interface AgentError { readonly kind: "connection" | "auth" | "server" | "interrupted" | "aborted"; readonly message: string; readonly status?: number; readonly retryable: boolean; readonly recovery?: "retry" | "check" | "none"; readonly detail?: string; }');
   const content = join(consumer, 'node_modules/@threadplane/content');
   mkdirSync(content, { recursive: true });
-  writeFileSync(join(content, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './markdown': { types: './markdown.d.ts' } } }));
+  writeFileSync(join(content, 'package.json'), JSON.stringify({ name: '@threadplane/content', type: 'module', exports: { './markdown': { types: './markdown.d.ts' }, './messages': { types: './messages.d.ts' } } }));
+  writeFileSync(join(content, 'messages.d.ts'), 'export interface MessageRow { readonly id: string; }');
   writeFileSync(join(content, 'markdown.d.ts'), 'export interface MarkdownSnapshot { readonly root: null | { readonly citations: ReadonlyMap<string, unknown> }; }');
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: '@threadplane/react', type: 'module', exports: { './chat': { types: './chat.d.ts' } } }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
@@ -282,12 +283,13 @@ export type ScrollBubbleMode = 'streaming' | 'idle';
 export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
 export type ChatMessageRole = import('@threadplane/core').Role;
-export interface ChatMessageProps { readonly role: ChatMessageRole; readonly speaker?: string; readonly label?: string; readonly children?: import('react').ReactNode; readonly beforeContent?: import('react').ReactNode; readonly afterContent?: import('react').ReactNode; readonly controls?: import('react').ReactNode; readonly className?: string; }
+export interface ChatMessageProps { readonly role: ChatMessageRole; readonly current?: boolean; readonly streaming?: boolean; readonly speaker?: string; readonly label?: string; readonly children?: import('react').ReactNode; readonly beforeContent?: import('react').ReactNode; readonly afterContent?: import('react').ReactNode; readonly controls?: import('react').ReactNode; readonly className?: string; }
 export declare function ChatMessage(props: ChatMessageProps): unknown;
 export interface MessageListScrollControls { readonly pinned: boolean; readonly scrollToLatest: () => void; readonly focus: () => void; }
-export interface MessageListProps { readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
+export interface MessageListRowContext { readonly current: boolean; }
+export interface MessageListProps { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: MessageListRowContext) => import('react').ReactNode; readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
-export interface ChatProps { readonly onRetry?: () => void; }`;
+export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; }`;
   writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export type Role = "assistant" | "user" | "system" | "tool"; export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -301,6 +303,13 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
     ['readonly role: ChatMessageRole;', 'role: ChatMessageRole;'],
     ['readonly role: ChatMessageRole;', 'readonly role?: ChatMessageRole;'],
     ['readonly role: ChatMessageRole;', 'readonly role: any;'],
+    ...['current', 'streaming'].flatMap((flag) => [
+      [`readonly ${flag}?: boolean;`, `${flag}?: boolean;`],
+      [`readonly ${flag}?: boolean;`, `readonly ${flag}: boolean;`],
+      [`readonly ${flag}?: boolean;`, `readonly ${flag}?: string;`],
+      [`readonly ${flag}?: boolean;`, `readonly ${flag}?: any;`],
+      [`readonly ${flag}?: boolean;`, ''],
+    ]),
     ['readonly speaker?: string;', 'speaker?: string;'],
     ['readonly label?: string;', 'label?: string;'],
     ["readonly children?: import('react').ReactNode;", 'readonly children?: () => string;'],
@@ -325,6 +334,12 @@ export interface ChatProps { readonly onRetry?: () => void; }`;
   }
   for (const parameter of ['any', 'unknown', 'ChatMessageProps, extra: string'])
     assert.match(compile(declaration.replace('props: ChatMessageProps', `props: ${parameter}`)), /false.*true/);
+  for (const after of ['current: boolean;', 'readonly current?: boolean;', 'readonly current: string;', 'readonly current: any;', 'readonly current: boolean; readonly owner: object;']) {
+    assert.match(compile(declaration.replace('MessageListRowContext { readonly current: boolean;', `MessageListRowContext { ${after}`)), /false.*true/, after);
+  }
+  assert.match(compile(declaration.replace('export interface MessageListRowContext { readonly current: boolean; }', '')), /MessageListRowContext/);
+  assert.match(compile(declaration.replace(', context: MessageListRowContext', '')), /false.*true/);
+  assert.match(compile(declaration.replace("readonly renderMessage?: MessageListProps['renderMessage'];", "readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow) => import('react').ReactNode;")), /false.*true/);
   assert.match(compile(declaration.replaceAll('ChatMessageProps', 'MissingChatMessageProps')), /ChatMessageProps/);
   assert.match(compile(declaration.replace('export declare function ChatMessage(props: ChatMessageProps): unknown;', '')), /ChatMessage/);
   for (const role of ["'assistant'", 'any', 'string'])

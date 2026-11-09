@@ -28,7 +28,9 @@ export function Transcript({ rows }: { readonly rows: readonly MessageRow[] }) {
 }
 ~~~
 
-The default renderer displays role labels, Markdown, assistant reasoning, resolved sources, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row)` callback replaces that entire presentation; it must explicitly include anything you want to retain.
+The default renderer displays role labels, Markdown, assistant reasoning, resolved sources, and tool observations. Tool-role message content remains literal text. A stable `renderMessage(row, context)` callback replaces that entire presentation; it must explicitly include anything you want to retain. Existing one-argument callbacks remain compatible, and generic row inference preserves authored fields.
+
+The exported `MessageListRowContext` has one readonly boolean field, `current`. It is true exactly for the final supplied row, regardless of role. The default [ChatMessage](/docs/react/chat/components/chat-message) receives that flag and `streaming` from `row.message.delivery.phase === 'streaming'`; only a current streaming assistant shows a decorative caret. Historical streaming rows and final non-assistant rows have no caret. Appending, removing or reordering rows updates the positional flag. With unchanged row references and stable callbacks, unrelated historical rows retain memoized rendering. Custom rendering bypasses default labels, outcomes and Markdown work, and owns forwarding both flags.
 
 Default assistant rows pass their provider citations to inline Markdown references and merge Sources with the same accepted Markdown snapshot. Whole provider records win exact-ID collisions, including missing or blocked URLs; Markdown-only sources are included. Combined Sources use stable ascending index order. Metadata-only corrections update both views while preserving unchanged Markdown snapshots.
 

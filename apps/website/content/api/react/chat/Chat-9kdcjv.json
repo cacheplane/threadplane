@@ -54,7 +54,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 37
+        "line": 36
       },
       "overloadIndex": 1,
       "parameters": [
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 37
+    "line": 36
   }
 }

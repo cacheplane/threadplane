@@ -61,7 +61,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 14
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": true
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 13
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": true
@@ -135,7 +135,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 12
+            "line": 14
           },
           "isReadonly": true,
           "isOptional": true
@@ -171,7 +171,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 16
+            "line": 18
           },
           "isReadonly": true,
           "isOptional": true
@@ -208,7 +208,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 15
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "current",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#current:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly current?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 10
           },
           "isReadonly": true,
           "isOptional": true
@@ -244,7 +280,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 11
+            "line": 13
           },
           "isReadonly": true,
           "isOptional": true
@@ -318,7 +354,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-message.tsx",
-            "line": 10
+            "line": 12
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "streaming",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatMessageProps#streaming:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly streaming?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-message.tsx",
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": true

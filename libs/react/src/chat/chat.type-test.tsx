@@ -1,6 +1,7 @@
 import type { AgentSession } from '@threadplane/core';
 import { createMessageContent } from '@threadplane/content/messages';
 import { Chat, type ChatProps } from './index';
+import type { MessageListProps } from './index';
 declare const session: AgentSession;
 <Chat session={session} />;
 <Chat
@@ -37,6 +38,13 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B
   ? true
   : false;
 type Assert<T extends true> = T;
+export type RenderMessageContract = Assert<
+  Equal<ChatProps['renderMessage'], MessageListProps['renderMessage']>
+>;
+<Chat
+  session={session}
+  renderMessage={(row, context) => (context.current ? row.id : null)}
+/>;
 export type CompactContentContract = Assert<
   Equal<
     Pick<ChatSidenavProps, 'collapsedContent'>,

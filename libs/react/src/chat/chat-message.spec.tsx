@@ -7,6 +7,61 @@ import * as chat from './index';
 afterEach(cleanup);
 
 describe('ChatMessage', () => {
+  for (const role of ['assistant', 'user', 'system', 'tool'] as const) {
+    for (const current of [undefined, false, true]) {
+      for (const streaming of [undefined, false, true]) {
+        it(`gates the passive caret for ${role}/${current}/${streaming}`, () => {
+          const view = render(
+            <chat.ChatMessage
+              role={role}
+              current={current}
+              streaming={streaming}
+              beforeContent={<aside>Before</aside>}
+              afterContent={<aside>After</aside>}
+              controls={0}
+            >
+              <b>Body</b>
+            </chat.ChatMessage>
+          );
+          const article = view.getByRole('article');
+          expect(article.getAttribute('data-current')).toBe(
+            String(current ?? false)
+          );
+          expect(article.getAttribute('data-streaming')).toBe(
+            String(streaming ?? false)
+          );
+          const body = article.querySelector('.tp-chat-message__body')!;
+          const carets = article.querySelectorAll('.tp-chat-message__caret');
+          expect(carets).toHaveLength(
+            role === 'assistant' && current && streaming ? 1 : 0
+          );
+          if (carets.length) {
+            expect(body.lastElementChild).toBe(carets[0]);
+            expect(carets[0].previousElementSibling?.textContent).toBe('Body');
+            expect(carets[0].getAttribute('aria-hidden')).toBe('true');
+            expect(carets[0].tagName).toBe('SPAN');
+            expect(carets[0].textContent).toBe('');
+          }
+          expect(body.getAttribute('dir')).toBe('auto');
+          expect(body.previousElementSibling?.textContent).toBe('Before');
+          expect(body.nextElementSibling?.textContent).toBe('After');
+          expect(article.lastElementChild?.textContent).toBe('0');
+          expect(
+            article.querySelector('[aria-live],[role="status"],[role="alert"]')
+          ).toBeNull();
+        });
+      }
+    }
+  }
+  it('shows one empty caret for an empty current streaming assistant body', () => {
+    const view = render(
+      <chat.ChatMessage role="assistant" current streaming />
+    );
+    const body = view.container.querySelector('.tp-chat-message__body')!;
+    expect(body.children).toHaveLength(1);
+    expect(body.firstElementChild?.className).toBe('tp-chat-message__caret');
+    expect(body.textContent).toBe('');
+  });
   it('renders passive before/after content once as direct article children around only the text body', () => {
     const action = vi.fn();
     const view = render(

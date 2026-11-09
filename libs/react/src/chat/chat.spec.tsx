@@ -100,6 +100,23 @@ function rejection() {
 }
 
 describe('Chat', () => {
+  it('forwards the second renderer argument without changing session ownership', () => {
+    const { session, raw } = fakeSession({
+      messages: [assistant('a', 'A'), assistant('b', 'B')],
+    });
+    const renderMessage = vi.fn((row, context) => (
+      <p>
+        {row.id}:{String(context.current)}
+      </p>
+    ));
+    const view = render(
+      <Chat session={session} renderMessage={renderMessage} />
+    );
+    expect(view.getByText('a:false')).toBeTruthy();
+    expect(view.getByText('b:true')).toBeTruthy();
+    expect(raw.submit).not.toHaveBeenCalled();
+    expect(raw.dispose).not.toHaveBeenCalled();
+  });
   it('offers a latest action from existing status without commands or draft changes and focuses only on activation', () => {
     const { session, raw, set } = fakeSession({
       messages: [assistant('a', 'Answer')],

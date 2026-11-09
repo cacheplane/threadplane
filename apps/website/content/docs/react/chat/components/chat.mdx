@@ -40,6 +40,8 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 
 Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
 
+`renderMessage` uses `MessageListProps['renderMessage']` and forwards `(row, context)` unchanged. The exported readonly `MessageListRowContext.current` is true only for the final supplied row. One-argument callbacks remain compatible. A custom renderer owns its presentation, including forwarding `current` and delivery-derived `streaming` to [ChatMessage](/docs/react/chat/components/chat-message). Default rows show a caret only for a current streaming assistant; all complete delivery outcomes remove it.
+
 The default [TypingIndicator](/docs/react/chat/components/typing-indicator) uses the same snapshot and subscription. It shows while running with no messages, a last user message, or an empty last assistant message; it hides on the first assistant text, including whitespace, or a last tool/system message. The polite status label appears after the transcript and before error/composer. Use explicit composition with `announce={false}` when your application already announces submission progress.
 
 When the reader scrolls upward, [ScrollBubble](/docs/react/chat/components/scroll-bubble) offers **Scroll to latest**. Its mode comes from the same snapshot status. Only an explicit activation scrolls and focuses the transcript; the existing MessageList remains the scroll owner. Token growth while unpinned preserves reader position and focus. No new Chat props, session reads, or subscriptions are required.

@@ -336,6 +336,28 @@ test('installed React checkpoint timeline inspects loaded occurrences through a 
       page.getByText('Response in progress…', { exact: true })
     ).toBeVisible();
     const activeDraft = await draft.inputValue();
+    const current = transcript.locator('article[data-current="true"]');
+    await expect(current).toHaveAttribute('data-streaming', 'true');
+    const caret = transcript.locator('.tp-chat-message__caret');
+    await expect(caret).toHaveCount(1);
+    const currentMarkdown = await current
+      .locator('.tp-markdown')
+      .elementHandle();
+    assert.ok(currentMarkdown);
+    // Prepare the only expected completion changes before releasing the stream.
+    // All other transcript markup and the retained Markdown node must survive.
+    const completedTranscript = await transcript.evaluate((element) => {
+      const expected = element.cloneNode(true) as HTMLElement;
+      const streaming = expected.querySelector(
+        'article[data-current="true"][data-streaming="true"]'
+      );
+      const indicator = streaming?.querySelector('.tp-chat-message__caret');
+      if (!streaming || !indicator)
+        throw new Error('Current streaming assistant and caret required');
+      streaming.setAttribute('data-streaming', 'false');
+      indicator.remove();
+      return expected.innerHTML;
+    });
     retainedTranscript = await transcript.innerHTML();
     await toggle.click();
     await expect(selected).toContainText(
@@ -356,6 +378,16 @@ test('installed React checkpoint timeline inspects loaded occurrences through a 
     ).toBeVisible();
     await expect(draft).toBeEnabled();
     await expect(transcript).toContainText('New timeline answer');
+    await expect(current).toHaveAttribute('data-streaming', 'false');
+    await expect(caret).toHaveCount(0);
+    expect(
+      await currentMarkdown.evaluate(
+        (node) =>
+          node ===
+          document.querySelector('article[data-current="true"] .tp-markdown')
+      )
+    ).toBe(true);
+    retainedTranscript = completedTranscript;
     await retained(activeDraft, 4);
     await page
       .getByRole('button', { name: 'Conversation B', exact: true })

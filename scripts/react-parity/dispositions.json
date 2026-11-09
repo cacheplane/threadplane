@@ -2306,7 +2306,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message/owned-markdown-body.component.ts#OwnedMarkdownBodyComponent",
@@ -5456,7 +5456,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageListComponent",
@@ -14498,6 +14498,16 @@
       "note": "Concrete authored rows and correlated tool contracts pass source and installed declaration checks; unchanged enriched rows stay memoized. Native React production scroll evidence covers pinning, scroll-up, title refresh and selection reset. Chat composition is verified in chat.spec. SSR and publication remain incomplete."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageListRowContext",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Readonly positional current context reaches stable custom renderers and Chat while primitive memo-row props preserve historical rendering. Previous-role behavior, automatic control reveal and full T23 parity remain deferred."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageListProps",
       "taskIds": [
         "T22",
@@ -17920,7 +17930,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessage",
@@ -17930,7 +17940,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessageProps",
@@ -17940,7 +17950,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatMessageRole",
@@ -17950,7 +17960,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     },
     {
       "id": "source:libs/react/src/chat/chat-message.tsx",
@@ -17960,7 +17970,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/chat-message.tsx",
-      "reason": "Eight readonly props compose a passive role article, literal speaker/label, independently directed text body, before/after content preserving surrounding chrome direction, and consumer-owned controls in default MessageList and native React. Current/streaming/caret behavior and full ChatMessage/T23 parity remain deferred."
+      "reason": "Ten readonly props compose a passive role article with a current streaming assistant caret inside the independently directed body, before/after rich chrome and consumer-owned controls. MessageList supplies readonly positional context to stable custom renderers and Chat forwards that contract. Previous-role behavior, automatic control reveal and full ChatMessage/T23 parity remain deferred."
     }
   ]
 }

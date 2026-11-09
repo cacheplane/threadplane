@@ -23,6 +23,7 @@ import {
   ToolObservation,
   TypingIndicator,
   isTyping,
+  type MessageListRowContext,
 } from '@threadplane/react/chat';
 import type {
   ReactApplication as Application,
@@ -60,10 +61,18 @@ type Presentation = 'page' | 'popup' | 'sidebar' | 'sidenav';
 const literal = (value: unknown) =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
-const Message = memo(function Message({ row }: { row: MessageContent }) {
+const Message = memo(function Message({
+  row,
+  current,
+}: {
+  row: MessageContent;
+  current: boolean;
+}) {
   return (
     <ChatMessage
       role={row.role}
+      current={current}
+      streaming={row.message.delivery.phase === 'streaming'}
       className={`message message-${row.role}`}
       label={`${row.role} message`}
       beforeContent={
@@ -132,7 +141,9 @@ const Message = memo(function Message({ row }: { row: MessageContent }) {
   );
 });
 
-const renderMessage = (row: MessageContent) => <Message row={row} />;
+const renderMessage = (row: MessageContent, context: MessageListRowContext) => (
+  <Message row={row} current={context.current} />
+);
 
 function ConversationSurface({
   presentation,

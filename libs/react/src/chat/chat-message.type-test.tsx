@@ -17,6 +17,8 @@ export type PropsContract = Assert<
     ChatMessageProps,
     {
       readonly role: Role;
+      readonly current?: boolean;
+      readonly streaming?: boolean;
       readonly speaker?: string;
       readonly label?: string;
       readonly children?: ReactNode;
@@ -31,6 +33,14 @@ export type ParameterContract = Assert<
   Equal<Parameters<typeof ChatMessage>, [ChatMessageProps]>
 >;
 const props: ChatMessageProps = { role: 'assistant' };
+// @ts-expect-error Props are readonly.
+props.current = true;
+// @ts-expect-error Props are readonly.
+props.streaming = true;
+// @ts-expect-error Current must be boolean.
+<ChatMessage role="assistant" current="true" />;
+// @ts-expect-error Streaming must be boolean.
+<ChatMessage role="assistant" streaming={1} />;
 // @ts-expect-error Role is required.
 const missing: ChatMessageProps = {};
 // @ts-expect-error Props are readonly.
