@@ -51,6 +51,11 @@
   min-height: 100%;
 }
 
+/* Preserve native disclosure state without adding a box around the article. */
+.docs-disclosure-handoff {
+  display: contents;
+}
+
 /* The global nav remains fixed above the unified workspace. The host owns the
  * remaining viewport, including footer suppression and the single scroll root
  * inside the active workspace panel. */
