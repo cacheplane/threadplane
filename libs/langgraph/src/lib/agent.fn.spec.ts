@@ -809,6 +809,46 @@ describe('agent', () => {
     expect(ref.getToolCalls(ref.langGraphMessages()[0] as CoreAIMessage)).toHaveLength(1);
   });
 
+  it('toolCalls() maps a tool message with status error to a failed call carrying its content', async () => {
+    const transport = new MockAgentTransport();
+    const ref = withInjectionContext(() =>
+      agent({ apiUrl: '', assistantId: 'a', transport, throttle: false })
+    );
+
+    ref.submit({ message: 'hello' });
+    transport.emit([{
+      type: 'messages',
+      messages: [
+        {
+          id: 'ai-1',
+          type: 'ai',
+          content: '',
+          tool_calls: [{ id: 'call-1', name: 'lookup_flight', args: { flight_number: 'UA999' } }],
+        },
+        {
+          id: 'tool-1',
+          type: 'tool',
+          tool_call_id: 'call-1',
+          content: 'Flight UA999 not found',
+          status: 'error',
+        },
+      ],
+    } satisfies StreamEvent]);
+    transport.close();
+    await new Promise(r => setTimeout(r, 20));
+
+    expect(ref.toolCalls()).toEqual([
+      {
+        id: 'call-1',
+        name: 'lookup_flight',
+        args: { flight_number: 'UA999' },
+        status: 'error',
+        result: 'Flight UA999 not found',
+        error: 'Flight UA999 not found',
+      },
+    ]);
+  });
+
   it('getMessagesMetadata() returns stream metadata captured from message tuples', async () => {
     const transport = new MockAgentTransport();
     const ref = withInjectionContext(() =>
