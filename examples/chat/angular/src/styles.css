@@ -26,59 +26,10 @@ html, body {
 html {
   --demo-page-bg: #0f1116;
   --demo-page-text: #e6e9ef;
-  /* Demo-owned controls follow the website palette without changing chat or
-   * generated content themes. Portaled toolbar menus inherit these too. */
-  --demo-control-bg: #15253e;
-  --demo-control-surface: #20314a;
-  --demo-control-text: #edf2fa;
-  --demo-control-muted: #b7c2d3;
-  --demo-control-border: #42526a;
-  --demo-control-focus: #f6c453;
-  --demo-control-yellow: #f6c453;
-  --demo-control-ink: #102747;
-  --demo-control-selected-bg: #3c3422;
-  --demo-control-selected-text: #ffda79;
 }
 html[data-color-scheme="light"] {
   --demo-page-bg: #ffffff;
   --demo-page-text: #1c1c1c;
-  --demo-control-bg: #ffffff;
-  --demo-control-surface: #f6f7f9;
-  --demo-control-text: #102747;
-  --demo-control-muted: #536174;
-  --demo-control-border: #dce1e8;
-  --demo-control-focus: #102747;
-  --demo-control-selected-bg: #fff4d6;
-  --demo-control-selected-text: #102747;
-}
-
-/* Toolbar selects use the library's connected portal unchanged. This class
- * is assigned only by DemoShell, so chat composer menus retain their theme. */
-.demo-controls-menu.chat-select__overlay .chat-select__menu {
-  min-width: min(200px, calc(100vw - 32px));
-  max-width: calc(100vw - 32px);
-  border-color: var(--demo-control-border);
-  background: var(--demo-control-bg);
-  color: var(--demo-control-text);
-  overscroll-behavior: contain;
-}
-.demo-controls-menu.chat-select__overlay .chat-select__option {
-  min-height: 44px;
-  justify-content: center;
-  color: var(--demo-control-text);
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-.demo-controls-menu.chat-select__overlay .chat-select__option:is(:hover, :focus-visible) {
-  background: var(--demo-control-surface);
-}
-.demo-controls-menu.chat-select__overlay .chat-select__option.is-active {
-  background: var(--demo-control-selected-bg);
-  color: var(--demo-control-selected-text);
-}
-.demo-controls-menu.chat-select__overlay .chat-select__option:focus-visible {
-  outline: 2px solid var(--demo-control-focus);
-  outline-offset: -2px;
 }
 
 /*

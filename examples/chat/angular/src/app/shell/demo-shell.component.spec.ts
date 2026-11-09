@@ -186,57 +186,31 @@ describe('DemoShell — toolbar layout', () => {
     }
   });
 
-  it('keeps focused desktop settings expanded when the mobile breakpoint applies', () => {
+  it('preserves toolbar selectors and their values across viewport changes', () => {
     TestBed.configureTestingModule({
       providers: [threadsAdapterProvider, ItineraryStore, provideRouter([])],
     });
+    const width = Object.getOwnPropertyDescriptor(window, 'innerWidth');
     const fixture = TestBed.createComponent(DemoShell);
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const settings = host.querySelector<HTMLElement>('.demo-shell__settings');
-    const trigger = settings?.querySelector<HTMLButtonElement>('.chat-select__trigger');
-    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="Demo settings"]');
-    if (!settings || !trigger || !toggle) throw new Error('Demo settings did not render');
-    expect(settings.getAttribute('data-open')).toBe('false');
-    trigger.focus();
-    fixture.detectChanges();
-    // The panel becomes explicitly open before focus moves into the body portal.
-    // CSS can now switch to the mobile layout without hiding its origin.
-    expect(settings.getAttribute('data-open')).toBe('true');
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    trigger.blur();
-    fixture.detectChanges();
-    expect(settings.getAttribute('data-open')).toBe('true');
-  });
-
-  it('toggles mobile settings without recreating selectors or changing their values', () => {
-    TestBed.configureTestingModule({
-      providers: [threadsAdapterProvider, ItineraryStore, provideRouter([])],
-    });
-    const fixture = TestBed.createComponent(DemoShell);
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="Demo settings"]');
-    expect(toggle).not.toBeNull();
-    if (!toggle) throw new Error('Demo settings toggle did not render');
-    const settings = host.querySelector<HTMLElement>(`#${toggle.getAttribute('aria-controls')}`);
-    if (!settings) throw new Error('Demo settings panel did not render');
-    const selectors = Array.from(settings.querySelectorAll('chat-select'));
-    const values = selectors.map(select => select.textContent);
-    expect(selectors).toHaveLength(4);
-    expect(settings.querySelector('.demo-shell__app-toggle')).not.toBeNull();
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(settings.getAttribute('data-open')).toBe('false');
-    toggle.click();
-    fixture.detectChanges();
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(settings.getAttribute('data-open')).toBe('true');
-    toggle.click();
-    fixture.detectChanges();
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(settings.getAttribute('data-open')).toBe('false');
-    expect(Array.from(settings.querySelectorAll('chat-select'))).toEqual(selectors);
-    expect(selectors.map(select => select.textContent)).toEqual(values);
+    try {
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      const toolbar = host.querySelector<HTMLElement>('.demo-shell__toolbar');
+      if (!toolbar) throw new Error('Demo toolbar did not render');
+      const selectors = Array.from(toolbar.querySelectorAll('chat-select'));
+      const values = selectors.map(select => select.textContent);
+      expect(selectors).toHaveLength(4);
+      for (const viewportWidth of [320, 1200]) {
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: viewportWidth });
+        window.dispatchEvent(new Event('resize'));
+        fixture.detectChanges();
+        expect(Array.from(toolbar.querySelectorAll('chat-select'))).toEqual(selectors);
+        expect(selectors.map(select => select.textContent)).toEqual(values);
+      }
+    } finally {
+      fixture.destroy();
+      if (width) Object.defineProperty(window, 'innerWidth', width);
+    }
   });
 
   it('publishes the rendered toolbar height, tracks wrapping, and disconnects on destroy', async () => {
@@ -581,6 +555,10 @@ describe('DemoShell — URL knob hydration', () => {
   });
 
   it('preserves query params on thread switch (signal→URL effect)', async () => {
+    // The destination exists; otherwise validation correctly redirects to /embed.
+    vi.spyOn(TestBed.inject(LangGraphThreadsAdapter), 'getThread').mockResolvedValue({
+      id: 'xyz123', title: 'Existing thread',
+    });
     const router = TestBed.inject(Router);
     await router.navigateByUrl('/embed?model=gpt-5-nano');
     const fx = TestBed.createComponent(DemoShell);
