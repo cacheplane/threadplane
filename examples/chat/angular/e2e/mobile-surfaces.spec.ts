@@ -68,12 +68,20 @@ test('mobile settings preserve the selected theme and leave room for conversatio
     .toBe(true);
 });
 
-for (const width of [320, 390]) {
-  test(`mobile popup promo keeps its image and complete caption at ${width}px`, async ({
+for (const { width, blockIconFont } of [
+  { width: 320, blockIconFont: false },
+  { width: 390, blockIconFont: false },
+  { width: 320, blockIconFont: true },
+]) {
+  test(`mobile popup promo keeps its image and complete caption at ${width}px${blockIconFont ? ' without the icon font' : ''}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 640 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    if (blockIconFont) {
+      await page.route('https://fonts.googleapis.com/**', route => route.abort());
+      await page.route('https://fonts.gstatic.com/**', route => route.abort());
+    }
     await openDemo(page, '/popup');
     const promo = page.locator('app-mode-promo .promo');
     await expect(promo).toBeVisible();
@@ -126,6 +134,11 @@ for (const width of [320, 390]) {
     await action.scrollIntoViewIfNeeded();
     const actionBox = await action.boundingBox();
     if (!actionBox) throw new Error('Promo action has no visible bounds');
+    const actionContainer = await promo.locator('.promo__action').boundingBox();
+    if (!actionContainer) throw new Error('Promo action container has no visible bounds');
+    expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(
+      actionContainer.x + actionContainer.width
+    );
     expect(actionBox.height).toBeGreaterThanOrEqual(44);
     expect(actionBox.y).toBeGreaterThanOrEqual(0);
     expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(640);

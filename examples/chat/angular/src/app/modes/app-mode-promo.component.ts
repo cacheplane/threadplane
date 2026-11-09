@@ -46,9 +46,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
             [attr.title]="hasMapsKey() ? null : 'Set GOOGLE_MAPS_API_KEY to enable'"
             (click)="enable.emit()"
           >
-            <span class="promo__icon" aria-hidden="true">map</span>
-            Enable app mode
-            <span class="promo__icon" aria-hidden="true">arrow_forward</span>
+            <svg class="promo__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z" />
+              <path d="M9 3v15M15 6v15" />
+            </svg>
+            <span class="promo__cta-label">Enable app mode</span>
+            <svg class="promo__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" />
+            </svg>
           </button>
           @if (!hasMapsKey()) {
             <p class="promo__note">Set <code>GOOGLE_MAPS_API_KEY</code> to enable</p>
@@ -94,11 +99,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     .promo__action { min-width: 0; max-width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .promo__cta {
       display: inline-flex; align-items: center; gap: 8px;
+      box-sizing: border-box; max-width: 100%;
       min-height: 44px;
       background: var(--demo-control-yellow); color: var(--demo-control-ink);
       border: none; font: inherit; font-size: 14px; font-weight: 600;
       padding: 11px 18px; border-radius: 8px; cursor: pointer;
     }
+    .promo__cta-icon { width: 18px; height: 18px; flex: 0 0 18px; }
+    .promo__cta-label { min-width: 0; overflow-wrap: anywhere; }
     .promo__cta:disabled { opacity: 0.5; cursor: not-allowed; }
     .promo__cta:focus-visible { outline: 2px solid var(--demo-control-focus); outline-offset: 2px; }
     .promo__cta:hover:not(:disabled) { filter: brightness(1.08); }
