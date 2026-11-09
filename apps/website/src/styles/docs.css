@@ -1927,7 +1927,7 @@ body:has([data-website-workspace-host]) [data-site-navigation] {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--color-accent);
   font: inherit;
   font-size: 14px;
