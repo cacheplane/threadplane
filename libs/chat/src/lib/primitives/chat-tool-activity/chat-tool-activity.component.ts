@@ -11,7 +11,7 @@ import {
   outcomeSources,
   type ToolActivityOutcome,
 } from './tool-outcome';
-import { activitySummary } from './activity-summary';
+import { activitySummary, failureSummaries } from './activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
 export type { ToolActivityOutcome, ToolActivitySource } from './tool-outcome';
 
@@ -251,9 +251,13 @@ export class ChatToolActivityComponent {
     </p>
     <chat-tool-outcomes [activities]="activities()" />
     } @if (failed()) {
-    <p role="alert" class="tp-tool-activity__error">
-      Some tools could not finish. Check Details before retrying.
-    </p>
+    <div role="alert" class="tp-tool-activity__error">
+      @for (text of failureSummaries(); track text) {
+      <p>{{ text }}</p>
+      } @empty {
+      <p>Some tools could not finish. Check Details before retrying.</p>
+      }
+    </div>
     }
     <ng-content />
   </section>`,
@@ -270,6 +274,9 @@ export class ChatToolActivityGroupComponent {
   );
   readonly failed = computed(() =>
     this.activities().some((item) => item.phase === 'error')
+  );
+  readonly failureSummaries = computed(() =>
+    failureSummaries(this.activities())
   );
   readonly phase = computed(() => this.summary().phase);
   readonly phaseLabel = computed(() => labels[this.phase()]);

@@ -24,7 +24,7 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from '../chat-tool-activity/chat-tool-activity.component';
-import { activitySummary } from '../chat-tool-activity/activity-summary';
+import { activitySummary, failureSummaries } from '../chat-tool-activity/activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from '../chat-tool-activity/activity-summary-styles';
 
 interface Group {
@@ -175,9 +175,13 @@ let nextChatToolCallsId = 0;
       <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
       }
       @if (summary.phase === 'error') {
-      <p role="alert">
-        Some tools could not finish. Check Details before retrying.
-      </p>
+      <div role="alert" class="tp-tool-activity__error">
+        @for (text of failureSummariesFor(group.calls); track text) {
+        <p>{{ text }}</p>
+        } @empty {
+        <p>Some tools could not finish. Check Details before retrying.</p>
+        }
+      </div>
       }
     } @else if (group.templateRef) { @for (tc of group.calls; track tc.id) {
     <ng-container
@@ -387,6 +391,9 @@ export class ChatToolCallsComponent {
       errorText: tc.error === undefined ? undefined : literal(tc.error),
     };
     return { ...activity, outcome: this.toolOutcome()?.(activity) };
+  }
+  protected failureSummariesFor(calls: readonly ToolCall[]): readonly string[] {
+    return failureSummaries(this.activitiesFor(calls));
   }
   protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map((call) => this.activityFor(call)); }
 }

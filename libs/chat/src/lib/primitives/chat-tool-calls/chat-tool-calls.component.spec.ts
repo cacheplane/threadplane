@@ -767,6 +767,34 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
       false
     );
   });
+  it('renders the generic failure copy as a div alert with one paragraph in the inline group alert', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput(
+      'agent',
+      mockAgent({
+        toolCalls: [
+          { id: 'a', name: 'read', status: 'complete', args: {} },
+          { id: 'b', name: 'save', status: 'error', args: {}, error: 'private' },
+        ],
+      })
+    );
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    // The failed member also renders its own <p role="alert">; the group
+    // alert is the sole block-level alert outside Details.
+    const alerts = Array.from(
+      root.querySelectorAll<HTMLElement>('[role="alert"]')
+    ).filter((el) => el.closest('details') === null && el.tagName === 'DIV');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent!.trim())
+    ).toEqual(['Some tools could not finish. Check Details before retrying.']);
+    expect(root.querySelector('.ctc__group-header')!.textContent).toContain(
+      'Used 2 tools · 1 failed'
+    );
+  });
   it('keeps an error-only diagnostic in Details and a safe failure outside', () => {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);

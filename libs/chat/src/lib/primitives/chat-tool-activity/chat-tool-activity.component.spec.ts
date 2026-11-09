@@ -11,6 +11,7 @@ import {
 } from './chat-tool-activity.component';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Shared readonly Angular/React test conformance data, excluded from production packages.
 import { phases } from '../../../../../../fixtures/tool-activity/phases';
+import { activitySummary } from './activity-summary';
 import { confirmedOutcomes, outcomeSources, resolveToolOutcome } from './tool-outcome';
 @Component({
   standalone: true,
@@ -41,7 +42,7 @@ describe('tool activity', () => {
     ['stopped', 'Tool activity stopped'],
     ['unknown', 'Tool status unavailable'],
     ['complete', 'Used 1 tool'],
-    ['error', 'Tool activity failed'],
+    ['error', 'Used 1 tool · 1 failed'],
   ] as const)('summarizes %s in one collapsed row', (phase, expected) => {
     const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
     fixture.componentRef.setInput('activities', [
@@ -374,5 +375,72 @@ describe('resolveToolOutcome', () => {
       outcome: { text: 'ok', sources: [{ title: 'B', url: 'https://example.com/b' }] },
     };
     expect(outcomeSources([errored])).toEqual([]);
+  });
+});
+
+describe('settled failure copy', () => {
+  function renderGroup(activities: readonly ToolActivityInfo[]): HTMLElement {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', activities);
+    fixture.detectChanges();
+    return fixture.nativeElement;
+  }
+  function outerAlerts(root: HTMLElement): HTMLElement[] {
+    return Array.from(root.querySelectorAll<HTMLElement>('[role="alert"]')).filter(
+      (el) => el.closest('details') === null
+    );
+  }
+  it('labels a settled mixed group with its failure count', () => {
+    const s = activitySummary([
+      { id: 'a', name: 't', phase: 'complete' },
+      { id: 'b', name: 't', phase: 'error' },
+    ]);
+    expect(s.label).toBe('Used 2 tools · 1 failed');
+    expect(s.status).toBe('Used 2 tools · 1 failed. 1 complete · 1 failed.');
+  });
+  it('keeps the failed label while work is still waiting', () => {
+    expect(
+      activitySummary([
+        { id: 'a', name: 't', phase: 'error' },
+        { id: 'b', name: 't', phase: 'waiting' },
+      ]).label
+    ).toBe('Tool activity failed');
+  });
+  it('uses a single-tool noun', () => {
+    expect(
+      activitySummary([{ id: 'a', name: 't', phase: 'error' }]).label
+    ).toBe('Used 1 tool · 1 failed');
+  });
+  it('lets an app caption win and still cues Failed', () => {
+    const s = activitySummary(
+      [{ id: 'a', name: 't', phase: 'error' }],
+      'Reading references'
+    );
+    expect(s.label).toBe('Reading references');
+    expect(s.cue).toContain('Failed');
+  });
+  it('shows de-duplicated failure copy in the group alert', () => {
+    const root = renderGroup([
+      { id: 'a', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+      { id: 'b', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+    ]);
+    const alerts = outerAlerts(root);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].tagName).toBe('DIV');
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent)
+    ).toEqual(['Reference B is unavailable.']);
+    expect(root.textContent).not.toContain('Some tools could not finish');
+  });
+  it('falls back to the generic group alert when no summary exists', () => {
+    const root = renderGroup([{ id: 'a', name: 't', phase: 'error' }]);
+    const alerts = outerAlerts(root);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].tagName).toBe('DIV');
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent!.trim())
+    ).toEqual(['Some tools could not finish. Check Details before retrying.']);
   });
 });

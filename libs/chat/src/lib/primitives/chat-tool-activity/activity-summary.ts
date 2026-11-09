@@ -31,6 +31,7 @@ export function activitySummary(
     : activities.length && activities.every((item) => item.phase === 'complete')
     ? 'complete'
     : 'unknown';
+  const settled = !has('running') && !has('waiting') && !has('pending');
   const automatic = active
     ? activities
         .find((item) => item.phase === 'running' && item.label?.trim())
@@ -38,7 +39,11 @@ export function activitySummary(
     : phase === 'complete'
     ? `Used ${activities.length} ${activities.length === 1 ? 'tool' : 'tools'}`
     : phase === 'error'
-    ? 'Tool activity failed'
+    ? settled
+      ? `Used ${activities.length} ${
+          activities.length === 1 ? 'tool' : 'tools'
+        } · ${activities.filter((item) => item.phase === 'error').length} failed`
+      : 'Tool activity failed'
     : phase === 'waiting'
     ? 'Tool activity paused'
     : phase === 'pending'
@@ -67,4 +72,17 @@ export function activitySummary(
     phase,
     status: `${label}. ${activityProgress(activities)}.`,
   };
+}
+
+/** De-duplicated app-safe failure copy of errored activities, in order. */
+export function failureSummaries(
+  activities: readonly ToolActivityInfo[]
+): readonly string[] {
+  return [
+    ...new Set(
+      activities.flatMap((item) =>
+        item.phase === 'error' && item.errorSummary ? [item.errorSummary] : []
+      )
+    ),
+  ];
 }
