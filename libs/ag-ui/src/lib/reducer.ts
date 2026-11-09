@@ -427,15 +427,19 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           for (const tc of m.toolCalls) {
             ids.push(tc.id);
             const failure = toolMessageErrors.get(tc.id);
-            const failed = failure ? toolResultFromContent(failure.content) : undefined;
-            snapshotToolCalls.push({
-              id: tc.id,
-              name: tc.function.name,
-              args: safeParseArgs(tc.function.arguments),
-              ...(failure && failed
-                ? { status: 'error', error: failure.error, result: failed.result, ...(failed.parts ? { parts: failed.parts } : {}) }
-                : { status: 'complete' }),
-            } as ToolCall);
+            const base = { id: tc.id, name: tc.function.name, args: safeParseArgs(tc.function.arguments) };
+            if (failure) {
+              const { result, parts } = toolResultFromContent(failure.content);
+              snapshotToolCalls.push({
+                ...base,
+                status: 'error',
+                error: failure.error,
+                result,
+                ...(parts ? { parts } : {}),
+              });
+            } else {
+              snapshotToolCalls.push({ ...base, status: 'complete' });
+            }
           }
           const { toolCalls: _dropped, ...rest } = m;
           // A tool-call-only assistant message may carry no content on the
@@ -497,7 +501,7 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
             ? prev.map((tc) => {
                 const failure = failures.get(tc.id);
                 return failure && tc.status !== 'error'
-                  ? { ...tc, status: 'error' as const, error: failure.error, result: failure.result ?? tc.result }
+                  ? { ...tc, status: 'error' as const, error: failure.error, result: failure.result ?? tc.result, ...(failure.parts ? { parts: failure.parts } : {}) }
                   : tc;
               })
             : prev;
