@@ -1,11 +1,12 @@
 <div class="demo-shell">
-  <div class="demo-shell__toolbar" role="toolbar" aria-label="Demo controls">
+  <div class="demo-shell__toolbar" role="toolbar" aria-label="Demo controls" [attr.inert]="conversationModalOpen() ? '' : null">
     <div class="demo-shell__navigation">
-      @if (sidenavMode() === 'drawer' && !drawerOpen()) {
+      @if (sidenavMode() === 'drawer') {
         <button
           type="button"
           class="demo-shell__hamburger"
           aria-label="Open conversations"
+          aria-controls="demo-conversations"
           [attr.aria-expanded]="drawerOpen()"
           (click)="toggleSidenav()"
         >☰</button>
@@ -102,9 +103,16 @@
 
   <chat-sidenav-scrim
     [open]="sidenavMode() === 'drawer' && drawerOpen()"
+    [attr.inert]="paletteOpen() ? '' : null"
     (dismiss)="drawerOpen.set(false)"
   />
   <chat-sidenav
+    id="demo-conversations"
+    [attr.inert]="(sidenavMode() === 'drawer' && !drawerOpen()) || paletteOpen() ? '' : null"
+    [attr.role]="drawerModalOpen() ? 'dialog' : null"
+    [attr.aria-modal]="drawerModalOpen() ? 'true' : null"
+    [attr.aria-label]="drawerModalOpen() ? 'Conversations' : null"
+    [cdkTrapFocus]="drawerModalOpen()"
     [threads]="visibleThreads()"
     [archivedThreads]="threadsSvc.archivedThreads()"
     [projects]="projectsSvc.projects()"
@@ -120,7 +128,7 @@
     (threadSelected)="onThreadSelected($event)"
     (projectSelected)="onProjectSelected($event)"
     (newProjectRequested)="onNewProjectClicked()"
-    (searchOpened)="paletteOpen.set(true)"
+    (searchOpened)="onSearchOpened()"
     (openChange)="onSidenavOpenChange($event)"
     (modeChange)="onSidenavModeChange($event)"
   >
@@ -152,7 +160,7 @@
   </chat-sidenav>
 
   @if (appMode() === 'on') {
-    <div class="demo-shell__app-body">
+    <div class="demo-shell__app-body" [attr.inert]="conversationModalOpen() ? '' : null">
       <!-- Sidebar mode renders the map inside the chat-sidebar's flex content
            slot (see SidebarMode, Task 12). Popup mode has no content slot, so
            the map is the full-bleed backdrop here, with the chat bubble
@@ -168,6 +176,7 @@
   } @else {
     <div
       class="demo-shell__main"
+      [attr.inert]="conversationModalOpen() ? '' : null"
       [attr.data-sidenav-mode]="sidenavMode() !== 'drawer' ? sidenavMode() : null"
     >
       <router-outlet />
@@ -175,6 +184,8 @@
   }
 
   <chat-history-search-palette
+    [cdkTrapFocus]="paletteOpen()"
+    (keydown.escape)="paletteOpen.set(false)"
     [(open)]="paletteOpen"
     [(query)]="searchQuery"
     [results]="searchResults()"

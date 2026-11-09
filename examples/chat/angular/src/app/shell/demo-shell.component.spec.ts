@@ -138,6 +138,54 @@ describe('DemoShell — mode signal', () => {
 });
 
 describe('DemoShell — toolbar layout', () => {
+  it('limits modal semantics to the active drawer or search and clears drawer state on desktop', () => {
+    const width = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 320 });
+    TestBed.configureTestingModule({
+      providers: [threadsAdapterProvider, ItineraryStore, provideRouter([])],
+    });
+    const fixture = TestBed.createComponent(DemoShell);
+    const component = fixture.componentInstance as unknown as {
+      drawerOpen: ReturnType<typeof signal<boolean>>;
+      paletteOpen: ReturnType<typeof signal<boolean>>;
+    };
+    try {
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      const drawer = host.querySelector('chat-sidenav');
+      const toolbar = host.querySelector('.demo-shell__toolbar');
+      const launcher = host.querySelector('.demo-shell__hamburger');
+      if (!drawer || !toolbar || !launcher) throw new Error('Demo navigation is missing');
+      expect(drawer.hasAttribute('inert')).toBe(true);
+      expect(drawer.hasAttribute('aria-modal')).toBe(false);
+      expect(toolbar.hasAttribute('inert')).toBe(false);
+      component.drawerOpen.set(true);
+      fixture.detectChanges();
+      expect(host.querySelector('.demo-shell__hamburger')).toBe(launcher);
+      expect(drawer.getAttribute('role')).toBe('dialog');
+      expect(drawer.getAttribute('aria-modal')).toBe('true');
+      expect(drawer.hasAttribute('inert')).toBe(false);
+      expect(toolbar.hasAttribute('inert')).toBe(true);
+      component.paletteOpen.set(true);
+      fixture.detectChanges();
+      expect(drawer.hasAttribute('inert')).toBe(true);
+      expect(drawer.hasAttribute('aria-modal')).toBe(false);
+      expect(toolbar.hasAttribute('inert')).toBe(true);
+      component.paletteOpen.set(false);
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 });
+      window.dispatchEvent(new Event('resize'));
+      fixture.detectChanges();
+      expect(component.drawerOpen()).toBe(false);
+      expect(drawer.getAttribute('data-mode')).toBe('expanded');
+      expect(drawer.hasAttribute('inert')).toBe(false);
+      expect(drawer.hasAttribute('aria-modal')).toBe(false);
+      expect(toolbar.hasAttribute('inert')).toBe(false);
+    } finally {
+      fixture.destroy();
+      if (width) Object.defineProperty(window, 'innerWidth', width);
+    }
+  });
+
   it('keeps focused desktop settings expanded when the mobile breakpoint applies', () => {
     TestBed.configureTestingModule({
       providers: [threadsAdapterProvider, ItineraryStore, provideRouter([])],

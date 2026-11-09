@@ -5,12 +5,14 @@ import {
   DestroyRef,
   ElementRef,
   afterNextRender,
+  afterRenderEffect,
   computed,
   effect,
   signal,
   inject,
   untracked,
 } from '@angular/core';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -130,6 +132,7 @@ export function isConflict(err: unknown): boolean {
   standalone: true,
   imports: [
     RouterOutlet,
+    CdkTrapFocus,
     ChatSidenavComponent,
     ChatSidenavScrimComponent,
     ChatHistorySearchPaletteComponent,
@@ -175,6 +178,7 @@ export class DemoShell {
   private readonly router = inject(Router);
   private readonly persistence = inject(PalettePersistence);
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   protected readonly threadsSvc = inject(LangGraphThreadsAdapter);
   protected readonly projectsSvc = inject(ProjectsService);
   private readonly telemetry = inject(ThreadplaneTelemetryService);
@@ -200,8 +204,40 @@ export class DemoShell {
   private lastSyncedItinerary = '';
 
   constructor() {
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const host = this.host;
     const destroyRef = inject(DestroyRef);
+    // The persistent drawer is modal only on narrow screens (or in App mode).
+    // Keep its focus lifecycle local to the demo; search temporarily takes over.
+    let previousDrawer = false;
+    let previousPalette = false;
+    let previousMode = this.sidenavMode();
+    afterRenderEffect(() => {
+      const mode = this.sidenavMode();
+      const drawer = mode === 'drawer' && this.drawerOpen();
+      const palette = this.paletteOpen();
+      const nav = host.querySelector<HTMLElement>('chat-sidenav');
+      const focus = (selector: string) => host.querySelector<HTMLElement>(selector)?.focus();
+      if (!palette) {
+        if (previousPalette) {
+          const opener = this.searchOpener;
+          if (opener?.isConnected && !opener.closest('[inert]')) opener.focus();
+          else focus(mode === 'drawer' && !drawer ? '.demo-shell__hamburger' : 'chat-sidenav [aria-label="Search conversations"]');
+          this.searchOpener = null;
+        } else if (drawer && !previousDrawer) {
+          focus('chat-sidenav [aria-label="Close conversations"]');
+        } else if (previousDrawer && !drawer) {
+          focus(mode === 'drawer' ? '.demo-shell__hamburger' : 'chat-sidenav [aria-label="New chat"]');
+        } else if (mode === 'drawer' && previousMode !== 'drawer' && nav?.contains(this.document.activeElement)) {
+          focus('.demo-shell__hamburger');
+        }
+      }
+      previousDrawer = drawer;
+      previousPalette = palette;
+      previousMode = mode;
+    });
+    effect(() => {
+      if (this.sidenavMode() !== 'drawer') this.drawerOpen.set(false);
+    });
     afterNextRender(() => {
       const shell = host.querySelector<HTMLElement>('.demo-shell');
       const toolbar = host.querySelector<HTMLElement>('.demo-shell__toolbar');
@@ -479,6 +515,13 @@ export class DemoShell {
 
   /** Whether the Cmd+K search palette is open. */
   protected readonly paletteOpen = signal<boolean>(false);
+  private searchOpener: HTMLElement | null = null;
+  protected readonly drawerModalOpen = computed(() =>
+    this.sidenavMode() === 'drawer' && this.drawerOpen() && !this.paletteOpen(),
+  );
+  protected readonly conversationModalOpen = computed(() =>
+    this.drawerModalOpen() || this.paletteOpen(),
+  );
 
   /** Current palette query. Two-way bound. */
   protected readonly searchQuery = signal<string>('');
@@ -846,6 +889,16 @@ export class DemoShell {
     this.onThreadSelected(threadId);
     this.paletteOpen.set(false);
     this.searchQuery.set('');
+  }
+
+  protected onSearchOpened(): void {
+    if (this.paletteOpen()) return;
+    // Safari does not focus clicked buttons. In the modal drawer, always
+    // return to Search rather than whichever navigation element kept focus.
+    this.searchOpener = this.drawerModalOpen()
+      ? this.host.querySelector<HTMLElement>('chat-sidenav [aria-label="Search conversations"]')
+      : this.document.activeElement as HTMLElement | null;
+    this.paletteOpen.set(true);
   }
 
   /** Create a new thread via the backend and switch to it. */
