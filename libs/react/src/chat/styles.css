@@ -427,6 +427,28 @@
   margin-block-start: 0.5rem;
   min-inline-size: 0;
 }
+.tp-chat-message--assistant > .tp-chat-message__controls {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.tp-chat-message--assistant:hover > .tp-chat-message__controls,
+.tp-chat-message--assistant:focus-within > .tp-chat-message__controls,
+.tp-chat-message--assistant[data-current='true'] > .tp-chat-message__controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (max-width: 768px), (hover: none) {
+  .tp-chat-message--assistant > .tp-chat-message__controls {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-chat-message--assistant > .tp-chat-message__controls {
+    transition: none;
+  }
+}
 .tp-chat-message__caret {
   display: inline-block;
   inline-size: 8px;

@@ -20,8 +20,17 @@ omitted context keeps the adjacent-sibling fallback. Explicit other roles overri
 that fallback. Existing assistant `:first-child` spacing remains DOM-dependent.
 The ten current/previous-role context combinations share stable frozen objects;
 changing a predecessor's projected role updates the following row even when its
-immutable row reference is retained. Automatic control reveal and full T23 parity
-remain open.
+immutable row reference is retained. With the opt-in chat stylesheet, a historical
+assistant's direct controls wrapper reserves its space but stays transparent and
+ignores pointer input until its article is hovered or contains keyboard focus.
+Current assistant controls stay visible. At widths up to 768px or on devices with
+no hover support, assistant controls stay visible. Controls remain in the DOM and
+tab order; opacity transitions take 200ms and are disabled with reduced motion.
+Without the stylesheet, controls use normal DOM presentation. The wrapper does
+not suppress controls during streaming. Non-assistant controls, standalone
+`MessageActions` and nested rich-content controls keep their existing behavior.
+Handlers, clipboard writes, status and disabled states remain application-owned.
+Full T23 parity remains open.
 
 Private, unpublished React binding for app-owned sessions. The root exports
 `useAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)` methods

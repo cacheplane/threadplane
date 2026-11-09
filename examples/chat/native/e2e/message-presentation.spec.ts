@@ -454,12 +454,36 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
       'data-prev-role',
       'user'
     );
+    const currentAnswer = caret.locator('../..');
+    const currentControls = currentAnswer.locator(
+      ':scope > .tp-chat-message__controls'
+    );
+    const currentCopy = currentControls.getByRole('button', {
+      name: 'Copy answer',
+      exact: true,
+    });
+    await expect(currentControls).toHaveCSS('opacity', '1');
+    await expect(currentControls).toHaveCSS('pointer-events', 'auto');
+    await expect(currentCopy).toBeEnabled();
+    const mountedCopy = await currentCopy.elementHandle();
+    const stableCurrentCopy = async () => {
+      expect(
+        await currentCopy.evaluate(
+          (el, original) => el === original,
+          mountedCopy
+        )
+      ).toBe(true);
+      await expect(currentControls).toHaveCSS('opacity', '1');
+      await expect(currentControls).toHaveCSS('pointer-events', 'auto');
+    };
     backend.steps[3].events[1].release();
     await expect(list).toContainText('and later text');
     await expect(caret.locator('../..')).toHaveAttribute(
       'data-prev-role',
       'assistant'
     );
+    await stableCurrentCopy();
+    expect(await writes()).toEqual([roleMessages[2].content]);
     expect((await geometry(list)).top).toBe(before);
     await expect(input).toBeFocused();
     await expect(input).toHaveValue('Preserved draft');
@@ -471,6 +495,14 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
       forcedColors: 'active',
       reducedMotion: 'reduce',
     });
+    await stableCurrentCopy();
+    await expect(currentControls).toHaveCSS('transition-duration', '0s');
+    const historicalControls = answer.locator(
+      ':scope > .tp-chat-message__controls'
+    );
+    await expect(historicalControls).toHaveCSS('opacity', '1');
+    await expect(historicalControls).toHaveCSS('pointer-events', 'auto');
+    await expect(historicalControls).toHaveCSS('transition-duration', '0s');
     await expect(caret).toBeVisible();
     await expect(caret).toHaveCSS('animation-name', 'none');
     await expect(caret).toHaveCSS('opacity', '1');
@@ -672,12 +704,46 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await expect(list).toContainText('followed at latest');
     await bottom(list);
     await expect(list).toBeFocused();
+    await stableCurrentCopy();
+    // The reader deliberately returned to latest before activating stream copy.
+    await currentCopy.click();
+    await expect(currentAnswer.getByRole('status')).toHaveText(
+      'Answer copied.'
+    );
+    expect(await writes()).toEqual([
+      roleMessages[2].content,
+      'First streamed answer and later text followed at latest\n\n' +
+        'Streaming grows this answer. '.repeat(50),
+    ]);
+    await stableCurrentCopy();
+    await list.focus();
     backend.steps[3].releaseBody();
     expect((await backend.steps[3].closed).finished).toBe(true);
     await expect(page.locator('.submission-status')).toHaveText(
       'Response complete.'
     );
     await expect(caret).toHaveCount(0);
+    // The caret disappears on completion; keep addressing the same article.
+    expect(await mountedCopy!.evaluate((el) => el.isConnected)).toBe(true);
+    const completedAnswer = list
+      .getByRole('article', { name: 'assistant message', exact: true })
+      .last();
+    const completedCopy = completedAnswer.getByRole('button', {
+      name: 'Copy answer',
+      exact: true,
+    });
+    expect(
+      await completedCopy.evaluate(
+        (el, original) => el === original,
+        mountedCopy
+      )
+    ).toBe(true);
+    await expect(
+      completedAnswer.locator(':scope > .tp-chat-message__controls')
+    ).toHaveCSS('opacity', '1');
+    await expect(
+      completedAnswer.locator(':scope > .tp-chat-message__controls')
+    ).toHaveCSS('pointer-events', 'auto');
     await expect(input).toHaveValue('Preserved draft');
     await bottom(list);
     await completeUpwardScroll(() => list.press('Home'), 0);

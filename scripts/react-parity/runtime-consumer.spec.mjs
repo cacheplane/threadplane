@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -29,7 +29,9 @@ test('shared view preparation copies the complete views without composing a priv
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
   const entry = readFileSync(join(consumer, 'main.tsx'), 'utf8');
-  assert.match(entry, /^if \(new URLSearchParams\(location.search\).has\('message-spacing'\)\)/);
+  assert.match(entry, /^if \(new URLSearchParams\(location.search\).has\('message-controls'\)\) \{\n  void import\('\.\/react-message-controls'\);\n\} else if/);
+  assert.ok(entry.indexOf("import('./react-message-controls')") < entry.indexOf("import('./react-app')"));
+  assert.equal(readFileSync(join(consumer, 'react-message-controls.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/react-message-controls.tsx', 'utf8'));
   assert.ok(entry.indexOf("import('./react-message-spacing')") < entry.indexOf("import('./react-app')"));
   assert.equal(readFileSync(join(consumer, 'react-message-spacing.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/react-message-spacing.tsx', 'utf8'));
   const contextView = readFileSync(join(consumer, 'react-overflow-menu.tsx'), 'utf8');
@@ -38,6 +40,13 @@ test('shared view preparation copies the complete views without composing a priv
   assert.match(contextView, /onContextMenu=/);
   assert.match(contextView, /returnFocusTo=/);
   assert.match(contextView, /anchorPoint=/);
+  const angular = join(consumer, 'angular');
+  mkdirSync(join(angular, 'src'), { recursive: true });
+  writeFileSync(join(angular, 'angular.json'), JSON.stringify({ projects: { consumer: { architect: { build: { options: {} } } } } }));
+  writeFileSync(join(angular, 'src/index.html'), '<head></head>');
+  runtime.prepareRuntimeViews(process.cwd(), angular, 'angular');
+  assert.equal(existsSync(join(angular, 'src/react-message-controls.tsx')), false);
+  assert.doesNotMatch(readFileSync(join(angular, 'src/main.ts'), 'utf8'), /message-controls|message-spacing|react-app/);
 });
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };

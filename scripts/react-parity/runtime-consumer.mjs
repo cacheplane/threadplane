@@ -424,7 +424,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
   cpSync(join(fixture, app), join(destination, app));
   writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
-    (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
+    (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-controls')) {\n  void import('./react-message-controls');\n} else if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
     `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
   if (kind === 'angular') {
     const configPath = join(consumer, 'angular.json');
@@ -435,6 +435,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
   }
   if (kind === 'react') {
+    cpSync(join(fixture, 'react-message-controls.tsx'), join(destination, 'react-message-controls.tsx'));
     cpSync(join(fixture, 'react-message-spacing.tsx'), join(destination, 'react-message-spacing.tsx'));
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
     cpSync(join(fixture, 'react-confirm-dialog.tsx'), join(destination, 'react-confirm-dialog.tsx'));
@@ -966,6 +967,205 @@ async function runMessageSpacingScenarios(page, server) {
   );
 }
 
+export async function runMessageControlsScenarios(browser, server) {
+  const counters = () => ({
+    runs: server.requests.length, history: server.historyRequests.length,
+    joins: server.joinRequests.length, status: server.statusRequests.length,
+    threads: server.threads.requests.length, checkpoints: server.checkpoints.requests.length,
+  });
+  const before = counters();
+  const pageErrors = [];
+  const unexpected = [];
+  const consoleFailures = [];
+  for (const mode of ['desktop', 'narrow', 'hoverless', 'reduced', 'forced']) {
+    const context = await browser.newContext({
+      viewport: { width: mode === 'narrow' ? 768 : 1280, height: 1100 },
+      ...(mode === 'hoverless' ? { hasTouch: true, isMobile: true } : {}),
+      ...(mode === 'reduced' ? { reducedMotion: 'reduce' } : {}),
+      ...(mode === 'forced' ? { forcedColors: 'active' } : {}),
+    });
+    try {
+      // Observe accidental clipboard ownership without exercising OS clipboard.
+      await context.addInitScript(() => {
+        window.controlsClipboardCalls = 0;
+        Object.defineProperty(navigator, 'clipboard', { value: {
+          writeText: async () => { window.controlsClipboardCalls++; },
+          readText: async () => { window.controlsClipboardCalls++; return ''; },
+        } });
+      });
+      const page = await context.newPage();
+      page.on('pageerror', (error) => pageErrors.push(error.message));
+      page.on('console', (message) => {
+        if (['warning', 'error'].includes(message.type())) consoleFailures.push(message.text());
+      });
+      page.on('request', (request) => {
+        if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
+      });
+      await page.goto(`${server.url}/?message-controls`);
+      await expect(page.getByRole('heading', { name: 'Installed message controls' })).toBeVisible();
+      const media = await page.evaluate(() => ({
+        narrow: matchMedia('(max-width: 768px)').matches,
+        hoverless: matchMedia('(hover: none)').matches,
+        reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        forced: matchMedia('(forced-colors: active)').matches,
+      }));
+      assert.deepEqual(media, {
+        narrow: mode === 'narrow', hoverless: mode === 'hoverless',
+        reduced: mode === 'reduced', forced: mode === 'forced',
+      }, `${mode} exercises the intended real browser media`);
+      const article = (id) => page.getByRole('article', { name: id, exact: true });
+      const controls = (id) => article(id).locator(':scope > .tp-chat-message__controls');
+      const button = (id) => page.getByRole('button', { name: `Act ${id}`, exact: true });
+      const calls = {};
+      const expectCalls = () => expect(page.getByTestId('action-counts')).toHaveText(JSON.stringify(calls));
+      const activate = async (id, keyboard = false) => {
+        if (keyboard) await page.keyboard.press('Enter');
+        else await button(id).click();
+        calls[id] = (calls[id] ?? 0) + 1;
+        await expectCalls();
+      };
+      const rest = async () => {
+        await page.getByRole('button', { name: 'After transcript', exact: true }).focus();
+        await page.mouse.move(0, 0);
+        await expect.poll(() => page.locator('article:hover').count()).toBe(0);
+      };
+      const style = async (id, visible) => {
+        await expect(controls(id)).toHaveCSS('opacity', visible ? '1' : '0');
+        await expect(controls(id)).toHaveCSS('pointer-events', visible ? 'auto' : 'none');
+      };
+      const geometry = () => controls('historical').evaluate((element) => {
+        const own = element.getBoundingClientRect();
+        const parent = element.parentElement.getBoundingClientRect();
+        return { width: own.width, height: own.height, offset: own.top - parent.top, articleHeight: parent.height };
+      });
+      await rest();
+      await expectCalls();
+      const alwaysVisible = mode === 'narrow' || mode === 'hoverless';
+      await style('historical', alwaysVisible);
+      await style('current', true);
+      for (const id of ['user', 'system', 'tool']) {
+        await style(id, true);
+        await activate(id);
+      }
+      for (const id of ['nested', 'standalone']) {
+        const group = button(id).locator('..');
+        await expect(group).toHaveCSS('opacity', '1');
+        await expect(group).toHaveCSS('pointer-events', 'auto');
+        if (id === 'nested') await expect(page.getByTestId('nested-controls')).toHaveCSS('opacity', '1');
+        await activate(id);
+      }
+      await rest();
+      const original = await button('historical').elementHandle();
+      const currentOriginal = await button('current').elementHandle();
+      const wrapperOriginal = await controls('historical').elementHandle();
+      const initialGeometry = await geometry();
+      const sameNodes = async () => {
+        assert.equal(await button('historical').evaluate((element, retained) => element === retained, original), true);
+        assert.equal(await controls('historical').evaluate((element, retained) => element === retained, wrapperOriginal), true);
+        assert.equal(await button('current').evaluate((element, retained) => element === retained, currentOriginal), true);
+      };
+      if (!alwaysVisible) {
+        await article('historical').hover();
+        await style('historical', true);
+        assert.deepEqual(await geometry(), initialGeometry, 'hover reserves identical layout');
+        await activate('historical');
+        await rest();
+        await style('historical', false);
+        // Actual Tab crosses from a preceding target into opacity-hidden controls.
+        await page.getByRole('button', { name: 'Before historical', exact: true }).focus();
+        await style('historical', false);
+        await page.keyboard.press('Tab');
+        await expect(button('historical')).toBeFocused();
+        await style('historical', true);
+        assert.deepEqual(await geometry(), initialGeometry, 'keyboard reveal reserves identical layout');
+        await activate('historical', true);
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Again historical', exact: true })).toBeFocused();
+        await style('historical', true);
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Before user', exact: true })).toBeFocused();
+        await style('historical', false);
+      } else {
+        await activate('historical');
+      }
+      await sameNodes();
+      await activate('current');
+      await page.getByRole('button', { name: 'Append user', exact: true }).click();
+      await rest();
+      await expect(article('current')).toHaveAttribute('data-current', 'false');
+      await style('current', alwaysVisible);
+      await page.getByRole('button', { name: 'Remove user', exact: true }).click();
+      await rest();
+      await expect(article('current')).toHaveAttribute('data-current', 'true');
+      await style('current', true);
+      await page.getByRole('button', { name: 'Move historical last', exact: true }).click();
+      await rest();
+      await expect(article('historical')).toHaveAttribute('data-current', 'true');
+      await expect(article('current')).toHaveAttribute('data-current', 'false');
+      await expect(article('historical')).toHaveAttribute('data-prev-role', 'assistant');
+      await style('historical', true);
+      await style('current', alwaysVisible);
+      await sameNodes();
+      await page.getByRole('button', { name: 'Restore order', exact: true }).click();
+      await page.getByRole('button', { name: 'Toggle streaming', exact: true }).click();
+      await rest();
+      await expect(article('historical')).toHaveAttribute('data-streaming', 'true');
+      await expect(article('current')).toHaveAttribute('data-streaming', 'true');
+      await style('current', true);
+      await activate('current');
+      await rest();
+      await style('historical', alwaysVisible);
+      if (!alwaysVisible) await article('historical').hover();
+      await style('historical', true);
+      await activate('historical');
+      await rest();
+      await page.getByRole('button', { name: 'Before historical', exact: true }).focus();
+      await style('historical', alwaysVisible);
+      await page.keyboard.press('Tab');
+      await expect(button('historical')).toBeFocused();
+      await style('historical', true);
+      await activate('historical', true);
+      await sameNodes();
+      await page.getByRole('button', { name: 'Toggle streaming', exact: true }).click();
+      await expect(article('historical')).toHaveAttribute('data-streaming', 'false');
+      await page.getByRole('button', { name: 'Toggle direction', exact: true }).click();
+      await expect(article('historical')).toHaveCSS('direction', 'rtl');
+      await rest();
+      await style('historical', alwaysVisible);
+      await page.getByRole('button', { name: 'Before historical', exact: true }).focus();
+      await style('historical', alwaysVisible);
+      await page.keyboard.press('Tab');
+      await expect(button('historical')).toBeFocused();
+      await style('historical', true);
+      await activate('historical', true);
+      if (mode === 'reduced') await expect(controls('historical')).toHaveCSS('transition-duration', '0s');
+      else {
+        await expect(controls('historical')).toHaveCSS('transition-property', 'opacity');
+        await expect(controls('historical')).toHaveCSS('transition-duration', '0.2s');
+        await expect(controls('historical')).toHaveCSS('transition-timing-function', 'ease');
+      }
+      if (mode === 'forced') {
+        await expect(button('historical')).toHaveCSS('outline-style', 'solid');
+        assert.notEqual(await button('historical').evaluate((element) => getComputedStyle(element).outlineWidth), '0px');
+      }
+      await rest();
+      await style('historical', alwaysVisible);
+      await sameNodes();
+      await expectCalls();
+      assert.equal(await page.evaluate(() => window.controlsClipboardCalls), 0);
+      await page.getByRole('button', { name: 'Dispose controls owner', exact: true }).click();
+      await expect(page.getByTestId('controls-owner')).toHaveText('disposed');
+      await expect(page.getByRole('article')).toHaveCount(0);
+      await expectCalls();
+    } finally { await context.close(); }
+  }
+  assert.deepEqual(counters(), before, 'controls projection, local actions and disposal produce no backend I/O');
+  assert.deepEqual(pageErrors, []);
+  assert.deepEqual(consoleFailures, []);
+  assert.deepEqual(unexpected, []);
+  console.log('Installed React message controls: desktop hover/Tab/current/streaming, append/remove/reorder, DOM/layout identity, 768px and wide hover:none contexts, RTL, reduced motion, forced colors, exact local actions and no clipboard/backend I/O passed.');
+}
+
 export async function runRuntimeScenarios(directory, kind) {
   const server = await serveRuntimeConsumer(directory);
   let browser;
@@ -1282,6 +1482,8 @@ export async function runRuntimeScenarios(directory, kind) {
     if (/react/i.test(kind)) {
       await runMessageSpacingScenarios(page, server);
       completed.push('installed message spacing through wrappers and explicit precedence in LTR/RTL');
+      await runMessageControlsScenarios(browser, server);
+      completed.push('installed assistant controls reveal through hover focus current and device media');
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
