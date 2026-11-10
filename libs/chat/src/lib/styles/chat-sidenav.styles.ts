@@ -17,7 +17,7 @@ export const CHAT_SIDENAV_STYLES = `
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 100;
+    z-index: var(--tplane-chat-z-sidenav, 100);
   }
   :host([data-mode="expanded"]) {
     width: var(--tplane-chat-sidenav-width-expanded);

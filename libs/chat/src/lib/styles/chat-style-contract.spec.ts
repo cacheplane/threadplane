@@ -191,3 +191,18 @@ describe('motion', () => {
     expect(mount.value).toContain('var(--tplane-chat-motion-ease)');
   });
 });
+
+describe('layers', () => {
+  it('names every z-index layer with a token, or keeps a local 0-2 stacking value', () => {
+    const offenders = componentStyleSources().flatMap(({ file, source }) =>
+      declarations(source, /^z-index$/, file)
+        .filter(({ value }) => {
+          if (/^var\(--tplane-chat-z-[a-z0-9-]+(,\s*\d+)?\)$/.test(value) || value === 'auto') return false;
+          // A local stacking value inside a positioned or isolated component.
+          return !(/^[0-2]$/.test(value) && /isolation:\s*isolate|position:\s*(relative|absolute|fixed)/.test(source));
+        })
+        .map(({ line, value }) => `${basename(file)}:${line} ${value}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

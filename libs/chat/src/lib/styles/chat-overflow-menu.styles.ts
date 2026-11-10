@@ -5,14 +5,14 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     position: fixed;
     inset: 0;
     background: transparent;
-    z-index: 59;
+    z-index: var(--tplane-chat-z-menu-scrim, 59);
     border: 0;
     padding: 0;
     cursor: default;
   }
   .chat-overflow-menu {
     position: fixed;
-    z-index: 60;
+    z-index: var(--tplane-chat-z-menu, 60);
     min-width: 160px;
     padding: 4px;
     margin: 0;

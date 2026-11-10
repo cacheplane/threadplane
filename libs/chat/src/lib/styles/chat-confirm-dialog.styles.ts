@@ -5,7 +5,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
     position: fixed;
     inset: 0;
     background: var(--tplane-chat-scrim);
-    z-index: 70;
+    z-index: var(--tplane-chat-z-confirm-scrim, 70);
     border: 0;
     padding: 0;
     cursor: pointer;
@@ -16,7 +16,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
     left: 50%;
     transform: translateX(-50%);
     width: min(420px, 90vw);
-    z-index: 71;
+    z-index: var(--tplane-chat-z-confirm, 71);
     padding: 20px;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);

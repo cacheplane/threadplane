@@ -212,6 +212,15 @@ const LAYER_TOKENS = `
   --tplane-chat-z-drawer: 1001;          /* chat-sidenav drawer mode host */
   --tplane-chat-z-modal-scrim: 1100;     /* chat-history-search-palette backdrop */
   --tplane-chat-z-modal: 1101;           /* chat-history-search-palette dialog */
+  --tplane-chat-z-overlay-container: 1000; /* overlay-container host (select and menu portals) */
+  --tplane-chat-z-sidenav: 100;          /* chat-sidenav collapsed-rail host */
+  --tplane-chat-z-menu-scrim: 59;        /* chat-overflow-menu click-away backdrop */
+  --tplane-chat-z-menu: 60;              /* chat-overflow-menu panel */
+  --tplane-chat-z-confirm-scrim: 70;     /* chat-confirm-dialog backdrop */
+  --tplane-chat-z-confirm: 71;           /* chat-confirm-dialog panel */
+  --tplane-chat-z-a2ui-modal: 50;        /* a2ui modal overlay */
+  --tplane-chat-z-debug-pill: 990;       /* chat-debug launcher pill */
+  --tplane-chat-z-debug-panel: 991;      /* chat-debug dock panel */
 `;
 
 const EDGE_CLAIM_TOKENS = `

@@ -61,7 +61,7 @@ function hasHistory(
         border: 1px solid var(--tplane-chat-debug-border);
         color: var(--tplane-chat-debug-text);
         cursor: pointer;
-        z-index: 990;
+        z-index: var(--tplane-chat-z-debug-pill, 990);
         box-shadow: var(--tplane-chat-debug-shadow-pill);
         transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
         padding: 0;
@@ -102,7 +102,7 @@ function hasHistory(
         background: var(--tplane-chat-debug-bg);
         color: var(--tplane-chat-debug-text);
         border: 1px solid var(--tplane-chat-debug-border);
-        z-index: 991;
+        z-index: var(--tplane-chat-z-debug-panel, 991);
         display: flex;
         flex-direction: column;
         box-shadow: var(--tplane-chat-debug-shadow-panel);
