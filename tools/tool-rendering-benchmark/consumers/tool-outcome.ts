@@ -73,13 +73,17 @@ const record = (value: unknown): Record<string, unknown> | undefined =>
  * How a confirmed reference result is arranged beside the assistant's answer.
  * `summary` repeats each reference's summary above the answer; `compact`
  * leaves the statement to the answer and keeps only the source links;
- * `cards` shows one card per distinct reference in the per-call result slot.
+ * `cards` shows one card per distinct reference in the per-call result slot;
+ * `sources` shows nothing per call and leaves the references to the library's
+ * Sources panel, which the scripted agent feeds with message citations.
  * A layout only changes this application's presentation of its own schema.
  */
-export type Layout = 'summary' | 'compact' | 'cards';
+export type Layout = 'summary' | 'compact' | 'cards' | 'sources';
 export const layoutFrom = (search: string): Layout => {
   const value = new URLSearchParams(search).get('layout');
-  return value === 'compact' || value === 'cards' ? value : 'summary';
+  return value === 'compact' || value === 'cards' || value === 'sources'
+    ? value
+    : 'summary';
 };
 const referenceRecords = (result: unknown): Reference[] | undefined => {
   const records = Array.isArray(result) ? result : [result];
@@ -89,7 +93,8 @@ const references =
   (layout: Layout): Decoder =>
   ({ result }) => {
     const records = referenceRecords(result);
-    if (!records || layout === 'cards') return undefined;
+    if (!records || layout === 'cards' || layout === 'sources')
+      return undefined;
     return {
       text:
         layout === 'compact'

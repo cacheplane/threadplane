@@ -18,7 +18,7 @@ const hosts = [
   { id: 'threadplane-angular', url: 'http://127.0.0.1:4812/' },
   { id: 'threadplane-react', url: 'http://127.0.0.1:4811/' },
 ];
-const layouts = ['summary', 'compact', 'cards'];
+const layouts = ['summary', 'compact', 'cards', 'sources'];
 const views = [
   { id: 'desktop', viewport: { width: 1440, height: 1000 } },
   { id: 'mobile', viewport: { width: 480, height: 900 } },
@@ -122,6 +122,21 @@ const measure = (page) =>
     },
     { assistant, groupToggle, urls }
   );
+// The Sources panel keeps its links behind one disclosure; open it when the
+// collapsed turn shows none, and report that the links needed that step.
+async function withSources(page, seen, expected = seen.links.length) {
+  if (seen.links.slice(0, expected).every((count) => count >= 1))
+    return { seen, sourcesBehindDisclosure: false };
+  const toggle = page
+    .locator(assistant)
+    .last()
+    .locator(':is(button, summary)', { hasText: 'Sources' })
+    .first();
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(150);
+  return { seen: await measure(page), sourcesBehindDisclosure: true };
+}
 const sentences = (blocks) =>
   blocks.flatMap((block) => block.split(/(?<=[.!?])\s+/)).filter(Boolean);
 
@@ -161,16 +176,26 @@ try {
           assert.equal(seen.collapsed, true, 'Activity stays collapsed');
           assert.equal(seen.overflow, false, 'No horizontal overflow');
           assert.ok(
-            seen.links.every((count) => count >= 1),
-            'Every source stays reachable as a visible link'
-          );
-          assert.ok(
             Object.values(entry.statements).every((count) => count >= 1),
             'Every fact is stated at least once'
           );
           const file = `${host.id}-${layout}-${view.id}-${theme}.png`;
           await page.screenshot({ path: join(output, file) });
           entry.capture = file;
+          const opened = await withSources(page, seen);
+          entry.sourcesBehindDisclosure = opened.sourcesBehindDisclosure;
+          entry.linksReachable = opened.seen.links;
+          assert.ok(
+            opened.seen.links.every((count) => count >= 1),
+            'Every source is a visible link, at most one disclosure away'
+          );
+          if (opened.sourcesBehindDisclosure) {
+            entry.expandedHeight = opened.seen.height;
+            entry.expandedCapture = file.replace('.png', '-sources-open.png');
+            await page.screenshot({
+              path: join(output, entry.expandedCapture),
+            });
+          }
           if (view.id === 'desktop' && theme === 'light') {
             // Manual expansion still reaches every call's literal result.
             const toggle = page.locator(groupToggle).first();
@@ -214,6 +239,10 @@ try {
       page.on('pageerror', (error) => row.errors.push(error.message));
       await run(page, host, 'partial-failure', layout);
       const failed = await measure(page);
+      await page.screenshot({
+        path: join(output, `${host.id}-${layout}-partial-failure.png`),
+      });
+      const retained = (await withSources(page, failed, 1)).seen.links[0];
       row.partialFailure = {
         toggle: failed.toggle,
         alert: await page
@@ -222,14 +251,11 @@ try {
           )
           .first()
           .innerText(),
-        retainedSource: failed.links[0],
+        retainedSource: retained,
       };
       assert.match(failed.toggle ?? '', /1 failed/, 'Failure is counted');
       assert.match(row.partialFailure.alert, /Retry array-to-sorted read/);
-      assert.ok(failed.links[0] >= 1, 'Successful reference is retained');
-      await page.screenshot({
-        path: join(output, `${host.id}-${layout}-partial-failure.png`),
-      });
+      assert.ok(retained >= 1, 'Successful reference is retained');
       await context.close();
       assert.deepEqual(row.errors, [], 'No page errors');
       rows.push(row);

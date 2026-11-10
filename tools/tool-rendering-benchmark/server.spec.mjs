@@ -475,3 +475,51 @@ test('long mixed read workload continues after a recoverable failure and retains
   assert.equal(events(text).at(-1).type, 'RUN_FINISHED');
   assert.ok(record.tools.every((tool) => tool.executionCount === 1));
 });
+
+test('the sources layout publishes confirmed references as citations without changing the workload', async (t) => {
+  const server = await fixture(t);
+  const run = async (participant, layout) => {
+    const response = await fetch(
+      `${server.url}/ag-ui?participant=${participant}&scenario=references${layout}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input(participant)),
+      }
+    );
+    assert.equal(response.status, 200);
+    return (await response.text())
+      .split('\n')
+      .filter((line) => line.startsWith('data: '))
+      .map((line) => JSON.parse(line.slice(6)));
+  };
+  const plain = await run('plain', '');
+  const cited = await run('cited', '&layout=sources');
+  assert.equal(
+    plain.some((event) => event.type === 'STATE_SNAPSHOT'),
+    false
+  );
+  const snapshots = cited.filter((event) => event.type === 'STATE_SNAPSHOT');
+  const [[messageId, citations]] = Object.entries(
+    snapshots.at(-1).snapshot.citations
+  );
+  assert.match(messageId, /-assistant$/);
+  assert.deepEqual(
+    citations.map(({ id, index, url }) => [id, index, url]),
+    [
+      ['source-1', 1, 'https://angular.dev/guide/signals'],
+      [
+        'source-2',
+        2,
+        'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted',
+      ],
+    ]
+  );
+  // Four calls return two distinct references: one snapshot per newly seen source.
+  assert.equal(snapshots.length, 2);
+  const [a, b] = server.receipts();
+  assert.deepEqual(
+    a.tools.map((tool) => [tool.id, tool.resultHash, tool.executionCount]),
+    b.tools.map((tool) => [tool.id, tool.resultHash, tool.executionCount])
+  );
+});
