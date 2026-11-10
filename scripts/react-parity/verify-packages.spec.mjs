@@ -744,6 +744,14 @@ export interface ChatProps { readonly onRetry?: () => void; readonly renderMessa
   assert.doesNotMatch(packageVerifier.plainExportTypes(['@threadplane/core']), /ChatSidenav|ThreadList|from 'react'/);
 });
 
+test('React chat entry supports resolveToolOutcome', () => {
+  const entry = {};
+  for (const name of packageVerifier.supportedExportNames('react/chat')) entry[name] = () => {};
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/chat', entry));
+  delete entry.resolveToolOutcome;
+  assert.throws(() => packageVerifier.assertSupportedExports('react/chat', entry), /resolveToolOutcome/);
+});
+
 test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/json', { createJson() {} }));
@@ -968,6 +976,7 @@ test('React chat requires its real supported export', () => {
   supported.ToolActivity = component;
   supported.ToolActivityGroup = component;
   supported.toolActivityPhase = component;
+  supported.resolveToolOutcome = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
   supported.ScrollBubble = component;

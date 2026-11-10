@@ -352,8 +352,10 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // which always returns a string. Parse it so downstream consumers
       // (chat-tool-views / toToolViewSpec) can spread the object into props.
       const { result, parts } = toolResultFromContent(e.content);
+      // A snapshot tool-message error is the authority; a late result carries
+      // no error field and must not downgrade an already failed call.
       store.toolCalls.update((prev) =>
-        prev.map((t) => t.id === e.toolCallId ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t),
+        prev.map((t) => t.id === e.toolCallId && t.status !== 'error' ? { ...t, status: 'complete', result, ...(parts ? { parts } : {}) } : t),
       );
       return;
     }
@@ -387,6 +389,17 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       // correctly. Also merge any snapshot-only tool calls into store.toolCalls
       // so the data is visible to <chat-tool-views>.
       const snapshotToolCalls: ToolCall[] = [];
+      // AG-UI 1.0 ToolMessage carries `error?: string` (why the tool failed,
+      // alongside its content). That is the only protocol-level failure
+      // signal; TOOL_CALL_RESULT has no error field. Index the non-empty ones.
+      const toolMessageErrors = new Map<string, { error: string; content: unknown }>();
+      for (const m of raw) {
+        const toolCallId = m['toolCallId'];
+        const error = m['error'];
+        if (m.role === 'tool' && typeof toolCallId === 'string' && typeof error === 'string' && error !== '') {
+          toolMessageErrors.set(toolCallId, { error, content: m.content });
+        }
+      }
       const messages: Message[] = raw.map((m) => {
         const previous = previousById.get(m.id);
         const completedMessage = m.id !== activeCanonicalAssistantId
@@ -415,12 +428,20 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           const ids: string[] = [];
           for (const tc of m.toolCalls) {
             ids.push(tc.id);
-            snapshotToolCalls.push({
-              id: tc.id,
-              name: tc.function.name,
-              args: safeParseArgs(tc.function.arguments),
-              status: 'complete',
-            });
+            const failure = toolMessageErrors.get(tc.id);
+            const base = { id: tc.id, name: tc.function.name, args: safeParseArgs(tc.function.arguments) };
+            if (failure) {
+              const { result, parts } = toolResultFromContent(failure.content);
+              snapshotToolCalls.push({
+                ...base,
+                status: 'error',
+                error: failure.error,
+                result,
+                ...(parts ? { parts } : {}),
+              });
+            } else {
+              snapshotToolCalls.push({ ...base, status: 'complete' });
+            }
           }
           const { toolCalls: _dropped, ...rest } = m;
           // A tool-call-only assistant message may carry no content on the
@@ -475,7 +496,18 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
           // streaming) and only insert entries not already present by id.
           const existingIds = new Set(prev.map((tc) => tc.id));
           const toAdd = snapshotToolCalls.filter((tc) => !existingIds.has(tc.id));
-          return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+          // A streamed call reads 'complete' (TOOL_CALL_RESULT has no error
+          // field); the snapshot's tool-message error is the authority.
+          const failures = new Map(snapshotToolCalls.filter((tc) => tc.status === 'error').map((tc) => [tc.id, tc]));
+          const merged = failures.size > 0
+            ? prev.map((tc) => {
+                const failure = failures.get(tc.id);
+                return failure && tc.status !== 'error'
+                  ? { ...tc, status: 'error' as const, error: failure.error, result: failure.result ?? tc.result, ...(failure.parts ? { parts: failure.parts } : {}) }
+                  : tc;
+              })
+            : prev;
+          return toAdd.length > 0 ? [...merged, ...toAdd] : merged;
         });
       }
       return;

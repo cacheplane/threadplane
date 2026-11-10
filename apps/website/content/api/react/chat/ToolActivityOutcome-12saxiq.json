@@ -1,25 +1,53 @@
 {
   "name": "ToolActivityOutcome",
   "entrypointId": "react/chat",
-  "kind": "Interface",
+  "kind": "TypeAlias",
   "href": "/docs/api/react/chat/ToolActivityOutcome",
-  "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+  "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation.",
+  "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded.",
   "declarations": [
     {
       "name": "ToolActivityOutcome",
-      "kind": "Interface",
-      "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
       "excerptTokens": [
         {
           "kind": "Content",
-          "text": "export interface ToolActivityOutcome "
+          "text": "export type ToolActivityOutcome = "
+        },
+        {
+          "kind": "Content",
+          "text": "{\n    readonly status?: 'succeeded';\n    readonly text: string;\n    readonly sources?: readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivitySource",
+          "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+          "href": "/docs/api/react/chat/ToolActivitySource"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n} | {\n    readonly status: 'failed';\n    readonly text: string;\n    readonly sources?: readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivitySource",
+          "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
+          "href": "/docs/api/react/chat/ToolActivitySource"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n}"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
         }
       ],
       "docs": {
-        "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation.",
+        "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -28,98 +56,19 @@
         "params": [],
         "typeParams": []
       },
-      "members": [
-        {
-          "name": "sources",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityOutcome#sources:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly sources?: "
-            },
-            {
-              "kind": "Content",
-              "text": "readonly "
-            },
-            {
-              "kind": "Reference",
-              "text": "ToolActivitySource",
-              "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
-              "href": "/docs/api/react/chat/ToolActivitySource"
-            },
-            {
-              "kind": "Content",
-              "text": "[]"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 9
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "text",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityOutcome#text:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly text: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 8
-          },
-          "isReadonly": true,
-          "isOptional": false
-        }
-      ],
+      "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 7
+        "line": 9
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 7
+    "line": 9
   }
 }

@@ -76,6 +76,9 @@ export { ChatToolCallsComponent } from './lib/primitives/chat-tool-calls/chat-to
 export { ChatToolViewsComponent } from './lib/primitives/chat-tool-views/chat-tool-views.component';
 export { ChatToolCallTemplateDirective } from './lib/primitives/chat-tool-calls/chat-tool-call-template.directive';
 export type { ChatToolCallTemplateContext } from './lib/primitives/chat-tool-calls/chat-tool-call-template.directive';
+export { ChatToolResultTemplateDirective } from './lib/primitives/chat-tool-calls/chat-tool-result-template.directive';
+export type { ChatToolResultTemplateContext } from './lib/primitives/chat-tool-calls/chat-tool-result-template.directive';
+export { resolveToolOutcome } from './lib/primitives/chat-tool-activity/tool-outcome';
 export { ChatSubagentsComponent } from './lib/primitives/chat-subagents/chat-subagents.component';
 export { ChatThreadListComponent } from './lib/primitives/chat-thread-list/chat-thread-list.component';
 export type { Thread, ThreadActionAdapter } from './lib/primitives/chat-thread-list/chat-thread-list.component';

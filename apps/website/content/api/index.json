@@ -2494,6 +2494,26 @@
       "summary": "Registers a per-tool-name template inside <chat-tool-calls>. The\nprimitive collects all directive instances via contentChildren() and\ndispatches incoming calls by their `name` field. A literal \"*\" name\nregisters a wildcard catch-all that handles any tool name without a\nspecific template registered.\n\nUsage:\n```html\n  <chat-tool-calls [agent]=\"agent\" [message]=\"msg\">\n    <ng-template chatToolCallTemplate=\"search_web\" let-call let-status=\"status\">\n      <my-search-result-card [query]=\"call.args.query\" [status]=\"status\"/>\n    </ng-template>\n    <ng-template chatToolCallTemplate=\"*\" let-call>\n      <chat-tool-call-card [toolCall]=\"call\"/>\n    </ng-template>\n  </chat-tool-calls>\n```"
     },
     {
+      "name": "ChatToolResultTemplateContext",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ChatToolResultTemplateContext",
+      "canonicalReference": "@threadplane/chat!ChatToolResultTemplateContext:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Template context for a per-call result slot: the resolved activity, after any `toolOutcome` hook ran."
+    },
+    {
+      "name": "ChatToolResultTemplateDirective",
+      "entrypointId": "chat",
+      "kind": "Class",
+      "href": "/docs/api/chat/ChatToolResultTemplateDirective",
+      "canonicalReference": "@threadplane/chat!ChatToolResultTemplateDirective:class",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Registers an app-owned result or action template for default tool rows.\nThe template renders outside the technical Details, once per matching\ncall, with the resolved `ToolActivityInfo`. A literal \"*\" matches any tool\nname without a specific template; a name match wins over \"*\". Tools that\nhave a `chatToolCallTemplate` keep that full replacement, and result\ntemplates do not apply to them. Name the call in any control, because a\nbare \"Retry\" below a collapsed group does not say which call it acts on.\n```html\n  <chat [agent]=\"agent\">\n    <ng-template chatToolResultTemplate=\"read_reference\" let-activity>\n      @if (activity.phase === 'error') {\n        <button type=\"button\" (click)=\"retryRead(activity.id)\">Retry reference read</button>\n      }\n    </ng-template>\n  </chat>\n```"
+    },
+    {
       "name": "ChatToolViewsComponent",
       "entrypointId": "chat",
       "kind": "Class",
@@ -3744,6 +3764,16 @@
       "summary": "A citation resolved from message metadata or a markdown definition, with its source identified."
     },
     {
+      "name": "resolveToolOutcome",
+      "entrypointId": "chat",
+      "kind": "Function",
+      "href": "/docs/api/chat/resolveToolOutcome",
+      "canonicalReference": "@threadplane/chat!resolveToolOutcome:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy."
+    },
+    {
       "name": "Role",
       "entrypointId": "chat",
       "kind": "TypeAlias",
@@ -3996,12 +4026,12 @@
     {
       "name": "ToolActivityOutcome",
       "entrypointId": "chat",
-      "kind": "Interface",
+      "kind": "TypeAlias",
       "href": "/docs/api/chat/ToolActivityOutcome",
-      "canonicalReference": "@threadplane/chat!ToolActivityOutcome:interface",
+      "canonicalReference": "@threadplane/chat!ToolActivityOutcome:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded."
     },
     {
       "name": "toolActivityPhase",
@@ -6324,6 +6354,16 @@
       "summary": "Presentation options for an application-owned reasoning document."
     },
     {
+      "name": "resolveToolOutcome",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/resolveToolOutcome",
+      "canonicalReference": "@threadplane/react!resolveToolOutcome:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy."
+    },
+    {
       "name": "ScrollBubble",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6536,12 +6576,12 @@
     {
       "name": "ToolActivityOutcome",
       "entrypointId": "react/chat",
-      "kind": "Interface",
+      "kind": "TypeAlias",
       "href": "/docs/api/react/chat/ToolActivityOutcome",
-      "canonicalReference": "@threadplane/react!ToolActivityOutcome:interface",
+      "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation."
+      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded."
     },
     {
       "name": "toolActivityPhase",

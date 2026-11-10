@@ -337,7 +337,7 @@ export type ScrimOptionsContract = Assert<Equal<Pick<ChatSidenavScrimProps, 'lab
 
 function verifyPlainExports(root, consumer, projects) {
   const specifiers = projects.flatMap((project) => consumerSpecifiers(JSON.parse(readFileSync(join(consumer, 'node_modules/@threadplane', project, 'package.json'), 'utf8'))));
-  writeFileSync(join(consumer, 'index.mjs'), `${assertSupportedExports.toString()}\n` + specifiers.map((specifier) => `assertSupportedExports(${JSON.stringify(specifier.slice('@threadplane/'.length))}, await import(${JSON.stringify(specifier)}));`).join('\n'));
+  writeFileSync(join(consumer, 'index.mjs'), `const SUPPORTED_EXPORTS = ${JSON.stringify(SUPPORTED_EXPORTS)};\n${supportedExportNames.toString()}\n${assertSupportedExports.toString()}\n` + specifiers.map((specifier) => `assertSupportedExports(${JSON.stringify(specifier.slice('@threadplane/'.length))}, await import(${JSON.stringify(specifier)}));`).join('\n'));
   writeFileSync(join(consumer, 'index.ts'), plainExportTypes(specifiers));
   writeFileSync(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true }, files: ['index.ts'] }));
   runConsumer(process.execPath, ['index.mjs'], consumer);
@@ -422,60 +422,66 @@ function verifyInstalledRenderState(root, ownerConsumer, plain, rootLock) {
   console.log(`Installed render-state proof: ${JSON.stringify(evidence)}`);
 }
 
+const SUPPORTED_EXPORTS = {
+  core: [
+    'completeDelivery',
+    'streamingDelivery',
+    'staticDelivery',
+    'projectAgentError',
+  ],
+  react: ['useAgent'],
+  'react/chat': [
+    'ApprovalCard',
+    'Chat',
+    'ChatError',
+    'TypingIndicator',
+    'ScrollBubble',
+    'ChatMessage',
+    'isTyping',
+    'ChatPopup',
+    'ChatSidebar',
+    'ChatSidenav',
+    'ChatSidenavScrim',
+    'ChatInput',
+    'Citations',
+    'CitationCard',
+    'CitationPreview',
+    'ConfirmDialog',
+    'HistorySearchPalette',
+    'Timeline',
+    'MessageList',
+    'MessageActions',
+    'OverflowMenu',
+    'Reasoning',
+    'TextTranscript',
+    'ThreadList',
+    'ProjectList',
+    'ProjectNameForm',
+    'ThreadRenameForm',
+    'ToolActivity',
+    'ToolActivityGroup',
+    'toolActivityPhase',
+    'resolveToolOutcome',
+    'ToolObservation',
+    'Welcome',
+    'WelcomeSuggestion',
+    'Suggestions',
+  ],
+  'react/debug': ['ChatDebug', 'StateDiff'],
+  'react/markdown': ['Markdown'],
+  'react/render': ['RenderSpec'],
+  'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
+  'content/json': ['createJson'],
+  'content/a2ui': ['createA2uiSurfaces'],
+  'content/render-state': ['createRenderState'],
+};
+
+export function supportedExportNames(project) {
+  return SUPPORTED_EXPORTS[project] ?? [];
+}
+
 export function assertSupportedExports(project, entry) {
-  const expected =
-    {
-      core: [
-        'completeDelivery',
-        'streamingDelivery',
-        'staticDelivery',
-        'projectAgentError',
-      ],
-      react: ['useAgent'],
-      'react/chat': [
-        'ApprovalCard',
-        'Chat',
-        'ChatError',
-        'TypingIndicator',
-        'ScrollBubble',
-        'ChatMessage',
-        'isTyping',
-        'ChatPopup',
-        'ChatSidebar',
-        'ChatSidenav',
-        'ChatSidenavScrim',
-        'ChatInput',
-        'Citations',
-        'CitationCard',
-        'CitationPreview',
-        'ConfirmDialog',
-        'HistorySearchPalette',
-        'Timeline',
-        'MessageList',
-        'MessageActions',
-        'OverflowMenu',
-        'Reasoning',
-        'TextTranscript',
-        'ThreadList',
-        'ProjectList',
-        'ProjectNameForm',
-        'ThreadRenameForm',
-        'ToolActivity',
-        'ToolActivityGroup',
-        'toolActivityPhase',
-        'ToolObservation',
-        'Welcome',
-        'WelcomeSuggestion',
-        'Suggestions',
-      ],
-      'react/debug': ['ChatDebug', 'StateDiff'],
-      'react/markdown': ['Markdown'],
-      'react/render': ['RenderSpec'],
-      'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
-      'content/json': ['createJson'],
-      'content/a2ui': ['createA2uiSurfaces'],
-      'content/render-state': ['createRenderState'],
-    }[project] ?? [];
+  const expected = supportedExportNames(project);
   // React entries may export forwardRef/memo components, which are $$typeof objects.
   const supported = (value, name) =>
     typeof value === 'function' ||

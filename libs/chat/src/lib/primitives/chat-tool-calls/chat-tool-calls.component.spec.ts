@@ -6,6 +6,8 @@ import type { Agent, Message, ToolCall } from '../../agent';
 import { staticDelivery } from '../../agent';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
+import { ChatToolResultTemplateDirective } from './chat-tool-result-template.directive';
+import type { ToolActivityInfo, ToolActivityOutcome } from '../chat-tool-activity/chat-tool-activity.component';
 
 describe('ToolCallsComponent — toolCalls computed', () => {
   it('returns agent.toolCalls() when no message is provided', () => {
@@ -767,6 +769,34 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
       false
     );
   });
+  it('renders the generic failure copy as a div alert with one paragraph in the inline group alert', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput(
+      'agent',
+      mockAgent({
+        toolCalls: [
+          { id: 'a', name: 'read', status: 'complete', args: {} },
+          { id: 'b', name: 'save', status: 'error', args: {}, error: 'private' },
+        ],
+      })
+    );
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    // The failed member also renders its own <p role="alert">; the group
+    // alert is the sole block-level alert outside Details.
+    const alerts = Array.from(
+      root.querySelectorAll<HTMLElement>('[role="alert"]')
+    ).filter((el) => el.closest('details') === null && el.tagName === 'DIV');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent!.trim())
+    ).toEqual(['Some tools could not finish. Check Details before retrying.']);
+    expect(root.querySelector('.ctc__group-header')!.textContent).toContain(
+      'Used 2 tools · 1 failed'
+    );
+  });
   it('keeps an error-only diagnostic in Details and a safe failure outside', () => {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
@@ -828,5 +858,249 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
     expect(
       fixture.nativeElement.querySelectorAll('[data-group=true]')
     ).toHaveLength(0);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatToolCallsComponent, ChatToolCallTemplateDirective, ChatToolResultTemplateDirective],
+  template: `
+    <chat-tool-calls
+      [agent]="agent"
+      [groupRelated]="groupRelated"
+      [toolOutcome]="outcome"
+      [toolResultTemplates]="suppliedList()"
+    >
+      @if (withResult) {
+        <ng-template chatToolResultTemplate="*" let-activity>
+          <span data-slot="any">{{ activity.id }}:{{ activity.phase }}</span>
+          @if (activity.phase === 'error') {
+            <button type="button">Retry {{ activity.id }}</button>
+          }
+        </ng-template>
+      }
+      @if (withNamed) {
+        <ng-template chatToolResultTemplate="read_reference" let-activity>
+          <span data-slot="named">{{ activity.id }}</span>
+        </ng-template>
+      }
+      @if (withCallTemplate) {
+        <ng-template chatToolCallTemplate="read_reference" let-call>
+          <span data-slot="call">{{ call.id }}</span>
+        </ng-template>
+      }
+    </chat-tool-calls>
+    <ng-template #supplied chatToolResultTemplate="read_reference" let-activity>
+      <span data-slot="supplied">{{ activity.id }}</span>
+    </ng-template>
+  `,
+})
+class ResultSlotHost {
+  agent: Agent = mockAgent();
+  groupRelated = true;
+  withResult = true;
+  withNamed = false;
+  withCallTemplate = false;
+  outcome: ((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined;
+  readonly suppliedTemplates = viewChildren('supplied', { read: ChatToolResultTemplateDirective });
+  suppliedList() {
+    return this.withSupplied ? this.suppliedTemplates() : [];
+  }
+  withSupplied = false;
+}
+
+describe('ChatToolCallsComponent — app-declared tool failures and result slot', () => {
+  const calls = (results: readonly unknown[]): ToolCall[] =>
+    results.map((result, i) => ({
+      id: `c${i}`,
+      name: 'read_reference',
+      args: {},
+      status: 'complete' as const,
+      result,
+    }));
+  const failB = (activity: ToolActivityInfo): ToolActivityOutcome | undefined =>
+    activity.id === 'c1' ? { status: 'failed', text: 'Reference B is unavailable.' } : undefined;
+  function setup(
+    results: readonly unknown[],
+    configure: (host: ResultSlotHost) => void = () => undefined
+  ) {
+    TestBed.configureTestingModule({ imports: [ResultSlotHost] });
+    const fixture = TestBed.createComponent(ResultSlotHost);
+    const host = fixture.componentInstance;
+    host.agent = mockAgent({ toolCalls: calls(results) });
+    configure(host);
+    fixture.detectChanges();
+    fixture.detectChanges();
+    return { fixture, root: fixture.nativeElement as HTMLElement, host };
+  }
+
+  it('partial failure shows one Complete and one Failed row', () => {
+    const { root } = setup(['ok', { recoverable: true, error: 'x' }], (h) => {
+      h.withResult = false;
+      h.outcome = failB;
+    });
+    expect(root.querySelector('.ctc__group-header')!.textContent).toContain('Used 2 tools · 1 failed');
+    expect(root.querySelector('[role="status"]')!.textContent!.trim()).toBe(
+      'Used 2 tools · 1 failed. 1 complete · 1 failed.'
+    );
+    const alert = root.querySelector('div[role="alert"].tp-tool-activity__error')!;
+    expect(alert.textContent!.trim()).toBe('Reference B is unavailable.');
+    expect(alert.closest('.ctc__group-body')).toBeNull();
+    const rowB = root.querySelector('chat-tool-activity [data-tool-id="c1"], [data-tool-id="c1"]')!;
+    expect(rowB.getAttribute('data-phase')).toBe('error');
+    expect(root.querySelector('[data-tool-id="c0"]')!.getAttribute('data-phase')).toBe('complete');
+    expect(rowB.querySelector('details')!.textContent).toContain('"recoverable": true');
+  });
+
+  it.each([
+    ['a single call with groupRelated off', ['ok'], false, 'auto', 'c0'],
+    ['grouping none', ['ok', { recoverable: true, error: 'x' }], true, 'none', 'c1'],
+  ] as const)('ungrouped failure (%s) shows exactly one alert with the failure text', (_, results, groupRelated, grouping, failedId) => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', mockAgent({ toolCalls: calls(results) }));
+    fixture.componentRef.setInput('groupRelated', groupRelated);
+    fixture.componentRef.setInput('grouping', grouping);
+    fixture.componentRef.setInput('toolOutcome', (activity: ToolActivityInfo): ToolActivityOutcome | undefined =>
+      activity.id === failedId ? { status: 'failed', text: 'Reference B is unavailable.' } : undefined
+    );
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const alerts = root.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent!.trim()).toBe('Reference B is unavailable.');
+    expect(root.textContent).not.toContain('Some tools could not finish');
+  });
+
+  it('a throwing toolOutcome leaves the call complete', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { root } = setup(['ok', 'ok2'], (h) => {
+      h.withResult = false;
+      h.outcome = (activity) => {
+        if (activity.id === 'c1') throw new Error('boom');
+        return undefined;
+      };
+    });
+    expect(root.querySelector('.ctc__group-header')!.textContent).toContain('Used 2 tools');
+    expect(root.querySelector('.ctc__group-header')!.textContent).not.toContain('failed');
+    expect(
+      [...root.querySelectorAll('.tp-tool-activity')].map((el) => el.getAttribute('data-phase'))
+    ).toEqual(['complete', 'complete']);
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+
+  it('falsy literal results stay complete', () => {
+    const { root } = setup([false, 0, '', [], null], (h) => {
+      h.withResult = false;
+      h.outcome = () => undefined;
+    });
+    expect(root.querySelector('.ctc__group-header')!.textContent).toContain('Used 5 tools');
+    expect(
+      [...root.querySelectorAll('.tp-tool-activity')].map((el) => el.getAttribute('data-phase'))
+    ).toEqual(['complete', 'complete', 'complete', 'complete', 'complete']);
+    expect(
+      [...root.querySelectorAll('.tp-tool-activity details pre:nth-of-type(2)')].map((el) => el.textContent)
+    ).toEqual(['false', '0', '', '[]', 'null']);
+  });
+
+  it('chatToolResultTemplate renders outside the collapsed group with the resolved activity', () => {
+    const { root } = setup(['ok', { recoverable: true, error: 'x' }], (h) => {
+      h.outcome = failB;
+    });
+    const body = root.querySelector('.ctc__group-body') as HTMLElement;
+    expect(body.hidden).toBe(true);
+    const buttons = root.querySelectorAll('button');
+    const retry = [...buttons].filter((b) => b.textContent!.trim() === 'Retry c1');
+    expect(retry).toHaveLength(1);
+    expect(body.contains(retry[0])).toBe(false);
+    expect(retry[0].closest('[data-tool-id]')!.getAttribute('data-tool-id')).toBe('c1');
+    expect(retry[0].closest('.tp-tool-activity__results')).toBeTruthy();
+    const seen = [...root.querySelectorAll('[data-slot="any"]')].map((el) => el.textContent);
+    expect(seen).toEqual(['c0:complete', 'c1:error']);
+  });
+
+  it('renders no results container without a matching template', () => {
+    const { root } = setup(['ok'], (h) => {
+      h.withResult = false;
+    });
+    expect(root.querySelector('.tp-tool-activity__results')).toBeNull();
+  });
+
+  it('chatToolResultTemplate renders inside the call row when ungrouped', () => {
+    const { root } = setup(['ok', 'bad'], (h) => {
+      h.groupRelated = false;
+      h.agent = mockAgent({
+        toolCalls: [
+          { id: 'c0', name: 'other_tool', args: {}, status: 'complete', result: 'ok' },
+          { id: 'c1', name: 'read_reference', args: {}, status: 'complete', result: 'bad' },
+        ],
+      });
+      h.outcome = failB;
+    });
+    const button = [...root.querySelectorAll('button')].find((b) => b.textContent!.trim() === 'Retry c1')!;
+    expect(button.closest('.tp-tool-activity')!.getAttribute('data-tool-id')).toBe('c1');
+  });
+
+  it('a name template beats "*" for that tool', () => {
+    const { root } = setup(['ok'], (h) => {
+      h.withNamed = true;
+    });
+    expect(root.querySelector('[data-slot="named"]')).toBeTruthy();
+    expect(root.querySelector('[data-slot="any"]')).toBeNull();
+  });
+
+  it('content-child result templates beat supplied ones for the same name', () => {
+    const { root } = setup(['ok'], (h) => {
+      h.withResult = false;
+      h.withNamed = true;
+      h.withSupplied = true;
+    });
+    expect(root.querySelector('[data-slot="named"]')).toBeTruthy();
+    expect(root.querySelector('[data-slot="supplied"]')).toBeNull();
+  });
+
+  it('supplied result templates render when no content child matches', () => {
+    const { root } = setup(['ok'], (h) => {
+      h.withResult = false;
+      h.withSupplied = true;
+    });
+    expect(root.querySelector('[data-slot="supplied"]')).toBeTruthy();
+  });
+
+  it('tools with a chatToolCallTemplate keep full replacement and get no result template', () => {
+    const { root } = setup(['ok'], (h) => {
+      h.withCallTemplate = true;
+    });
+    expect(root.querySelector('[data-slot="call"]')).toBeTruthy();
+    expect(root.querySelector('[data-slot="any"]')).toBeNull();
+    expect(root.querySelector('.tp-tool-activity__results')).toBeNull();
+  });
+
+  it('renders identical failure text from two failed calls once in the group alert', () => {
+    const { root } = setup(['a', 'b'], (h) => {
+      h.withResult = false;
+      h.outcome = () => ({ status: 'failed', text: 'Reference is unavailable.' });
+    });
+    const paragraphs = root.querySelectorAll('div[role="alert"].tp-tool-activity__error > p');
+    expect([...paragraphs].map((p) => p.textContent!.trim())).toEqual(['Reference is unavailable.']);
+  });
+
+  it('does not re-run toolOutcome on repeated change detection', () => {
+    const outcome = vi.fn(failB);
+    const { fixture } = setup(['ok', 'bad'], (h) => {
+      h.withResult = false;
+      h.outcome = outcome;
+    });
+    const before = outcome.mock.calls.length;
+    const root = fixture.nativeElement as HTMLElement;
+    // Toggling a signal the template reads re-renders the OnPush view
+    // without changing the tool calls.
+    (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('.ctc__group-header')!.getAttribute('aria-expanded')).toBe('true');
+    (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(outcome.mock.calls.length).toBe(before);
   });
 });
