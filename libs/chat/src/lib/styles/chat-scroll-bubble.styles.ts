@@ -22,6 +22,7 @@ export const CHAT_SCROLL_BUBBLE_STYLES = `
     border: 1px solid var(--tplane-chat-separator);
     color: var(--tplane-chat-text);
     cursor: pointer;
+    box-shadow: var(--tplane-chat-elevation-float);
     transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-scroll-bubble:hover { transform: scale(1.05); }
