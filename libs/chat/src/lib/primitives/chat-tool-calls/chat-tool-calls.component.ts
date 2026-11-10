@@ -143,7 +143,7 @@ let nextChatToolCallsId = 0;
   ],
   template: `
     @for (group of groups(); track group.key) { @if (group.subagent) {
-    <chat-subagent-card [subagent]="group.subagent" />
+    <chat-subagent-card [subagent]="group.subagent" [toolLabel]="toolLabel()" />
     } @else if (!group.templateRef) {
     <!-- Default grouped strip -->
     @let grouped = grouping() !== 'none' && (group.calls.length > 1 || groupRelated());
