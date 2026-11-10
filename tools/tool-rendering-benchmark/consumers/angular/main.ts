@@ -42,7 +42,11 @@ class Benchmark {
   readonly toolLabel = toolLabel;
   // The application decodes its own tool schemas; only this scenario's backend can retry a read.
   readonly toolOutcome = toolOutcomes(
-    toolDecoders({ retryReads: scenario === 'partial-failure', layout })
+    toolDecoders({
+      retryReads: scenario === 'partial-failure',
+      layout,
+      declareSources: true,
+    })
   );
   readonly scenario = scenario;
   // The cards layout shows each distinct reference once, on the last call that returned it.
@@ -153,7 +157,7 @@ Component({
 bootstrapApplication(Benchmark, {
   providers: [
     provideAgent({
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}&layout=${layout}`,
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}`,
       telemetry: false,
     }),
   ],

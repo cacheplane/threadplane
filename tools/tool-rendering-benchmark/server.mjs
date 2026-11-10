@@ -41,6 +41,9 @@ export async function createBenchmarkServer({
   const streams = new Set();
   const gates = new Map();
   const recoveries = new Map();
+  // Agent state per thread: a state snapshot replaces the whole state, so each
+  // one carries the citations of every earlier message in the thread as well.
+  const threadCitations = new Map();
   let address;
   function stop(run, reason = 'aborted') {
     if (terminal.has(run.record.status)) return;
@@ -120,6 +123,8 @@ export async function createBenchmarkServer({
           if (gate.participant === participant) gate.revoked = true;
         for (const [key, recovery] of recoveries)
           if (recovery.participant === participant) recoveries.delete(key);
+        for (const key of threadCitations.keys())
+          if (JSON.parse(key)[0] === participant) threadCitations.delete(key);
         return json(200, { reset: true });
       }
       if (url.pathname.startsWith('/approve/')) {
@@ -577,11 +582,14 @@ export async function createBenchmarkServer({
                 url: row.url,
                 snippet: typeof row.summary === 'string' ? row.summary : '',
               });
-          if (cited.size > before)
-            emit({
-              type: 'STATE_SNAPSHOT',
-              snapshot: { citations: { [messageId]: [...cited.values()] } },
-            });
+          if (cited.size > before) {
+            const citations = {
+              ...threadCitations.get(recoveryKey),
+              [messageId]: [...cited.values()],
+            };
+            threadCitations.set(recoveryKey, citations);
+            emit({ type: 'STATE_SNAPSHOT', snapshot: { citations } });
+          }
         }
       }
       if (!active()) return;

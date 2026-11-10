@@ -78,7 +78,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 259
+        "line": 285
       },
       "overloadIndex": 1,
       "parameters": [
@@ -120,6 +120,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 259
+    "line": 285
   }
 }

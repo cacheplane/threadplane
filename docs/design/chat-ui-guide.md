@@ -46,16 +46,16 @@ token has a light and a dark value; a token with only one value is a bug.
 
 ### 2.1 Neutral palette (Today, keep)
 
-| Token | Light | Dark | Use |
-| --- | --- | --- | --- |
-| `--tplane-chat-bg` | `rgb(255,255,255)` | `rgb(17,17,17)` | Page behind the chat |
-| `--tplane-chat-surface` | `rgb(255,255,255)` | `rgb(28,28,28)` | Chat surfaces, menus |
-| `--tplane-chat-surface-alt` | `rgb(251,251,251)` | `rgb(44,44,44)` | Hover and selected rows, floating surfaces in dark |
-| `--tplane-chat-text` | `rgb(28,28,28)` | `rgb(245,245,245)` | Body text ("ink") |
-| `--tplane-chat-text-muted` | `rgb(115,115,115)` | `rgb(160,160,160)` | Secondary text, status words |
-| `--tplane-chat-separator` | `rgb(229,229,229)` | `rgb(45,45,45)` | Hairline rules and borders |
-| `--tplane-chat-primary` | `rgb(28,28,28)` | `rgb(255,255,255)` | Primary button fill, user bubble |
-| `--tplane-chat-on-primary` | `rgb(255,255,255)` | `rgb(28,28,28)` | Text on primary |
+| Token                       | Light              | Dark               | Use                                                |
+| --------------------------- | ------------------ | ------------------ | -------------------------------------------------- |
+| `--tplane-chat-bg`          | `rgb(255,255,255)` | `rgb(17,17,17)`    | Page behind the chat                               |
+| `--tplane-chat-surface`     | `rgb(255,255,255)` | `rgb(28,28,28)`    | Chat surfaces, menus                               |
+| `--tplane-chat-surface-alt` | `rgb(251,251,251)` | `rgb(44,44,44)`    | Hover and selected rows, floating surfaces in dark |
+| `--tplane-chat-text`        | `rgb(28,28,28)`    | `rgb(245,245,245)` | Body text ("ink")                                  |
+| `--tplane-chat-text-muted`  | `rgb(115,115,115)` | `rgb(160,160,160)` | Secondary text, status words                       |
+| `--tplane-chat-separator`   | `rgb(229,229,229)` | `rgb(45,45,45)`    | Hairline rules and borders                         |
+| `--tplane-chat-primary`     | `rgb(28,28,28)`    | `rgb(255,255,255)` | Primary button fill, user bubble                   |
+| `--tplane-chat-on-primary`  | `rgb(255,255,255)` | `rgb(28,28,28)`    | Text on primary                                    |
 
 `--tplane-chat-text-muted` must meet 4.5:1 on `surface` and `surface-alt` in
 both themes, because status words and the progress shimmer use it as text.
@@ -68,11 +68,11 @@ One family per meaning, each with text, background and border. Today there are
 several reds and greens and one undefined token (`--tplane-chat-error`, used by
 tool activity with a `#b42318` fallback).
 
-| Meaning | Text | Background | Border | Used for |
-| --- | --- | --- | --- | --- |
-| Danger | `--tplane-chat-error-text` | `--tplane-chat-error-bg` | `--tplane-chat-error-border` | Failed calls, run errors, destructive approvals |
-| Warning | `--tplane-chat-warning-text` | `--tplane-chat-warning-bg` | `--tplane-chat-warning-border` (new) | Waiting for approval, stopped |
-| Success | `--tplane-chat-success-text` | `--tplane-chat-success-bg` (new) | `--tplane-chat-success-border` (new) | Receipts after a confirmed save |
+| Meaning | Text                         | Background                       | Border                               | Used for                                        |
+| ------- | ---------------------------- | -------------------------------- | ------------------------------------ | ----------------------------------------------- |
+| Danger  | `--tplane-chat-error-text`   | `--tplane-chat-error-bg`         | `--tplane-chat-error-border`         | Failed calls, run errors, destructive approvals |
+| Warning | `--tplane-chat-warning-text` | `--tplane-chat-warning-bg`       | `--tplane-chat-warning-border` (new) | Waiting for approval, stopped                   |
+| Success | `--tplane-chat-success-text` | `--tplane-chat-success-bg` (new) | `--tplane-chat-success-border` (new) | Receipts after a confirmed save                 |
 
 Rules:
 
@@ -101,14 +101,14 @@ they land.
 
 ### 2.4 Shape (Today, tighten)
 
-| Token | Value | Use |
-| --- | --- | --- |
-| `--tplane-chat-radius-sm` | 4px | Inline code, small icons, task boxes |
-| `--tplane-chat-radius-button` | 8px | Every button except pills and the launcher |
-| `--tplane-chat-radius-card` | 8px | Panels, cards, menus |
-| `--tplane-chat-radius-bubble` | 15px | Message bubbles |
-| `--tplane-chat-radius-input` | 20px | Composer |
-| `--tplane-chat-radius-launcher` | 9999px | Launcher, pills |
+| Token                           | Value  | Use                                        |
+| ------------------------------- | ------ | ------------------------------------------ |
+| `--tplane-chat-radius-sm`       | 4px    | Inline code, small icons, task boxes       |
+| `--tplane-chat-radius-button`   | 8px    | Every button except pills and the launcher |
+| `--tplane-chat-radius-card`     | 8px    | Panels, cards, menus                       |
+| `--tplane-chat-radius-bubble`   | 15px   | Message bubbles                            |
+| `--tplane-chat-radius-input`    | 20px   | Composer                                   |
+| `--tplane-chat-radius-launcher` | 9999px | Launcher, pills                            |
 
 Target: component styles use these tokens only. Today there are literal 5, 6,
 8, 10 and 12px radii across components.
@@ -132,11 +132,11 @@ confirm dialog, approval card, sidenav and popup collapse into this one token.
 
 ### 2.6 Motion (Target)
 
-| Token | Value |
-| --- | --- |
-| `--tplane-chat-motion-duration` | 150ms |
-| `--tplane-chat-motion-duration-slow` | 250ms (drawers and panels that travel) |
-| `--tplane-chat-motion-ease` | `cubic-bezier(0.22, 1, 0.36, 1)` (ease-out) |
+| Token                                | Value                                       |
+| ------------------------------------ | ------------------------------------------- |
+| `--tplane-chat-motion-duration`      | 150ms                                       |
+| `--tplane-chat-motion-duration-slow` | 250ms (drawers and panels that travel)      |
+| `--tplane-chat-motion-ease`          | `cubic-bezier(0.22, 1, 0.36, 1)` (ease-out) |
 
 - Animate only `opacity` and `transform`.
 - One moving element per view (see Principles).
@@ -229,7 +229,10 @@ Rows (Target):
 - After the label, a status word in muted text ("Complete", "Failed",
   "Stopped"). Failed uses the danger text color. The row never repeats the
   failure message.
-- Sources sit directly under the row that produced them.
+- Sources a call declares are listed once in the message's Sources panel,
+  closed until opened, beside the message's own citations. They are not
+  repeated as links under the row. A standalone activity with no message
+  around it keeps its own source links.
 
 Failure (Target):
 
@@ -333,21 +336,21 @@ Every component change checks:
 
 ## 8. Gap list (Angular)
 
-| Area | Status | Target section |
-| --- | --- | --- |
-| Status reds and greens | Done. Components read the status tokens. `success-bg`, `success-border` and `warning-border` are declared for the phase 3 status panels, and no component reads them yet | 2.2 |
-| Focus ring | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset | 2.3 |
-| Radii | Done. Components use the radius tokens | 2.4 |
-| Shadows | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases | 2.5 |
-| Motion | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease` | 2.6 |
-| Layers | Done. Every cross-component layer reads a named `--tplane-chat-z-*` token; local 0 to 2 stacking values remain inside components | 2.7 |
-| Forced colors | Done. Status panels keep a border | 6.1, 7 |
-| Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
-| Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
-| Tool rows | Open. Generic labels; failure text repeats when expanded; sources not under their call | 6.2 |
-| Progress | Open. No step list, no elapsed time, no Stop in the activity group | 6.3 |
-| Approvals | Open. Modal dialog | 6.4 |
-| Retry and receipts | Open. Not provided by the library | 6.5, 6.6 |
+| Area                        | Status                                                                                                                                                                   | Target section |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| Status reds and greens      | Done. Components read the status tokens. `success-bg`, `success-border` and `warning-border` are declared for the phase 3 status panels, and no component reads them yet | 2.2            |
+| Focus ring                  | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset                                                                                                              | 2.3            |
+| Radii                       | Done. Components use the radius tokens                                                                                                                                   | 2.4            |
+| Shadows                     | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases                                                                              | 2.5            |
+| Motion                      | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease`                                                                           | 2.6            |
+| Layers                      | Done. Every cross-component layer reads a named `--tplane-chat-z-*` token; local 0 to 2 stacking values remain inside components                                         | 2.7            |
+| Forced colors               | Done. Status panels keep a border                                                                                                                                        | 6.1, 7         |
+| Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties                                                                         | 2.6            |
+| Grouped failure alert       | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity                                          | 6.2            |
+| Tool rows                   | Open. Generic labels; failure text repeats when expanded                                                                                                                 | 6.2            |
+| Progress                    | Open. No step list, no elapsed time, no Stop in the activity group                                                                                                       | 6.3            |
+| Approvals                   | Open. Modal dialog                                                                                                                                                       | 6.4            |
+| Retry and receipts          | Open. Not provided by the library                                                                                                                                        | 6.5, 6.6       |
 
 The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
 

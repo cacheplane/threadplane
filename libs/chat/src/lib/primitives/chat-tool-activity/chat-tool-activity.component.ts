@@ -1,10 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
+  effect,
+  inject,
   input,
   output,
 } from '@angular/core';
+import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 import {
   ChatStatusPanelComponent,
   STATUS_PANEL_CONTENT_STYLES,
@@ -121,7 +125,7 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:a
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, styles],
-  template: `@if (outcomes().length || sources().length) {
+  template: `@if (outcomes().length || inlineSources().length) {
     <div class="tp-tool-outcomes">
       @for (outcome of outcomes().slice(0, 3); track outcome.text) {
       <p>{{ outcome.text }}</p>
@@ -132,9 +136,9 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:a
         <p>{{ outcome.text }}</p>
         }
       </details>
-      } @if (sources().length) {
+      } @if (inlineSources().length) {
       <ul aria-label="Tool sources">
-        @for (source of sources().slice(0, 3); track source.url) {
+        @for (source of inlineSources().slice(0, 3); track source.url) {
         <li>
           <a [href]="source.url" target="_blank" rel="noopener noreferrer">{{
             source.title
@@ -142,11 +146,11 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:a
         </li>
         }
       </ul>
-      } @if (sources().length > 3) {
+      } @if (inlineSources().length > 3) {
       <details>
-        <summary>More sources ({{ sources().length - 3 }})</summary>
+        <summary>More sources ({{ inlineSources().length - 3 }})</summary>
         <ul aria-label="More tool sources">
-          @for (source of sources().slice(3); track source.url) {
+          @for (source of inlineSources().slice(3); track source.url) {
           <li>
             <a [href]="source.url" target="_blank" rel="noopener noreferrer">{{
               source.title
@@ -163,6 +167,16 @@ export class ChatToolOutcomesComponent {
   readonly activities = input.required<readonly ToolActivityInfo[]>();
   readonly outcomes = computed(() => confirmedOutcomes(this.activities()));
   readonly sources = computed(() => outcomeSources(this.activities()));
+  // Inside a message with a Sources panel, the panel lists these; standalone use keeps the links here.
+  private readonly resolver = inject(CitationsResolverService, { optional: true });
+  protected readonly inlineSources = computed(() => (this.resolver?.sourcesPanel() ? [] : this.sources()));
+
+  constructor() {
+    const resolver = this.resolver;
+    if (!resolver) return;
+    effect(() => resolver.setToolSources(this, this.sources()));
+    inject(DestroyRef).onDestroy(() => resolver.setToolSources(this, []));
+  }
 }
 /** @internal Confirmed-write receipts shared by default rows and grouped presentation. */
 @Component({

@@ -1,11 +1,12 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import {
   activityFailures,
   confirmedOutcomes,
   outcomeSources,
   receiptOutcomes,
   resolveToolOutcome,
+  ToolSourcesInPanelContext,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
 import { activitySummary } from './activity-summary.js';
@@ -171,7 +172,9 @@ function ToolOutcomes({
   readonly activities: readonly ToolActivityInfo[];
 }) {
   const outcomes = confirmedOutcomes(activities);
-  const sources = outcomeSources(activities);
+  // Inside a message the Sources panel lists these; repeating them here would show each source twice.
+  const inPanel = useContext(ToolSourcesInPanelContext);
+  const sources = inPanel ? [] : outcomeSources(activities);
   if (!outcomes.length && !sources.length) return null;
   return (
     <div className="tp-tool-outcomes">

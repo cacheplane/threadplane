@@ -4091,7 +4091,7 @@
       "canonicalReference": "@threadplane/chat!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
     },
     {
       "name": "ToolArgs",
@@ -6751,7 +6751,7 @@
       "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
     },
     {
       "name": "ToolObservation",

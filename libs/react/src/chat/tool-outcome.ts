@@ -1,6 +1,11 @@
+import { createContext } from 'react';
+import type { Citation } from '@threadplane/core';
 import type { ToolActivityInfo } from './tool-activity.js';
 
-/** An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links. */
+/**
+ * An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.
+ * Inside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links.
+ */
 export interface ToolActivitySource {
   readonly title: string;
   readonly url: string;
@@ -51,7 +56,8 @@ export function confirmedOutcomes(
       activity.outcome?.status !== 'receipt'
         ? activity.outcome
         : undefined;
-    if (!outcome || seen.has(outcome.text)) return [];
+    // An outcome may declare sources alone; blank text is not a result line.
+    if (!outcome || !outcome.text.trim() || seen.has(outcome.text)) return [];
     seen.add(outcome.text);
     return [outcome];
   });
@@ -85,6 +91,48 @@ export function outcomeSources(
         return false;
       }
     });
+}
+/**
+ * @internal True inside a message whose Sources panel already lists tool-declared sources,
+ * so activity rows do not repeat them as links. Standalone primitives keep their own links.
+ */
+export const ToolSourcesInPanelContext = createContext(false);
+/**
+ * Citations for tool-declared sources that the message's own citations do not already cover.
+ * Matching is by normalised URL; new entries are numbered after the highest existing index.
+ */
+export function toolSourceCitations(
+  existing: readonly { readonly index: number; readonly url?: string }[],
+  sources: readonly ToolActivitySource[]
+): Citation[] {
+  const href = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    try {
+      return new URL(url).href;
+    } catch {
+      return undefined;
+    }
+  };
+  const seen = new Set(
+    existing.flatMap((citation) => href(citation.url) ?? [])
+  );
+  let index = existing.reduce(
+    (max, citation) => Math.max(max, citation.index),
+    0
+  );
+  return sources.flatMap((source) => {
+    const url = href(source.url);
+    if (!url || seen.has(url)) return [];
+    seen.add(url);
+    return [
+      {
+        id: 'tool-source:' + url,
+        index: ++index,
+        title: source.title,
+        url: source.url,
+      },
+    ];
+  });
 }
 /**
  * Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.

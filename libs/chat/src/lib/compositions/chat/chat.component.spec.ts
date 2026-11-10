@@ -103,7 +103,54 @@ describe('ChatComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
     expect(root.querySelector('.tp-tool-outcomes')?.textContent).toContain('Reference verified');
     expect(root.querySelector('.tp-tool-outcomes')?.closest('[hidden], details')).toBeNull();
-    expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeTruthy();
+    // The declared source joins the message's one Sources panel, closed until opened,
+    // and is not repeated as a link under the activity. Two calls declare it; it is listed once.
+    TestBed.tick();
+    fixture.detectChanges();
+    expect(root.querySelector('.tp-tool-outcomes a')).toBeNull();
+    expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeNull();
+    const sources = root.querySelector<HTMLButtonElement>('chat-citations .chat-citations__header')!;
+    expect(sources.getAttribute('aria-expanded')).toBe('false');
+    expect(sources.querySelector('.chat-citations__count')?.textContent).toBe('1');
+    sources.click();
+    fixture.detectChanges();
+    const links = root.querySelectorAll('chat-citations a[href="https://angular.dev/guide/signals"]');
+    expect(links.length).toBe(1);
+    expect(root.querySelector('chat-citations')?.textContent).toContain('Signals');
+  });
+  it('lists a tool-declared source once beside the message citations and numbers it after them', () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({
+      messages: [{
+        id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'success'),
+        citations: [{ id: 'own', index: 3, title: 'Signals guide', url: 'https://angular.dev/guide/signals' }],
+      }],
+      toolCalls: [{ id: 'c', name: 'lookup', args: {}, status: 'complete' as const, result: 'ok' }],
+    });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('toolOutcome', () => ({
+      text: 'Checked',
+      sources: [
+        { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+        { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted' },
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+      ],
+    }));
+    fixture.detectChanges();
+    TestBed.tick();
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const sources = root.querySelector<HTMLButtonElement>('chat-citations .chat-citations__header')!;
+    expect(sources.querySelector('.chat-citations__count')?.textContent).toBe('2');
+    sources.click();
+    fixture.detectChanges();
+    const text = root.querySelector('chat-citations')!.textContent!;
+    expect(text).toContain('Signals guide');
+    expect(text).not.toContain('Same page');
+    expect(text).toContain('toSorted');
+    expect(text).not.toContain('Unsafe');
+    expect(text.indexOf('Signals guide')).toBeLessThan(text.indexOf('toSorted'));
+    expect(root.querySelector('a[href^="javascript:"]')).toBeNull();
   });
   it('forwards chatToolResultTemplate to grouped tool rendering and suppresses it under chatActivityTemplate', () => {
     @Component({
