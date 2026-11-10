@@ -233,9 +233,15 @@ for (const [text, count] of [
     await page.goto(base);
     await submit(page, text);
     await saved(page);
+    // The lookup's declared error result is shown as a failed call, not a complete one.
+    if (text === 'Unknown flight') {
+      await expect(cards(page)).toHaveCount(0);
+      const failed = page.locator('.tp-tool-activity[data-phase="error"]');
+      await expect(failed).toHaveCount(count);
+      await expect(failed).toContainText('not found');
+      return;
+    }
     await expect(cards(page)).toHaveCount(count);
-    if (text === 'Unknown flight')
-      await expect(cards(page)).toContainText('not found');
     if (text === 'Routes tomorrow')
       await expect(cards(page)).toContainText('date_offset_days');
   });
