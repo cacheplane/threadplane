@@ -2364,6 +2364,26 @@
       "summary": "Backdrop scrim for chat-sidenav's drawer mode, rendered as a sibling of\n`<chat-sidenav>` so its z-index sits cleanly between the page content\nand the drawer host (escapes the drawer host's stacking context).\n\nUsage:\n```html\n  <chat-sidenav-scrim [open]=\"drawerOpen()\" (dismiss)=\"drawerOpen.set(false)\" />\n  <chat-sidenav [(open)]=\"drawerOpen\" ...></chat-sidenav>\n```"
     },
     {
+      "name": "ChatStatusPanelComponent",
+      "entrypointId": "chat",
+      "kind": "Class",
+      "href": "/docs/api/chat/ChatStatusPanelComponent",
+      "canonicalReference": "@threadplane/chat!ChatStatusPanelComponent:class",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "The one container for a failed call, a run error, an approval or a receipt.\nA lead sentence, projected detail, then actions marked `chatStatusPanelActions`.\nDisplays only; it runs nothing. Set `role=\"alert\"` on it for failures only.\n```html\n<chat-status-panel tone=\"success\" lead=\"Saved.\">\n  <p>Note #4821 in Comparisons.</p>\n  <button chatStatusPanelActions type=\"button\" (click)=\"open()\">Open note</button>\n</chat-status-panel>\n```"
+    },
+    {
+      "name": "ChatStatusPanelTone",
+      "entrypointId": "chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/chat/ChatStatusPanelTone",
+      "canonicalReference": "@threadplane/chat!ChatStatusPanelTone:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information."
+    },
+    {
       "name": "ChatStreamingMdComponent",
       "entrypointId": "chat",
       "kind": "Class",
@@ -4031,7 +4051,7 @@
       "canonicalReference": "@threadplane/chat!ToolActivityOutcome:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded."
+      "summary": "Concise, application-authored result evidence. A missing status means succeeded.\n`failed` shows a completed call as failed and may declare a retry the application handles.\n`receipt` records a write the application confirmed from the decoded result, never from an approval."
     },
     {
       "name": "toolActivityPhase",
@@ -4052,6 +4072,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Explicit readonly presentation state, separate from execution/session ownership."
+    },
+    {
+      "name": "ToolActivityRetry",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolActivityRetry",
+      "canonicalReference": "@threadplane/chat!ToolActivityRetry:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An opt-in retry the application declares for one failed call. The label names the call, such as \"Retry toSorted read\"."
     },
     {
       "name": "ToolActivitySource",
@@ -4102,6 +4132,36 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "The execution state of an agent tool call."
+    },
+    {
+      "name": "ToolOutcomeCall",
+      "entrypointId": "chat",
+      "kind": "Interface",
+      "href": "/docs/api/chat/ToolOutcomeCall",
+      "canonicalReference": "@threadplane/chat!ToolOutcomeCall:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity."
+    },
+    {
+      "name": "ToolOutcomeDecoder",
+      "entrypointId": "chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/chat/ToolOutcomeDecoder",
+      "canonicalReference": "@threadplane/chat!ToolOutcomeDecoder:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Decodes one tool's declared result schema. Return undefined for anything it does not recognise."
+    },
+    {
+      "name": "toolOutcomes",
+      "entrypointId": "chat",
+      "kind": "Function",
+      "href": "/docs/api/chat/toolOutcomes",
+      "canonicalReference": "@threadplane/chat!toolOutcomes:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Builds a `toolOutcome` callback from one decoder per tool name.\nA decoder runs only for a complete call of its own tool that has a result, so\nrunning, stopped and failed calls and every undeclared tool stay literal.\nParsing is done once here; values such as `false`, `0`, `\"\"`, `[]` and `null`\nreach the decoder unchanged and mean nothing until it says so."
     },
     {
       "name": "tools",
@@ -6394,6 +6454,36 @@
       "summary": "Passive action props; no session or scrolling owner is created."
     },
     {
+      "name": "StatusPanel",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/StatusPanel",
+      "canonicalReference": "@threadplane/react!StatusPanel:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "The one container for a failed call, a run error, an approval or a receipt. Displays only; it runs nothing."
+    },
+    {
+      "name": "StatusPanelProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/StatusPanelProps",
+      "canonicalReference": "@threadplane/react!StatusPanelProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A lead sentence, detail and actions for something the person must read or act on."
+    },
+    {
+      "name": "StatusPanelTone",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/StatusPanelTone",
+      "canonicalReference": "@threadplane/react!StatusPanelTone:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information."
+    },
+    {
       "name": "SuggestionItem",
       "entrypointId": "react/chat",
       "kind": "Interface",
@@ -6581,7 +6671,7 @@
       "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded."
+      "summary": "Concise, application-authored result evidence. A missing status means succeeded.\n`failed` shows a completed call as failed and may declare a retry the application handles.\n`receipt` records a write the application confirmed from the decoded result, never from an approval."
     },
     {
       "name": "toolActivityPhase",
@@ -6614,6 +6704,16 @@
       "summary": "Presentation evidence and an independently mounted rich-result/action slot."
     },
     {
+      "name": "ToolActivityRetry",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolActivityRetry",
+      "canonicalReference": "@threadplane/react!ToolActivityRetry:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "An opt-in retry the application declares for one failed call. The label names the call, such as \"Retry toSorted read\"."
+    },
+    {
       "name": "ToolActivitySource",
       "entrypointId": "react/chat",
       "kind": "Interface",
@@ -6642,6 +6742,36 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Literal observed text. The caller owns tool/result association and formatting."
+    },
+    {
+      "name": "ToolOutcomeCall",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/ToolOutcomeCall",
+      "canonicalReference": "@threadplane/react!ToolOutcomeCall:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity."
+    },
+    {
+      "name": "ToolOutcomeDecoder",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/ToolOutcomeDecoder",
+      "canonicalReference": "@threadplane/react!ToolOutcomeDecoder:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Decodes one tool's declared result schema. Return undefined for anything it does not recognise."
+    },
+    {
+      "name": "toolOutcomes",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/toolOutcomes",
+      "canonicalReference": "@threadplane/react!toolOutcomes:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Builds a `toolOutcome` callback from one decoder per tool name.\nA decoder runs only for a complete call of its own tool that has a result, so\nrunning, stopped and failed calls and every undeclared tool stay literal.\nParsing is done once here; values such as `false`, `0`, `\"\"`, `[]` and `null`\nreach the decoder unchanged and mean nothing until it says so."
     },
     {
       "name": "TypingIndicator",

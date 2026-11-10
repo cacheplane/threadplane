@@ -56,8 +56,7 @@ main.benchmark-chat {
   overflow: hidden;
 }
 .benchmark-header button,
-.benchmark-decision button,
-.benchmark-retry {
+.benchmark-decision button {
   cursor: pointer;
   color: inherit;
   background: var(--surface);
@@ -89,7 +88,6 @@ main.benchmark-chat {
 }
 .benchmark-decision :focus-visible,
 .benchmark-recovery :focus-visible,
-.benchmark-retry:focus-visible,
 .benchmark-message-actions :focus-visible,
 .benchmark-header :focus-visible {
   outline: 2px solid currentColor;

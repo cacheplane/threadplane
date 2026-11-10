@@ -1,0 +1,54 @@
+{
+  "name": "StatusPanelTone",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/StatusPanelTone",
+  "canonicalReference": "@threadplane/react!StatusPanelTone:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information.",
+  "declarations": [
+    {
+      "name": "StatusPanelTone",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!StatusPanelTone:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type StatusPanelTone = "
+        },
+        {
+          "kind": "Content",
+          "text": "'danger' | 'warning' | 'success' | 'neutral'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/status-panel.tsx",
+        "line": 5
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/status-panel.tsx",
+    "line": 5
+  }
+}

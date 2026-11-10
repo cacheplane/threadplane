@@ -45,7 +45,7 @@ export function extractErrorMessage(error: unknown): string | null {
           @if (agent().checkStatus) {
             <button type="button" class="chat-error__check" (click)="agent().checkStatus!()">Check status</button>
           }
-        } @else if (err.retryable) {
+        } @else if (err.retryable && !retryHidden()) {
           <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry</button>
         }
         @if (err.detail) {
@@ -57,4 +57,6 @@ export function extractErrorMessage(error: unknown): string | null {
 })
 export class ChatErrorComponent {
   readonly agent = input.required<Agent>();
+  /** Hide the generic Retry, which re-sends the whole request, when a narrower retry is already offered elsewhere. */
+  readonly retryHidden = input(false);
 }

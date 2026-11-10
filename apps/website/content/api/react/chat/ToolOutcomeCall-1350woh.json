@@ -1,0 +1,153 @@
+{
+  "name": "ToolOutcomeCall",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ToolOutcomeCall",
+  "canonicalReference": "@threadplane/react!ToolOutcomeCall:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity.",
+  "declarations": [
+    {
+      "name": "ToolOutcomeCall",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ToolOutcomeCall:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolOutcomeCall "
+        }
+      ],
+      "docs": {
+        "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activity",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolOutcomeCall#activity:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 251
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "args",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolOutcomeCall#args:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly args: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Parsed JSON arguments, or undefined when they are not valid JSON.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 253
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolOutcomeCall#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Parsed JSON result, or the literal result text when it is not JSON.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 255
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/tool-outcome.ts",
+        "line": 250
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-outcome.ts",
+    "line": 250
+  }
+}

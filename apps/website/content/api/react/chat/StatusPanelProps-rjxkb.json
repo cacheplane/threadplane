@@ -1,0 +1,264 @@
+{
+  "name": "StatusPanelProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/StatusPanelProps",
+  "canonicalReference": "@threadplane/react!StatusPanelProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A lead sentence, detail and actions for something the person must read or act on.",
+  "declarations": [
+    {
+      "name": "StatusPanelProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!StatusPanelProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface StatusPanelProps "
+        }
+      ],
+      "docs": {
+        "summary": "A lead sentence, detail and actions for something the person must read or act on.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "actions",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#actions:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly actions?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Buttons or links shown after the detail. Name the action and its object.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "children",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#children:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly children?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Detail, in ordinary text.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 13
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "lead",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#lead:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly lead?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Short statement ending in a period, such as \"Saved.\"",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 11
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "role",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#role:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly role?: "
+            },
+            {
+              "kind": "Content",
+              "text": "'alert' | 'status'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Use `alert` for failures only; receipts and approvals are announced politely by their owner.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "tone",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!StatusPanelProps#tone:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly tone?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "StatusPanelTone",
+              "canonicalReference": "@threadplane/react!StatusPanelTone:type",
+              "href": "/docs/api/react/chat/StatusPanelTone"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Defaults to `neutral`. The lead sentence carries the meaning; colour only reinforces it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/status-panel.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/status-panel.tsx",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/status-panel.tsx",
+    "line": 7
+  }
+}

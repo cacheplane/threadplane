@@ -65,7 +65,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 70
+        "line": 93
       },
       "overloadIndex": 1,
       "parameters": [
@@ -94,6 +94,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 70
+    "line": 93
   }
 }

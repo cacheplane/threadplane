@@ -18,7 +18,7 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from './tool-activity.js';
-import { resolveToolOutcome } from './tool-outcome.js';
+import { resolveToolOutcome, withoutStaleRetry } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -81,6 +81,11 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   ) => ToolActivityOutcome | undefined;
   /** App-owned rich result or action for one tool call, rendered outside technical Details. Keep stable like renderMessage; custom renderMessage retains full ownership. */
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
+  /**
+   * Application-owned handler for a retry declared by `toolOutcome` on a failed call. The control is offered only while
+   * nothing is running and no later call repeats the same tool and arguments. Without it no retry control renders. Keep stable.
+   */
+  readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -113,6 +118,30 @@ function safeOutcome(
     return undefined;
   }
 }
+const NONE: ReadonlySet<string> = new Set();
+/** Per-row retry staleness across the whole transcript: every call while work is active, else calls a later one repeats. */
+function staleRetriesByRow(rows: readonly MessageRow[]): readonly string[] {
+  const busy =
+    rows.at(-1)?.message.delivery.phase === 'streaming' ||
+    rows.some((row) =>
+      row.toolCalls.some((call) => {
+        const phase = toolActivityPhase(call.status, row.message.delivery);
+        return phase === 'pending' || phase === 'running';
+      })
+    );
+  if (busy) return rows.map((row) => (row.toolCalls.length ? '*' : ''));
+  const key = (call: MessageRow['toolCalls'][number]) =>
+    call.name + '\0' + literal(call.args);
+  const last = new Map<string, string>();
+  for (const row of rows)
+    for (const call of row.toolCalls) last.set(key(call), call.id);
+  return rows.map((row) =>
+    row.toolCalls
+      .filter((call) => last.get(key(call)) !== call.id)
+      .map((call) => call.id)
+      .join('\n')
+  );
+}
 const literal = (value: unknown): string =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
@@ -125,6 +154,8 @@ function RowView<TRow extends MessageRow>({
   toolLabel,
   toolOutcome,
   renderToolResult,
+  onToolRetry,
+  staleRetries,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -139,11 +170,15 @@ function RowView<TRow extends MessageRow>({
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
+  readonly onToolRetry?: (activity: ToolActivityInfo) => void;
+  /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
+  readonly staleRetries?: string;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
     return <>{renderMessage(row, contexts[prevRole ?? 'first'])}</>;
   }
+  const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
@@ -156,10 +191,13 @@ function RowView<TRow extends MessageRow>({
       resultText: call.status === 'complete' ? literal(call.result) : undefined,
       errorText: call.status === 'error' ? call.error : undefined,
     };
-    return resolveToolOutcome(
+    const resolved = resolveToolOutcome(
       activity,
       toolOutcome ? safeOutcome(toolOutcome, activity) : undefined
     );
+    return staleRetries === '*' || stale.has(call.id)
+      ? withoutStaleRetry(resolved, NONE)
+      : resolved;
   });
   return (
     <ChatMessage
@@ -184,10 +222,15 @@ function RowView<TRow extends MessageRow>({
               <ToolActivityGroup
                 activities={activities}
                 renderResult={renderToolResult}
+                onRetry={onToolRetry}
               />
             ) : (
               activities.map((activity) => (
-                <ToolActivity key={activity.id} activity={activity}>
+                <ToolActivity
+                  key={activity.id}
+                  activity={activity}
+                  onRetry={onToolRetry}
+                >
                   {renderToolResult?.(activity)}
                 </ToolActivity>
               ))
@@ -222,9 +265,14 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   toolLabel,
   toolOutcome,
   renderToolResult,
+  onToolRetry,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
+  const staleRetries = useMemo(
+    () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
+    [onToolRetry, rows]
+  );
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
@@ -321,6 +369,8 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               toolLabel={toolLabel}
               toolOutcome={toolOutcome}
               renderToolResult={renderToolResult}
+              onToolRetry={onToolRetry}
+              staleRetries={staleRetries?.[index]}
             />
           ))}
           {children}

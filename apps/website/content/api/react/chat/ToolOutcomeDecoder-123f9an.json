@@ -1,0 +1,74 @@
+{
+  "name": "ToolOutcomeDecoder",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/ToolOutcomeDecoder",
+  "canonicalReference": "@threadplane/react!ToolOutcomeDecoder:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Decodes one tool's declared result schema. Return undefined for anything it does not recognise.",
+  "declarations": [
+    {
+      "name": "ToolOutcomeDecoder",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!ToolOutcomeDecoder:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ToolOutcomeDecoder = "
+        },
+        {
+          "kind": "Content",
+          "text": "(call: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolOutcomeCall",
+          "canonicalReference": "@threadplane/react!ToolOutcomeCall:interface",
+          "href": "/docs/api/react/chat/ToolOutcomeCall"
+        },
+        {
+          "kind": "Content",
+          "text": ") => "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityOutcome",
+          "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
+          "href": "/docs/api/react/chat/ToolActivityOutcome"
+        },
+        {
+          "kind": "Content",
+          "text": " | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Decodes one tool's declared result schema. Return undefined for anything it does not recognise.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/tool-outcome.ts",
+        "line": 258
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/tool-outcome.ts",
+    "line": 258
+  }
+}
