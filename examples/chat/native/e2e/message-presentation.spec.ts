@@ -380,7 +380,45 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     const copy = answer
       .locator('.tp-chat-message__controls')
       .getByRole('button', { name: 'Copy answer', exact: true });
+    const compactCopy = async (button: Locator) => {
+      await expect(button).toHaveAccessibleName('Copy answer');
+      await expect(button).toHaveAttribute('title', 'Copy answer');
+      await expect(button).toHaveClass(/tp-message-actions__action--icon-only/);
+      await expect(button.locator('.tp-message-actions__label')).toHaveText(
+        'Copy answer'
+      );
+      await expect(button.locator('.tp-message-actions__label')).toHaveCSS(
+        'clip-path',
+        'inset(50%)'
+      );
+      const icon = button.locator('.tp-message-actions__icon');
+      await expect(icon).toHaveAttribute('aria-hidden', 'true');
+      const svg = icon.locator('svg');
+      await expect(svg).toHaveAttribute('aria-hidden', 'true');
+      await expect(svg).toHaveAttribute('focusable', 'false');
+      await expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
+      await expect(svg).toHaveAttribute('stroke', 'currentColor');
+      await expect(svg.locator('path')).toHaveAttribute(
+        'd',
+        'M5 15V5a2 2 0 0 1 2-2h10'
+      );
+      const bounds = await button.boundingBox();
+      expect(bounds!.width).toBeGreaterThanOrEqual(36);
+      expect(bounds!.height).toBeGreaterThanOrEqual(36);
+      const glyph = await svg.boundingBox();
+      expect(glyph!.width).toBe(16);
+      expect(glyph!.height).toBe(16);
+    };
+    await compactCopy(copy);
     await copy.focus();
+    await expect(copy).toBeFocused();
+    // Real keyboard traversal selects the browser's focus-visible modality.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expect(copy).toBeFocused();
+    await expect(copy).toHaveCSS('outline-style', 'solid');
+    await expect(copy).toHaveCSS('outline-width', '2px');
+    await expect(copy).toHaveCSS('outline-offset', '3px');
     await copy.press('Enter');
     await expect(answer.getByRole('status')).toHaveText('Answer copied.');
     expect(await writes()).toEqual([roleMessages[2].content]);
@@ -467,6 +505,7 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     await expect(currentCopy).toBeEnabled();
     const mountedCopy = await currentCopy.elementHandle();
     const stableCurrentCopy = async () => {
+      await compactCopy(currentCopy);
       expect(
         await currentCopy.evaluate(
           (el, original) => el === original,

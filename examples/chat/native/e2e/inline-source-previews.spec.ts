@@ -133,6 +133,11 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
     await page.keyboard.press('Escape');
     await expect(trigger).toBeFocused();
     await expect(dialog).toHaveCount(0);
+    // Observe beyond the 120ms hover timer with the pointer stationary: layout
+    // boundary events after Escape must not reopen the dismissed portal.
+    await page.waitForTimeout(150);
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
     await page.keyboard.press('Control+Enter');
     await expect(dialog).toHaveCount(0);
     await page.keyboard.press('Enter');
@@ -353,6 +358,13 @@ test('installed inline previews bridge keyboard focus, transfer hover and retire
         await sheets.dispose();
       }
       await page.keyboard.press('Escape');
+      await expect(trigger).toBeFocused();
+      await expect(dialog).toHaveCount(0);
+      // Restoring styles can expose the stationary pointer over the trigger.
+      // Observe beyond its original 120ms hover delay before the next width.
+      await page.waitForTimeout(150);
+      await expect(dialog).toHaveCount(0);
+      await expect(trigger).toBeFocused();
       await preserved();
     }
     // The literal long-type fixture needs room above both anchor positions.

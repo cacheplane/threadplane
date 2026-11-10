@@ -11,6 +11,7 @@ This experimental, private React source-build component presents one message. It
 import type { MessageRow } from '@threadplane/content/messages';
 import {
   ChatMessage,
+  MessageActions,
   MessageList,
   Reasoning,
   Citations,
@@ -19,7 +20,10 @@ import {
 import { Markdown } from '@threadplane/react/markdown';
 import '@threadplane/react/chat/styles.css';
 
-export function StandaloneMessage({ onCopy }: { readonly onCopy: () => void }) {
+export function StandaloneMessage({ onCopy, copyPending = false }: {
+  readonly onCopy: () => void;
+  readonly copyPending?: boolean;
+}) {
   return (
     <ChatMessage
       role="assistant"
@@ -28,9 +32,22 @@ export function StandaloneMessage({ onCopy }: { readonly onCopy: () => void }) {
       beforeContent={<p>Message context</p>}
       afterContent={<aside aria-label="Sources">Source details</aside>}
       controls={
-        <button type="button" onClick={onCopy}>
-          Copy
-        </button>
+        <MessageActions
+          disabled={copyPending}
+          actions={[{
+            id: 'copy',
+            label: 'Copy answer',
+            onSelect: onCopy,
+            iconOnly: true,
+            icon: (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
+                <rect x="9" y="9" width="11" height="11" rx="2" />
+                <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+              </svg>
+            ),
+          }]}
+        />
       }
     >
       <p>שלום עולם — content chooses its own direction.</p>
@@ -97,3 +114,11 @@ Children render once in `.tp-chat-message__body` with `dir="auto"`, independentl
 This wrapper does not suppress streaming controls: current streaming assistant controls stay usable, and historical streaming controls follow the same reveal conditions. Non-assistant controls, standalone `MessageActions` and nested rich-content controls retain their existing behavior. The consumer owns each handler, status, disabled state and clipboard operation. Rendering, updating and unmounting do not activate controls, move focus or announce a live status.
 
 The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing custom renderer bypass and scroll policy. Its readonly `MessageListRowContext.current` identifies the final supplied row, even when that row is user, system or tool; optional readonly `prevRole` comes from `rows[index - 1]?.role`, rather than the message payload or DOM. The ten positional combinations reuse frozen context objects. Replacing a preceding immutable row with a different projected role updates the following row even if its own reference is unchanged; unrelated historical rows remain memoized. Appending also rerenders the former final row because `current` changes. Stable one-argument renderers remain compatible, and Chat forwards the same two-argument contract. Full ChatMessage/T23 parity remains deferred.
+
+`MessageActions` can supply the controls, as in the local copy SVG above. `MessageAction` has exactly six readonly fields: required unique `id`, literal string `label` and argumentless `onSelect`, plus optional `disabled`, `icon` and `iconOnly`. `MessageActionsProps` keeps four readonly fields: required `actions` and optional `disabled`, `label` and `className`. The default group label is **Message actions**; empty actions render nothing. Both group and per-action disabled states default to false; either disables the native button.
+
+`icon` accepts app-authored decorative, noninteractive ReactNode content inside an `aria-hidden` wrapper. `iconOnly` defaults to false; only `true` with a supplied icon enables compact presentation. Exactly `null`, `undefined` and booleans omit the icon and keep a visible label even with `iconOnly: true`. Zero, strings (including empty strings), arrays (including empty arrays), fragments and components that render nothing follow normal ReactNode semantics. There is no child inspection; compact callers must supply a meaningful visible, noninteractive glyph.
+
+The literal string label always provides the button's accessible name. The opt-in chat stylesheet visually hides only the effective compact label, sets a minimum 36px square target and sizes direct SVG glyphs to 16px. Compact markup supplies the same literal label as a native `title` tooltip independently of CSS. Without the stylesheet, both icon and label remain visible in normal DOM presentation. Omit `iconOnly` for an icon beside a visible label; omit `icon` for a text button.
+
+Same-ID compatible updates and reordering preserve the native button and its focus where native disabled behavior permits. Pointer, Enter and Space activation call the current argumentless callback. Rendering, updating and unmounting do not activate actions. The application owns clipboard admission and writes, pending state, feedback, async completion and errors; it must handle promise rejections itself. No automatic ratings or regeneration commands are provided. This bounded private presentation feature does not complete T28 or establish public release parity.
