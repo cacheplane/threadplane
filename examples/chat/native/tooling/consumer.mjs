@@ -334,6 +334,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     '@threadplane/react/src/chat/chat-message',
     '@threadplane/react/src/chat/reasoning',
     '@threadplane/react/src/chat/approval-card',
+    '@threadplane/react/src/chat/select',
     '@threadplane/react/src/chat/message-actions',
     '@threadplane/react/src/chat/citations',
     '@threadplane/react/src/chat/citation-preview',

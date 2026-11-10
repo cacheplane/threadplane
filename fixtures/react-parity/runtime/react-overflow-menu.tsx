@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OverflowMenu, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { OverflowMenu, Select, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -12,6 +12,8 @@ export function OverflowMenuFixture() {
   const [expandedLabel, setExpandedLabel] = useState(false);
   if (new URLSearchParams(window.location.search).has('confirm'))
     return <ConfirmDialogFixture />;
+  if (new URLSearchParams(window.location.search).has('select'))
+    return <SelectFixture />;
   if (new URLSearchParams(window.location.search).has('rename'))
     return <main><h1>Installed rename editor</h1><ThreadRenameFormFixture /></main>;
   return (
@@ -83,6 +85,71 @@ export function OverflowMenuFixture() {
           />
         </span>
         <button>After menu</button>
+      </div>
+    </main>
+  );
+}
+
+/** Installed controlled select; the owner may refuse a requested change. */
+function SelectFixture() {
+  const [value, setValue] = useState('');
+  const [open, setOpen] = useState(false);
+  const [refuse, setRefuse] = useState(false);
+  const [requests, setRequests] = useState<string[]>([]);
+  return (
+    <main>
+      <h1>Installed select</h1>
+      <label>
+        <input
+          type="checkbox"
+          checked={refuse}
+          onChange={(event) => setRefuse(event.currentTarget.checked)}
+        />
+        Refuse changes
+      </label>
+      <output data-testid="select-value">{JSON.stringify(value)}</output>
+      <output data-testid="select-requests">{JSON.stringify(requests)}</output>
+      <div
+        dir="rtl"
+        style={
+          {
+            position: 'fixed',
+            left: 10,
+            bottom: 10,
+            overflow: 'hidden',
+            fontFamily: 'monospace',
+            fontSize: 18,
+            lineHeight: '24px',
+            colorScheme: 'light',
+            '--tp-chat-surface': 'rgb(241, 242, 243)',
+            '--tp-chat-text': 'rgb(11, 22, 33)',
+          } as React.CSSProperties
+        }
+      >
+        <button>Before select</button>
+        <Select
+          label="Fixture tone"
+          placeholder="Pick a tone"
+          options={[
+            { value: 'plain<&', label: 'Plain literal <&>', description: 'No <b>markup</b> is interpreted' },
+            { value: 'disabled', label: 'Unavailable tone', disabled: true },
+            { value: 'formal', label: 'Formal' },
+            {
+              value: 'long',
+              label: 'A long wrapping tone label that stays inside the viewport at every tested width',
+            },
+          ]}
+          value={value}
+          onValueChange={(next, event) => {
+            if (event.currentTarget.ownerDocument !== document)
+              throw Error('Wrong select owner document');
+            setRequests((values) => [...values, next]);
+            if (!refuse) setValue(next);
+          }}
+          open={open}
+          onOpenChange={setOpen}
+        />
+        <button>After select</button>
       </div>
     </main>
   );

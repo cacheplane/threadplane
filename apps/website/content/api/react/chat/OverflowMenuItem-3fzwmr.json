@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/overflow-menu.tsx",
-            "line": 16
+            "line": 10
           },
           "isReadonly": true,
           "isOptional": true
@@ -96,7 +96,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/overflow-menu.tsx",
-            "line": 14
+            "line": 8
           },
           "isReadonly": true,
           "isOptional": false
@@ -132,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/overflow-menu.tsx",
-            "line": 15
+            "line": 9
           },
           "isReadonly": true,
           "isOptional": false
@@ -168,7 +168,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/overflow-menu.tsx",
-            "line": 17
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": true
@@ -176,12 +176,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/overflow-menu.tsx",
-        "line": 13
+        "line": 7
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/overflow-menu.tsx",
-    "line": 13
+    "line": 7
   }
 }

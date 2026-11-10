@@ -543,6 +543,61 @@ test('installed React welcome prefills explicitly and retains composer ownership
     await expect(draft).toBeFocused();
     await retained(3, 'Help me plan a weekend trip.');
     await draft.fill('');
+    // The More prompts select portals its listbox out of the clipped suggestion
+    // row. Opening, navigating and dismissing are local; choosing fills the draft.
+    const more = page.getByRole('button', {
+      name: 'More prompts',
+      exact: true,
+    });
+    const prompts = page.getByRole('listbox', {
+      name: 'More example prompts',
+      exact: true,
+    });
+    await expect(more).toBeEnabled();
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await more.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(
+      prompts.getByRole('option', { name: /^Compare two options/ })
+    ).toBeFocused();
+    await expect(more).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      await prompts.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return (
+          node.parentElement === document.body &&
+          getComputedStyle(node).position === 'fixed' &&
+          box.left >= 8 &&
+          box.top >= 8 &&
+          box.right <= innerWidth - 8 &&
+          box.bottom <= innerHeight - 8
+        );
+      })
+    ).toBe(true);
+    await expect(prompts.getByRole('option')).toHaveCount(3);
+    await page.screenshot({
+      path: testInfo.outputPath('welcome-more-prompts.png'),
+      fullPage: false,
+    });
+    await page.keyboard.press('Escape');
+    await expect(prompts).toHaveCount(0);
+    await expect(more).toBeFocused();
+    await expect(dialog).toBeVisible();
+    await retained(3, '');
+    await more.click();
+    await page.keyboard.press('ArrowDown');
+    await expect(
+      prompts.getByRole('option', { name: /^Draft a message/ })
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(prompts).toHaveCount(0);
+    await expect(draft).toBeFocused();
+    await retained(3, 'Help me draft a clear, friendly message.');
+    await expect(more).toBeDisabled();
+    await expect(more).toHaveText('More prompts');
+    await expect(trip).toBeDisabled();
+    await draft.fill('');
+    await expect(more).toBeEnabled();
     await close.click();
     await preference.uncheck();
     await launcher.click();
@@ -555,7 +610,7 @@ test('installed React welcome prefills explicitly and retains composer ownership
     for (const width of [320, 390]) {
       await page.setViewportSize({ width, height: 844 });
       await expect(welcome).toBeVisible();
-      for (const control of [welcome, draft, trip, topic]) {
+      for (const control of [welcome, draft, trip, topic, more]) {
         await control.scrollIntoViewIfNeeded();
         const box = await control.boundingBox();
         assert.ok(box);

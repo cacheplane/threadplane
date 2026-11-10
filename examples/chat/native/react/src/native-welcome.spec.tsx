@@ -290,6 +290,56 @@ it('prefills both literal suggestions without issuing any owner commands', async
   expect(f.commands).toEqual(['history']);
 });
 
+it('prefills from the More prompts select as a local action without owner commands', async () => {
+  // jsdom reports no layout boxes; the anchored list requires a rendered trigger.
+  const rects = vi
+    .spyOn(HTMLElement.prototype, 'getClientRects')
+    .mockImplementation(function (this: HTMLElement) {
+      return [this.getBoundingClientRect()] as unknown as DOMRectList;
+    });
+  try {
+    const f = await owner();
+    const view = render(
+      <NativeComposer application={f.application} snapshot={f.snapshot()} />
+    );
+    const more = view.getByRole('button', {
+      name: 'More prompts',
+    }) as HTMLButtonElement;
+    expect(more.getAttribute('aria-haspopup')).toBe('listbox');
+    fireEvent.click(more);
+    const list = view.getByRole('listbox', { name: 'More example prompts' });
+    expect(list.parentElement).toBe(document.body);
+    expect(
+      Array.from(list.querySelectorAll('[role="option"]')).map((option) =>
+        option.getAttribute('aria-selected')
+      )
+    ).toEqual(['false', 'false', 'false']);
+    fireEvent.click(view.getByRole('option', { name: /^Compare two options/ }));
+    expect(inputOf(view).value).toBe(
+      'Help me compare two options and choose one.'
+    );
+    expect(document.activeElement).toBe(inputOf(view));
+    expect(view.queryByRole('listbox')).toBeNull();
+    // Choosing a prompt is an action, not a retained selection.
+    expect(more.textContent).toBe('More prompts');
+    expect(more.disabled).toBe(true);
+    fireEvent.change(inputOf(view), { target: { value: '' } });
+    expect(more.disabled).toBe(false);
+    for (const command of [
+      f.submit,
+      f.application.stop,
+      f.application.select,
+      f.application.create,
+      f.application.refresh,
+      f.application.dispose,
+    ])
+      expect(command).not.toHaveBeenCalled();
+    expect(f.commands).toEqual(['history']);
+  } finally {
+    rects.mockRestore();
+  }
+});
+
 it('rejects a live replacement thread and revalidates after capability reads', async () => {
   const f = await owner();
   const ready = f.snapshot();

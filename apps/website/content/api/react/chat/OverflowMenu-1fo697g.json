@@ -54,7 +54,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/overflow-menu.tsx",
-        "line": 102
+        "line": 30
       },
       "overloadIndex": 1,
       "parameters": [
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/overflow-menu.tsx",
-    "line": 102
+    "line": 30
   }
 }

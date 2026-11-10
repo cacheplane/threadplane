@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ChatInput,
+  Select,
   Suggestions,
   Welcome,
   WelcomeSuggestion,
@@ -18,6 +19,22 @@ const suggestions = [
     label: 'Explain a topic',
     value: 'Help me understand a topic step by step.',
   },
+] as const;
+
+// App-authored prompts. Choosing one fills the draft; it is not a retained
+// selection and never issues a request.
+const morePrompts = [
+  {
+    value: 'Help me compare two options and choose one.',
+    label: 'Compare two options',
+    description: 'Weigh trade-offs side by side',
+  },
+  {
+    value: 'Help me draft a clear, friendly message.',
+    label: 'Draft a message',
+    description: 'Start from a short brief',
+  },
+  { value: 'Summarize my notes into key points.', label: 'Summarize notes' },
 ] as const;
 
 const followups = [
@@ -71,6 +88,7 @@ export function NativeComposer({
   snapshot: ApplicationSnapshot;
 }) {
   const [draft, setDraft] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
   const liveDraft = useRef('');
   const input = useRef<ChatInputHandle>(null);
   const active = snapshot.submission.active;
@@ -140,14 +158,26 @@ export function NativeComposer({
                   onSelect={selectSuggestion}
                 />
               ) : (
-                suggestions.map((suggestion) => (
-                  <WelcomeSuggestion
-                    key={suggestion.label}
-                    {...suggestion}
+                <>
+                  {suggestions.map((suggestion) => (
+                    <WelcomeSuggestion
+                      key={suggestion.label}
+                      {...suggestion}
+                      disabled={draft.length > 0}
+                      onSelect={selectSuggestion}
+                    />
+                  ))}
+                  <Select
+                    label="More example prompts"
+                    placeholder="More prompts"
+                    options={morePrompts}
+                    value=""
+                    onValueChange={selectSuggestion}
+                    open={moreOpen}
+                    onOpenChange={setMoreOpen}
                     disabled={draft.length > 0}
-                    onSelect={selectSuggestion}
                   />
-                ))
+                </>
               )}
             </>
           ) : null

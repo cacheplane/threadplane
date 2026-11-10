@@ -52,6 +52,7 @@ export {
   type OverflowMenuProps,
   type OverflowMenuItem,
 } from './overflow-menu.js';
+export { Select, type SelectOption, type SelectProps } from './select.js';
 export {
   ThreadList,
   type ThreadListItem,

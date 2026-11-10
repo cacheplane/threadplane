@@ -41,6 +41,7 @@ test('production composition requires installed typing indicator runtime and dec
       'chat-message',
       'reasoning',
       'approval-card',
+      'select',
       'message-actions',
       'citations',
       'citation-preview',

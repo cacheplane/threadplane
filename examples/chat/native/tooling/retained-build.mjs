@@ -306,6 +306,7 @@ function selectedInputs(p, selected) {
       ['chat-message', 'ChatMessage'],
       ['reasoning', 'Reasoning'],
       ['approval-card', 'ApprovalCard'],
+      ['select', 'Select'],
       ['message-actions', 'MessageActions'],
       ['citations', 'Citations'],
       ['text-transcript', 'TextTranscript'],

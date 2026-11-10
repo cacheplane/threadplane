@@ -796,6 +796,62 @@ exact-ID clipboard command and an app-owned rename editor; compact navigation
 remains selection-only. Typeahead, further lifecycle/project commands
 and full parity remain open.
 
+## Controlled select
+
+The private chat entry also exports `Select`, `SelectProps` and `SelectOption`.
+Supply readonly ordered options with unique string values and literal labels, a
+controlled `value` with `onValueChange(value, event)`, controlled
+`open`/`onOpenChange`, and a required `label` naming the list:
+
+```tsx
+<Select
+  label="Response tone"
+  placeholder="Tone"
+  options={[
+    { value: 'plain', label: 'Plain', description: 'Short sentences' },
+    { value: 'formal', label: 'Formal' },
+    { value: 'playful', label: 'Playful', disabled: true },
+  ]}
+  value={tone}
+  onValueChange={setTone}
+  open={open}
+  onOpenChange={setOpen}
+/>
+```
+
+The trigger shows the label of the option whose value equals `value`, or
+`placeholder` (default `Select`) when none does. An option the owner has not
+accepted is never shown as selected: activating an option requests closure and
+then calls `onValueChange` with its literal value and the original React button
+mouse event, and the displayed selection changes only when the owner supplies
+the new `value`. Activating the current value only closes the list. Selecting
+never performs work by itself; changing a backend model, sending a message or
+persisting a preference stays an explicit application command.
+
+Optional `disabled`, option `disabled`, `className` (trigger) and
+`menuClassName` (list) control presentation. Only strict `true` disables.
+Option labels and descriptions are literal text.
+
+The list is a named `listbox` of native option buttons, portaled to the
+trigger document body so an ancestor's `overflow` or `transform` cannot clip
+it. It prefers the space above the trigger, as a composer usually sits at the
+bottom of the viewport, uses the space below when that does not fit, and
+stays within an 8px viewport margin. Opening focuses the selected enabled option, otherwise the first
+enabled one. Arrow keys wrap across enabled options, Home/End select edges and
+native Enter/Space activate. ArrowDown on the trigger opens the list like a click; ArrowUp opens it at
+the last enabled option. Escape closes from an option or the trigger
+before a containing panel and returns focus to the trigger; Tab continues from
+the trigger's natural order. Outside pointer/focus, external scroll and
+viewport resize request dismissal, and unavailable anchors suppress the portal
+exactly as for the command menu, with which it shares one private engine.
+Import the chat stylesheet for fixed placement and 40px targets; without it the
+list renders in normal flow at the end of the document body.
+
+Compared with Angular `chat-select`, the two-way `value` binding becomes
+explicit `value`/`onValueChange`, list visibility is owner-controlled,
+`menuLabel` is the required `label`, and `panelClass` is `menuClassName`.
+Typeahead and a model-select slot on the `Chat` composition are not provided.
+
 ## Controlled chat panels
 
 `ChatPopup` is a private non-modal shell from `@threadplane/react/chat`:
