@@ -90,3 +90,49 @@ describe('radii', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('outline removal', () => {
+  /** Selectors allowed to drop the outline without a ring, with the reason. */
+  const ALLOWLIST: Record<string, string> = {
+    // Rename inputs are mounted focused and keep an always-on primary border.
+    '.chat-thread-list__edit': 'always-on primary border while editing',
+    '.chat-project-list__edit': 'always-on primary border while editing',
+    // Timeline inspector host is not focusable; keydown bubbles from its list.
+    ':host': 'non-focusable host element',
+  };
+  const RING = /outline:\s*(2px solid var\(--tplane-chat-focus-ring\)|var\(--a2ui-focus-ring-width\) solid var\(--a2ui-focus-ring-color\))/;
+
+  function rulesOf(source: string): { selectors: string[]; body: string }[] {
+    const text = source.replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
+      selectors: (sel.split(/[`;]/).pop() ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      body,
+    }));
+  }
+  const stripPseudo = (sel: string): string =>
+    sel.replace(/:(hover|focus-visible|focus-within|focus|active|not\([^)]*\)|disabled)/g, '');
+
+  it('pairs every outline removal with a focus-ring rule for the same element', () => {
+    const offenders: string[] = [];
+    for (const { file, source } of componentStyleSources()) {
+      const rules = rulesOf(source);
+      const ringRules = rules.filter(
+        (r) => RING.test(r.body) && r.selectors.some((s) => /:focus(-visible|-within)?\b/.test(s)),
+      );
+      for (const rule of rules.filter((r) => /outline:\s*(none|0)\s*(;|$)/.test(r.body))) {
+        for (const selector of rule.selectors) {
+          const base = stripPseudo(selector);
+          if (ALLOWLIST[base]) continue;
+          const covered = ringRules.some((r) =>
+            r.selectors.some((s) => {
+              if (/:focus-within\b/.test(s)) return true; // ancestor ring covers its descendants
+              return stripPseudo(s) === base && /:focus/.test(s);
+            }),
+          );
+          if (!covered) offenders.push(`${basename(file)} ${selector}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

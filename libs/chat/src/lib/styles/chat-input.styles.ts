@@ -25,8 +25,11 @@ export const CHAT_INPUT_STYLES = `
   box-sizing: border-box;
   transition: border-color 150ms ease;
 }
-/* The textarea draws no outline of its own; the pill carries the focus cue. */
-.chat-input__pill:focus-within { border-color: var(--tplane-chat-text-muted); }
+/* The textarea draws no outline of its own; the pill carries the focus ring. */
+.chat-input__pill:focus-within {
+  outline: 2px solid var(--tplane-chat-focus-ring);
+  outline-offset: 2px;
+}
 
 .chat-input__hint > span {
   display: block;

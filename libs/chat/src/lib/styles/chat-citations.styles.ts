@@ -125,10 +125,10 @@ export const CHAT_CITATION_MARKER_STYLES = `
     background: var(--tplane-chat-citation-accent-soft);
     border-color: var(--tplane-chat-citation-accent-border);
     color: var(--tplane-chat-citation-accent);
-    outline: none;
   }
   .chat-citation-marker:focus-visible {
-    box-shadow: 0 0 0 2px var(--tplane-chat-citation-accent-border);
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
   }
   .chat-citation-marker--unresolved {
     color: var(--tplane-chat-text-muted);
@@ -287,7 +287,10 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations-card:hover,
   .chat-citations-card:focus-visible {
     border-color: var(--tplane-chat-citation-accent-border);
-    outline: none;
+  }
+  .chat-citations-card:focus-visible {
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
   }
   .chat-citations-card__index {
     flex: 0 0 auto;

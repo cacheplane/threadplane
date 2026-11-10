@@ -74,10 +74,13 @@ export const CHAT_SELECT_STYLES = `
     line-height: 1.3;
     white-space: normal;
   }
-  .chat-select__option:hover:not(:disabled),
+  .chat-select__option:hover:not(:disabled) {
+    background: var(--tplane-chat-surface-alt);
+  }
   .chat-select__option:focus-visible {
     background: var(--tplane-chat-surface-alt);
-    outline: none;
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: -2px;
   }
   .chat-select__option.is-active {
     background: var(--tplane-chat-surface-alt);

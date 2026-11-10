@@ -48,6 +48,11 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     font: inherit;
     font-size: 1rem;
   }
+  .chat-history-search-palette__input:focus-visible {
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--tplane-chat-radius-sm);
+  }
   .chat-history-search-palette__input::placeholder {
     color: var(--tplane-chat-text-muted);
   }
