@@ -24,13 +24,28 @@ export function CitationCard({ citation, className }: CitationCardProps) {
     citation.url === undefined ? undefined : markdownUrl(citation.url, 'link');
   return (
     <div className={['tp-citation-card', className].filter(Boolean).join(' ')}>
-      <CitationSourceMarker
-        citation={citation}
-        className="tp-citation-card__visual"
-      />
+      <span className="tp-citations__index tp-citation-card__index">
+        {citation.index}
+      </span>
       <div className="tp-citation-card__body">
+        <div className="tp-citation-card__metadata">
+          <CitationSourceMarker
+            citation={citation}
+            className="tp-citation-card__visual"
+          />
+          {domain && <span className="tp-citation-card__domain">{domain}</span>}
+          {published !== null && (
+            <span className="tp-citation-card__published">{published}</span>
+          )}
+          {meta.label !== null && (
+            <span
+              className={`tp-citations__type tp-citation-card__badge tp-citation-card__badge--${meta.tone}`}
+            >
+              {meta.label}
+            </span>
+          )}
+        </div>
         <div className="tp-citation-card__heading">
-          <span className="tp-citations__index">[{citation.index}] </span>
           {href === undefined ? (
             <span className="tp-citations__title">{title}</span>
           ) : (
@@ -44,23 +59,6 @@ export function CitationCard({ citation, className }: CitationCardProps) {
             </a>
           )}
         </div>
-        {(meta.label !== null || Boolean(domain) || published !== null) && (
-          <div className="tp-citation-card__metadata">
-            {meta.label !== null && (
-              <span
-                className={`tp-citations__type tp-citation-card__badge tp-citation-card__badge--${meta.tone}`}
-              >
-                {meta.label}
-              </span>
-            )}
-            {domain && (
-              <span className="tp-citation-card__domain">{domain}</span>
-            )}
-            {published !== null && (
-              <span className="tp-citation-card__published">{published}</span>
-            )}
-          </div>
-        )}
         {citation.snippet !== undefined && (
           <p className="tp-citations__snippet tp-citation-card__snippet">
             {citation.snippet}
