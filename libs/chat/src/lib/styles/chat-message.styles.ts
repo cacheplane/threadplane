@@ -111,7 +111,7 @@ export const CHAT_MESSAGE_STYLES = `
   }
   .chat-message__control-btn:hover { transform: scale(1.05); }
   .chat-message__control-btn:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
     border-radius: 4px;
   }

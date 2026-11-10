@@ -55,3 +55,27 @@ describe('status colors', () => {
     ).toEqual([]);
   });
 });
+
+describe('focus ring', () => {
+  it('draws every focus outline with the focus token', () => {
+    const offenders = offendersOf(
+      /^outline$/,
+      (value) =>
+        value !== 'none' &&
+        value !== '0' &&
+        value !== '2px solid var(--tplane-chat-focus-ring)' &&
+        value !== 'var(--a2ui-focus-ring-width) solid var(--a2ui-focus-ring-color)',
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('gives every focus-ring outline an outline-offset in the same rule', () => {
+    const offenders = componentStyleSources().flatMap(({ file, source }) =>
+      [...source.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\{([^{}]*)\}/g)]
+        .filter(([, body]) => /outline:\s*2px solid var\(--tplane-chat-focus-ring\)/.test(body))
+        .filter(([, body]) => !/outline-offset:/.test(body))
+        .map(([, body]) => `${basename(file)} ${body.trim().slice(0, 60)}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

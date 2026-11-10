@@ -35,7 +35,7 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     background: var(--tplane-chat-surface-alt);
   }
   .chat-overflow-menu__item:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: -2px;
   }
   .chat-overflow-menu__item--destructive {

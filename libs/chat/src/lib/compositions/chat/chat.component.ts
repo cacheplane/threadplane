@@ -212,7 +212,7 @@ export function isPinned(
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
-    .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-text-muted); outline-offset: -2px; }
+    .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: -2px; }
     .chat-stopped-notice {
       display: flex;
       align-items: center;

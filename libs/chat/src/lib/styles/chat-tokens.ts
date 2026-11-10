@@ -31,6 +31,7 @@ const LIGHT_TOKENS = `
   --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
   --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .04), 0 6px 16px rgb(0 0 0 / .08);
   --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --a2ui-focus-ring-color: var(--tplane-chat-focus-ring);
   --tplane-chat-scrim: rgb(0 0 0 / .32);
 
   /* --a2ui-* light variant */
@@ -105,6 +106,7 @@ const DARK_TOKENS = `
   --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
   --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .5);
   --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --a2ui-focus-ring-color: var(--tplane-chat-focus-ring);
   --tplane-chat-scrim: rgb(0 0 0 / .6);
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
@@ -410,7 +412,6 @@ const A2UI_INVARIANT_TOKENS = `
   --a2ui-shape-extra-large: 28px;
 
   /* Focus ring */
-  --a2ui-focus-ring-color: var(--a2ui-primary);
   --a2ui-focus-ring-width: 2px;
 
   /* Motion */

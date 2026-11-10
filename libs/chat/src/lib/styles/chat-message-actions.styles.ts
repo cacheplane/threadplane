@@ -51,7 +51,7 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     background: var(--tplane-chat-surface-alt);
   }
   .chat-message-actions__btn:focus-visible {
-    outline: 2px solid var(--tplane-chat-text-muted);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-message-actions__btn.is-active {

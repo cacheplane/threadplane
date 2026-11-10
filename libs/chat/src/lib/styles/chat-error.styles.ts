@@ -41,7 +41,7 @@ export const CHAT_ERROR_STYLES = `
     color: var(--tplane-chat-error-text);
   }
   .chat-error__retry:focus-visible, .chat-error__check:focus-visible {
-    outline: 2px solid var(--tplane-chat-error-text);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
 `;

@@ -56,7 +56,7 @@ export const CHAT_PROJECT_LIST_STYLES = `
   }
   .chat-project-list__kebab:focus-visible {
     opacity: 1;
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-project-list__edit {

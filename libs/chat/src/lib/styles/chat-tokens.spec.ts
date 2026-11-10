@@ -282,6 +282,15 @@ function contrast(a: string, b: string): number {
   return contrastRatio(parseColor(a), parseColor(b));
 }
 
+describe('ROOT_TOKEN_STYLES — a2ui focus alias', () => {
+  it('aliases --a2ui-focus-ring-color to the chat focus token in both themes, once', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(themeBlock(theme)).toContain('--a2ui-focus-ring-color: var(--tplane-chat-focus-ring);');
+    }
+    expect(ROOT_TOKEN_STYLES).not.toContain('--a2ui-focus-ring-color: var(--a2ui-primary)');
+  });
+});
+
 describe('ROOT_TOKEN_STYLES — status families', () => {
   it.each(['success-bg', 'success-border', 'warning-border', 'elevation-float', 'scrim'])(
     'declares --tplane-chat-%s in light and dark', (name) => {

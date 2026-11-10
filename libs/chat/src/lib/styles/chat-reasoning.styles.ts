@@ -27,7 +27,7 @@ export const CHAT_REASONING_STYLES = `
   }
   .chat-reasoning__header:hover { color: var(--tplane-chat-text); }
   .chat-reasoning__header:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
 

@@ -67,7 +67,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   }
   .chat-confirm-dialog__cancel:focus-visible,
   .chat-confirm-dialog__confirm:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
 `;

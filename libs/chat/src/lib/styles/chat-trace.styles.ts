@@ -17,7 +17,7 @@ export const CHAT_TRACE_STYLES = `
     font: inherit;
   }
   .chat-trace__header:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
     border-radius: 4px;
   }

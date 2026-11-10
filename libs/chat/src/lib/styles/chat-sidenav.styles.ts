@@ -123,7 +123,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 100%;
   }
   .chat-sidenav__action--new:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   /* Collapsed mode: shrink to 32×32 icon-only square. */
@@ -166,7 +166,7 @@ export const CHAT_SIDENAV_STYLES = `
   }
   .chat-sidenav__action:hover { background: var(--tplane-chat-surface-alt); }
   .chat-sidenav__action:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   :host([data-mode="collapsed"]) .chat-sidenav__action {
@@ -256,7 +256,7 @@ export const CHAT_SIDENAV_STYLES = `
     color: var(--tplane-chat-text);
   }
   .chat-sidenav__debug:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-sidenav__debug-dot {
@@ -351,7 +351,7 @@ export const CHAT_SIDENAV_STYLES = `
     color: var(--tplane-chat-text);
   }
   .chat-sidenav__archived-heading:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-sidenav__archived-chevron {

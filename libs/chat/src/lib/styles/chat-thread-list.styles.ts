@@ -84,7 +84,7 @@ export const CHAT_THREAD_LIST_STYLES = `
   }
   .chat-thread-list__kebab:focus-visible {
     opacity: 1;
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-thread-list__initial {

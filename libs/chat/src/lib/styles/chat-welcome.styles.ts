@@ -91,7 +91,7 @@ export const CHAT_WELCOME_SUGGESTION_STYLES = `
   }
   .chat-welcome-suggestion:active { transform: scale(0.98); }
   .chat-welcome-suggestion:focus-visible {
-    outline: 2px solid var(--tplane-chat-text-muted);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-welcome-suggestion__label { white-space: nowrap; }

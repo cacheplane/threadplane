@@ -28,9 +28,9 @@ describe('CHAT_SIDENAV_STYLES — New chat button', () => {
     );
   });
 
-  it('keeps the primary-color focus ring (a11y affordance, not chrome)', () => {
+  it('keeps the shared focus ring (a11y affordance, not chrome)', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__action--new:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--tplane-chat-primary\)\s*;/,
+      /\.chat-sidenav__action--new:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--tplane-chat-focus-ring\)\s*;/,
     );
   });
 
