@@ -335,12 +335,12 @@ Every component change checks:
 
 | Area | Status | Target section |
 | --- | --- | --- |
-| Status reds and greens | Done. Components read the status tokens, including `success-bg`, `success-border` and `warning-border` | 2.2 |
+| Status reds and greens | Done. Components read the status tokens. `success-bg`, `success-border` and `warning-border` are declared for the phase 3 status panels, and no component reads them yet | 2.2 |
 | Focus ring | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset | 2.3 |
 | Radii | Done. Components use the radius tokens | 2.4 |
 | Shadows | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases | 2.5 |
 | Motion | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease` | 2.6 |
-| Layers | Done. Every z-index reads a named `--tplane-chat-z-*` token | 2.7 |
+| Layers | Done. Every cross-component layer reads a named `--tplane-chat-z-*` token; local 0 to 2 stacking values remain inside components | 2.7 |
 | Forced colors | Done. Status panels keep a border | 6.1, 7 |
 | Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
 | Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
