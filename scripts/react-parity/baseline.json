@@ -1,25 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "3127bf17f3fa7eade7d7c97ff7e314c364acde9e",
+  "baselineHead": "a56baf75d0d2be51e67ac712e31401a5bc49958c",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "libs/ag-ui/src/lib/reducer.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-result-template.directive.ts",
-      "libs/chat/src/public-api.ts",
-      "libs/react/src/chat/activity-summary.ts",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/tool-activity.tsx",
-      "libs/react/src/chat/tool-outcome.ts"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2610,7 +2593,7 @@
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "sha256": "4e6ce445045b1b024a52b5edcf1a389b44e7345bb7a881c87c7db75d19b55130"
+      "sha256": "7e3b6cb85219bc9ad2c3d027f200e51fb65c8e67907bccaa476a7ac5e61b1131"
     },
     {
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-trace.mdx",
@@ -3180,7 +3163,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "d1f3f8fc44ee3be469cec2ef3d5596e960e5e9072b1db10aeecb0a2b74bf39e2"
+      "sha256": "a1f0fcc5bdfa53b956032c58e917d10376e5b9862242f9f7224f848229590a6c"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",

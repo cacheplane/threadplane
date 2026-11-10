@@ -28,6 +28,9 @@ async function until(read, condition, label) {
   }
   throw new Error('Timed out: ' + label);
 }
+// React renders the group primitive; Angular's <chat> renders its default tool rows.
+const groupToggle =
+  '.tp-tool-activity-group__details > summary, .ctc__group-header:not([hidden])';
 const evidence = [];
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 try {
@@ -276,9 +279,7 @@ try {
         name: approved ? 'Approve save' : 'Deny save',
         exact: true,
       });
-      const pausedGroup = page
-        .locator('.tp-tool-activity-group__details > summary')
-        .first();
+      const pausedGroup = page.locator(groupToggle).first();
       await pausedGroup.click();
       await page
         .locator('summary')
@@ -329,11 +330,15 @@ try {
         (focused) => focused,
         'Composer regains focus after keyboard approval controls disappear'
       );
-      const settledGroup = page
-        .locator('.tp-tool-activity-group__details')
-        .first();
-      if (await settledGroup.evaluate((el) => el.open)) {
-        await settledGroup.locator(':scope > summary').click();
+      const settledGroup = page.locator(groupToggle).first();
+      if (
+        await settledGroup.evaluate((el) =>
+          el.matches('summary')
+            ? el.parentElement.open
+            : el.getAttribute('aria-expanded') === 'true'
+        )
+      ) {
+        await settledGroup.click();
         await page
           .locator('summary')
           .filter({ hasText: /^Details$/ })
@@ -434,9 +439,24 @@ try {
     await start('partial-failure');
     const failedRows = await finished('partial-failure', 'error');
     const failed = failedRows.at(-1);
+    // The declared failure is counted, and the successful read keeps its source.
     await page
-      .getByRole('button', { name: 'Retry failed read', exact: true })
-      .click();
+      .getByText('Used 2 tools · 1 failed', { exact: true })
+      .first()
+      .waitFor({ state: 'visible' });
+    assert.ok(
+      await page
+        .getByRole('link', { name: 'Angular signals', exact: true })
+        .count(),
+      'Successful read keeps its source beside the failed read'
+    );
+    // The retry names its call and sits outside the collapsed Details.
+    const retry = page.getByRole('button', {
+      name: 'Retry read of array-to-sorted',
+      exact: true,
+    });
+    await retry.focus();
+    await page.keyboard.press('Enter');
     const retriedRows = await finished('partial-failure', 'complete');
     const retried = retriedRows.find((row) => row.retryOf === failed.id);
     assert.ok(retried, 'Retry is backend-correlated');
@@ -458,6 +478,11 @@ try {
         .count(),
       'Successful prefix remains visible'
     );
+    assert.equal(
+      await retry.count(),
+      0,
+      'A superseded failed read stops offering retry'
+    );
 
     await start('long-mixed');
     await until(
@@ -474,13 +499,11 @@ try {
       name: 'Conversation',
       exact: true,
     });
-    const focusTarget = page
-      .locator('.tp-tool-activity-group__details > summary')
-      .first();
+    const focusTarget = page.locator(groupToggle).first();
     await focusTarget.focus();
     await page.keyboard.press('Enter');
     await page
-      .locator('.tp-tool-activity-group__items')
+      .locator('.tp-tool-activity-group__items, .ctc__group-body:not([hidden])')
       .first()
       .waitFor({ state: 'visible' });
     await until(
@@ -500,36 +523,31 @@ try {
         max: el.scrollHeight - el.clientHeight,
       }));
     const nativeWheel = async (delta) => {
-      const [settled] = await Promise.all([
-        region.evaluate(
-          (el, delta) =>
-            new Promise((resolve) => {
-              let observedWheel = false;
-              const onWheel = (event) => {
-                if (
-                  event.isTrusted &&
-                  Math.sign(event.deltaY) === Math.sign(delta)
-                )
-                  observedWheel = true;
-              };
-              const onEnd = (event) => {
-                if (!observedWheel || event.target !== el) return;
-                el.removeEventListener('wheel', onWheel);
-                el.removeEventListener('scrollend', onEnd);
-                resolve({
-                  trusted: event.isTrusted,
-                  top: el.scrollTop,
-                  max: el.scrollHeight - el.clientHeight,
-                });
-              };
-              el.addEventListener('wheel', onWheel, { passive: true });
-              el.addEventListener('scrollend', onEnd, { passive: true });
-            }),
-          delta
-        ),
-        page.mouse.wheel(0, delta),
-      ]);
-      return settled;
+      // Register the listeners before sending the wheel. Racing the two lets a
+      // loaded machine deliver the wheel first, and the gesture never settles.
+      await region.evaluate((el, delta) => {
+        el.wheelSettled = new Promise((resolve) => {
+          let observedWheel = false;
+          const onWheel = (event) => {
+            if (event.isTrusted && Math.sign(event.deltaY) === Math.sign(delta))
+              observedWheel = true;
+          };
+          const onEnd = (event) => {
+            if (!observedWheel || event.target !== el) return;
+            el.removeEventListener('wheel', onWheel);
+            el.removeEventListener('scrollend', onEnd);
+            resolve({
+              trusted: event.isTrusted,
+              top: el.scrollTop,
+              max: el.scrollHeight - el.clientHeight,
+            });
+          };
+          el.addEventListener('wheel', onWheel, { passive: true });
+          el.addEventListener('scrollend', onEnd, { passive: true });
+        });
+      }, delta);
+      await page.mouse.wheel(0, delta);
+      return region.evaluate((el) => el.wheelSettled);
     };
     const initialLatest = await readScroll();
     // Do not queue opposite gestures: a still-coasting down wheel can restore
