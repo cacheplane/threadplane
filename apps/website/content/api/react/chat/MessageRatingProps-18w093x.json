@@ -1,0 +1,347 @@
+{
+  "name": "MessageRatingProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/MessageRatingProps",
+  "canonicalReference": "@threadplane/react!MessageRatingProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls the rating shown for one identified message and reports each requested change with that identity.",
+  "declarations": [
+    {
+      "name": "MessageRatingProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!MessageRatingProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface MessageRatingProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls the rating shown for one identified message and reports each requested change with that identity.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 18
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "downLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#downLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly downLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "messageId",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#messageId:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly messageId: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 8
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onValueChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#onValueChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onValueChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageRatingValue",
+              "canonicalReference": "@threadplane/react!MessageRatingValue:type",
+              "href": "/docs/api/react/chat/MessageRatingValue"
+            },
+            {
+              "kind": "Content",
+              "text": " | null, messageId: string) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 10
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "upLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#upLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly upLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageRatingProps#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageRatingValue",
+              "canonicalReference": "@threadplane/react!MessageRatingValue:type",
+              "href": "/docs/api/react/chat/MessageRatingValue"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-rating.tsx",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/message-rating.tsx",
+        "line": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-rating.tsx",
+    "line": 7
+  }
+}

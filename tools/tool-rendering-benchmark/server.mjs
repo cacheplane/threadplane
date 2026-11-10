@@ -153,6 +153,10 @@ export async function createBenchmarkServer({
       } catch {
         return json(400, { error: 'Unknown benchmark scenario' });
       }
+      // Presentation variant only: the same calls and results, with confirmed
+      // references also published as message citations in agent state.
+      const citeSources =
+        protocol === 'ag-ui' && url.searchParams.get('layout') === 'sources';
       if (scenario.nativeApproval && protocol !== 'ag-ui')
         return json(400, { error: 'Native approval requires AG-UI' });
       const threadId =
@@ -240,6 +244,7 @@ export async function createBenchmarkServer({
         ? [{ ...scenario.calls[1], id: 'read-sorted-retry' }]
         : scenario.calls;
       const messageId = id + '-assistant';
+      const cited = new Map();
       const record = {
         id,
         participant,
@@ -555,6 +560,29 @@ export async function createBenchmarkServer({
                 output: result,
               }
         );
+        if (citeSources) {
+          const before = cited.size;
+          for (const row of Array.isArray(result) ? result : [result])
+            if (
+              row &&
+              typeof row === 'object' &&
+              typeof row.url === 'string' &&
+              typeof row.title === 'string' &&
+              !cited.has(row.url)
+            )
+              cited.set(row.url, {
+                id: 'source-' + (cited.size + 1),
+                index: cited.size + 1,
+                title: row.title,
+                url: row.url,
+                snippet: typeof row.summary === 'string' ? row.summary : '',
+              });
+          if (cited.size > before)
+            emit({
+              type: 'STATE_SNAPSHOT',
+              snapshot: { citations: { [messageId]: [...cited.values()] } },
+            });
+        }
       }
       if (!active()) return;
       if (protocol === 'ag-ui') {

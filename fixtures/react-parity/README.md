@@ -1,5 +1,15 @@
 # React parity foundations
 
+The private chat package includes a bounded controlled `MessageRating` with an
+exact readonly prop contract: one identified message, an owner-held `up`, `down`
+or `null` value, and change requests that carry the message identity. The
+installed plain-package fixture checks two independent groups, literal labels,
+36px compact targets, a visibly distinct pressed option, Space/Enter toggling,
+clearing by pressing the current rating, refused requests, disabled inertness and
+RTL layout. Native assistant answers compose it with page-lifetime ratings scoped
+to the conversation; nothing is stored or sent. Regeneration and a feedback
+backend remain future work.
+
 The private chat package includes a bounded controlled `Select` with exact
 readonly option/prop contracts. It shares one private anchored-menu engine with
 `OverflowMenu`; that engine is not exported. The installed plain-package fixture
