@@ -360,6 +360,7 @@ export function prepareInstalledTypes(root, consumer, kind) {
   cpSync(join(fixture, 'scenarios.ts'), join(consumer, 'scenarios.ts'));
   writeFileSync(join(consumer, 'installed-types.ts'), installedTypeSource(readFileSync(join(fixture, 'installed-types.ts'), 'utf8'), kind));
   if (kind === 'react') {
+    cpSync(join(fixture, 'message-action-types.tsx'), join(consumer, 'message-action-types.tsx'));
     cpSync(join(fixture, 'message-list-types.tsx'), join(consumer, 'message-list-types.tsx'));
     cpSync(join(fixture, 'json-types.ts'), join(consumer, 'json-types.ts'));
     cpSync(join(fixture, 'render-types.tsx'), join(consumer, 'render-types.tsx'));
@@ -367,7 +368,7 @@ export function prepareInstalledTypes(root, consumer, kind) {
   writeFileSync(join(consumer, 'tsconfig.contracts.json'), JSON.stringify({ compilerOptions: {
     target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022', 'DOM'], types: [], strict: true, skipLibCheck: false, noEmit: true,
     ...(kind === 'react' ? { jsx: 'react-jsx' } : {}),
-  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx', 'json-types.ts', 'render-types.tsx'] : [])] }, null, 2));
+  }, files: ['installed-types.ts', ...(kind === 'react' ? ['message-list-types.tsx', 'json-types.ts', 'render-types.tsx', 'message-action-types.tsx'] : [])] }, null, 2));
 }
 
 /** Typecheck the private source against the *installed* public core declarations,
@@ -424,7 +425,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
   cpSync(join(fixture, app), join(destination, app));
   writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
-    (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-controls')) {\n  void import('./react-message-controls');\n} else if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
+    (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-action-icons')) {\n  if (new URLSearchParams(location.search).has('no-styles')) {\n    void import('./react-message-action-icons');\n  } else {\n    void import('./react-message-action-icons-styled');\n  }\n} else if (new URLSearchParams(location.search).has('message-controls')) {\n  void import('./react-message-controls');\n} else if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
     `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
   if (kind === 'angular') {
     const configPath = join(consumer, 'angular.json');
@@ -435,6 +436,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">'));
   }
   if (kind === 'react') {
+    for (const name of ['react-message-action-icons.tsx', 'react-message-action-icons-styled.tsx']) cpSync(join(fixture, name), join(destination, name));
     cpSync(join(fixture, 'react-message-controls.tsx'), join(destination, 'react-message-controls.tsx'));
     cpSync(join(fixture, 'react-message-spacing.tsx'), join(destination, 'react-message-spacing.tsx'));
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
@@ -1166,6 +1168,182 @@ export async function runMessageControlsScenarios(browser, server) {
   console.log('Installed React message controls: desktop hover/Tab/current/streaming, append/remove/reorder, DOM/layout identity, 768px and wide hover:none contexts, RTL, reduced motion, forced colors, exact local actions and no clipboard/backend I/O passed.');
 }
 
+export async function runMessageActionIconScenarios(browser, server) {
+  const counters = () => ({
+    runs: server.requests.length, history: server.historyRequests.length,
+    joins: server.joinRequests.length, status: server.statusRequests.length,
+    threads: server.threads.requests.length, checkpoints: server.checkpoints.requests.length,
+  });
+  const before = counters();
+  const pageErrors = [];
+  const consoleFailures = [];
+  const unexpected = [];
+  for (const mode of ['no-styles', 'desktop', 'narrow', 'rtl', 'forced', 'reduced']) {
+    const context = await browser.newContext({
+      viewport: { width: mode === 'narrow' ? 360 : 1280, height: 1100 },
+      ...(mode === 'forced' ? { forcedColors: 'active' } : {}),
+      ...(mode === 'reduced' ? { reducedMotion: 'reduce' } : {}),
+    });
+    try {
+      await context.addInitScript(() => {
+        window.iconClipboardCalls = 0;
+        Object.defineProperty(navigator, 'clipboard', { value: {
+          writeText: async () => { window.iconClipboardCalls++; },
+          readText: async () => { window.iconClipboardCalls++; return ''; },
+        } });
+      });
+      const page = await context.newPage();
+      page.on('pageerror', (error) => pageErrors.push(error.message));
+      page.on('console', (message) => {
+        if (['warning', 'error'].includes(message.type())) consoleFailures.push(message.text());
+      });
+      page.on('request', (request) => {
+        if (!request.url().startsWith(`${server.url}/`)) unexpected.push(request.url());
+      });
+      await page.goto(`${server.url}/?message-action-icons${mode === 'no-styles' ? '&no-styles' : ''}`);
+      await expect(page.getByRole('heading', { name: 'Installed message action icons' })).toBeVisible();
+      assert.deepEqual(await page.evaluate(() => ({
+        narrow: matchMedia('(max-width: 768px)').matches,
+        forced: matchMedia('(forced-colors: active)').matches,
+        reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      })), { narrow: mode === 'narrow', forced: mode === 'forced', reduced: mode === 'reduced' });
+      const command = (name) => page.getByRole('button', { name, exact: true });
+      const group = page.getByRole('group', { name: 'Icon commands', exact: true });
+      let compactLabel = 'Copy <b>& "answer"';
+      const compact = () => group.getByRole('button', { name: compactLabel, exact: true });
+      const calls = {};
+      const argumentsSeen = [];
+      const expectCalls = async () => {
+        await expect(page.getByTestId('icon-counts')).toHaveText(JSON.stringify(calls));
+        await expect(page.getByTestId('icon-arguments')).toHaveText(JSON.stringify(argumentsSeen));
+      };
+      const activate = async (target, id, key) => {
+        if (key) await page.keyboard.press(key);
+        else await target.click();
+        calls[id] = (calls[id] ?? 0) + 1;
+        argumentsSeen.push(0);
+        await expectCalls();
+      };
+      // Fixture controls are external to the action group. A DOM click lets
+      // presentation updates run while the native action keeps keyboard focus.
+      const updateWithoutFocus = (name) => command(name).evaluate((element) => element.click());
+      if (mode === 'rtl') await command('Toggle direction').click();
+      await expect(group).toHaveCSS('direction', mode === 'rtl' ? 'rtl' : 'ltr');
+      await expectCalls();
+      await expect(group.getByRole('button')).toHaveCount(12);
+      await expect(compact()).toHaveAccessibleName(compactLabel);
+      await expect(compact()).toHaveAttribute('title', compactLabel);
+      await expect(compact().locator('b')).toHaveCount(0);
+      await expect(compact().locator('.tp-message-actions__icon')).toHaveAttribute('aria-hidden', 'true');
+      await expect(compact().locator('svg title')).toHaveText('Misleading SVG command');
+      await expect(group.getByRole('button', { name: 'Misleading SVG command', exact: true })).toHaveCount(0);
+      await expect(command('Text only').locator('.tp-message-actions__icon')).toHaveCount(0);
+      await expect(command('Icon and label').locator('.tp-message-actions__label')).toHaveCSS('position', 'static');
+      for (let index = 0; index < 4; index++) {
+        const absent = command(`Absent ${index}`);
+        await expect(absent.locator('.tp-message-actions__icon')).toHaveCount(0);
+        await expect(absent).not.toHaveAttribute('title');
+        await expect(absent).not.toHaveClass(/--icon-only/);
+        await expect(absent.locator('.tp-message-actions__label')).toHaveCSS('position', 'static');
+        await expect(absent).toHaveAccessibleName(`Absent ${index}`);
+      }
+      await expect(command('Zero icon').locator('.tp-message-actions__icon')).toHaveText('0');
+      for (const name of ['Zero icon', ...Array.from({ length: 4 }, (_, index) => `Owned empty ${index}`)]) {
+        await expect(command(name)).toHaveClass(/--icon-only/);
+        await expect(command(name)).toHaveAttribute('title', name);
+        await expect(command(name).locator('.tp-message-actions__icon')).toHaveCount(1);
+      }
+      if (mode === 'no-styles') {
+        assert.equal(await page.evaluate(() => document.styleSheets.length), 0, 'real CSS-free entry loads no stylesheets');
+        await expect(compact().locator('.tp-message-actions__label')).toBeVisible();
+        await expect(compact().locator('.tp-message-actions__label')).toHaveCSS('position', 'static');
+        await expect(compact().locator('svg')).toBeVisible();
+      } else {
+        assert.ok(await page.evaluate(() => document.styleSheets.length) > 0, 'opt-in packed stylesheet loaded');
+        const label = compact().locator('.tp-message-actions__label');
+        await expect(label).toHaveCSS('position', 'absolute');
+        await expect(label).toHaveCSS('clip-path', 'inset(50%)');
+        await expect(label).toHaveCSS('width', '1px');
+        await expect(label).not.toHaveAttribute('aria-hidden');
+        await expect(compact().locator('svg')).toHaveCSS('width', '16px');
+        await expect(compact().locator('svg')).toHaveCSS('height', '16px');
+        assert.equal(await compact().locator('svg').evaluate((svg) => getComputedStyle(svg).stroke === getComputedStyle(svg.closest('button')).color), true, 'glyph inherits currentColor');
+        const bounds = await compact().boundingBox();
+        assert.ok(bounds.width >= 36 && bounds.height >= 36, `${mode} compact target is at least 36px`);
+        assert.equal(await group.evaluate((element) => element.getBoundingClientRect().right <= innerWidth), true, 'group fits narrow viewport');
+      }
+      await activate(compact(), 'compact-initial');
+      await command('Before actions').focus();
+      await page.keyboard.press('Tab');
+      await expect(command('Text only')).toBeFocused();
+      await activate(command('Text only'), 'text', 'Enter');
+      await page.keyboard.press('Tab');
+      await expect(command('Icon and label')).toBeFocused();
+      await activate(command('Icon and label'), 'labelled', 'Space');
+      await page.keyboard.press('Tab');
+      await expect(compact()).toBeFocused();
+      if (mode !== 'no-styles') {
+        await expect(compact()).toHaveCSS('outline-style', 'solid');
+        await expect(compact()).toHaveCSS('outline-width', '2px');
+        await expect(compact()).toHaveCSS('outline-offset', '3px');
+      }
+      await activate(compact(), 'compact-initial', 'Enter');
+      await activate(compact(), 'compact-initial', 'Space');
+      const retained = await compact().elementHandle();
+      const sameFocusedButton = async () => {
+        assert.equal(await compact().evaluate((element, original) => element === original, retained), true);
+        await expect(compact()).toBeFocused();
+      };
+      await updateWithoutFocus('Update action');
+      compactLabel = 'Changed <em>& command';
+      await expect(compact()).toHaveAccessibleName(compactLabel);
+      await expect(compact()).not.toHaveAttribute('title');
+      await expect(compact()).not.toHaveClass(/--icon-only/);
+      await expect(compact().locator('[data-glyph="changed"]')).toHaveCount(1);
+      await sameFocusedButton();
+      await expectCalls();
+      await updateWithoutFocus('Reorder actions');
+      await sameFocusedButton();
+      await expect(group.getByRole('button').last()).toHaveAccessibleName('Text only');
+      await activate(compact(), 'compact-current', 'Enter');
+      await updateWithoutFocus('Toggle action disabled');
+      await expect(compact()).toBeDisabled();
+      await compact().dispatchEvent('click');
+      await expectCalls();
+      await updateWithoutFocus('Toggle action disabled');
+      await expect(compact()).toBeEnabled();
+      assert.equal(await compact().evaluate((element, original) => element === original, retained), true);
+      await activate(compact(), 'compact-current');
+      await command('Toggle group disabled').click();
+      assert.equal(await group.locator('button:disabled').count(), 12);
+      await compact().dispatchEvent('click');
+      await expectCalls();
+      await command('Before actions').focus();
+      await page.keyboard.press('Tab');
+      await expect(command('After actions')).toBeFocused();
+      await command('Toggle group disabled').click();
+      await expect(compact()).toBeEnabled();
+      await updateWithoutFocus('Update action');
+      compactLabel = 'Copy <b>& "answer"';
+      await expect(compact()).toHaveAttribute('title', compactLabel);
+      assert.equal(await compact().evaluate((element, original) => element === original, retained), true);
+      await activate(compact(), 'compact-initial');
+      await expectCalls();
+      await command('Unmount actions').click();
+      await expect(group).toHaveCount(0);
+      await expect(page.getByTestId('icon-mounted')).toHaveText('unmounted');
+      await expectCalls();
+      assert.equal(await page.evaluate(() => window.iconClipboardCalls), 0);
+      assert.deepEqual(counters(), before, `${mode} icons do not create backend I/O`);
+    } finally { await context.close(); }
+  }
+  assert.deepEqual(pageErrors, []);
+  assert.deepEqual(consoleFailures, []);
+  assert.deepEqual(unexpected, []);
+  assert.deepEqual(counters(), before);
+  console.log('Installed React message action icons: real no-styles entry, styled desktop/narrow/RTL/forced/reduced contexts, literal accessible names and tooltips, decorative glyphs, target/focus geometry, pointer/Enter/Space, current argumentless callbacks, keyed identity, disabled/unmount and zero clipboard/backend I/O passed.');
+}
+
 export async function runRuntimeScenarios(directory, kind) {
   const server = await serveRuntimeConsumer(directory);
   let browser;
@@ -1484,6 +1662,8 @@ export async function runRuntimeScenarios(directory, kind) {
       completed.push('installed message spacing through wrappers and explicit precedence in LTR/RTL');
       await runMessageControlsScenarios(browser, server);
       completed.push('installed assistant controls reveal through hover focus current and device media');
+      await runMessageActionIconScenarios(browser, server);
+      completed.push('installed message action icons with opt-in styles and native app-owned commands');
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
@@ -1493,6 +1673,9 @@ export async function runRuntimeScenarios(directory, kind) {
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleFailures, [], 'browser console has no warnings or errors');
     assert.deepEqual(unexpected, []);
+    const iconsScenario = 'installed message action icons with opt-in styles and native app-owned commands';
+    assert.equal(completed.filter((scenario) => scenario === iconsScenario).length, /react/i.test(kind) ? 1 : 0);
+    assert.equal(completed.length, /react/i.test(kind) ? 30 : 27);
     console.log(`${kind}: ${completed.length} browser scenarios passed (${completed.join('; ')}); main workflow: 3 exact history reads, 10 exact run POSTs, 1 cursor join GET, 2 exact-run status GETs, one tool handler, 7 component submissions, 2 explicit resumes, 1 explicit reconnect; thread workflow: 4 history POSTs, 2 run POSTs, stream/history abort, no implicit selection I/O; no page errors/unexpected requests.`);
     return completed;
   } finally {

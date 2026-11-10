@@ -6,7 +6,7 @@ import test from 'node:test';
 import * as runtime from './runtime-consumer.mjs';
 
 test('installed React contract includes owned JSON types without adding them to core', (t) => {
-  for (const kind of ['react', 'core']) {
+  for (const kind of ['react', 'core', 'angular']) {
     const consumer = mkdtempSync(join(tmpdir(), 'json-type-contract-'));
     t.after(() => rmSync(consumer, { recursive: true, force: true }));
     runtime.prepareInstalledTypes(process.cwd(), consumer, kind);
@@ -15,6 +15,10 @@ test('installed React contract includes owned JSON types without adding them to 
     assert.equal(existsSync(join(consumer, 'json-types.ts')), kind === 'react');
     assert.equal(config.files.includes('render-types.tsx'), kind === 'react');
     assert.equal(existsSync(join(consumer, 'render-types.tsx')), kind === 'react');
+    assert.equal(config.compilerOptions.skipLibCheck, false);
+    assert.equal(config.files.includes('message-action-types.tsx'), kind === 'react');
+    assert.equal(existsSync(join(consumer, 'message-action-types.tsx')), kind === 'react');
+    if (kind === 'react') assert.equal(readFileSync(join(consumer, 'message-action-types.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/message-action-types.tsx', 'utf8'));
   }
 });
 
@@ -29,7 +33,15 @@ test('shared view preparation copies the complete views without composing a priv
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /threads/);
   const entry = readFileSync(join(consumer, 'main.tsx'), 'utf8');
-  assert.match(entry, /^if \(new URLSearchParams\(location.search\).has\('message-controls'\)\) \{\n  void import\('\.\/react-message-controls'\);\n\} else if/);
+  assert.match(entry, /^if \(new URLSearchParams\(location.search\).has\('message-action-icons'\)\) \{/);
+  assert.match(entry, /has\('no-styles'\)\)[\s\S]*import\('\.\/react-message-action-icons'\)[\s\S]*import\('\.\/react-message-action-icons-styled'\)/);
+  for (const name of ['react-message-action-icons.tsx', 'react-message-action-icons-styled.tsx']) {
+    assert.equal(readFileSync(join(consumer, name), 'utf8'), readFileSync(join('fixtures/react-parity/runtime', name), 'utf8'));
+  }
+  assert.doesNotMatch(readFileSync(join(consumer, 'react-message-action-icons.tsx'), 'utf8'), /import[^;]+\.css/);
+  assert.equal(readFileSync(join(consumer, 'react-message-action-icons-styled.tsx'), 'utf8'), "import '@threadplane/react/chat/styles.css';\nimport './react-message-action-icons';\n");
+  assert.ok(entry.indexOf("import('./react-message-action-icons')") < entry.indexOf("import('./react-message-controls')"));
+  assert.ok(entry.indexOf("import('./react-message-controls')") < entry.indexOf("import('./react-message-spacing')"));
   assert.ok(entry.indexOf("import('./react-message-controls')") < entry.indexOf("import('./react-app')"));
   assert.equal(readFileSync(join(consumer, 'react-message-controls.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/react-message-controls.tsx', 'utf8'));
   assert.ok(entry.indexOf("import('./react-message-spacing')") < entry.indexOf("import('./react-app')"));
@@ -46,7 +58,9 @@ test('shared view preparation copies the complete views without composing a priv
   writeFileSync(join(angular, 'src/index.html'), '<head></head>');
   runtime.prepareRuntimeViews(process.cwd(), angular, 'angular');
   assert.equal(existsSync(join(angular, 'src/react-message-controls.tsx')), false);
-  assert.doesNotMatch(readFileSync(join(angular, 'src/main.ts'), 'utf8'), /message-controls|message-spacing|react-app/);
+  assert.equal(existsSync(join(angular, 'src/react-message-action-icons.tsx')), false);
+  assert.equal(existsSync(join(angular, 'src/react-message-action-icons-styled.tsx')), false);
+  assert.doesNotMatch(readFileSync(join(angular, 'src/main.ts'), 'utf8'), /message-action-icons|message-controls|message-spacing|react-app/);
 });
 
 const versions = { react: '19.2.4', 'react-dom': '19.2.4', '@types/react': '19.2.14', '@types/react-dom': '19.2.3', vite: '7.3.1', typescript: '5.9.3' };

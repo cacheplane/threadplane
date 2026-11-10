@@ -121,6 +121,37 @@ test('installed React message actions copy only explicit answer text without con
     });
     const copy = list.getByRole('button', { name: 'Copy answer', exact: true });
     await expect(copy).toHaveCount(1);
+    const compactCopy = async () => {
+      await expect(copy).toHaveAccessibleName('Copy answer');
+      await expect(copy).toHaveAttribute('title', 'Copy answer');
+      await expect(copy).toHaveClass(/tp-message-actions__action--icon-only/);
+      await expect(copy.locator('.tp-message-actions__label')).toHaveText(
+        'Copy answer'
+      );
+      const icon = copy.locator('.tp-message-actions__icon');
+      await expect(icon).toHaveAttribute('aria-hidden', 'true');
+      const svg = icon.locator('svg');
+      await expect(svg).toHaveAttribute('aria-hidden', 'true');
+      await expect(svg).toHaveAttribute('focusable', 'false');
+      await expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
+      await expect(svg).toHaveAttribute('stroke', 'currentColor');
+      await expect(svg.locator('rect')).toHaveAttribute('width', '11');
+      await expect(svg.locator('path')).toHaveAttribute(
+        'd',
+        'M5 15V5a2 2 0 0 1 2-2h10'
+      );
+      const bounds = await copy.boundingBox();
+      expect(bounds!.width).toBeGreaterThanOrEqual(36);
+      expect(bounds!.height).toBeGreaterThanOrEqual(36);
+      const glyph = await svg.boundingBox();
+      expect(glyph!.width).toBe(16);
+      expect(glyph!.height).toBe(16);
+      await expect(copy.locator('.tp-message-actions__label')).toHaveCSS(
+        'clip-path',
+        'inset(50%)'
+      );
+    };
+    await compactCopy();
     await expect(
       list.getByRole('group', { name: 'Message actions' })
     ).toHaveClass(/tp-message-actions/);
@@ -176,11 +207,19 @@ test('installed React message actions copy only explicit answer text without con
     await expect(controls).toHaveCSS('opacity', '0');
     await copy.focus();
     await expect(copy).toBeFocused();
+    // Real keyboard traversal selects the browser's focus-visible modality.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expect(copy).toBeFocused();
+    await expect(copy).toHaveCSS('outline-style', 'solid');
+    await expect(copy).toHaveCSS('outline-width', '2px');
+    await expect(copy).toHaveCSS('outline-offset', '3px');
     await expect(controls).toHaveCSS('opacity', '1');
     await expect(controls).toHaveCSS('pointer-events', 'auto');
     expect(await messageBounds(copy)).toEqual(copyBounds);
     expect(await writes()).toEqual([]);
     const stableControls = async () => {
+      await compactCopy();
       expect(
         await controls.evaluate(
           (el, original) => el === original,

@@ -28,6 +28,37 @@ function pending() {
   return { write, resolve, reject };
 }
 describe('native CopyAnswer', () => {
+  it('renders a compact decorative copy glyph with the literal label and tooltip without writing', () => {
+    const attempt = pending();
+    const view = render(<CopyAnswer text="Answer" generation="a" />);
+    const button = view.getByRole('button', {
+      name: 'Copy answer',
+      exact: true,
+    });
+    expect(button.getAttribute('title')).toBe('Copy answer');
+    expect(
+      button.classList.contains('tp-message-actions__action--icon-only')
+    ).toBe(true);
+    expect(
+      button.querySelector('.tp-message-actions__label')?.textContent
+    ).toBe('Copy answer');
+    const icon = button.querySelector('.tp-message-actions__icon');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    const svg = icon?.querySelector('svg');
+    expect(svg?.getAttribute('aria-hidden')).toBe('true');
+    expect(svg?.getAttribute('focusable')).toBe('false');
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(svg?.getAttribute('width')).toBe('16');
+    expect(svg?.getAttribute('height')).toBe('16');
+    expect(svg?.getAttribute('stroke')).toBe('currentColor');
+    expect(svg?.querySelector('rect')?.outerHTML).toBe(
+      '<rect x="9" y="9" width="11" height="11" rx="2"></rect>'
+    );
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe(
+      'M5 15V5a2 2 0 0 1 2-2h10'
+    );
+    expect(attempt.write).not.toHaveBeenCalled();
+  });
   it('hides empty answers while retaining an admitted pending write through empty corrections', async () => {
     const attempt = pending();
     const view = render(<CopyAnswer text="Old" generation="a" />);
