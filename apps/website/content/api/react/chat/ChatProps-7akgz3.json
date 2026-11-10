@@ -83,7 +83,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 24
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -121,7 +121,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 21
+            "line": 25
           },
           "isReadonly": true,
           "isOptional": true
@@ -163,7 +163,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 25
+            "line": 29
           },
           "isReadonly": true,
           "isOptional": true
@@ -199,7 +199,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 34
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": true
@@ -241,7 +241,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 32
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -283,7 +283,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 23
+            "line": 27
           },
           "isReadonly": true,
           "isOptional": true
@@ -325,7 +325,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 30
+            "line": 34
           },
           "isReadonly": true,
           "isOptional": true
@@ -363,7 +363,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 19
+            "line": 23
           },
           "isReadonly": true,
           "isOptional": false
@@ -405,7 +405,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 26
+            "line": 30
           },
           "isReadonly": true,
           "isOptional": true
@@ -447,7 +447,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 28
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -455,12 +455,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 13
+        "line": 17
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 13
+    "line": 17
   }
 }

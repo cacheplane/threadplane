@@ -39,7 +39,7 @@ import type { ToolActivityInfo, ToolActivityOutcome } from '../../primitives/cha
 import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-result-template.directive';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
-import { offersToolRetry } from '../../primitives/chat-tool-calls/tool-retry-offer';
+import { offersToolRetry, repeatsToolFailure } from '../../primitives/chat-tool-calls/tool-retry-offer';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
 import { ChatSelectComponent, type ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
@@ -473,7 +473,9 @@ export function isPinned(
                 (clicked)="onScrollBubbleClick()"
               />
             }
-            <chat-error [agent]="agent()" [retryHidden]="toolRetryOffered()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
+            @if (!errorRepeatsToolFailure()) {
+              <chat-error [agent]="agent()" [retryHidden]="toolRetryOffered()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
+            }
             <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
@@ -669,6 +671,20 @@ export class ChatComponent {
   protected readonly toolRetryOffered = computed(() => {
     const agent = this.agent();
     return !agent.isLoading() && offersToolRetry(agent.toolCalls(), this.toolOutcome());
+  });
+
+  /**
+   * The run error says nothing the transcript does not: a failed call already shows the same words, and the
+   * notice would carry no action or detail of its own. Custom tool or activity templates own that display, so
+   * the notice stays whenever they are in use.
+   */
+  protected readonly errorRepeatsToolFailure = computed(() => {
+    const agent = this.agent();
+    const error = agent.error();
+    if (!error || error.detail || error.recovery === 'check') return false;
+    if (error.retryable && !this.toolRetryOffered()) return false;
+    if (this.toolCallTemplates().length > 0 || this.activityTemplate()) return false;
+    return repeatsToolFailure(error.message, agent.toolCalls(), this.toolOutcome());
   });
 
   protected sourceText(message: Message): string {
