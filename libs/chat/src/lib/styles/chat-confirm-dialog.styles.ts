@@ -70,4 +70,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
     outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
+  @media (forced-colors: active) {
+    .chat-confirm-dialog { border-color: CanvasText; }
+  }
 `;

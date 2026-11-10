@@ -206,3 +206,39 @@ describe('layers', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('forced colors on status panels', () => {
+  /** Concatenated bodies of every `@media (forced-colors: active)` block. */
+  function forcedColorsCss(source: string): string {
+    const out: string[] = [];
+    const start = /@media\s*\(\s*forced-colors\s*:\s*active\s*\)\s*\{/g;
+    for (let m = start.exec(source); m; m = start.exec(source)) {
+      let depth = 1;
+      let i = m.index + m[0].length;
+      const from = i;
+      for (; i < source.length && depth > 0; i++) {
+        if (source[i] === '{') depth++;
+        else if (source[i] === '}') depth--;
+      }
+      out.push(source.slice(from, i - 1));
+    }
+    return out.join('\n');
+  }
+  const PANELS: [string, string, string][] = [
+    ['chat-error.styles.ts', '.chat-error', 'chat-error banner'],
+    ['chat-interrupt.styles.ts', '.chat-interrupt', 'interrupt panel'],
+    ['chat-tool-activity.component.ts', '.tp-tool-activity__error', 'tool-activity error alert'],
+    ['chat-confirm-dialog.styles.ts', '.chat-confirm-dialog', 'confirm dialog'],
+  ];
+  for (const [file, selector, label] of PANELS) {
+    it(`keeps a CanvasText border on the ${label}`, () => {
+      const css = forcedColorsCss(sourceOf(file));
+      const rule = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(
+        ([, sel, body]) =>
+          sel.split(',').some((s) => s.trim() === selector) &&
+          /border(-color)?:\s*(1px solid )?CanvasText/.test(body),
+      );
+      expect(rule, `${file} needs a forced-colors rule for ${selector}`).toBeTruthy();
+    });
+  }
+});
