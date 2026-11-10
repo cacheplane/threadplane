@@ -183,3 +183,23 @@ main.benchmark-chat {
     height: calc(100dvh - 122px);
   }
 }
+/* Result cards for the `cards` layout comparison; one per distinct reference. */
+.benchmark-reference {
+  margin-block: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.benchmark-reference a {
+  color: inherit;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+.benchmark-reference p {
+  margin: 4px 0 0;
+}
+.benchmark-reference a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

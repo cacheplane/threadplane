@@ -17,12 +17,18 @@ import {
 } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import './shell.css';
-import { toolLabel, toolDecoders } from './tool-outcome';
+import {
+  layoutFrom,
+  referenceCards,
+  toolLabel,
+  toolDecoders,
+} from './tool-outcome';
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
 // The application decodes its own tool schemas; only this scenario's backend can retry a read.
+const layout = layoutFrom(location.search);
 const toolOutcome = toolOutcomes(
-  toolDecoders({ retryReads: scenario === 'partial-failure' })
+  toolDecoders({ retryReads: scenario === 'partial-failure', layout })
 );
 function App() {
   const [session] = useState(() =>
@@ -70,6 +76,8 @@ function App() {
           })
         : []
   );
+  // The cards layout shows each distinct reference once, on the last call that returned it.
+  const cards = layout === 'cards' ? referenceCards(activities) : undefined;
   const root = useRef<HTMLElement>(null);
   const composer = useRef<ChatInputHandle>(null);
   const disposed = useRef(false);
@@ -188,7 +196,25 @@ function App() {
                                   'Retry the failed read explicitly.'
                                 )
                         }
-                      />
+                      >
+                        {(message.toolCalls ?? [])
+                          .flatMap((call) => cards?.get(call.id) ?? [])
+                          .map((card) => (
+                            <article
+                              className="benchmark-reference"
+                              key={card.url}
+                            >
+                              <a
+                                href={card.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {card.title}
+                              </a>
+                              <p>{card.summary}</p>
+                            </article>
+                          ))}
+                      </ToolActivityGroup>
                     )}
                   <p className="benchmark-message-text">
                     {typeof message.content === 'string'
