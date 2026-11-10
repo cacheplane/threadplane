@@ -84,6 +84,52 @@
           "isStatic": false,
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "retryHidden",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatErrorComponent#retryHidden:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retryHidden: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Hide the generic Retry, which re-sends the whole request, when a narrower retry is already offered elsewhere.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
+            "line": 61
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
         }
       ],
       "source": {
@@ -98,6 +144,12 @@
             "alias": "agent",
             "required": true,
             "type": "Agent<unknown>"
+          },
+          {
+            "name": "retryHidden",
+            "alias": "retryHidden",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "outputs": []

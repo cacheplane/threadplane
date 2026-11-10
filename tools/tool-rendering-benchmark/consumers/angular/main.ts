@@ -12,18 +12,12 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import {
   ChatComponent,
   ChatInterruptTemplateDirective,
-  ChatToolResultTemplateDirective,
-  type ToolActivityInfo,
+  toolOutcomes,
 } from '@threadplane/chat';
 import { provideAgent, injectAgent } from '@threadplane/ag-ui';
 import '@threadplane/chat/chat.css';
 import './shell.css';
-import {
-  toolLabel,
-  toolOutcome,
-  savedNoteId,
-  retryableReference,
-} from './tool-outcome';
+import { toolLabel, toolDecoders } from './tool-outcome';
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
 class Benchmark {
@@ -38,29 +32,11 @@ class Benchmark {
     });
   }
   readonly toolLabel = toolLabel;
-  readonly toolOutcome = toolOutcome;
+  // The application decodes its own tool schemas; only this scenario's backend can retry a read.
+  readonly toolOutcome = toolOutcomes(
+    toolDecoders({ retryReads: scenario === 'partial-failure' })
+  );
   readonly scenario = scenario;
-  readonly savedNoteId = savedNoteId;
-  /** The reference a failed read may retry; none while a run is active or once a later read supersedes it. */
-  retryReference(activity: ToolActivityInfo): string | undefined {
-    if (scenario !== 'partial-failure' || this.agent.isLoading())
-      return undefined;
-    const text = (value: unknown) =>
-      value === undefined
-        ? undefined
-        : typeof value === 'string'
-        ? value
-        : JSON.stringify(value);
-    return retryableReference(
-      activity,
-      this.agent.toolCalls().map((call) => ({
-        id: call.id,
-        name: call.name,
-        argumentsText: text(call.args),
-        resultText: text(call.result),
-      }))
-    );
-  }
   readonly decisionPending = signal(false);
   readonly decisionError = signal('');
   async decide(approved: boolean, generation: number) {
@@ -126,23 +102,9 @@ class Benchmark {
 Component({
   selector: 'benchmark-root',
   standalone: true,
-  imports: [
-    ChatComponent,
-    ChatInterruptTemplateDirective,
-    ChatToolResultTemplateDirective,
-  ],
+  imports: [ChatComponent, ChatInterruptTemplateDirective],
   template: `<header class="benchmark-header"><div><h1>Tool conversation benchmark · Angular</h1><p>Scripted agent · real local tools · {{ scenario }} · installed SDK</p></div><button (click)="reset()">New conversation</button></header>
-  <main class="benchmark-chat"><chat [agent]="agent" [welcomeDisabled]="true" placeholder="Type a message..." [groupRelatedTools]="true" [toolLabel]="toolLabel" [toolOutcome]="toolOutcome" style="height:100%">
-    <ng-template chatToolResultTemplate="read_reference" let-activity>
-      @if (retryReference(activity); as reference) {
-        <button type="button" class="benchmark-retry" (click)="retryRead()">Retry read of {{ reference }}</button>
-      }
-    </ng-template>
-    <ng-template chatToolResultTemplate="save_note" let-activity>
-      @if (savedNoteId(activity); as note) {
-        <p class="benchmark-receipt">Saved note {{ note }} in the local benchmark store.</p>
-      }
-    </ng-template>
+  <main class="benchmark-chat"><chat [agent]="agent" [welcomeDisabled]="true" placeholder="Type a message..." [groupRelatedTools]="true" [toolLabel]="toolLabel" [toolOutcome]="toolOutcome" (toolRetry)="retryRead()" style="height:100%">
     <ng-template chatInterruptTemplate>
       @let generation = agent.interruptSession().generation;
       <section class="benchmark-decision" aria-label="Save approval">

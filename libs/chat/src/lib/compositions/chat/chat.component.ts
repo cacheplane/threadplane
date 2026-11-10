@@ -39,6 +39,7 @@ import type { ToolActivityInfo, ToolActivityOutcome } from '../../primitives/cha
 import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-result-template.directive';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolve-message-tool-calls';
+import { offersToolRetry } from '../../primitives/chat-tool-calls/tool-retry-offer';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
 import { ChatSelectComponent, type ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
@@ -352,6 +353,7 @@ export function isPinned(
                       [groupRelated]="currentGroupRelatedTools"
                       [toolLabel]="currentToolLabel"
                       [toolOutcome]="currentToolOutcome"
+                      (toolRetry)="toolRetry.emit($event)"
                     />
                   }
                   <chat-tool-views
@@ -471,7 +473,7 @@ export function isPinned(
                 (clicked)="onScrollBubbleClick()"
               />
             }
-            <chat-error [agent]="agent()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
+            <chat-error [agent]="agent()" [retryHidden]="toolRetryOffered()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
             <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
@@ -659,6 +661,15 @@ export class ChatComponent {
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
   /** App-authored confirmed outcome previews for default tool rendering; return `status: 'failed'` to show a completed call as failed. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
+  /**
+   * Emits the failed activity when a retry declared by `toolOutcome` is activated. The application owns what a retry does.
+   * While one is offered, the error banner drops its generic Retry, which would re-send the whole request.
+   */
+  readonly toolRetry = output<ToolActivityInfo>();
+  protected readonly toolRetryOffered = computed(() => {
+    const agent = this.agent();
+    return !agent.isLoading() && offersToolRetry(agent.toolCalls(), this.toolOutcome());
+  });
 
   protected sourceText(message: Message): string {
     return typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2);

@@ -768,6 +768,15 @@ test('React chat entry supports resolveToolOutcome', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', entry), /resolveToolOutcome/);
 });
 
+test('React chat entry supports the outcome registry and status panel', () => {
+  for (const name of ['toolOutcomes', 'StatusPanel']) {
+    const entry = {};
+    for (const supported of packageVerifier.supportedExportNames('react/chat')) entry[supported] = () => {};
+    delete entry[name];
+    assert.throws(() => packageVerifier.assertSupportedExports('react/chat', entry), new RegExp(name));
+  }
+});
+
 test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/json', { createJson() {} }));
@@ -994,6 +1003,8 @@ test('React chat requires its real supported export', () => {
   supported.ToolActivityGroup = component;
   supported.toolActivityPhase = component;
   supported.resolveToolOutcome = component;
+  supported.toolOutcomes = component;
+  supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
   supported.ScrollBubble = component;

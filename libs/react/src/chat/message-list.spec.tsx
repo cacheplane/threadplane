@@ -642,6 +642,97 @@ describe('MessageList', () => {
       expect(seen).toContain('c0:complete');
       content.dispose();
     });
+    it('offers a declared retry until a later row repeats the call, and never while work is active', () => {
+      const content = createMessageContent();
+      const failRead = (activity: { phase?: string; resultText?: string }) =>
+        activity.phase === 'complete' && activity.resultText?.includes('error')
+          ? {
+              status: 'failed' as const,
+              text: 'Read unavailable',
+              retry: { label: 'Retry sorted read' },
+            }
+          : undefined;
+      const settled = {
+        generation: 'g',
+        phase: 'complete',
+        outcome: 'success',
+      } as Message['delivery'];
+      const call = (id: string, patch: object) => ({
+        id,
+        name: 'read',
+        args: { id: 'sorted' },
+        status: 'complete',
+        result: { error: 'x' },
+        ...patch,
+      });
+      const rows = (second?: object) =>
+        content.project(
+          snap(
+            [
+              msg('a', 'First', { toolCallIds: ['c0'], delivery: settled }),
+              ...(second
+                ? [
+                    msg('b', 'Second', {
+                      toolCallIds: ['c1'],
+                      delivery: settled,
+                    }),
+                  ]
+                : []),
+            ],
+            [
+              call('c0', {}),
+              ...(second ? [call('c1', second)] : []),
+            ] as AgentSnapshot['toolCalls']
+          )
+        );
+      const onToolRetry = vi.fn();
+      const view = render(
+        <MessageList
+          rows={rows()}
+          toolOutcome={failRead}
+          onToolRetry={onToolRetry}
+        />
+      );
+      fireEvent.click(view.getByRole('button', { name: 'Retry sorted read' }));
+      expect(onToolRetry).toHaveBeenCalledTimes(1);
+      expect(onToolRetry.mock.calls[0][0].id).toBe('c0');
+      view.rerender(
+        <MessageList
+          rows={rows({ status: 'running', result: undefined })}
+          toolOutcome={failRead}
+          onToolRetry={onToolRetry}
+        />
+      );
+      expect(
+        view.queryByRole('button', { name: 'Retry sorted read' })
+      ).toBeNull();
+      view.rerender(
+        <MessageList
+          rows={rows({ result: { title: 'ok' } })}
+          toolOutcome={failRead}
+          onToolRetry={onToolRetry}
+        />
+      );
+      expect(
+        view.queryByRole('button', { name: 'Retry sorted read' })
+      ).toBeNull();
+      expect(view.getAllByText('Read unavailable').length).toBeGreaterThan(0);
+      view.rerender(
+        <MessageList
+          rows={rows({ args: { id: 'signals' }, result: 'ok' })}
+          toolOutcome={failRead}
+          onToolRetry={onToolRetry}
+        />
+      );
+      expect(
+        view.getByRole('button', { name: 'Retry sorted read' })
+      ).toBeTruthy();
+      view.rerender(<MessageList rows={rows()} toolOutcome={failRead} />);
+      expect(
+        view.queryByRole('button', { name: 'Retry sorted read' })
+      ).toBeNull();
+      content.dispose();
+    });
     it('renders no results container when the slot returns nothing', () => {
       const { content, rows } = project(['ok']);
       const view = render(

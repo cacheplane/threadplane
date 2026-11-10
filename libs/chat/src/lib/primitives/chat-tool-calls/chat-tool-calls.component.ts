@@ -5,6 +5,7 @@ import {
   computed,
   contentChildren,
   input,
+  output,
   signal,
   inject,
   ElementRef,
@@ -23,12 +24,23 @@ import { resolveMessageToolCalls } from './resolve-message-tool-calls';
 import {
   ChatToolActivityComponent,
   ChatToolOutcomesComponent,
+  ChatToolReceiptsComponent,
   toolActivityPhase,
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from '../chat-tool-activity/chat-tool-activity.component';
-import { resolveToolOutcome } from '../chat-tool-activity/tool-outcome';
-import { activitySummary, failureSummaries } from '../chat-tool-activity/activity-summary';
+import {
+  activityFailures,
+  receiptOutcomes,
+  resolveToolOutcome,
+  withoutStaleRetry,
+  type ToolActivityFailure,
+} from '../chat-tool-activity/tool-outcome';
+import { activitySummary } from '../chat-tool-activity/activity-summary';
+import {
+  ChatStatusPanelComponent,
+  STATUS_PANEL_CONTENT_STYLES,
+} from '../chat-status-panel/chat-status-panel.component';
 import { ACTIVITY_SUMMARY_STYLES } from '../chat-tool-activity/activity-summary-styles';
 
 interface Group {
@@ -40,6 +52,14 @@ interface Group {
   subagent?: Subagent;
 }
 
+const NONE: ReadonlySet<string> = new Set();
+const stableText = (value: unknown): string => {
+  try {
+    return typeof value === 'string' ? value : JSON.stringify(value) ?? '';
+  } catch {
+    return String(value);
+  }
+};
 // Unique per instance, so each group body id is unique on the page.
 let nextChatToolCallsId = 0;
 
@@ -51,11 +71,14 @@ let nextChatToolCallsId = 0;
     NgTemplateOutlet,
     ChatToolActivityComponent,
     ChatToolOutcomesComponent,
+    ChatToolReceiptsComponent,
+    ChatStatusPanelComponent,
     ChatSubagentCardComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
     ACTIVITY_SUMMARY_STYLES,
+    STATUS_PANEL_CONTENT_STYLES,
     `
       :host {
         display: block;
@@ -170,7 +193,7 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc, !grouped)">
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)" (toolRetry)="toolRetry.emit($event)">
           @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
           <ng-container
             [ngTemplateOutlet]="resultTemplate"
@@ -182,8 +205,21 @@ let nextChatToolCallsId = 0;
       </div>
     </div>
       @if (grouped) {
-      <p class="tp-tool-activity__status" role="status" aria-live="polite" aria-atomic="true">{{ summary.status }}</p>
+      <p class="tp-tool-activity__status" role="status" aria-live="polite" aria-atomic="true">{{ summary.status }}{{ receiptStatusFor(group.calls) }}</p>
       <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
+      @if (summary.phase === 'error') {
+      <!-- Ungrouped rows already show their own alert; only a group adds one. -->
+      <div chatStatusPanel tone="danger" role="alert" class="tp-tool-activity__error">
+        @for (failure of failuresFor(group.calls); track failure.key) {
+        <p>{{ failure.text }}</p>
+        @if (failure.retry; as retry) {
+        <button type="button" class="tp-tool-activity__retry" (click)="toolRetry.emit(retry.activity)">{{ retry.label }}</button>
+        } } @empty {
+        <p>Some tools could not finish. Check Details before retrying.</p>
+        }
+      </div>
+      }
+      <chat-tool-receipts [activities]="activitiesFor(group.calls)" />
       @let results = resultsFor(group.calls);
       @if (results.length) {
       <div class="tp-tool-activity__results">
@@ -194,16 +230,6 @@ let nextChatToolCallsId = 0;
             [ngTemplateOutletContext]="{ $implicit: result.activity }"
           />
         </div>
-        }
-      </div>
-      }
-      @if (summary.phase === 'error') {
-      <!-- Ungrouped rows already show their own alert; only a group adds one. -->
-      <div role="alert" class="tp-tool-activity__error">
-        @for (text of failureSummariesFor(group.calls); track text) {
-        <p>{{ text }}</p>
-        } @empty {
-        <p>Some tools could not finish. Check Details before retrying.</p>
         }
       </div>
       }
@@ -231,6 +257,11 @@ export class ChatToolCallsComponent {
   >(undefined);
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
+  /**
+   * Emits the failed activity when a retry declared by `toolOutcome` is activated. The control is offered only while the
+   * agent is idle and no later call repeats the same tool and arguments. The application owns what a retry does.
+   */
+  readonly toolRetry = output<ToolActivityInfo>();
 
   /**
    * Per-tool-name + wildcard result templates supplied by a parent composition,
@@ -431,8 +462,21 @@ export class ChatToolCallsComponent {
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
       errorText: tc.error === undefined ? undefined : literal(tc.error),
     };
-    return resolveToolOutcome(activity, this.safeOutcome(activity));
+    const resolved = resolveToolOutcome(activity, this.safeOutcome(activity));
+    // Read agent-wide state only for a call that declares a retry, so ordinary rows stay isolated from later activity.
+    const declaresRetry = resolved.outcome?.status === 'failed' && !!resolved.outcome.retry;
+    return declaresRetry && this.staleRetryIds().has(tc.id) ? withoutStaleRetry(resolved, NONE) : resolved;
   }
+  /** Calls whose declared retry is no longer offered: all while the agent works, else those a later call repeats. */
+  private readonly staleRetryIds = computed((): ReadonlySet<string> => {
+    const agent = this.agent();
+    const all = agent.toolCalls();
+    if (agent.isLoading()) return new Set(all.map((call) => call.id));
+    const key = (call: ToolCall) => call.name + '\0' + stableText(call.args);
+    const last = new Map<string, string>();
+    for (const call of all) last.set(key(call), call.id);
+    return new Set(all.filter((call) => last.get(key(call)) !== call.id).map((call) => call.id));
+  });
   /** A throwing app hook must not break the transcript; the call keeps its core phase. */
   private safeOutcome(activity: ToolActivityInfo): ToolActivityOutcome | undefined {
     try {
@@ -454,8 +498,11 @@ export class ChatToolCallsComponent {
       return template ? [{ activity: this.activityFor(call), template }] : [];
     });
   }
-  protected failureSummariesFor(calls: readonly ToolCall[]): readonly string[] {
-    return failureSummaries(this.activitiesFor(calls));
+  protected failuresFor(calls: readonly ToolCall[]): readonly ToolActivityFailure[] {
+    return activityFailures(this.activitiesFor(calls));
+  }
+  protected receiptStatusFor(calls: readonly ToolCall[]): string {
+    return receiptOutcomes(this.activitiesFor(calls)).map((receipt) => ` ${receipt.lead} ${receipt.text}`).join('');
   }
   protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map((call) => this.activityFor(call)); }
 }

@@ -2111,6 +2111,70 @@
   font-size: 13px;
   margin: 8px 0;
 }
+.tp-status-panel {
+  --tp-status-tone: var(--tp-chat-muted, light-dark(#5f6368, #b0b0b0));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
+  border-radius: var(--tp-chat-radius-card, 8px);
+  background: color-mix(in srgb, var(--tp-status-tone) 8%, transparent);
+  color: var(--tp-chat-text, inherit);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.tp-status-panel[data-tone='danger'] {
+  --tp-status-tone: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+.tp-status-panel[data-tone='warning'] {
+  --tp-status-tone: light-dark(#b45309, #fbbf24);
+}
+.tp-status-panel[data-tone='success'] {
+  --tp-status-tone: light-dark(#15803d, #4ade80);
+}
+.tp-status-panel p {
+  margin: 0;
+}
+.tp-status-panel__lead,
+.tp-status-panel.tp-tool-activity__error > p {
+  color: var(--tp-status-tone);
+  font-weight: 500;
+}
+.tp-status-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tp-status-panel button,
+.tp-tool-activity__retry {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--tp-chat-border, currentColor);
+  border-radius: var(--tp-chat-radius-sm, 6px);
+  background: var(--tp-chat-surface, transparent);
+  color: var(--tp-chat-text, inherit);
+  font: inherit;
+  cursor: pointer;
+}
+.tp-status-panel button:focus-visible,
+.tp-tool-activity__retry:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .tp-status-panel button,
+  .tp-tool-activity__retry {
+    min-height: 44px;
+  }
+}
+@media (forced-colors: active) {
+  .tp-status-panel {
+    border-color: CanvasText;
+  }
+}
 .tp-tool-activity__label {
   min-inline-size: 0;
   overflow: hidden;

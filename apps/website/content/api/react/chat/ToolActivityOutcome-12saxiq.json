@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!ToolActivityOutcome:type",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded.",
+  "summary": "Concise, application-authored result evidence. A missing status means succeeded.\n`failed` shows a completed call as failed and may declare a retry the application handles.\n`receipt` records a write the application confirmed from the decoded result, never from an approval.",
   "declarations": [
     {
       "name": "ToolActivityOutcome",
@@ -29,7 +29,7 @@
         },
         {
           "kind": "Content",
-          "text": "[];\n} | {\n    readonly status: 'failed';\n    readonly text: string;\n    readonly sources?: readonly "
+          "text": "[];\n    readonly retry?: never;\n} | {\n    readonly status: 'failed';\n    readonly text: string;\n    readonly sources?: readonly "
         },
         {
           "kind": "Reference",
@@ -39,7 +39,17 @@
         },
         {
           "kind": "Content",
-          "text": "[];\n}"
+          "text": "[];\n    readonly retry?: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityRetry",
+          "canonicalReference": "@threadplane/react!ToolActivityRetry:interface",
+          "href": "/docs/api/react/chat/ToolActivityRetry"
+        },
+        {
+          "kind": "Content",
+          "text": ";\n} | {\n    readonly status: 'receipt';\n    readonly text: string;\n    readonly lead?: string;\n}"
         },
         {
           "kind": "Content",
@@ -47,7 +57,7 @@
         }
       ],
       "docs": {
-        "summary": "Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded.",
+        "summary": "Concise, application-authored result evidence. A missing status means succeeded.\n`failed` shows a completed call as failed and may declare a retry the application handles.\n`receipt` records a write the application confirmed from the decoded result, never from an approval.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -59,16 +69,16 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 9
+        "line": 17
       },
       "typeTokenRange": {
         "startIndex": 1,
-        "endIndex": 6
+        "endIndex": 8
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 9
+    "line": 17
   }
 }

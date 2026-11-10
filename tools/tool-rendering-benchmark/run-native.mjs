@@ -317,7 +317,7 @@ try {
       );
       const settledOutcome = page.getByText(
         approved
-          ? /^Saved note note-[1-9]\d* in the local benchmark store\.$/
+          ? /^Note note-[1-9]\d* in the local benchmark store\.$/
           : 'Save declined. No note was saved.',
         { exact: true }
       );
@@ -452,7 +452,7 @@ try {
     );
     // The retry names its call and sits outside the collapsed Details.
     const retry = page.getByRole('button', {
-      name: 'Retry read of array-to-sorted',
+      name: 'Retry array-to-sorted read',
       exact: true,
     });
     await retry.focus();

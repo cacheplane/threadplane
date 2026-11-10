@@ -28,6 +28,8 @@ export interface ChatProps
   readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable. */
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
+  readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
 }
@@ -44,6 +46,7 @@ export function Chat({
   toolLabel,
   toolOutcome,
   renderToolResult,
+  onToolRetry,
   onRetry,
   ...input
 }: ChatProps) {
@@ -58,6 +61,7 @@ export function Chat({
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolResult={renderToolResult}
+        onToolRetry={onToolRetry}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble

@@ -108,81 +108,89 @@ It does not run, approve or retry anything, so the handler you bind owns that wo
 ### Recover from a partial failure
 
 One read fails, another succeeds, and the user wants the missing piece without losing the rest.
-The two sections above are the parts, and this is how I put them together.
+You declare what each tool's result means, and the library does the rest of the display work.
 The example tools are `read_reference`, which declares a recoverable `{"error": string, "recoverable": true}` result, and `save_note`, which returns `{"saved": true, "id": string}` only after an approved save.
 
-**Decode each tool's declared schema, and nothing else.**
-`toolOutcome` returns `status: 'failed'` for the declared error, and `{ text, sources }` for a validated reference.
-Each call keeps its own outcome, so the successful read keeps its summary and sources beside the failed one, and the group reads **Used 2 tools · 1 failed**.
-Sources come from the decoded result of the call they support and render as links outside **Details**.
-The literal JSON stays inside **Details**, so a citation is never a guess about a raw payload.
-
-Two small application helpers decide what the result templates shows.
-
 ```typescript
-import type { ToolActivityInfo } from '@threadplane/chat';
+import { toolOutcomes } from '@threadplane/chat';
 
-/** The note ID from an admitted save, and nothing for any other result. */
-function savedNoteId(activity: ToolActivityInfo): string | undefined {
-  if (activity.name !== 'save_note' || activity.phase !== 'complete') return undefined;
-  try {
-    const result = JSON.parse(activity.resultText ?? '');
-    return result?.saved === true && typeof result.id === 'string' ? result.id : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** The reference a failed read can retry, until a later read of it exists. */
-function retryableReference(
-  activity: ToolActivityInfo,
-  calls: readonly ToolActivityInfo[]
-): string | undefined {
-  if (activity.name !== 'read_reference' || activity.outcome?.status !== 'failed') return undefined;
-  const reference = (call: ToolActivityInfo): string | undefined => {
-    try {
-      const id = JSON.parse(call.argumentsText ?? '')?.id;
-      return call.name === 'read_reference' && typeof id === 'string' ? id : undefined;
-    } catch {
-      return undefined;
+const toolOutcome = toolOutcomes({
+  read_reference: ({ args, result }) => {
+    const { id } = args as { id: string };
+    const read = result as { error?: string; recoverable?: boolean; title?: string; url?: string; summary?: string };
+    if (read.recoverable === true && typeof read.error === 'string') {
+      return { status: 'failed', text: read.error, retry: { label: `Retry ${id} read` } };
     }
-  };
-  const id = reference(activity);
-  const later = calls.slice(calls.findIndex((call) => call.id === activity.id) + 1);
-  return id && !later.some((call) => reference(call) === id) ? id : undefined;
-}
+    return typeof read.summary === 'string' && typeof read.title === 'string' && typeof read.url === 'string'
+      ? { text: read.summary, sources: [{ title: read.title, url: read.url }] }
+      : undefined;
+  },
+  save_note: ({ result }) => {
+    const save = result as { saved?: boolean; id?: string } | null;
+    return save?.saved === true && typeof save.id === 'string'
+      ? { status: 'receipt', text: `Note ${save.id} in Comparisons.` }
+      : undefined;
+  },
+});
 ```
+
+`toolOutcomes` takes one decoder per tool name and returns a `toolOutcome` callback.
+It parses the arguments and the result once, and runs a decoder only for a completed call of its own tool.
+A running, stopped or already failed call never reaches a decoder, and neither does a tool you did not list.
+**Decode each tool's declared schema, and nothing else.**
+`false`, `0`, `""`, `[]` and `null` arrive unchanged and mean nothing until your decoder says so.
+
+Each call keeps its own outcome.
+The successful read keeps its summary and source link beside the failed one, and the group reads **Used 2 tools · 1 failed**.
+Sources render as links outside **Details**, and the literal JSON stays inside it.
+
+#### Declare a retry
+
+`retry: { label }` on a failed outcome offers a retry for that one call.
+The failure appears in one panel below the group, with the retry after the explanation.
 
 ```html
-<chat [agent]="agent" [toolOutcome]="toolOutcome">
-  <ng-template chatToolResultTemplate="read_reference" let-activity>
-    @if (retryReference(activity); as reference) {
-      <button type="button" (click)="retryRead(reference)">Retry read of {{ reference }}</button>
-    }
-  </ng-template>
-  <ng-template chatToolResultTemplate="save_note" let-activity>
-    @if (savedNoteId(activity); as noteId) {
-      <p>Saved note {{ noteId }}.</p>
-    }
-  </ng-template>
-</chat>
+<chat [agent]="agent" [toolOutcome]="toolOutcome" (toolRetry)="retryRead($event)" />
 ```
 
-`retryReference(activity)` returns nothing while `agent.isLoading()`, and otherwise calls the helper with `agent.toolCalls()` mapped to the same `id`, `name` and `argumentsText` fields.
-`retryRead` is your own handler.
+`(toolRetry)` emits the failed activity.
 
-The retry is a new request through `agent.submit()`, in the same conversation.
-Your backend runs only the failed read again, as a new call with its own ID, and the earlier failed row stays in the history.
-The helper stops offering the retry once that later read exists, and you should also hide it while a response is running.
-Name the reference in the control, because the group may be collapsed above it.
+The library decides only *when* the control is worth showing.
+It hides it while anything is running, and removes it once a later call repeats the same tool and arguments.
+Your handler decides what a retry does.
+Send it as a new request in the same conversation, and have your backend run only the failed read again as a new call.
+Name the call in the label, such as **Retry toSorted read**, because the group may be collapsed above it.
+`<chat-tool-activity-group>` emits the same `(toolRetry)`, and takes a `context` input with every observed call so it can apply the same rule across messages.
+While a per-call retry is offered, the `<chat>` error banner drops its own **Retry**, because that one re-sends the whole request.
 
-The receipt comes from the decoded save result, never from the approval.
-An approval that has not produced `saved: true` shows no receipt, and neither does a denied or reset one.
-Do not offer this kind of retry for a write.
-A write that failed with an uncertain acknowledgment needs reconciliation first.
+I would not declare a retry for a write.
+A write that failed with an uncertain acknowledgment needs reconciliation before another attempt.
 
-The cost is that your application tracks which failed calls are still worth retrying.
-The library shows what you declare and does not run, retry or save anything.
+#### Show a receipt
+
+`status: 'receipt'` records a write your application confirmed.
+It renders as a success panel with the lead **Saved.**, or your own `lead`, followed by your `text`.
+Return it only from the decoded save result, never from the approval.
+An approval that has not produced `saved: true` shows no receipt, and neither does a denied one.
+
+#### The status panel
+
+Failures and receipts use `<chat-status-panel>`, which you can also use for your own approvals and notices.
+
+```html
+<chat-status-panel tone="warning" lead="Waiting for your approval.">
+  <p>Save the comparison note to your workspace?</p>
+  <button chatStatusPanelActions type="button" (click)="save()">Save note</button>
+</chat-status-panel>
+```
+
+`tone` is `danger`, `warning`, `success` or `neutral`.
+The lead sentence carries the meaning and the colour only reinforces it.
+Set `role="alert"` for failures only.
+The panel displays what you give it and runs nothing.
+
+The cost of all this is one decoder per tool, kept in step with that tool's real schema.
+A decoder that drifts shows the wrong state.
 
 ### The agent and tool loop
 
