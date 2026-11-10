@@ -16,12 +16,19 @@ export function exampleToolLabel(name: string): string | undefined {
   return Object.hasOwn(labels, name) ? labels[name] : undefined;
 }
 
-/** Summaries of confirmed demo aviation data; execution and errors stay with the session. */
+/**
+ * Summaries of confirmed demo aviation data, plus the lookup tools' declared
+ * `{ "error": string }` result shown as a failed call. Execution stays with the
+ * session, and a not-found lookup is not retried because the answer is fixed.
+ */
 export function exampleToolOutcome(activity: {
   readonly phase?: string;
   readonly name: string;
   readonly resultText?: string;
-}): { readonly text: string } | undefined {
+}):
+  | { readonly status?: 'succeeded'; readonly text: string }
+  | { readonly status: 'failed'; readonly text: string }
+  | undefined {
   if (activity.phase !== 'complete' || typeof activity.resultText !== 'string')
     return undefined;
   let result: unknown;
@@ -30,7 +37,18 @@ export function exampleToolOutcome(activity: {
   } catch {
     return undefined;
   }
-  if (!record(result) || 'error' in result) return undefined;
+  if (!record(result)) return undefined;
+  if ('error' in result) {
+    const error = result['error'];
+    // Only the two lookup tools declare this shape, and only as the whole result.
+    return ['lookup_flight', 'get_airport_info'].includes(activity.name) &&
+      Object.keys(result).length === 1 &&
+      typeof error === 'string' &&
+      error.trim().length > 0 &&
+      error.length <= 300
+      ? { status: 'failed', text: error.split('. Available:')[0] }
+      : undefined;
+  }
   if (activity.name === 'lookup_flight' && flightResult(result)) {
     const status =
       result['status'] === 'on_time' ? 'on time' : result['status'];

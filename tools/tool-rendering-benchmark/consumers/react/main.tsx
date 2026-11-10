@@ -18,8 +18,8 @@ import './shell.css';
 import {
   toolLabel,
   toolOutcome,
-  recoverableReadError,
-  saveDeclined,
+  savedNoteId,
+  retryableReference,
 } from './tool-outcome';
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
@@ -35,6 +35,27 @@ function App() {
   const [decisionError, setDecisionError] = useState('');
   const [copiedId, setCopiedId] = useState('');
   const decision = snapshot.decision;
+  // Every observed call in transcript order, paired with its tool message.
+  const calls = snapshot.transcript.flatMap((message) =>
+    message.role === 'assistant'
+      ? (message.toolCalls ?? []).map((call) => {
+          const result = snapshot.transcript.find(
+            (message) =>
+              message.role === 'tool' && message.toolCallId === call.id
+          );
+          return {
+            id: call.id,
+            name: call.function.name,
+            argumentsText: call.function.arguments,
+            settled: !!result,
+            resultText:
+              result && typeof result.content === 'string'
+                ? result.content
+                : undefined,
+          };
+        })
+      : []
+  );
   const root = useRef<HTMLElement>(null);
   const composer = useRef<ChatInputHandle>(null);
   const disposed = useRef(false);
@@ -139,33 +160,14 @@ function App() {
                   {message.role === 'assistant' &&
                     !!message.toolCalls?.length && (
                       <ToolActivityGroup
-                        activities={message.toolCalls.map((call) => {
-                          const result = snapshot.transcript.find(
-                            (message) =>
-                              message.role === 'tool' &&
-                              message.toolCallId === call.id
-                          );
-                          const resultText =
-                            result && typeof result.content === 'string'
-                              ? result.content
-                              : undefined;
-                          const errorText = [
-                            'partial-failure',
-                            'long-mixed',
-                          ].includes(scenario)
-                            ? recoverableReadError(resultText)
-                            : undefined;
+                        activities={message.toolCalls.flatMap(({ id }) => {
+                          const call = calls.find((call) => call.id === id);
+                          if (!call) return [];
                           const activity = {
                             id: call.id,
-                            name: call.function.name,
-                            label:
-                              call.function.name === 'save_note' &&
-                              saveDeclined(resultText)
-                                ? 'Save declined'
-                                : toolLabel(call.function.name),
-                            phase: errorText
-                              ? ('error' as const)
-                              : result
+                            name: call.name,
+                            label: toolLabel(call.name),
+                            phase: call.settled
                               ? ('complete' as const)
                               : busy
                               ? ('running' as const)
@@ -175,15 +177,40 @@ function App() {
                               : snapshot.run?.outcome === 'aborted'
                               ? ('stopped' as const)
                               : ('unknown' as const),
-                            argumentsText: call.function.arguments,
-                            resultText,
-                            errorText,
+                            argumentsText: call.argumentsText,
+                            resultText: call.resultText,
                           };
-                          return {
-                            ...activity,
-                            outcome: toolOutcome(activity),
-                          };
+                          // A declared failed outcome turns the complete call into a failed row.
+                          return [
+                            { ...activity, outcome: toolOutcome(activity) },
+                          ];
                         })}
+                        renderResult={(activity) => {
+                          const note = savedNoteId(activity);
+                          if (note)
+                            return (
+                              <p className="benchmark-receipt">
+                                Saved note {note} in the local benchmark store.
+                              </p>
+                            );
+                          const reference =
+                            scenario === 'partial-failure' && !busy
+                              ? retryableReference(activity, calls)
+                              : undefined;
+                          return reference ? (
+                            <button
+                              type="button"
+                              className="benchmark-retry"
+                              onClick={() =>
+                                void session.submit(
+                                  'Retry the failed read explicitly.'
+                                )
+                              }
+                            >
+                              Retry read of {reference}
+                            </button>
+                          ) : null;
+                        }}
                       />
                     )}
                   <p className="benchmark-message-text">
@@ -262,18 +289,6 @@ function App() {
             {snapshot.status === 'error' && (
               <div className="benchmark-recovery" role="alert">
                 <p>The benchmark run failed.</p>
-                {scenario === 'partial-failure' && (
-                  <>
-                    <button
-                      onClick={() =>
-                        void session.submit('Retry the failed read explicitly.')
-                      }
-                    >
-                      Retry failed read
-                    </button>
-                    <p>The successful read stays in this conversation.</p>
-                  </>
-                )}
               </div>
             )}
           </MessageList>
