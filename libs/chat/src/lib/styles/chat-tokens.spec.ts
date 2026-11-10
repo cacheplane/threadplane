@@ -1,9 +1,7 @@
 // libs/chat/src/lib/styles/chat-tokens.spec.ts
-import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { REDUCED_MOTION_LOOP_SELECTORS, ROOT_TOKEN_STYLES } from './chat-tokens';
+import { componentStyleSources } from './style-contract';
 
 describe('ROOT_TOKEN_STYLES — prefers-reduced-motion', () => {
   it('includes a prefers-reduced-motion media block', () => {
@@ -67,30 +65,6 @@ describe('ROOT_TOKEN_STYLES — prefers-reduced-motion', () => {
     expect(ROOT_TOKEN_STYLES).not.toContain(selector);
   });
 });
-
-const LIB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DEBUG_ROOT = join(LIB_ROOT, '..', '..', 'debug', 'src');
-
-/** Every non-spec source file in the chat lib and its debug entry point. */
-function componentStyleSources(): { file: string; source: string }[] {
-  const out: { file: string; source: string }[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      if (entry.isDirectory()) walk(path);
-      else if (
-        entry.name.endsWith('.ts') &&
-        !entry.name.endsWith('.spec.ts') &&
-        entry.name !== 'chat-tokens.ts'
-      ) {
-        out.push({ file: path, source: readFileSync(path, 'utf8') });
-      }
-    }
-  };
-  walk(LIB_ROOT);
-  walk(DEBUG_ROOT);
-  return out;
-}
 
 /**
  * Finds each CSS rule whose `animation` loops forever and returns the
@@ -283,5 +257,65 @@ describe('ROOT_TOKEN_STYLES — theme attribute selectors', () => {
     // (the chat-lib-internal attribute documented for app-shells that
     // already use `data-theme` for their own picker) must flip tokens.
     expect(ROOT_TOKEN_STYLES).toContain(selector);
+  });
+});
+
+/** Value of a token from the explicit-theme block of ROOT_TOKEN_STYLES. */
+function themeBlock(theme: 'light' | 'dark'): string {
+  const marker = `[data-threadplane-chat-theme="${theme}"] {`;
+  const start = ROOT_TOKEN_STYLES.indexOf(marker);
+  return ROOT_TOKEN_STYLES.slice(start + marker.length, ROOT_TOKEN_STYLES.indexOf('}', start));
+}
+
+function tokenValue(theme: 'light' | 'dark', name: string): string {
+  const match = new RegExp(`--tplane-chat-${name}:\\s*([^;]+);`).exec(themeBlock(theme));
+  return match ? match[1].trim() : '';
+}
+
+function parseColor(value: string): string {
+  const rgb = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(value);
+  if (!rgb) return value;
+  return '#' + [rgb[1], rgb[2], rgb[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('');
+}
+
+function contrast(a: string, b: string): number {
+  return contrastRatio(parseColor(a), parseColor(b));
+}
+
+describe('ROOT_TOKEN_STYLES — status families', () => {
+  it.each(['success-bg', 'success-border', 'warning-border', 'elevation-float'])(
+    'declares --tplane-chat-%s in light and dark', (name) => {
+      expect(tokenValue('light', name)).toBeTruthy();
+      expect(tokenValue('dark', name)).toBeTruthy();
+      expect(tokenValue('dark', name)).not.toEqual(tokenValue('light', name));
+    });
+  it.each([
+    ['error-text', 'error-bg'], ['warning-text', 'warning-bg'], ['success-text', 'success-bg'],
+    ['text-muted', 'surface'], ['text-muted', 'surface-alt'],
+  ])('--tplane-chat-%s meets 4.5:1 on --tplane-chat-%s in both themes', (fg, bg) => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(contrast(tokenValue(theme, fg), tokenValue(theme, bg))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it('declares one focus ring and the motion tokens', () => {
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-focus-ring: var(--tplane-chat-primary)');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-motion-duration: 150ms');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-motion-duration-slow: 250ms');
+    expect(ROOT_TOKEN_STYLES).toContain('--tplane-chat-motion-ease: cubic-bezier(0.22, 1, 0.36, 1)');
+  });
+  it('keeps the shadow tokens as aliases of the elevation token', () => {
+    for (const size of ['sm', 'md', 'lg']) {
+      expect(tokenValue('light', `shadow-${size}`)).toBe('var(--tplane-chat-elevation-float)');
+    }
+  });
+  it('declares the focus-ring and shadow aliases in both theme blocks', () => {
+    // A var() alias resolves where it is declared, so a :root-only alias
+    // would keep the light value under a [data-theme="dark"] wrapper.
+    for (const theme of ['light', 'dark'] as const) {
+      expect(tokenValue(theme, 'focus-ring')).toBe('var(--tplane-chat-primary)');
+      for (const size of ['sm', 'md', 'lg']) {
+        expect(tokenValue(theme, `shadow-${size}`)).toBe('var(--tplane-chat-elevation-float)');
+      }
+    }
   });
 });
