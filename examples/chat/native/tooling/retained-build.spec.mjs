@@ -274,6 +274,7 @@ function fixture(t, framework = 'react') {
         'approval-card',
         'select',
         'message-actions',
+        'message-rating',
         'citations',
         'text-transcript',
         'suggestions',
@@ -583,6 +584,21 @@ for (const [graph, extension] of [
     assert.throws(
       () => captureRetainedBuild(f.directory, f),
       /Installed Select /
+    );
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed MessageRating ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/message-rating' + extension
+    ];
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /Installed MessageRating /
     );
   });
 
