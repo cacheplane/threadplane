@@ -113,7 +113,7 @@ export const CHAT_MESSAGE_STYLES = `
   .chat-message__control-btn:focus-visible {
     outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
   }
   .chat-message__control-btn svg { width: 16px; height: 16px; pointer-events: none; }
 `;

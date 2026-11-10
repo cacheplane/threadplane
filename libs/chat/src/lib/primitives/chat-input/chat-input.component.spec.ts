@@ -225,7 +225,7 @@ describe('ChatInputComponent', () => {
     const pill = (fixture.nativeElement as HTMLElement).querySelector('.chat-input__pill') as HTMLElement;
     expect(pill).not.toBeNull();
     const cs = getComputedStyle(pill);
-    expect(cs.borderRadius).toBe('9999px');
+    expect(cs.borderRadius).toBe('var(--tplane-chat-radius-launcher)');
   });
 
   it('renders the send button as a circle', () => {

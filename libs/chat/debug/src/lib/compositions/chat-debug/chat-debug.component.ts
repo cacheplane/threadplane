@@ -188,13 +188,13 @@ function hasHistory(
         padding: 2px;
         background: var(--tplane-chat-debug-bg-deep);
         border: 1px solid var(--tplane-chat-debug-border);
-        border-radius: 6px;
+        border-radius: var(--tplane-chat-radius-card);
       }
       .panel__dock-btn {
         appearance: none;
         background: transparent;
         border: 0;
-        border-radius: 4px;
+        border-radius: var(--tplane-chat-radius-sm);
         width: 24px;
         height: 22px;
         padding: 0;
@@ -220,7 +220,7 @@ function hasHistory(
         appearance: none;
         background: transparent;
         border: 0;
-        border-radius: 6px;
+        border-radius: var(--tplane-chat-radius-card);
         width: 26px;
         height: 26px;
         margin-left: 4px;

@@ -66,7 +66,7 @@ export const CHAT_THREAD_LIST_STYLES = `
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text-muted);
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     cursor: pointer;
     opacity: 0;
     transition: opacity 100ms ease;
@@ -178,7 +178,7 @@ export const CHAT_THREAD_LIST_STYLES = `
     right: 4px;
     height: 2px;
     background: var(--tplane-chat-primary);
-    border-radius: 1px;
+    border-radius: var(--tplane-chat-radius-sm);
     pointer-events: none;
   }
   .chat-thread-list__item-wrap[data-drop-position="before"]::before { top: -1px; }

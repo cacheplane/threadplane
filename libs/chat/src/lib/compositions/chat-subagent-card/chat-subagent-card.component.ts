@@ -47,7 +47,7 @@ function statusToTraceState(s: SubagentStatus): TraceState {
     .sac__id { font-family: var(--tplane-chat-font-mono); font-size: var(--tplane-chat-font-size-xs); color: var(--tplane-chat-text-muted); margin-left: 4px; }
     .sac__pill {
       padding: 1px 8px;
-      border-radius: 9999px;
+      border-radius: var(--tplane-chat-radius-launcher);
       font-size: var(--tplane-chat-font-size-xs);
       font-weight: 500;
       margin-left: 4px;

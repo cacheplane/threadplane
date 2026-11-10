@@ -20,7 +20,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
     padding: 20px;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 12px;
+    border-radius: var(--tplane-chat-radius-card);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
   }
   .chat-confirm-dialog__title {
@@ -43,7 +43,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   .chat-confirm-dialog__cancel,
   .chat-confirm-dialog__confirm {
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: var(--tplane-chat-radius-button);
     font: inherit;
     font-size: var(--tplane-chat-font-size-sm);
     cursor: pointer;

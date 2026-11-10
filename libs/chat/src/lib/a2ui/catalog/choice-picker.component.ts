@@ -109,7 +109,7 @@ interface ResolvedOption {
     .a2ui-cp__chip {
       padding: var(--a2ui-spacing-1) var(--a2ui-spacing-3);
       font-size: var(--a2ui-typography-body-size);
-      border-radius: var(--a2ui-shape-large, 9999px);
+      border-radius: var(--a2ui-shape-large);
       background: var(--a2ui-surface-variant);
       color: var(--a2ui-on-surface);
       border: 1px solid var(--a2ui-outline);

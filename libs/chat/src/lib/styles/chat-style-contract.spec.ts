@@ -79,3 +79,14 @@ describe('focus ring', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('radii', () => {
+  const ALLOWED =
+    /^(0|50%|var\(--tplane-chat-radius-(sm|card|button|bubble|input|launcher)\)|var\(--tplane-chat-citation-radius\)|var\(--tplane-chat-debug-radius-(panel|input|pill)\)|var\(--a2ui-shape-[a-z-]+\))$/;
+  it('uses only radius tokens, 0 or 50% in every border-radius', () => {
+    const offenders = offendersOf(/^border-radius$/, (value) =>
+      !value.split(/\s+/).every((part) => part === '/' || ALLOWED.test(part)),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

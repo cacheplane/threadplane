@@ -39,7 +39,7 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     border: 0;
     padding: 0;
     margin: 0;
-    border-radius: 6px;
+    border-radius: var(--tplane-chat-radius-button);
     background: transparent;
     color: var(--tplane-chat-text-muted);
     cursor: pointer;

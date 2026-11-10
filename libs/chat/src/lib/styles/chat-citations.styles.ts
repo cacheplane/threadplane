@@ -9,7 +9,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 5px;
+    border-radius: var(--tplane-chat-radius-sm);
     border: 1px solid currentColor;
   }
   .chat-citation-source-icon svg {
@@ -20,7 +20,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
   .chat-citation-source-icon--sm {
     width: 14px;
     height: 14px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
   }
   .chat-citation-source-icon--sm svg {
     width: 9px;
@@ -60,7 +60,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
     box-sizing: border-box;
     padding: 1px 6px;
     border: 1px solid currentColor;
-    border-radius: 999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -236,7 +236,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
     color: var(--tplane-chat-text-muted);
     background: var(--tplane-chat-surface-alt);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     padding: 1px var(--tplane-chat-space-2);
   }
   .chat-citations__favstack { display: flex; margin-left: 2px; }

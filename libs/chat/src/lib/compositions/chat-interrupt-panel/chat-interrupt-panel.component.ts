@@ -68,7 +68,7 @@ export function interruptReasonText(interrupt: AgentInterrupt | undefined): stri
     .chat-interrupt-panel__dot {
       width: 6px;
       height: 6px;
-      border-radius: 999px;
+      border-radius: var(--tplane-chat-radius-launcher);
       background: var(--tplane-chat-warning-text);
       flex: 0 0 6px;
     }

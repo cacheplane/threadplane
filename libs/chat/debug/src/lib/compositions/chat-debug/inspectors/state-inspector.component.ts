@@ -31,7 +31,7 @@ import { DebugStateInspectorComponent } from '../debug-state-inspector.component
       gap: 6px;
       background: var(--tplane-chat-debug-bg-deep);
       border: 1px solid var(--tplane-chat-debug-border);
-      border-radius: 6px;
+      border-radius: var(--tplane-chat-radius-card);
       padding: 3px 8px;
       font: inherit;
       font-size: 11px;

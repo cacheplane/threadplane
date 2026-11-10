@@ -505,7 +505,7 @@ describe('ChatSidenavComponent — New chat primary CTA', () => {
       /\.chat-sidenav__action\.chat-sidenav__action--new[^{]*\{[^}]*background:\s*var\(--tplane-chat-text/
     );
     expect(styles).toMatch(
-      /\.chat-sidenav__action--new[^{]*\{[^}]*border-radius:\s*8px/
+      /\.chat-sidenav__action--new[^{]*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-button\)/
     );
   });
 });

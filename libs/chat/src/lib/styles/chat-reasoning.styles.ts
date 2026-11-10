@@ -16,7 +16,7 @@ export const CHAT_REASONING_STYLES = `
     padding: 4px 10px;
     background: var(--tplane-chat-surface-alt);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     color: var(--tplane-chat-text-muted);
     font-size: var(--tplane-chat-font-size-xs);
     font-family: inherit;

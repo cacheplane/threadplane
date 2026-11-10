@@ -19,13 +19,13 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     list-style: none;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   }
   .chat-overflow-menu__item {
     display: block;
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     color: var(--tplane-chat-text);
     font-size: var(--tplane-chat-font-size-sm);
     cursor: pointer;

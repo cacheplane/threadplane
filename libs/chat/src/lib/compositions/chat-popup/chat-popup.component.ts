@@ -35,7 +35,7 @@ import { installChatSurfaceFocus } from '../shared/surface-focus';
       max-height: calc(var(--tplane-chat-viewport-height, 100dvh) - 6rem);
       background: var(--tplane-chat-bg);
       border: 1px solid var(--tplane-chat-separator);
-      border-radius: 0.75rem;
+      border-radius: var(--tplane-chat-radius-card);
       box-shadow: 0 5px 40px rgba(0,0,0,.16);
       transform-origin: bottom right;
       transform: scale(0.95) translateY(20px);

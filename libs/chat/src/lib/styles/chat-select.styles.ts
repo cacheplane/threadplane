@@ -8,7 +8,7 @@ export const CHAT_SELECT_STYLES = `
     height: 32px;
     padding: 0 10px;
     border: 0;
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     background: transparent;
     color: var(--tplane-chat-text-muted);
     font: inherit;
@@ -47,7 +47,7 @@ export const CHAT_SELECT_STYLES = `
     overflow-y: auto;
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 12px;
+    border-radius: var(--tplane-chat-radius-card);
     box-shadow: var(--tplane-chat-shadow-lg);
     padding: 4px;
     box-sizing: border-box;
@@ -62,7 +62,7 @@ export const CHAT_SELECT_STYLES = `
     border: 0;
     background: transparent;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     color: var(--tplane-chat-text);
     font: inherit;
     font-size: var(--tplane-chat-font-size-sm);

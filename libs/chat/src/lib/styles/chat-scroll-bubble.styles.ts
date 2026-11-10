@@ -17,7 +17,7 @@ export const CHAT_SCROLL_BUBBLE_STYLES = `
     min-width: 36px;
     height: 36px;
     padding: 0 12px;
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     color: var(--tplane-chat-text);

@@ -34,9 +34,9 @@ describe('CHAT_SIDENAV_STYLES — New chat button', () => {
     );
   });
 
-  it('uses 8px border-radius (consistent with Search button + thread items)', () => {
+  it('uses a radius token (consistent with Search button + thread items)', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__action\.chat-sidenav__action--new\s*\{[^}]*border-radius:\s*8px\s*;/,
+      /\.chat-sidenav__action\.chat-sidenav__action--new\s*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-button\)\s*;/,
     );
   });
 });
@@ -112,9 +112,9 @@ describe('CHAT_SIDENAV_STYLES — Archived disclosure', () => {
     );
   });
 
-  it('uses 8px border-radius so it reads as a clickable nav item', () => {
+  it('uses the card radius token so it reads as a clickable nav item', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__archived-heading\s*\{[^}]*border-radius:\s*8px\s*;/,
+      /\.chat-sidenav__archived-heading\s*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-card\)\s*;/,
     );
   });
 

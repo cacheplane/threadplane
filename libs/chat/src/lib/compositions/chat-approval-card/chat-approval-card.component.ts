@@ -35,7 +35,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
       margin: auto;
       padding: 0;
       border: 0;
-      border-radius: 12px;
+      border-radius: var(--tplane-chat-radius-card);
       background: var(--tplane-chat-surface);
       color: var(--tplane-chat-text);
       box-shadow: 0 20px 50px rgba(0,0,0,0.18);
@@ -79,7 +79,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
     .btn {
       border: 0;
       padding: 6px 14px;
-      border-radius: 8px;
+      border-radius: var(--tplane-chat-radius-button);
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;

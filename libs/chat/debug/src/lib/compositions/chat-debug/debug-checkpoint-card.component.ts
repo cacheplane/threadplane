@@ -54,7 +54,7 @@ export interface DebugCheckpoint {
     .debug-checkpoint-card__badge {
       font-size: var(--tplane-chat-font-size-xs);
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: var(--tplane-chat-radius-sm);
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
     }

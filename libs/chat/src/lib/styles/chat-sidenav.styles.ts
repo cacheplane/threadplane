@@ -113,7 +113,7 @@ export const CHAT_SIDENAV_STYLES = `
        .chat-sidenav__action.chat-sidenav__action--new block. */
     border: 0;
     padding: 12px 18px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     font-size: var(--tplane-chat-font-size-sm);
     font-weight: 600;
     display: flex;
@@ -131,7 +131,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 32px;
     height: 32px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: var(--tplane-chat-radius-card);
     justify-content: center;
   }
   :host([data-mode="collapsed"]) .chat-sidenav__action--new .chat-sidenav__action-label {
@@ -157,7 +157,7 @@ export const CHAT_SIDENAV_STYLES = `
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     cursor: pointer;
     font-family: inherit;
     font-size: var(--tplane-chat-font-size-sm);
@@ -186,7 +186,7 @@ export const CHAT_SIDENAV_STYLES = `
   .chat-sidenav__action.chat-sidenav__action--new {
     background: var(--tplane-chat-text);
     color: var(--tplane-chat-bg);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     padding: 12px 18px;
     font-weight: 600;
     font-size: var(--tplane-chat-font-size-sm);
@@ -243,7 +243,7 @@ export const CHAT_SIDENAV_STYLES = `
     gap: 7px;
     padding: 0 9px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     background: transparent;
     color: var(--tplane-chat-text-muted);
     cursor: pointer;
@@ -283,7 +283,7 @@ export const CHAT_SIDENAV_STYLES = `
   .chat-sidenav__toggle {
     width: 28px;
     height: 28px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text-muted);
@@ -338,7 +338,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 100%;
     padding: 8px 12px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     background: transparent;
     color: var(--tplane-chat-text);
     font: inherit;
@@ -396,7 +396,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 32px;
     height: 32px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: var(--tplane-chat-radius-card);
     justify-content: center;
     background: transparent;
   }

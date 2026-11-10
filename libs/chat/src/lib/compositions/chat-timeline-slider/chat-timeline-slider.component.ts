@@ -67,7 +67,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
     .timeline-slider__index {
       width: 22px;
       height: 22px;
-      border-radius: 9999px;
+      border-radius: var(--tplane-chat-radius-launcher);
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-xs);

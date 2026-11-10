@@ -38,7 +38,7 @@ export const CHAT_PROJECT_LIST_STYLES = `
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text-muted);
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     cursor: pointer;
     opacity: 0;
     transition: opacity 100ms ease;
@@ -77,7 +77,7 @@ export const CHAT_PROJECT_LIST_STYLES = `
     color: var(--tplane-chat-text);
     border: 0;
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     font-family: inherit;
     font-size: var(--tplane-chat-font-size-sm);
     font-weight: 400;

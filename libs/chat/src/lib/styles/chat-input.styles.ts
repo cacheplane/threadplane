@@ -19,7 +19,7 @@ export const CHAT_INPUT_STYLES = `
   gap: 8px;
   background: var(--tplane-chat-surface);
   border: 1px solid var(--tplane-chat-separator);
-  border-radius: 9999px;
+  border-radius: var(--tplane-chat-radius-launcher);
   padding: 8px 8px 8px 16px;
   min-height: 56px;
   box-sizing: border-box;
@@ -56,7 +56,7 @@ export const CHAT_INPUT_STYLES = `
 .chat-input__textarea:placeholder-shown { white-space: nowrap; overflow-x: hidden; }
 .chat-input__textarea::placeholder { color: var(--tplane-chat-text-muted); }
 .chat-input__textarea::-webkit-scrollbar { width: 4px; }
-.chat-input__textarea::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 4px; }
+.chat-input__textarea::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: var(--tplane-chat-radius-sm); }
 
 .chat-input__controls {
   display: flex;

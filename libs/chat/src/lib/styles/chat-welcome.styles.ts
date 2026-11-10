@@ -77,7 +77,7 @@ export const CHAT_WELCOME_SUGGESTION_STYLES = `
     padding: 10px 16px;
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     color: var(--tplane-chat-text);
     font-family: inherit;
     font-size: var(--tplane-chat-font-size-sm);
