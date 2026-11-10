@@ -58,7 +58,10 @@ export const toolLabel = (name: string) =>
     ? 'Reading reference sources'
     : undefined;
 type Outcome =
-  | { text: string; sources?: { title: string; url: string }[] }
+  | {
+      text: string;
+      sources?: { title: string; url: string; snippet?: string }[];
+    }
   | { status: 'failed'; text: string; retry?: { label: string } }
   | { status: 'receipt'; text: string };
 type Decoder = (call: {
@@ -88,23 +91,22 @@ const referenceRecords = (result: unknown): Reference[] | undefined => {
   const records = Array.isArray(result) ? result : [result];
   return records.length && records.every(reference) ? records : undefined;
 };
-/**
- * `declareSources` is true where the library places declared sources in the
- * message's Sources panel (the Angular `chat` composition). The React consumer
- * composes its own message markup, so its panel is fed from agent state and
- * its outcomes declare no sources, which would otherwise repeat as links.
- */
 const references =
-  (layout: Layout, declareSources: boolean): Decoder =>
+  (layout: Layout): Decoder =>
   ({ result }) => {
     const records = referenceRecords(result);
     if (!records || layout === 'cards') return undefined;
-    const sources = records.map(({ title, url }) => ({ title, url }));
-    if (layout === 'sources')
-      return declareSources ? { text: '', sources } : undefined;
+    // The library lists declared sources once in the message's Sources panel.
+    const sources = records.map(({ title, url, summary }) => ({
+      title,
+      url,
+      snippet: summary,
+    }));
     return {
       text:
-        layout === 'compact'
+        layout === 'sources'
+          ? ''
+          : layout === 'compact'
           ? 'Sources checked.'
           : records.map((row) => row.summary).join(' '),
       sources,
@@ -143,19 +145,12 @@ export function referenceCards(
 export const toolDecoders = (options: {
   readonly retryReads: boolean;
   readonly layout?: Layout;
-  readonly declareSources?: boolean;
 }): Record<string, Decoder> => ({
-  search_reference: references(
-    options.layout ?? 'sources',
-    options.declareSources ?? false
-  ),
+  search_reference: references(options.layout ?? 'sources'),
   read_reference: (call) => {
     const error = recoverableReadError(call.result);
     if (error === undefined)
-      return references(
-        options.layout ?? 'sources',
-        options.declareSources ?? false
-      )(call);
+      return references(options.layout ?? 'sources')(call);
     const id = record(call.args)?.id;
     return {
       status: 'failed',

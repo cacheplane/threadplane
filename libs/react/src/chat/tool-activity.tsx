@@ -1,12 +1,11 @@
 'use client';
-import { useContext, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   activityFailures,
   confirmedOutcomes,
   outcomeSources,
   receiptOutcomes,
   resolveToolOutcome,
-  ToolSourcesInPanelContext,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
 import { activitySummary } from './activity-summary.js';
@@ -86,12 +85,21 @@ export interface ToolActivityProps {
   readonly children?: ReactNode;
   /** Application-owned handler for a declared retry. Without it no retry control renders. */
   readonly onRetry?: (activity: ToolActivityInfo) => void;
+  /** Where declared sources appear. Defaults to links under the activity; see `ToolSourcePlacement`. */
+  readonly sources?: ToolSourcePlacement;
 }
+/**
+ * Where an activity's declared sources appear. `links` (the default) shows them under the activity.
+ * `panel` shows none here, for an application that lists them in its own Sources panel with
+ * `citationsWithToolSources`. `MessageList` and `Chat` already do this.
+ */
+export type ToolSourcePlacement = 'links' | 'panel';
 /** Human-readable activity with opt-in literal inspection and a persistent rich-result slot. */
 export function ToolActivity({
   activity: input,
   children,
   onRetry,
+  sources,
 }: ToolActivityProps) {
   // Direct primitive use gets the same failed-outcome display as projected rows.
   const activity = resolveToolOutcome(input, input.outcome);
@@ -160,7 +168,7 @@ export function ToolActivity({
           </>
         )}
       </details>
-      <ToolOutcomes activities={[activity]} />
+      <ToolOutcomes activities={[activity]} placement={sources} />
       <ToolReceipts activities={[activity]} />
       {children}
     </section>
@@ -168,13 +176,14 @@ export function ToolActivity({
 }
 function ToolOutcomes({
   activities,
+  placement,
 }: {
   readonly activities: readonly ToolActivityInfo[];
+  readonly placement?: ToolSourcePlacement;
 }) {
   const outcomes = confirmedOutcomes(activities);
-  // Inside a message the Sources panel lists these; repeating them here would show each source twice.
-  const inPanel = useContext(ToolSourcesInPanelContext);
-  const sources = inPanel ? [] : outcomeSources(activities);
+  // A Sources panel that already lists these would otherwise show each source twice.
+  const sources = placement === 'panel' ? [] : outcomeSources(activities);
   if (!outcomes.length && !sources.length) return null;
   return (
     <div className="tp-tool-outcomes">
@@ -247,6 +256,8 @@ export interface ToolActivityGroupProps {
   readonly onRetry?: (activity: ToolActivityInfo) => void;
   /** Every observed call in transcript order, so a retry stops being offered once a later call repeats it or work is running. Defaults to this group's activities. */
   readonly context?: readonly ToolActivityInfo[];
+  /** Where declared sources appear. Defaults to links under the group; see `ToolSourcePlacement`. */
+  readonly sources?: ToolSourcePlacement;
   readonly children?: ReactNode;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
@@ -256,6 +267,7 @@ export function ToolActivityGroup({
   renderResult,
   onRetry,
   context,
+  sources,
   children,
 }: ToolActivityGroupProps) {
   // Resolve once so the label, cue, live region and rows agree on each phase.
@@ -318,7 +330,7 @@ export function ToolActivityGroup({
           {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}
         </p>
       )}
-      <ToolOutcomes activities={activities} />
+      <ToolOutcomes activities={activities} placement={sources} />
       {failed && (
         <StatusPanel
           tone="danger"

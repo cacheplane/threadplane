@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-            "line": 269
+            "line": 282
           },
           "isReadonly": true,
           "isOptional": false
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-            "line": 271
+            "line": 284
           },
           "isReadonly": true,
           "isOptional": false
@@ -134,7 +134,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-            "line": 273
+            "line": 286
           },
           "isReadonly": true,
           "isOptional": false
@@ -142,12 +142,12 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-        "line": 268
+        "line": 281
       }
     }
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-    "line": 268
+    "line": 281
   }
 }

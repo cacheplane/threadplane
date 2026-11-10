@@ -8,6 +8,10 @@ import type { ToolActivityInfo } from './chat-tool-activity.component';
 export interface ToolActivitySource {
   readonly title: string;
   readonly url: string;
+  /** A short excerpt shown on the source's card in the Sources panel. */
+  readonly snippet?: string;
+  /** The source's own icon (absolute URL or `data:` URI) for the Sources panel. Never fetched or guessed by the library. */
+  readonly iconUrl?: string;
 }
 /** An opt-in retry the application declares for one failed call. The label names the call, such as "Retry toSorted read". */
 export interface ToolActivityRetry {
@@ -113,7 +117,16 @@ export function toolSourceCitations(
     const url = href(source.url);
     if (!url || seen.has(url)) return [];
     seen.add(url);
-    return [{ id: 'tool-source:' + url, index: ++index, title: source.title, url: source.url }];
+    return [
+      {
+        id: 'tool-source:' + url,
+        index: ++index,
+        title: source.title,
+        url: source.url,
+        ...(source.snippet?.trim() ? { snippet: source.snippet } : {}),
+        ...(source.iconUrl ? { iconUrl: source.iconUrl } : {}),
+      },
+    ];
   });
 }
 /**

@@ -42,11 +42,7 @@ class Benchmark {
   readonly toolLabel = toolLabel;
   // The application decodes its own tool schemas; only this scenario's backend can retry a read.
   readonly toolOutcome = toolOutcomes(
-    toolDecoders({
-      retryReads: scenario === 'partial-failure',
-      layout,
-      declareSources: true,
-    })
+    toolDecoders({ retryReads: scenario === 'partial-failure', layout })
   );
   readonly scenario = scenario;
   // The cards layout shows each distinct reference once, on the last call that returned it.

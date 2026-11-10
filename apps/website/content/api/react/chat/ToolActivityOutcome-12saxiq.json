@@ -69,7 +69,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 22
+        "line": 27
       },
       "typeTokenRange": {
         "startIndex": 1,
@@ -79,6 +79,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 22
+    "line": 27
   }
 }

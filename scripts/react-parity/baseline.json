@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "476f1a91dae798ef8e70a80ac5bde5f122b83109",
+  "baselineHead": "f2cc269a5247224d557a205dfd86ba794846a1e6",
   "sourceState": {
     "modified": [
       "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
       "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-      "libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
       "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+      "libs/chat/src/lib/styles/chat-citations.styles.ts",
+      "libs/react/src/chat/index.ts",
       "libs/react/src/chat/message-list.tsx",
+      "libs/react/src/chat/styles.css",
       "libs/react/src/chat/tool-activity.tsx",
       "libs/react/src/chat/tool-outcome.ts"
     ],
@@ -877,7 +877,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "91a3f40d4d1c4bdd5ba6459534a7c9568c023ee8ba694bb60f9b02441f0bbe5c"
+      "sha256": "b0cab00228bcfd86ce1a366f9bfb2a7c392528a21179acfb48f53c04d6500160"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -2623,7 +2623,7 @@
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "sha256": "d4dc43f88cff9fa663cdd045aead0a29dedfbac5a787d8482f2bfe9b887b9f01"
+      "sha256": "4d386ec18e76d36cee99655e5f1a3c75645012f7b48b8a165c778ae7a07742b2"
     },
     {
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-trace.mdx",
@@ -3193,7 +3193,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "1779ee7ef6a081708d2c8d49c3230a16bedf2a7b9e464a11c1461bfedd8f6a29"
+      "sha256": "c837645739e883663be848a8deb96917d51762403f15bdba25616d8a18752eb8"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",
@@ -8228,7 +8228,7 @@
           "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
           "symbol": "ToolActivitySource",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivitySource {\n    readonly title: string;\n    readonly url: string;\n}"
+          "signature": "export interface ToolActivitySource {\n    readonly title: string;\n    readonly url: string;\n    readonly snippet?: string;\n    readonly iconUrl?: string;\n}"
         }
       ]
     },
@@ -12332,7 +12332,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivity",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ToolActivity({ activity: input, children, onRetry, }: ToolActivityProps) {\n    const activity = resolveToolOutcome(input, input.outcome);\n    const phase = activity.phase ?? 'unknown';\n    const retry = onRetry ? activityFailures([activity])[0]?.retry : undefined;\n    return (<section className=\"tp-tool-activity\" data-phase={phase} data-tool-id={activity.id}>\n      <div className=\"tp-tool-activity__heading\">\n        <span>{activity.label ?? 'Tool activity'}</span>\n        <span className=\"tp-tool-activity__phase\">{labels[phase]}</span>\n        {activity.durationMs !== undefined &&\n            Number.isFinite(activity.durationMs) &&\n            activity.durationMs >= 0 && (<span className=\"tp-tool-activity__duration\">\n              {activity.durationMs}ms\n            </span>)}\n      </div>\n      {phase === 'error' && (<p className=\"tp-tool-activity__error\" role=\"alert\">\n          {activity.errorSummary ??\n                'This tool could not finish. Check Details before retrying.'}\n        </p>)}\n      {retry && onRetry && (<button type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n          {retry.label}\n        </button>)}\n      <details className=\"tp-tool-activity__details\">\n        <summary>Details</summary>\n        <dl>\n          <dt>Tool</dt>\n          <dd>\n            <code>{activity.name}</code>\n          </dd>\n          <dt>Call ID</dt>\n          <dd>\n            <code>{activity.id}</code>\n          </dd>\n        </dl>\n        {activity.argumentsText !== undefined && (<>\n            <p>Arguments</p>\n            <pre>{activity.argumentsText}</pre>\n          </>)}\n        {activity.resultText !== undefined && (<>\n            <p>Result</p>\n            <pre>{activity.resultText}</pre>\n          </>)}\n        {activity.errorText !== undefined && (<>\n            <p>Error</p>\n            <pre>{activity.errorText}</pre>\n          </>)}\n      </details>\n      <ToolOutcomes activities={[activity]}/>\n      <ToolReceipts activities={[activity]}/>\n      {children}\n    </section>);\n}"
+          "signature": "export function ToolActivity({ activity: input, children, onRetry, sources, }: ToolActivityProps) {\n    const activity = resolveToolOutcome(input, input.outcome);\n    const phase = activity.phase ?? 'unknown';\n    const retry = onRetry ? activityFailures([activity])[0]?.retry : undefined;\n    return (<section className=\"tp-tool-activity\" data-phase={phase} data-tool-id={activity.id}>\n      <div className=\"tp-tool-activity__heading\">\n        <span>{activity.label ?? 'Tool activity'}</span>\n        <span className=\"tp-tool-activity__phase\">{labels[phase]}</span>\n        {activity.durationMs !== undefined &&\n            Number.isFinite(activity.durationMs) &&\n            activity.durationMs >= 0 && (<span className=\"tp-tool-activity__duration\">\n              {activity.durationMs}ms\n            </span>)}\n      </div>\n      {phase === 'error' && (<p className=\"tp-tool-activity__error\" role=\"alert\">\n          {activity.errorSummary ??\n                'This tool could not finish. Check Details before retrying.'}\n        </p>)}\n      {retry && onRetry && (<button type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n          {retry.label}\n        </button>)}\n      <details className=\"tp-tool-activity__details\">\n        <summary>Details</summary>\n        <dl>\n          <dt>Tool</dt>\n          <dd>\n            <code>{activity.name}</code>\n          </dd>\n          <dt>Call ID</dt>\n          <dd>\n            <code>{activity.id}</code>\n          </dd>\n        </dl>\n        {activity.argumentsText !== undefined && (<>\n            <p>Arguments</p>\n            <pre>{activity.argumentsText}</pre>\n          </>)}\n        {activity.resultText !== undefined && (<>\n            <p>Result</p>\n            <pre>{activity.resultText}</pre>\n          </>)}\n        {activity.errorText !== undefined && (<>\n            <p>Error</p>\n            <pre>{activity.errorText}</pre>\n          </>)}\n      </details>\n      <ToolOutcomes activities={[activity]} placement={sources}/>\n      <ToolReceipts activities={[activity]}/>\n      {children}\n    </section>);\n}"
         }
       ]
     },
@@ -12360,7 +12360,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityGroup",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ToolActivityGroup({ activities: input, label, renderResult, onRetry, context, children, }: ToolActivityGroupProps) {\n    const activities = input.map((activity) => resolveToolOutcome(activity, activity.outcome));\n    const summary = activitySummary(activities, label);\n    const failed = summary.phase === 'error';\n    const failures = activityFailures(activities, context);\n    const receipts = receiptOutcomes(activities);\n    const results = renderResult\n        ? activities.flatMap((activity) => {\n            const result = renderResult(activity);\n            return result === null || result === undefined\n                ? []\n                : [\n                    <div key={activity.id} data-tool-id={activity.id}>\n                {result}\n              </div>,\n                ];\n        })\n        : [];\n    return (<section className=\"tp-tool-activity-group\" data-phase={summary.phase} data-active={summary.active}>\n      {activities.length > 0 && (<details className=\"tp-tool-activity-group__details\">\n          <summary>\n            <span className=\"tp-tool-activity__label\" data-active={summary.active}>\n              {summary.label}\n            </span>\n            {summary.cue && (<span className=\"tp-tool-activity__cue\">{summary.cue}</span>)}\n          </summary>\n          <div className=\"tp-tool-activity-group__items\">\n            {activities.map((activity) => (<ToolActivity key={activity.id} activity={{ ...activity, outcome: undefined }}/>))}\n          </div>\n        </details>)}\n      {activities.length > 0 && (<p role=\"status\" aria-live=\"polite\" aria-atomic=\"true\" className=\"tp-tool-activity__status\">\n          {summary.status}\n          {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}\n        </p>)}\n      <ToolOutcomes activities={activities}/>\n      {failed && (<StatusPanel tone=\"danger\" role=\"alert\" className=\"tp-tool-activity__error\">\n          {failures.length > 0 ? (failures.flatMap(({ key, text, retry }) => [\n                <p key={key}>{text}</p>,\n                retry && onRetry && (<button key={`${key}-retry`} type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n                  {retry.label}\n                </button>),\n            ])) : (<p>Some tools could not finish. Check Details before retrying.</p>)}\n        </StatusPanel>)}\n      <ToolReceipts activities={activities}/>\n      {results.length > 0 && (<div className=\"tp-tool-activity__results\">{results}</div>)}\n      {children}\n    </section>);\n}"
+          "signature": "export function ToolActivityGroup({ activities: input, label, renderResult, onRetry, context, sources, children, }: ToolActivityGroupProps) {\n    const activities = input.map((activity) => resolveToolOutcome(activity, activity.outcome));\n    const summary = activitySummary(activities, label);\n    const failed = summary.phase === 'error';\n    const failures = activityFailures(activities, context);\n    const receipts = receiptOutcomes(activities);\n    const results = renderResult\n        ? activities.flatMap((activity) => {\n            const result = renderResult(activity);\n            return result === null || result === undefined\n                ? []\n                : [\n                    <div key={activity.id} data-tool-id={activity.id}>\n                {result}\n              </div>,\n                ];\n        })\n        : [];\n    return (<section className=\"tp-tool-activity-group\" data-phase={summary.phase} data-active={summary.active}>\n      {activities.length > 0 && (<details className=\"tp-tool-activity-group__details\">\n          <summary>\n            <span className=\"tp-tool-activity__label\" data-active={summary.active}>\n              {summary.label}\n            </span>\n            {summary.cue && (<span className=\"tp-tool-activity__cue\">{summary.cue}</span>)}\n          </summary>\n          <div className=\"tp-tool-activity-group__items\">\n            {activities.map((activity) => (<ToolActivity key={activity.id} activity={{ ...activity, outcome: undefined }}/>))}\n          </div>\n        </details>)}\n      {activities.length > 0 && (<p role=\"status\" aria-live=\"polite\" aria-atomic=\"true\" className=\"tp-tool-activity__status\">\n          {summary.status}\n          {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}\n        </p>)}\n      <ToolOutcomes activities={activities} placement={sources}/>\n      {failed && (<StatusPanel tone=\"danger\" role=\"alert\" className=\"tp-tool-activity__error\">\n          {failures.length > 0 ? (failures.flatMap(({ key, text, retry }) => [\n                <p key={key}>{text}</p>,\n                retry && onRetry && (<button key={`${key}-retry`} type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n                  {retry.label}\n                </button>),\n            ])) : (<p>Some tools could not finish. Check Details before retrying.</p>)}\n        </StatusPanel>)}\n      <ToolReceipts activities={activities}/>\n      {results.length > 0 && (<div className=\"tp-tool-activity__results\">{results}</div>)}\n      {children}\n    </section>);\n}"
         }
       ]
     },
@@ -12374,7 +12374,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityGroupProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivityGroupProps {\n    readonly activities: readonly ToolActivityInfo[];\n    readonly label?: string;\n    readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly context?: readonly ToolActivityInfo[];\n    readonly children?: ReactNode;\n}"
+          "signature": "export interface ToolActivityGroupProps {\n    readonly activities: readonly ToolActivityInfo[];\n    readonly label?: string;\n    readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly context?: readonly ToolActivityInfo[];\n    readonly sources?: ToolSourcePlacement;\n    readonly children?: ReactNode;\n}"
         }
       ]
     },
@@ -12430,7 +12430,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivityProps {\n    readonly activity: ToolActivityInfo;\n    readonly children?: ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n}"
+          "signature": "export interface ToolActivityProps {\n    readonly activity: ToolActivityInfo;\n    readonly children?: ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly sources?: ToolSourcePlacement;\n}"
         }
       ]
     },
@@ -12458,7 +12458,7 @@
           "path": "libs/react/src/chat/tool-outcome.ts",
           "symbol": "ToolActivitySource",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivitySource {\n    readonly title: string;\n    readonly url: string;\n}"
+          "signature": "export interface ToolActivitySource {\n    readonly title: string;\n    readonly url: string;\n    readonly snippet?: string;\n    readonly iconUrl?: string;\n}"
         }
       ]
     },
@@ -12515,6 +12515,20 @@
           "symbol": "ToolOutcomeDecoder",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type ToolOutcomeDecoder = (call: ToolOutcomeCall) => ToolActivityOutcome | undefined;"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolSourcePlacement",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ToolSourcePlacement",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/tool-activity.tsx",
+          "symbol": "ToolSourcePlacement",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type ToolSourcePlacement = 'links' | 'panel';"
         }
       ]
     },
@@ -12599,6 +12613,20 @@
           "symbol": "WelcomeSuggestionProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface WelcomeSuggestionProps {\n    readonly label: string;\n    readonly value: string;\n    readonly onSelect: (value: string) => void;\n    readonly description?: string;\n    readonly icon?: ReactNode;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#citationsWithToolSources",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "citationsWithToolSources",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/tool-outcome.ts",
+          "symbol": "citationsWithToolSources",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function citationsWithToolSources(citations: readonly Citation[], activities: readonly ToolActivityInfo[], snapshot?: MarkdownSnapshot): readonly Citation[] {\n    const added = toolSourceCitations([\n        ...citations,\n        ...[...(snapshot?.root?.citations.values() ?? [])].map(definitionToCitation),\n    ], outcomeSources(activities.map((activity) => resolveToolOutcome(activity, activity.outcome))));\n    return added.length ? [...citations, ...added] : citations;\n}"
         }
       ]
     },
@@ -15618,7 +15646,7 @@
       "id": "source:libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-      "sha256": "da6e48570e52d244204961aa070656d16285a3f77977eb4cfb4c032cea5179d4"
+      "sha256": "28a59e7237cd2813ddff04be4f6bd662927ee50fdf81079955f823b0383ed2d4"
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-call-template.directive.ts",
@@ -15750,7 +15778,7 @@
       "id": "source:libs/chat/src/lib/styles/chat-citations.styles.ts",
       "kind": "source",
       "path": "libs/chat/src/lib/styles/chat-citations.styles.ts",
-      "sha256": "3a1a11ac255507272cd9429be18da08cbae79a3be80f16b11364fb1d26b99276"
+      "sha256": "fb49126975287c33d87adb0568ca001ad51ff4c9e31af2f28b9e3971d967e505"
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-confirm-dialog.styles.ts",
@@ -17202,7 +17230,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "a00af5f21da0bf73d92ba4ad5e3bee5b04623dae281466b6485bf26262875704"
+      "sha256": "89a7be467fdc19251e74103e22a96d0e305635fcbb78c87dbad7e7a22863bbfc"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -17256,7 +17284,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "99a77e42418fc479b66a44491d84b921c8ab0154eb66a9e3b8c04267e38ff4a2"
+      "sha256": "7f1dbcef456ce28cc7a727a1e3321922d62831b5f5e1217e9f16025a86e65623"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
@@ -17334,7 +17362,7 @@
       "id": "source:libs/react/src/chat/tool-activity.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/tool-activity.tsx",
-      "sha256": "933a3d795d36dd4851dd38601833f11c2b4b6e67bbda4fc5796eeddbdd091577"
+      "sha256": "45913b6a80cafb7334a51482bc4520018abc138b593064a635fbcb943ea28500"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",
@@ -17346,7 +17374,7 @@
       "id": "source:libs/react/src/chat/tool-outcome.ts",
       "kind": "source",
       "path": "libs/react/src/chat/tool-outcome.ts",
-      "sha256": "f2aa7db779e7eca31e824dd9507016c861c0e018ea9f9638b8336b42d93aa062"
+      "sha256": "648a36221d5485215dc66c00b87977417785ece43846ed0124ef1722e49ffb99"
     },
     {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",

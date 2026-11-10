@@ -19,13 +19,10 @@ import {
   type ToolActivityOutcome,
 } from './tool-activity.js';
 import {
-  outcomeSources,
+  citationsWithToolSources,
   resolveToolOutcome,
-  toolSourceCitations,
-  ToolSourcesInPanelContext,
   withoutStaleRetry,
 } from './tool-outcome.js';
-import { definitionToCitation } from '../markdown/citation-source.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -126,6 +123,7 @@ function safeOutcome(
   }
 }
 const NONE: ReadonlySet<string> = new Set();
+const NO_CITATIONS: readonly never[] = [];
 /** Per-row retry staleness across the whole transcript: every call while work is active, else calls a later one repeats. */
 function staleRetriesByRow(rows: readonly MessageRow[]): readonly string[] {
   const busy =
@@ -207,21 +205,9 @@ function RowView<TRow extends MessageRow>({
       : resolved;
   });
   // Sources a tool call declares join the message's one Sources panel instead of
-  // repeating as links under the activity. Numbering continues after the
-  // message's own citations and any Markdown source definitions.
+  // repeating as links under the activity.
   const assistant = row.role === 'assistant';
-  const cited = assistant ? row.message.citations ?? [] : [];
-  const sources = assistant
-    ? toolSourceCitations(
-        [
-          ...cited,
-          ...[...(row.markdown.root?.citations.values() ?? [])].map(
-            definitionToCitation
-          ),
-        ],
-        outcomeSources(activities)
-      )
-    : [];
+  const sourcePlacement = assistant ? 'panel' : 'links';
   return (
     <ChatMessage
       role={row.role}
@@ -236,31 +222,35 @@ function RowView<TRow extends MessageRow>({
         <>
           {assistant && (
             <Citations
-              citations={sources.length ? [...cited, ...sources] : cited}
+              citations={citationsWithToolSources(
+                row.message.citations ?? NO_CITATIONS,
+                activities,
+                row.markdown
+              )}
               snapshot={row.markdown}
               collapsible
             />
           )}
-          <ToolSourcesInPanelContext.Provider value={assistant}>
-            {row.role !== 'tool' &&
-              (groupRelatedTools ? (
-                <ToolActivityGroup
-                  activities={activities}
-                  renderResult={renderToolResult}
+          {row.role !== 'tool' &&
+            (groupRelatedTools ? (
+              <ToolActivityGroup
+                activities={activities}
+                renderResult={renderToolResult}
+                onRetry={onToolRetry}
+                sources={sourcePlacement}
+              />
+            ) : (
+              activities.map((activity) => (
+                <ToolActivity
+                  key={activity.id}
+                  activity={activity}
                   onRetry={onToolRetry}
-                />
-              ) : (
-                activities.map((activity) => (
-                  <ToolActivity
-                    key={activity.id}
-                    activity={activity}
-                    onRetry={onToolRetry}
-                  >
-                    {renderToolResult?.(activity)}
-                  </ToolActivity>
-                ))
-              ))}
-          </ToolSourcesInPanelContext.Provider>
+                  sources={sourcePlacement}
+                >
+                  {renderToolResult?.(activity)}
+                </ToolActivity>
+              ))
+            ))}
         </>
       }
     >

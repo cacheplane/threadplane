@@ -466,6 +466,7 @@ const SUPPORTED_EXPORTS = {
     'toolActivityPhase',
     'resolveToolOutcome',
     'toolOutcomes',
+    'citationsWithToolSources',
     'StatusPanel',
     'ToolObservation',
     'Welcome',

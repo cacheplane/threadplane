@@ -1004,6 +1004,7 @@ test('React chat requires its real supported export', () => {
   supported.toolActivityPhase = component;
   supported.resolveToolOutcome = component;
   supported.toolOutcomes = component;
+  supported.citationsWithToolSources = component;
   supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;

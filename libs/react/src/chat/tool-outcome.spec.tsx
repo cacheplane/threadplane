@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  Citations,
+  citationsWithToolSources,
   StatusPanel,
   ToolActivity,
   ToolActivityGroup,
@@ -349,5 +351,63 @@ describe('tool sources outside a message', () => {
     expect(
       view.getByRole('link', { name: 'Signals' }).closest('.tp-tool-outcomes')
     ).toBeTruthy();
+  });
+});
+
+describe('a custom composition with its own Sources panel', () => {
+  const activities: ToolActivityInfo[] = [
+    {
+      id: 'c',
+      name: 'lookup',
+      phase: 'complete',
+      outcome: {
+        text: '',
+        sources: [
+          {
+            title: 'Signals',
+            url: 'https://angular.dev/guide/signals',
+            snippet: 'Reactive values.',
+            iconUrl: 'data:image/png;base64,AA==',
+          },
+          { title: 'Cited already', url: 'https://example.com/cited' },
+        ],
+      },
+    },
+  ];
+  const own = [
+    { id: 'own', index: 2, title: 'Own', url: 'https://example.com/cited' },
+  ];
+  it('adds declared sources to the message citations with their snippet and icon', () => {
+    expect(citationsWithToolSources(own, activities)).toEqual([
+      own[0],
+      {
+        id: 'tool-source:https://angular.dev/guide/signals',
+        index: 3,
+        title: 'Signals',
+        url: 'https://angular.dev/guide/signals',
+        snippet: 'Reactive values.',
+        iconUrl: 'data:image/png;base64,AA==',
+      },
+    ]);
+  });
+  it('returns the same citations when the activities add nothing', () => {
+    expect(citationsWithToolSources(own, [])).toBe(own);
+    expect(
+      citationsWithToolSources(own, [{ ...activities[0], phase: 'running' }])
+    ).toBe(own);
+  });
+  it('shows each source once: in the panel, with no links or blank line under the activity', () => {
+    const view = render(
+      <>
+        <ToolActivityGroup activities={activities} sources="panel" />
+        <ToolActivity activity={activities[0]} sources="panel" />
+        <Citations citations={citationsWithToolSources(own, activities)} />
+      </>
+    );
+    expect(view.container.querySelector('.tp-tool-outcomes')).toBeNull();
+    const links = view.getAllByRole('link', { name: /Signals/ });
+    expect(links).toHaveLength(1);
+    expect(links[0].closest('.tp-citations')).toBeTruthy();
+    expect(view.getByText('Reactive values.')).toBeTruthy();
   });
 });

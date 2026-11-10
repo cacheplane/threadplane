@@ -41,9 +41,6 @@ export async function createBenchmarkServer({
   const streams = new Set();
   const gates = new Map();
   const recoveries = new Map();
-  // Agent state per thread: a state snapshot replaces the whole state, so each
-  // one carries the citations of every earlier message in the thread as well.
-  const threadCitations = new Map();
   let address;
   function stop(run, reason = 'aborted') {
     if (terminal.has(run.record.status)) return;
@@ -123,8 +120,6 @@ export async function createBenchmarkServer({
           if (gate.participant === participant) gate.revoked = true;
         for (const [key, recovery] of recoveries)
           if (recovery.participant === participant) recoveries.delete(key);
-        for (const key of threadCitations.keys())
-          if (JSON.parse(key)[0] === participant) threadCitations.delete(key);
         return json(200, { reset: true });
       }
       if (url.pathname.startsWith('/approve/')) {
@@ -158,10 +153,6 @@ export async function createBenchmarkServer({
       } catch {
         return json(400, { error: 'Unknown benchmark scenario' });
       }
-      // Presentation variant only: the same calls and results, with confirmed
-      // references also published as message citations in agent state.
-      const citeSources =
-        protocol === 'ag-ui' && url.searchParams.get('layout') === 'sources';
       if (scenario.nativeApproval && protocol !== 'ag-ui')
         return json(400, { error: 'Native approval requires AG-UI' });
       const threadId =
@@ -249,7 +240,6 @@ export async function createBenchmarkServer({
         ? [{ ...scenario.calls[1], id: 'read-sorted-retry' }]
         : scenario.calls;
       const messageId = id + '-assistant';
-      const cited = new Map();
       const record = {
         id,
         participant,
@@ -565,32 +555,6 @@ export async function createBenchmarkServer({
                 output: result,
               }
         );
-        if (citeSources) {
-          const before = cited.size;
-          for (const row of Array.isArray(result) ? result : [result])
-            if (
-              row &&
-              typeof row === 'object' &&
-              typeof row.url === 'string' &&
-              typeof row.title === 'string' &&
-              !cited.has(row.url)
-            )
-              cited.set(row.url, {
-                id: 'source-' + (cited.size + 1),
-                index: cited.size + 1,
-                title: row.title,
-                url: row.url,
-                snippet: typeof row.summary === 'string' ? row.summary : '',
-              });
-          if (cited.size > before) {
-            const citations = {
-              ...threadCitations.get(recoveryKey),
-              [messageId]: [...cited.values()],
-            };
-            threadCitations.set(recoveryKey, citations);
-            emit({ type: 'STATE_SNAPSHOT', snapshot: { citations } });
-          }
-        }
       }
       if (!active()) return;
       if (protocol === 'ag-ui') {

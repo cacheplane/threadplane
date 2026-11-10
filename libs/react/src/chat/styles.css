@@ -970,7 +970,10 @@
 .tp-citations__list {
   display: grid;
   gap: 0.5rem;
-  padding-inline-start: 1.25rem;
+  /* Each source is numbered in its own row, so list markers would repeat that. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .tp-citations__title {
   white-space: pre-wrap;

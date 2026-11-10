@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 242
+            "line": 251
           },
           "isReadonly": true,
           "isOptional": false
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 250
+            "line": 261
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 249
+            "line": 258
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 243
+            "line": 252
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,7 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 247
+            "line": 256
           },
           "isReadonly": true,
           "isOptional": true
@@ -286,7 +286,45 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 245
+            "line": 254
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "sources",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#sources:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly sources?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolSourcePlacement",
+              "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
+              "href": "/docs/api/react/chat/ToolSourcePlacement"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Where declared sources appear. Defaults to links under the group; see `ToolSourcePlacement`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 260
           },
           "isReadonly": true,
           "isOptional": true
@@ -294,12 +332,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 241
+        "line": 250
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 241
+    "line": 250
   }
 }

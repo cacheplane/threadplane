@@ -10,6 +10,7 @@ import { createSession } from '@threadplane/ag-ui';
 import {
   ChatInput,
   Citations,
+  citationsWithToolSources,
   ToolActivityGroup,
   MessageList,
   toolOutcomes,
@@ -31,38 +32,13 @@ const layout = layoutFrom(location.search);
 const toolOutcome = toolOutcomes(
   toolDecoders({ retryReads: scenario === 'partial-failure', layout })
 );
-type Source = React.ComponentProps<typeof Citations>['citations'][number];
-const NO_SOURCES: readonly Source[] = [];
-// Agent state carries citations per assistant message; the app accepts only its own declared shape.
-function citationsFor(state: unknown, messageId: string): readonly Source[] {
-  const byMessage =
-    state && typeof state === 'object'
-      ? (state as { citations?: Record<string, unknown> }).citations
-      : undefined;
-  const rows = byMessage?.[messageId];
-  if (!Array.isArray(rows)) return NO_SOURCES;
-  return rows.flatMap((row, index): Source[] =>
-    row &&
-    typeof row.id === 'string' &&
-    typeof row.title === 'string' &&
-    typeof row.url === 'string'
-      ? [
-          {
-            id: row.id,
-            index: index + 1,
-            title: row.title,
-            url: row.url,
-            snippet: typeof row.snippet === 'string' ? row.snippet : undefined,
-          },
-        ]
-      : []
-  );
-}
+// This raw session carries no message citations; the panel lists tool-declared sources.
+const NO_CITATIONS: readonly never[] = [];
 function App() {
   const [session] = useState(() =>
     createSession({
       threadId: crypto.randomUUID(),
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}&layout=${layout}`,
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}`,
     })
   );
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
@@ -216,6 +192,7 @@ function App() {
                           )
                         )}
                         context={activities}
+                        sources="panel"
                         onRetry={
                           busy
                             ? undefined
@@ -251,7 +228,14 @@ function App() {
                   </p>
                   {message.role === 'assistant' && (
                     <Citations
-                      citations={citationsFor(snapshot.state, message.id)}
+                      citations={citationsWithToolSources(
+                        NO_CITATIONS,
+                        activities.filter((activity) =>
+                          message.toolCalls?.some(
+                            (call) => call.id === activity.id
+                          )
+                        )
+                      )}
                       collapsible
                     />
                   )}
