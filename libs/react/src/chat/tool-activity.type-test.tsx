@@ -51,16 +51,16 @@ const succeededRetry: ToolActivityOutcome = {
   text: 'ok',
   retry: { label: 'Again' },
 };
-// @ts-expect-error A retry names its call; it carries no handler or executor.
 const executingRetry: ToolActivityOutcome = {
   status: 'failed',
   text: 'x',
+  // @ts-expect-error A retry names its call; it carries no handler or executor.
   retry: { label: 'Again', run: () => undefined },
 };
-// @ts-expect-error A receipt is a record, not a source list.
 const receiptSources: ToolActivityOutcome = {
   status: 'receipt',
   text: 'x',
+  // @ts-expect-error A receipt is a record, not a source list.
   sources: [],
 };
 const decoded = toolOutcomes({
