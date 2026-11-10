@@ -1,0 +1,153 @@
+{
+  "name": "ToolOutcomeCall",
+  "entrypointId": "chat",
+  "kind": "Interface",
+  "href": "/docs/api/chat/ToolOutcomeCall",
+  "canonicalReference": "@threadplane/chat!ToolOutcomeCall:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity.",
+  "declarations": [
+    {
+      "name": "ToolOutcomeCall",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/chat!ToolOutcomeCall:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ToolOutcomeCall "
+        }
+      ],
+      "docs": {
+        "summary": "What a per-tool decoder receives: the call's parsed arguments and result beside the literal activity.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activity",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolOutcomeCall#activity:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+              "href": "/docs/api/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+            "line": 239
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "args",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolOutcomeCall#args:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly args: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Parsed JSON arguments, or undefined when they are not valid JSON.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+            "line": 241
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "result",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolOutcomeCall#result:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly result: "
+            },
+            {
+              "kind": "Content",
+              "text": "unknown"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Parsed JSON result, or the literal result text when it is not JSON.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+            "line": 243
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+        "line": 238
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+    "line": 238
+  }
+}

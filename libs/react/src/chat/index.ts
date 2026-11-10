@@ -14,7 +14,12 @@ export {
   isTyping,
   type TypingIndicatorProps,
 } from './typing-indicator.js';
-export { resolveToolOutcome } from './tool-outcome.js';
+export { resolveToolOutcome, toolOutcomes } from './tool-outcome.js';
+export {
+  StatusPanel,
+  type StatusPanelProps,
+  type StatusPanelTone,
+} from './status-panel.js';
 export {
   ToolActivity,
   ToolActivityGroup,
@@ -22,7 +27,10 @@ export {
   type ToolActivityDelivery,
   type ToolActivityInfo,
   type ToolActivityOutcome,
+  type ToolActivityRetry,
   type ToolActivitySource,
+  type ToolOutcomeCall,
+  type ToolOutcomeDecoder,
   type ToolActivityPhase,
   type ToolActivityProps,
   type ToolActivityGroupProps,

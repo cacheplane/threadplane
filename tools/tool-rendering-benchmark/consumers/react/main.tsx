@@ -11,18 +11,19 @@ import {
   ChatInput,
   ToolActivityGroup,
   MessageList,
+  toolOutcomes,
+  type ToolActivityInfo,
   type ChatInputHandle,
 } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import './shell.css';
-import {
-  toolLabel,
-  toolOutcome,
-  savedNoteId,
-  retryableReference,
-} from './tool-outcome';
+import { toolLabel, toolDecoders } from './tool-outcome';
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
+// The application decodes its own tool schemas; only this scenario's backend can retry a read.
+const toolOutcome = toolOutcomes(
+  toolDecoders({ retryReads: scenario === 'partial-failure' })
+);
 function App() {
   const [session] = useState(() =>
     createSession({
@@ -36,25 +37,38 @@ function App() {
   const [copiedId, setCopiedId] = useState('');
   const decision = snapshot.decision;
   // Every observed call in transcript order, paired with its tool message.
-  const calls = snapshot.transcript.flatMap((message) =>
-    message.role === 'assistant'
-      ? (message.toolCalls ?? []).map((call) => {
-          const result = snapshot.transcript.find(
-            (message) =>
-              message.role === 'tool' && message.toolCallId === call.id
-          );
-          return {
-            id: call.id,
-            name: call.function.name,
-            argumentsText: call.function.arguments,
-            settled: !!result,
-            resultText:
-              result && typeof result.content === 'string'
-                ? result.content
-                : undefined,
-          };
-        })
-      : []
+  const activities: ToolActivityInfo[] = snapshot.transcript.flatMap(
+    (message) =>
+      message.role === 'assistant'
+        ? (message.toolCalls ?? []).map((call) => {
+            const result = snapshot.transcript.find(
+              (message) =>
+                message.role === 'tool' && message.toolCallId === call.id
+            );
+            const activity: ToolActivityInfo = {
+              id: call.id,
+              name: call.function.name,
+              label: toolLabel(call.function.name),
+              phase: result
+                ? 'complete'
+                : busy
+                ? 'running'
+                : decision?.kind === 'native' ||
+                  snapshot.run?.outcome === 'paused'
+                ? 'waiting'
+                : snapshot.run?.outcome === 'aborted'
+                ? 'stopped'
+                : 'unknown',
+              argumentsText: call.function.arguments,
+              resultText:
+                result && typeof result.content === 'string'
+                  ? result.content
+                  : undefined,
+            };
+            // A declared failed outcome turns the complete call into a failed row.
+            return { ...activity, outcome: toolOutcome(activity) };
+          })
+        : []
   );
   const root = useRef<HTMLElement>(null);
   const composer = useRef<ChatInputHandle>(null);
@@ -160,57 +174,20 @@ function App() {
                   {message.role === 'assistant' &&
                     !!message.toolCalls?.length && (
                       <ToolActivityGroup
-                        activities={message.toolCalls.flatMap(({ id }) => {
-                          const call = calls.find((call) => call.id === id);
-                          if (!call) return [];
-                          const activity = {
-                            id: call.id,
-                            name: call.name,
-                            label: toolLabel(call.name),
-                            phase: call.settled
-                              ? ('complete' as const)
-                              : busy
-                              ? ('running' as const)
-                              : decision?.kind === 'native' ||
-                                snapshot.run?.outcome === 'paused'
-                              ? ('waiting' as const)
-                              : snapshot.run?.outcome === 'aborted'
-                              ? ('stopped' as const)
-                              : ('unknown' as const),
-                            argumentsText: call.argumentsText,
-                            resultText: call.resultText,
-                          };
-                          // A declared failed outcome turns the complete call into a failed row.
-                          return [
-                            { ...activity, outcome: toolOutcome(activity) },
-                          ];
-                        })}
-                        renderResult={(activity) => {
-                          const note = savedNoteId(activity);
-                          if (note)
-                            return (
-                              <p className="benchmark-receipt">
-                                Saved note {note} in the local benchmark store.
-                              </p>
-                            );
-                          const reference =
-                            scenario === 'partial-failure' && !busy
-                              ? retryableReference(activity, calls)
-                              : undefined;
-                          return reference ? (
-                            <button
-                              type="button"
-                              className="benchmark-retry"
-                              onClick={() =>
+                        activities={activities.filter((activity) =>
+                          message.toolCalls?.some(
+                            (call) => call.id === activity.id
+                          )
+                        )}
+                        context={activities}
+                        onRetry={
+                          busy
+                            ? undefined
+                            : () =>
                                 void session.submit(
                                   'Retry the failed read explicitly.'
                                 )
-                              }
-                            >
-                              Retry read of {reference}
-                            </button>
-                          ) : null;
-                        }}
+                        }
                       />
                     )}
                   <p className="benchmark-message-text">

@@ -1,0 +1,88 @@
+{
+  "name": "StatusPanel",
+  "entrypointId": "react/chat",
+  "kind": "Function",
+  "href": "/docs/api/react/chat/StatusPanel",
+  "canonicalReference": "@threadplane/react!StatusPanel:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "The one container for a failed call, a run error, an approval or a receipt. Displays only; it runs nothing.",
+  "declarations": [
+    {
+      "name": "StatusPanel",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/react!StatusPanel:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function StatusPanel(input: "
+        },
+        {
+          "kind": "Reference",
+          "text": "StatusPanelProps",
+          "canonicalReference": "@threadplane/react!StatusPanelProps:interface",
+          "href": "/docs/api/react/chat/StatusPanelProps"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "import(\"react/jsx-runtime\")."
+        },
+        {
+          "kind": "Reference",
+          "text": "JSX.Element",
+          "canonicalReference": "@types/react!JSX.Element:interface"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "The one container for a failed call, a run error, an approval or a receipt. Displays only; it runs nothing.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/status-panel.tsx",
+        "line": 21
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "{ tone, lead, children, actions, role, className, }",
+          "parameterTypeTokenRange": {
+            "startIndex": 0,
+            "endIndex": 0
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "input",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/status-panel.tsx",
+    "line": 21
+  }
+}

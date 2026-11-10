@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 85
+            "line": 90
           },
           "isReadonly": true,
           "isOptional": true
@@ -190,6 +190,52 @@
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
             "line": 72
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onToolRetry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!MessageListProps#onToolRetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onToolRetry?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Application-owned handler for a retry declared by `toolOutcome` on a failed call. The control is offered only while\nnothing is running and no later call repeats the same tool and arguments. Without it no retry control renders. Keep stable.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/message-list.tsx",
+            "line": 88
           },
           "isReadonly": true,
           "isOptional": true
@@ -309,7 +355,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 87
+            "line": 92
           },
           "isReadonly": true,
           "isOptional": true

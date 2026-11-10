@@ -79,7 +79,63 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 275
+            "line": 324
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "context",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolActivityGroupComponent#context:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly context: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+              "href": "/docs/api/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Every observed call in transcript order, so a retry stops being offered once a later call repeats it or work is running. Defaults to this group's activities.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+            "line": 342
           },
           "isStatic": false,
           "isReadonly": true,
@@ -125,53 +181,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 287
-          },
-          "isStatic": false,
-          "isReadonly": true,
-          "isOptional": false
-        },
-        {
-          "name": "failureSummaries",
-          "kind": "Property",
-          "canonicalReference": "@threadplane/chat!ChatToolActivityGroupComponent#failureSummaries:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly failureSummaries: "
-            },
-            {
-              "kind": "Content",
-              "text": "import(\"@angular/core\")."
-            },
-            {
-              "kind": "Reference",
-              "text": "Signal",
-              "canonicalReference": "@angular/core!Signal:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<readonly string[]>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 290
+            "line": 336
           },
           "isStatic": false,
           "isReadonly": true,
@@ -217,7 +227,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 282
+            "line": 331
           },
           "isStatic": false,
           "isReadonly": true,
@@ -273,7 +283,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 293
+            "line": 351
           },
           "isStatic": false,
           "isReadonly": true,
@@ -319,7 +329,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 294
+            "line": 352
           },
           "isStatic": false,
           "isReadonly": true,
@@ -365,7 +375,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 283
+            "line": 332
           },
           "isStatic": false,
           "isReadonly": true,
@@ -421,7 +431,63 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 284
+            "line": 333
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolRetry",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolActivityGroupComponent#toolRetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolRetry: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputEmitterRef",
+              "canonicalReference": "@angular/core!OutputEmitterRef:class"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+              "href": "/docs/api/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Emits the failed activity when its declared retry is activated. The application owns what a retry does.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+            "line": 340
           },
           "isStatic": false,
           "isReadonly": true,
@@ -430,7 +496,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-        "line": 221
+        "line": 257
       },
       "angular": {
         "selector": "chat-tool-activity-group",
@@ -442,18 +508,31 @@
             "type": "readonly ToolActivityInfo[]"
           },
           {
+            "name": "context",
+            "alias": "context",
+            "required": false,
+            "type": "readonly ToolActivityInfo[] | undefined"
+          },
+          {
             "name": "label",
             "alias": "label",
             "required": false,
             "type": "string | undefined"
           }
         ],
-        "outputs": []
+        "outputs": [
+          {
+            "name": "toolRetry",
+            "alias": "toolRetry",
+            "required": false,
+            "type": "ToolActivityInfo"
+          }
+        ]
       }
     }
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-    "line": 221
+    "line": 257
   }
 }

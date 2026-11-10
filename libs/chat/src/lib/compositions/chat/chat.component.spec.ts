@@ -21,6 +21,7 @@ import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-call
 import { ChatActivityTemplateDirective } from './chat-activity-template.directive';
 import { ChatRunActivityTemplateDirective } from './chat-run-activity-template.directive';
 import type { Spec, StateStore } from '@json-render/core';
+import { AgentError } from '../../agent/agent-error';
 import type { AgentEvent } from '../../agent/agent-event';
 import type { Subagent } from '../../agent/subagent';
 import {
@@ -131,6 +132,35 @@ describe('ChatComponent', () => {
     fixture.detectChanges();
     expect(root.querySelector('[data-activity]')).toBeTruthy();
     expect(root.querySelector('.tp-tool-activity__results')).toBeNull();
+  });
+  it('forwards a declared tool retry and drops the generic banner Retry while it is offered', () => {
+    const retryable = new AgentError({ kind: 'server', message: 'Read unavailable', retryable: true });
+    const agent = mockAgent({
+      status: 'error',
+      error: retryable,
+      messages: [{ id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'error') }],
+      toolCalls: [{ id: 'c', name: 'read', args: { id: 'sorted' }, status: 'complete' as const, result: { error: 'x' } }],
+    });
+    const fixture = TestBed.createComponent(ChatComponent);
+    fixture.componentRef.setInput('agent', agent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    // Without a declared retry the banner keeps its own.
+    expect(root.querySelector('button.chat-error__retry')).toBeTruthy();
+    const retried: string[] = [];
+    fixture.componentInstance.toolRetry.subscribe((activity) => retried.push(activity.id));
+    fixture.componentRef.setInput('toolOutcome', () => ({ status: 'failed', text: 'Read unavailable', retry: { label: 'Retry sorted read' } }));
+    fixture.detectChanges();
+    expect(root.querySelector('button.chat-error__retry')).toBeNull();
+    expect(root.querySelector('.chat-error__msg')?.textContent).toContain('Read unavailable');
+    const button = root.querySelector<HTMLButtonElement>('button.tp-tool-activity__retry');
+    expect(button?.textContent?.trim()).toBe('Retry sorted read');
+    button!.click();
+    expect(retried).toEqual(['c']);
+    // While the agent works the per-call retry is withdrawn; the banner's own state is the agent's.
+    agent.isLoading.set(true);
+    fixture.detectChanges();
+    expect(root.querySelector('button.tp-tool-activity__retry')).toBeNull();
   });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
