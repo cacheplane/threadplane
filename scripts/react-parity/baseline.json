@@ -1,14 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "8e1e19159168df492f13ca92f3bf3f0097f92da8",
+  "baselineHead": "c4c15c4f4fd62c12a5c9c121d12b3a26312496ae",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-rating.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -873,7 +867,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "886e1f35474b82ba2109bf27684ebb28ef038c66e24a701410dca82837a060f5"
+      "sha256": "a8dfbcab86006b659829d6a3b9d7f47da2805c563903dd9852dd1ca89c35aa01"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
