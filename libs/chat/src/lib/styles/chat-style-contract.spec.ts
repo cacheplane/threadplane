@@ -97,6 +97,8 @@ describe('outline removal', () => {
     // Rename inputs are mounted focused and keep an always-on primary border.
     '.chat-thread-list__edit': 'always-on primary border while editing',
     '.chat-project-list__edit': 'always-on primary border while editing',
+    // The pill (.chat-input__pill:focus-within) draws the ring around the textarea.
+    '.chat-input__textarea': 'the pill ancestor carries the focus ring',
     // Timeline inspector host is not focusable; keydown bubbles from its list.
     ':host': 'non-focusable host element',
   };
@@ -125,7 +127,12 @@ describe('outline removal', () => {
           if (ALLOWLIST[base]) continue;
           const covered = ringRules.some((r) =>
             r.selectors.some((s) => {
-              if (/:focus-within\b/.test(s)) return true; // ancestor ring covers its descendants
+              if (/:focus-within\b/.test(s)) {
+                // An ancestor ring covers a descendant only when the offender's selector
+                // lives under that ring's base (the same component root).
+                const ringBase = stripPseudo(s);
+                return selector.startsWith(ringBase) || selector.includes(ringBase);
+              }
               return stripPseudo(s) === base && /:focus/.test(s);
             }),
           );
