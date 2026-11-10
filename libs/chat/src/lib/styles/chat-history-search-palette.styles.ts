@@ -4,7 +4,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
   .chat-history-search-palette__scrim {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--tplane-chat-scrim);
     z-index: var(--tplane-chat-z-modal-scrim, 1100);
     border: 0;
     padding: 0;
@@ -19,8 +19,8 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     max-height: 70vh;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+    border-radius: var(--tplane-chat-radius-card);
+    box-shadow: var(--tplane-chat-elevation-float);
     z-index: var(--tplane-chat-z-modal, 1101);
     display: flex;
     flex-direction: column;
@@ -48,6 +48,11 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     font: inherit;
     font-size: 1rem;
   }
+  .chat-history-search-palette__input:focus-visible {
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--tplane-chat-radius-sm);
+  }
   .chat-history-search-palette__input::placeholder {
     color: var(--tplane-chat-text-muted);
   }
@@ -57,7 +62,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     padding: 4px;
     color: var(--tplane-chat-text-muted);
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
   }
   .chat-history-search-palette__close:hover { color: var(--tplane-chat-text); }
   .chat-history-search-palette__list {
@@ -71,7 +76,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     display: flex;
     flex-direction: column;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     cursor: pointer;
   }
   .chat-history-search-palette__row[aria-selected="true"] {
@@ -100,7 +105,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     height: 36px;
     margin: 4px 0;
     background: var(--tplane-chat-surface-alt);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     animation: tplane-chat-pulse 1.4s ease-in-out infinite;
   }
 `;

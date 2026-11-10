@@ -17,13 +17,13 @@ export const CHAT_SCROLL_BUBBLE_STYLES = `
     min-width: 36px;
     height: 36px;
     padding: 0 12px;
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     color: var(--tplane-chat-text);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     cursor: pointer;
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    box-shadow: var(--tplane-chat-elevation-float);
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-scroll-bubble:hover { transform: scale(1.05); }
   .chat-scroll-bubble__dots { display: inline-flex; gap: 4px; align-items: center; }

@@ -12,7 +12,7 @@ describe.each([
   it('draws a visible focus ring for keyboard focus', () => {
     expect(normalized).toMatch(
       new RegExp(
-        `\\.${className}:focus-visible\\s*\\{[^}]*outline:\\s*2px\\s+solid\\s+var\\(--tplane-chat-primary\\)\\s*;`,
+        `\\.${className}:focus-visible\\s*\\{[^}]*outline:\\s*2px\\s+solid\\s+var\\(--tplane-chat-focus-ring\\)\\s*;`,
       ),
     );
   });

@@ -34,7 +34,7 @@ export const CHAT_MARKDOWN_STYLES = `
   chat-streaming-md strong, chat-streaming-md b { font-weight: 700; }
   chat-streaming-md em, chat-streaming-md i { font-style: italic; }
   chat-streaming-md del, chat-streaming-md s { text-decoration: line-through; color: var(--tplane-chat-text-muted); }
-  chat-streaming-md mark { background: var(--tplane-chat-surface-alt); padding: 0 2px; border-radius: 2px; }
+  chat-streaming-md mark { background: var(--tplane-chat-surface-alt); padding: 0 2px; border-radius: var(--tplane-chat-radius-sm); }
   chat-streaming-md sub { font-size: 0.75em; vertical-align: sub; }
   chat-streaming-md sup { font-size: 0.75em; vertical-align: super; }
 
@@ -192,7 +192,7 @@ export const CHAT_MARKDOWN_STYLES = `
   }
 
   /* Media */
-  chat-streaming-md img { max-width: 100%; height: auto; border-radius: 6px; }
+  chat-streaming-md img { max-width: 100%; height: auto; border-radius: var(--tplane-chat-radius-card); }
   /* Broken-image fallback: muted pill showing alt text + icon. Triggered
      when <img> fires (error). Caught by live browser smoke — prior impl
      showed only the browser's broken-image icon with no readable alt. */
@@ -203,7 +203,7 @@ export const CHAT_MARKDOWN_STYLES = `
     padding: 0.25rem 0.5rem;
     background: var(--tplane-chat-surface-alt);
     border: 1px dashed var(--tplane-chat-separator);
-    border-radius: 6px;
+    border-radius: var(--tplane-chat-radius-card);
     font-size: 0.9em;
     color: var(--tplane-chat-text-muted, currentColor);
     opacity: 0.85;

@@ -61,9 +61,9 @@ function hasHistory(
         border: 1px solid var(--tplane-chat-debug-border);
         color: var(--tplane-chat-debug-text);
         cursor: pointer;
-        z-index: 990;
+        z-index: var(--tplane-chat-z-debug-pill, 990);
         box-shadow: var(--tplane-chat-debug-shadow-pill);
-        transition: background 120ms ease, border-color 120ms ease;
+        transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
         padding: 0;
       }
       .launcher:hover {
@@ -102,7 +102,7 @@ function hasHistory(
         background: var(--tplane-chat-debug-bg);
         color: var(--tplane-chat-debug-text);
         border: 1px solid var(--tplane-chat-debug-border);
-        z-index: 991;
+        z-index: var(--tplane-chat-z-debug-panel, 991);
         display: flex;
         flex-direction: column;
         box-shadow: var(--tplane-chat-debug-shadow-panel);
@@ -117,7 +117,7 @@ function hasHistory(
         border-top-left-radius: var(--tplane-chat-debug-radius-panel);
         border-bottom-left-radius: var(--tplane-chat-debug-radius-panel);
         transform-origin: bottom right;
-        transition: right 200ms ease-out;
+        transition: right var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
       }
       .panel--left {
         top: 0;
@@ -138,7 +138,7 @@ function hasHistory(
         border-top-left-radius: var(--tplane-chat-debug-radius-panel);
         border-top-right-radius: var(--tplane-chat-debug-radius-panel);
         transform-origin: bottom right;
-        transition: right 200ms ease-out;
+        transition: right var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
       }
       /* Mobile breakpoint: when an edge-claimer occupies the right and
        the device is narrow, the bottom strip's effective width is
@@ -188,13 +188,13 @@ function hasHistory(
         padding: 2px;
         background: var(--tplane-chat-debug-bg-deep);
         border: 1px solid var(--tplane-chat-debug-border);
-        border-radius: 6px;
+        border-radius: var(--tplane-chat-radius-card);
       }
       .panel__dock-btn {
         appearance: none;
         background: transparent;
         border: 0;
-        border-radius: 4px;
+        border-radius: var(--tplane-chat-radius-sm);
         width: 24px;
         height: 22px;
         padding: 0;
@@ -203,7 +203,7 @@ function hasHistory(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: background 120ms ease, color 120ms ease;
+        transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
       }
       .panel__dock-btn:hover {
         color: var(--tplane-chat-debug-text);
@@ -220,7 +220,7 @@ function hasHistory(
         appearance: none;
         background: transparent;
         border: 0;
-        border-radius: 6px;
+        border-radius: var(--tplane-chat-radius-card);
         width: 26px;
         height: 26px;
         margin-left: 4px;
@@ -229,7 +229,7 @@ function hasHistory(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: background 120ms ease, color 120ms ease;
+        transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
       }
       .panel__close:hover {
         background: var(--tplane-chat-debug-surface);
@@ -264,7 +264,7 @@ function hasHistory(
         font-weight: 500;
         color: var(--tplane-chat-debug-text-muted);
         cursor: pointer;
-        transition: color 120ms ease, border-color 120ms ease;
+        transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
         margin-bottom: -1px;
       }
       .panel__tab:hover {

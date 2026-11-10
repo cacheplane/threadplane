@@ -5,27 +5,27 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     position: fixed;
     inset: 0;
     background: transparent;
-    z-index: 59;
+    z-index: var(--tplane-chat-z-menu-scrim, 59);
     border: 0;
     padding: 0;
     cursor: default;
   }
   .chat-overflow-menu {
     position: fixed;
-    z-index: 60;
+    z-index: var(--tplane-chat-z-menu, 60);
     min-width: 160px;
     padding: 4px;
     margin: 0;
     list-style: none;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: var(--tplane-chat-radius-card);
+    box-shadow: var(--tplane-chat-elevation-float);
   }
   .chat-overflow-menu__item {
     display: block;
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
     color: var(--tplane-chat-text);
     font-size: var(--tplane-chat-font-size-sm);
     cursor: pointer;
@@ -35,7 +35,7 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     background: var(--tplane-chat-surface-alt);
   }
   .chat-overflow-menu__item:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: -2px;
   }
   .chat-overflow-menu__item--destructive {

@@ -17,7 +17,7 @@ export const CHAT_SIDENAV_STYLES = `
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 100;
+    z-index: var(--tplane-chat-z-sidenav, 100);
   }
   :host([data-mode="expanded"]) {
     width: var(--tplane-chat-sidenav-width-expanded);
@@ -48,7 +48,7 @@ export const CHAT_SIDENAV_STYLES = `
     pointer-events: none;
   }
   :host([data-mode="drawer"][data-open="true"]) {
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--tplane-chat-elevation-float);
   }
   .chat-sidenav {
     display: flex;
@@ -62,7 +62,7 @@ export const CHAT_SIDENAV_STYLES = `
   :host([data-mode="drawer"]) .chat-sidenav {
     width: 100%;
     height: 100%;
-    transition: transform 200ms ease;
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     transform: translateX(-100%);
     /* Keep the closed/closing panel inert. The host is inert above, and the
      * panel can still be hit during its transform transition unless pointer
@@ -113,7 +113,7 @@ export const CHAT_SIDENAV_STYLES = `
        .chat-sidenav__action.chat-sidenav__action--new block. */
     border: 0;
     padding: 12px 18px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     font-size: var(--tplane-chat-font-size-sm);
     font-weight: 600;
     display: flex;
@@ -123,7 +123,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 100%;
   }
   .chat-sidenav__action--new:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   /* Collapsed mode: shrink to 32×32 icon-only square. */
@@ -131,7 +131,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 32px;
     height: 32px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: var(--tplane-chat-radius-card);
     justify-content: center;
   }
   :host([data-mode="collapsed"]) .chat-sidenav__action--new .chat-sidenav__action-label {
@@ -157,7 +157,7 @@ export const CHAT_SIDENAV_STYLES = `
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     cursor: pointer;
     font-family: inherit;
     font-size: var(--tplane-chat-font-size-sm);
@@ -166,7 +166,7 @@ export const CHAT_SIDENAV_STYLES = `
   }
   .chat-sidenav__action:hover { background: var(--tplane-chat-surface-alt); }
   .chat-sidenav__action:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   :host([data-mode="collapsed"]) .chat-sidenav__action {
@@ -186,7 +186,7 @@ export const CHAT_SIDENAV_STYLES = `
   .chat-sidenav__action.chat-sidenav__action--new {
     background: var(--tplane-chat-text);
     color: var(--tplane-chat-bg);
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     padding: 12px 18px;
     font-weight: 600;
     font-size: var(--tplane-chat-font-size-sm);
@@ -243,7 +243,7 @@ export const CHAT_SIDENAV_STYLES = `
     gap: 7px;
     padding: 0 9px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     background: transparent;
     color: var(--tplane-chat-text-muted);
     cursor: pointer;
@@ -256,15 +256,14 @@ export const CHAT_SIDENAV_STYLES = `
     color: var(--tplane-chat-text);
   }
   .chat-sidenav__debug:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-sidenav__debug-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 8px color-mix(in srgb, #22c55e 60%, transparent);
+    background: var(--tplane-chat-success);
     flex: 0 0 auto;
   }
   .chat-sidenav__debug-dot--streaming {
@@ -284,7 +283,7 @@ export const CHAT_SIDENAV_STYLES = `
   .chat-sidenav__toggle {
     width: 28px;
     height: 28px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-button);
     border: 0;
     background: transparent;
     color: var(--tplane-chat-text-muted);
@@ -339,7 +338,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 100%;
     padding: 8px 12px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     background: transparent;
     color: var(--tplane-chat-text);
     font: inherit;
@@ -352,13 +351,13 @@ export const CHAT_SIDENAV_STYLES = `
     color: var(--tplane-chat-text);
   }
   .chat-sidenav__archived-heading:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
   }
   .chat-sidenav__archived-chevron {
     width: 12px;
     height: 12px;
-    transition: transform 150ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     flex-shrink: 0;
   }
   .chat-sidenav__archived[data-open="true"] .chat-sidenav__archived-chevron {
@@ -397,7 +396,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 32px;
     height: 32px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: var(--tplane-chat-radius-card);
     justify-content: center;
     background: transparent;
   }

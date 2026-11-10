@@ -33,7 +33,7 @@ export const CHAT_ERROR_STYLES = `
     padding: 2px 10px;
     font-size: var(--tplane-chat-font-size-sm);
     cursor: pointer;
-    transition: background 150ms ease, color 150ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     white-space: nowrap;
   }
   .chat-error__retry:hover, .chat-error__check:hover {
@@ -41,7 +41,10 @@ export const CHAT_ERROR_STYLES = `
     color: var(--tplane-chat-error-text);
   }
   .chat-error__retry:focus-visible, .chat-error__check:focus-visible {
-    outline: 2px solid var(--tplane-chat-error-text);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    .chat-error { border-color: CanvasText; }
   }
 `;

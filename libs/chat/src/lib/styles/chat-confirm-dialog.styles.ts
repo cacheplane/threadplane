@@ -4,8 +4,8 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   .chat-confirm-dialog__scrim {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 70;
+    background: var(--tplane-chat-scrim);
+    z-index: var(--tplane-chat-z-confirm-scrim, 70);
     border: 0;
     padding: 0;
     cursor: pointer;
@@ -16,12 +16,12 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
     left: 50%;
     transform: translateX(-50%);
     width: min(420px, 90vw);
-    z-index: 71;
+    z-index: var(--tplane-chat-z-confirm, 71);
     padding: 20px;
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+    border-radius: var(--tplane-chat-radius-card);
+    box-shadow: var(--tplane-chat-elevation-float);
   }
   .chat-confirm-dialog__title {
     margin: 0 0 8px 0;
@@ -43,7 +43,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   .chat-confirm-dialog__cancel,
   .chat-confirm-dialog__confirm {
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: var(--tplane-chat-radius-button);
     font: inherit;
     font-size: var(--tplane-chat-font-size-sm);
     cursor: pointer;
@@ -59,7 +59,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   }
   .chat-confirm-dialog__confirm--destructive {
     background: var(--tplane-chat-destructive);
-    color: #fff;
+    color: var(--a2ui-on-primary);
     border-color: transparent;
   }
   .chat-confirm-dialog__confirm--destructive:hover {
@@ -67,7 +67,10 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   }
   .chat-confirm-dialog__cancel:focus-visible,
   .chat-confirm-dialog__confirm:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    .chat-confirm-dialog { border-color: CanvasText; }
   }
 `;

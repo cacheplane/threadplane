@@ -23,8 +23,8 @@ export const CHAT_DEBUG_TOKENS = `
     --tplane-chat-debug-text-subtle: #71717a;
     --tplane-chat-debug-accent: #4f8df5;
     --tplane-chat-debug-success: #4ade80;
-    --tplane-chat-debug-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.5);
-    --tplane-chat-debug-shadow-pill: 0 6px 18px rgba(0, 0, 0, 0.4);
+    --tplane-chat-debug-shadow-panel: var(--tplane-chat-elevation-float, 0 8px 32px rgba(0, 0, 0, 0.5));
+    --tplane-chat-debug-shadow-pill: var(--tplane-chat-elevation-float, 0 6px 18px rgba(0, 0, 0, 0.4));
     --tplane-chat-debug-radius-panel: 12px;
     --tplane-chat-debug-radius-input: 8px;
     --tplane-chat-debug-radius-pill: 999px;

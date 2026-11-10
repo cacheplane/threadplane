@@ -34,9 +34,9 @@ describe('CHAT_PROJECT_LIST_STYLES — New project button', () => {
     );
   });
 
-  it('uses 8px border-radius (consistent with thread items)', () => {
+  it('uses the card radius token (consistent with thread items)', () => {
     expect(normalized).toMatch(
-      /\.chat-project-list__new\s*\{[^}]*border-radius:\s*8px\s*;/,
+      /\.chat-project-list__new\s*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-(card|button)\)\s*;/,
     );
   });
 });

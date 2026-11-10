@@ -32,7 +32,7 @@ import { CHAT_DEBUG_TOKENS } from './chat-debug-tokens';
       font-size: var(--tplane-chat-font-size-xs);
       font-family: var(--tplane-chat-font-mono);
       padding: 4px 8px;
-      border-radius: 4px;
+      border-radius: var(--tplane-chat-radius-sm);
     }
     .debug-state-diff__entry--added {
       background: var(--tplane-chat-surface-alt);

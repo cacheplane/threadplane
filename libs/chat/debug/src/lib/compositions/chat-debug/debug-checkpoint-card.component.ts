@@ -28,7 +28,7 @@ export interface DebugCheckpoint {
       padding: 8px 12px;
       cursor: pointer;
       background: var(--tplane-chat-bg);
-      transition: background 150ms ease, border-color 150ms ease;
+      transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .debug-checkpoint-card:hover {
       background: color-mix(in srgb, var(--tplane-chat-text) 5%, transparent);
@@ -54,7 +54,7 @@ export interface DebugCheckpoint {
     .debug-checkpoint-card__badge {
       font-size: var(--tplane-chat-font-size-xs);
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: var(--tplane-chat-radius-sm);
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
     }

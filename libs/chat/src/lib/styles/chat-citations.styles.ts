@@ -9,7 +9,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 5px;
+    border-radius: var(--tplane-chat-radius-sm);
     border: 1px solid currentColor;
   }
   .chat-citation-source-icon svg {
@@ -20,7 +20,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
   .chat-citation-source-icon--sm {
     width: 14px;
     height: 14px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
   }
   .chat-citation-source-icon--sm svg {
     width: 9px;
@@ -60,7 +60,7 @@ const CHAT_CITATION_SOURCE_VISUAL_STYLES = `
     box-sizing: border-box;
     padding: 1px 6px;
     border: 1px solid currentColor;
-    border-radius: 999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -118,17 +118,17 @@ export const CHAT_CITATION_MARKER_STYLES = `
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citation-marker:hover,
   .chat-citation-marker:focus-visible {
     background: var(--tplane-chat-citation-accent-soft);
     border-color: var(--tplane-chat-citation-accent-border);
     color: var(--tplane-chat-citation-accent);
-    outline: none;
   }
   .chat-citation-marker:focus-visible {
-    box-shadow: 0 0 0 2px var(--tplane-chat-citation-accent-border);
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
   }
   .chat-citation-marker--unresolved {
     color: var(--tplane-chat-text-muted);
@@ -157,7 +157,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
-    box-shadow: var(--tplane-chat-shadow-md);
+    box-shadow: var(--tplane-chat-elevation-float);
     padding: var(--tplane-chat-space-3);
     text-align: left;
     color: var(--tplane-chat-text);
@@ -176,7 +176,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
   }
   .chat-citation-preview__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 10px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 10px; font-weight: 700;
   }
   .chat-citation-preview__domain {
     font-size: 12px;
@@ -236,7 +236,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
     color: var(--tplane-chat-text-muted);
     background: var(--tplane-chat-surface-alt);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     padding: 1px var(--tplane-chat-space-2);
   }
   .chat-citations__favstack { display: flex; margin-left: 2px; }
@@ -250,7 +250,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations__fav:first-child { margin-left: 0; }
   .chat-citations__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 9px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 9px; font-weight: 700;
   }
   .chat-citations__source-icon {
     width: 16px; height: 16px;
@@ -265,7 +265,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations__chevron {
     margin-left: auto;
     color: var(--tplane-chat-text-muted);
-    transition: transform 120ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citations__chevron.is-open { transform: rotate(180deg); }
   .chat-citations__list {
@@ -282,12 +282,15 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
     border-radius: var(--tplane-chat-radius-card);
     text-decoration: none; color: inherit;
     cursor: pointer;
-    transition: border-color 120ms ease, background 120ms ease;
+    transition: border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citations-card:hover,
   .chat-citations-card:focus-visible {
     border-color: var(--tplane-chat-citation-accent-border);
-    outline: none;
+  }
+  .chat-citations-card:focus-visible {
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 2px;
   }
   .chat-citations-card__index {
     flex: 0 0 auto;
@@ -309,7 +312,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   }
   .chat-citations-card__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 8px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 8px; font-weight: 700;
   }
   .chat-citations-card__domain { font-size: 11.5px; color: var(--tplane-chat-text-muted); }
   .chat-citations-card__type { margin-left: auto; font-size: 10.5px; }
