@@ -333,19 +333,22 @@ Every component change checks:
 
 ## 8. Gap list (Angular)
 
-| Area | Today | Target section |
+| Area | Status | Target section |
 | --- | --- | --- |
-| Status reds and greens | `#b42318` fallback for undefined `--tplane-chat-error`; `#22c55e` in sidenav; `#d33d55` in a2ui catalog controls alongside `--a2ui-error` | 2.2 |
-| Focus ring | Three focus colors plus the a2ui ring | 2.3 |
-| Radii | Literal 5, 6, 8, 10, 12px | 2.4 |
-| Shadows | Three shadow tokens plus literal shadows in dialog, approval card, sidenav, popup | 2.5 |
-| Motion | Literal 100, 120, 150, 200ms with `ease` | 2.6 |
-| Layers | Literal z-index values | 2.7 |
-| Forced colors | Handled in tool activity, markdown and input only | 6.1, 7 |
-| Undefined tokens | `viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*` are read with fallbacks but never declared | 2 |
-| Tool rows | Generic labels; failure text repeats when expanded; sources not under their call | 6.2 |
-| Progress | No step list, no elapsed time, no Stop in the activity group | 6.3 |
-| Approvals | Modal dialog | 6.4 |
-| Retry and receipts | Not provided by the library | 6.5, 6.6 |
+| Status reds and greens | Done. Components read the status tokens, including `success-bg`, `success-border` and `warning-border` | 2.2 |
+| Focus ring | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset | 2.3 |
+| Radii | Done. Components use the radius tokens | 2.4 |
+| Shadows | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases | 2.5 |
+| Motion | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease` | 2.6 |
+| Layers | Done. Every z-index reads a named `--tplane-chat-z-*` token | 2.7 |
+| Forced colors | Done. Status panels keep a border | 6.1, 7 |
+| Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
+| Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
+| Tool rows | Open. Generic labels; failure text repeats when expanded; sources not under their call | 6.2 |
+| Progress | Open. No step list, no elapsed time, no Stop in the activity group | 6.3 |
+| Approvals | Open. Modal dialog | 6.4 |
+| Retry and receipts | Open. Not provided by the library | 6.5, 6.6 |
+
+The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
 
 React follows once the Angular gaps close, using this guide as its spec.
