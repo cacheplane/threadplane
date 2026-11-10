@@ -978,7 +978,8 @@
 .tp-citations {
   margin-block: 1.25rem 0.75rem;
   padding-block-start: 0.5rem;
-  border-block-start: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-block-start: 1px solid
+    var(--tp-chat-border, var(--ds-border, GrayText));
   overflow-wrap: anywhere;
 }
 .tp-citations__heading,
@@ -2011,11 +2012,11 @@
 }
 
 /* The disclosure uses the resolved source order and local decorative markers.
-   It reads as a quiet full-width row under the answer, not a boxed button. */
+   It reads as a quiet full-width row under the answer, not a boxed button. The
+   surface stays painted so a theme scoped to Sources keeps its own contrast. */
 .tp-citations__toggle,
 .tp-citations__toggle:hover:not(:disabled) {
   border-color: transparent;
-  background: transparent;
 }
 .tp-citations__toggle {
   display: flex;
