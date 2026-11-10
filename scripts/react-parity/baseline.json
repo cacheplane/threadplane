@@ -1,14 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "46d78fddabc35ca5e7bf28fb88951c98adc04b4f",
+  "baselineHead": "13664b49329230371d4c61d2cc677c0ec556a922",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-rating.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -2463,7 +2457,7 @@
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "sha256": "4230a2df6e4837c4f1e68b885bdb42d6b41bfface6c410789a2b613c9ff8c7da"
+      "sha256": "d114aa009f6e8b979e94a4c79431aa5b367fb506459c5cfa9ef136e55405aeaa"
     },
     {
       "id": "doc:apps/website/content/docs/angular/ag-ui/guides/json-render.mdx",
