@@ -56,6 +56,59 @@ function reference(value: unknown): value is Reference {
     referenceUrls.has(row.url)
   );
 }
+/** The note ID from an admitted save. Anything else, including a declined save, is not a receipt. */
+export function savedNoteId(activity: Activity): string | undefined {
+  if (
+    activity.name !== 'save_note' ||
+    activity.phase !== 'complete' ||
+    !activity.resultText
+  )
+    return undefined;
+  try {
+    const row: unknown = JSON.parse(activity.resultText);
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return undefined;
+    const { saved, id } = row as Record<string, unknown>;
+    return saved === true &&
+      typeof id === 'string' &&
+      /^note-[1-9]\d*$/.test(id) &&
+      Object.keys(row).length === 2
+      ? id
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+type Call = Activity & { readonly id: string; readonly argumentsText?: string };
+function referenceId(call: Call): string | undefined {
+  if (call.name !== 'read_reference' || !call.argumentsText) return undefined;
+  try {
+    const args: unknown = JSON.parse(call.argumentsText);
+    const id = (args as Record<string, unknown> | null)?.id;
+    return typeof id === 'string' && /^[a-z0-9-]{1,60}$/.test(id)
+      ? id
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+/**
+ * The reference a failed read may retry, given every call in transcript order.
+ * Only the declared recoverable error qualifies, and only until a later read of
+ * the same reference exists, so a retried or superseded row stops offering it.
+ */
+export function retryableReference(
+  call: Call,
+  calls: readonly Call[]
+): string | undefined {
+  const id = referenceId(call);
+  if (!id || recoverableReadError(call.resultText) === undefined)
+    return undefined;
+  const index = calls.findIndex((other) => other.id === call.id);
+  return index >= 0 &&
+    !calls.slice(index + 1).some((other) => referenceId(other) === id)
+    ? id
+    : undefined;
+}
 export const toolLabel = (name: string) =>
   name === 'search_reference'
     ? 'Finding reference sources'
@@ -71,19 +124,14 @@ export function toolOutcome(activity: Activity) {
     return undefined;
   try {
     const value: unknown = JSON.parse(activity.resultText);
-    if (activity.name === 'save_note') {
-      if (saveDeclined(value))
-        return { text: 'Save declined. No note was saved.' };
-      if (!value || typeof value !== 'object') return undefined;
-      const row = value as Record<string, unknown>;
-      if (
-        row.saved !== true ||
-        typeof row.id !== 'string' ||
-        !/^note-[1-9]\d*$/.test(row.id) ||
-        Object.keys(row).length !== 2
-      )
-        return undefined;
-      return { text: `Saved note ${row.id} in the local benchmark store.` };
+    if (activity.name === 'save_note')
+      // A saved note is shown as a receipt in the per-call slot, see savedNoteId.
+      return saveDeclined(value)
+        ? { text: 'Save declined. No note was saved.' }
+        : undefined;
+    if (activity.name === 'read_reference') {
+      const error = recoverableReadError(value);
+      if (error) return { status: 'failed' as const, text: error };
     }
     const records = Array.isArray(value) ? value : [value];
     if (!records.length || !records.every(reference)) return undefined;

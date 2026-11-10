@@ -296,7 +296,7 @@ function outcome(
         name: string;
         phase?: string;
         resultText?: string;
-      }) => { text: string } | undefined;
+      }) => { status?: string; text: string } | undefined;
     }
   ).exampleToolOutcome;
   expect(typeof helper).toBe('function');
@@ -372,6 +372,75 @@ it('does not summarize pending, unknown, error or malformed aviation observation
     })
   ).toBeUndefined();
   expect(outcome('other_tool', flight)).toBeUndefined();
+});
+it('declares only the lookup tools\' whole-result error shape as a failed call', () => {
+  expect(
+    outcome('lookup_flight', { error: 'Flight UA999 not found in dataset' })
+  ).toEqual({ status: 'failed', text: 'Flight UA999 not found in dataset' });
+  expect(
+    outcome('get_airport_info', {
+      error: "Airport XXX not in dataset. Available: ['JFK', 'LAX']",
+    })
+  ).toEqual({ status: 'failed', text: 'Airport XXX not in dataset' });
+  for (const result of [
+    { error: '' },
+    { error: '   ' },
+    { error: 404 },
+    { error: null },
+    { error: 'x'.repeat(301) },
+    { error: 'Flight not found', retry: true },
+    false,
+    0,
+    '',
+  ])
+    expect(outcome('lookup_flight', result)).toBeUndefined();
+  expect(outcome('find_routes', { error: 'No routes' })).toBeUndefined();
+  expect(outcome('other_tool', { error: 'Nope' })).toBeUndefined();
+  expect(
+    outcome('lookup_flight', { error: 'Flight UA999 not found' }, 'running')
+  ).toBeUndefined();
+});
+it('shows a declared lookup failure as a failed call and keeps the literal result', () => {
+  const content = createMessageContent();
+  const row = content.project({
+    status: 'idle',
+    toolCalls: [],
+    messages: [
+      {
+        id: 'call',
+        role: 'assistant',
+        content: '',
+        toolCallIds: ['lookup'],
+        delivery: { generation: 'call', phase: 'complete', outcome: 'success' },
+      },
+    ],
+  })[0];
+  try {
+    const resultText = JSON.stringify({
+      error: 'Flight UA999 not found in dataset',
+    });
+    const view = render(
+      renderMessage(row, [
+        {
+          id: 'lookup',
+          name: 'lookup_flight',
+          argumentsText: '{"flight_number":"UA999"}',
+          phase: 'complete',
+          resultText,
+        },
+      ])
+    );
+    // The group-level alert stays visible while the call row is collapsed.
+    expect(
+      view.container.querySelector('section > .tp-tool-activity__error')
+        ?.textContent
+    ).toBe('Flight UA999 not found in dataset');
+    expect(view.container.textContent).toContain('Failed');
+    expect(view.container.textContent).not.toContain('Complete');
+    expect(view.container.textContent).toContain(resultText);
+  } finally {
+    content.dispose();
+  }
 });
 it('shows a confirmed flight outcome once above the technical disclosure', () => {
   const content = createMessageContent();

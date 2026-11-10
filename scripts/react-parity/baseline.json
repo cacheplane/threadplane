@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "ec660df00f7796adb4a3dfc3d0ce7392a0f5e0ed",
+  "baselineHead": "33d1d8906d7b2911af324dc05668859eda312f6d",
   "sourceState": {
-    "modified": [],
+    "modified": [
+      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
+      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx"
+    ],
     "untracked": []
   },
   "scope": {
@@ -2593,7 +2596,7 @@
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "sha256": "4e6ce445045b1b024a52b5edcf1a389b44e7345bb7a881c87c7db75d19b55130"
+      "sha256": "7e3b6cb85219bc9ad2c3d027f200e51fb65c8e67907bccaa476a7ac5e61b1131"
     },
     {
       "id": "doc:apps/website/content/docs/angular/chat/components/chat-trace.mdx",
@@ -3163,7 +3166,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "d1f3f8fc44ee3be469cec2ef3d5596e960e5e9072b1db10aeecb0a2b74bf39e2"
+      "sha256": "a1f0fcc5bdfa53b956032c58e917d10376e5b9862242f9f7224f848229590a6c"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",

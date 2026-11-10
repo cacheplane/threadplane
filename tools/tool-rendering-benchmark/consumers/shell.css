@@ -57,7 +57,7 @@ main.benchmark-chat {
 }
 .benchmark-header button,
 .benchmark-decision button,
-.benchmark-recovery button {
+.benchmark-retry {
   cursor: pointer;
   color: inherit;
   background: var(--surface);
@@ -67,8 +67,7 @@ main.benchmark-chat {
   font: inherit;
 }
 .benchmark-header button:disabled,
-.benchmark-decision button:disabled,
-.benchmark-recovery button:disabled {
+.benchmark-decision button:disabled {
   cursor: default;
   opacity: 0.5;
 }
@@ -90,6 +89,7 @@ main.benchmark-chat {
 }
 .benchmark-decision :focus-visible,
 .benchmark-recovery :focus-visible,
+.benchmark-retry:focus-visible,
 .benchmark-message-actions :focus-visible,
 .benchmark-header :focus-visible {
   outline: 2px solid currentColor;
