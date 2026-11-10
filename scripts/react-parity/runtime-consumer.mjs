@@ -789,6 +789,42 @@ export async function runMessageRatingScenarios(page, url) {
   assert.equal(count, 7, 'disabled and layout interaction requested nothing');
 }
 
+export async function runMenuTypeaheadScenarios(page, url) {
+  await page.goto(`${url}/?menu&select`);
+  const trigger = page.locator('.tp-select__trigger');
+  const list = page.getByRole('listbox', { name: 'Fixture tone', exact: true });
+  const value = page.getByTestId('select-value');
+  const before = await value.textContent();
+  await trigger.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(list.getByRole('option', { name: /^Plain literal <&>/ })).toBeFocused();
+  // A typed character moves real focus to the matching label without selecting it.
+  await page.keyboard.press('f');
+  await expect(list.getByRole('option', { name: 'Formal', exact: true })).toBeFocused();
+  // After a pause a new search starts; a quick second character extends it.
+  await page.waitForTimeout(650);
+  await page.keyboard.press('a');
+  await expect(list.getByRole('option', { name: /^A long wrapping tone label/ })).toBeFocused();
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(650);
+  await expect(list).toHaveCount(0);
+  assert.notEqual(await value.textContent(), before, 'Space still activates the focused option');
+  await expect(trigger).toBeFocused();
+  // The command menu shares the engine.
+  await page.goto(`${url}/?menu`);
+  const menuTrigger = page.locator('.tp-overflow-menu__trigger').first();
+  await menuTrigger.focus();
+  await page.keyboard.press('ArrowDown');
+  const items = page.getByRole('menu').getByRole('menuitem');
+  const labels = await items.evaluateAll((nodes) => nodes.filter((node) => !node.disabled).map((node) => node.textContent.trim()));
+  const target = labels.at(-1);
+  await page.keyboard.press(target[0].toLowerCase());
+  const focused = await page.evaluate(() => document.activeElement.textContent.trim());
+  assert.ok(focused.toLowerCase().startsWith(target[0].toLowerCase()), `menu typeahead focused ${focused} for ${target}`);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+}
+
 export async function runSelectScenarios(page, url) {
   await page.goto(`${url}/?menu&select`);
   const trigger = page.locator('.tp-select__trigger');
@@ -1833,6 +1869,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runOverflowMenuScenarios(page, server.url);
       await runSelectScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
+      await runMenuTypeaheadScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }

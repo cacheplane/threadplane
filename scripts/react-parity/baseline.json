@@ -1,16 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "fc282c4cf6b5e31dafba65b26ca1060fba8f3645",
+  "baselineHead": "45a9c83ab6fc16587f25d2c5e0e4f8b7cfee5728",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-message.mdx",
       "libs/react/README.md",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/styles.css"
+      "libs/react/src/chat/internal/use-anchored-menu.ts",
+      "libs/react/src/chat/select.tsx"
     ],
-    "untracked": [
-      "libs/react/src/chat/message-rating.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -856,7 +853,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "a4540bc2a7f731e01bc280de1a46bfcfa38b4946b4d41e543c71464e07693862"
+      "sha256": "87408a71c080fbe52a2403a829e35806893d69935b30eaa94f6596e86bfc7828"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -12105,7 +12102,7 @@
           "path": "libs/react/src/chat/select.tsx",
           "symbol": "Select",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Select({ options, value, onValueChange, open, onOpenChange, label, placeholder = 'Select', disabled, className, menuClassName, }: SelectProps) {\n    const change = useRef(onValueChange);\n    change.current = onValueChange;\n    const { id, trigger, menu, portal, placement, effective, close, ...handlers } = useAnchoredMenu({\n        open,\n        onOpenChange,\n        disabled,\n        items: options,\n        side: 'above',\n        gap: 8,\n        initialFocus: selected,\n    });\n    const current = options.find((option) => option.value === value);\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-select__trigger', className].filter(Boolean).join(' ')} disabled={disabled === true} aria-haspopup=\"listbox\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} data-open={effective ? '' : undefined} onClick={handlers.triggerProps.onClick} onKeyDown={(event) => {\n            if (event.key === 'Escape' && effective && !event.defaultPrevented) {\n                event.preventDefault();\n                event.stopPropagation();\n                close(true);\n            }\n            else\n                handlers.triggerProps.onKeyDown(event);\n        }}>\n        <span className=\"tp-select__value\">\n          {current?.label ?? placeholder}\n        </span>\n        <svg className=\"tp-select__chevron\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" aria-hidden=\"true\">\n          <path d=\"M4 6l4 4 4-4\" stroke=\"currentColor\" fill=\"none\" strokeWidth=\"1.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\"/>\n        </svg>\n      </button>\n      {effective &&\n            portal &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"listbox\" aria-label={label} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className={['tp-select__menu', menuClassName]\n                    .filter(Boolean)\n                    .join(' ')} style={{ ...portal.style, ...placement }} {...handlers.menuProps}>\n            {options.map((option) => (<button key={option.value} type=\"button\" role=\"option\" aria-selected={option.value === value} tabIndex={-1} data-item-id={option.value} disabled={option.disabled === true} className=\"tp-select__option\" onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || option.disabled === true)\n                            return;\n                        close(true);\n                        if (option.value !== value)\n                            change.current(option.value, event);\n                    }}>\n                <span className=\"tp-select__option-label\">{option.label}</span>\n                {option.description ? (<span className=\"tp-select__option-description\">\n                    {option.description}\n                  </span>) : null}\n              </button>))}\n          </div>, portal.document.body)}\n    </>);\n}"
+          "signature": "export function Select({ options, value, onValueChange, open, onOpenChange, label, placeholder = 'Select', disabled, className, menuClassName, }: SelectProps) {\n    const change = useRef(onValueChange);\n    change.current = onValueChange;\n    const { id, trigger, menu, portal, placement, effective, close, ...handlers } = useAnchoredMenu({\n        open,\n        onOpenChange,\n        disabled,\n        items: options,\n        side: 'above',\n        gap: 8,\n        initialFocus: selected,\n        itemText: optionLabel,\n    });\n    const current = options.find((option) => option.value === value);\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-select__trigger', className].filter(Boolean).join(' ')} disabled={disabled === true} aria-haspopup=\"listbox\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} data-open={effective ? '' : undefined} onClick={handlers.triggerProps.onClick} onKeyDown={(event) => {\n            if (event.key === 'Escape' && effective && !event.defaultPrevented) {\n                event.preventDefault();\n                event.stopPropagation();\n                close(true);\n            }\n            else\n                handlers.triggerProps.onKeyDown(event);\n        }}>\n        <span className=\"tp-select__value\">\n          {current?.label ?? placeholder}\n        </span>\n        <svg className=\"tp-select__chevron\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" aria-hidden=\"true\">\n          <path d=\"M4 6l4 4 4-4\" stroke=\"currentColor\" fill=\"none\" strokeWidth=\"1.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\"/>\n        </svg>\n      </button>\n      {effective &&\n            portal &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"listbox\" aria-label={label} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className={['tp-select__menu', menuClassName]\n                    .filter(Boolean)\n                    .join(' ')} style={{ ...portal.style, ...placement }} {...handlers.menuProps}>\n            {options.map((option) => (<button key={option.value} type=\"button\" role=\"option\" aria-selected={option.value === value} tabIndex={-1} data-item-id={option.value} disabled={option.disabled === true} className=\"tp-select__option\" onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || option.disabled === true)\n                            return;\n                        close(true);\n                        if (option.value !== value)\n                            change.current(option.value, event);\n                    }}>\n                <span className=\"tp-select__option-label\">{option.label}</span>\n                {option.description ? (<span className=\"tp-select__option-description\">\n                    {option.description}\n                  </span>) : null}\n              </button>))}\n          </div>, portal.document.body)}\n    </>);\n}"
         }
       ]
     },
@@ -17277,7 +17274,7 @@
       "id": "source:libs/react/src/chat/internal/use-anchored-menu.ts",
       "kind": "source",
       "path": "libs/react/src/chat/internal/use-anchored-menu.ts",
-      "sha256": "c2b3061ce96cf1681875638f16648fc87bf2b8fddb4106e3ed189cd0193df4a1"
+      "sha256": "05c3d77d10f9f76812d05394038d94683b30cb693fd6b6ae2fb014fa6a8f0971"
     },
     {
       "id": "source:libs/react/src/chat/internal/use-message-content.ts",
@@ -17337,7 +17334,7 @@
       "id": "source:libs/react/src/chat/select.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/select.tsx",
-      "sha256": "c2de07d91f33f3b11f7fc4742618213118dbee9d10d6e401b82d4ab6df7bcef6"
+      "sha256": "cacb4ff27a38f44887d3bddd56ab57e1778034205368f5f067ec5c9f0c919347"
     },
     {
       "id": "source:libs/react/src/chat/status-panel.tsx",

@@ -1,5 +1,10 @@
 # React parity foundations
 
+The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The
+installed browser fixture types into a real open list and menu: a character moves
+focus to the matching label without selecting, a pause starts a new search, and
+Space still activates the focused option.
+
 The private chat package includes a bounded controlled `MessageRating` with an
 exact readonly prop contract: one identified message, an owner-held `up`, `down`
 or `null` value, and change requests that carry the message identity. The
