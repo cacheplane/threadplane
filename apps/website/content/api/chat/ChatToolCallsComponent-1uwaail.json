@@ -738,7 +738,7 @@
             },
             {
               "kind": "Content",
-              "text": "<((name: string) => string | undefined) | undefined>"
+              "text": "<((name: string, args?: unknown) => string | undefined) | undefined>"
             },
             {
               "kind": "Content",
@@ -746,7 +746,7 @@
             }
           ],
           "docs": {
-            "summary": "App-owned readable labels. Technical names remain in Details.",
+            "summary": "App-owned readable labels. Receives the call's arguments so repeated calls to one tool can say what each did, such as \"Read toSorted\". Technical names remain in Details.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -996,7 +996,7 @@
             "name": "toolLabel",
             "alias": "toolLabel",
             "required": false,
-            "type": "((name: string) => string | undefined) | undefined"
+            "type": "((name: string, args?: unknown) => string | undefined) | undefined"
           },
           {
             "name": "toolOutcome",

@@ -658,7 +658,7 @@ export class ChatComponent {
   /** Group built-in tool rows across names per assistant message; false retains adjacent same-name grouping. */
   readonly groupRelatedTools = input(true);
   /** App-authored readable labels; technical names remain in Details. */
-  readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+  readonly toolLabel = input<((name: string, args?: unknown) => string | undefined) | undefined>(undefined);
   /** App-authored confirmed outcome previews for default tool rendering; return `status: 'failed'` to show a completed call as failed. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
   /**

@@ -93,6 +93,7 @@ const styles = `
 .tp-tool-activity__heading, summary { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
 .tp-tool-activity__heading { font-weight:500; }
 .tp-tool-activity__phase, .tp-tool-activity__duration { color:var(--tplane-chat-text-muted); font-size:12px; font-weight:400; }
+[data-phase='error'] .tp-tool-activity__phase { color:var(--tplane-chat-error-text); }
 summary { cursor:pointer; color:var(--tplane-chat-text-muted); padding:6px 0; list-style:revert; display:list-item; }
 summary:focus-visible { outline:2px solid var(--tplane-chat-focus-ring); outline-offset:3px; border-radius:var(--tplane-chat-radius-sm); }
 summary > span + span { margin-inline-start:12px; }
@@ -197,7 +198,7 @@ export class ChatToolReceiptsComponent {
       >@if (duration() !== undefined) {
       <span class="tp-tool-activity__duration">{{ duration() }}ms</span> }
     </div>
-    @if (phase() === 'error') {
+    @if (phase() === 'error' && !grouped()) {
     <p role="alert" class="tp-tool-activity__error">
       {{
         resolved().errorSummary ??
@@ -237,6 +238,8 @@ export class ChatToolReceiptsComponent {
 })
 export class ChatToolActivityComponent {
   readonly activity = input.required<ToolActivityInfo>();
+  /** Set when an enclosing group shows the failure in its own panel; the row then names the failure only by its status word. */
+  readonly grouped = input(false);
   /** Direct primitive use gets the same failed-outcome display as projected rows. */
   protected readonly resolved = computed(() => {
     const activity = this.activity();
@@ -291,7 +294,7 @@ export class ChatToolActivityComponent {
       </summary>
       <div class="tp-tool-activity-group__items">
         @for (activity of resolved(); track activity.id) {
-        <chat-tool-activity [activity]="withoutOutcome(activity)" /> }
+        <chat-tool-activity [activity]="withoutOutcome(activity)" [grouped]="true" /> }
       </div>
     </details>
     <p

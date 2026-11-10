@@ -1104,3 +1104,40 @@ describe('ChatToolCallsComponent — app-declared tool failures and result slot'
     expect(outcome.mock.calls.length).toBe(before);
   });
 });
+
+describe('ChatToolCallsComponent — call-specific labels', () => {
+  it('passes each call its own arguments so repeated calls get distinct labels', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const toolLabel = vi.fn((name: string, args?: unknown) =>
+      name === 'read' ? `Read ${(args as { ref: string }).ref}` : undefined
+    );
+    fixture.componentRef.setInput('agent', mockAgent({
+      toolCalls: [
+        { id: 'a', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
+        { id: 'b', name: 'read', args: { ref: 'toReversed' }, status: 'complete', result: 'ok' },
+      ],
+    }));
+    fixture.componentRef.setInput('toolLabel', toolLabel);
+    fixture.detectChanges();
+    expect(toolLabel).toHaveBeenCalledWith('read', { ref: 'toSorted' });
+    const headings = Array.from(
+      fixture.nativeElement.querySelectorAll('.tp-tool-activity__heading > span:first-child') as NodeListOf<HTMLElement>
+    ).map((el) => el.textContent);
+    expect(headings).toEqual(['Read toSorted', 'Read toReversed']);
+  });
+  it('keeps the failure message out of grouped rows', () => {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', mockAgent({
+      toolCalls: [
+        { id: 'a', name: 'read', args: { ref: 'A' }, status: 'complete', result: 'ok' },
+        { id: 'b', name: 'read', args: { ref: 'B' }, status: 'error', error: 'boom' },
+      ],
+    }));
+    fixture.detectChanges();
+    const body: HTMLElement = fixture.nativeElement.querySelector('.ctc__group-body');
+    expect(body.querySelector('[role="alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[role="alert"]')).toHaveLength(1);
+  });
+});

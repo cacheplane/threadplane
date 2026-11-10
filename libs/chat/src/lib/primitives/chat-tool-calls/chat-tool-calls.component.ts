@@ -193,7 +193,7 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc, !grouped)" (toolRetry)="toolRetry.emit($event)">
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" (toolRetry)="toolRetry.emit($event)">
           @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
           <ng-container
             [ngTemplateOutlet]="resultTemplate"
@@ -251,9 +251,9 @@ export class ChatToolCallsComponent {
   >(undefined);
   /** Group default tool rows across names; false retains adjacent same-name grouping. None disables all grouping. */
   readonly groupRelated = input(true);
-  /** App-owned readable labels. Technical names remain in Details. */
+  /** App-owned readable labels. Receives the call's arguments so repeated calls to one tool can say what each did, such as "Read toSorted". Technical names remain in Details. */
   readonly toolLabel = input<
-    ((name: string) => string | undefined) | undefined
+    ((name: string, args?: unknown) => string | undefined) | undefined
   >(undefined);
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
@@ -456,7 +456,7 @@ export class ChatToolCallsComponent {
     const activity: ToolActivityInfo = {
       id: tc.id,
       name: tc.name,
-      label: this.toolLabel()?.(tc.name),
+      label: this.toolLabel()?.(tc.name, tc.args),
       phase,
       argumentsText: literal(tc.args),
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
