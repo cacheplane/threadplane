@@ -215,7 +215,7 @@ handlers = {
 
 ## Theming
 
-`createSurface.theme` carries agent-supplied presentation hints. `primaryColor` flows to `<a2ui-surface>` as the `--a2ui-primary` CSS custom property, which catalog components consume for accents (buttons, sliders, focus rings). `iconUrl` and `agentDisplayName` identify the agent that owns the surface: when either is set, `<a2ui-surface>` renders a small identity header (a 16px round icon and the display name in muted label text) above the surface. The demo sends no theme, so its surfaces render with the host application's colors and no header.
+`createSurface.theme` carries agent-supplied presentation hints. `primaryColor` flows to `<a2ui-surface>` as the `--a2ui-primary` CSS custom property, which catalog components consume for accents (buttons and sliders). Focus rings follow `--tplane-chat-focus-ring`. `iconUrl` and `agentDisplayName` identify the agent that owns the surface: when either is set, `<a2ui-surface>` renders a small identity header (a 16px round icon and the display name in muted label text) above the surface. The demo sends no theme, so its surfaces render with the host application's colors and no header.
 
 ## A2UI versus json-render
 

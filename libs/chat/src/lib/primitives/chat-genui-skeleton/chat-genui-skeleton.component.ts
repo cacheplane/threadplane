@@ -10,7 +10,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
     :host { display: block; width: 100%; }
     .chat-genui-skeleton {
       border: 1px solid var(--tplane-chat-separator);
-      border-radius: 10px;
+      border-radius: var(--tplane-chat-radius-card);
       padding: 14px;
       background: var(--tplane-chat-surface-alt);
     }
@@ -29,7 +29,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
     }
     .chat-genui-skeleton__row {
       height: 10px;
-      border-radius: 5px;
+      border-radius: var(--tplane-chat-radius-sm);
       background: linear-gradient(
         90deg,
         var(--tplane-chat-separator) 0%,

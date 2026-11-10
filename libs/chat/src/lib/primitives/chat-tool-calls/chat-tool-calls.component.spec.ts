@@ -576,7 +576,7 @@ describe('ChatToolCallsComponent — group header disclosure semantics', () => {
       .map((style) => style.textContent ?? '')
       .join('\n');
     expect(css).toMatch(
-      /\.ctc__group-header(\[[^\]]*\])?:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--tplane-chat-primary\)/,
+      /\.ctc__group-header(\[[^\]]*\])?:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--tplane-chat-focus-ring\)/,
     );
     expect(css).toMatch(/\.ctc__group-header(\[[^\]]*\])?\s*\{[^}]*min-height:\s*32px/);
   });

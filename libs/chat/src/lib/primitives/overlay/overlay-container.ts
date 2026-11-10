@@ -9,7 +9,7 @@ const STRUCTURE_CSS = `
 .${CONTAINER_CLASS} {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--tplane-chat-z-overlay-container, 1000);
   pointer-events: none;
 }
 .chat-overlay-pane {

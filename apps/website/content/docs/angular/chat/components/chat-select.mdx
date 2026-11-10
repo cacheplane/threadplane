@@ -155,13 +155,13 @@ chat-select {
 }
 ```
 
-The menu does not inherit from `chat-select` — it inherits from `body`, because that is where the overlay container sits. The menu reads `--tplane-chat-surface`, `--tplane-chat-separator`, and `--tplane-chat-shadow-lg` for its box, and `--tplane-chat-text`, `--tplane-chat-text-muted`, and `--tplane-chat-surface-alt` for its options. Set those at `:root` for an application-wide change:
+The menu does not inherit from `chat-select` — it inherits from `body`, because that is where the overlay container sits. The menu reads `--tplane-chat-surface`, `--tplane-chat-separator`, and `--tplane-chat-elevation-float` for its box, and `--tplane-chat-text`, `--tplane-chat-text-muted`, and `--tplane-chat-surface-alt` for its options. Set those at `:root` for an application-wide change:
 
 ```css
 :root {
   --tplane-chat-surface: hsl(0 0% 100%);
   --tplane-chat-separator: hsl(0 0% 90%);
-  --tplane-chat-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --tplane-chat-elevation-float: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 ```
 
@@ -180,7 +180,7 @@ To restyle one select without touching the rest of the application, put the toke
 .model-picker-panel {
   --tplane-chat-surface: hsl(240 20% 12%);
   --tplane-chat-separator: hsl(240 12% 24%);
-  --tplane-chat-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --tplane-chat-elevation-float: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .model-picker-panel .chat-select__menu {

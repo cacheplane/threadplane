@@ -55,7 +55,7 @@ import { RenderElementComponent } from '@threadplane/render';
     .a2ui-modal__overlay {
       position: fixed;
       inset: 0;
-      z-index: 50;
+      z-index: var(--tplane-chat-z-a2ui-modal, 50);
       display: flex;
       align-items: center;
       justify-content: center;

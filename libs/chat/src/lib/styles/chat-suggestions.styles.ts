@@ -9,7 +9,7 @@ export const CHAT_SUGGESTIONS_STYLES = `
     background: transparent;
     color: var(--tplane-chat-text);
     cursor: pointer;
-    transition: transform 200ms ease;
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
   }
   .chat-suggestion:hover { transform: scale(1.03); }
   .chat-suggestion:disabled { cursor: wait; opacity: 0.6; }

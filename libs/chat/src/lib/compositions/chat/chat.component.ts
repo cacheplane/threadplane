@@ -207,13 +207,13 @@ export function isPinned(
     .chat-source-details pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; }
     .chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-top: var(--tplane-chat-edge-pad); }
     .chat-scroll::-webkit-scrollbar { width: 6px; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 10px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: var(--tplane-chat-radius-launcher); }
     [chatFooter] {
       padding-bottom: var(--tplane-chat-edge-pad);
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
-    .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-text-muted); outline-offset: -2px; }
+    .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: -2px; }
     .chat-stopped-notice {
       display: flex;
       align-items: center;

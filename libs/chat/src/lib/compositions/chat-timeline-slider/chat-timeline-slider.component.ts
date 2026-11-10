@@ -57,7 +57,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
       cursor: default;
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-sm);
-      transition: background 150ms ease;
+      transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .timeline-slider__entry:hover { background: color-mix(in srgb, var(--tplane-chat-text) 5%, transparent); }
     .timeline-slider__entry[data-active="true"] {
@@ -67,7 +67,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
     .timeline-slider__index {
       width: 22px;
       height: 22px;
-      border-radius: 9999px;
+      border-radius: var(--tplane-chat-radius-launcher);
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-xs);
@@ -109,7 +109,7 @@ import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
       color: var(--tplane-chat-text);
       border: 0;
       cursor: pointer;
-      transition: background 150ms ease;
+      transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .timeline-slider__btn:hover { background: color-mix(in srgb, var(--tplane-chat-text) 8%, transparent); }
   `],

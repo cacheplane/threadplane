@@ -8,7 +8,7 @@ export const CHAT_SELECT_STYLES = `
     height: 32px;
     padding: 0 10px;
     border: 0;
-    border-radius: 9999px;
+    border-radius: var(--tplane-chat-radius-launcher);
     background: transparent;
     color: var(--tplane-chat-text-muted);
     font: inherit;
@@ -17,7 +17,7 @@ export const CHAT_SELECT_STYLES = `
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-select__trigger:hover:not(:disabled) {
     background: var(--tplane-chat-surface-alt);
@@ -30,7 +30,7 @@ export const CHAT_SELECT_STYLES = `
   .chat-select__chevron {
     width: 12px;
     height: 12px;
-    transition: transform 120ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     flex: none;
   }
   .chat-select__trigger.is-open .chat-select__chevron {
@@ -47,8 +47,8 @@ export const CHAT_SELECT_STYLES = `
     overflow-y: auto;
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
-    border-radius: 12px;
-    box-shadow: var(--tplane-chat-shadow-lg);
+    border-radius: var(--tplane-chat-radius-card);
+    box-shadow: var(--tplane-chat-elevation-float);
     padding: 4px;
     box-sizing: border-box;
   }
@@ -62,7 +62,7 @@ export const CHAT_SELECT_STYLES = `
     border: 0;
     background: transparent;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--tplane-chat-radius-card);
     color: var(--tplane-chat-text);
     font: inherit;
     font-size: var(--tplane-chat-font-size-sm);
@@ -74,10 +74,13 @@ export const CHAT_SELECT_STYLES = `
     line-height: 1.3;
     white-space: normal;
   }
-  .chat-select__option:hover:not(:disabled),
+  .chat-select__option:hover:not(:disabled) {
+    background: var(--tplane-chat-surface-alt);
+  }
   .chat-select__option:focus-visible {
     background: var(--tplane-chat-surface-alt);
-    outline: none;
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: -2px;
   }
   .chat-select__option.is-active {
     background: var(--tplane-chat-surface-alt);

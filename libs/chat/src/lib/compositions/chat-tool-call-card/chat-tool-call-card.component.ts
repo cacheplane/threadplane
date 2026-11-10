@@ -36,7 +36,7 @@ export interface ToolCallInfo {
       align-items: center;
       gap: var(--tplane-chat-space-1);
       padding: 1px var(--tplane-chat-space-2);
-      border-radius: 9999px;
+      border-radius: var(--tplane-chat-radius-launcher);
       background: var(--tplane-chat-surface-alt);
       color: var(--tplane-chat-text-muted);
       font-size: 10px;

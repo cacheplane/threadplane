@@ -17,14 +17,14 @@ export const CHAT_TRACE_STYLES = `
     font: inherit;
   }
   .chat-trace__header:focus-visible {
-    outline: 2px solid var(--tplane-chat-primary);
+    outline: 2px solid var(--tplane-chat-focus-ring);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--tplane-chat-radius-sm);
   }
   .chat-trace__chevron {
     width: 12px;
     height: 12px;
-    transition: transform 200ms ease;
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     flex-shrink: 0;
   }
   :host([data-expanded="true"]) .chat-trace__chevron { transform: rotate(90deg); }

@@ -104,7 +104,7 @@ let nextChatToolCallsId = 0;
         text-align: left;
       }
       .ctc__group-header:focus-visible {
-        outline: 2px solid var(--tplane-chat-primary);
+        outline: 2px solid var(--tplane-chat-focus-ring);
         outline-offset: 2px;
         border-radius: var(--tplane-chat-radius-card);
       }
@@ -112,7 +112,7 @@ let nextChatToolCallsId = 0;
         flex: none;
         width: 10px;
         height: 10px;
-        transition: transform 120ms ease;
+        transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
       }
       .ctc__group-body[hidden] {
         display: none;

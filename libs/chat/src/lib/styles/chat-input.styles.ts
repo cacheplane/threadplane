@@ -19,14 +19,17 @@ export const CHAT_INPUT_STYLES = `
   gap: 8px;
   background: var(--tplane-chat-surface);
   border: 1px solid var(--tplane-chat-separator);
-  border-radius: 9999px;
+  border-radius: var(--tplane-chat-radius-launcher);
   padding: 8px 8px 8px 16px;
   min-height: 56px;
   box-sizing: border-box;
-  transition: border-color 150ms ease;
+  transition: border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
 }
-/* The textarea draws no outline of its own; the pill carries the focus cue. */
-.chat-input__pill:focus-within { border-color: var(--tplane-chat-text-muted); }
+/* The textarea draws no outline of its own; the pill carries the focus ring. */
+.chat-input__pill:focus-within {
+  outline: 2px solid var(--tplane-chat-focus-ring);
+  outline-offset: 2px;
+}
 
 .chat-input__hint > span {
   display: block;
@@ -56,7 +59,7 @@ export const CHAT_INPUT_STYLES = `
 .chat-input__textarea:placeholder-shown { white-space: nowrap; overflow-x: hidden; }
 .chat-input__textarea::placeholder { color: var(--tplane-chat-text-muted); }
 .chat-input__textarea::-webkit-scrollbar { width: 4px; }
-.chat-input__textarea::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: 4px; }
+.chat-input__textarea::-webkit-scrollbar-thumb { background: var(--tplane-chat-separator); border-radius: var(--tplane-chat-radius-sm); }
 
 .chat-input__controls {
   display: flex;
@@ -75,7 +78,7 @@ export const CHAT_INPUT_STYLES = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+  transition: opacity var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   padding: 0;
 }
 .chat-input__send {

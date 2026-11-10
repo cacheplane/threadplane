@@ -28,15 +28,15 @@ describe('CHAT_SIDENAV_STYLES — New chat button', () => {
     );
   });
 
-  it('keeps the primary-color focus ring (a11y affordance, not chrome)', () => {
+  it('keeps the shared focus ring (a11y affordance, not chrome)', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__action--new:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--tplane-chat-primary\)\s*;/,
+      /\.chat-sidenav__action--new:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--tplane-chat-focus-ring\)\s*;/,
     );
   });
 
-  it('uses 8px border-radius (consistent with Search button + thread items)', () => {
+  it('uses a radius token (consistent with Search button + thread items)', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__action\.chat-sidenav__action--new\s*\{[^}]*border-radius:\s*8px\s*;/,
+      /\.chat-sidenav__action\.chat-sidenav__action--new\s*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-button\)\s*;/,
     );
   });
 });
@@ -85,9 +85,9 @@ describe('CHAT_SIDENAV_STYLES — drawer elevation + z-index token', () => {
       /:host\(\[data-mode="drawer"\]\)\s*\{[^}]*z-index:\s*var\(--tplane-chat-z-drawer,\s*1001\)\s*;/,
     );
   });
-  it('applies a right-edge box-shadow when the drawer is open', () => {
+  it('applies the float elevation when the drawer is open', () => {
     expect(normalized).toMatch(
-      /:host\(\[data-mode="drawer"\]\[data-open="true"\]\)\s*\{[^}]*box-shadow:\s*8px\s+0\s+32px\s+rgba\(0,\s*0,\s*0,\s*0\.18\)\s*;/,
+      /:host\(\[data-mode="drawer"\]\[data-open="true"\]\)\s*\{[^}]*box-shadow:\s*var\(--tplane-chat-elevation-float\)\s*;/,
     );
   });
   it('no longer declares the .chat-sidenav__scrim selector', () => {
@@ -112,9 +112,9 @@ describe('CHAT_SIDENAV_STYLES — Archived disclosure', () => {
     );
   });
 
-  it('uses 8px border-radius so it reads as a clickable nav item', () => {
+  it('uses the card radius token so it reads as a clickable nav item', () => {
     expect(normalized).toMatch(
-      /\.chat-sidenav__archived-heading\s*\{[^}]*border-radius:\s*8px\s*;/,
+      /\.chat-sidenav__archived-heading\s*\{[^}]*border-radius:\s*var\(--tplane-chat-radius-card\)\s*;/,
     );
   });
 

@@ -31,7 +31,7 @@ import { DebugStateInspectorComponent } from '../debug-state-inspector.component
       gap: 6px;
       background: var(--tplane-chat-debug-bg-deep);
       border: 1px solid var(--tplane-chat-debug-border);
-      border-radius: 6px;
+      border-radius: var(--tplane-chat-radius-card);
       padding: 3px 8px;
       font: inherit;
       font-size: 11px;
@@ -39,7 +39,7 @@ import { DebugStateInspectorComponent } from '../debug-state-inspector.component
       text-transform: none;
       color: var(--tplane-chat-debug-text-muted);
       cursor: pointer;
-      transition: color 120ms ease, border-color 120ms ease;
+      transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .state__copy:hover {
       color: var(--tplane-chat-debug-text);

@@ -11342,6 +11342,15 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/chat/src/lib/styles/style-contract.ts",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned",
+      "reason": "Test-only helper that scans Angular component styles for the style-contract spec; not part of the package surface."
+    },
+    {
       "id": "source:libs/chat/src/lib/testing/mock-agent.ts",
       "taskIds": [
         "T05",

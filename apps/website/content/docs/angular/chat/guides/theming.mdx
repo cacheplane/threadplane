@@ -79,14 +79,33 @@ That block is wrapped in `@layer tplane-chat`. Unlayered CSS beats layered CSS i
 | `--tplane-chat-muted` | `rgb(200, 200, 200)` | `rgb(60, 60, 60)` | Quiet borders, such as suggestion chips |
 | `--tplane-chat-error-bg` | `#fef2f2` | `rgb(45, 21, 21)` | Error background |
 | `--tplane-chat-error-border` | `#fecaca` | `#dc2626` | Error border |
-| `--tplane-chat-error-text` | `#dc2626` | `#fca5a5` | Error text |
+| `--tplane-chat-error-text` | `#b91c1c` | `#fca5a5` | Error text; the light value meets 4.5:1 on the error background |
 | `--tplane-chat-destructive` | `#dc2626` | `#ef4444` | Destructive confirm button |
 | `--tplane-chat-warning-bg` | `#fffbeb` | `rgb(45, 35, 21)` | Warning background |
 | `--tplane-chat-warning-text` | `#b45309` | `#fbbf24` | Warning text |
+| `--tplane-chat-warning-border` | `#fde68a` | `#92400e` | Warning border; declared for the upcoming status panels, no component reads it yet |
 | `--tplane-chat-success` | `#16a34a` | `#4ade80` | Success icons and indicators |
+| `--tplane-chat-success-bg` | `#f0fdf4` | `rgb(20, 45, 28)` | Success background; declared for the upcoming status panels, no component reads it yet |
+| `--tplane-chat-success-border` | `#bbf7d0` | `#166534` | Success border; declared for the upcoming status panels, no component reads it yet |
 | `--tplane-chat-success-text` | `#15803d` | `#4ade80` | Small success text, such as the `complete` status pill; darker than `--tplane-chat-success` so it meets 4.5:1 contrast |
 
-Three shadow tokens, `--tplane-chat-shadow-sm`, `--tplane-chat-shadow-md`, and `--tplane-chat-shadow-lg`, are declared with the light palette and are not redefined for dark.
+### Focus, elevation, scrim and motion
+
+| Token | Light | Dark | Purpose |
+|---|---|---|---|
+| `--tplane-chat-focus-ring` | `var(--tplane-chat-primary)` | `var(--tplane-chat-primary)` | Color of the one focus ring used by every component: 2px, offset 2px. `--a2ui-focus-ring-color` aliases it |
+| `--tplane-chat-elevation-float` | `0 1px 2px rgb(0 0 0 / .04), 0 6px 16px rgb(0 0 0 / .08)` | `0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .5)` | Shadow for floating UI only: dialogs, the approval card, the popup window and launcher, the sidenav drawer, the sidebar panel, menus, the select dropdown, the history palette, the citation preview, the scroll-to-bottom button and the debug dock |
+| `--tplane-chat-scrim` | `rgb(0 0 0 / .32)` | `rgb(0 0 0 / .6)` | Backdrop behind dialogs, the history palette and the sidenav drawer |
+
+`--tplane-chat-shadow-sm`, `--tplane-chat-shadow-md` and `--tplane-chat-shadow-lg` remain declared as aliases of `--tplane-chat-elevation-float` in both themes, so consumer CSS that reads them keeps resolving. Chat components read `--tplane-chat-elevation-float`, not these names. To change component shadows, override `--tplane-chat-elevation-float`; it changes every floating surface at once.
+
+| Token | Default | Purpose |
+|---|---|---|
+| `--tplane-chat-motion-duration` | `150ms` | Hover, focus and color transitions |
+| `--tplane-chat-motion-duration-slow` | `250ms` | Panel, drawer and expand transitions |
+| `--tplane-chat-motion-ease` | `cubic-bezier(0.22, 1, 0.36, 1)` | Easing for every chat transition |
+
+Under `prefers-reduced-motion: reduce` the library shortens animations and transitions regardless of these values. Status panels (error, warning and success) keep a border in forced-colors mode.
 
 ### Shape and layout
 
@@ -118,7 +137,7 @@ Three shadow tokens, `--tplane-chat-shadow-sm`, `--tplane-chat-shadow-md`, and `
 | `--tplane-chat-line-height` | `1.6` | Assistant text |
 | `--tplane-chat-line-height-tight` | `1.5` | User bubble |
 
-Three further families are declared alongside these and follow the same override rule: `--tplane-chat-citation-*` for citation markers and the sources panel, `--tplane-chat-z-*` for the overlay, drawer, and modal layers, and `--a2ui-*` for generative UI surfaces rendered inside the conversation. Four ready-made presets ship as `@threadplane/chat/themes/{default,material}-{light,dark}.css` and set only `--a2ui-*` values; see [the A2UI overview](/docs/angular/chat/a2ui/overview) for what those surfaces render.
+Three further families are declared alongside these and follow the same override rule: `--tplane-chat-citation-*` for citation markers and the sources panel, `--tplane-chat-z-*` for the named layers (overlay content, drawer, modal, menu, confirm dialog, sidenav, overlay container, A2UI modal and the debug pill and panel, each with a scrim token where it has a backdrop), and `--a2ui-*` for generative UI surfaces rendered inside the conversation. Four ready-made presets ship as `@threadplane/chat/themes/{default,material}-{light,dark}.css` and set only `--a2ui-*` values; see [the A2UI overview](/docs/angular/chat/a2ui/overview) for what those surfaces render.
 
 ## Light and dark mode
 

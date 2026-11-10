@@ -74,7 +74,7 @@ const TYPE_MAP: Record<TextFieldVariant, string> = {
     }
       .a2ui-check-error {
       font-size: var(--a2ui-typography-label-size);
-      color: var(--a2ui-error, #d33d55);
+      color: var(--a2ui-error);
     }
 `],
 })

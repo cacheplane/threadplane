@@ -18,14 +18,21 @@ const LIGHT_TOKENS = `
   --tplane-chat-destructive: #dc2626;
   --tplane-chat-warning-bg: #fffbeb;
   --tplane-chat-warning-text: #b45309;
+  --tplane-chat-warning-border: #fde68a;
   --tplane-chat-success: #16a34a;
+  --tplane-chat-success-bg: #f0fdf4;
+  --tplane-chat-success-border: #bbf7d0;
   /* Success color for small text (status pills). The base success green
      is 3.3:1 on white, enough for icons but not for text; this one is
      4.5:1 or better on the light surfaces. */
   --tplane-chat-success-text: #15803d;
-  --tplane-chat-shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --tplane-chat-shadow-md: 0 4px 6px -1px rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.06);
-  --tplane-chat-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.10), 0 4px 6px -2px rgba(0,0,0,.05);
+  --tplane-chat-shadow-sm: var(--tplane-chat-elevation-float);
+  --tplane-chat-shadow-md: var(--tplane-chat-elevation-float);
+  --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
+  --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .04), 0 6px 16px rgb(0 0 0 / .08);
+  --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --a2ui-focus-ring-color: var(--tplane-chat-focus-ring);
+  --tplane-chat-scrim: rgb(0 0 0 / .32);
 
   /* --a2ui-* light variant */
   --a2ui-primary: #4f8df5;
@@ -89,8 +96,18 @@ const DARK_TOKENS = `
   --tplane-chat-destructive: #ef4444;
   --tplane-chat-warning-bg: rgb(45, 35, 21);
   --tplane-chat-warning-text: #fbbf24;
+  --tplane-chat-warning-border: #92400e;
   --tplane-chat-success: #4ade80;
   --tplane-chat-success-text: #4ade80;
+  --tplane-chat-success-bg: rgb(20, 45, 28);
+  --tplane-chat-success-border: #166534;
+  --tplane-chat-shadow-sm: var(--tplane-chat-elevation-float);
+  --tplane-chat-shadow-md: var(--tplane-chat-elevation-float);
+  --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
+  --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .5);
+  --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --a2ui-focus-ring-color: var(--tplane-chat-focus-ring);
+  --tplane-chat-scrim: rgb(0 0 0 / .6);
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
   --a2ui-primary: #4f8df5;
@@ -154,6 +171,12 @@ const GEOMETRY_TOKENS = `
   --tplane-chat-citation-radius: 6px;
 `;
 
+const MOTION_TOKENS = `
+  --tplane-chat-motion-duration: 150ms;
+  --tplane-chat-motion-duration-slow: 250ms;
+  --tplane-chat-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+`;
+
 const TYPOGRAPHY_TOKENS = `
   --tplane-chat-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --tplane-chat-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -189,6 +212,15 @@ const LAYER_TOKENS = `
   --tplane-chat-z-drawer: 1001;          /* chat-sidenav drawer mode host */
   --tplane-chat-z-modal-scrim: 1100;     /* chat-history-search-palette backdrop */
   --tplane-chat-z-modal: 1101;           /* chat-history-search-palette dialog */
+  --tplane-chat-z-overlay-container: 1000; /* overlay-container host (select and menu portals) */
+  --tplane-chat-z-sidenav: 100;          /* chat-sidenav collapsed-rail host */
+  --tplane-chat-z-menu-scrim: 59;        /* chat-overflow-menu click-away backdrop */
+  --tplane-chat-z-menu: 60;              /* chat-overflow-menu panel */
+  --tplane-chat-z-confirm-scrim: 70;     /* chat-confirm-dialog backdrop */
+  --tplane-chat-z-confirm: 71;           /* chat-confirm-dialog panel */
+  --tplane-chat-z-a2ui-modal: 50;        /* a2ui modal overlay */
+  --tplane-chat-z-debug-pill: 990;       /* chat-debug launcher pill */
+  --tplane-chat-z-debug-panel: 991;      /* chat-debug dock panel */
 `;
 
 const EDGE_CLAIM_TOKENS = `
@@ -389,7 +421,6 @@ const A2UI_INVARIANT_TOKENS = `
   --a2ui-shape-extra-large: 28px;
 
   /* Focus ring */
-  --a2ui-focus-ring-color: var(--a2ui-primary);
   --a2ui-focus-ring-width: 2px;
 
   /* Motion */
@@ -413,6 +444,7 @@ export const ROOT_TOKEN_STYLES = `
   :root {
     ${LIGHT_TOKENS}
     ${GEOMETRY_TOKENS}
+    ${MOTION_TOKENS}
     ${TYPOGRAPHY_TOKENS}
     ${SPACING_TOKENS}
     ${LAYER_TOKENS}
