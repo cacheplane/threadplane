@@ -1197,7 +1197,19 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
-.tp-chat-input__actions button:focus-visible {
+.tp-chat-input__leading,
+.tp-chat-input__trailing {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.tp-chat-input__footer {
+  min-width: 0;
+}
+.tp-chat-input__send:focus-visible,
+.tp-chat-input__stop:focus-visible {
   outline: 2px solid var(--tp-chat-accent);
   outline-offset: 3px;
 }
