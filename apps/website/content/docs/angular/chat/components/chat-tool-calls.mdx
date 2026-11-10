@@ -46,6 +46,65 @@ Pass a stable `toolOutcome(activity)` callback to `<chat>` or `<chat-tool-calls>
 
 Custom tool templates retain ownership. Project approval controls outside technical Details and dispatch decisions through the current adapter interrupt generation. A failed read can offer an explicit retry while retaining the successful prefix and failed attempt. Reconcile an uncertain write before retrying it.
 
+### Declare a failed result
+
+A tool can finish delivery and still report that it failed.
+`lookup_flight` returns `{"error": "Flight UA999 not found in dataset"}` for an unknown flight, and the call still completes.
+By default the row stays complete, because the library does not guess what a payload means.
+
+Decode the tool's declared schema in `toolOutcome` and return `status: 'failed'` only for its declared error shape.
+
+```typescript
+import type { ToolActivityInfo, ToolActivityOutcome } from '@threadplane/chat';
+
+const toolOutcome = (activity: ToolActivityInfo): ToolActivityOutcome | undefined => {
+  if (activity.name !== 'lookup_flight' || !activity.resultText) return undefined;
+  try {
+    const result = JSON.parse(activity.resultText);
+    return typeof result?.error === 'string'
+      ? { status: 'failed', text: result.error }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+};
+```
+
+A failed call shows as failed, its `text` becomes the error explanation, and a settled group counts it.
+For example, a group of three calls with one failure reads **Used 3 tools · 1 failed**.
+Values such as `false`, `0`, `""`, `[]` and `null` are literal results, not failures.
+Returning `undefined` keeps the call as it was.
+Only a call that completed can be marked failed, so a running or stopped call is never rewritten.
+
+This changes what is shown, not what the model receives.
+The model still sees the original tool result.
+If a tool should tell the model that it failed, set the error flag your protocol provides on the tool message.
+The cost is that you maintain a decoder per tool, and a decoder that drifts from the tool's real schema shows the wrong state.
+`ChatToolActivityComponent` and `ChatToolActivityGroupComponent` apply the same resolution to a failed outcome you pass them directly.
+`resolveToolOutcome(activity, outcome)` is exported if you render activities with your own markup and want the same resolution.
+
+### Add content to one call
+
+Project an `ng-template` carrying `chatToolResultTemplate` into `<chat>` or `<chat-tool-calls>` to add content to a single call's row, such as a retry button or a rich result.
+
+```html
+<chat [agent]="agent" [toolOutcome]="toolOutcome">
+  <ng-template chatToolResultTemplate="lookup_flight" let-activity>
+    @if (activity.phase === 'error') {
+      <button type="button" (click)="retryLookup(activity.id)">Retry flight lookup</button>
+    }
+  </ng-template>
+</chat>
+```
+
+The context is the resolved `ToolActivityInfo` as `$implicit`, after `toolOutcome` ran, so a declared failure arrives with `phase: 'error'`.
+Its content renders outside **Details** and is shown below a collapsed group.
+Below a collapsed group, name the call in the control, such as **Retry UA999 lookup**, because a bare **Retry** does not say which call it acts on.
+A literal `"*"` matches any tool without a template of its own, and a name match wins over it.
+A tool with a `chatToolCallTemplate` keeps that full replacement, and result templates do not apply to it.
+The slot only displays what you render.
+It does not run, approve or retry anything, so the handler you bind owns that work.
+
 ### The agent and tool loop
 
 `should_continue` looks at the last message and routes to the `tools` node whenever it carries tool calls, and the `tools` edge goes straight back to `agent`. That is the loop: the model calls a tool, `ToolNode` runs it, the result returns as a tool message, and the model is invoked again within the same user turn. A model response with no tool calls falls through to the title node instead.
@@ -115,9 +174,10 @@ The component is standalone, so add it to a component's `imports` array.
 | `groupSummary`      | `((name: string, count: number) => string) \| undefined` | `undefined`  | Replaces the generic activity count.                                                                                                                                                                              |
 | `groupRelated`      | `boolean`                                                | `true`       | Groups adjacent built-in calls across tool names, including a single call. Set `false` for same-name grouping only. `grouping="none"` disables grouping. Custom templates and subagents stay separate.                                                             |
 | `toolLabel`         | `(name: string) => string \| undefined`                  | `undefined`  | Supplies a readable label; unknown names use “Tool activity.” The technical name stays in Details.                                                                                                                |
-| `toolOutcome`       | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Supplies validated, app-authored previews and source links for default rows. Custom templates retain ownership. |
+| `toolOutcome`       | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Supplies validated, app-authored previews and source links for default rows, and `status: 'failed'` to mark a completed call failed. Custom templates retain ownership. |
 | `excludeToolNames`  | `readonly string[]`                                      | `[]`         | Tool names to hide entirely. Compositions use it to keep internal orchestration tools out of the transcript.                                                                                                      |
 | `toolCallTemplates` | `readonly ChatToolCallTemplateDirective[]`               | `[]`         | Per-tool templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
+| `toolResultTemplates` | `readonly ChatToolResultTemplateDirective[]` | `[]` | Per-call result templates supplied by a parent composition, such as the ones `<chat>` collects from its own content. A template projected directly into `<chat-tool-calls>` wins over a supplied one with the same name. |
 
 The component has no outputs.
 
@@ -143,7 +203,7 @@ Set `[groupRelated]="false"` to retain same-name adjacency grouping: `search_web
 
 ## Default group summaries
 
-While a tool is running, the row shows its application-provided `toolLabel` with a subtle text shimmer, falling back to **Running tools…**. Explicitly completed calls settle to **Used 4 tools**, with the appropriate count. There is no additional completion-count subline. A tool count does not establish a successful business operation or persisted write.
+While a tool is running, the row shows its application-provided `toolLabel` with a subtle text shimmer, falling back to **Running tools…**. Explicitly completed calls settle to **Used 4 tools**, with the appropriate count; when some failed it reads **Used 4 tools · 1 failed**. There is no additional completion-count subline. A tool count does not establish a successful business operation or persisted write.
 
 Queued, paused, stopped and unavailable activity uses static wording. **Tool activity paused** does not imply approval. A failed call can coexist with running work; the activity row preserves a static failure cue while actual work remains active. Reduced motion and forced colors use readable static text. Meaningful state changes remain available in a polite status region without raw payloads or timer ticks.
 

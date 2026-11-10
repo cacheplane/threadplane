@@ -228,6 +228,98 @@ describe('reduceEvent', () => {
       .toBe(secondReplacement?.delivery.generation);
   });
 
+  const flightSnapshot = (toolMessage: Record<string, unknown>) => ({
+    type: 'MESSAGES_SNAPSHOT',
+    messages: [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [{ id: 't1', type: 'function', function: { name: 'lookup_flight', arguments: '{"flight_number":"UA999"}' } }],
+      },
+      { role: 'tool', id: 'm2', toolCallId: 't1', ...toolMessage },
+    ],
+  }) as any;
+
+  it('maps a snapshot tool message error to a failed call', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+
+    expect(store.toolCalls().find(t => t.id === 't1')).toMatchObject({
+      status: 'error',
+      error: 'Flight UA999 not found',
+      result: { error: 'Flight UA999 not found' },
+    });
+  });
+
+  const streamFlightCall = (store: ReturnType<typeof makeStore>) => {
+    reduceEvent({ type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'lookup_flight', parentMessageId: 'm1' } as any, store);
+    reduceEvent({ type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '{"flight_number":"UA999"}' } as any, store);
+    reduceEvent({ type: 'TOOL_CALL_END', toolCallId: 't1' } as any, store);
+    reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: '{"error":"Flight UA999 not found"}' } as any, store);
+  };
+
+  it('upgrades a streamed complete call to error when the snapshot tool message carries an error', () => {
+    const store = makeStore();
+    streamFlightCall(store);
+    expect(store.toolCalls().find(t => t.id === 't1')?.status).toBe('complete');
+
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+
+    expect(store.toolCalls().filter(t => t.id === 't1')).toHaveLength(1);
+    expect(store.toolCalls().find(t => t.id === 't1')).toMatchObject({
+      status: 'error',
+      error: 'Flight UA999 not found',
+      result: { error: 'Flight UA999 not found' },
+    });
+  });
+
+  it('leaves a streamed call that is already failed unchanged on a failing snapshot', () => {
+    const store = makeStore();
+    streamFlightCall(store);
+    store.toolCalls.update(prev => prev.map(t => t.id === 't1'
+      ? { ...t, status: 'error', error: 'streamed failure', result: 'streamed result' } as typeof t
+      : t));
+    const before = store.toolCalls().find(t => t.id === 't1');
+
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+
+    expect(store.toolCalls().find(t => t.id === 't1')).toBe(before);
+  });
+
+  it('keeps a snapshot-failed call failed when a late TOOL_CALL_RESULT arrives', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({
+      content: '{"error":"Flight UA999 not found"}',
+      error: 'Flight UA999 not found',
+    }), store);
+    const failed = store.toolCalls().find(t => t.id === 't1');
+    expect(failed?.status).toBe('error');
+
+    reduceEvent({ type: 'TOOL_CALL_RESULT', toolCallId: 't1', content: '{"error":"Flight UA999 not found"}' } as any, store);
+
+    expect(store.toolCalls().find(t => t.id === 't1')?.status).toBe('error');
+    expect(store.toolCalls().find(t => t.id === 't1')).toBe(failed);
+  });
+
+  it('keeps a snapshot tool call complete when its tool message has no error', () => {
+    const store = makeStore();
+    reduceEvent(flightSnapshot({ content: '{"status":"on time"}' }), store);
+
+    const call = store.toolCalls().find(t => t.id === 't1');
+    expect(call?.status).toBe('complete');
+    expect(call).not.toHaveProperty('error');
+  });
+
   it('preserves an omitted current assistant so later deltas still apply', () => {
     const store = makeStore();
     reduceEvent({ type: 'TEXT_MESSAGE_START', messageId: 'm1' } as any, store);

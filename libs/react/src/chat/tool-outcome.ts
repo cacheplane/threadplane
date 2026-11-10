@@ -1,13 +1,22 @@
+import type { ToolActivityInfo } from './tool-activity.js';
+
 /** An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links. */
 export interface ToolActivitySource {
   readonly title: string;
   readonly url: string;
 }
-/** Concise, application-authored result evidence; does not establish persistence or business confirmation. */
-export interface ToolActivityOutcome {
-  readonly text: string;
-  readonly sources?: readonly ToolActivitySource[];
-}
+/** Concise, application-authored result evidence; does not establish persistence or business confirmation. A missing status means succeeded. */
+export type ToolActivityOutcome =
+  | {
+      readonly status?: 'succeeded';
+      readonly text: string;
+      readonly sources?: readonly ToolActivitySource[];
+    }
+  | {
+      readonly status: 'failed';
+      readonly text: string;
+      readonly sources?: readonly ToolActivitySource[];
+    };
 interface Activity {
   readonly phase?: string;
   readonly outcome?: ToolActivityOutcome;
@@ -18,7 +27,9 @@ export function confirmedOutcomes(
   const seen = new Set<string>();
   return activities.flatMap((activity) => {
     const outcome =
-      activity.phase === 'complete' ? activity.outcome : undefined;
+      activity.phase === 'complete' && activity.outcome?.status !== 'failed'
+        ? activity.outcome
+        : undefined;
     if (!outcome || seen.has(outcome.text)) return [];
     seen.add(outcome.text);
     return [outcome];
@@ -30,7 +41,10 @@ export function outcomeSources(
   const seen = new Set<string>();
   return activities
     .flatMap((activity) =>
-      activity.phase === 'complete' ? activity.outcome?.sources ?? [] : []
+      activity.phase === 'complete' ||
+      (activity.phase === 'error' && activity.outcome?.status === 'failed')
+        ? activity.outcome?.sources ?? []
+        : []
     )
     .filter((source) => {
       try {
@@ -48,6 +62,24 @@ export function outcomeSources(
         return false;
       }
     });
+}
+/**
+ * Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.
+ * Idempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.
+ */
+export function resolveToolOutcome(
+  activity: ToolActivityInfo,
+  outcome: ToolActivityOutcome | undefined
+): ToolActivityInfo {
+  if (activity.phase === 'complete' && outcome?.status === 'failed') {
+    return {
+      ...activity,
+      phase: 'error',
+      errorSummary: outcome.text.trim() || undefined,
+      outcome,
+    };
+  }
+  return { ...activity, outcome };
 }
 export function activityProgress(activities: readonly Activity[]): string {
   const names: Record<string, string> = {

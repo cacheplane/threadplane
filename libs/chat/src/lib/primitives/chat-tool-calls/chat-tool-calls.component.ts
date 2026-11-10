@@ -10,12 +10,15 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
+  isDevMode,
+  type TemplateRef,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import type { Agent, Message, ToolCall, Subagent } from '../../agent';
 import type { ToolCallInfo } from '../../compositions/chat-tool-call-card/chat-tool-call-card.component';
 import { ChatSubagentCardComponent } from '../../compositions/chat-subagent-card/chat-subagent-card.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
+import { ChatToolResultTemplateDirective, type ChatToolResultTemplateContext } from './chat-tool-result-template.directive';
 import { resolveMessageToolCalls } from './resolve-message-tool-calls';
 import {
   ChatToolActivityComponent,
@@ -24,7 +27,8 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from '../chat-tool-activity/chat-tool-activity.component';
-import { activitySummary } from '../chat-tool-activity/activity-summary';
+import { resolveToolOutcome } from '../chat-tool-activity/tool-outcome';
+import { activitySummary, failureSummaries } from '../chat-tool-activity/activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from '../chat-tool-activity/activity-summary-styles';
 
 interface Group {
@@ -166,18 +170,43 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc, !grouped)" />
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)">
+          @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
+          <ng-container
+            [ngTemplateOutlet]="resultTemplate"
+            [ngTemplateOutletContext]="{ $implicit: activityFor(tc) }"
+          />
+          } }
+        </chat-tool-activity>
         }
       </div>
     </div>
       @if (grouped) {
       <p class="tp-tool-activity__status" role="status" aria-live="polite" aria-atomic="true">{{ summary.status }}</p>
       <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
+      @let results = resultsFor(group.calls);
+      @if (results.length) {
+      <div class="tp-tool-activity__results">
+        @for (result of results; track result.activity.id) {
+        <div [attr.data-tool-id]="result.activity.id">
+          <ng-container
+            [ngTemplateOutlet]="result.template"
+            [ngTemplateOutletContext]="{ $implicit: result.activity }"
+          />
+        </div>
+        }
+      </div>
       }
       @if (summary.phase === 'error') {
-      <p role="alert">
-        Some tools could not finish. Check Details before retrying.
-      </p>
+      <!-- Ungrouped rows already show their own alert; only a group adds one. -->
+      <div role="alert" class="tp-tool-activity__error">
+        @for (text of failureSummariesFor(group.calls); track text) {
+        <p>{{ text }}</p>
+        } @empty {
+        <p>Some tools could not finish. Check Details before retrying.</p>
+        }
+      </div>
+      }
       }
     } @else if (group.templateRef) { @for (tc of group.calls; track tc.id) {
     <ng-container
@@ -200,8 +229,17 @@ export class ChatToolCallsComponent {
   readonly toolLabel = input<
     ((name: string) => string | undefined) | undefined
   >(undefined);
-  /** App-authored confirmed result previews; custom tool templates keep ownership. */
+  /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
+
+  /**
+   * Per-tool-name + wildcard result templates supplied by a parent composition,
+   * for the same reason as `toolCallTemplates`. Content children win by name.
+   */
+  readonly toolResultTemplates = input<readonly ChatToolResultTemplateDirective[]>([]);
+
+  /** App-owned per-call result or action templates registered as content children. */
+  readonly resultTemplates = contentChildren(ChatToolResultTemplateDirective);
 
   /**
    * Tool names whose groups should be hidden. Used by chat compositions
@@ -233,6 +271,13 @@ export class ChatToolCallsComponent {
     for (const t of this.templates()) {
       map.set(t.name(), t);
     }
+    return map;
+  });
+
+  private readonly resultRegistry = computed(() => {
+    const map = new Map<string, ChatToolResultTemplateDirective>();
+    for (const t of this.toolResultTemplates()) map.set(t.name(), t);
+    for (const t of this.resultTemplates()) map.set(t.name(), t);
     return map;
   });
 
@@ -386,7 +431,31 @@ export class ChatToolCallsComponent {
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
       errorText: tc.error === undefined ? undefined : literal(tc.error),
     };
-    return { ...activity, outcome: this.toolOutcome()?.(activity) };
+    return resolveToolOutcome(activity, this.safeOutcome(activity));
+  }
+  /** A throwing app hook must not break the transcript; the call keeps its core phase. */
+  private safeOutcome(activity: ToolActivityInfo): ToolActivityOutcome | undefined {
+    try {
+      return this.toolOutcome()?.(activity);
+    } catch (error) {
+      if (isDevMode()) {
+        console.error('toolOutcome threw; the tool call keeps its core phase.', error);
+      }
+      return undefined;
+    }
+  }
+  protected resultTemplateFor(name: string): TemplateRef<ChatToolResultTemplateContext> | undefined {
+    const registry = this.resultRegistry();
+    return (registry.get(name) ?? registry.get('*'))?.templateRef;
+  }
+  protected resultsFor(calls: readonly ToolCall[]): readonly { activity: ToolActivityInfo; template: TemplateRef<ChatToolResultTemplateContext> }[] {
+    return calls.flatMap((call) => {
+      const template = this.resultTemplateFor(call.name);
+      return template ? [{ activity: this.activityFor(call), template }] : [];
+    });
+  }
+  protected failureSummariesFor(calls: readonly ToolCall[]): readonly string[] {
+    return failureSummaries(this.activitiesFor(calls));
   }
   protected activitiesFor(calls: readonly ToolCall[]): readonly ToolActivityInfo[] { return calls.map((call) => this.activityFor(call)); }
 }

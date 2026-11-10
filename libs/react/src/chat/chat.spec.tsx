@@ -106,6 +106,16 @@ it('forwards authored outcome previews through Chat without executing additional
   expect(view.getByText('Reference verified').closest('details')).toBeNull();
   expect(raw.submit).not.toHaveBeenCalled();
 });
+it('forwards renderToolResult through Chat', () => {
+  const { session } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
+  const view = render(
+    <Chat
+      session={session}
+      renderToolResult={(activity) => <button type="button">Act on {activity.id}</button>}
+    />
+  );
+  expect(view.getByRole('button', { name: 'Act on call' })).toBeTruthy();
+});
 const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const disposed = (content: MessageContent) =>

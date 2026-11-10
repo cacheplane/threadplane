@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 191
+            "line": 220
           },
           "isStatic": false,
           "isReadonly": true,
@@ -125,7 +125,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 212
+            "line": 250
           },
           "isStatic": false,
           "isReadonly": true,
@@ -180,7 +180,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 323
+            "line": 368
           },
           "isStatic": false,
           "isReadonly": true,
@@ -226,7 +226,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 193
+            "line": 222
           },
           "isStatic": false,
           "isReadonly": true,
@@ -272,7 +272,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 198
+            "line": 227
           },
           "isStatic": false,
           "isReadonly": true,
@@ -327,7 +327,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 248
+            "line": 293
           },
           "isStatic": false,
           "isReadonly": true,
@@ -373,7 +373,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 194
+            "line": 223
           },
           "isStatic": false,
           "isReadonly": true,
@@ -429,7 +429,63 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 192
+            "line": 221
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "resultTemplates",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallsComponent#resultTemplates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly resultTemplates: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "Signal",
+              "canonicalReference": "@angular/core!Signal:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatToolResultTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatToolResultTemplateDirective:class",
+              "href": "/docs/api/chat/ChatToolResultTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned per-call result or action templates registered as content children.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+            "line": 242
           },
           "isStatic": false,
           "isReadonly": true,
@@ -485,7 +541,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 226
+            "line": 264
           },
           "isStatic": false,
           "isReadonly": true,
@@ -530,7 +586,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 325
+            "line": 370
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -600,7 +656,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 239
+            "line": 284
           },
           "isStatic": false,
           "isReadonly": true,
@@ -656,7 +712,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 221
+            "line": 259
           },
           "isStatic": false,
           "isReadonly": true,
@@ -702,7 +758,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 200
+            "line": 229
           },
           "isStatic": false,
           "isReadonly": true,
@@ -743,7 +799,7 @@
             {
               "kind": "Reference",
               "text": "ToolActivityOutcome",
-              "canonicalReference": "@threadplane/chat!ToolActivityOutcome:interface",
+              "canonicalReference": "@threadplane/chat!ToolActivityOutcome:type",
               "href": "/docs/api/chat/ToolActivityOutcome"
             },
             {
@@ -756,7 +812,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored confirmed result previews; custom tool templates keep ownership.",
+            "summary": "App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -768,7 +824,63 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 204
+            "line": 233
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolResultTemplates",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolCallsComponent#toolResultTemplates:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolResultTemplates: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatToolResultTemplateDirective",
+              "canonicalReference": "@threadplane/chat!ChatToolResultTemplateDirective:class",
+              "href": "/docs/api/chat/ChatToolResultTemplateDirective"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Per-tool-name + wildcard result templates supplied by a parent composition,\nfor the same reason as `toolCallTemplates`. Content children win by name.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
+            "line": 239
           },
           "isStatic": false,
           "isReadonly": true,
@@ -777,7 +889,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-        "line": 43
+        "line": 47
       },
       "angular": {
         "selector": "chat-tool-calls",
@@ -835,6 +947,12 @@
             "alias": "toolOutcome",
             "required": false,
             "type": "((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined"
+          },
+          {
+            "name": "toolResultTemplates",
+            "alias": "toolResultTemplates",
+            "required": false,
+            "type": "readonly ChatToolResultTemplateDirective[]"
           }
         ],
         "outputs": []
@@ -843,6 +961,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-    "line": 43
+    "line": 47
   }
 }

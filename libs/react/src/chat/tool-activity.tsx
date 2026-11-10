@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import {
   confirmedOutcomes,
   outcomeSources,
+  resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
 import { activitySummary } from './activity-summary.js';
@@ -78,7 +79,12 @@ export interface ToolActivityProps {
   readonly children?: ReactNode;
 }
 /** Human-readable activity with opt-in literal inspection and a persistent rich-result slot. */
-export function ToolActivity({ activity, children }: ToolActivityProps) {
+export function ToolActivity({
+  activity: input,
+  children,
+}: ToolActivityProps) {
+  // Direct primitive use gets the same failed-outcome display as projected rows.
+  const activity = resolveToolOutcome(input, input.outcome);
   const phase = activity.phase ?? 'unknown';
   return (
     <section
@@ -192,16 +198,42 @@ function ToolOutcomes({
 export interface ToolActivityGroupProps {
   readonly activities: readonly ToolActivityInfo[];
   readonly label?: string;
+  /** App-owned per-call result or action, rendered outside the collapsed group; null or undefined omits the call. */
+  readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;
   readonly children?: ReactNode;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
 export function ToolActivityGroup({
-  activities,
+  activities: input,
   label,
+  renderResult,
   children,
 }: ToolActivityGroupProps) {
+  // Resolve once so the label, cue, live region and rows agree on each phase.
+  const activities = input.map((activity) =>
+    resolveToolOutcome(activity, activity.outcome)
+  );
   const summary = activitySummary(activities, label);
   const failed = summary.phase === 'error';
+  const failureSummaries = [
+    ...new Set(
+      activities.flatMap((item) =>
+        item.phase === 'error' && item.errorSummary ? [item.errorSummary] : []
+      )
+    ),
+  ];
+  const results = renderResult
+    ? activities.flatMap((activity) => {
+        const result = renderResult(activity);
+        return result === null || result === undefined
+          ? []
+          : [
+              <div key={activity.id} data-tool-id={activity.id}>
+                {result}
+              </div>,
+            ];
+      })
+    : [];
   return (
     <section
       className="tp-tool-activity-group"
@@ -242,10 +274,17 @@ export function ToolActivityGroup({
         </p>
       )}
       <ToolOutcomes activities={activities} />
+      {results.length > 0 && (
+        <div className="tp-tool-activity__results">{results}</div>
+      )}
       {failed && (
-        <p role="alert" className="tp-tool-activity__error">
-          Some tools could not finish. Check Details before retrying.
-        </p>
+        <div role="alert" className="tp-tool-activity__error">
+          {failureSummaries.length > 0 ? (
+            failureSummaries.map((text) => <p key={text}>{text}</p>)
+          ) : (
+            <p>Some tools could not finish. Check Details before retrying.</p>
+          )}
+        </div>
       )}
       {children}
     </section>

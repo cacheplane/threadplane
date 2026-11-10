@@ -17,6 +17,8 @@ import { a2uiBasicCatalog } from '../../a2ui/catalog/index';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatMessageComponent } from '../../primitives/chat-message/chat-message.component';
 import { ChatStreamingMdComponent, markdownDocument } from '../../streaming/streaming-markdown.component';
+import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-result-template.directive';
+import { ChatActivityTemplateDirective } from './chat-activity-template.directive';
 import { ChatRunActivityTemplateDirective } from './chat-run-activity-template.directive';
 import type { Spec, StateStore } from '@json-render/core';
 import type { AgentEvent } from '../../agent/agent-event';
@@ -101,6 +103,34 @@ describe('ChatComponent', () => {
     expect(root.querySelector('.tp-tool-outcomes')?.textContent).toContain('Reference verified');
     expect(root.querySelector('.tp-tool-outcomes')?.closest('[hidden], details')).toBeNull();
     expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeTruthy();
+  });
+  it('forwards chatToolResultTemplate to grouped tool rendering and suppresses it under chatActivityTemplate', () => {
+    @Component({
+      standalone: true,
+      imports: [ChatComponent, ChatToolResultTemplateDirective, ChatActivityTemplateDirective],
+      template: `
+        <chat [agent]="agent">
+          <ng-template chatToolResultTemplate="*" let-activity>
+            <button type="button">Act on {{ activity.id }}</button>
+          </ng-template>
+          @if (withActivity()) {
+            <ng-template chatActivityTemplate><span data-activity>own</span></ng-template>
+          }
+        </chat>
+      `,
+    })
+    class Host {
+      agent = mockAgent({ messages: [{ id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'success') }], toolCalls: [{ id: 'c', name: 'lookup', args: {}, status: 'complete' as const, result: 'ok' }] });
+      withActivity = signal(false);
+    }
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity__results button')?.textContent).toContain('Act on c');
+    fixture.componentInstance.withActivity.set(true);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-activity]')).toBeTruthy();
+    expect(root.querySelector('.tp-tool-activity__results')).toBeNull();
   });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');

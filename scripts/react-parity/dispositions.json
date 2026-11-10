@@ -3,6 +3,40 @@
   "purpose": "Planning ownership for the reviewed migration scope. Existing task assignments are preserved; in-progress records identify bounded runtime/configuration subsets, not whole-task completion. Inventory validation is not React parity.",
   "rows": [
     {
+      "id": "component:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-result-template.directive.ts#ChatToolResultTemplateDirective",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Per-call result slot: React renderToolResult and Angular chatToolResultTemplate receive the resolved activity and add content outside Details; neither runs anything."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatToolResultTemplateDirective",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Per-call result slot: React renderToolResult and Angular chatToolResultTemplate receive the resolved activity and add content outside Details; neither runs anything."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatToolResultTemplateContext",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Context for the per-call result slot; React passes the resolved ToolActivityInfo to renderToolResult directly."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#resolveToolOutcome",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same resolver in both frameworks: decodes an app-declared outcome, and status failed marks a call failed for display only."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#resolveToolOutcome",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same resolver in both frameworks: decodes an app-declared outcome, and status failed marks a call failed for display only."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-result-template.directive.ts",
+      "taskIds": ["T28"], "treatment": "react", "status": "planned"
+    },
+    {
       "id": "component:libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts#ChatToolOutcomesComponent",
       "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/tool-activity.tsx",

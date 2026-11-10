@@ -11,6 +11,8 @@ import {
 } from './chat-tool-activity.component';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Shared readonly Angular/React test conformance data, excluded from production packages.
 import { phases } from '../../../../../../fixtures/tool-activity/phases';
+import { activitySummary } from './activity-summary';
+import { confirmedOutcomes, outcomeSources, resolveToolOutcome } from './tool-outcome';
 @Component({
   standalone: true,
   imports: [ChatToolActivityComponent, ChatToolActivityGroupComponent],
@@ -40,7 +42,7 @@ describe('tool activity', () => {
     ['stopped', 'Tool activity stopped'],
     ['unknown', 'Tool status unavailable'],
     ['complete', 'Used 1 tool'],
-    ['error', 'Tool activity failed'],
+    ['error', 'Used 1 tool · 1 failed'],
   ] as const)('summarizes %s in one collapsed row', (phase, expected) => {
     const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
     fixture.componentRef.setInput('activities', [
@@ -327,5 +329,193 @@ describe('tool activity', () => {
     expect(inner.open).toBe(true);
     expect(document.activeElement).toBe(inspection);
     expect(group.querySelector('button').closest('details')).toBeNull();
+  });
+});
+
+describe('resolveToolOutcome', () => {
+  it('marks a complete call failed from an app-declared outcome', () => {
+    const r = resolveToolOutcome(
+      { id: 'b', name: 'read', phase: 'complete', resultText: '{"recoverable":true}' },
+      { status: 'failed', text: 'Reference B is unavailable.' }
+    );
+    expect(r.phase).toBe('error');
+    expect(r.errorSummary).toBe('Reference B is unavailable.');
+    expect(r.resultText).toBe('{"recoverable":true}');
+    expect(r.errorText).toBeUndefined();
+  });
+  it('never overrides a non-complete phase', () => {
+    for (const phase of ['error', 'stopped', 'waiting', 'pending', 'running', 'unknown'] as const) {
+      const r = resolveToolOutcome(
+        { id: 'x', name: 't', phase, errorText: 'boom' },
+        { status: 'failed', text: 'nope' }
+      );
+      expect(r.phase).toBe(phase);
+      expect(r.errorSummary).toBeUndefined();
+      expect(r.errorText).toBe('boom');
+    }
+  });
+  it('treats a missing status as succeeded', () => {
+    expect(
+      resolveToolOutcome({ id: 'a', name: 't', phase: 'complete' }, { text: 'ok' }).phase
+    ).toBe('complete');
+  });
+  it('keeps failed outcomes out of confirmedOutcomes but keeps their sources', () => {
+    const failed = resolveToolOutcome(
+      { id: 'b', name: 't', phase: 'complete' },
+      { status: 'failed', text: 'x', sources: [{ title: 'B', url: 'https://example.com/b' }] }
+    );
+    expect(confirmedOutcomes([failed])).toEqual([]);
+    expect(outcomeSources([failed]).map((s) => s.url)).toEqual(['https://example.com/b']);
+  });
+  it('ignores sources on an errored activity whose outcome is not failed', () => {
+    const errored = {
+      id: 'e',
+      name: 't',
+      phase: 'error' as const,
+      outcome: { text: 'ok', sources: [{ title: 'B', url: 'https://example.com/b' }] },
+    };
+    expect(outcomeSources([errored])).toEqual([]);
+  });
+});
+
+describe('settled failure copy', () => {
+  function renderGroup(activities: readonly ToolActivityInfo[]): HTMLElement {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', activities);
+    fixture.detectChanges();
+    return fixture.nativeElement;
+  }
+  function outerAlerts(root: HTMLElement): HTMLElement[] {
+    return Array.from(root.querySelectorAll<HTMLElement>('[role="alert"]')).filter(
+      (el) => el.closest('details') === null
+    );
+  }
+  it('labels a settled mixed group with its failure count', () => {
+    const s = activitySummary([
+      { id: 'a', name: 't', phase: 'complete' },
+      { id: 'b', name: 't', phase: 'error' },
+    ]);
+    expect(s.label).toBe('Used 2 tools · 1 failed');
+    expect(s.status).toBe('Used 2 tools · 1 failed. 1 complete · 1 failed.');
+  });
+  it('keeps the failed label while work is still waiting', () => {
+    expect(
+      activitySummary([
+        { id: 'a', name: 't', phase: 'error' },
+        { id: 'b', name: 't', phase: 'waiting' },
+      ]).label
+    ).toBe('Tool activity failed');
+  });
+  it('uses a single-tool noun', () => {
+    expect(
+      activitySummary([{ id: 'a', name: 't', phase: 'error' }]).label
+    ).toBe('Used 1 tool · 1 failed');
+  });
+  it('lets an app caption win and still cues Failed', () => {
+    const s = activitySummary(
+      [{ id: 'a', name: 't', phase: 'error' }],
+      'Reading references'
+    );
+    expect(s.label).toBe('Reading references');
+    expect(s.cue).toContain('Failed');
+  });
+  it('shows de-duplicated failure copy in the group alert', () => {
+    const root = renderGroup([
+      { id: 'a', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+      { id: 'b', name: 't', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+    ]);
+    const alerts = outerAlerts(root);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].tagName).toBe('DIV');
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent)
+    ).toEqual(['Reference B is unavailable.']);
+    expect(root.textContent).not.toContain('Some tools could not finish');
+  });
+  it('falls back to the generic group alert when no summary exists', () => {
+    const root = renderGroup([{ id: 'a', name: 't', phase: 'error' }]);
+    const alerts = outerAlerts(root);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].tagName).toBe('DIV');
+    expect(alerts[0].classList.contains('tp-tool-activity__error')).toBe(true);
+    expect(
+      Array.from(alerts[0].querySelectorAll('p')).map((p) => p.textContent!.trim())
+    ).toEqual(['Some tools could not finish. Check Details before retrying.']);
+  });
+});
+
+describe('primitives given a failed outcome directly', () => {
+  const failedFlight: ToolActivityInfo = {
+    id: 'f1',
+    name: 'lookup_flight',
+    phase: 'complete',
+    resultText: '{"error":"Flight UA999 not found"}',
+    outcome: { status: 'failed', text: "Flight UA999 isn't in this dataset." },
+  };
+  it('shows a failed row with the app-authored failure copy', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', failedFlight);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity')?.getAttribute('data-phase')).toBe('error');
+    expect(root.querySelector('.tp-tool-activity__phase')?.textContent).toBe('Failed');
+    const alerts = root.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent!.trim()).toBe("Flight UA999 isn't in this dataset.");
+    expect(root.textContent).not.toContain('Complete');
+  });
+  it('counts the failure in the group label and live region', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      { id: 'a', name: 'get_airport_info', phase: 'complete' },
+      failedFlight,
+    ]);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity__label')?.textContent!.trim()).toBe(
+      'Used 2 tools · 1 failed'
+    );
+    expect(root.querySelector('[role="status"]')?.textContent!.trim()).toBe(
+      'Used 2 tools · 1 failed. 1 complete · 1 failed.'
+    );
+    const groupAlerts = Array.from(root.querySelectorAll('[role="alert"]')).filter(
+      (el) => el.closest('details') === null
+    );
+    expect(groupAlerts).toHaveLength(1);
+    expect(groupAlerts[0].textContent!.trim()).toBe("Flight UA999 isn't in this dataset.");
+  });
+});
+
+describe('empty failure copy', () => {
+  it('falls back to no summary when the failed text is blank', () => {
+    const r = resolveToolOutcome(
+      { id: 'b', name: 't', phase: 'complete' },
+      { status: 'failed', text: '   ' }
+    );
+    expect(r.phase).toBe('error');
+    expect(r.errorSummary).toBeUndefined();
+  });
+  it('trims surrounding whitespace from failure copy', () => {
+    expect(
+      resolveToolOutcome(
+        { id: 'b', name: 't', phase: 'complete' },
+        { status: 'failed', text: '  Reference B is unavailable. ' }
+      ).errorSummary
+    ).toBe('Reference B is unavailable.');
+  });
+  it('shows the generic row copy for a blank failed outcome', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', {
+      id: 'b',
+      name: 't',
+      phase: 'complete',
+      outcome: { status: 'failed', text: '' },
+    });
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[role="alert"]')?.textContent!.trim()).toBe(
+      'This tool could not finish. Check Details before retrying.'
+    );
   });
 });

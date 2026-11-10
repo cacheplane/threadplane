@@ -1,0 +1,99 @@
+{
+  "name": "resolveToolOutcome",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/resolveToolOutcome",
+  "canonicalReference": "@threadplane/chat!resolveToolOutcome:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.",
+  "declarations": [
+    {
+      "name": "resolveToolOutcome",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!resolveToolOutcome:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function resolveToolOutcome(activity: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityInfo",
+          "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+          "href": "/docs/api/chat/ToolActivityInfo"
+        },
+        {
+          "kind": "Content",
+          "text": ", outcome: "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityOutcome",
+          "canonicalReference": "@threadplane/chat!ToolActivityOutcome:type",
+          "href": "/docs/api/chat/ToolActivityOutcome"
+        },
+        {
+          "kind": "Content",
+          "text": " | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "ToolActivityInfo",
+          "canonicalReference": "@threadplane/chat!ToolActivityInfo:interface",
+          "href": "/docs/api/chat/ToolActivityInfo"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.\nIdempotent, so primitives can re-apply it to an already resolved activity. Blank failure text falls back to the generic failure copy.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+        "line": 70
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "activity",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        },
+        {
+          "parameterName": "outcome",
+          "parameterTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 5
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 6,
+        "endIndex": 7
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
+    "line": 70
+  }
+}
