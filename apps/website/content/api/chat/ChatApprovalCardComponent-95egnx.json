@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent:class",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions.",
+  "summary": "Displays an approval for a matching agent interrupt, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions.",
   "declarations": [
     {
       "name": "ChatApprovalCardComponent",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions.",
+        "summary": "Displays an approval for a matching agent interrupt, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 148
+            "line": 196
           },
           "overloadIndex": 1,
           "parameters": []
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 128
+            "line": 170
           },
           "isStatic": false,
           "isReadonly": true,
@@ -163,7 +163,145 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 123
+            "line": 157
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "approveLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#approveLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly approveLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Primary button text. Name the action, such as \"Save note\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 166
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "cancelLabel",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#cancelLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly cancelLabel: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Secondary button text. Name the alternative, such as \"Don't save\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 168
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "destructive",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#destructive:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly destructive: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<boolean>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Marks an action that cannot be undone: danger tint, the lead \"This can't be undone.\" and a danger primary button. Name the exact effect in `approveLabel`, such as \"Delete 12 drafts\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 164
           },
           "isStatic": false,
           "isReadonly": true,
@@ -209,7 +347,63 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 124
+            "line": 158
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "presentation",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#presentation:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly presentation: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatApprovalPresentation",
+              "canonicalReference": "@threadplane/chat!ChatApprovalPresentation:type",
+              "href": "/docs/api/chat/ChatApprovalPresentation"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "`dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+            "line": 162
           },
           "isStatic": false,
           "isReadonly": true,
@@ -255,7 +449,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 126
+            "line": 160
           },
           "isStatic": false,
           "isReadonly": true,
@@ -301,7 +495,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 125
+            "line": 159
           },
           "isStatic": false,
           "isReadonly": true,
@@ -310,7 +504,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-        "line": 21
+        "line": 27
       },
       "angular": {
         "selector": "chat-approval-card",
@@ -322,10 +516,34 @@
             "type": "Agent<unknown>"
           },
           {
+            "name": "approveLabel",
+            "alias": "approveLabel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "cancelLabel",
+            "alias": "cancelLabel",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "destructive",
+            "alias": "destructive",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "matchKind",
             "alias": "matchKind",
             "required": false,
             "type": "string | undefined"
+          },
+          {
+            "name": "presentation",
+            "alias": "presentation",
+            "required": false,
+            "type": "ChatApprovalPresentation"
           },
           {
             "name": "showEdit",
@@ -353,6 +571,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-    "line": 21
+    "line": 27
   }
 }

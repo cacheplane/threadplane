@@ -96,6 +96,34 @@ provideAgent({
 
 The card owns the chrome and the buttons; the `#body` template owns the content, and the payload arrives as that template's implicit value.
 
+### Showing the approval in the transcript
+
+Set `presentation="inline"` and put the card in a `chatInterruptTemplate`, and the approval appears as a panel at the end of the conversation instead of a modal. It leads with "Waiting for your approval.", then the `title` as the request, the `#body` content, and the actions. Focus moves to the first action when the panel appears. While it waits, the composer reads "Answer the approval to continue", and after you answer, focus returns to the composer.
+
+Name both actions. `approveLabel` says what approving does, `cancelLabel` names the alternative:
+
+```html
+<chat [agent]="agent">
+  <ng-template chatInterruptTemplate>
+    <chat-approval-card
+      [agent]="agent"
+      matchKind="refund_approval"
+      presentation="inline"
+      title="Refund $47.50 to cus_a8x2k?"
+      approveLabel="Issue refund"
+      cancelLabel="Don't refund"
+      (action)="onAction($event)"
+    >
+      <ng-template #body let-payload>
+        <code>issue_refund · amount: {{ payload.amount }}</code>
+      </ng-template>
+    </chat-approval-card>
+  </ng-template>
+</chat>
+```
+
+For an action that cannot be undone, add `[destructive]="true"`. The panel switches to the danger tint, leads with "This can't be undone." and draws the primary button in the destructive color, so give it the exact effect, such as "Delete 12 drafts". `destructive` and the two labels apply to the dialog too.
+
 ### Resuming with the decision
 
 The card emits an action rather than resuming by itself, which leaves the resume payload entirely up to the component. Approve and Cancel are terminal, so the card closes and the handler submits the matching decision. Edit is not terminal: it flips a signal, the body template grows an amount field, and the Save button submits the edited value.

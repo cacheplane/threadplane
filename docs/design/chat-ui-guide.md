@@ -346,7 +346,7 @@ Every component change checks:
 | Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
 | Tool rows | Partly done. `toolLabel` receives the call's arguments, and grouped rows show only the Failed status word in the danger color. Open: sources still collect below the group instead of under their call | 6.2 |
 | Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Open: upcoming steps from a declared plan, and elapsed time and Stop on the `chat-tool-activity-group` primitive, which has no agent | 6.3 |
-| Approvals | Open. Modal dialog | 6.4 |
+| Approvals | Partly done. `chat-approval-card` takes `presentation="inline"` (a warning panel, or danger with `destructive`), named action labels, focus on the first action and back to the composer, and the composer hint. Open: the dialog is still the default, and the one-line "Approved: save note" record after answering | 6.4 |
 | Retry and receipts | Done for declared retry and receipts. Open: the "Retrying …" lead while a retry runs, and "Retry response" on run errors | 6.5, 6.6 |
 
 The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
