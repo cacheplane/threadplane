@@ -1,6 +1,7 @@
 // libs/chat/src/lib/styles/chat-style-contract.spec.ts
 import { basename } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ROOT_TOKEN_STYLES } from './chat-tokens';
 import { componentStyleSources, declarations } from './style-contract';
 
 function sourceOf(name: string): string {
@@ -138,7 +139,11 @@ describe('outline removal', () => {
                 // An ancestor ring covers a descendant only when the offender's selector
                 // lives under that ring's base (the same component root).
                 const ringBase = stripPseudo(s);
-                return selector.startsWith(ringBase) || selector.includes(ringBase);
+                if (!ringBase) return false;
+                return (
+                  selector === ringBase ||
+                  [' ', ':', '.', '>', '['].some((c) => selector.startsWith(ringBase + c))
+                );
               }
               return stripPseudo(s) === base && /:focus/.test(s);
             }),
@@ -193,15 +198,41 @@ describe('motion', () => {
 });
 
 describe('layers', () => {
-  it('names every z-index layer with a token, or keeps a local 0-2 stacking value', () => {
-    const offenders = componentStyleSources().flatMap(({ file, source }) =>
-      declarations(source, /^z-index$/, file)
+  const LAYERS = new Map(
+    [...ROOT_TOKEN_STYLES.matchAll(/(--tplane-chat-z-[a-z0-9-]+):\s*(\d+)\s*;/g)].map((m) => [m[1], m[2]]),
+  );
+  const ruleBodies = (source: string): string[] =>
+    [...source.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]);
+
+  it('names every z-index layer with a token, or keeps a local 0-2 value in a positioned rule', () => {
+    const offenders = componentStyleSources().flatMap(({ file, source }) => {
+      const bodies = ruleBodies(source);
+      const hostIsolated = bodies.some((b) => /isolation:\s*isolate/.test(b));
+      return declarations(source, /^z-index$/, file)
         .filter(({ value }) => {
           if (/^var\(--tplane-chat-z-[a-z0-9-]+(,\s*\d+)?\)$/.test(value) || value === 'auto') return false;
-          // A local stacking value inside a positioned or isolated component.
-          return !(/^[0-2]$/.test(value) && /isolation:\s*isolate|position:\s*(relative|absolute|fixed)/.test(source));
+          if (!/^[0-2]$/.test(value)) return true;
+          // Local value: the rule that sets it must itself be positioned (or the host isolates).
+          const positioned = bodies.some(
+            (b) =>
+              new RegExp(`z-index:\\s*${value}\\s*(;|$)`).test(b) &&
+              /position:\s*(relative|absolute|fixed|sticky)/.test(b),
+          );
+          return !(positioned || hostIsolated);
         })
-        .map(({ line, value }) => `${basename(file)}:${line} ${value}`),
+        .map(({ line, value }) => `${basename(file)}:${line} ${value}`);
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it('keeps every layer token fallback equal to the declared layer value', () => {
+    expect(LAYERS.size).toBeGreaterThan(0);
+    const offenders = componentStyleSources().flatMap(({ file, source }) =>
+      declarations(source, /^z-index$/, file).flatMap(({ line, value }) => {
+        const m = /^var\((--tplane-chat-z-[a-z0-9-]+),\s*(\d+)\)$/.exec(value);
+        if (!m) return [];
+        return LAYERS.get(m[1]) === m[2] ? [] : [`${basename(file)}:${line} ${m[1]} fallback ${m[2]} vs ${LAYERS.get(m[1])}`];
+      }),
     );
     expect(offenders).toEqual([]);
   });
