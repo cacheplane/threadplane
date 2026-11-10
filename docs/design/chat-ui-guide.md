@@ -345,7 +345,7 @@ Every component change checks:
 | Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
 | Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
 | Tool rows | Partly done. `toolLabel` receives the call's arguments, and grouped rows show only the Failed status word in the danger color. Open: sources still collect below the group instead of under their call | 6.2 |
-| Progress | Open. No step list, no elapsed time, no Stop in the activity group | 6.3 |
+| Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Open: upcoming steps from a declared plan, and elapsed time and Stop on the `chat-tool-activity-group` primitive, which has no agent | 6.3 |
 | Approvals | Open. Modal dialog | 6.4 |
 | Retry and receipts | Done for declared retry and receipts. Open: the "Retrying …" lead while a retry runs, and "Retry response" on run errors | 6.5, 6.6 |
 

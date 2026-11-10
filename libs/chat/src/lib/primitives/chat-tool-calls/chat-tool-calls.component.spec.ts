@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { signal, computed, Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
@@ -1139,5 +1139,77 @@ describe('ChatToolCallsComponent — call-specific labels', () => {
     const body: HTMLElement = fixture.nativeElement.querySelector('.ctc__group-body');
     expect(body.querySelector('[role="alert"]')).toBeNull();
     expect(fixture.nativeElement.querySelectorAll('[role="alert"]')).toHaveLength(1);
+  });
+});
+
+describe('ChatToolCallsComponent — progress view', () => {
+  const running = (): ToolCall[] => [
+    { id: 'a', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
+    { id: 'b', name: 'read', args: { ref: 'toReversed' }, status: 'running' },
+    { id: 'c', name: 'save', args: {}, status: 'pending' },
+  ];
+  function render(calls: ToolCall[], isLoading = true) {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    const agent = mockAgent({ toolCalls: calls, isLoading });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('toolLabel', (name: string, args?: unknown) =>
+      name === 'read' ? `Reading ${(args as { ref: string }).ref}` : 'Saving note'
+    );
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    return { fixture, agent, root };
+  }
+  afterEach(() => vi.useRealTimers());
+
+  it('collapsed: names the current step with the shimmer, then elapsed time and Stop', () => {
+    vi.useFakeTimers();
+    const { fixture, agent, root } = render(running());
+    const label = root.querySelector('.ctc__group-header .tp-tool-activity__label')!;
+    expect(label.textContent!.trim()).toBe('Reading toReversed');
+    expect(label.getAttribute('data-active')).toBe('true');
+    expect(root.querySelector('.ctc__group-elapsed')!.textContent!.trim()).toBe('0s');
+    vi.advanceTimersByTime(65_000);
+    fixture.detectChanges();
+    expect(root.querySelector('.ctc__group-elapsed')!.textContent!.trim()).toBe('1m 05s');
+    const stop = root.querySelector<HTMLButtonElement>('.ctc__group-stop')!;
+    expect(stop.textContent!.trim()).toBe('Stop');
+    expect(stop.closest('.ctc__group-header')).toBeNull();
+    stop.click();
+    expect(agent.stopCount).toBe(1);
+  });
+
+  it('expanded: a static count heading and the shimmer on the current row only', () => {
+    const { fixture, root } = render(running());
+    root.querySelector<HTMLButtonElement>('.ctc__group-header')!.click();
+    fixture.detectChanges();
+    const label = root.querySelector('.ctc__group-header .tp-tool-activity__label')!;
+    expect(label.textContent!.trim()).toBe('Working · 1 of 3 done');
+    expect(label.getAttribute('data-active')).toBe('false');
+    const active = Array.from(root.querySelectorAll('.ctc__group-body [data-active="true"]'));
+    expect(active.map((el) => el.textContent!.trim())).toEqual(['Reading toReversed']);
+    expect(root.querySelector('.ctc__group-stop')).not.toBeNull();
+  });
+
+  it('keeps the live region on the current step while expanded', () => {
+    const { fixture, root } = render(running());
+    root.querySelector<HTMLButtonElement>('.ctc__group-header')!.click();
+    fixture.detectChanges();
+    expect(root.querySelector('[role="status"]')!.textContent).toContain('Reading toReversed');
+  });
+
+  it('finished: settles to the used line with no elapsed time or Stop', () => {
+    const { root } = render(
+      running().map((call) => ({ ...call, status: 'complete' as const, result: 'ok' })),
+      false
+    );
+    expect(root.querySelector('.ctc__group-header .tp-tool-activity__label')!.textContent!.trim()).toBe('Used 3 tools');
+    expect(root.querySelector('.ctc__group-elapsed')).toBeNull();
+    expect(root.querySelector('.ctc__group-stop')).toBeNull();
+  });
+
+  it('offers no Stop when the agent is idle', () => {
+    const { root } = render(running(), false);
+    expect(root.querySelector('.ctc__group-stop')).toBeNull();
   });
 });
