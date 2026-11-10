@@ -713,6 +713,95 @@ export async function runRenameFormScenarios(page, url) {
   console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
 }
 
+export async function runSelectScenarios(page, url) {
+  await page.goto(`${url}/?menu&select`);
+  const trigger = page.locator('.tp-select__trigger');
+  const list = page.getByRole('listbox', { name: 'Fixture tone', exact: true });
+  const plain = list.getByRole('option', { name: /^Plain literal <&>/ });
+  const formal = list.getByRole('option', { name: 'Formal', exact: true });
+  const long = list.getByRole('option', { name: /^A long wrapping tone label/ });
+  const value = page.getByTestId('select-value');
+  const requests = page.getByTestId('select-requests');
+  await expect(trigger).toHaveText('Pick a tone');
+  await expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+  await expect(list).toHaveCount(0);
+  for (const width of [1280, 390]) {
+    if (page.viewportSize()?.width !== width || page.viewportSize()?.height !== 844) {
+      await page.evaluate(() => {
+        window.selectViewportReady = new Promise(resolve => window.addEventListener('resize', () => resolve(), { once: true }));
+      });
+      await page.setViewportSize({ width, height: 844 });
+      await handshake(page.evaluate(() => window.selectViewportReady), 'select fixture viewport resize');
+    }
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(list.getByRole('option')).toHaveCount(4);
+    const evidence = await list.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const anchor = document.querySelector('.tp-select__trigger').getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return {
+        portaled: node.parentElement === document.body,
+        contained: box.left >= 8 && box.top >= 8 && box.right <= innerWidth - 8 && box.bottom <= innerHeight - 8,
+        above: box.bottom <= anchor.top,
+        fits: node.scrollWidth <= node.clientWidth,
+        targets: Array.from(node.querySelectorAll('button')).every(button => button.getBoundingClientRect().height >= 40),
+        literal: node.querySelector('b') === null && node.textContent.includes('No <b>markup</b> is interpreted'),
+        rtl: style.direction, font: style.fontFamily, fontSize: style.fontSize,
+        surface: style.backgroundColor, text: style.color,
+      };
+    });
+    assert.deepEqual(evidence, { portaled: true, contained: true, above: true, fits: true, targets: true, literal: true, rtl: 'rtl', font: 'monospace', fontSize: '18px', surface: 'rgb(241, 242, 243)', text: 'rgb(11, 22, 33)' });
+    await page.screenshot({ path: join(tmpdir(), `react-select-plain-${width}.png`), fullPage: false });
+    await page.keyboard.press('Escape');
+    await expect(list).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  }
+  // Nothing was requested by opening, navigating or dismissing.
+  await expect(requests).toHaveText('[]');
+  await trigger.press('Enter');
+  await expect(plain).toBeFocused();
+  await page.keyboard.press('ArrowDown'); await expect(formal).toBeFocused();
+  await page.keyboard.press('End'); await expect(long).toBeFocused();
+  await page.keyboard.press('ArrowDown'); await expect(plain).toBeFocused();
+  await page.keyboard.press('Home'); await expect(plain).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(list).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveText('Plain literal <&>');
+  await expect(value).toHaveText(JSON.stringify('plain<&'));
+  // Reopening focuses the selection; activating it again requests nothing.
+  await trigger.press('Space');
+  await expect(plain).toBeFocused();
+  await expect(plain).toHaveAttribute('aria-selected', 'true');
+  await expect(formal).toHaveAttribute('aria-selected', 'false');
+  await page.keyboard.press('Enter');
+  await expect(list).toHaveCount(0);
+  await expect(requests).toHaveText(JSON.stringify(['plain<&']));
+  // The disabled option is inert for a real pointer.
+  await trigger.click();
+  await list.getByRole('option', { name: 'Unavailable tone', exact: true }).click({ force: true });
+  await expect(list).toHaveCount(1);
+  await expect(requests).toHaveText(JSON.stringify(['plain<&']));
+  // A refused change leaves the owner's value displayed and selected.
+  await page.keyboard.press('Escape');
+  await page.getByRole('checkbox', { name: 'Refuse changes' }).check();
+  await trigger.click();
+  await formal.click();
+  await expect(list).toHaveCount(0);
+  await expect(requests).toHaveText(JSON.stringify(['plain<&', 'formal']));
+  await expect(value).toHaveText(JSON.stringify('plain<&'));
+  await expect(trigger).toHaveText('Plain literal <&>');
+  // Tab continues from the trigger's natural order (RTL does not change order).
+  await trigger.press('Enter'); await expect(plain).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'After select' })).toBeFocused();
+  await expect(list).toHaveCount(0);
+  await trigger.click(); await expect(plain).toBeFocused();
+  await page.getByRole('heading', { name: 'Installed select' }).click();
+  await expect(list).toHaveCount(0);
+  console.log('Installed React select: portaled listbox above a clipped anchor, literal options, keyboard, disabled skipping, accepted/refused/unchanged selection, Tab destination, local RTL/theme/font and 1280/390 containment passed.');
+}
+
 export async function runOverflowMenuScenarios(page, url) {
   await page.goto(`${url}/?menu`);
   const trigger = page.getByRole('button', { name: 'Fixture actions for full ID' });
@@ -1666,6 +1755,7 @@ export async function runRuntimeScenarios(directory, kind) {
       completed.push('installed message action icons with opt-in styles and native app-owned commands');
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
+      await runSelectScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }

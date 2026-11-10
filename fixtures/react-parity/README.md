@@ -1,5 +1,15 @@
 # React parity foundations
 
+The private chat package includes a bounded controlled `Select` with exact
+readonly option/prop contracts. It shares one private anchored-menu engine with
+`OverflowMenu`; that engine is not exported. The installed plain-package fixture
+checks a body-portaled listbox above an `overflow: hidden` anchor, literal
+option text, wrapping keyboard navigation that skips disabled options,
+accepted, refused and unchanged selection requests, the Tab destination, local
+RTL/theme/font across the portal and containment at 1280/390px. Native welcome
+composes it as an app-authored "More prompts" picker that only fills the draft.
+Typeahead, a Chat model-select slot and backend model commands remain future work.
+
 The private chat package includes a bounded controlled `OverflowMenu` with exact
 readonly item/prop contracts and a required React DOM ^19.2.4 peer. The headless
 root remains DOM-import-free. Native full directories compose an exact-ID copy

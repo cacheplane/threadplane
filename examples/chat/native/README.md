@@ -321,6 +321,16 @@ and disposal. The primitives add no internal lifecycle or network work. This is
 bounded private T22 presentation and T23 native composition; full parity and a
 public release remain open.
 
+Beside the two welcome suggestions, the welcome state composes the controlled
+`Select` as a “More prompts” picker of three app-authored prompts, mirroring the
+Angular demo's overflow select. Its listbox portals to the document body, so the
+height-limited scrolling suggestion row cannot clip it. Choosing a prompt is a
+local action that goes through the same guarded prefill path: it fills and
+focuses the textarea and nothing more. The picker keeps no selection, so its
+trigger always reads “More prompts”, and any draft disables it. Opening,
+navigating, dismissing and choosing issue no request. It does not select a
+model or change any backend behavior.
+
 After a locally completed successful text response, Native React uses the
 controlled `Suggestions` group for two app-authored presets: “Make it shorter”
 (`Make that more concise.`) and “Give an example”

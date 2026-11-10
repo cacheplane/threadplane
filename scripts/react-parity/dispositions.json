@@ -2510,9 +2510,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/select.tsx",
-      "reason": "Native component. Controlled selected value, keyboard options, disabled state and label association."
+      "reason": "Bounded private React controlled Select presents literal labelled options with descriptions, strict disabled state, owner-accepted value and open transitions, an owner-document listbox portal, wrapping keyboard navigation, Escape, and focus return. Angular two-way binding becomes explicit value/onValueChange; panelClass becomes menuClassName. Typeahead, Chat composition model slots and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts#ChatSidenavScrimComponent",
@@ -10910,7 +10910,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "target": "libs/react/src/chat/select.tsx",
+      "reason": "Bounded private React controlled Select presents literal labelled options with descriptions, strict disabled state, owner-accepted value and open transitions, an owner-document listbox portal, wrapping keyboard navigation, Escape, and focus return. Angular two-way binding becomes explicit value/onValueChange; panelClass becomes menuClassName. Typeahead, Chat composition model slots and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
@@ -11267,7 +11269,8 @@
         "T22"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "React Select presentation lives in the opt-in chat stylesheet with 40px targets, logical alignment, system-color fallbacks and reduced-motion handling; the Angular style constant stays unchanged."
     },
     {
       "id": "source:libs/chat/src/lib/styles/chat-sidenav.styles.ts",
@@ -16500,6 +16503,51 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Select",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private controlled single-select over the shared anchored-menu engine; native dogfoods an app-authored prompt picker that only fills the draft. Selecting never performs work. Typeahead, Chat model-slot composition and full parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SelectOption",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly unique string value, literal label, optional literal description and strict disabled state."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SelectProps",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required controlled value/open with change requests, required list label, optional placeholder, strict disabled state and trigger/list classes. The original mouse event accompanies an accepted-or-refused change request; re-activating the current value requests nothing."
+    },
+    {
+      "id": "source:libs/react/src/chat/select.tsx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Listbox presentation and selection intent over the private anchored-menu engine: prefers space above the trigger, focuses the selected enabled option, and leaves value ownership with the caller."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/use-anchored-menu.ts",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Private engine extracted unchanged from OverflowMenu and shared with Select: owner-document portal state, measured placement with a preferred side, roving focus, dismissal and unavailable-anchor suppression. Not exported; callers own roles, markup and activation meaning."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ThreadList",

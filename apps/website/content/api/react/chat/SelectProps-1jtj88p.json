@@ -1,0 +1,431 @@
+{
+  "name": "SelectProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SelectProps",
+  "canonicalReference": "@threadplane/react!SelectProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Controls the selected value, list visibility, accessible list name and placeholder for an absent value.",
+  "declarations": [
+    {
+      "name": "SelectProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SelectProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SelectProps "
+        }
+      ],
+      "docs": {
+        "summary": "Controls the selected value, list visibility, accessible list name and placeholder for an absent value.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "disabled",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#disabled:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly disabled?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 25
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 23
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "menuClassName",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#menuClassName:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly menuClassName?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onOpenChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#onOpenChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onOpenChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(open: boolean) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "onValueChange",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#onValueChange:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onValueChange: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: string, event: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MouseEvent",
+              "canonicalReference": "@types/react!React.MouseEvent:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "HTMLButtonElement",
+              "canonicalReference": "!HTMLButtonElement:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ">) => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "open",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#open:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly open: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 21
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "options",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#options:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly options: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "SelectOption",
+              "canonicalReference": "@threadplane/react!SelectOption:interface",
+              "href": "/docs/api/react/chat/SelectOption"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "placeholder",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#placeholder:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly placeholder?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 24
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "value",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SelectProps#value:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly value: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/select.tsx",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/select.tsx",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/select.tsx",
+    "line": 14
+  }
+}

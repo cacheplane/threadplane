@@ -272,6 +272,7 @@ function fixture(t, framework = 'react') {
         'chat-message',
         'reasoning',
         'approval-card',
+        'select',
         'message-actions',
         'citations',
         'text-transcript',
@@ -568,6 +569,21 @@ for (const [graph, extension] of [
       'node_modules/@threadplane/react/src/chat/approval-card' + extension
     ];
     assert.throws(() => captureRetainedBuild(f.directory, f), /ApprovalCard/);
+  });
+
+for (const [graph, extension] of [
+  ['compiler', '.d.ts'],
+  ['bundler', '.js'],
+])
+  test(`React retention requires installed Select ${graph}`, (t) => {
+    const f = fixture(t, 'react');
+    delete f.provenance[graph].inputs[
+      'node_modules/@threadplane/react/src/chat/select' + extension
+    ];
+    assert.throws(
+      () => captureRetainedBuild(f.directory, f),
+      /Installed Select /
+    );
   });
 
 for (const [graph, extension] of [

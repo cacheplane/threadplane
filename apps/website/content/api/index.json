@@ -6454,6 +6454,36 @@
       "summary": "Passive action props; no session or scrolling owner is created."
     },
     {
+      "name": "Select",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/Select",
+      "canonicalReference": "@threadplane/react!Select:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "A controlled single-select dropdown. The owner holds the value and decides\nwhether a requested change or closure is accepted; selecting never performs\nwork by itself."
+    },
+    {
+      "name": "SelectOption",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SelectOption",
+      "canonicalReference": "@threadplane/react!SelectOption:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A selectable value and literal label with an optional description and disabled state. Values are unique within one select."
+    },
+    {
+      "name": "SelectProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SelectProps",
+      "canonicalReference": "@threadplane/react!SelectProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Controls the selected value, list visibility, accessible list name and placeholder for an absent value."
+    },
+    {
       "name": "StatusPanel",
       "entrypointId": "react/chat",
       "kind": "Function",

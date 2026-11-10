@@ -1,25 +1,60 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "dde600584d02621cbc25bcecab1429abfb2d1e52",
+  "baselineHead": "efe309970cd63b0a8b8f2c36d30a6e35a8b384a9",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
+      "apps/website/content/docs/angular/chat/a2ui/overview.mdx",
+      "apps/website/content/docs/angular/chat/components/chat-select.mdx",
+      "apps/website/content/docs/angular/chat/guides/theming.mdx",
+      "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug-tokens.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/chat-debug.component.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/debug-checkpoint-card.component.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/debug-state-diff.component.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/inspectors/state-inspector.component.ts",
+      "libs/chat/debug/src/lib/compositions/chat-debug/inspectors/timeline-inspector.component.ts",
+      "libs/chat/src/lib/a2ui/a2ui-default-fallback.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/check-box.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/modal.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/slider.component.ts",
+      "libs/chat/src/lib/a2ui/catalog/text-field.component.ts",
+      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+      "libs/chat/src/lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component.ts",
+      "libs/chat/src/lib/compositions/chat-popup/chat-popup.component.ts",
+      "libs/chat/src/lib/compositions/chat-sidebar/chat-sidebar.component.ts",
+      "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
+      "libs/chat/src/lib/compositions/chat-timeline-slider/chat-timeline-slider.component.ts",
+      "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
       "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-error/chat-error.component.ts",
+      "libs/chat/src/lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component.ts",
+      "libs/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
       "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
       "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
       "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/tool-retry-offer.ts",
-      "libs/chat/src/public-api.ts",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/index.ts",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/status-panel.tsx",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/tool-activity.tsx",
-      "libs/react/src/chat/tool-outcome.ts"
+      "libs/chat/src/lib/primitives/overlay/overlay-container.ts",
+      "libs/chat/src/lib/styles/chat-citations.styles.ts",
+      "libs/chat/src/lib/styles/chat-confirm-dialog.styles.ts",
+      "libs/chat/src/lib/styles/chat-error.styles.ts",
+      "libs/chat/src/lib/styles/chat-history-search-palette.styles.ts",
+      "libs/chat/src/lib/styles/chat-input.styles.ts",
+      "libs/chat/src/lib/styles/chat-interrupt.styles.ts",
+      "libs/chat/src/lib/styles/chat-launcher-button.styles.ts",
+      "libs/chat/src/lib/styles/chat-markdown.styles.ts",
+      "libs/chat/src/lib/styles/chat-message-actions.styles.ts",
+      "libs/chat/src/lib/styles/chat-message.styles.ts",
+      "libs/chat/src/lib/styles/chat-overflow-menu.styles.ts",
+      "libs/chat/src/lib/styles/chat-project-list.styles.ts",
+      "libs/chat/src/lib/styles/chat-reasoning.styles.ts",
+      "libs/chat/src/lib/styles/chat-scroll-bubble.styles.ts",
+      "libs/chat/src/lib/styles/chat-select.styles.ts",
+      "libs/chat/src/lib/styles/chat-sidenav.styles.ts",
+      "libs/chat/src/lib/styles/chat-suggestions.styles.ts",
+      "libs/chat/src/lib/styles/chat-thread-list.styles.ts",
+      "libs/chat/src/lib/styles/chat-tokens.ts",
+      "libs/chat/src/lib/styles/chat-trace.styles.ts",
+      "libs/chat/src/lib/styles/chat-welcome.styles.ts",
+      "libs/chat/src/lib/styles/style-contract.ts"
     ],
     "untracked": []
   },
@@ -867,7 +902,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "71be6dc1a45bd656079a88397d350ba147d1d34cc3128700f390fb892260951c"
+      "sha256": "7099f5947dc36a851aae92a39124404186fc0933aa31062653d3800f2dc4600d"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -885,7 +920,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "d028f6677c1a9328a1ba81a385cb808d38c09fead30d7f21b0293de451df2421"
+      "sha256": "91a3f40d4d1c4bdd5ba6459534a7c9568c023ee8ba694bb60f9b02441f0bbe5c"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -11892,7 +11927,7 @@
           "path": "libs/react/src/chat/overflow-menu.tsx",
           "symbol": "OverflowMenu",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function OverflowMenu({ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }: OverflowMenuProps) {\n    const id = useId();\n    const trigger = useRef<HTMLButtonElement>(null);\n    const menu = useRef<HTMLDivElement>(null);\n    const callbacks = useRef({ onOpenChange, onSelect });\n    callbacks.current = { onOpenChange, onSelect };\n    const [portal, setPortal] = useState<{\n        document: Document;\n        style: CSSProperties;\n    } | null>(null);\n    const [placement, setPlacement] = useState<CSSProperties>({\n        visibility: 'hidden',\n    });\n    const focusedPortal = useRef<typeof portal>(null);\n    const suppressed = useRef(false);\n    const restore = useRef(false);\n    const context = useRef({ anchorPoint, returnFocusTo });\n    context.current = { anchorPoint, returnFocusTo };\n    const restoreTarget = useRef<HTMLElement | null | undefined>(null);\n    const returningFocus = useRef(false);\n    const focusInvoker = (target = context.current.returnFocusTo) => {\n        const anchor = trigger.current;\n        if (!anchor)\n            return;\n        returningFocus.current = true;\n        try {\n            if (target &&\n                target.ownerDocument === anchor.ownerDocument &&\n                available(target)) {\n                try {\n                    target.focus();\n                }\n                catch {\n                }\n                if (anchor.ownerDocument.activeElement === target)\n                    return;\n            }\n            if (available(anchor))\n                anchor.focus();\n        }\n        finally {\n            returningFocus.current = false;\n        }\n    };\n    const initial = useRef<'first' | 'last'>('first');\n    const [openingRequest, setOpeningRequest] = useState(0);\n    const focused = useRef<string | null>(null);\n    const ownedFocus = useRef(false);\n    const enabled = () => Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);\n    const focusEdge = (edge: 'first' | 'last') => {\n        const buttons = enabled();\n        (buttons[edge === 'first' ? 0 : buttons.length - 1] ?? menu.current)?.focus();\n    };\n    const close = (returnFocus = false) => {\n        restore.current = returnFocus;\n        if (returnFocus)\n            restoreTarget.current = context.current.returnFocusTo;\n        callbacks.current.onOpenChange(false);\n    };\n    const measure = () => {\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const win = portal?.document.defaultView;\n        if (!anchor || !panel || !win)\n            return;\n        const rect = anchor.getBoundingClientRect();\n        const box = panel.getBoundingClientRect();\n        const width = Math.min(box.width, Math.max(0, win.innerWidth - 16));\n        const height = Math.min(box.height, Math.max(0, win.innerHeight - 16));\n        const point = context.current.anchorPoint;\n        const usePoint = point && Number.isFinite(point.x) && Number.isFinite(point.y);\n        const aligned = usePoint\n            ? point.x - (portal.style.direction === 'rtl' ? width : 0)\n            : portal.style.direction === 'rtl'\n                ? rect.left\n                : rect.right - width;\n        const below = (usePoint ? point.y : rect.bottom) + 4;\n        const preferred = below + height > win.innerHeight - 8\n            ? (usePoint ? point.y : rect.top) - height - 4\n            : below;\n        const left = Math.max(8, Math.min(aligned, win.innerWidth - width - 8));\n        const top = Math.max(8, Math.min(preferred, win.innerHeight - height - 8));\n        setPlacement((previous) => previous.visibility !== 'hidden' &&\n            previous.left === left &&\n            previous.top === top\n            ? previous\n            : { left, top });\n    };\n    useIsomorphicLayoutEffect(() => {\n        const anchor = trigger.current;\n        if (!open) {\n            if (restore.current && anchor) {\n                const active = anchor.ownerDocument.activeElement;\n                if (active === anchor.ownerDocument.body ||\n                    (active && menu.current?.contains(active)))\n                    focusInvoker(restoreTarget.current);\n            }\n            restoreTarget.current = null;\n            restore.current = false;\n            suppressed.current = false;\n            ownedFocus.current = false;\n            focused.current = null;\n            focusedPortal.current = null;\n            initial.current = 'first';\n            setPortal(null);\n            return;\n        }\n        if (!anchor || suppressed.current)\n            return;\n        if (!available(anchor)) {\n            suppressed.current = true;\n            setPortal(null);\n            callbacks.current.onOpenChange(false);\n            return;\n        }\n        setPlacement({ visibility: 'hidden' });\n        setPortal({ document: anchor.ownerDocument, style: snapshot(anchor) });\n    }, [open, disabled, openingRequest]);\n    useIsomorphicLayoutEffect(() => {\n        measure();\n    }, [portal, items, anchorPoint?.x, anchorPoint?.y]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !menu.current || !trigger.current)\n            return;\n        const anchor = trigger.current;\n        const panel = menu.current;\n        const doc = portal.document;\n        const win = doc.defaultView;\n        if (!win)\n            return;\n        const chain = ancestors(anchor);\n        const openingScroll = new Map<Element, {\n            top: number;\n            left: number;\n        }>(chain.map((node) => [\n            node,\n            { top: node.scrollTop, left: node.scrollLeft },\n        ]));\n        const inside = (target: EventTarget | null) => target instanceof win.Node &&\n            (panel.contains(target) || anchor.contains(target));\n        const outside = (event: Event) => {\n            if (!returningFocus.current &&\n                !event.defaultPrevented &&\n                !inside(event.target))\n                close();\n        };\n        const scroll = (event: Event) => {\n            if (event.defaultPrevented ||\n                (event.target instanceof win.Node && panel.contains(event.target)))\n                return;\n            const target = event.target === doc ? doc.scrollingElement : event.target;\n            if (target instanceof win.Element) {\n                const original = openingScroll.get(target);\n                if (original &&\n                    target.scrollTop === original.top &&\n                    target.scrollLeft === original.left)\n                    return;\n            }\n            close();\n        };\n        const suppress = () => {\n            if (!suppressed.current) {\n                suppressed.current = true;\n                restore.current = false;\n                setPortal(null);\n                callbacks.current.onOpenChange(false);\n            }\n        };\n        const check = () => {\n            if (!available(anchor))\n                suppress();\n            else\n                measure();\n        };\n        const observer = new win.MutationObserver((records) => {\n            if (!available(anchor))\n                suppress();\n            else {\n                const presentation = snapshot(anchor);\n                const presentationChanged = Object.entries(portal.style).some(([name, value]) => Reflect.get(presentation, name) !== value);\n                const themeAttributeChanged = records.some((record) => record.type === 'attributes' &&\n                    (record.attributeName === 'dir' ||\n                        record.attributeName === 'data-theme') &&\n                    record.oldValue !==\n                        (record.target as Element).getAttribute(record.attributeName));\n                if (presentationChanged || themeAttributeChanged)\n                    close();\n                else\n                    measure();\n            }\n        });\n        for (const node of chain)\n            observer.observe(node, {\n                attributes: true,\n                attributeOldValue: true,\n                childList: true,\n            });\n        const layout = typeof win.ResizeObserver === 'function'\n            ? new win.ResizeObserver(check)\n            : null;\n        for (const node of chain)\n            layout?.observe(node);\n        layout?.observe(panel);\n        doc.addEventListener('pointerdown', outside);\n        doc.addEventListener('focusin', outside);\n        doc.addEventListener('scroll', scroll, true);\n        const resize = () => {\n            check();\n            close();\n        };\n        win.addEventListener('resize', resize);\n        return () => {\n            observer.disconnect();\n            layout?.disconnect();\n            doc.removeEventListener('pointerdown', outside);\n            doc.removeEventListener('focusin', outside);\n            doc.removeEventListener('scroll', scroll, true);\n            win.removeEventListener('resize', resize);\n        };\n    }, [portal]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal ||\n            placement.visibility === 'hidden' ||\n            focusedPortal.current === portal)\n            return;\n        focusedPortal.current = portal;\n        focusEdge(initial.current);\n        initial.current = 'first';\n    }, [portal, placement]);\n    useIsomorphicLayoutEffect(() => {\n        if (!portal || !ownedFocus.current || !menu.current)\n            return;\n        const doc = portal.document;\n        const active = doc.activeElement;\n        if (active !== doc.body &&\n            active !== menu.current &&\n            !menu.current.contains(active))\n            return;\n        const survivor = enabled().find((button) => button.dataset['itemId'] === focused.current);\n        if (!survivor)\n            focusEdge('first');\n    }, [items, portal]);\n    const effective = open && portal !== null && !suppressed.current;\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-overflow-menu__trigger', className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} title={label} disabled={disabled === true} aria-haspopup=\"menu\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} id={`${id}-trigger`} onClick={(event) => {\n            event.stopPropagation();\n            if (!event.defaultPrevented) {\n                initial.current = 'first';\n                restore.current = true;\n                callbacks.current.onOpenChange(!open);\n            }\n        }} onKeyDown={(event) => {\n            if (event.defaultPrevented)\n                return;\n            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {\n                event.preventDefault();\n                event.stopPropagation();\n                initial.current = event.key === 'ArrowUp' ? 'last' : 'first';\n                if (effective)\n                    focusEdge(initial.current);\n                else {\n                    setOpeningRequest((request) => request + 1);\n                    callbacks.current.onOpenChange(true);\n                }\n            }\n        }}>\n        <span aria-hidden=\"true\">⋯</span>\n      </button>\n      {effective &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"menu\" aria-labelledby={`${id}-trigger`} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className=\"tp-overflow-menu\" style={{ ...portal.style, ...placement }} onFocus={(event) => {\n                    ownedFocus.current = true;\n                    focused.current =\n                        (event.target as HTMLElement).dataset['itemId'] ?? null;\n                    for (const button of enabled())\n                        button.tabIndex =\n                            button === (event.target as HTMLElement) ? 0 : -1;\n                }} onKeyDown={(event) => {\n                    if (event.defaultPrevented)\n                        return;\n                    if (event.key === 'Escape') {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        close(true);\n                    }\n                    else if (event.key === 'Tab') {\n                        focusInvoker();\n                        close();\n                    }\n                    else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {\n                        event.preventDefault();\n                        event.stopPropagation();\n                        const buttons = enabled();\n                        const index = buttons.indexOf(portal.document.activeElement as HTMLButtonElement);\n                        const next = event.key === 'Home'\n                            ? 0\n                            : event.key === 'End'\n                                ? buttons.length - 1\n                                : (index +\n                                    (event.key === 'ArrowDown' ? 1 : -1) +\n                                    buttons.length) %\n                                    buttons.length;\n                        (buttons[next] ?? menu.current)?.focus();\n                    }\n                }}>\n            <ul role=\"presentation\">\n              {items.map((item) => (<li key={item.id} role=\"presentation\">\n                  <button type=\"button\" role=\"menuitem\" tabIndex={-1} data-item-id={item.id} disabled={item.disabled === true} className={item.tone === 'destructive'\n                        ? 'tp-overflow-menu__item tp-overflow-menu__item--destructive'\n                        : 'tp-overflow-menu__item'} onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || item.disabled === true)\n                            return;\n                        close(true);\n                        callbacks.current.onSelect(item.id, event);\n                    }}>\n                    {item.label}\n                  </button>\n                </li>))}\n            </ul>\n          </div>, portal.document.body)}\n    </>);\n}"
+          "signature": "export function OverflowMenu({ items, open, onOpenChange, onSelect, label, className, disabled, anchorPoint, returnFocusTo, }: OverflowMenuProps) {\n    const selection = useRef(onSelect);\n    selection.current = onSelect;\n    const { id, trigger, menu, portal, placement, effective, close, ...handlers } = useAnchoredMenu({\n        open,\n        onOpenChange,\n        disabled,\n        items,\n        anchorPoint,\n        returnFocusTo,\n    });\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-overflow-menu__trigger', className]\n            .filter(Boolean)\n            .join(' ')} aria-label={label} title={label} disabled={disabled === true} aria-haspopup=\"menu\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} id={`${id}-trigger`} {...handlers.triggerProps}>\n        <span aria-hidden=\"true\">⋯</span>\n      </button>\n      {effective &&\n            portal &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"menu\" aria-labelledby={`${id}-trigger`} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className=\"tp-overflow-menu\" style={{ ...portal.style, ...placement }} {...handlers.menuProps}>\n            <ul role=\"presentation\">\n              {items.map((item) => (<li key={item.id} role=\"presentation\">\n                  <button type=\"button\" role=\"menuitem\" tabIndex={-1} data-item-id={item.id} disabled={item.disabled === true} className={item.tone === 'destructive'\n                        ? 'tp-overflow-menu__item tp-overflow-menu__item--destructive'\n                        : 'tp-overflow-menu__item'} onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || item.disabled === true)\n                            return;\n                        close(true);\n                        selection.current(item.id, event);\n                    }}>\n                    {item.label}\n                  </button>\n                </li>))}\n            </ul>\n          </div>, portal.document.body)}\n    </>);\n}"
         }
       ]
     },
@@ -12061,6 +12096,48 @@
           "symbol": "ScrollBubbleProps",
           "syntaxKind": "InterfaceDeclaration",
           "signature": "export interface ScrollBubbleProps {\n    readonly mode: ScrollBubbleMode;\n    readonly onClick: () => void;\n    readonly disabled?: boolean;\n    readonly label?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Select",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "Select",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/select.tsx",
+          "symbol": "Select",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function Select({ options, value, onValueChange, open, onOpenChange, label, placeholder = 'Select', disabled, className, menuClassName, }: SelectProps) {\n    const change = useRef(onValueChange);\n    change.current = onValueChange;\n    const { id, trigger, menu, portal, placement, effective, close, ...handlers } = useAnchoredMenu({\n        open,\n        onOpenChange,\n        disabled,\n        items: options,\n        side: 'above',\n        gap: 8,\n        initialFocus: selected,\n    });\n    const current = options.find((option) => option.value === value);\n    return (<>\n      <button ref={trigger} type=\"button\" className={['tp-select__trigger', className].filter(Boolean).join(' ')} disabled={disabled === true} aria-haspopup=\"listbox\" aria-expanded={effective} aria-controls={effective ? `${id}-menu` : undefined} data-open={effective ? '' : undefined} onClick={handlers.triggerProps.onClick} onKeyDown={(event) => {\n            if (event.key === 'Escape' && effective && !event.defaultPrevented) {\n                event.preventDefault();\n                event.stopPropagation();\n                close(true);\n            }\n            else\n                handlers.triggerProps.onKeyDown(event);\n        }}>\n        <span className=\"tp-select__value\">\n          {current?.label ?? placeholder}\n        </span>\n        <svg className=\"tp-select__chevron\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" aria-hidden=\"true\">\n          <path d=\"M4 6l4 4 4-4\" stroke=\"currentColor\" fill=\"none\" strokeWidth=\"1.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\"/>\n        </svg>\n      </button>\n      {effective &&\n            portal &&\n            createPortal(<div ref={menu} id={`${id}-menu`} role=\"listbox\" aria-label={label} tabIndex={-1} dir={portal.style.direction === 'rtl' ? 'rtl' : 'ltr'} className={['tp-select__menu', menuClassName]\n                    .filter(Boolean)\n                    .join(' ')} style={{ ...portal.style, ...placement }} {...handlers.menuProps}>\n            {options.map((option) => (<button key={option.value} type=\"button\" role=\"option\" aria-selected={option.value === value} tabIndex={-1} data-item-id={option.value} disabled={option.disabled === true} className=\"tp-select__option\" onClick={(event) => {\n                        event.stopPropagation();\n                        if (event.defaultPrevented || option.disabled === true)\n                            return;\n                        close(true);\n                        if (option.value !== value)\n                            change.current(option.value, event);\n                    }}>\n                <span className=\"tp-select__option-label\">{option.label}</span>\n                {option.description ? (<span className=\"tp-select__option-description\">\n                    {option.description}\n                  </span>) : null}\n              </button>))}\n          </div>, portal.document.body)}\n    </>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SelectOption",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "SelectOption",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/select.tsx",
+          "symbol": "SelectOption",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface SelectOption {\n    readonly value: string;\n    readonly label: string;\n    readonly description?: string;\n    readonly disabled?: boolean;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SelectProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "SelectProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/select.tsx",
+          "symbol": "SelectProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface SelectProps {\n    readonly options: readonly SelectOption[];\n    readonly value: string;\n    readonly onValueChange: (value: string, event: MouseEvent<HTMLButtonElement>) => void;\n    readonly open: boolean;\n    readonly onOpenChange: (open: boolean) => void;\n    readonly label: string;\n    readonly placeholder?: string;\n    readonly disabled?: boolean;\n    readonly className?: string;\n    readonly menuClassName?: string;\n}"
         }
       ]
     },
@@ -17168,7 +17245,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "ca36aa9183b27115f4e540356ad0e1ca253d4fb19fbdb7098cceeac25725b267"
+      "sha256": "a00af5f21da0bf73d92ba4ad5e3bee5b04623dae281466b6485bf26262875704"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -17201,6 +17278,12 @@
       "sha256": "0a64b3b549377fa32be8210dcd22bb55c896212f7065ec488018db0825f4d415"
     },
     {
+      "id": "source:libs/react/src/chat/internal/use-anchored-menu.ts",
+      "kind": "source",
+      "path": "libs/react/src/chat/internal/use-anchored-menu.ts",
+      "sha256": "c2b3061ce96cf1681875638f16648fc87bf2b8fddb4106e3ed189cd0193df4a1"
+    },
+    {
       "id": "source:libs/react/src/chat/internal/use-message-content.ts",
       "kind": "source",
       "path": "libs/react/src/chat/internal/use-message-content.ts",
@@ -17222,7 +17305,7 @@
       "id": "source:libs/react/src/chat/overflow-menu.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/overflow-menu.tsx",
-      "sha256": "d6b3699e61ca95d4b1dd26f4a12727f86e6322efeb904b554fbdd86da8967416"
+      "sha256": "f196b204abc9d479dbff7587a0d5e55727a56a6c378eee9ae7e62936e83e4e74"
     },
     {
       "id": "source:libs/react/src/chat/project-list.tsx",
@@ -17247,6 +17330,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/scroll-bubble.tsx",
       "sha256": "f4a136f245c39d90f65886ae87787f8b5a3d36e826d02ecb7698ac9a87ad6f0d"
+    },
+    {
+      "id": "source:libs/react/src/chat/select.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/select.tsx",
+      "sha256": "c2de07d91f33f3b11f7fc4742618213118dbee9d10d6e401b82d4ab6df7bcef6"
     },
     {
       "id": "source:libs/react/src/chat/status-panel.tsx",
