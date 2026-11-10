@@ -299,6 +299,42 @@ test('installed React message actions copy only explicit answer text without con
       list.getByText('Could not copy answer.', { exact: true })
     ).toBeVisible();
     expect(await writes()).toEqual([answer, answer, answer]);
+    // Rating is application-owned page state: it writes nothing to the
+    // clipboard and issues no conversation request.
+    const rating = list.getByRole('group', {
+      name: 'Rate answer (kept on this page only)',
+      exact: true,
+    });
+    await expect(rating).toHaveCount(1);
+    await draft.fill('Draft kept while rating');
+    await expect(rating).toHaveAttribute('data-message-id', 'answer');
+    const good = rating.getByRole('button', {
+      name: 'Good answer',
+      exact: true,
+    });
+    const poor = rating.getByRole('button', {
+      name: 'Poor answer',
+      exact: true,
+    });
+    await expect(good).toHaveAttribute('aria-pressed', 'false');
+    await expect(poor).toHaveAttribute('aria-pressed', 'false');
+    await good.click();
+    await expect(good).toHaveAttribute('aria-pressed', 'true');
+    await expect(poor).toHaveAttribute('aria-pressed', 'false');
+    await poor.focus();
+    await page.keyboard.press('Space');
+    await expect(good).toHaveAttribute('aria-pressed', 'false');
+    await expect(poor).toHaveAttribute('aria-pressed', 'true');
+    await expect(poor).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(poor).toHaveAttribute('aria-pressed', 'false');
+    await good.click();
+    await expect(good).toHaveAttribute('aria-pressed', 'true');
+    const ratingBounds = await good.boundingBox();
+    expect(ratingBounds!.width).toBeGreaterThanOrEqual(36);
+    expect(ratingBounds!.height).toBeGreaterThanOrEqual(36);
+    await expect(draft).toHaveValue('Draft kept while rating');
+    expect(await writes()).toEqual([answer, answer, answer]);
     backend.verify();
     for (const step of backend.steps)
       expect((await step.closed).finished).toBe(true);

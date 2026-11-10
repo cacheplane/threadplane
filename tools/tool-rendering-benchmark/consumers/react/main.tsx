@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { createSession } from '@threadplane/ag-ui';
 import {
   ChatInput,
+  Citations,
   ToolActivityGroup,
   MessageList,
   toolOutcomes,
@@ -17,18 +18,51 @@ import {
 } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import './shell.css';
-import { toolLabel, toolDecoders } from './tool-outcome';
+import {
+  layoutFrom,
+  referenceCards,
+  toolLabel,
+  toolDecoders,
+} from './tool-outcome';
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
 // The application decodes its own tool schemas; only this scenario's backend can retry a read.
+const layout = layoutFrom(location.search);
 const toolOutcome = toolOutcomes(
-  toolDecoders({ retryReads: scenario === 'partial-failure' })
+  toolDecoders({ retryReads: scenario === 'partial-failure', layout })
 );
+type Source = React.ComponentProps<typeof Citations>['citations'][number];
+const NO_SOURCES: readonly Source[] = [];
+// Agent state carries citations per assistant message; the app accepts only its own declared shape.
+function citationsFor(state: unknown, messageId: string): readonly Source[] {
+  const byMessage =
+    state && typeof state === 'object'
+      ? (state as { citations?: Record<string, unknown> }).citations
+      : undefined;
+  const rows = byMessage?.[messageId];
+  if (!Array.isArray(rows)) return NO_SOURCES;
+  return rows.flatMap((row, index): Source[] =>
+    row &&
+    typeof row.id === 'string' &&
+    typeof row.title === 'string' &&
+    typeof row.url === 'string'
+      ? [
+          {
+            id: row.id,
+            index: index + 1,
+            title: row.title,
+            url: row.url,
+            snippet: typeof row.snippet === 'string' ? row.snippet : undefined,
+          },
+        ]
+      : []
+  );
+}
 function App() {
   const [session] = useState(() =>
     createSession({
       threadId: crypto.randomUUID(),
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}`,
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}&layout=${layout}`,
     })
   );
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
@@ -70,6 +104,8 @@ function App() {
           })
         : []
   );
+  // The cards layout shows each distinct reference once, on the last call that returned it.
+  const cards = layout === 'cards' ? referenceCards(activities) : undefined;
   const root = useRef<HTMLElement>(null);
   const composer = useRef<ChatInputHandle>(null);
   const disposed = useRef(false);
@@ -188,13 +224,37 @@ function App() {
                                   'Retry the failed read explicitly.'
                                 )
                         }
-                      />
+                      >
+                        {(message.toolCalls ?? [])
+                          .flatMap((call) => cards?.get(call.id) ?? [])
+                          .map((card) => (
+                            <article
+                              className="benchmark-reference"
+                              key={card.url}
+                            >
+                              <a
+                                href={card.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {card.title}
+                              </a>
+                              <p>{card.summary}</p>
+                            </article>
+                          ))}
+                      </ToolActivityGroup>
                     )}
                   <p className="benchmark-message-text">
                     {typeof message.content === 'string'
                       ? message.content
                       : JSON.stringify(message.content)}
                   </p>
+                  {message.role === 'assistant' && (
+                    <Citations
+                      citations={citationsFor(snapshot.state, message.id)}
+                      collapsible
+                    />
+                  )}
                   {message.role === 'assistant' &&
                     typeof message.content === 'string' &&
                     message.content.trim() && (
