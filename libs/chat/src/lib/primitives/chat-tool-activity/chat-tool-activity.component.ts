@@ -3,18 +3,31 @@ import {
   Component,
   computed,
   input,
+  output,
 } from '@angular/core';
+import {
+  ChatStatusPanelComponent,
+  STATUS_PANEL_CONTENT_STYLES,
+} from '../chat-status-panel/chat-status-panel.component';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import {
+  activityFailures,
   activityProgress,
   confirmedOutcomes,
   outcomeSources,
+  receiptOutcomes,
   resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome';
-import { activitySummary, failureSummaries } from './activity-summary';
+import { activitySummary } from './activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
-export type { ToolActivityOutcome, ToolActivitySource } from './tool-outcome';
+export type {
+  ToolActivityOutcome,
+  ToolActivityRetry,
+  ToolActivitySource,
+  ToolOutcomeCall,
+  ToolOutcomeDecoder,
+} from './tool-outcome';
 
 /** Explicit readonly presentation state, separate from execution/session ownership. */
 export type ToolActivityPhase =
@@ -151,13 +164,28 @@ export class ChatToolOutcomesComponent {
   readonly outcomes = computed(() => confirmedOutcomes(this.activities()));
   readonly sources = computed(() => outcomeSources(this.activities()));
 }
+/** @internal Confirmed-write receipts shared by default rows and grouped presentation. */
+@Component({
+  selector: 'chat-tool-receipts',
+  standalone: true,
+  imports: [ChatStatusPanelComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [STATUS_PANEL_CONTENT_STYLES],
+  template: `@for (receipt of receipts(); track receipt.id) {
+    <div chatStatusPanel tone="success" [lead]="receipt.lead" class="tp-tool-activity__receipt"><p>{{ receipt.text }}</p></div>
+    }`,
+})
+export class ChatToolReceiptsComponent {
+  readonly activities = input.required<readonly ToolActivityInfo[]>();
+  readonly receipts = computed(() => receiptOutcomes(this.activities()));
+}
 /** Human-readable activity with literal Details and an always-mounted rich-result slot. */
 @Component({
   selector: 'chat-tool-activity',
   standalone: true,
-  imports: [ChatToolOutcomesComponent],
+  imports: [ChatToolOutcomesComponent, ChatToolReceiptsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [CHAT_HOST_TOKENS, styles],
+  styles: [CHAT_HOST_TOKENS, styles, STATUS_PANEL_CONTENT_STYLES],
   template: ` <section
     class="tp-tool-activity"
     [attr.data-phase]="phase()"
@@ -176,6 +204,8 @@ export class ChatToolOutcomesComponent {
           'This tool could not finish. Check Details before retrying.'
       }}
     </p>
+    } @if (retry(); as retry) {
+    <button type="button" class="tp-tool-activity__retry" (click)="toolRetry.emit(retry.activity)">{{ retry.label }}</button>
     }
     <details class="tp-tool-activity__details">
       <summary>Details</summary>
@@ -201,6 +231,7 @@ export class ChatToolOutcomesComponent {
       }
     </details>
     <chat-tool-outcomes [activities]="[resolved()]" />
+    <chat-tool-receipts [activities]="[resolved()]" />
     <ng-content />
   </section>`,
 })
@@ -213,6 +244,11 @@ export class ChatToolActivityComponent {
   });
   readonly phase = computed(() => this.resolved().phase ?? 'unknown');
   readonly phaseLabel = computed(() => labels[this.phase()]);
+  /** Emits the failed activity when its declared retry is activated. The application owns what a retry does. */
+  readonly toolRetry = output<ToolActivityInfo>();
+  protected readonly retry = computed(
+    () => activityFailures([this.resolved()])[0]?.retry
+  );
   readonly duration = computed(() => {
     const ms = this.resolved().durationMs;
     return ms !== undefined && Number.isFinite(ms) && ms >= 0 ? ms : undefined;
@@ -222,9 +258,19 @@ export class ChatToolActivityComponent {
 @Component({
   selector: 'chat-tool-activity-group',
   standalone: true,
-  imports: [ChatToolActivityComponent, ChatToolOutcomesComponent],
+  imports: [
+    ChatToolActivityComponent,
+    ChatToolOutcomesComponent,
+    ChatToolReceiptsComponent,
+    ChatStatusPanelComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [CHAT_HOST_TOKENS, styles, ACTIVITY_SUMMARY_STYLES],
+  styles: [
+    CHAT_HOST_TOKENS,
+    styles,
+    ACTIVITY_SUMMARY_STYLES,
+    STATUS_PANEL_CONTENT_STYLES,
+  ],
   template: ` <section
     class="tp-tool-activity-group"
     [attr.data-phase]="phase()"
@@ -254,18 +300,21 @@ export class ChatToolActivityComponent {
       aria-atomic="true"
       class="tp-tool-activity__status"
     >
-      {{ summary().status }}
+      {{ summary().status }}{{ receiptStatus() }}
     </p>
     <chat-tool-outcomes [activities]="resolved()" />
     } @if (failed()) {
-    <div role="alert" class="tp-tool-activity__error">
-      @for (text of failureSummaries(); track text) {
-      <p>{{ text }}</p>
-      } @empty {
+    <div chatStatusPanel tone="danger" role="alert" class="tp-tool-activity__error">
+      @for (failure of failures(); track failure.key) {
+      <p>{{ failure.text }}</p>
+      @if (failure.retry; as retry) {
+      <button type="button" class="tp-tool-activity__retry" (click)="toolRetry.emit(retry.activity)">{{ retry.label }}</button>
+      } } @empty {
       <p>Some tools could not finish. Check Details before retrying.</p>
       }
     </div>
     }
+    <chat-tool-receipts [activities]="resolved()" />
     <ng-content />
   </section>`,
 })
@@ -288,8 +337,17 @@ export class ChatToolActivityGroupComponent {
   readonly failed = computed(() =>
     this.resolved().some((item) => item.phase === 'error')
   );
-  readonly failureSummaries = computed(() =>
-    failureSummaries(this.resolved())
+  /** Emits the failed activity when its declared retry is activated. The application owns what a retry does. */
+  readonly toolRetry = output<ToolActivityInfo>();
+  /** Every observed call in transcript order, so a retry stops being offered once a later call repeats it or work is running. Defaults to this group's activities. */
+  readonly context = input<readonly ToolActivityInfo[]>();
+  protected readonly failures = computed(() =>
+    activityFailures(this.resolved(), this.context())
+  );
+  protected readonly receiptStatus = computed(() =>
+    receiptOutcomes(this.resolved())
+      .map((receipt) => ` ${receipt.lead} ${receipt.text}`)
+      .join('')
   );
   readonly phase = computed(() => this.summary().phase);
   readonly phaseLabel = computed(() => labels[this.phase()]);

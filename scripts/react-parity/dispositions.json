@@ -3,6 +3,113 @@
   "purpose": "Planning ownership for the reviewed migration scope. Existing task assignments are preserved; in-progress records identify bounded runtime/configuration subsets, not whole-task completion. Inventory validation is not React parity.",
   "rows": [
     {
+      "id": "component:libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts#ChatStatusPanelComponent",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "component:libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts#ChatToolReceiptsComponent",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-activity.tsx",
+      "reason": "Internal confirmed-write receipt renderer matches React's internal ToolReceipts; a receipt shows only for a complete call with a receipt outcome."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatStatusPanelComponent",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatStatusPanelTone",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#StatusPanel",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#StatusPanelProps",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#StatusPanelTone",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ToolActivityRetry",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same app-declared retry metadata in both frameworks; the library decides only when the control is still offered and never runs it."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ToolOutcomeCall",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ToolOutcomeDecoder",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#toolOutcomes",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolActivityRetry",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same app-declared retry metadata in both frameworks; the library decides only when the control is still offered and never runs it."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolOutcomeCall",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolOutcomeDecoder",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#toolOutcomes",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
+      "id": "source:libs/chat/src/lib/primitives/chat-tool-calls/tool-retry-offer.ts",
+      "taskIds": ["T28"], "treatment": "internal", "status": "in-progress",
+      "reason": "Angular composition helper: tells <chat> when a per-call retry is offered so its error banner drops the generic Retry. React's Chat takes an explicit onRetry, so the application makes that choice."
+    },
+    {
+      "id": "source:libs/react/src/chat/status-panel.tsx",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/status-panel.tsx",
+      "reason": "Status panel for a failed call, an approval or a receipt: Angular chat-status-panel and React StatusPanel take a tone, a lead and actions; neither runs anything."
+    },
+    {
       "id": "component:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-result-template.directive.ts#ChatToolResultTemplateDirective",
       "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/message-list.tsx",

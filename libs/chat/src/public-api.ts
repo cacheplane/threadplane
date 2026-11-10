@@ -78,7 +78,8 @@ export { ChatToolCallTemplateDirective } from './lib/primitives/chat-tool-calls/
 export type { ChatToolCallTemplateContext } from './lib/primitives/chat-tool-calls/chat-tool-call-template.directive';
 export { ChatToolResultTemplateDirective } from './lib/primitives/chat-tool-calls/chat-tool-result-template.directive';
 export type { ChatToolResultTemplateContext } from './lib/primitives/chat-tool-calls/chat-tool-result-template.directive';
-export { resolveToolOutcome } from './lib/primitives/chat-tool-activity/tool-outcome';
+export { resolveToolOutcome, toolOutcomes } from './lib/primitives/chat-tool-activity/tool-outcome';
+export { ChatStatusPanelComponent, type ChatStatusPanelTone } from './lib/primitives/chat-status-panel/chat-status-panel.component';
 export { ChatSubagentsComponent } from './lib/primitives/chat-subagents/chat-subagents.component';
 export { ChatThreadListComponent } from './lib/primitives/chat-thread-list/chat-thread-list.component';
 export type { Thread, ThreadActionAdapter } from './lib/primitives/chat-thread-list/chat-thread-list.component';
@@ -338,6 +339,9 @@ export {
   type ToolActivityDelivery,
   type ToolActivityInfo,
   type ToolActivityOutcome,
+  type ToolActivityRetry,
   type ToolActivitySource,
   type ToolActivityPhase,
+  type ToolOutcomeCall,
+  type ToolOutcomeDecoder,
 } from './lib/primitives/chat-tool-activity/chat-tool-activity.component';

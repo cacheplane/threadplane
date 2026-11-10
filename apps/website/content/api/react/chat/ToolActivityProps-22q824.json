@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 77
+            "line": 83
           },
           "isReadonly": true,
           "isOptional": false
@@ -99,7 +99,53 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 79
+            "line": 85
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onRetry",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#onRetry:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onRetry?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(activity: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Application-owned handler for a declared retry. Without it no retry control renders.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 87
           },
           "isReadonly": true,
           "isOptional": true
@@ -107,12 +153,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 76
+        "line": 82
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 76
+    "line": 82
   }
 }

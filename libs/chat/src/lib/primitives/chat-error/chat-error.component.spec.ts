@@ -77,6 +77,18 @@ describe('ChatErrorComponent — rendering', () => {
     expect(btn).toBeNull();
   });
 
+  it('hides the generic Retry when retryHidden is set and keeps the message', () => {
+    @Component({ standalone: true, imports: [ChatErrorComponent], template: `<chat-error [agent]="agent" [retryHidden]="true" />` })
+    class HiddenHost {
+      agent = mockAgent({ status: 'error', error: new AgentError({ kind: 'server', message: 'Read unavailable', retryable: true }) });
+    }
+    const hidden = TestBed.createComponent(HiddenHost);
+    hidden.detectChanges();
+    const el: HTMLElement = hidden.nativeElement;
+    expect(el.querySelector('button.chat-error__retry')).toBeNull();
+    expect(el.querySelector('.chat-error__msg')?.textContent).toContain('Read unavailable');
+  });
+
   it('clicking Retry calls agent.retry()', async () => {
     const err = new AgentError({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true });
     const agent = mockAgent({ status: 'error', error: err });
