@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OverflowMenu, Select, ThreadList, ThreadRenameForm } from '@threadplane/react/chat';
+import { MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -14,6 +14,8 @@ export function OverflowMenuFixture() {
     return <ConfirmDialogFixture />;
   if (new URLSearchParams(window.location.search).has('select'))
     return <SelectFixture />;
+  if (new URLSearchParams(window.location.search).has('rating'))
+    return <RatingFixture />;
   if (new URLSearchParams(window.location.search).has('rename'))
     return <main><h1>Installed rename editor</h1><ThreadRenameFormFixture /></main>;
   return (
@@ -91,6 +93,32 @@ export function OverflowMenuFixture() {
 }
 
 /** Installed controlled select; the owner may refuse a requested change. */
+function RatingFixture() {
+  const [values, setValues] = useState<Record<string, MessageRatingValue | null>>({ first: null, second: 'down' });
+  const [requests, setRequests] = useState<Array<[MessageRatingValue | null, string]>>([]);
+  const [refuse, setRefuse] = useState(false);
+  const [disabled, setDisabled] = useState(false);
+  const [rtl, setRtl] = useState(false);
+  const change = (value: MessageRatingValue | null, messageId: string) => {
+    setRequests((previous) => [...previous, [value, messageId]]);
+    if (!refuse) setValues((previous) => ({ ...previous, [messageId]: value }));
+  };
+  return (
+    <main dir={rtl ? 'rtl' : 'ltr'}>
+      <h1>Installed message rating</h1>
+      <label><input type="checkbox" checked={refuse} onChange={(event) => setRefuse(event.target.checked)} />Refuse rating changes</label>
+      <label><input type="checkbox" checked={disabled} onChange={(event) => setDisabled(event.target.checked)} />Disable ratings</label>
+      <label><input type="checkbox" checked={rtl} onChange={(event) => setRtl(event.target.checked)} />Right to left</label>
+      <output data-testid="rating-values">{JSON.stringify(values)}</output>
+      <output data-testid="rating-requests">{JSON.stringify(requests)}</output>
+      <button>Before ratings</button>
+      <MessageRating messageId="first" value={values['first']} onValueChange={change} disabled={disabled} />
+      <MessageRating messageId="second" value={values['second']} onValueChange={change} disabled={disabled} label="Rate <second>" upLabel="Helpful <b>&" downLabel="Not helpful" className="owned-rating" />
+      <button>After ratings</button>
+    </main>
+  );
+}
+
 function SelectFixture() {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
