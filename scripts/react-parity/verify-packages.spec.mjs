@@ -254,6 +254,8 @@ export interface OverflowMenuItem { readonly id: string; readonly label: string;
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export interface SelectOption { readonly value: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
 export interface SelectProps { readonly options: readonly SelectOption[]; readonly value: string; readonly onValueChange: (value: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly label: string; readonly placeholder?: string; readonly disabled?: boolean; readonly className?: string; readonly menuClassName?: string; }
+export type MessageRatingValue = 'up' | 'down';
+export interface MessageRatingProps { readonly messageId: string; readonly value: MessageRatingValue | null; readonly onValueChange: (value: MessageRatingValue | null, messageId: string) => void; readonly disabled?: boolean; readonly label?: string; readonly upLabel?: string; readonly downLabel?: string; readonly className?: string; }
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
 export interface ChatSidenavProps { readonly onSearch?: () => void; readonly searchLabel?: string; readonly searchShortcut?: boolean; readonly toggleShortcut?: boolean; readonly collapsedContent?: import('react').ReactNode; readonly mode: ChatSidenavMode; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onModeChange: (mode: Exclude<ChatSidenavMode, 'drawer'>) => void; }
 export interface ChatSidenavScrimProps { readonly open: boolean; readonly onDismiss: () => void; readonly label?: string; readonly className?: string; }
@@ -577,6 +579,19 @@ export interface ChatProps { readonly onRetry?: () => void; readonly renderMessa
     ['SelectOption', 'readonly description?: string', "readonly description?: import('react').ReactNode"],
     ['SelectOption', 'readonly disabled?: boolean', 'readonly disabled: boolean'],
   ]) assert.match(compile(mutateInterface(name, before, after)), /Select|false.*true/, `${name}: ${before} → ${after}`);
+  assert.match(compile(declaration.replaceAll('MessageRatingProps', 'MissingMessageRatingProps')), /MessageRatingProps/);
+  assert.match(compile(declaration.replace("export type MessageRatingValue = 'up' | 'down';", "export type MessageRatingValue = 'up' | 'down' | 'neutral';")), /MessageRating|false.*true/);
+  for (const [name, before, after] of [
+    ['MessageRatingProps', 'readonly messageId: string;', 'readonly messageId?: string;'],
+    ['MessageRatingProps', 'readonly messageId: string;', 'messageId: string;'],
+    ['MessageRatingProps', 'readonly value: MessageRatingValue | null;', 'readonly value?: MessageRatingValue | null;'],
+    ['MessageRatingProps', 'readonly value: MessageRatingValue | null;', 'readonly value: MessageRatingValue;'],
+    ['MessageRatingProps', 'readonly onValueChange: (value: MessageRatingValue | null, messageId: string) => void', 'readonly onValueChange: (value: MessageRatingValue | null) => void'],
+    ['MessageRatingProps', 'readonly onValueChange: (value: MessageRatingValue | null, messageId: string) => void', 'readonly onValueChange: (value: MessageRatingValue, messageId: string) => void'],
+    ['MessageRatingProps', 'readonly disabled?: boolean', 'readonly disabled: boolean'],
+    ['MessageRatingProps', 'readonly upLabel?: string', "readonly upLabel?: import('react').ReactNode"],
+    ['MessageRatingProps', 'readonly className?: string', 'readonly className?: string | string[]'],
+  ]) assert.match(compile(mutateInterface(name, before, after)), /MessageRating|false.*true/, `${name}: ${before} → ${after}`);
   for (const [name, before, after] of [
     ['TimelineItem', 'readonly id: string;', 'id: string;'],
     ['TimelineItem', 'readonly label: string;', 'readonly label?: string;'],
@@ -997,6 +1012,7 @@ test('React chat requires its real supported export', () => {
   const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.Select = component;
+  supported.MessageRating = component;
   supported.CitationPreview = component;
   supported.CitationCard = component;
   supported.ToolActivity = component;
