@@ -261,7 +261,7 @@ export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + markdown + citationDisplay;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
-import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps, SelectOption, SelectProps } from '@threadplane/react/chat';
+import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps, SelectOption, SelectProps, MessageRatingProps, MessageRatingValue } from '@threadplane/react/chat';
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
@@ -307,6 +307,8 @@ export type OverflowMenuItemContract = Assert<Equal<OverflowMenuItem, { readonly
 export type OverflowMenuPropsContract = Assert<Equal<OverflowMenuProps, { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null }>>;
 export type SelectOptionContract = Assert<Equal<SelectOption, { readonly value: string; readonly label: string; readonly description?: string; readonly disabled?: boolean }>>;
 export type SelectPropsContract = Assert<Equal<SelectProps, { readonly options: readonly SelectOption[]; readonly value: string; readonly onValueChange: (value: string, event: MouseEvent<HTMLButtonElement>) => void; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly label: string; readonly placeholder?: string; readonly disabled?: boolean; readonly className?: string; readonly menuClassName?: string }>>;
+export type MessageRatingValueContract = Assert<Equal<MessageRatingValue, 'up' | 'down'>>;
+export type MessageRatingPropsContract = Assert<Equal<MessageRatingProps, { readonly messageId: string; readonly value: MessageRatingValue | null; readonly onValueChange: (value: MessageRatingValue | null, messageId: string) => void; readonly disabled?: boolean; readonly label?: string; readonly upLabel?: string; readonly downLabel?: string; readonly className?: string }>>;
 export type ProjectListItemContract = Assert<Equal<ProjectListItem, { readonly id: string; readonly name: string }>>;
 export type ProjectListContract = Assert<Equal<ProjectListProps, { readonly projects: readonly ProjectListItem[]; readonly onSelect: (projectId: string) => void; readonly activeProjectId?: string | null; readonly label?: string; readonly className?: string; readonly onNewProject?: () => void; readonly newProjectDisabled?: boolean; readonly newProjectLabel?: string; readonly renderActions?: (project: ProjectListItem) => ReactNode }>>;
 export type ThreadListItemContract = Assert<Equal<ThreadListItem, { readonly id: string; readonly title?: string; readonly updatedAt?: number; readonly pinned?: boolean }>>;
@@ -453,6 +455,7 @@ const SUPPORTED_EXPORTS = {
     'Timeline',
     'MessageList',
     'MessageActions',
+    'MessageRating',
     'OverflowMenu',
     'Reasoning',
     'Select',

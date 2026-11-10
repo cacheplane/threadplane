@@ -1,14 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6ebdec54756ba017277ab18adaac65b4eaeb8416",
+  "baselineHead": "46d78fddabc35ca5e7bf28fb88951c98adc04b4f",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "apps/website/content/docs/react/chat/components/chat-message.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/message-rating.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -856,7 +855,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "7099f5947dc36a851aae92a39124404186fc0933aa31062653d3800f2dc4600d"
+      "sha256": "a4540bc2a7f731e01bc280de1a46bfcfa38b4946b4d41e543c71464e07693862"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -874,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "91a3f40d4d1c4bdd5ba6459534a7c9568c023ee8ba694bb60f9b02441f0bbe5c"
+      "sha256": "374aeb045881645f457071d114c561f6a1d7b56b3f981d290e8d3e6a2fdf01d0"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3154,7 +3153,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-message.mdx",
-      "sha256": "67a402dc5115468070ad879c3b04ada4fa2d8b305ac2cb7a3c7dae373d905a57"
+      "sha256": "3185843826bbe6624d0696d4f81816b0315f885e67b5aa3a7fb64988a525cf63"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-popup.mdx",
@@ -11886,6 +11885,48 @@
       ]
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageRating",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageRating",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-rating.tsx",
+          "symbol": "MessageRating",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function MessageRating({ messageId, value, onValueChange, disabled = false, label = 'Rate response', upLabel = 'Good response', downLabel = 'Poor response', className, }: MessageRatingProps) {\n    const option = (rating: MessageRatingValue, text: string) => (<button type=\"button\" className=\"tp-message-actions__action tp-message-actions__action--icon-only tp-message-rating__option\" data-rating={rating} aria-pressed={value === rating} title={text} disabled={disabled} onClick={() => {\n            if (!disabled)\n                onValueChange(value === rating ? null : rating, messageId);\n        }}>\n      <span className=\"tp-message-actions__icon\" aria-hidden=\"true\">\n        <svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\" focusable=\"false\">\n          {paths[rating].map((d) => (<path key={d} d={d}/>))}\n        </svg>\n      </span>\n      <span className=\"tp-message-actions__label\">{text}</span>\n    </button>);\n    return (<div role=\"group\" aria-label={label} className={['tp-message-actions tp-message-rating', className]\n            .filter(Boolean)\n            .join(' ')} data-message-id={messageId}>\n      {option('up', upLabel)}\n      {option('down', downLabel)}\n    </div>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRatingProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageRatingProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-rating.tsx",
+          "symbol": "MessageRatingProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface MessageRatingProps {\n    readonly messageId: string;\n    readonly value: MessageRatingValue | null;\n    readonly onValueChange: (value: MessageRatingValue | null, messageId: string) => void;\n    readonly disabled?: boolean;\n    readonly label?: string;\n    readonly upLabel?: string;\n    readonly downLabel?: string;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRatingValue",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "MessageRatingValue",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/message-rating.tsx",
+          "symbol": "MessageRatingValue",
+          "syntaxKind": "TypeAliasDeclaration",
+          "signature": "export type MessageRatingValue = 'up' | 'down';"
+        }
+      ]
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#OverflowMenu",
       "kind": "export",
       "path": "libs/react/src/chat/index.ts",
@@ -17213,7 +17254,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "a00af5f21da0bf73d92ba4ad5e3bee5b04623dae281466b6485bf26262875704"
+      "sha256": "2a23fe7078d1099967326cb5b72ab03d501c7d92e86a52267cd192d3e55004e6"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",
@@ -17268,6 +17309,12 @@
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
       "sha256": "e8e30850ad06631f39bd7f2fd1c8d627451d2bfe673e84c2d4efa62fc0c22239"
+    },
+    {
+      "id": "source:libs/react/src/chat/message-rating.tsx",
+      "kind": "source",
+      "path": "libs/react/src/chat/message-rating.tsx",
+      "sha256": "2c618f5733590538bd87deb332ccc069b5e5cf243a1a672fe10a8cb533972f98"
     },
     {
       "id": "source:libs/react/src/chat/overflow-menu.tsx",

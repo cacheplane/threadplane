@@ -115,6 +115,23 @@ This wrapper does not suppress streaming controls: current streaming assistant c
 
 The component exposes no session, message snapshot, render callback or raw element props. MessageList keeps its existing custom renderer bypass and scroll policy. Its readonly `MessageListRowContext.current` identifies the final supplied row, even when that row is user, system or tool; optional readonly `prevRole` comes from `rows[index - 1]?.role`, rather than the message payload or DOM. The ten positional combinations reuse frozen context objects. Replacing a preceding immutable row with a different projected role updates the following row even if its own reference is unchanged; unrelated historical rows remain memoized. Appending also rerenders the former final row because `current` changes. Stable one-argument renderers remain compatible, and Chat forwards the same two-argument contract. Full ChatMessage/T23 parity remains deferred.
 
+`MessageRating` supplies a controlled thumbs up and down for one response. Pass the row's stable `messageId`, the current `value` (`'up'`, `'down'` or `null`) and `onValueChange(next, messageId)`. `aria-pressed` reflects only `value`; pressing the current rating requests `null`. The component keeps no state and sends nothing, so your application decides whether to accept, store or send a rating. `disabled`, `label`, `upLabel`, `downLabel` and `className` are optional. With the opt-in chat stylesheet the two options are compact 36px targets and the pressed option is visibly distinct, including in forced-colors mode.
+
+```tsx
+<ChatMessage
+  role="assistant"
+  controls={
+    <MessageRating
+      messageId={row.id}
+      value={ratings.get(row.id) ?? null}
+      onValueChange={(next, id) => saveRating(id, next)}
+    />
+  }
+>
+  {children}
+</ChatMessage>
+```
+
 `MessageActions` can supply the controls, as in the local copy SVG above. `MessageAction` has exactly six readonly fields: required unique `id`, literal string `label` and argumentless `onSelect`, plus optional `disabled`, `icon` and `iconOnly`. `MessageActionsProps` keeps four readonly fields: required `actions` and optional `disabled`, `label` and `className`. The default group label is **Message actions**; empty actions render nothing. Both group and per-action disabled states default to false; either disables the native button.
 
 `icon` accepts app-authored decorative, noninteractive ReactNode content inside an `aria-hidden` wrapper. `iconOnly` defaults to false; only `true` with a supplied icon enables compact presentation. Exactly `null`, `undefined` and booleans omit the icon and keep a visible label even with `iconOnly: true`. Zero, strings (including empty strings), arrays (including empty arrays), fragments and components that render nothing follow normal ReactNode semantics. There is no child inspection; compact callers must supply a meaningful visible, noninteractive glyph.
