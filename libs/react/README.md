@@ -367,8 +367,9 @@ independently of CSS. Without the stylesheet, both icon and label remain visible
 in normal DOM presentation. Text-only and icon-plus-label actions keep visible labels.
 
 The app owns clipboard writes, pending state, async feedback and errors; it must
-handle promise completion and rejection itself. No ratings or regeneration
-commands are supplied. Rendering, updating and unmounting invoke no action.
+handle promise completion and rejection itself. No regeneration command is
+supplied; ratings use the separate controlled `MessageRating` below. Rendering,
+updating and unmounting invoke no action.
 Compatible same-ID updates and reordering retain each native button and its focus
 where native disabled behavior permits; activation calls the current argumentless
 callback. This private feature does not complete T28 or establish public release parity.
@@ -795,6 +796,45 @@ Native full directories compose pointer and keyboard context menus for one
 exact-ID clipboard command and an app-owned rename editor; compact navigation
 remains selection-only. Typeahead, further lifecycle/project commands
 and full parity remain open.
+
+## Controlled message rating
+
+`MessageRating` renders thumbs up and down for one identified response as a named
+group of two native toggle buttons. It is fully controlled: `value` is `'up'`,
+`'down'` or `null`, and `aria-pressed` reflects only that value. Activating an
+option calls `onValueChange(next, messageId)`, where `next` is the requested
+rating, or `null` when the current rating is pressed again. The owner decides
+whether to accept, store or send it; a refused request leaves the display
+unchanged. The component keeps no state, sends nothing and stores nothing.
+
+`MessageRatingProps` has eight readonly fields: required `messageId`, `value` and
+`onValueChange`, plus optional `disabled`, `label`, `upLabel`, `downLabel` and
+`className`. The defaults are **Rate response**, **Good response** and **Poor
+response**. Labels are literal strings; each is the button's accessible name and
+its native `title`. `disabled` disables both options while the accepted rating
+stays visible. The group carries `data-message-id` for styling and tests.
+
+The glyphs are built in and decorative. With the opt-in chat stylesheet, options
+use the same compact 36px targets as icon-only `MessageActions`, and the pressed
+option has a distinct border, background and text color with a forced-colors
+fallback. Without the stylesheet, labels remain visible beside the glyphs.
+
+```tsx
+import { MessageRating, type MessageRatingValue } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function AnswerRating({ messageId, value, onRate }: {
+  readonly messageId: string;
+  readonly value: MessageRatingValue | null;
+  readonly onRate: (value: MessageRatingValue | null, messageId: string) => void;
+}) {
+  return <MessageRating messageId={messageId} value={value} onValueChange={onRate} />;
+}
+```
+
+Use the stable row identity from `MessageList` (`row.id`) and scope stored ratings
+to their conversation. This private feature does not add copy or regeneration
+commands, a feedback backend, or public release parity.
 
 ## Controlled select
 

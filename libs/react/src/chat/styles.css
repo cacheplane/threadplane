@@ -542,6 +542,22 @@
 .tp-message-actions__action:disabled {
   cursor: not-allowed;
 }
+.tp-message-rating__option[aria-pressed='true'] {
+  border-color: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+}
+.tp-message-rating__option:disabled {
+  opacity: 0.6;
+}
+@media (forced-colors: active) {
+  .tp-message-rating__option[aria-pressed='true'] {
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+}
 .tp-chat-message {
   position: relative;
   min-width: 0;

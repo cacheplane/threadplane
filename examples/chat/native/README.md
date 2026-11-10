@@ -800,7 +800,13 @@ Unavailable or rejected clipboard access reports failure without a legacy fallba
 `native-conversation-react:copy-test` covers source replacement and late settlement;
 the installed production browser proof stubs every clipboard write and checks
 keyboard use, remounts, preserved drafts and no extra conversation requests.
-Ratings and regeneration remain separate application capabilities.
+Assistant answers with text also compose the installed controlled `MessageRating`.
+The application holds each rating in memory, keyed by conversation and message
+identity, so equal message IDs in different conversations stay independent and a
+rating survives switching away and back. Nothing is stored or sent, and a reload
+forgets every rating; the group is named "Rate answer (kept on this page only)".
+Like Copy, rating stays available while that answer streams, so completing a
+response changes no control markup; it is absent for unsaved conversations. Regeneration remains a separate application capability.
 
 ### Loaded project navigation (private React T29 slice)
 

@@ -42,6 +42,11 @@ import { BackgroundActivity } from './background-activity';
 import { LoadedCheckpointTimeline } from './loaded-checkpoint-timeline';
 import { ObservedStateComparison } from './observed-state-comparison';
 import { CopyAnswer } from './copy-answer';
+import {
+  AnswerRating,
+  AnswerRatings,
+  AnswerRatingScope,
+} from './answer-rating';
 import { renderNativeSourceCard } from './source-card';
 import {
   ConversationActions,
@@ -122,10 +127,13 @@ const Message = memo(function Message({
       }
       controls={
         row.role === 'assistant' ? (
-          <CopyAnswer
-            text={row.message.content}
-            generation={row.message.delivery.generation}
-          />
+          <>
+            <CopyAnswer
+              text={row.message.content}
+              generation={row.message.delivery.generation}
+            />
+            {row.message.content && <AnswerRating messageId={row.id} />}
+          </>
         ) : undefined
       }
     >
@@ -888,29 +896,31 @@ function Conversation({
             {selection.status === 'ready' && (
               <>
                 <ChatError error={snapshot.runtime?.error} />
-                <MessageList
-                  key={selection.id}
-                  rows={snapshot.messages}
-                  renderMessage={renderMessage}
-                  label="Conversation messages"
-                  className="transcript"
-                  renderScrollControl={(controls) =>
-                    controls.pinned ? null : (
-                      <ScrollBubble
-                        className="native-scroll-bubble"
-                        mode={
-                          snapshot.runtime?.status === 'running'
-                            ? 'streaming'
-                            : 'idle'
-                        }
-                        onClick={() => {
-                          controls.scrollToLatest();
-                          controls.focus();
-                        }}
-                      />
-                    )
-                  }
-                />
+                <AnswerRatingScope conversationId={selection.id}>
+                  <MessageList
+                    key={selection.id}
+                    rows={snapshot.messages}
+                    renderMessage={renderMessage}
+                    label="Conversation messages"
+                    className="transcript"
+                    renderScrollControl={(controls) =>
+                      controls.pinned ? null : (
+                        <ScrollBubble
+                          className="native-scroll-bubble"
+                          mode={
+                            snapshot.runtime?.status === 'running'
+                              ? 'streaming'
+                              : 'idle'
+                          }
+                          onClick={() => {
+                            controls.scrollToLatest();
+                            controls.focus();
+                          }}
+                        />
+                      )
+                    }
+                  />
+                </AnswerRatingScope>
                 {snapshot.runtime && (
                   <TypingIndicator
                     active={isTyping(snapshot.runtime)}
@@ -991,7 +1001,12 @@ export function App({
       </header>
       <main>
         {application ? (
-          <Conversation application={application} presentation={presentation} />
+          <AnswerRatings>
+            <Conversation
+              application={application}
+              presentation={presentation}
+            />
+          </AnswerRatings>
         ) : (
           <section className="setup" role="status">
             <h1>Set up an assistant to begin</h1>

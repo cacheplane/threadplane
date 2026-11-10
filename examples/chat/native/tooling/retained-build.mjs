@@ -308,6 +308,7 @@ function selectedInputs(p, selected) {
       ['approval-card', 'ApprovalCard'],
       ['select', 'Select'],
       ['message-actions', 'MessageActions'],
+      ['message-rating', 'MessageRating'],
       ['citations', 'Citations'],
       ['text-transcript', 'TextTranscript'],
       ['error', 'ChatError'],

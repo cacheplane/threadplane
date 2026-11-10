@@ -6324,6 +6324,36 @@
       "summary": "View-owned actions. Retained actions become inert when this list unmounts."
     },
     {
+      "name": "MessageRating",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/MessageRating",
+      "canonicalReference": "@threadplane/react!MessageRating:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Controlled thumbs up and down for one response. The owner holds the rating\nand decides whether a requested change is accepted, stored or sent; pressing\nthe current rating requests that it be cleared."
+    },
+    {
+      "name": "MessageRatingProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/MessageRatingProps",
+      "canonicalReference": "@threadplane/react!MessageRatingProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Controls the rating shown for one identified message and reports each requested change with that identity."
+    },
+    {
+      "name": "MessageRatingValue",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/MessageRatingValue",
+      "canonicalReference": "@threadplane/react!MessageRatingValue:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A positive or negative judgement of one response."
+    },
+    {
       "name": "OverflowMenu",
       "entrypointId": "react/chat",
       "kind": "Function",

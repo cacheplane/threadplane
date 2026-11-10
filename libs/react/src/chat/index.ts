@@ -101,6 +101,11 @@ export {
   type MessageActionsProps,
 } from './message-actions.js';
 export {
+  MessageRating,
+  type MessageRatingProps,
+  type MessageRatingValue,
+} from './message-rating.js';
+export {
   ApprovalCard,
   type ApprovalCardAction,
   type ApprovalCardProps,

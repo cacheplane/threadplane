@@ -2429,7 +2429,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/chat/message-actions.tsx",
-      "reason": "Private authored MessageActions group adds app-authored decorative icons and explicit compact presentation, dogfooded through app-owned copy with exact answer text, pending and clipboard outcome. Literal labels, native buttons and current argumentless callbacks remain intact. Ratings, regeneration, full T28 and public release parity remain open."
+      "reason": "Private authored MessageActions group adds app-authored decorative icons and explicit compact presentation, dogfooded through app-owned copy with exact answer text, pending and clipboard outcome. Literal labels, native buttons and current argumentless callbacks remain intact. A separate controlled MessageRating presents owner-held up/down/null per identified message and reports change requests, dogfooded with page-lifetime ratings in native. Regeneration, a feedback backend, full T28 and public release parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts#ChatMessageListComponent",
@@ -5599,7 +5599,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/message-actions.tsx",
-      "reason": "Private React native-button presentation now supports app-authored decorative icons and explicit compact labels, with app-owned copy dogfood. Automatic copy/rate/regenerate commands, richer custom action slots, full legacy parity and public release remain separate."
+      "reason": "Private React native-button presentation now supports app-authored decorative icons and explicit compact labels, with app-owned copy dogfood, plus a separate controlled MessageRating whose owner holds the rating. Automatic copy/regenerate commands, rating persistence, richer custom action slots, full legacy parity and public release remain separate."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatMessageComponent",
@@ -10839,7 +10839,8 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Copy is app-authored through MessageActions and rating is the controlled MessageRating; Angular internal rating and copied state become owner-held values. Regeneration needs a session command and stays open."
     },
     {
       "id": "source:libs/chat/src/lib/primitives/chat-message-list/chat-message-list.component.ts",
@@ -16515,6 +16516,42 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Scoped point/trigger portal placement, local theme snapshot, invoker-aware focus/Tab and unavailable-anchor suppression without backend execution ownership. Typeahead and full parity remain open. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRating",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Bounded private controlled thumbs up/down for one identified response: two native toggle buttons whose pressed state reflects only the owner value; pressing the current rating requests null. Keeps no state and sends nothing. Native dogfoods page-lifetime ratings scoped to the conversation."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRatingProps",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly required messageId, controlled value and change request carrying the message identity, plus optional strict disabled state, literal group/option labels and a group class."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRatingValue",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Exactly up or down; an absent rating is null at the prop."
+    },
+    {
+      "id": "source:libs/react/src/chat/message-rating.tsx",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Stateless rating presentation reusing the compact message-action button styles with built-in decorative glyphs and a distinct pressed style."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Select",
