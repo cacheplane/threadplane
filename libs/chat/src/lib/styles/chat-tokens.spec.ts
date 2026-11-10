@@ -283,7 +283,7 @@ function contrast(a: string, b: string): number {
 }
 
 describe('ROOT_TOKEN_STYLES — status families', () => {
-  it.each(['success-bg', 'success-border', 'warning-border', 'elevation-float'])(
+  it.each(['success-bg', 'success-border', 'warning-border', 'elevation-float', 'scrim'])(
     'declares --tplane-chat-%s in light and dark', (name) => {
       expect(tokenValue('light', name)).toBeTruthy();
       expect(tokenValue('dark', name)).toBeTruthy();

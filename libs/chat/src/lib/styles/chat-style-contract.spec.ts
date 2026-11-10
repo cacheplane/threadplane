@@ -29,3 +29,29 @@ describe('style contract harness', () => {
     expect(values).toEqual(['2px', '5px']);
   });
 });
+
+function offendersOf(property: RegExp, bad: (value: string) => boolean): string[] {
+  return componentStyleSources().flatMap(({ file, source }) =>
+    declarations(source, property, file)
+      .filter(({ value }) => bad(value))
+      .map(({ file: f, line, value }) => `${basename(f)}:${line} ${value}`),
+  );
+}
+
+describe('status colors', () => {
+  it('uses no literal colors in component styles', () => {
+    const offenders = offendersOf(
+      /^(color|background(-color)?|border(-[a-z]+)?-color|border|fill|stroke|outline-color)$/,
+      (value) => /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(value.replace(/var\([^)]*\)/g, '')),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('does not read the undeclared --tplane-chat-error token', () => {
+    expect(
+      componentStyleSources()
+        .filter(({ source }) => /var\(--tplane-chat-error[,)]/.test(source))
+        .map(({ file }) => basename(file)),
+    ).toEqual([]);
+  });
+});

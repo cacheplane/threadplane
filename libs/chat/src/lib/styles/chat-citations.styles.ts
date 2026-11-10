@@ -176,7 +176,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
   }
   .chat-citation-preview__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 10px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 10px; font-weight: 700;
   }
   .chat-citation-preview__domain {
     font-size: 12px;
@@ -250,7 +250,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations__fav:first-child { margin-left: 0; }
   .chat-citations__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 9px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 9px; font-weight: 700;
   }
   .chat-citations__source-icon {
     width: 16px; height: 16px;
@@ -309,7 +309,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   }
   .chat-citations-card__fav--mono {
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 8px; font-weight: 700;
+    color: var(--a2ui-on-primary); font-size: 8px; font-weight: 700;
   }
   .chat-citations-card__domain { font-size: 11.5px; color: var(--tplane-chat-text-muted); }
   .chat-citations-card__type { margin-left: auto; font-size: 10.5px; }

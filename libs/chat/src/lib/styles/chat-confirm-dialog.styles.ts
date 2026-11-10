@@ -4,7 +4,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   .chat-confirm-dialog__scrim {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--tplane-chat-scrim);
     z-index: 70;
     border: 0;
     padding: 0;
@@ -59,7 +59,7 @@ export const CHAT_CONFIRM_DIALOG_STYLES = `
   }
   .chat-confirm-dialog__confirm--destructive {
     background: var(--tplane-chat-destructive);
-    color: #fff;
+    color: var(--a2ui-on-primary);
     border-color: transparent;
   }
   .chat-confirm-dialog__confirm--destructive:hover {

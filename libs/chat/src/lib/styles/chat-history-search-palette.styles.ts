@@ -4,7 +4,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
   .chat-history-search-palette__scrim {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--tplane-chat-scrim);
     z-index: var(--tplane-chat-z-modal-scrim, 1100);
     border: 0;
     padding: 0;

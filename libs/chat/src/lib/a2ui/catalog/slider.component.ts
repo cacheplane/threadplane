@@ -41,7 +41,7 @@ import { emitBinding } from './emit-binding';
     }
       .a2ui-check-error {
       font-size: var(--a2ui-typography-label-size);
-      color: var(--a2ui-error, #d33d55);
+      color: var(--a2ui-error);
     }
 `],
 })

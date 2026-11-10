@@ -41,7 +41,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
       box-shadow: 0 20px 50px rgba(0,0,0,0.18);
     }
     dialog.chat-approval-card::backdrop {
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--tplane-chat-scrim);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
     }

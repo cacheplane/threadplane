@@ -31,6 +31,7 @@ const LIGHT_TOKENS = `
   --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
   --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .04), 0 6px 16px rgb(0 0 0 / .08);
   --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --tplane-chat-scrim: rgb(0 0 0 / .32);
 
   /* --a2ui-* light variant */
   --a2ui-primary: #4f8df5;
@@ -104,6 +105,7 @@ const DARK_TOKENS = `
   --tplane-chat-shadow-lg: var(--tplane-chat-elevation-float);
   --tplane-chat-elevation-float: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .5);
   --tplane-chat-focus-ring: var(--tplane-chat-primary);
+  --tplane-chat-scrim: rgb(0 0 0 / .6);
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
   --a2ui-primary: #4f8df5;

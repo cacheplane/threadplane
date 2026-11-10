@@ -263,8 +263,7 @@ export const CHAT_SIDENAV_STYLES = `
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 8px color-mix(in srgb, #22c55e 60%, transparent);
+    background: var(--tplane-chat-success);
     flex: 0 0 auto;
   }
   .chat-sidenav__debug-dot--streaming {

@@ -94,7 +94,7 @@ summary > span + span { margin-inline-start:12px; }
 .tp-tool-activity-group__items chat-tool-activity + chat-tool-activity { margin-block-start:12px; }
 dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; } dd { margin:0; overflow-wrap:anywhere; }
 pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; font:12px/1.6 var(--tplane-chat-font-mono); margin:4px 0 12px; padding:8px; border-radius:6px; background:var(--tplane-chat-surface-alt); }
-.tp-tool-activity__error { color:var(--tplane-chat-error,#b42318); font-size:13px; margin:8px 0; }
+.tp-tool-activity__error { color:var(--tplane-chat-error-text); font-size:13px; margin:8px 0; }
 .tp-tool-outcomes { margin-block:8px 16px; overflow-wrap:anywhere; }
 .tp-tool-outcomes p { margin:4px 0; }
 .tp-tool-outcomes ul { display:flex; flex-wrap:wrap; gap:8px 16px; padding:0; list-style:none; margin:8px 0; }
