@@ -1,0 +1,54 @@
+{
+  "name": "MessageRatingValue",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/MessageRatingValue",
+  "canonicalReference": "@threadplane/react!MessageRatingValue:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A positive or negative judgement of one response.",
+  "declarations": [
+    {
+      "name": "MessageRatingValue",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!MessageRatingValue:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type MessageRatingValue = "
+        },
+        {
+          "kind": "Content",
+          "text": "'up' | 'down'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "A positive or negative judgement of one response.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/message-rating.tsx",
+        "line": 4
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/message-rating.tsx",
+    "line": 4
+  }
+}

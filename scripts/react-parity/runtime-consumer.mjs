@@ -713,6 +713,82 @@ export async function runRenameFormScenarios(page, url) {
   console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
 }
 
+export async function runMessageRatingScenarios(page, url) {
+  await page.goto(`${url}/?menu&rating`);
+  await expect(page.getByRole('heading', { name: 'Installed message rating' })).toBeVisible();
+  const first = page.getByRole('group', { name: 'Rate response', exact: true });
+  const second = page.getByRole('group', { name: 'Rate <second>', exact: true });
+  const good = first.getByRole('button', { name: 'Good response', exact: true });
+  const poor = first.getByRole('button', { name: 'Poor response', exact: true });
+  const helpful = second.getByRole('button', { name: 'Helpful <b>&', exact: true });
+  const unhelpful = second.getByRole('button', { name: 'Not helpful', exact: true });
+  const values = page.getByTestId('rating-values');
+  const requests = page.getByTestId('rating-requests');
+  const pressed = async () => Promise.all([good, poor, helpful, unhelpful].map((button) => button.getAttribute('aria-pressed')));
+  await expect(first).toHaveAttribute('data-message-id', 'first');
+  await expect(second).toHaveAttribute('data-message-id', 'second');
+  await expect(second).toHaveClass('tp-message-actions tp-message-rating owned-rating');
+  assert.deepEqual(await pressed(), ['false', 'false', 'false', 'true']);
+  await expect(helpful.locator('b')).toHaveCount(0);
+  await expect(helpful).toHaveAttribute('title', 'Helpful <b>&');
+  // Icon-only presentation keeps a 36px target with a hidden literal label and a decorative glyph.
+  for (const button of [good, poor, helpful, unhelpful]) {
+    const evidence = await button.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const label = node.querySelector('.tp-message-actions__label').getBoundingClientRect();
+      const icon = node.querySelector('.tp-message-actions__icon');
+      return { width: box.width, height: box.height, label: [label.width, label.height], hidden: icon.getAttribute('aria-hidden'), focusable: icon.querySelector('svg').getAttribute('focusable'), type: node.getAttribute('type') };
+    });
+    assert.ok(evidence.width >= 36 && evidence.height >= 36, `rating target ${JSON.stringify(evidence)}`);
+    assert.deepEqual([evidence.label, evidence.hidden, evidence.focusable, evidence.type], [[1, 1], 'true', 'false', 'button']);
+  }
+  // The pressed option is visibly distinct from its unpressed sibling.
+  const paint = (button) => button.evaluate((node) => { const style = getComputedStyle(node); return [style.borderTopColor, style.backgroundColor, style.color].join('|'); });
+  assert.notEqual(await paint(unhelpful), await paint(helpful));
+  // Keyboard: natural tab order, Space and Enter toggle, focus stays on the pressed option.
+  await page.getByRole('button', { name: 'Before ratings', exact: true }).focus();
+  await page.keyboard.press('Tab'); await expect(good).toBeFocused();
+  await page.keyboard.press('Space');
+  assert.deepEqual(await pressed(), ['true', 'false', 'false', 'true']);
+  await expect(good).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(poor).toBeFocused();
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await pressed(), ['false', 'true', 'false', 'true']);
+  // Pressing the current rating requests clearing; each group reports its own identity.
+  await poor.click();
+  await unhelpful.click();
+  await helpful.click();
+  assert.deepEqual(await pressed(), ['false', 'false', 'true', 'false']);
+  await expect(requests).toHaveText(JSON.stringify([['up', 'first'], ['down', 'first'], [null, 'first'], [null, 'second'], ['up', 'second']]));
+  await expect(values).toHaveText(JSON.stringify({ first: null, second: 'up' }));
+  // A refused request leaves the owner's rating displayed.
+  await page.getByRole('checkbox', { name: 'Refuse rating changes' }).check();
+  await good.click();
+  await helpful.click();
+  assert.deepEqual(await pressed(), ['false', 'false', 'true', 'false']);
+  await expect(requests).toHaveText(JSON.stringify([['up', 'first'], ['down', 'first'], [null, 'first'], [null, 'second'], ['up', 'second'], ['up', 'first'], [null, 'second']]));
+  await page.getByRole('checkbox', { name: 'Refuse rating changes' }).uncheck();
+  // Disabled keeps the accepted rating visible, is skipped by Tab and is inert for a real pointer.
+  await page.getByRole('checkbox', { name: 'Disable ratings' }).check();
+  for (const button of [good, poor, helpful, unhelpful]) await expect(button).toBeDisabled();
+  await helpful.click({ force: true });
+  await poor.click({ force: true });
+  assert.deepEqual(await pressed(), ['false', 'false', 'true', 'false']);
+  await page.getByRole('button', { name: 'Before ratings', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'After ratings', exact: true })).toBeFocused();
+  await page.getByRole('checkbox', { name: 'Disable ratings' }).uncheck();
+  // Direction changes layout only: order of options in the DOM and tab sequence is unchanged.
+  await page.getByRole('checkbox', { name: 'Right to left' }).check();
+  const [goodBox, poorBox] = [await good.boundingBox(), await poor.boundingBox()];
+  assert.ok(goodBox.x > poorBox.x, 'RTL places the first option at the inline start');
+  await page.getByRole('button', { name: 'Before ratings', exact: true }).focus();
+  await page.keyboard.press('Tab'); await expect(good).toBeFocused();
+  await page.screenshot({ path: join(tmpdir(), 'react-message-rating.png'), fullPage: false });
+  const count = JSON.parse(await requests.textContent()).length;
+  assert.equal(count, 7, 'disabled and layout interaction requested nothing');
+}
+
 export async function runSelectScenarios(page, url) {
   await page.goto(`${url}/?menu&select`);
   const trigger = page.locator('.tp-select__trigger');
@@ -1756,6 +1832,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runRenameFormScenarios(page, server.url);
       await runOverflowMenuScenarios(page, server.url);
       await runSelectScenarios(page, server.url);
+      await runMessageRatingScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }
