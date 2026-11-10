@@ -38,7 +38,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
       border-radius: var(--tplane-chat-radius-card);
       background: var(--tplane-chat-surface);
       color: var(--tplane-chat-text);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+      box-shadow: var(--tplane-chat-elevation-float);
     }
     dialog.chat-approval-card::backdrop {
       background: var(--tplane-chat-scrim);
@@ -83,7 +83,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: transform 200ms ease, opacity 200ms ease;
+      transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease), opacity var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     }
     .btn:hover { transform: scale(1.03); }
     .btn-primary { background: var(--tplane-chat-primary); color: var(--tplane-chat-on-primary); }

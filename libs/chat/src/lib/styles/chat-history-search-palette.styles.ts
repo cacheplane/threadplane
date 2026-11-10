@@ -20,7 +20,7 @@ export const CHAT_HISTORY_SEARCH_PALETTE_STYLES = `
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--tplane-chat-elevation-float);
     z-index: var(--tplane-chat-z-modal, 1101);
     display: flex;
     flex-direction: column;

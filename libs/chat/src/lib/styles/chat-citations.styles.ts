@@ -118,7 +118,7 @@ export const CHAT_CITATION_MARKER_STYLES = `
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citation-marker:hover,
   .chat-citation-marker:focus-visible {
@@ -157,7 +157,7 @@ export const CHAT_CITATION_PREVIEW_STYLES = `
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
-    box-shadow: var(--tplane-chat-shadow-md);
+    box-shadow: var(--tplane-chat-elevation-float);
     padding: var(--tplane-chat-space-3);
     text-align: left;
     color: var(--tplane-chat-text);
@@ -265,7 +265,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   .chat-citations__chevron {
     margin-left: auto;
     color: var(--tplane-chat-text-muted);
-    transition: transform 120ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citations__chevron.is-open { transform: rotate(180deg); }
   .chat-citations__list {
@@ -282,7 +282,7 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
     border-radius: var(--tplane-chat-radius-card);
     text-decoration: none; color: inherit;
     cursor: pointer;
-    transition: border-color 120ms ease, background 120ms ease;
+    transition: border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-citations-card:hover,
   .chat-citations-card:focus-visible {

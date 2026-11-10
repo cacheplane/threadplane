@@ -9,7 +9,7 @@ export const CHAT_WELCOME_STYLES = `
     min-height: 0;
     padding: var(--tplane-chat-welcome-padding, 24px);
     box-sizing: border-box;
-    animation: tplane-chat-welcome-mount 200ms ease-out both;
+    animation: tplane-chat-welcome-mount var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease) both;
   }
   .chat-welcome__inner {
     display: flex;
@@ -83,7 +83,7 @@ export const CHAT_WELCOME_SUGGESTION_STYLES = `
     font-size: var(--tplane-chat-font-size-sm);
     text-align: center;
     cursor: pointer;
-    transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-welcome-suggestion:hover {
     background: var(--tplane-chat-surface-alt);

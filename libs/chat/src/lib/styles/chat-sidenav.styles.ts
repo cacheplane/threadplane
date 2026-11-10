@@ -48,7 +48,7 @@ export const CHAT_SIDENAV_STYLES = `
     pointer-events: none;
   }
   :host([data-mode="drawer"][data-open="true"]) {
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--tplane-chat-elevation-float);
   }
   .chat-sidenav {
     display: flex;
@@ -62,7 +62,7 @@ export const CHAT_SIDENAV_STYLES = `
   :host([data-mode="drawer"]) .chat-sidenav {
     width: 100%;
     height: 100%;
-    transition: transform 200ms ease;
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     transform: translateX(-100%);
     /* Keep the closed/closing panel inert. The host is inert above, and the
      * panel can still be hit during its transform transition unless pointer
@@ -357,7 +357,7 @@ export const CHAT_SIDENAV_STYLES = `
   .chat-sidenav__archived-chevron {
     width: 12px;
     height: 12px;
-    transition: transform 150ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     flex-shrink: 0;
   }
   .chat-sidenav__archived[data-open="true"] .chat-sidenav__archived-chevron {

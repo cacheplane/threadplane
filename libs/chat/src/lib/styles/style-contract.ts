@@ -34,8 +34,9 @@ function stripComments(source: string): string {
 }
 
 /**
- * Returns each CSS declaration whose property matches, with the value up to
- * `;`, a newline, a closing backtick, or a brace. Comments are
+ * Returns each CSS declaration whose property matches, with the value read through
+ * to `;`, a closing backtick, or a brace (so multi-line values stay whole,
+ * with whitespace collapsed). Comments are
  * ignored, as are values that begin with a quote: those are JS object
  * properties (such as a2ui theme configs), not component styles.
  */
@@ -46,10 +47,10 @@ export function declarations(
 ): { file: string; line: number; value: string }[] {
   const text = stripComments(source);
   const out: { file: string; line: number; value: string }[] = [];
-  const pattern = /(?<=^|[\s{;])(-{0,2}[A-Za-z][\w-]*)\s*:\s*([^;\n`{}]*)/g;
+  const pattern = /(?<=^|[\s{;])(-{0,2}[A-Za-z][\w-]*)\s*:\s*([^;`{}]*)/g;
   for (const match of text.matchAll(pattern)) {
     if (!property.test(match[1])) continue;
-    const value = match[2].trim();
+    const value = match[2].trim().replace(/\s+/g, ' ');
     if (!value || /^['"`]/.test(value)) continue;
     const line = text.slice(0, match.index).split('\n').length;
     out.push({ file, line, value });

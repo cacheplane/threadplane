@@ -17,7 +17,7 @@ export const CHAT_SELECT_STYLES = `
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
+    transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-select__trigger:hover:not(:disabled) {
     background: var(--tplane-chat-surface-alt);
@@ -30,7 +30,7 @@ export const CHAT_SELECT_STYLES = `
   .chat-select__chevron {
     width: 12px;
     height: 12px;
-    transition: transform 120ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     flex: none;
   }
   .chat-select__trigger.is-open .chat-select__chevron {
@@ -48,7 +48,7 @@ export const CHAT_SELECT_STYLES = `
     background: var(--tplane-chat-surface);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
-    box-shadow: var(--tplane-chat-shadow-lg);
+    box-shadow: var(--tplane-chat-elevation-float);
     padding: 4px;
     box-sizing: border-box;
   }

@@ -20,7 +20,7 @@ export const CHAT_OVERFLOW_MENU_STYLES = `
     background: var(--tplane-chat-bg);
     border: 1px solid var(--tplane-chat-separator);
     border-radius: var(--tplane-chat-radius-card);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--tplane-chat-elevation-float);
   }
   .chat-overflow-menu__item {
     display: block;

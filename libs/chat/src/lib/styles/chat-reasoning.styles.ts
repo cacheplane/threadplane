@@ -34,7 +34,7 @@ export const CHAT_REASONING_STYLES = `
   .chat-reasoning__chevron {
     width: 10px;
     height: 10px;
-    transition: transform 120ms ease;
+    transition: transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   :host([data-expanded="true"]) .chat-reasoning__chevron { transform: rotate(90deg); }
 

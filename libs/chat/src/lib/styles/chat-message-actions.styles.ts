@@ -9,7 +9,7 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     gap: 0.5rem;
     padding: 16px 0 12px 0;
     opacity: 0;
-    transition: opacity 200ms ease;
+    transition: opacity var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     pointer-events: none;
   }
   :host-context(chat-message[data-role="assistant"]:hover),
@@ -43,7 +43,7 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     background: transparent;
     color: var(--tplane-chat-text-muted);
     cursor: pointer;
-    transition: color 150ms ease, transform 150ms ease, background 150ms ease;
+    transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   }
   .chat-message-actions__btn:hover {
     color: var(--tplane-chat-text);

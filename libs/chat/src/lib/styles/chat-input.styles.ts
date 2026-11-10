@@ -23,7 +23,7 @@ export const CHAT_INPUT_STYLES = `
   padding: 8px 8px 8px 16px;
   min-height: 56px;
   box-sizing: border-box;
-  transition: border-color 150ms ease;
+  transition: border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
 }
 /* The textarea draws no outline of its own; the pill carries the focus ring. */
 .chat-input__pill:focus-within {
@@ -78,7 +78,7 @@ export const CHAT_INPUT_STYLES = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+  transition: opacity var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), transform var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
   padding: 0;
 }
 .chat-input__send {

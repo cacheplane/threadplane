@@ -12,8 +12,8 @@ export const CHAT_LAUNCHER_BUTTON_STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--tplane-chat-shadow-md);
-    transition: transform 200ms ease;
+    box-shadow: var(--tplane-chat-elevation-float);
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
   }
   .chat-launcher-button:hover { transform: scale(1.05); }
   .chat-launcher-button svg { width: 24px; height: 24px; }

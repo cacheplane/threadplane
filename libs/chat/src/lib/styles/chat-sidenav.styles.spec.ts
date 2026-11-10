@@ -85,9 +85,9 @@ describe('CHAT_SIDENAV_STYLES — drawer elevation + z-index token', () => {
       /:host\(\[data-mode="drawer"\]\)\s*\{[^}]*z-index:\s*var\(--tplane-chat-z-drawer,\s*1001\)\s*;/,
     );
   });
-  it('applies a right-edge box-shadow when the drawer is open', () => {
+  it('applies the float elevation when the drawer is open', () => {
     expect(normalized).toMatch(
-      /:host\(\[data-mode="drawer"\]\[data-open="true"\]\)\s*\{[^}]*box-shadow:\s*8px\s+0\s+32px\s+rgba\(0,\s*0,\s*0,\s*0\.18\)\s*;/,
+      /:host\(\[data-mode="drawer"\]\[data-open="true"\]\)\s*\{[^}]*box-shadow:\s*var\(--tplane-chat-elevation-float\)\s*;/,
     );
   });
   it('no longer declares the .chat-sidenav__scrim selector', () => {

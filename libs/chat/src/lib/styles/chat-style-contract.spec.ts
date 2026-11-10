@@ -28,6 +28,13 @@ describe('style contract harness', () => {
     const values = declarations(source, /^border-radius$/).map(({ value }) => value);
     expect(values).toEqual(['2px', '5px']);
   });
+
+  it('reads a multi-line value through to its semicolon', () => {
+    const source = 'a {\n  box-shadow:\n    0 1px 2px red,\n    0 4px 8px blue;\n  color: red;\n}';
+    expect(declarations(source, /^box-shadow$/).map(({ value }) => value)).toEqual([
+      '0 1px 2px red, 0 4px 8px blue',
+    ]);
+  });
 });
 
 function offendersOf(property: RegExp, bad: (value: string) => boolean): string[] {
@@ -141,5 +148,46 @@ describe('outline removal', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('elevation', () => {
+  const ALLOWED = [
+    /^none$/,
+    /^var\(--tplane-chat-elevation-float\)$/,
+    /^var\(--a2ui-elevation-\d\)$/,
+    // Debug dock tokens alias the float elevation.
+    /^var\(--tplane-chat-debug-shadow-(panel|pill)\)$/,
+    // Inset hairline or token-colored halo: no offset, token-derived color only.
+    /^inset 0 0 0 \d+px var\(--[a-z0-9-]+\)$/,
+    /^0 0 \d+px (var\(--[a-z0-9-]+\)|color-mix\(in srgb, var\(--[a-z0-9-]+\) \d+%, transparent\))$/,
+  ];
+  it('uses only the float token, none, a2ui elevations or token-colored halos in box-shadow', () => {
+    const offenders = offendersOf(/^box-shadow$/, (value) => !ALLOWED.some((ok) => ok.test(value)));
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('motion', () => {
+  const stripVars = (value: string): string => {
+    let out = value;
+    for (let i = 0; i < 4; i++) out = out.replace(/var\([^()]*\)/g, '');
+    return out;
+  };
+  it('writes every transition duration and easing as a motion token', () => {
+    const offenders = offendersOf(/^transition(-duration|-timing-function)?$/, (value) =>
+      /(^|[\s,])-?\d*\.?\d+m?s\b|\b(ease|ease-in|ease-out|ease-in-out|linear)\b|cubic-bezier|steps\(/.test(
+        stripVars(value),
+      ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('moves the welcome mount animation onto the motion tokens', () => {
+    const [mount] = declarations(sourceOf('chat-welcome.styles.ts'), /^animation$/).filter(({ value }) =>
+      value.includes('tplane-chat-welcome-mount'),
+    );
+    expect(mount.value).toContain('var(--tplane-chat-motion-duration-slow)');
+    expect(mount.value).toContain('var(--tplane-chat-motion-ease)');
   });
 });

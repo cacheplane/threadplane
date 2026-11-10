@@ -39,7 +39,7 @@ import { DebugStateInspectorComponent } from '../debug-state-inspector.component
       text-transform: none;
       color: var(--tplane-chat-debug-text-muted);
       cursor: pointer;
-      transition: color 120ms ease, border-color 120ms ease;
+      transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .state__copy:hover {
       color: var(--tplane-chat-debug-text);

@@ -21,7 +21,7 @@ export const CHAT_PROJECT_LIST_STYLES = `
     border: 0;
     text-align: left;
     box-sizing: border-box;
-    transition: background-color 150ms ease;
+    transition: background-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -41,7 +41,7 @@ export const CHAT_PROJECT_LIST_STYLES = `
     border-radius: var(--tplane-chat-radius-sm);
     cursor: pointer;
     opacity: 0;
-    transition: opacity 100ms ease;
+    transition: opacity var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     padding: 0;
     line-height: 1;
     font-size: 18px;

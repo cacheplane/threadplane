@@ -42,7 +42,7 @@ import { installChatSurfaceFocus } from '../shared/surface-focus';
       flex: 1 1 auto;
       min-width: 0;
       min-height: 0;
-      transition: margin-right 300ms ease;
+      transition: margin-right var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     }
     :host([data-push="true"][data-open="true"]) .chat-sidebar__content {
       margin-right: var(--tplane-chat-sidebar-width-drawer, 28rem);
@@ -58,9 +58,9 @@ import { installChatSurfaceFocus } from '../shared/surface-focus';
       width: var(--tplane-chat-sidebar-width-drawer, 28rem);
       background: var(--tplane-chat-bg);
       border-left: 1px solid var(--tplane-chat-separator);
-      box-shadow: -8px 0 32px rgba(0,0,0,.08);
+      box-shadow: var(--tplane-chat-elevation-float);
       transform: translateX(100%);
-      transition: transform 200ms ease-out, bottom 200ms ease-out;
+      transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease), bottom var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
       z-index: var(--tplane-chat-z-overlay-content, 30);
       display: flex;
       flex-direction: column;
@@ -105,7 +105,7 @@ import { installChatSurfaceFocus } from '../shared/surface-focus';
       bottom: calc(1rem + var(--tplane-chat-debug-claim-bottom, 0));
       right: 1rem;
       z-index: var(--tplane-chat-z-overlay-content, 30);
-      transition: bottom 200ms ease-out;
+      transition: bottom var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     }
     /* Hide the launcher when the sidebar is open — the close button on the
        panel handles dismissal, and the panel covers the launcher anyway. */

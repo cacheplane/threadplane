@@ -24,7 +24,7 @@ export const CHAT_TRACE_STYLES = `
   .chat-trace__chevron {
     width: 12px;
     height: 12px;
-    transition: transform 200ms ease;
+    transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     flex-shrink: 0;
   }
   :host([data-expanded="true"]) .chat-trace__chevron { transform: rotate(90deg); }

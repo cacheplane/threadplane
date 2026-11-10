@@ -80,7 +80,7 @@ export function stepSelection(dir: Direction, current: number, count: number): n
       text-transform: none;
       padding: 2px 6px;
       border-radius: var(--tplane-chat-radius-card);
-      transition: color 120ms ease, background 120ms ease;
+      transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .timeline__clear:hover:not(:disabled) {
       color: var(--tplane-chat-debug-text);
@@ -118,7 +118,7 @@ export function stepSelection(dir: Direction, current: number, count: number): n
       font-size: 11px;
       color: var(--tplane-chat-debug-text-muted);
       cursor: pointer;
-      transition: color 120ms ease, border-color 120ms ease;
+      transition: color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .timeline__row button.row-action:hover {
       color: var(--tplane-chat-debug-text);

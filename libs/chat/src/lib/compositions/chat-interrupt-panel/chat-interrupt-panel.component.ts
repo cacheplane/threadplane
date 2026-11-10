@@ -90,7 +90,7 @@ export function interruptReasonText(interrupt: AgentInterrupt | undefined): stri
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: transform 200ms ease, opacity 200ms ease;
+      transition: transform var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease), opacity var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     }
     .btn:hover { transform: scale(1.03); }
     .btn-primary { background: var(--tplane-chat-primary); color: var(--tplane-chat-on-primary); }

@@ -28,7 +28,7 @@ export interface DebugCheckpoint {
       padding: 8px 12px;
       cursor: pointer;
       background: var(--tplane-chat-bg);
-      transition: background 150ms ease, border-color 150ms ease;
+      transition: background var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease), border-color var(--tplane-chat-motion-duration) var(--tplane-chat-motion-ease);
     }
     .debug-checkpoint-card:hover {
       background: color-mix(in srgb, var(--tplane-chat-text) 5%, transparent);
