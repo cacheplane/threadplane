@@ -1,0 +1,151 @@
+{
+  "name": "ApprovalRecordProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/ApprovalRecordProps",
+  "canonicalReference": "@threadplane/react!ApprovalRecordProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "The one-line record an answered approval leaves in the transcript: \"Approved: Save note\".",
+  "declarations": [
+    {
+      "name": "ApprovalRecordProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!ApprovalRecordProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface ApprovalRecordProps "
+        }
+      ],
+      "docs": {
+        "summary": "The one-line record an answered approval leaves in the transcript: \"Approved: Save note\".",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ApprovalRecordProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/approval-card.tsx",
+            "line": 98
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ApprovalRecordProps#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "What was approved, such as \"Save note\". Omit for just \"Approved\" or \"Declined\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/approval-card.tsx",
+            "line": 97
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "verdict",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ApprovalRecordProps#verdict:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly verdict: "
+            },
+            {
+              "kind": "Content",
+              "text": "'approved' | 'declined'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/approval-card.tsx",
+            "line": 95
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/approval-card.tsx",
+        "line": 94
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/approval-card.tsx",
+    "line": 94
+  }
+}

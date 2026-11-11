@@ -70,10 +70,46 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/approval-card.tsx",
-            "line": 15
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "autoFocus",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ApprovalCardProps#autoFocus:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly autoFocus?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Moves focus to the first action when the card appears. Defaults to true.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/approval-card.tsx",
+            "line": 26
+          },
+          "isReadonly": true,
+          "isOptional": true
         },
         {
           "name": "children",
@@ -107,7 +143,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/approval-card.tsx",
-            "line": 14
+            "line": 15
           },
           "isReadonly": true,
           "isOptional": false
@@ -143,7 +179,43 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/approval-card.tsx",
-            "line": 18
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "destructive",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ApprovalCardProps#destructive:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly destructive?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Marks an action that cannot be undone: danger tint, the lead \"This can't be undone.\" and a danger\nprimary button. Name the exact effect in the first action, such as \"Delete 12 drafts\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/approval-card.tsx",
+            "line": 24
           },
           "isReadonly": true,
           "isOptional": true
@@ -179,7 +251,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/approval-card.tsx",
-            "line": 17
+            "line": 19
           },
           "isReadonly": true,
           "isOptional": true
@@ -203,7 +275,7 @@
             }
           ],
           "docs": {
-            "summary": "",
+            "summary": "The request in plain words, such as \"Save the comparison note to your workspace?\"",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -215,7 +287,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/approval-card.tsx",
-            "line": 16
+            "line": 18
           },
           "isReadonly": true,
           "isOptional": true
@@ -223,12 +295,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/approval-card.tsx",
-        "line": 13
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/approval-card.tsx",
-    "line": 13
+    "line": 14
   }
 }

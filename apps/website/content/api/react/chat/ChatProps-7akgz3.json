@@ -53,6 +53,43 @@
       },
       "members": [
         {
+          "name": "approval",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#approval:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly approval?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "A pending approval, such as an `ApprovalCard`, shown at the end of the transcript. While it is\nset, the composer reads \"Answer the approval to continue\"; once it clears, focus returns to the\ncomposer. The app decides when it is pending and what answering does.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 41
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "className",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ChatProps#className:member",
@@ -205,7 +242,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 41
+            "line": 47
           },
           "isReadonly": true,
           "isOptional": true
@@ -247,7 +284,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 37
+            "line": 43
           },
           "isReadonly": true,
           "isOptional": true
@@ -289,7 +326,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 39
+            "line": 45
           },
           "isReadonly": true,
           "isOptional": true

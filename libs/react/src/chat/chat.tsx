@@ -1,9 +1,9 @@
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { AgentSession } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
-import { ChatInput, type ChatInputProps } from './chat-input.js';
+import { ChatInput, type ChatInputHandle, type ChatInputProps } from './chat-input.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList, type MessageListProps } from './message-list.js';
@@ -33,6 +33,12 @@ export interface ChatProps
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /**
+   * A pending approval, such as an `ApprovalCard`, shown at the end of the transcript. While it is
+   * set, the composer reads "Answer the approval to continue"; once it clears, focus returns to the
+   * composer. The app decides when it is pending and what answering does.
+   */
+  readonly approval?: ReactNode;
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -58,6 +64,7 @@ export function Chat({
   inputLeading,
   inputTrailing,
   inputFooter,
+  approval,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
@@ -65,6 +72,14 @@ export function Chat({
   const stop = useCallback(() => {
     session.stop().catch(ignore);
   }, [session]);
+  // Answering removes the approval and its focused button; continue in the composer.
+  const composer = useRef<ChatInputHandle>(null);
+  const pending = approval !== undefined && approval !== null && approval !== false;
+  const hadApproval = useRef(pending);
+  useEffect(() => {
+    if (hadApproval.current && !pending) composer.current?.focus();
+    hadApproval.current = pending;
+  }, [pending]);
   const rows = useMessageContent(snapshot, session, content);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
@@ -89,7 +104,9 @@ export function Chat({
             />
           )
         }
-      />
+      >
+        {pending ? approval : null}
+      </MessageList>
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
         error={snapshot.error}
@@ -111,8 +128,10 @@ export function Chat({
         }
       />
       <ChatInput
+        ref={composer}
         key={sessionKey(session)}
         {...input}
+        placeholder={pending ? 'Answer the approval to continue' : input.placeholder}
         leading={inputLeading}
         trailing={inputTrailing}
         footer={inputFooter}

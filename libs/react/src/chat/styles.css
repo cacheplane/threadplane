@@ -479,6 +479,39 @@
 .tp-approval-card__action:disabled {
   cursor: not-allowed;
 }
+/* The approval reads as a status panel: warning, or danger for a destructive action. */
+.tp-approval-card.tp-status-panel {
+  border-color: color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
+  background: color-mix(in srgb, var(--tp-status-tone) 8%, var(--tp-chat-surface, Canvas));
+}
+.tp-approval-card .tp-status-panel__lead {
+  margin: 0 0 0.25rem;
+}
+.tp-approval-card .tp-approval-card__action--primary {
+  border-color: var(--tp-chat-text, CanvasText);
+  background: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-surface, Canvas);
+}
+.tp-approval-card .tp-approval-card__action--danger {
+  border-color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: light-dark(#ffffff, #1c1c1c);
+}
+@media (pointer: coarse) {
+  .tp-approval-card__action { min-height: 44px; }
+}
+@media (forced-colors: active) {
+  .tp-approval-card .tp-approval-card__action--primary,
+  .tp-approval-card .tp-approval-card__action--danger { border: 1px solid ButtonText; }
+}
+.tp-approval-record {
+  margin: 0;
+  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+}
+.tp-approval-record[data-verdict='approved']::before {
+  content: '✓ ' / '';
+}
 .tp-chat-list {
   flex: 1 1 auto;
   min-height: 0;

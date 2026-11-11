@@ -1,16 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "883ef640dc456ed8962cc6d0e046aa647788e273",
+  "baselineHead": "1c8e4837677cfac17d03b77458210e6275e69c63",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "libs/langgraph/src/runtime/create-session.ts",
-      "libs/langgraph/src/runtime/ownership.ts",
-      "libs/react/src/chat/activity-summary.ts",
+      "apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
+      "libs/react/src/chat/approval-card.tsx",
       "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css",
-      "libs/react/src/chat/tool-activity.tsx"
+      "libs/react/src/chat/index.ts",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -876,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "dbdae21ab836c2b459d3186c5a108804927bcbedf1e853ea25d08d481589b682"
+      "sha256": "6a21a3a558f41e162fb3ec5b5b78b3ebf79921fb3eb4f45c610840ce360a42b4"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3144,7 +3141,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-interrupt-panel.mdx",
-      "sha256": "e4207013d3af79b97823eed92bac1bb9b2c9e01f5b6c677d5e1374e1048f3e62"
+      "sha256": "e26390a0342469c9985147197667dcd392fbcb712cda32dea4cdcc37b8615f77"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-message-list.mdx",
@@ -11323,7 +11320,7 @@
           "path": "libs/react/src/chat/approval-card.tsx",
           "symbol": "ApprovalCard",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ApprovalCard({ children, actions, title = 'Approval request', disabled = false, className, }: ApprovalCardProps) {\n    const heading = useId();\n    return (<section className={['tp-approval-card', className].filter(Boolean).join(' ')} aria-labelledby={heading}>\n      <h2 id={heading} className=\"tp-approval-card__title\">\n        {title}\n      </h2>\n      <div className=\"tp-approval-card__body\">{children}</div>\n      <div className=\"tp-approval-card__actions\">\n        {actions.map((action) => (<button key={action.id} type=\"button\" className=\"tp-approval-card__action\" disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n            {action.label}\n          </button>))}\n      </div>\n    </section>);\n}"
+          "signature": "export function ApprovalCard({ children, actions, title = 'Approval request', disabled = false, destructive = false, autoFocus = true, className, }: ApprovalCardProps) {\n    const heading = useId();\n    const firstAction = useRef<HTMLButtonElement>(null);\n    useEffect(() => {\n        if (autoFocus)\n            firstAction.current?.focus();\n    }, []);\n    return (<section className={['tp-approval-card', 'tp-status-panel', className]\n            .filter(Boolean)\n            .join(' ')} data-tone={destructive ? 'danger' : 'warning'} aria-labelledby={heading}>\n      <p className=\"tp-status-panel__lead\">\n        {destructive ? \"This can't be undone.\" : 'Waiting for your approval.'}\n      </p>\n      <h2 id={heading} className=\"tp-approval-card__title\">\n        {title}\n      </h2>\n      <div className=\"tp-approval-card__body\">{children}</div>\n      <div className=\"tp-approval-card__actions\">\n        {actions.map((action, index) => (<button key={action.id} ref={index === 0 ? firstAction : undefined} type=\"button\" className={[\n                'tp-approval-card__action',\n                index === 0 &&\n                    (destructive\n                        ? 'tp-approval-card__action--danger'\n                        : 'tp-approval-card__action--primary'),\n            ]\n                .filter(Boolean)\n                .join(' ')} disabled={disabled || action.disabled} onClick={() => {\n                if (!disabled && !action.disabled)\n                    action.onSelect();\n            }}>\n            {action.label}\n          </button>))}\n      </div>\n    </section>);\n}"
         }
       ]
     },
@@ -11351,7 +11348,35 @@
           "path": "libs/react/src/chat/approval-card.tsx",
           "symbol": "ApprovalCardProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ApprovalCardProps {\n    readonly children: ReactNode;\n    readonly actions: readonly ApprovalCardAction[];\n    readonly title?: string;\n    readonly disabled?: boolean;\n    readonly className?: string;\n}"
+          "signature": "export interface ApprovalCardProps {\n    readonly children: ReactNode;\n    readonly actions: readonly ApprovalCardAction[];\n    readonly title?: string;\n    readonly disabled?: boolean;\n    readonly destructive?: boolean;\n    readonly autoFocus?: boolean;\n    readonly className?: string;\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalRecord",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalRecord",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalRecord",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function ApprovalRecord({ verdict, label, className }: ApprovalRecordProps) {\n    const verb = verdict === 'approved' ? 'Approved' : 'Declined';\n    return (<p className={['tp-approval-record', className].filter(Boolean).join(' ')} data-verdict={verdict}>\n      {label?.trim() ? `${verb}: ${label.trim()}` : verb}\n    </p>);\n}"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalRecordProps",
+      "kind": "export",
+      "path": "libs/react/src/chat/index.ts",
+      "symbol": "ApprovalRecordProps",
+      "declarations": [
+        {
+          "path": "libs/react/src/chat/approval-card.tsx",
+          "symbol": "ApprovalRecordProps",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface ApprovalRecordProps {\n    readonly verdict: 'approved' | 'declined';\n    readonly label?: string;\n    readonly className?: string;\n}"
         }
       ]
     },
@@ -11365,7 +11390,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "Chat",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, toolOutcome, renderToolResult, onToolRetry, onRetry, inputLeading, inputTrailing, inputFooter, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const stop = useCallback(() => {\n        session.stop().catch(ignore);\n    }, [session]);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} plan={snapshot.plan} onStop={snapshot.status === 'running' ? stop : undefined} renderScrollControl={(controls) => controls.pinned ? null : (<ScrollBubble mode={snapshot.status === 'running' ? 'streaming' : 'idle'} onClick={() => {\n                controls.scrollToLatest();\n                controls.focus();\n            }}/>)}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} leading={inputLeading} trailing={inputTrailing} footer={inputFooter} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, toolOutcome, renderToolResult, onToolRetry, onRetry, inputLeading, inputTrailing, inputFooter, approval, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const stop = useCallback(() => {\n        session.stop().catch(ignore);\n    }, [session]);\n    const composer = useRef<ChatInputHandle>(null);\n    const pending = approval !== undefined && approval !== null && approval !== false;\n    const hadApproval = useRef(pending);\n    useEffect(() => {\n        if (hadApproval.current && !pending)\n            composer.current?.focus();\n        hadApproval.current = pending;\n    }, [pending]);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} plan={snapshot.plan} onStop={snapshot.status === 'running' ? stop : undefined} renderScrollControl={(controls) => controls.pinned ? null : (<ScrollBubble mode={snapshot.status === 'running' ? 'streaming' : 'idle'} onClick={() => {\n                controls.scrollToLatest();\n                controls.focus();\n            }}/>)}>\n        {pending ? approval : null}\n      </MessageList>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput ref={composer} key={sessionKey(session)} {...input} placeholder={pending ? 'Answer the approval to continue' : input.placeholder} leading={inputLeading} trailing={inputTrailing} footer={inputFooter} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
         }
       ]
     },
@@ -11519,7 +11544,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "ChatProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: MessageListProps['renderMessage'];\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly renderToolResult?: MessageListProps['renderToolResult'];\n    readonly onToolRetry?: MessageListProps['onToolRetry'];\n    readonly onRetry?: () => void;\n    readonly inputLeading?: ChatInputProps['leading'];\n    readonly inputTrailing?: ChatInputProps['trailing'];\n    readonly inputFooter?: ChatInputProps['footer'];\n}"
+          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: MessageListProps['renderMessage'];\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly renderToolResult?: MessageListProps['renderToolResult'];\n    readonly onToolRetry?: MessageListProps['onToolRetry'];\n    readonly onRetry?: () => void;\n    readonly approval?: ReactNode;\n    readonly inputLeading?: ChatInputProps['leading'];\n    readonly inputTrailing?: ChatInputProps['trailing'];\n    readonly inputFooter?: ChatInputProps['footer'];\n}"
         }
       ]
     },
@@ -17159,7 +17184,7 @@
       "id": "source:libs/react/src/chat/approval-card.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/approval-card.tsx",
-      "sha256": "c574f85986e72342b50900c21413eee55ebfac135b2c0d23c3a16dcccbdfea78"
+      "sha256": "5da33dc7c7a4f9db96fd55851f246c76b02a2c914d481d7c98b5a433353570cf"
     },
     {
       "id": "source:libs/react/src/chat/chat-input.tsx",
@@ -17201,7 +17226,7 @@
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "c6e8e8728271c869f30f5b20d99c5f5f27dd9cd91e425f3cca207210e3bb2693"
+      "sha256": "d3191592888fabf91f555205d19a2f54cab8f18a875b22d8ec681983925b6605"
     },
     {
       "id": "source:libs/react/src/chat/citation-card.tsx",
@@ -17243,7 +17268,7 @@
       "id": "source:libs/react/src/chat/index.ts",
       "kind": "source",
       "path": "libs/react/src/chat/index.ts",
-      "sha256": "2a23fe7078d1099967326cb5b72ab03d501c7d92e86a52267cd192d3e55004e6"
+      "sha256": "bcbd23fb6bb35643950bd68f625d7fcc9d0480683415d6a104cc6e91df490a5c"
     },
     {
       "id": "source:libs/react/src/chat/internal/citation-source-marker.tsx",

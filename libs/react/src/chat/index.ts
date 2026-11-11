@@ -102,8 +102,10 @@ export {
 } from './message-rating.js';
 export {
   ApprovalCard,
+  ApprovalRecord,
   type ApprovalCardAction,
   type ApprovalCardProps,
+  type ApprovalRecordProps,
 } from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';
 export { ChatError, type ChatErrorProps } from './error.js';

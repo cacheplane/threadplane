@@ -35,6 +35,14 @@ The owner checks message and tool identities, the confirmed conversation prefix,
 
 These checks fence state observed by this page. They are not an atomic checkpoint precondition on the backend resume request; another client changing the same thread without this page observing it is outside this example's guarantee. Each page creates its own fresh thread, and there is no shared-thread picker.
 
+## How the card reads
+
+`ApprovalCard` renders as an inline warning panel. It leads with "Waiting for your approval.", then your `title` as the request in plain words, your body, and the actions. The first action is the primary button, so make it the action itself, such as **Save note**, and name the alternative in the second, such as a button that declines it. Focus moves to the first action when the card appears; pass `autoFocus={false}` when your page manages focus itself.
+
+For an action that cannot be undone, pass `destructive`. The panel switches to the danger tint, leads by saying the action cannot be undone, and draws the primary button in the danger color, so name the exact effect, such as **Delete 12 drafts**.
+
+Pass the card to `Chat` as `approval` to show it at the end of the transcript. While it is set, the composer reads "Answer the approval to continue", and once it clears, focus returns to the composer. After the person answers, render `<ApprovalRecord verdict="approved" label="Save note" />` after the message the approval followed to leave a one-line record, such as **Approved: Save note**. Your application decides when an approval is pending and when to record it.
+
 ## Confirm completion and recover locally
 
 After each paused or successful operation, the application reads saved history once. It keeps commands blocked until the messages, tool results and root checkpoint agree with the owned operation. Title generation updates metadata without entering the answer stream.
