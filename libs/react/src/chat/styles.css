@@ -2055,6 +2055,9 @@
   }
 }
 .tp-tool-activity,
+.tp-chat-tool-call {
+  min-width: 0;
+}
 .tp-tool-activity-group {
   min-width: 0;
   color: var(--tp-chat-text, CanvasText);

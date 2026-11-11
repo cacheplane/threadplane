@@ -116,6 +116,14 @@ it('forwards renderToolResult through Chat', () => {
   );
   expect(view.getByRole('button', { name: 'Act on call' })).toBeTruthy();
 });
+it('forwards renderToolCall through Chat', () => {
+  const { session } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
+  const view = render(
+    <Chat session={session} renderToolCall={(call) => <p>Card for {call.name}</p>} />
+  );
+  expect(view.getByText('Card for lookup').parentElement?.className).toBe('tp-chat-tool-call');
+  expect(view.container.querySelector('.tp-tool-activity')).toBeNull();
+});
 const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const disposed = (content: MessageContent) =>
