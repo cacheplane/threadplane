@@ -192,3 +192,78 @@ describe('ChatApprovalCardComponent', () => {
     expect(cancelEvent.defaultPrevented).toBe(true);
   });
 });
+
+@Component({
+  standalone: true,
+  imports: [ChatApprovalCardComponent],
+  template: `
+    <chat-approval-card
+      [agent]="agent"
+      presentation="inline"
+      [destructive]="destructive"
+      title="Save the comparison note to your workspace?"
+      approveLabel="Save note"
+      cancelLabel="Don't save"
+      (action)="lastAction = $event"
+    >
+      <ng-template #body let-payload><code class="args">save_note · folder: {{ payload.folder }}</code></ng-template>
+    </chat-approval-card>
+  `,
+})
+class InlineHost {
+  agent = mockAgent({ withInterrupt: true });
+  destructive = false;
+  lastAction: string | undefined = undefined;
+}
+
+describe('ChatApprovalCardComponent — inline', () => {
+  function render(destructive = false) {
+    const fixture = TestBed.createComponent(InlineHost);
+    fixture.componentInstance.destructive = destructive;
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: { folder: 'Comparisons' }, resumable: true });
+    fixture.detectChanges();
+    TestBed.tick();
+    return { fixture, root: fixture.nativeElement as HTMLElement };
+  }
+
+  it('renders a warning status panel in place and never opens the dialog', () => {
+    const { root } = render();
+    expect(root.querySelector('dialog')!.open).toBe(false);
+    const panel = root.querySelector<HTMLElement>('.chat-approval-card--inline')!;
+    expect(panel.getAttribute('data-tone')).toBe('warning');
+    expect(panel.querySelector('.tp-status-panel__lead')!.textContent!.trim()).toBe('Waiting for your approval.');
+    expect(panel.textContent).toContain('Save the comparison note to your workspace?');
+    expect(panel.querySelector('.args')!.textContent).toBe('save_note · folder: Comparisons');
+    const buttons = Array.from(panel.querySelectorAll('button')).map((b) => b.textContent!.trim());
+    expect(buttons).toEqual(['Save note', "Don't save"]);
+    expect(panel.closest('[role="alert"]')).toBeNull();
+  });
+
+  it('moves focus to the first action when it appears', () => {
+    const { root } = render();
+    expect(document.activeElement).toBe(root.querySelector('.chat-approval-card--inline button'));
+  });
+
+  it('emits approve and cancel from the named actions', () => {
+    const { fixture, root } = render();
+    root.querySelectorAll<HTMLButtonElement>('.chat-approval-card--inline button')[1].click();
+    expect(fixture.componentInstance.lastAction).toBe('cancel');
+    root.querySelectorAll<HTMLButtonElement>('.chat-approval-card--inline button')[0].click();
+    expect(fixture.componentInstance.lastAction).toBe('approve');
+  });
+
+  it('uses the danger tint and states that a destructive action cannot be undone', () => {
+    const { root } = render(true);
+    const panel = root.querySelector<HTMLElement>('.chat-approval-card--inline')!;
+    expect(panel.getAttribute('data-tone')).toBe('danger');
+    expect(panel.querySelector('.tp-status-panel__lead')!.textContent!.trim()).toBe("This can't be undone.");
+    expect(panel.querySelector('button')!.classList.contains('btn-danger')).toBe(true);
+  });
+
+  it('renders nothing while no interrupt is pending', () => {
+    const fixture = TestBed.createComponent(InlineHost);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.chat-approval-card--inline')).toBeNull();
+  });
+});

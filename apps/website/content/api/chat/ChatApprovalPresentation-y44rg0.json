@@ -1,0 +1,54 @@
+{
+  "name": "ChatApprovalPresentation",
+  "entrypointId": "chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/chat/ChatApprovalPresentation",
+  "canonicalReference": "@threadplane/chat!ChatApprovalPresentation:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "`dialog` opens a modal; `inline` renders a status panel where the card is placed, such as a `chatInterruptTemplate`.",
+  "declarations": [
+    {
+      "name": "ChatApprovalPresentation",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/chat!ChatApprovalPresentation:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type ChatApprovalPresentation = "
+        },
+        {
+          "kind": "Content",
+          "text": "'dialog' | 'inline'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "`dialog` opens a modal; `inline` renders a status panel where the card is placed, such as a `chatInterruptTemplate`.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+        "line": 24
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
+    "line": 24
+  }
+}

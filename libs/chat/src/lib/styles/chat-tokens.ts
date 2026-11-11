@@ -16,6 +16,8 @@ const LIGHT_TOKENS = `
      14px alert text; this red is ≈5.9:1 there and 6.4:1 on white. */
   --tplane-chat-error-text: #b91c1c;
   --tplane-chat-destructive: #dc2626;
+  /* Text on a destructive fill: 4.8:1 on #dc2626. */
+  --tplane-chat-on-destructive: #ffffff;
   --tplane-chat-warning-bg: #fffbeb;
   --tplane-chat-warning-text: #b45309;
   --tplane-chat-warning-border: #fde68a;
@@ -94,6 +96,7 @@ const DARK_TOKENS = `
   --tplane-chat-error-border: #dc2626;
   --tplane-chat-error-text: #fca5a5;
   --tplane-chat-destructive: #ef4444;
+  --tplane-chat-on-destructive: rgb(28, 28, 28);
   --tplane-chat-warning-bg: rgb(45, 35, 21);
   --tplane-chat-warning-text: #fbbf24;
   --tplane-chat-warning-border: #92400e;
