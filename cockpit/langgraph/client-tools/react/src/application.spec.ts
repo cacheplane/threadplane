@@ -314,7 +314,7 @@ it('is a core session for Chat: owner status, thread messages and calls, and the
   const { pending } = await h.start();
   expect(agent.getSnapshot().status).toBe('running');
   const plan = Object.freeze([{ label: 'Write the trip summary', status: 'pending' as const }]);
-  const messages = Object.freeze([{ id: 'u', role: 'user' as const, content: 'Trip' }]);
+  const messages = Object.freeze([{ id: 'reply', role: 'assistant' as const, content: 'Planning.', delivery: { generation: 'run', phase: 'streaming' as const } }]);
   h.replace({ messages: messages as never, plan });
   const running = agent.getSnapshot();
   expect(running.messages).toBe(messages);

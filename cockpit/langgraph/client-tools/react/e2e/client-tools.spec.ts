@@ -224,8 +224,8 @@ test('a planned trip shows Chat progress with plan steps, waits for the booking,
   await expect(page.getByRole('button', { name: 'Confirm booking' })).toBeFocused();
   await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the approval to continue');
   // Opened while running: a static count, then the plan's pending steps after the calls.
-  await group.locator('summary').click();
-  await expect(group.locator('summary')).toContainText('Working · 1 of 2 done');
+  await group.locator('.tp-tool-activity-group__details > summary').click();
+  await expect(group.locator('.tp-tool-activity-group__details > summary')).toContainText('Working · 1 of 2 done');
   await expect(group.locator('.tp-tool-activity-group__plan-step')).toHaveText(['Write the trip summary', 'Suggest what to pack']);
   await page.getByRole('button', { name: 'Confirm booking' }).click();
   await expect(conversation.getByText('Approved: Booking', { exact: true })).toBeVisible();
