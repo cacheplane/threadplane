@@ -11,6 +11,7 @@ import {
   activityFailures,
   receiptOutcomes,
   retryableToolIds,
+  toolSourceCitations,
   withoutStaleRetry,
 } from './tool-outcome';
 afterEach(cleanup);
@@ -291,5 +292,62 @@ describe('StatusPanel', () => {
     expect(panel.getAttribute('data-tone')).toBe('neutral');
     expect(panel.hasAttribute('role')).toBe(false);
     expect(panel.children).toHaveLength(0);
+  });
+});
+
+describe('toolSourceCitations', () => {
+  const sources = [
+    { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+    { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Again', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Not a URL', url: 'nope' },
+  ];
+  it('adds only sources the message does not already cite and numbers them after its citations', () => {
+    expect(
+      toolSourceCitations(
+        [{ index: 4, url: 'https://angular.dev/guide/signals' }, { index: 2 }],
+        sources
+      )
+    ).toEqual([
+      {
+        id: 'tool-source:https://developer.mozilla.org/toSorted',
+        index: 5,
+        title: 'toSorted',
+        url: 'https://developer.mozilla.org/toSorted',
+      },
+    ]);
+  });
+  it('starts at 1 when the message cites nothing', () => {
+    expect(
+      toolSourceCitations([], sources).map(({ index, title }) => [index, title])
+    ).toEqual([
+      [1, 'Same page'],
+      [2, 'toSorted'],
+    ]);
+  });
+});
+
+describe('tool sources outside a message', () => {
+  it("keeps a standalone group's declared sources as its own links", () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          {
+            id: 'c',
+            name: 'lookup',
+            phase: 'complete',
+            outcome: {
+              text: 'Checked',
+              sources: [
+                { title: 'Signals', url: 'https://angular.dev/guide/signals' },
+              ],
+            },
+          },
+        ]}
+      />
+    );
+    expect(
+      view.getByRole('link', { name: 'Signals' }).closest('.tp-tool-outcomes')
+    ).toBeTruthy();
   });
 });

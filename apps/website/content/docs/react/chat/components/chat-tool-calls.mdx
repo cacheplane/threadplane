@@ -78,7 +78,9 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 }]} />
 ```
 
-Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries outside the collapsed technical subtree, with the first three visible and the rest in **More results**. An outcome may declare sources alone by leaving `text` empty.
+
+Inside `MessageList` and `Chat`, declared sources join the message's one **Sources** panel, which is closed until opened and lists each source once beside the message's own citations. A source whose URL the message already cites is not added again. `ToolActivity` and `ToolActivityGroup` used on their own have no message panel, so they keep the sources as links, with the first three visible and the rest in **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. Sources accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 
@@ -250,7 +252,7 @@ A running, stopped or already failed call never reaches a decoder, and neither d
 
 Each call keeps its own outcome.
 The successful read keeps its summary and source link beside the failed one, and the group reads **Used 2 tools · 1 failed**.
-Sources render as links outside **Details**, and the literal JSON stays inside it.
+Sources appear in the message's **Sources** panel, and the literal JSON stays inside **Details**.
 
 ### Declare a retry
 
