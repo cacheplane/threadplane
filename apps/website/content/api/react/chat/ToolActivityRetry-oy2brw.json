@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 20
+            "line": 10
           },
           "isReadonly": true,
           "isOptional": false
@@ -68,12 +68,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 19
+        "line": 9
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 19
+    "line": 9
   }
 }

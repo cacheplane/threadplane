@@ -149,44 +149,6 @@
           },
           "isReadonly": true,
           "isOptional": true
-        },
-        {
-          "name": "sources",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityProps#sources:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly sources?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "ToolSourcePlacement",
-              "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
-              "href": "/docs/api/react/chat/ToolSourcePlacement"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Where declared sources appear. Defaults to links under the activity; see `ToolSourcePlacement`.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 89
-          },
-          "isReadonly": true,
-          "isOptional": true
         }
       ],
       "source": {
