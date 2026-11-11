@@ -25,7 +25,7 @@ function project(calls: readonly ReturnType<typeof call>[]) {
     id: 'a',
     role: 'assistant',
     content: 'Answer',
-    delivery: completeDelivery('success'),
+    delivery: completeDelivery('g', 'success'),
     toolCallIds: calls.map((item) => item.id),
   };
   return createMessageContent().project({

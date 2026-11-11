@@ -1,10 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "4d4ddeb48ae363d3011421473bbdbf807888c390",
+  "baselineHead": "0df1747bbaecefe08e6a72b4a8369ff34b2b8663",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
