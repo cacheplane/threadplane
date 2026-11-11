@@ -54,7 +54,7 @@
       "lanes": [
         "quality"
       ],
-      "sha256": "477f7ca29fe6911a1e2bcd6ead05f94754653e71bfc66e448df5f0e591a63ff9"
+      "sha256": "5e5dda834e87eed8869858040bf808e218c2b3f28a89f0e535cb42b9f706a347"
     },
     {
       "step": "- name: Build and validate private React foundations",

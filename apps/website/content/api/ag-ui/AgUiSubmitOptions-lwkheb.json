@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 117
+            "line": 116
           },
           "isReadonly": false,
           "isOptional": true
@@ -78,12 +78,12 @@
       ],
       "source": {
         "path": "libs/ag-ui/src/lib/to-agent.ts",
-        "line": 115
+        "line": 114
       }
     }
   ],
   "source": {
     "path": "libs/ag-ui/src/lib/to-agent.ts",
-    "line": 115
+    "line": 114
   }
 }
