@@ -292,15 +292,26 @@ export function ownSnapshot(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
+  const plan = ownValueWithSharing(
+    input.plan as PlainValue,
+    previous?.plan as PlainValue
+  ) as AgentSnapshot['plan'];
   if (
     previous &&
     input.status === previous.status &&
     messages === previous.messages &&
     toolCalls === previous.toolCalls &&
-    error === previous.error
+    error === previous.error &&
+    plan === previous.plan
   )
     return previous;
-  return freeze({ status: input.status, messages, toolCalls, error });
+  return freeze({
+    status: input.status,
+    messages,
+    toolCalls,
+    error,
+    ...(plan ? { plan } : {}),
+  });
 }
 
 /** One backend aggregate, composing the core fields and owned application data. */
@@ -341,6 +352,7 @@ export function ownLangGraphSnapshot(
     messages: core.messages,
     toolCalls: core.toolCalls,
     error: core.error,
+    ...(core.plan ? { plan: core.plan } : {}),
     history,
     values,
     interrupts,

@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  Citations,
+  citationsWithToolSources,
   StatusPanel,
   ToolActivity,
   ToolActivityGroup,
@@ -11,6 +13,7 @@ import {
   activityFailures,
   receiptOutcomes,
   retryableToolIds,
+  toolSourceCitations,
   withoutStaleRetry,
 } from './tool-outcome';
 afterEach(cleanup);
@@ -291,5 +294,120 @@ describe('StatusPanel', () => {
     expect(panel.getAttribute('data-tone')).toBe('neutral');
     expect(panel.hasAttribute('role')).toBe(false);
     expect(panel.children).toHaveLength(0);
+  });
+});
+
+describe('toolSourceCitations', () => {
+  const sources = [
+    { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+    { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Again', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Not a URL', url: 'nope' },
+  ];
+  it('adds only sources the message does not already cite and numbers them after its citations', () => {
+    expect(
+      toolSourceCitations(
+        [{ index: 4, url: 'https://angular.dev/guide/signals' }, { index: 2 }],
+        sources
+      )
+    ).toEqual([
+      {
+        id: 'tool-source:https://developer.mozilla.org/toSorted',
+        index: 5,
+        title: 'toSorted',
+        url: 'https://developer.mozilla.org/toSorted',
+      },
+    ]);
+  });
+  it('starts at 1 when the message cites nothing', () => {
+    expect(
+      toolSourceCitations([], sources).map(({ index, title }) => [index, title])
+    ).toEqual([
+      [1, 'Same page'],
+      [2, 'toSorted'],
+    ]);
+  });
+});
+
+describe('tool sources outside a message', () => {
+  it("keeps a standalone group's declared sources as its own links", () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          {
+            id: 'c',
+            name: 'lookup',
+            phase: 'complete',
+            outcome: {
+              text: 'Checked',
+              sources: [
+                { title: 'Signals', url: 'https://angular.dev/guide/signals' },
+              ],
+            },
+          },
+        ]}
+      />
+    );
+    expect(
+      view.getByRole('link', { name: 'Signals' }).closest('.tp-tool-outcomes')
+    ).toBeTruthy();
+  });
+});
+
+describe('a custom composition with its own Sources panel', () => {
+  const activities: ToolActivityInfo[] = [
+    {
+      id: 'c',
+      name: 'lookup',
+      phase: 'complete',
+      outcome: {
+        text: '',
+        sources: [
+          {
+            title: 'Signals',
+            url: 'https://angular.dev/guide/signals',
+            snippet: 'Reactive values.',
+            iconUrl: 'data:image/png;base64,AA==',
+          },
+          { title: 'Cited already', url: 'https://example.com/cited' },
+        ],
+      },
+    },
+  ];
+  const own = [
+    { id: 'own', index: 2, title: 'Own', url: 'https://example.com/cited' },
+  ];
+  it('adds declared sources to the message citations with their snippet and icon', () => {
+    expect(citationsWithToolSources(own, activities)).toEqual([
+      own[0],
+      {
+        id: 'tool-source:https://angular.dev/guide/signals',
+        index: 3,
+        title: 'Signals',
+        url: 'https://angular.dev/guide/signals',
+        snippet: 'Reactive values.',
+        iconUrl: 'data:image/png;base64,AA==',
+      },
+    ]);
+  });
+  it('returns the same citations when the activities add nothing', () => {
+    expect(citationsWithToolSources(own, [])).toBe(own);
+    expect(
+      citationsWithToolSources(own, [{ ...activities[0], phase: 'running' }])
+    ).toBe(own);
+  });
+  it('shows each source once: in the panel, with no links or blank line under the activity', () => {
+    const view = render(
+      <>
+        <ToolActivityGroup activities={activities} sources="panel" />
+        <ToolActivity activity={activities[0]} sources="panel" />
+        <Citations citations={citationsWithToolSources(own, activities)} />
+      </>
+    );
+    expect(view.container.querySelector('.tp-tool-outcomes')).toBeNull();
+    const links = view.getAllByRole('link', { name: /Signals/ });
+    expect(links).toHaveLength(1);
+    expect(links[0].closest('.tp-citations')).toBeTruthy();
+    expect(view.getByText('Reactive values.')).toBeTruthy();
   });
 });

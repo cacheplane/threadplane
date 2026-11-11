@@ -12,16 +12,10 @@ const literal = (value: unknown): string => {
   }
 };
 
-/**
- * @internal True when some completed call currently offers a retry declared by `toolOutcome`.
- * Lets a composition drop a generic "Retry" that would re-run the whole request beside it.
- */
-export function offersToolRetry(
-  calls: readonly ToolCall[],
-  toolOutcome: ((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined
-): boolean {
-  if (!toolOutcome) return false;
-  const activities = calls.map((call): ToolActivityInfo => {
+type ToolOutcomeFn = ((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined;
+
+function resolvedActivities(calls: readonly ToolCall[], toolOutcome: NonNullable<ToolOutcomeFn>): ToolActivityInfo[] {
+  return calls.map((call): ToolActivityInfo => {
     const activity: ToolActivityInfo = {
       id: call.id,
       name: call.name,
@@ -35,5 +29,24 @@ export function offersToolRetry(
       return activity;
     }
   });
-  return retryableToolIds(activities).size > 0;
+}
+
+/**
+ * @internal True when some completed call currently offers a retry declared by `toolOutcome`.
+ * Lets a composition drop a generic "Retry" that would re-run the whole request beside it.
+ */
+export function offersToolRetry(calls: readonly ToolCall[], toolOutcome: ToolOutcomeFn): boolean {
+  return !!toolOutcome && retryableToolIds(resolvedActivities(calls, toolOutcome)).size > 0;
+}
+
+/**
+ * @internal True when `message` is word for word the failure a call already shows through `toolOutcome`.
+ * Lets a composition skip a run-error notice that would only say the same thing twice.
+ */
+export function repeatsToolFailure(message: string, calls: readonly ToolCall[], toolOutcome: ToolOutcomeFn): boolean {
+  const text = message.trim();
+  if (!toolOutcome || !text) return false;
+  return resolvedActivities(calls, toolOutcome).some(
+    (activity) => activity.outcome?.status === 'failed' && activity.errorSummary === text
+  );
 }

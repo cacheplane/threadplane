@@ -60,6 +60,12 @@ for (const decision of ['Approve', 'Decline'] as const) {
     await expect(
       page.getByRole('button', { name: 'Approve', exact: true })
     ).toBeEnabled();
+    // The pending approval sits at the end of the transcript.
+    await expect(
+      page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('region', { name: 'Reservation approval' })
+    ).toBeVisible();
     await expect(page.getByText('North Pines', { exact: true })).toBeVisible();
     await expect(page.getByText('$90.00', { exact: true })).toBeVisible();
     await page.screenshot({
@@ -153,6 +159,16 @@ for (const decision of ['Approve', 'Decline'] as const) {
         { exact: true }
       )
     ).toBeVisible();
+    // The answered approval leaves a one-line record, and focus returns to the composer.
+    await expect(
+      page
+        .getByRole('region', { name: 'Conversation' })
+        .locator('.tp-approval-record')
+    ).toHaveText(decision === 'Approve' ? /^Approved$/ : /^Declined$/);
+    await expect(
+      page.getByRole('region', { name: 'Reservation approval' })
+    ).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused();
     const records = await requests(request);
     expect(records).toHaveLength(2);
     const resume = records[1].body;
