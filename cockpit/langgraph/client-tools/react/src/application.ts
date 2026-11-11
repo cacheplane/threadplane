@@ -43,9 +43,22 @@ export function createClientToolsApplication(options: {
       message.toolCallIds?.some((id) => !state.toolCalls.some((call) => call.id === id))
     ) || controller.getSnapshot().bookings.some((row) => row.status === 'pending');
   }
+  /** The core session view `Chat` observes: run status from this owner, messages, calls and plan from the thread. */
+  const none = Object.freeze([]) as readonly never[];
+  let agentSnapshot: AgentSnapshot = Object.freeze({ status: 'idle', messages: none, toolCalls: none });
+  function observeAgent() {
+    const state = session?.getSnapshot();
+    const status = snapshot.busy ? 'running' : 'idle';
+    const messages = state?.messages ?? none, toolCalls = state?.toolCalls ?? none, plan = state?.plan;
+    const previous = agentSnapshot;
+    if (previous.status === status && previous.messages === messages &&
+        previous.toolCalls === toolCalls && previous.plan === plan) return;
+    agentSnapshot = Object.freeze({ status, messages, toolCalls, ...(plan ? { plan } : {}) });
+  }
   function publish(update: Partial<ClientToolsApplicationSnapshot>) {
     if (disposed) return;
     snapshot = Object.freeze({ ...snapshot, ...update });
+    observeAgent();
     for (const notify of listeners) notify();
   }
   function projection() {
@@ -120,13 +133,26 @@ export function createClientToolsApplication(options: {
     disposal = Promise.resolve().then(() => session?.dispose()).then(() => undefined);
     return disposal;
   }
+  function subscribe(notify: () => void) {
+    if (disposed) return () => undefined;
+    listeners.add(notify);
+    return () => { listeners.delete(notify); };
+  }
+  /** This owner as a core session for `Chat`. Admission stays here; `Chat` never disposes it. */
+  const agent: AgentSession = Object.freeze({
+    getSnapshot: () => agentSnapshot,
+    subscribe,
+    async submit(text: string) {
+      await submit(text);
+      return snapshot.outcome ?? 'aborted';
+    },
+    stop,
+    dispose: () => Promise.resolve(),
+  });
   return {
     getSnapshot: () => snapshot,
-    subscribe(notify: () => void) {
-      if (disposed) return () => undefined;
-      listeners.add(notify);
-      return () => { listeners.delete(notify); };
-    },
+    subscribe,
+    agent,
     submit, stop, dispose,
     decide(row: BookingPanel, confirmed: boolean) {
       if (disposed || !operation || operation.signal.aborted || !snapshot.busy) return false;

@@ -45,11 +45,15 @@ Normal tools return results to another model run in the same confirmed conversat
 
 <ExampleCode file="cockpit/langgraph/client-tools/react/src/tools.ts" />
 
+## Progress and the plan
+
+Ask for **Trip** in the local preview. The model calls `get_weather` and `confirm_booking` together, and the graph state declares a plan in the `todos` shape that a deep-agents style to-do tool writes. While the browser runs the calls, `Chat` shows the progress view on the tool group: the current step, the elapsed time and a **Stop** button that stops the run like the composer. Open the group and its heading reads **Working · 1 of 2 done**, followed by the plan's pending steps, dimmed. The local fixture supplies this plan; the deployed client-tools graph does not write `todos`, so its runs show calls without upcoming steps.
+
 ## Booking decisions and ownership
 
-A fictional booking is an approval, so it follows the same pattern as the other examples: its `ApprovalCard` waits at the end of the transcript (through `MessageList` children) with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the approval to continue". These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the first takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. Focus returns to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
+A fictional booking is an approval, so it follows the same pattern as the other examples: its `ApprovalCard` waits at the end of the transcript (through the `approval` slot of `Chat`) with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the approval to continue". These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the first takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. `Chat` returns focus to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
 
-React borrows snapshots through useAgent and renders native MessageList, ChatInput, and ApprovalCard. Weather details and booking summaries render as literal text. This preview uses authored functions and example-owned presentation; it does not implement a general view-tool or ask-tool registry or infer schemas from TypeScript.
+React borrows snapshots through useAgent and renders `Chat` and `ApprovalCard`. The application exposes itself to `Chat` as a core session through `application.agent`: its run status, the thread's messages and tool calls, and the declared plan. Admission stays with the application, which sets `disabled` on `Chat` while it cannot accept a message. Weather details and booking summaries render as literal text. This preview uses authored functions and example-owned presentation; it does not implement a general view-tool or ask-tool registry or infer schemas from TypeScript.
 
 <ExampleCode file="cockpit/langgraph/client-tools/react/src/app.tsx" />
 

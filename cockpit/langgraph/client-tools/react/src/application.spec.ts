@@ -305,3 +305,39 @@ it('releasing a UI subscriber is inert and cannot cancel execution', async () =>
   h.run.resolve('success');
   await pending;
 });
+
+it('is a core session for Chat: owner status, thread messages and calls, and the declared plan', async () => {
+  const h = setup();
+  const agent = h.application.agent;
+  const idle = agent.getSnapshot();
+  expect(idle).toEqual({ status: 'idle', messages: [], toolCalls: [] });
+  const { pending } = await h.start();
+  expect(agent.getSnapshot().status).toBe('running');
+  const plan = Object.freeze([{ label: 'Write the trip summary', status: 'pending' as const }]);
+  const messages = Object.freeze([{ id: 'u', role: 'user' as const, content: 'Trip' }]);
+  h.replace({ messages: messages as never, plan });
+  const running = agent.getSnapshot();
+  expect(running.messages).toBe(messages);
+  expect(running.plan).toBe(plan);
+  // Unrelated owner updates keep the same snapshot, so Chat does not re-render.
+  h.replace({ interrupts: [] });
+  expect(agent.getSnapshot()).toBe(running);
+  h.run.resolve('success');
+  await pending;
+  expect(agent.getSnapshot().status).toBe('idle');
+  expect(agent.getSnapshot().plan).toBe(plan);
+});
+
+it('routes Chat submit and stop through the owner and never lets Chat dispose it', async () => {
+  const h = setup();
+  const submitted = h.application.agent.submit('Trip');
+  h.creation.resolve('confirmed-thread');
+  await Promise.resolve(); await Promise.resolve();
+  expect(h.session.submit).toHaveBeenCalledWith('Trip', expect.anything());
+  await h.application.agent.stop();
+  expect(h.session.stop).toHaveBeenCalledTimes(1);
+  h.run.resolve('aborted');
+  expect(await submitted).toBe('aborted');
+  await h.application.agent.dispose();
+  expect(h.session.dispose).not.toHaveBeenCalled();
+});
