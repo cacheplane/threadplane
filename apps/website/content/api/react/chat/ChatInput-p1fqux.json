@@ -73,7 +73,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/chat-input.tsx",
-        "line": 37
+        "line": 49
       },
       "isReadonly": true,
       "variableTypeTokenRange": {
@@ -84,6 +84,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/chat-input.tsx",
-    "line": 37
+    "line": 49
   }
 }

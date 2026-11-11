@@ -293,7 +293,8 @@ export interface MessageListScrollControls { readonly pinned: boolean; readonly 
 export interface MessageListRowContext { readonly current: boolean; readonly prevRole?: ChatMessageRole; }
 export interface MessageListProps { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: MessageListRowContext) => import('react').ReactNode; readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
-export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; }`;
+export interface ChatInputProps { readonly onSubmit: (text: string) => boolean | void; readonly leading?: import('react').ReactNode; readonly trailing?: import('react').ReactNode; readonly footer?: import('react').ReactNode; }
+export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; readonly inputLeading?: ChatInputProps['leading']; readonly inputTrailing?: ChatInputProps['trailing']; readonly inputFooter?: ChatInputProps['footer']; }`;
   writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export type Role = "assistant" | "user" | "system" | "tool"; export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -579,6 +580,16 @@ export interface ChatProps { readonly onRetry?: () => void; readonly renderMessa
     ['SelectOption', 'readonly description?: string', "readonly description?: import('react').ReactNode"],
     ['SelectOption', 'readonly disabled?: boolean', 'readonly disabled: boolean'],
   ]) assert.match(compile(mutateInterface(name, before, after)), /Select|false.*true/, `${name}: ${before} → ${after}`);
+  assert.match(compile(declaration.replaceAll('ChatInputProps', 'MissingChatInputProps')), /ChatInputProps/);
+  for (const [name, before, after] of [
+    ['ChatInputProps', "readonly leading?: import('react').ReactNode;", ''],
+    ['ChatInputProps', "readonly leading?: import('react').ReactNode;", "leading?: import('react').ReactNode;"],
+    ['ChatInputProps', "readonly trailing?: import('react').ReactNode;", "readonly trailing: import('react').ReactNode;"],
+    ['ChatInputProps', "readonly footer?: import('react').ReactNode;", 'readonly footer?: string;'],
+    ['ChatProps', "readonly inputLeading?: ChatInputProps['leading'];", ''],
+    ['ChatProps', "readonly inputTrailing?: ChatInputProps['trailing'];", "inputTrailing?: ChatInputProps['trailing'];"],
+    ['ChatProps', "readonly inputFooter?: ChatInputProps['footer'];", 'readonly inputFooter?: () => void;'],
+  ]) assert.match(compile(mutateInterface(name, before, after)), /Chat|false.*true/, `${name}: ${before} → ${after}`);
   assert.match(compile(declaration.replaceAll('MessageRatingProps', 'MissingMessageRatingProps')), /MessageRatingProps/);
   assert.match(compile(declaration.replace("export type MessageRatingValue = 'up' | 'down';", "export type MessageRatingValue = 'up' | 'down' | 'neutral';")), /MessageRating|false.*true/);
   for (const [name, before, after] of [
