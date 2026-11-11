@@ -526,6 +526,14 @@ slot adds no element.
 />
 ```
 
+Two more slots sit above the input surface: `banner` for a notice such as a
+paused or read-only state, then `attachments` for content that belongs to the
+next message, such as chosen files (`Chat`: `inputBanner`, `inputAttachments`).
+The composer never reads, sends or clears either one. Your `onSubmit` sends the
+files you hold and clears them, and a banner that should be announced carries
+its own `role="status"`. A model picker needs no slot of its own: pass a
+`Select` as `trailing`.
+
 Slot content sits inside the composer form and is otherwise untouched: it keeps
 its own state across drafts and submissions, stays enabled while the composer is
 `disabled` or `busy`, and supplies its own names and focus styles. Give slot
@@ -819,8 +827,15 @@ The Node rendering check covers DOM-free import and pre-mount trigger rendering,
 including `open=true`; it is a bounded check, with no broader hydration claim.
 Native full directories compose pointer and keyboard context menus for one
 exact-ID clipboard command and an app-owned rename editor; compact navigation
-remains selection-only. Typeahead, further lifecycle/project commands
-and full parity remain open.
+remains selection-only. Further lifecycle/project commands and full parity
+remain open.
+
+Typing in an open menu or select list moves focus to the next enabled entry
+whose label starts with the typed text. Characters typed within half a second
+extend the search, repeating one character cycles through the entries that start
+with it, and an arrow key or closing starts over. Matching ignores case and
+select descriptions. Typing only moves focus: it never selects, and Space still
+activates the focused entry.
 
 ## Controlled message rating
 
@@ -915,7 +930,7 @@ list renders in normal flow at the end of the document body.
 Compared with Angular `chat-select`, the two-way `value` binding becomes
 explicit `value`/`onValueChange`, list visibility is owner-controlled,
 `menuLabel` is the required `label`, and `panelClass` is `menuClassName`.
-Typeahead and a model-select slot on the `Chat` composition are not provided.
+A model-select slot on the `Chat` composition is not provided.
 
 ## Controlled chat panels
 

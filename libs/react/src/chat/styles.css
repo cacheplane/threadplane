@@ -1208,6 +1208,11 @@
 .tp-chat-input__footer {
   min-width: 0;
 }
+.tp-chat-input__banner,
+.tp-chat-input__attachments {
+  min-width: 0;
+  margin-block-end: 0.5rem;
+}
 .tp-chat-input__send:focus-visible,
 .tp-chat-input__stop:focus-visible {
   outline: 2px solid var(--tp-chat-accent);
@@ -2050,6 +2055,9 @@
   }
 }
 .tp-tool-activity,
+.tp-chat-tool-call {
+  min-width: 0;
+}
 .tp-tool-activity-group {
   min-width: 0;
   color: var(--tp-chat-text, CanvasText);
@@ -2067,6 +2075,16 @@
   color: var(--tp-chat-muted, GrayText);
   font-size: 12px;
   font-weight: 400;
+}
+.tp-tool-activity__retrying {
+  display: block;
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tp-chat-text, CanvasText);
+}
+.tp-tool-activity[data-phase='error'] .tp-tool-activity__phase {
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
 }
 .tp-tool-activity summary,
 .tp-tool-activity-group summary {
@@ -2252,7 +2270,7 @@
   margin: 0;
 }
 .tp-status-panel__lead,
-.tp-status-panel.tp-tool-activity__error > p {
+.tp-status-panel.tp-tool-activity__error > p:not(.tp-tool-activity__retrying) {
   color: var(--tp-status-tone);
   font-weight: 500;
 }
