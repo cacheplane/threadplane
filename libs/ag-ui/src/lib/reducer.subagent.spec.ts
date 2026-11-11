@@ -385,6 +385,32 @@ describe('reduceEvent SUBAGENT_* lifecycle', () => {
     expect(call?.status).toBe('running');
   });
 
+  it('a settled subagent stays through later runs with its transcript; a running one is dropped', () => {
+    const store = makeStore();
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'sa-done', name: 'reader', parentToolCallId: 'call-1' }), store);
+    reduceEvent(ev({ type: 'TEXT_MESSAGE_START', messageId: 'c-1', role: 'assistant', subagentRunId: 'sa-done' }), store);
+    reduceEvent(ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'c-1', delta: 'Both read.', subagentRunId: 'sa-done' }), store);
+    reduceEvent(ev({ type: 'SUBAGENT_FINISHED', subagentRunId: 'sa-done', outcome: { type: 'success' } }), store);
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'sa-failed', name: 'checker' }), store);
+    reduceEvent(ev({ type: 'SUBAGENT_ERROR', subagentRunId: 'sa-failed', message: 'boom' }), store);
+    reduceEvent(ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'sa-open', name: 'writer' }), store);
+    const settled = store.activities().get('sa-done')!;
+
+    reduceEvent(ev({ type: 'RUN_STARTED' }), store);
+
+    expect([...store.activities().keys()]).toEqual(['sa-done', 'sa-failed']);
+    // The same entry, so a card already showing it keeps its content and generation.
+    expect(store.activities().get('sa-done')).toBe(settled);
+    expect(settled.content()).toMatchObject({ name: 'reader', toolCallId: 'call-1', status: 'complete' });
+    expect((settled.content()['messages'] as Array<Record<string, unknown>>)[0]).toMatchObject({ content: 'Both read.' });
+    expect(store.activities().get('sa-failed')!.content()['status']).toBe('error');
+
+    // And through a further run.
+    reduceEvent(ev({ type: 'RUN_FINISHED' }), store);
+    reduceEvent(ev({ type: 'RUN_STARTED' }), store);
+    expect(store.activities().get('sa-done')).toBe(settled);
+  });
+
   it('unattributed events behave exactly as before (regression)', () => {
     const store = makeStore();
     reduceEvent(ev({ type: 'TEXT_MESSAGE_START', messageId: 'm-1', role: 'assistant' }), store);

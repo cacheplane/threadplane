@@ -301,3 +301,55 @@ it('describes a completed transport without claiming a reservation was approved'
     h.view.queryByRole('region', { name: 'Observed backend result' })
   ).toBeNull();
 });
+it.each([
+  ['Approve', 'approved'],
+  ['Decline', 'declined'],
+] as const)(
+  'records %s in the transcript and returns focus to the enabled composer',
+  (name, verdict) => {
+    const rows = [{ id: 'ask', role: 'user' as const, content: 'Reserve' }];
+    const h = setup({
+      rows,
+      approval,
+      canRespond: true,
+      canSubmit: false,
+      reservation: 'pending',
+    });
+    const transcript = h.view.getByRole('region', { name: 'Conversation' });
+    // The pending approval renders at the end of the transcript.
+    expect(
+      transcript.contains(
+        h.view.getByRole('region', { name: 'Reservation approval' })
+      )
+    ).toBe(true);
+    h.application.decide.mockImplementation(async () => {
+      h.update({ busy: true, canRespond: false, activity: 'running' });
+    });
+    fireEvent.click(h.view.getByRole('button', { name }));
+    act(() =>
+      h.update({
+        rows: [
+          ...rows,
+          { id: 'reply', role: 'assistant', content: 'Settled.' },
+        ],
+        approval: undefined,
+        busy: false,
+        canSubmit: true,
+        activity: 'idle',
+        outcome: 'success',
+        reservation: verdict,
+      })
+    );
+    const records = transcript.querySelectorAll('.tp-approval-record');
+    expect(records).toHaveLength(1);
+    expect(records[0].textContent).toBe(
+      verdict === 'approved' ? 'Approved' : 'Declined'
+    );
+    expect(records[0].closest('li')?.textContent).toContain('Reserve');
+    expect(document.activeElement).toBe(
+      h.view.getByRole('textbox', { name: 'Message' })
+    );
+    act(() => h.update({ viewGeneration: 8 }));
+    expect(transcript.querySelector('.tp-approval-record')).toBeNull();
+  }
+);

@@ -1,9 +1,19 @@
+import type { Citation } from '@threadplane/core';
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
+import { definitionToCitation } from '../markdown/citation-source.js';
 import type { ToolActivityInfo } from './tool-activity.js';
 
-/** An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links. */
+/**
+ * An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.
+ * Inside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links.
+ */
 export interface ToolActivitySource {
   readonly title: string;
   readonly url: string;
+  /** A short excerpt shown on the source's card in the Sources panel. */
+  readonly snippet?: string;
+  /** The source's own icon (absolute URL or `data:` URI) for the Sources panel. Never fetched or guessed by the library. */
+  readonly iconUrl?: string;
 }
 /** An opt-in retry the application declares for one failed call. The label names the call, such as "Retry toSorted read". */
 export interface ToolActivityRetry {
@@ -51,7 +61,8 @@ export function confirmedOutcomes(
       activity.outcome?.status !== 'receipt'
         ? activity.outcome
         : undefined;
-    if (!outcome || seen.has(outcome.text)) return [];
+    // An outcome may declare sources alone; blank text is not a result line.
+    if (!outcome || !outcome.text.trim() || seen.has(outcome.text)) return [];
     seen.add(outcome.text);
     return [outcome];
   });
@@ -85,6 +96,72 @@ export function outcomeSources(
         return false;
       }
     });
+}
+/**
+ * Citations for tool-declared sources that the message's own citations do not already cover.
+ * Matching is by normalised URL; new entries are numbered after the highest existing index.
+ */
+export function toolSourceCitations(
+  existing: readonly { readonly index: number; readonly url?: string }[],
+  sources: readonly ToolActivitySource[]
+): Citation[] {
+  const href = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    try {
+      return new URL(url).href;
+    } catch {
+      return undefined;
+    }
+  };
+  const seen = new Set(
+    existing.flatMap((citation) => href(citation.url) ?? [])
+  );
+  let index = existing.reduce(
+    (max, citation) => Math.max(max, citation.index),
+    0
+  );
+  return sources.flatMap((source) => {
+    const url = href(source.url);
+    if (!url || seen.has(url)) return [];
+    seen.add(url);
+    return [
+      {
+        id: 'tool-source:' + url,
+        index: ++index,
+        title: source.title,
+        url: source.url,
+        ...(source.snippet?.trim() ? { snippet: source.snippet } : {}),
+        ...(source.iconUrl ? { iconUrl: source.iconUrl } : {}),
+      },
+    ];
+  });
+}
+/**
+ * A message's citations plus the sources its tool activities declare, for an application that
+ * renders its own Sources panel. Pass the result to `Citations` and set `sources="panel"` on the
+ * activity so the sources are not repeated as links. A source the message already cites is not
+ * added again; `snapshot` also counts the answer's Markdown source definitions.
+ * Returns `citations` itself when nothing is added.
+ */
+export function citationsWithToolSources(
+  citations: readonly Citation[],
+  activities: readonly ToolActivityInfo[],
+  snapshot?: MarkdownSnapshot
+): readonly Citation[] {
+  const added = toolSourceCitations(
+    [
+      ...citations,
+      ...[...(snapshot?.root?.citations.values() ?? [])].map(
+        definitionToCitation
+      ),
+    ],
+    outcomeSources(
+      activities.map((activity) =>
+        resolveToolOutcome(activity, activity.outcome)
+      )
+    )
+  );
+  return added.length ? [...citations, ...added] : citations;
 }
 /**
  * Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.

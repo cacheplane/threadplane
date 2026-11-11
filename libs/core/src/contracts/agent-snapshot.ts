@@ -1,6 +1,7 @@
 import type { AgentError } from './error.js';
 import type { Message } from './message.js';
 import type { ToolCall, ToolContract } from './tool.js';
+import type { AgentPlanStep } from './plan.js';
 
 /** Session execution state exposed alongside messages, tool calls, and an optional failure. */
 export type AgentStatus = 'idle' | 'running' | 'error';
@@ -19,5 +20,7 @@ export type AgentSnapshot<
       readonly messages: readonly Message[];
       readonly toolCalls: readonly ToolCall<TTools>[];
       readonly error?: AgentError;
+      /** Steps the agent declared for its work, in order; absent when it declared none. */
+      readonly plan?: readonly AgentPlanStep[];
     }
   : never;

@@ -102,6 +102,48 @@ const scenarios = deepFreeze({
     recoverableRead: 'read-sorted',
     conclusion: 'Both authored references are now available.',
   },
+  // Plan, delegation, a parent read and a gated save in one turn; history is then restored.
+  'deep-workflow': {
+    id: 'deep-workflow',
+    prompt:
+      'Plan a comparison note, delegate the reading, check the sorted-copy claim, then ask before saving it.',
+    calls: [
+      call('plan', 'plan_workflow', {
+        steps: [
+          'Delegate reading both references',
+          'Check the sorted-copy claim',
+          'Save the comparison note after approval',
+        ],
+      }),
+      {
+        ...call('delegate-reading', 'delegate_research', {
+          task: 'Read both references',
+        }),
+        delegate: {
+          name: 'reference-reader',
+          description: 'Reads both authored references',
+          summary: 'Both references were read.',
+          calls: [
+            call('child-read-angular', 'read_reference', {
+              id: 'angular-signals',
+            }),
+            call('child-read-sorted', 'read_reference', {
+              id: 'array-to-sorted',
+            }),
+          ],
+        },
+      },
+      call('check-sorted', 'read_reference', { id: 'array-to-sorted' }),
+      {
+        ...call('save-comparison', 'save_note', {
+          text: 'Signals manage reactive values; toSorted creates a sorted copy.',
+        }),
+        approval: true,
+      },
+    ],
+    nativeApproval: true,
+    conclusion: 'The comparison note was saved in the local benchmark store.',
+  },
   'long-mixed': {
     id: 'long-mixed',
     prompt:
@@ -147,6 +189,35 @@ export async function executeTool(name, args, context = {}) {
     if (!Object.hasOwn(values, args?.kind))
       throw new Error('Invalid inspection kind');
     return values[args.kind];
+  }
+  if (name === 'plan_workflow') {
+    if (
+      !Array.isArray(args?.steps) ||
+      !args.steps.length ||
+      args.steps.length > 6 ||
+      args.steps.some(
+        (step) => typeof step !== 'string' || !step || step.length > 120
+      )
+    )
+      throw new Error('Invalid plan');
+    return {
+      steps: args.steps.map((text, index) => ({
+        id: 'step-' + (index + 1),
+        text,
+      })),
+    };
+  }
+  if (name === 'delegate_research') {
+    if (
+      typeof args?.task !== 'string' ||
+      !args.task ||
+      args.task.length > 200 ||
+      typeof context.delegate !== 'function'
+    )
+      throw new Error('Invalid delegation');
+    // The caller runs the child calls; this records only what they returned.
+    const results = await context.delegate(args.task);
+    return { delegated: true, references: results.map((row) => row.id) };
   }
   if (name === 'save_note') {
     if (!context.approved || typeof context.save !== 'function')
