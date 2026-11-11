@@ -7,16 +7,18 @@ export type ChatStatusPanelTone = 'danger' | 'warning' | 'success' | 'neutral';
 
 const styles = `
 :host {
-  --tp-status-tone: var(--tplane-chat-text-muted, GrayText);
+  --tp-status-tone: var(--tplane-chat-text-muted);
+  --tp-status-bg: var(--tplane-chat-surface-alt);
+  --tp-status-border: var(--tplane-chat-border);
   display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:8px 0; padding:8px 12px;
-  border:1px solid color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
+  border:1px solid var(--tp-status-border);
   border-radius:var(--tplane-chat-radius-card);
-  background:color-mix(in srgb, var(--tp-status-tone) 8%, transparent);
+  background:var(--tp-status-bg);
   color:var(--tplane-chat-text); font-size:13px; overflow-wrap:anywhere;
 }
-:host([data-tone='danger']) { --tp-status-tone: var(--tplane-chat-error-text, #b91c1c); }
-:host([data-tone='warning']) { --tp-status-tone: var(--tplane-chat-warning-text, #b45309); }
-:host([data-tone='success']) { --tp-status-tone: var(--tplane-chat-success-text, #15803d); }
+:host([data-tone='danger']) { --tp-status-tone: var(--tplane-chat-error-text); --tp-status-bg: var(--tplane-chat-error-bg); --tp-status-border: var(--tplane-chat-error-border); }
+:host([data-tone='warning']) { --tp-status-tone: var(--tplane-chat-warning-text); --tp-status-bg: var(--tplane-chat-warning-bg); --tp-status-border: var(--tplane-chat-warning-border); }
+:host([data-tone='success']) { --tp-status-tone: var(--tplane-chat-success-text); --tp-status-bg: var(--tplane-chat-success-bg); --tp-status-border: var(--tplane-chat-success-border); }
 .tp-status-panel__lead { margin:0; color:var(--tp-status-tone); font-weight:500; }
 .tp-status-panel__actions { display:flex; flex-wrap:wrap; gap:8px; }
 .tp-status-panel__actions:empty { display:none; }
@@ -26,10 +28,10 @@ const styles = `
 /** Shared look for text and buttons a component projects into a status panel from its own template. */
 export const STATUS_PANEL_CONTENT_STYLES = `
 .tp-status-panel > p { margin:0; }
-.tp-tool-activity__error.tp-status-panel > p { color:var(--tplane-chat-error-text, #b91c1c); font-weight:500; }
+.tp-tool-activity__error.tp-status-panel > p { color:var(--tplane-chat-error-text); font-weight:500; }
 .tp-tool-activity__retry {
-  min-height:32px; padding:4px 12px; border:1px solid var(--tplane-chat-border, currentColor);
-  border-radius:var(--tplane-chat-radius-sm); background:var(--tplane-chat-surface, transparent);
+  min-height:32px; padding:4px 12px; border:1px solid var(--tplane-chat-border);
+  border-radius:var(--tplane-chat-radius-sm); background:var(--tplane-chat-surface);
   color:var(--tplane-chat-text); font:inherit; cursor:pointer;
 }
 .tp-tool-activity__retry:focus-visible { outline:2px solid var(--tplane-chat-focus-ring); outline-offset:2px; }
