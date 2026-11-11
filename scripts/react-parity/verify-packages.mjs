@@ -585,10 +585,10 @@ selection.rowKey = 'other';
     writeFileSync(join(plain, 'tsconfig.debug.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], strict: true, skipLibCheck: false, noEmit: true }, files: ['debug-types.ts'] }));
     runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.debug.json'], plain);
     prepareInstalledTypes(root, plain, 'react');
-    await prepareRuntimeConsumer(root, plain, 'react');
+    await prepareRuntimeConsumer(root, plain, 'react', { a2ui: true });
     for (const config of ['tsconfig.contracts.json', 'tsconfig.app.json']) runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', config], plain);
     console.log(runConsumer(process.execPath, [join(plain, 'node_modules/vite/bin/vite.js'), 'build'], plain));
-    await runRuntimeScenarios(join(plain, 'dist'), 'React');
+    await runRuntimeScenarios(join(plain, 'dist'), 'React', { a2ui: true });
     console.log(`Verified ${Object.keys(tarballs).length} selected plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
   } finally {
     if (retain) console.log(`Retained packed consumer evidence: ${temporary}`);

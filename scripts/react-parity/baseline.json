@@ -1,20 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "dc81c4ca5693947ad3dd75c7d7e89d99888a52f9",
+  "baselineHead": "51fca6309fde196ac6fc01c9a7dcbaa3331ec0cb",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "libs/react/README.md"
     ],
     "untracked": []
   },
@@ -862,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "da9995cc55f3d7af45494684145f84986c65b1c27f9b532d03e4b6326e4f5774"
+      "sha256": "67c8ee0c1365b7aa0aa87c916bf617f62a20fdade205805b45d4efde6e2ee1fa"
     },
     {
       "id": "asset:libs/react/package.json",
