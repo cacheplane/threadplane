@@ -100,6 +100,10 @@ function ComposerSlotsFixture() {
   const [presses, setPresses] = useState(0);
   const [busy, setBusy] = useState(false);
   const [rtl, setRtl] = useState(false);
+  const [files, setFiles] = useState(['itinerary.pdf', 'a-very-long-attachment-name-that-must-not-widen-the-page.png']);
+  const [notice, setNotice] = useState(true);
+  const [model, setModel] = useState('fast');
+  const [modelOpen, setModelOpen] = useState(false);
   return (
     <main dir={rtl ? 'rtl' : 'ltr'}>
       <h1>Installed composer slots</h1>
@@ -112,11 +116,25 @@ function ComposerSlotsFixture() {
         busy={busy}
         hint="Enter sends"
         leading={<span data-testid="slot-leading">Trip</span>}
+        banner={notice && <p role="status" data-testid="slot-banner">Replies are paused <button type="button" onClick={() => setNotice(false)}>Dismiss</button></p>}
+        attachments={files.length > 0 && (
+          <ul aria-label="Attached files" data-testid="slot-attachments" style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: 0, padding: 0, listStyle: 'none' }}>
+            {files.map((file) => (
+              <li key={file} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{file} <button type="button" onClick={() => setFiles((all) => all.filter((name) => name !== file))}>Remove {file}</button></li>
+            ))}
+          </ul>
+        )}
         trailing={<button type="button" onClick={() => setPresses(presses + 1)}>Tools {presses}</button>}
         footer={<p role="status" data-testid="slot-footer">{sent.length} sent</p>}
       />
       <h2>No slots</h2>
       <ChatInput onSubmit={() => undefined} label="Plain message" />
+      <h2>Model picker</h2>
+      <ChatInput
+        onSubmit={(text) => setSent((previous) => [...previous, text])}
+        label="Model message"
+        trailing={<Select label="Model" options={[{ value: 'fast', label: 'Fast' }, { value: 'careful', label: 'Careful' }]} value={model} onValueChange={(value) => setModel(value)} open={modelOpen} onOpenChange={setModelOpen} />}
+      />
     </main>
   );
 }
