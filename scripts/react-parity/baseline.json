@@ -1,15 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "45a9c83ab6fc16587f25d2c5e0e4f8b7cfee5728",
+  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
-    "untracked": []
+    "modified": [],
+    "untracked": [
+      "apps/website/content/docs/react/chat/components/chat-select.mdx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -3166,6 +3162,12 @@
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-reasoning.mdx",
       "sha256": "36e2741af0d48f8d7aa36bc2d6e8d80dd7cdee50acc9edd4986e0dd08d9a4cda"
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-select.mdx",
+      "kind": "doc",
+      "path": "apps/website/content/docs/react/chat/components/chat-select.mdx",
+      "sha256": "dbec6caffd10fb0829b29dc421c1e13da69de0614631db2a3280ad1c02d531ec"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-sidebar.mdx",

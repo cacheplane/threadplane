@@ -1711,6 +1711,13 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/components/chat-select.mdx",
+        "description": "Let the traveler pick a model beside the draft, while your application decides what the choice means.",
+        "apiEntrypointIds": [
+          "react/chat"
+        ]
       }
     }
   },
