@@ -139,6 +139,39 @@ function safeOutcome(
     return undefined;
   }
 }
+/**
+ * @internal True when `message` is word for word the failure a call already shows through `toolOutcome`.
+ * Lets a composition skip a run-error notice that would only say the same thing twice.
+ */
+export function repeatsToolFailure(
+  message: string,
+  rows: readonly MessageRow[],
+  toolOutcome:
+    | ((activity: ToolActivityInfo) => ToolActivityOutcome | undefined)
+    | undefined
+): boolean {
+  const text = message.trim();
+  if (!toolOutcome || !text) return false;
+  return rows.some((row) =>
+    row.toolCalls.some((call) => {
+      if (call.status !== 'complete') return false;
+      const activity: ToolActivityInfo = {
+        id: call.id,
+        name: call.name,
+        phase: toolActivityPhase(call.status, row.message.delivery),
+        argumentsText: literal(call.args),
+        resultText: literal(call.result),
+      };
+      const resolved = resolveToolOutcome(
+        activity,
+        safeOutcome(toolOutcome, activity)
+      );
+      return (
+        resolved.outcome?.status === 'failed' && resolved.errorSummary === text
+      );
+    })
+  );
+}
 const NONE: ReadonlySet<string> = new Set();
 const NO_CITATIONS: readonly never[] = [];
 const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
