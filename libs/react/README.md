@@ -819,8 +819,15 @@ The Node rendering check covers DOM-free import and pre-mount trigger rendering,
 including `open=true`; it is a bounded check, with no broader hydration claim.
 Native full directories compose pointer and keyboard context menus for one
 exact-ID clipboard command and an app-owned rename editor; compact navigation
-remains selection-only. Typeahead, further lifecycle/project commands
-and full parity remain open.
+remains selection-only. Further lifecycle/project commands and full parity
+remain open.
+
+Typing in an open menu or select list moves focus to the next enabled entry
+whose label starts with the typed text. Characters typed within half a second
+extend the search, repeating one character cycles through the entries that start
+with it, and an arrow key or closing starts over. Matching ignores case and
+select descriptions. Typing only moves focus: it never selects, and Space still
+activates the focused entry.
 
 ## Controlled message rating
 
@@ -915,7 +922,7 @@ list renders in normal flow at the end of the document body.
 Compared with Angular `chat-select`, the two-way `value` binding becomes
 explicit `value`/`onValueChange`, list visibility is owner-controlled,
 `menuLabel` is the required `label`, and `panelClass` is `menuClassName`.
-Typeahead and a model-select slot on the `Chat` composition are not provided.
+A model-select slot on the `Chat` composition is not provided.
 
 ## Controlled chat panels
 

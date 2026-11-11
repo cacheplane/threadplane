@@ -1,5 +1,10 @@
 # React parity foundations
 
+The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The
+installed browser fixture types into a real open list and menu: a character moves
+focus to the matching label without selecting, a pause starts a new search, and
+Space still activates the focused option.
+
 `ChatInput` accepts app-owned `leading`, `trailing` and `footer` content, and
 `Chat` passes it through `inputLeading`, `inputTrailing` and `inputFooter`. The
 installed browser fixture covers inline order in both directions, the footer after
