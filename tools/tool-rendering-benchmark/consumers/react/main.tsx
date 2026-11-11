@@ -20,6 +20,8 @@ import {
 import '@threadplane/react/chat/styles.css';
 import './shell.css';
 import {
+  benchmarkThread,
+  forgetBenchmarkThread,
   layoutFrom,
   referenceCards,
   toolLabel,
@@ -34,10 +36,12 @@ const toolOutcome = toolOutcomes(
 );
 // This raw session carries no message citations; the panel lists tool-declared sources.
 const NO_CITATIONS: readonly never[] = [];
-function App() {
+type History = NonNullable<Parameters<typeof createSession>[0]['messages']>;
+function App({ threadId, history }: { threadId?: string; history?: History }) {
   const [session] = useState(() =>
     createSession({
-      threadId: crypto.randomUUID(),
+      threadId: threadId ?? crypto.randomUUID(),
+      ...(history?.length ? { messages: history } : {}),
       url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}`,
     })
   );
@@ -155,6 +159,7 @@ function App() {
             disposed.current = true;
             pendingFocus.current?.cleanup();
             await session.dispose();
+            forgetBenchmarkThread(scenario);
             await fetch('http://127.0.0.1:4809/reset/threadplane-react', {
               method: 'POST',
             });
@@ -330,4 +335,24 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById('root')!).render(<App />);
+// A kept thread reloads its parent transcript from the benchmark server before the session starts.
+async function start() {
+  const threadId = benchmarkThread(scenario);
+  let history: History | undefined;
+  if (threadId) {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:4809/threads/threadplane-react/${encodeURIComponent(
+          threadId
+        )}/messages`
+      );
+      if (response.ok) history = (await response.json()).messages;
+    } catch {
+      /* No history: start an empty thread. */
+    }
+  }
+  createRoot(document.getElementById('root')!).render(
+    <App threadId={threadId} history={history} />
+  );
+}
+void start();

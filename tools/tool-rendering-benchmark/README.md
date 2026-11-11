@@ -71,3 +71,25 @@ Both target consumers show confirmed references in the message's Sources panel b
 Both consumers declare each reference as a tool-outcome source with its summary as the snippet. The Angular `chat` composition lists those in the Sources panel itself. The React consumer composes its own message markup around the primitives, so it passes `sources="panel"` to the activity group and renders `Citations` with `citationsWithToolSources`.
 
 With the same local servers running, execute `node tools/tool-rendering-benchmark/run-layouts.mjs /private/tmp/tool-layout-evidence`. It sends the real reference prompt in each layout on both hosts at 1440×1000 and 480×900 in light and dark, then records visible words, turn height and how many visible sentences state each fixture fact (1 means no repetition). It asserts that every layout keeps the activity collapsed, both source links visible or at most one disclosure away (recorded as `sourcesBehindDisclosure`), each call's literal result reachable through Details, no horizontal overflow, and a failed read counted with its named retry and retained successful reference. The numbers describe repetition only; which layout reads better is a human judgement, so the runner does not rank them.
+
+## Deep workflow and restored history
+
+`?scenario=deep-workflow` is one controlled turn that plans, delegates, reads, and then asks before its only write:
+
+1. `plan_workflow` returns three numbered steps.
+2. `delegate_research` runs two `read_reference` calls as a subagent. The server sends `SUBAGENT_STARTED`, the child message and child tool events with the subagent's run ID, then `SUBAGENT_FINISHED`, and only then the delegating call's own result.
+3. A parent `read_reference` call checks one reference.
+4. `save_note` pauses the run with a native interrupt. Approving resumes with only that call and saves one note; denying resumes with a cancellation result and saves nothing.
+
+The ledger records each child call with its `parent` call and `subagentRunId`, so "the delegated reads ran once each, the write ran once or not at all" is checked from the server, never from what a host shows.
+
+For this scenario each target consumer keeps its thread ID in `sessionStorage` and restores the thread on reload. The server keeps every delivered AG-UI event per thread, with the user turn recorded in the stored `RUN_STARTED.input` because a live stream never sends it:
+
+- `GET /threads/<participant>/<threadId>/events` returns `{ events }`. The Angular consumer passes it to `provideAgent` through `httpReplay`.
+- `GET /threads/<participant>/<threadId>/messages` returns `{ messages }`, the parent transcript folded into native AG-UI messages. The React consumer passes it to its session as initial messages. Child events are not part of this projection.
+
+Reading history is not a run. `GET /restores` lists the history requests and `GET /notes` returns the saved-note count, so a driver can show that a reload ran no tool and wrote nothing. "New conversation" forgets the kept thread, and a participant reset deletes its history.
+
+With the same local servers running, execute `node tools/tool-rendering-benchmark/run-deep.mjs /private/tmp/tool-deep-evidence`. On both hosts, once approving and once denying, it sends the real prompt, checks the ledger at the pause, decides with the keyboard on the real control, checks the write count, reloads, and checks that the reload produced a history request, no run and no write, offers no decision again, and leaves the composer usable. It asserts that the prompt, the decision's outcome and the final answer are readable both live and restored, and that nothing overflows at 1440px or 480px.
+
+Everything else is recorded, not asserted: for each fact (plan label and steps, delegation label and outcome, subagent name and summary, read rows, source links) whether it is visible with everything closed, visible only after opening disclosures, or absent, while waiting, after the decision, and after the reload, plus the list of facts that read differently after restore. Those differences are observations about each integration and the two different restore inputs, not a ranking.
