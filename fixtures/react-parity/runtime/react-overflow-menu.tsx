@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
+import { ChatInput, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -16,6 +16,8 @@ export function OverflowMenuFixture() {
     return <SelectFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
     return <RatingFixture />;
+  if (new URLSearchParams(window.location.search).has('slots'))
+    return <ComposerSlotsFixture />;
   if (new URLSearchParams(window.location.search).has('rename'))
     return <main><h1>Installed rename editor</h1><ThreadRenameFormFixture /></main>;
   return (
@@ -88,6 +90,33 @@ export function OverflowMenuFixture() {
         </span>
         <button>After menu</button>
       </div>
+    </main>
+  );
+}
+
+/** Installed composer with app-owned leading, trailing and footer content. */
+function ComposerSlotsFixture() {
+  const [sent, setSent] = useState<string[]>([]);
+  const [presses, setPresses] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [rtl, setRtl] = useState(false);
+  return (
+    <main dir={rtl ? 'rtl' : 'ltr'}>
+      <h1>Installed composer slots</h1>
+      <label><input type="checkbox" checked={busy} onChange={(event) => setBusy(event.target.checked)} />Busy</label>
+      <label><input type="checkbox" checked={rtl} onChange={(event) => setRtl(event.target.checked)} />Right to left</label>
+      <output data-testid="slots-sent">{JSON.stringify(sent)}</output>
+      <ChatInput
+        onSubmit={(text) => setSent((previous) => [...previous, text])}
+        onStop={() => setBusy(false)}
+        busy={busy}
+        hint="Enter sends"
+        leading={<span data-testid="slot-leading">Trip</span>}
+        trailing={<button type="button" onClick={() => setPresses(presses + 1)}>Tools {presses}</button>}
+        footer={<p role="status" data-testid="slot-footer">{sent.length} sent</p>}
+      />
+      <h2>No slots</h2>
+      <ChatInput onSubmit={() => undefined} label="Plain message" />
     </main>
   );
 }
