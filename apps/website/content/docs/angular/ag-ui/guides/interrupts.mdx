@@ -124,6 +124,8 @@ Name both actions. `approveLabel` says what approving does, `cancelLabel` names 
 
 For an action that cannot be undone, add `[destructive]="true"`. The panel switches to the danger tint, leads by saying the action cannot be undone, and draws the primary button in the destructive color, so give it the exact effect, such as "Delete 12 drafts". `destructive` and the two labels apply to the dialog too.
 
+Once the person answers, the inline panel shrinks to one muted line after the message it followed, such as "Approved: Refund $47.50" or "Declined: Refund $47.50". The line names `approveLabel` unless you set `recordLabel`, and reads just "Approved" or "Declined" when the button keeps its default text. The record lasts for the session: it is not stored with the thread, so it is gone after a reload. Edit leaves no record, because the approval stays open.
+
 ### Resuming with the decision
 
 The card emits an action rather than resuming by itself, which leaves the resume payload entirely up to the component. Approve and Cancel are terminal, so the card closes and the handler submits the matching decision. Edit is not terminal: it flips a signal, the body template grows an amount field, and the Save button submits the edited value.

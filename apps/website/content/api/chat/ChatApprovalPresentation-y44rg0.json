@@ -39,7 +39,7 @@
       "members": [],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-        "line": 24
+        "line": 25
       },
       "typeTokenRange": {
         "startIndex": 1,
@@ -49,6 +49,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-    "line": 24
+    "line": 25
   }
 }
