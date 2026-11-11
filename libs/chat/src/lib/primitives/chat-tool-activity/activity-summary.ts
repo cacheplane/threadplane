@@ -74,6 +74,21 @@ export function activitySummary(
   };
 }
 
+/** Expanded heading while work runs: "Working · 1 of 3 done". Finished means complete, failed or stopped. */
+export function workingLabel(activities: readonly ToolActivityInfo[]): string {
+  const done = activities.filter(
+    (item) => item.phase === 'complete' || item.phase === 'error' || item.phase === 'stopped'
+  ).length;
+  return `Working · ${done} of ${activities.length} done`;
+}
+
+/** Elapsed time as "45s" or "1m 05s". */
+export function formatElapsed(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  if (total < 60) return `${total}s`;
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, '0')}s`;
+}
+
 /** De-duplicated app-safe failure copy of errored activities, in order. */
 export function failureSummaries(
   activities: readonly ToolActivityInfo[]
