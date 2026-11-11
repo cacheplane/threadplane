@@ -73,8 +73,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
-  /** App-authored human labels; keep this function stable like renderMessage. */
-  readonly toolLabel?: (name: string) => string | undefined;
+  /** App-authored human labels from the tool name and the call's arguments, such as "Read Array.prototype.toSorted"; keep this function stable like renderMessage. */
+  readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
   readonly toolOutcome?: (
     activity: ToolActivityInfo
@@ -152,6 +152,42 @@ function staleRetriesByRow(rows: readonly MessageRow[]): readonly string[] {
       .join('\n')
   );
 }
+/**
+ * Per row, the failed calls a later call is repeating right now: same tool and
+ * arguments, still pending or running. Joined IDs keep the row memo stable.
+ */
+function retryingByRow(rows: readonly MessageRow[]): readonly string[] {
+  const key = (call: MessageRow['toolCalls'][number]) =>
+    call.name + '\0' + literal(call.args);
+  const calls = rows.flatMap((row) =>
+    row.toolCalls.map((call) => ({
+      call,
+      running: ['pending', 'running'].includes(
+        toolActivityPhase(call.status, row.message.delivery)
+      ),
+    }))
+  );
+  const repeating = new Set<string>();
+  calls.forEach(({ call }, i) => {
+    if (
+      call.status === 'error' || call.status === 'complete'
+        ? calls.slice(i + 1).some((later) => later.running && key(later.call) === key(call))
+        : false
+    )
+      repeating.add(call.id);
+  });
+  return rows.map((row) =>
+    row.toolCalls
+      .filter((call) => repeating.has(call.id))
+      .map((call) => call.id)
+      .join('\n')
+  );
+}
+/** "Retrying toSorted read" from a declared label such as "Retry toSorted read". */
+function retryingText(label: string): string {
+  const rest = /^retry\b\s*(.*)$/i.exec(label.trim())?.[1];
+  return rest ? `Retrying ${rest}` : 'Retrying';
+}
 const literal = (value: unknown): string =>
   typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? '';
 
@@ -167,6 +203,7 @@ function RowView<TRow extends MessageRow>({
   renderToolResult,
   onToolRetry,
   staleRetries,
+  retrying,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -176,7 +213,7 @@ function RowView<TRow extends MessageRow>({
     context: MessageListRowContext
   ) => ReactNode;
   readonly groupRelatedTools?: boolean;
-  readonly toolLabel?: (name: string) => string | undefined;
+  readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
@@ -188,19 +225,24 @@ function RowView<TRow extends MessageRow>({
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
   readonly staleRetries?: string;
+  /** Failed call IDs a later running call is repeating, joined by newlines. */
+  readonly retrying?: string;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
     return <>{renderMessage(row, contexts[prevRole ?? 'first'])}</>;
   }
   const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
+  const repeating = new Set(retrying ? retrying.split('\n') : []);
+  // Read the declared label before a running retry withdraws it.
+  const retryingLeads = new Map<string, string>();
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
     const activity: ToolActivityInfo = {
       id: call.id,
       name: call.name,
-      label: toolLabel?.(call.name),
+      label: toolLabel?.(call.name, call.args),
       phase,
       argumentsText: literal(call.args),
       resultText: call.status === 'complete' ? literal(call.result) : undefined,
@@ -210,6 +252,12 @@ function RowView<TRow extends MessageRow>({
       activity,
       toolOutcome ? safeOutcome(toolOutcome, activity) : undefined
     );
+    if (
+      repeating.has(call.id) &&
+      resolved.outcome?.status === 'failed' &&
+      resolved.outcome.retry?.label.trim()
+    )
+      retryingLeads.set(call.id, retryingText(resolved.outcome.retry.label));
     return staleRetries === '*' || stale.has(call.id)
       ? withoutStaleRetry(resolved, NONE)
       : resolved;
@@ -266,6 +314,9 @@ function RowView<TRow extends MessageRow>({
                   activities={run.activities}
                   renderResult={renderToolResult}
                   onRetry={onToolRetry}
+                  retrying={run.activities
+                    .map((activity) => retryingLeads.get(activity.id))
+                    .find((lead) => lead !== undefined)}
                 />
               ) : (
                 run.activities.map((activity) => (
@@ -273,6 +324,7 @@ function RowView<TRow extends MessageRow>({
                     key={activity.id}
                     activity={activity}
                     onRetry={onToolRetry}
+                    retrying={retryingLeads.get(activity.id)}
                   >
                     {renderToolResult?.(activity)}
                   </ToolActivity>
@@ -317,6 +369,10 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
+  );
+  const retrying = useMemo(
+    () => (toolOutcome ? retryingByRow(rows) : undefined),
+    [toolOutcome, rows]
   );
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -417,6 +473,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               renderToolResult={renderToolResult}
               onToolRetry={onToolRetry}
               staleRetries={staleRetries?.[index]}
+              retrying={retrying?.[index]}
             />
           ))}
           {children}

@@ -54,17 +54,17 @@ describe('ChatError', () => {
                   ? 'Check status'
                   : null
                 : recovery !== 'none' && retryable && retryAvailable
-                ? 'Retry'
+                ? 'Retry response'
                 : null;
             const buttons = view.queryAllByRole('button');
             expect(buttons).toHaveLength(label ? 1 : 0);
             if (label) {
               fireEvent.click(view.getByRole('button', { name: label }));
               expect(
-                label === 'Retry' ? retry : check
+                label === 'Retry response' ? retry : check
               ).toHaveBeenCalledExactlyOnceWith();
             }
-            expect(label === 'Retry' ? check : retry).not.toHaveBeenCalled();
+            expect(label === 'Retry response' ? check : retry).not.toHaveBeenCalled();
           });
         }
       }

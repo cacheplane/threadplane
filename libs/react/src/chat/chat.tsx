@@ -34,6 +34,10 @@ export interface ChatProps
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /** App-owned notice above the composer; see `ChatInputProps.banner`. */
+  readonly inputBanner?: ChatInputProps['banner'];
+  /** App-owned content above the input surface; see `ChatInputProps.attachments`. */
+  readonly inputAttachments?: ChatInputProps['attachments'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -57,6 +61,8 @@ export function Chat({
   renderToolResult,
   onToolRetry,
   onRetry,
+  inputBanner,
+  inputAttachments,
   inputLeading,
   inputTrailing,
   inputFooter,
@@ -110,6 +116,8 @@ export function Chat({
       <ChatInput
         key={sessionKey(session)}
         {...input}
+        banner={inputBanner}
+        attachments={inputAttachments}
         leading={inputLeading}
         trailing={inputTrailing}
         footer={inputFooter}

@@ -184,7 +184,7 @@ describe('website docs bindings', () => {
   it('lists all authored variants from the catalog', () => {
     const slugs = getAllDocSlugs();
     expect(slugs).toEqual(getNarrativeDocuments());
-    expect(slugs).toHaveLength(191);
+    expect(slugs).toHaveLength(192);
     expect(slugs).toContainEqual(expect.objectContaining({
       library: 'langgraph',
       section: 'getting-started',
@@ -498,7 +498,7 @@ describe('website docs bindings', () => {
 
   it('keeps experimental source-build disclosures on every extracted React guide', () => {
     const react = getAllDocSlugs('react');
-    expect(react).toHaveLength(73);
+    expect(react).toHaveLength(74);
     for (const document of react) {
       const doc = getDocByPath(document.href)!;
       expect(readFrontmatterDescription(doc.content), document.id).toBe(document.description);
