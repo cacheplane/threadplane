@@ -28,7 +28,12 @@ export interface AnchoredMenuOptions {
   readonly returnFocusTo?: HTMLElement | null;
   /** Entry focused by an ordinary opening; the first enabled entry otherwise. */
   readonly initialFocus?: (menu: HTMLElement) => HTMLElement | null | undefined;
+  /** Text matched by typeahead for one entry; its text content otherwise. */
+  readonly itemText?: (item: HTMLElement) => string;
 }
+
+/** Keystrokes further apart than this start a new typeahead search. */
+const TYPEAHEAD_RESET_MS = 500;
 
 const tokens = [
   '--tp-chat-text',
@@ -106,12 +111,14 @@ export function useAnchoredMenu({
   anchorPoint,
   returnFocusTo,
   initialFocus,
+  itemText,
 }: AnchoredMenuOptions) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
-  const callbacks = useRef({ onOpenChange, initialFocus });
-  callbacks.current = { onOpenChange, initialFocus };
+  const callbacks = useRef({ onOpenChange, initialFocus, itemText });
+  callbacks.current = { onOpenChange, initialFocus, itemText };
+  const typed = useRef({ text: '', at: 0 });
   const [portal, setPortal] = useState<{
     document: Document;
     style: CSSProperties;
@@ -165,6 +172,7 @@ export function useAnchoredMenu({
     )?.focus();
   };
   const close = (returnFocus = false) => {
+    typed.current.text = '';
     restore.current = returnFocus;
     if (returnFocus) restoreTarget.current = context.current.returnFocusTo;
     callbacks.current.onOpenChange(false);
@@ -442,6 +450,7 @@ export function useAnchoredMenu({
         ) {
           event.preventDefault();
           event.stopPropagation();
+          typed.current.text = '';
           const buttons = enabled();
           const index = buttons.indexOf(
             (portal?.document.activeElement ?? null) as HTMLButtonElement
@@ -456,6 +465,45 @@ export function useAnchoredMenu({
                   buttons.length) %
                 buttons.length;
           (buttons[next] ?? menu.current)?.focus();
+        } else if (
+          // Space activates the focused entry, so it never joins a search.
+          event.key.length === 1 &&
+          event.key !== ' ' &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey &&
+          !event.nativeEvent.isComposing &&
+          event.nativeEvent.keyCode !== 229
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          const key = event.key.toLocaleLowerCase();
+          const fresh = event.timeStamp - typed.current.at > TYPEAHEAD_RESET_MS;
+          const text = (fresh ? '' : typed.current.text) + key;
+          typed.current = { text, at: event.timeStamp };
+          const buttons = enabled();
+          const index = buttons.indexOf(
+            (portal?.document.activeElement ?? null) as HTMLButtonElement
+          );
+          // Repeating one character cycles through the entries starting with it.
+          const cycling = [...text].every((character) => character === key);
+          const search = cycling ? key : text;
+          const offset = cycling || text.length === 1 ? 1 : 0;
+          for (let step = 0; step < buttons.length; step++) {
+            const button =
+              buttons[(index + offset + step + buttons.length) % buttons.length];
+            const label = (
+              callbacks.current.itemText?.(button) ??
+              button.textContent ??
+              ''
+            )
+              .trim()
+              .toLocaleLowerCase();
+            if (label.startsWith(search)) {
+              button.focus();
+              break;
+            }
+          }
         }
       },
     },

@@ -116,6 +116,14 @@ it('forwards renderToolResult through Chat', () => {
   );
   expect(view.getByRole('button', { name: 'Act on call' })).toBeTruthy();
 });
+it('forwards renderToolCall through Chat', () => {
+  const { session } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
+  const view = render(
+    <Chat session={session} renderToolCall={(call) => <p>Card for {call.name}</p>} />
+  );
+  expect(view.getByText('Card for lookup').parentElement?.className).toBe('tp-chat-tool-call');
+  expect(view.container.querySelector('.tp-tool-activity')).toBeNull();
+});
 const box = (view: ReturnType<typeof render>) =>
   view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
 const disposed = (content: MessageContent) =>
@@ -265,7 +273,7 @@ describe('Chat', () => {
     const { session, raw } = fakeSession({ error: failure() });
     const retry = vi.fn();
     const view = render(<Chat session={session} onRetry={retry} />);
-    fireEvent.click(view.getByRole('button', { name: 'Retry' }));
+    fireEvent.click(view.getByRole('button', { name: 'Retry response' }));
     expect(retry).toHaveBeenCalledExactlyOnceWith();
     expect(raw.submit).not.toHaveBeenCalled();
     expect(view.getByRole('alert').classList.contains('tp-chat__error')).toBe(
@@ -278,7 +286,7 @@ describe('Chat', () => {
     (recovery) => {
       const { session } = fakeSession({ error: failure(recovery) });
       const view = render(<Chat session={session} onRetry={vi.fn()} />);
-      expect(view.queryByRole('button', { name: 'Retry' })).toBeNull();
+      expect(view.queryByRole('button', { name: 'Retry response' })).toBeNull();
       expect(view.queryByRole('button', { name: 'Check status' })).toBeNull();
     }
   );
@@ -305,7 +313,7 @@ describe('Chat', () => {
       Object.assign(session, { checkStatus: request });
       const view = render(<Chat session={session} onRetry={request} />);
       const button = view.getByRole('button', {
-        name: recovery === 'check' ? 'Check status' : 'Retry',
+        name: recovery === 'check' ? 'Check status' : 'Retry response',
       });
       const presented = session.getSnapshot();
       for (const error of [failure(recovery), undefined]) {
@@ -373,6 +381,8 @@ describe('Chat', () => {
     const view = render(
       <Chat
         session={session}
+        inputBanner={<p>Notice</p>}
+        inputAttachments={<p>Files</p>}
         inputLeading={<span>Lead</span>}
         inputTrailing={<button type="button">Tools</button>}
         inputFooter={<p>Foot</p>}
@@ -383,6 +393,12 @@ describe('Chat', () => {
       'tp-chat-input__leading'
     );
     expect(tools.parentElement?.className).toBe('tp-chat-input__trailing');
+    expect(view.getByText('Notice').parentElement?.className).toBe(
+      'tp-chat-input__banner'
+    );
+    expect(view.getByText('Files').parentElement?.className).toBe(
+      'tp-chat-input__attachments'
+    );
     expect(view.getByText('Foot').parentElement?.className).toBe(
       'tp-chat-input__footer'
     );
