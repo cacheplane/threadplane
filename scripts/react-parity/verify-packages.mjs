@@ -283,8 +283,8 @@ export type IsTypingResultContract = Assert<Equal<ReturnType<typeof import('@thr
 export type ChatErrorContract = Assert<Equal<import('@threadplane/react/chat').ChatErrorProps, { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string }>>;
 export type ChatErrorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatError>[0], import('@threadplane/react/chat').ChatErrorProps>>;
 export type ChatRetryContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'onRetry'>, { readonly onRetry?: () => void }>>;
-export type ChatInputSlotsContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatInputProps, 'leading' | 'trailing' | 'footer'>, { readonly leading?: import('react').ReactNode; readonly trailing?: import('react').ReactNode; readonly footer?: import('react').ReactNode }>>;
-export type ChatSlotsContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'inputLeading' | 'inputTrailing' | 'inputFooter'>, { readonly inputLeading?: import('react').ReactNode; readonly inputTrailing?: import('react').ReactNode; readonly inputFooter?: import('react').ReactNode }>>;
+export type ChatInputSlotsContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatInputProps, 'banner' | 'attachments' | 'leading' | 'trailing' | 'footer'>, { readonly banner?: import('react').ReactNode; readonly attachments?: import('react').ReactNode; readonly leading?: import('react').ReactNode; readonly trailing?: import('react').ReactNode; readonly footer?: import('react').ReactNode }>>;
+export type ChatSlotsContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'inputBanner' | 'inputAttachments' | 'inputLeading' | 'inputTrailing' | 'inputFooter'>, { readonly inputBanner?: import('react').ReactNode; readonly inputAttachments?: import('react').ReactNode; readonly inputLeading?: import('react').ReactNode; readonly inputTrailing?: import('react').ReactNode; readonly inputFooter?: import('react').ReactNode }>>;
 export type WelcomeContract = Assert<Equal<WelcomeProps, { readonly title?: ReactNode; readonly children?: ReactNode; readonly suggestions?: ReactNode; readonly className?: string }>>;
 export type SuggestionItemContract = Assert<Equal<import('@threadplane/react/chat').SuggestionItem, { readonly id: string; readonly label: string; readonly value: string; readonly disabled?: boolean }>>;
 export type SuggestionsContract = Assert<Equal<import('@threadplane/react/chat').SuggestionsProps, { readonly suggestions: readonly import('@threadplane/react/chat').SuggestionItem[]; readonly onSelect: (value: string) => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string }>>;
@@ -471,8 +471,11 @@ const SUPPORTED_EXPORTS = {
     'toolActivityPhase',
     'resolveToolOutcome',
     'toolOutcomes',
+    'citationsWithToolSources',
     'StatusPanel',
     'ToolObservation',
+    'SubagentCard',
+    'subagentsFromEvidence',
     'Welcome',
     'WelcomeSuggestion',
     'Suggestions',
