@@ -5353,6 +5353,42 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#AgentPlan",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentPlanStep",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#agentPlan",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#agentPlanFromState",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#AgentUsageEntry",
       "taskIds": [
         "T03",
@@ -10095,6 +10131,15 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/chat/src/lib/agent/agent-plan.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
       "taskIds": [
         "T03",
@@ -10292,6 +10337,14 @@
         "T15"
       ],
       "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat-approval-card/approval-records.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
       "status": "planned"
     },
     {
