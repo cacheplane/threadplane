@@ -1,4 +1,5 @@
 import {
+  agentPlanFromState,
   completeDelivery,
   type AgentError,
   type AgentSession,
@@ -422,10 +423,12 @@ export function createSession(
       status = 'error';
       error = invocationConflictError();
     }
+    const plan = agentPlanFromState(values);
     publication.publish({
       status,
       history: historyPage,
       values,
+      ...(plan ? { plan } : {}),
       interrupts,
       subgraphs: subgraphs.subgraphs,
       ...(retained?.run.evidence.runId

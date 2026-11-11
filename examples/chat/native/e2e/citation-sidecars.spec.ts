@@ -162,12 +162,12 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
     const panels = page.getByRole('region', { name: 'Sources', exact: true });
     await expect(panels).toHaveCount(2);
     const mixed = panels.first();
-    const header = mixed.getByRole('button', { name: /^Sources \(/ });
-    await expect(header).toHaveAccessibleName('Sources (3)');
+    const header = mixed.getByRole('button', { name: /^Sources \d/ });
+    await expect(header).toHaveAccessibleName('Sources 3');
     await header.click();
     await expect(
       mixed.getByRole('listitem').locator('.tp-citation-card__heading')
-    ).toHaveText(['[1] Provider', '[1] Sidecar', '[4] javascript:blocked']);
+    ).toHaveText(['Provider', 'Sidecar', 'javascript:blocked']);
     await mixed
       .getByRole('button', {
         name: 'Preview source 4: javascript:blocked',
@@ -180,7 +180,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
     await blocked.getByRole('button', { name: 'Close', exact: true }).click();
     const onlyHeader = panels
       .nth(1)
-      .getByRole('button', { name: 'Sources (1)', exact: true });
+      .getByRole('button', { name: 'Sources 1', exact: true });
     await onlyHeader.click();
     await panels
       .nth(1)
@@ -264,7 +264,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
         expect(await open.evaluate((node) => node.isConnected)).toBe(false);
         await trigger.evaluate((node) => (node as HTMLButtonElement).click());
         await expect(card).toHaveCount(0);
-        await expect(header).toHaveAccessibleName('Sources (2)');
+        await expect(header).toHaveAccessibleName('Sources 2');
       }
       await expect(header).toHaveAttribute('aria-expanded', 'true');
       if (index === 1) step.releaseBody();
@@ -297,7 +297,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
         `Conversation ID: ${id.toLowerCase()}`
       );
       await expect(
-        panels.first().getByRole('button', { name: 'Sources (3)', exact: true })
+        panels.first().getByRole('button', { name: 'Sources 3', exact: true })
       ).toHaveAttribute('aria-expanded', 'false');
       expect(backend.requests).toHaveLength(count);
       // The app keys its composer by conversation; selection owns a fresh draft.
@@ -319,7 +319,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
       if (id === 'B')
         await panels
           .first()
-          .getByRole('button', { name: 'Sources (3)', exact: true })
+          .getByRole('button', { name: 'Sources 3', exact: true })
           .click();
       await expect(draft).toHaveValue(`Draft for ${id}`);
       expect(
@@ -333,7 +333,7 @@ test('installed Markdown Sources merge exact metadata, retain streamed cards and
     );
     await retiredHeader.evaluate((node) => (node as HTMLButtonElement).click());
     await expect(
-      panels.first().getByRole('button', { name: 'Sources (3)', exact: true })
+      panels.first().getByRole('button', { name: 'Sources 3', exact: true })
     ).toHaveAttribute('aria-expanded', 'false');
     await expect(draft).toHaveValue('Draft for A');
     expect(

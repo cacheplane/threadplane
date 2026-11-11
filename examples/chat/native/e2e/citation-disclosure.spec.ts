@@ -95,7 +95,7 @@ test('installed Sources disclosure keeps native activation, previews, and local 
     assert.ok(textarea);
     const panel = page.getByRole('region', { name: 'Sources', exact: true });
     const header = panel.getByRole('button', {
-      name: 'Sources (2)',
+      name: 'Sources 2',
       exact: true,
     });
     await expect(header).toHaveAttribute('type', 'button');

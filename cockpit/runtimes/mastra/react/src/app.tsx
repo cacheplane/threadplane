@@ -1,11 +1,13 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
 import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
   ApprovalCard,
   ChatInput,
   TextTranscript,
+  type ApprovalRecordEntry,
+  type ChatInputHandle,
 } from '@threadplane/react/chat';
 import {
   createConnectedApplication,
@@ -24,6 +26,34 @@ export function MastraDemo({
   const snapshot = useAgent(application);
   const generation = snapshot.viewGeneration;
   const approval = snapshot.approval;
+  // Answered approvals stay in the transcript as one-line records.
+  const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
+  // Answering removes the card and its focused button; focus returns to the
+  // composer as soon as the composer is enabled again.
+  const composer = useRef<ChatInputHandle>(null);
+  const [focusOwed, setFocusOwed] = useState(false);
+  const pending = approval !== undefined;
+  const composerDisabled = !snapshot.canSubmit;
+  useEffect(() => {
+    if (!focusOwed || pending || composerDisabled) return;
+    setFocusOwed(false);
+    composer.current?.focus();
+  }, [focusOwed, pending, composerDisabled]);
+  function decide(action: 'approve' | 'decline') {
+    if (!approval) return;
+    const before = application.getSnapshot();
+    void application.decide(approval, action, generation);
+    // Record only a decision the application admitted.
+    if (before.busy || !application.getSnapshot().busy) return;
+    setRecords((previous) => [
+      ...previous,
+      {
+        afterId: before.rows.at(-1)?.id,
+        verdict: action === 'approve' ? 'approved' : 'declined',
+      },
+    ]);
+    setFocusOwed(true);
+  }
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -35,6 +65,8 @@ export function MastraDemo({
   );
   useEffect(() => {
     setDraft('');
+    setRecords([]);
+    setFocusOwed(false);
   }, [generation]);
   const status = snapshot.busy
     ? snapshot.activity === 'replacing'
@@ -61,6 +93,8 @@ export function MastraDemo({
           type="button"
           disabled={snapshot.activity === 'replacing'}
           onClick={() => {
+            setRecords([]);
+            setFocusOwed(false);
             void application.newConversation();
           }}
         >
@@ -84,42 +118,44 @@ export function MastraDemo({
       >
         Reserve the campsite
       </button>
-      <TextTranscript messages={snapshot.rows} label="Conversation" />
-      {approval && (
-        <ApprovalCard
-          key={approval.pause}
-          title="Reservation approval"
-          disabled={snapshot.busy || !snapshot.canRespond}
-          actions={[
-            {
-              id: 'approve',
-              label: 'Approve',
-              onSelect: () => {
-                void application.decide(approval, 'approve', generation);
+      <TextTranscript
+        messages={snapshot.rows}
+        label="Conversation"
+        approvalRecords={records}
+      >
+        {approval && (
+          <ApprovalCard
+            key={approval.pause}
+            title="Reservation approval"
+            disabled={snapshot.busy || !snapshot.canRespond}
+            actions={[
+              {
+                id: 'approve',
+                label: 'Approve',
+                onSelect: () => decide('approve'),
               },
-            },
-            {
-              id: 'decline',
-              label: 'Decline',
-              onSelect: () => {
-                void application.decide(approval, 'decline', generation);
+              {
+                id: 'decline',
+                label: 'Decline',
+                onSelect: () => decide('decline'),
               },
-            },
-          ]}
-        >
-          <dl className="reservation-details">
-            <dt>Campsite</dt>
-            <dd>{approval.site}</dd>
-            <dt>Nights</dt>
-            <dd>{approval.nights}</dd>
-            <dt>Total (USD)</dt>
-            <dd>${approval.total.toFixed(2)}</dd>
-          </dl>
-          <p>
-            This decision applies only to the fictional reservation shown here.
-          </p>
-        </ApprovalCard>
-      )}
+            ]}
+          >
+            <dl className="reservation-details">
+              <dt>Campsite</dt>
+              <dd>{approval.site}</dd>
+              <dt>Nights</dt>
+              <dd>{approval.nights}</dd>
+              <dt>Total (USD)</dt>
+              <dd>${approval.total.toFixed(2)}</dd>
+            </dl>
+            <p>
+              This decision applies only to the fictional reservation shown
+              here.
+            </p>
+          </ApprovalCard>
+        )}
+      </TextTranscript>
       {snapshot.result !== null && (
         <section
           aria-label="Observed backend result"
@@ -133,11 +169,12 @@ export function MastraDemo({
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput
+          ref={composer}
           label="Message"
           placeholder="Ask for a fictional campsite reservation…"
           value={draft}
           onValueChange={setDraft}
-          disabled={!snapshot.canSubmit}
+          disabled={composerDisabled}
           busy={snapshot.busy}
           onStop={
             snapshot.busy && snapshot.activity !== 'replacing'

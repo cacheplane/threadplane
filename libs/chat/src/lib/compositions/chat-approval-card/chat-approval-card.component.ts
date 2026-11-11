@@ -17,6 +17,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { ChatStatusPanelComponent } from '../../primitives/chat-status-panel/chat-status-panel.component';
+import { CHAT_APPROVAL_RECORDS } from './approval-records';
 
 /** Actions emitted by the approval dialog for the host to handle. */
 export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
@@ -158,14 +159,20 @@ export class ChatApprovalCardComponent {
   readonly matchKind = input<string | undefined>(undefined);
   readonly title = input<string>('Approval required');
   readonly showEdit = input<boolean>(false);
-  /** `dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript. */
-  readonly presentation = input<ChatApprovalPresentation>('dialog');
+  /** `inline` (default) renders a status panel in place; put the card in a `chatInterruptTemplate` so it sits at the end of the transcript. `dialog` opens a modal instead. */
+  readonly presentation = input<ChatApprovalPresentation>('inline');
   /** Marks an action that cannot be undone: danger tint, the lead "This can't be undone." and a danger primary button. Name the exact effect in `approveLabel`, such as "Delete 12 drafts". */
   readonly destructive = input<boolean>(false);
   /** Primary button text. Name the action, such as "Save note". */
   readonly approveLabel = input<string>('Approve');
   /** Secondary button text. Name the alternative, such as "Don't save". */
   readonly cancelLabel = input<string>('Cancel');
+  /**
+   * Inline only: what the one-line record names once the approval is answered,
+   * as in "Approved: Save note". Defaults to `approveLabel` when the app named
+   * the action; otherwise the record reads just "Approved" or "Declined".
+   */
+  readonly recordLabel = input<string | undefined>(undefined);
 
   readonly action = output<ChatApprovalAction>();
 
@@ -177,6 +184,7 @@ export class ChatApprovalCardComponent {
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
   private readonly firstAction = viewChild<ElementRef<HTMLButtonElement>>('firstAction');
   private readonly injector = inject(Injector);
+  private readonly records = inject(CHAT_APPROVAL_RECORDS, { optional: true });
 
   private readonly interrupt = computed(() => this.agent().interrupt?.());
 
@@ -220,6 +228,7 @@ export class ChatApprovalCardComponent {
   }
 
   protected emit(action: ChatApprovalAction): void {
+    if (action !== 'edit') this.record(action === 'approve' ? 'approved' : 'declined');
     this.action.emit(action);
     // 'approve' and 'cancel' are terminal — they resolve the interrupt, so the
     // dialog closes. 'edit' is non-terminal: the caller reveals an inline
@@ -235,6 +244,22 @@ export class ChatApprovalCardComponent {
     ev.preventDefault();
     this.action.emit('cancel');
     this.closeDialog();
+  }
+
+  /** Inline answers leave a one-line record after the message they followed. */
+  private record(verdict: 'approved' | 'declined'): void {
+    if (!this.records || this.presentation() !== 'inline' || !this.payload()) return;
+    const approve = this.approveLabel();
+    const label = this.recordLabel() ?? (approve === 'Approve' ? '' : approve);
+    const messages = this.agent().messages();
+    let afterMessageId: string | undefined;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') {
+        afterMessageId = messages[i].id;
+        break;
+      }
+    }
+    this.records.add({ verdict, label, afterMessageId });
   }
 
   private closeDialog(): void {

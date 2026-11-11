@@ -10,11 +10,11 @@ test.describe('cockpit runtimes/aws-strands: meeting booking approval', () => {
   test('approval card displays the pending book_meeting call', async ({ page }) => {
     await page.goto('/');
     await page.getByText('Book the Q3 roadmap review').click();
-    const dialog = page.locator('dialog.chat-approval-card');
-    await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await expect(dialog).toContainText('Booking approval required');
-    await expect(dialog).toContainText('Q3 roadmap review');
-    await expect(dialog).toContainText('Tuesday 10:00');
+    const panel = page.locator('.chat-approval-card--inline');
+    await expect(panel).toBeVisible({ timeout: 30_000 });
+    await expect(panel).toContainText('Booking approval required');
+    await expect(panel).toContainText('Q3 roadmap review');
+    await expect(panel).toContainText('Tuesday 10:00');
   });
 
   test('shared state panel snapshots availability and the pending booking', async ({ page }) => {
@@ -31,9 +31,9 @@ test.describe('cockpit runtimes/aws-strands: meeting booking approval', () => {
   test('Approve resumes the run and the meeting is booked', async ({ page }) => {
     await page.goto('/');
     await page.getByText('Book the Q3 roadmap review').click();
-    const dialog = page.locator('dialog.chat-approval-card');
-    await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await dialog.getByRole('button', { name: 'Approve' }).click();
+    const panel = page.locator('.chat-approval-card--inline');
+    await expect(panel).toBeVisible({ timeout: 30_000 });
+    await panel.getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText(/is booked for Tuesday 10:00/i)).toBeVisible({ timeout: 30_000 });
   });
 });

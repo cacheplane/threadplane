@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
@@ -68,6 +68,7 @@ interface PackingList {
   imports: [
     ChatComponent,
     ChatApprovalCardComponent,
+    ChatInterruptTemplateDirective,
     ChatWelcomeSuggestionComponent,
     ExampleChatLayoutComponent,
     CurrencyPipe,
@@ -91,8 +92,38 @@ interface PackingList {
               />
             }
           </div>
+          <!-- The approval sits at the end of the transcript, inline. -->
+          <ng-template chatInterruptTemplate>
+            <!-- #region approval-card -->
+            <chat-approval-card
+              [agent]="agent"
+              title="Reservation approval required"
+              (action)="onAction($event)"
+            >
+              <ng-template #body>
+                <div class="approval-body">
+                  @if (suspendPayload(); as s) {
+                    <div class="approval-row">
+                      <span class="approval-label">Campsite</span>
+                      <strong>{{ s.site }}</strong>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">Nights</span>
+                      <strong>{{ s.nights }}</strong>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">Total</span>
+                      <strong>{{ s.total_usd | currency }}</strong>
+                    </div>
+                  } @else {
+                    <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
+                  }
+                </div>
+              </ng-template>
+            </chat-approval-card>
+            <!-- #endregion -->
+          </ng-template>
         </chat>
-
         <!-- #region shared-state-panel -->
         <aside class="state-panel" data-testid="packing-state">
           <h2 class="state-title">Shared state — packing list</h2>
@@ -112,34 +143,6 @@ interface PackingList {
         </aside>
         <!-- #endregion -->
 
-        <!-- #region approval-card -->
-        <chat-approval-card
-          [agent]="agent"
-          title="Reservation approval required"
-          (action)="onAction($event)"
-        >
-          <ng-template #body>
-            <div class="approval-body">
-              @if (suspendPayload(); as s) {
-                <div class="approval-row">
-                  <span class="approval-label">Campsite</span>
-                  <strong>{{ s.site }}</strong>
-                </div>
-                <div class="approval-row">
-                  <span class="approval-label">Nights</span>
-                  <strong>{{ s.nights }}</strong>
-                </div>
-                <div class="approval-row">
-                  <span class="approval-label">Total</span>
-                  <strong>{{ s.total_usd | currency }}</strong>
-                </div>
-              } @else {
-                <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
-              }
-            </div>
-          </ng-template>
-        </chat-approval-card>
-        <!-- #endregion -->
       </div>
     </example-chat-layout>
   `,
