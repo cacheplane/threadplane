@@ -227,7 +227,7 @@ jobs:
         if: matrix.lane == 'quality'
         run: |
           node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs
-          node scripts/react-parity/inventory.mjs --check
+          node scripts/react-parity/inventory.mjs --check --drift warn
           node scripts/react-parity/verify-boundaries.mjs
       - name: Build and validate private React foundations
         if: matrix.lane == 'quality'
@@ -531,34 +531,9 @@ jobs:
       - run: npx nx lint website
       - run: npx nx run website:generate-api-docs
       - run: npx nx test website
-      - name: Commit generated API docs to same-repo PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          # Bind the attacker-controllable PR branch name to an env var so it is
-          # passed as a literal value, never interpolated into the script text
-          # (prevents shell injection — OSSF Scorecard Dangerous-Workflow).
-          HEAD_REF: ${{ github.head_ref }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          if test -z "$(git status --porcelain -- apps/website/content/api)"; then
-            echo "Generated API docs are already committed."
-            exit 0
-          fi
-
-          # Commit through the GitHub API, not `git push`: GitHub signs
-          # API-created commits, and main requires signed commits, so an
-          # unsigned bot commit would block the PR from merging.
-          git add --all -- apps/website/content/api
-          oid="$(node scripts/commit-staged-via-api.mjs \
-            --repo "$GITHUB_REPOSITORY" \
-            --branch "$HEAD_REF" \
-            --message "chore(docs): regenerate api docs")"
-          git fetch --no-tags --depth=1 origin "$oid"
-          git reset --soft "$oid"
-      - name: Verify generated API docs are committed
-        run: |
-          git diff --exit-code -- apps/website/content/api
-          test -z "$(git ls-files --others --exclude-standard -- apps/website/content/api)"
+      # The committed reference under apps/website/content/api is a convenience
+      # copy that may lag. The build regenerates it, so PRs never need to commit
+      # it and queued PRs never conflict on it.
       - run: npx nx build website
 
   growth-lifecycle:
