@@ -205,7 +205,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 42
+            "line": 40
           },
           "isReadonly": true,
           "isOptional": true
@@ -247,7 +247,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 38
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -289,7 +289,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 40
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": true
@@ -325,7 +325,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 36
+            "line": 34
           },
           "isReadonly": true,
           "isOptional": true
@@ -367,7 +367,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 34
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -493,48 +493,6 @@
           },
           "isReadonly": true,
           "isOptional": false
-        },
-        {
-          "name": "subagents",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ChatProps#subagents:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly subagents?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "MessageListProps",
-              "canonicalReference": "@threadplane/react!MessageListProps:interface",
-              "href": "/docs/api/react/chat/MessageListProps"
-            },
-            {
-              "kind": "Content",
-              "text": "['subagents']"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Child agents shown as subagent cards in place of the tool calls that started them. Keep stable.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/chat.tsx",
-            "line": 32
-          },
-          "isReadonly": true,
-          "isOptional": true
         },
         {
           "name": "toolLabel",
