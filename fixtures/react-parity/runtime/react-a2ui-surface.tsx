@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@threadplane/react/a2ui';
 import '@threadplane/react/a2ui/styles.css';
@@ -44,6 +44,38 @@ function tripSurface(summary: string) {
 const PHOTO = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="teal"/></svg>')}`;
 const SUMMARIES = ['Two nights in Lyon', 'Three-nights-with-an-unbroken-summary-that-must-wrap-inside-the-card-and-never-widen-the-page'];
 
+/** One long-lived store: the form's edits live here, not in the page. */
+const formSurfaces = createA2uiSurfaces();
+for (const message of [
+  { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic' } },
+  { version: 'v0.9', updateComponents: { surfaceId: 'form', components: [
+    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'fixed'] },
+    { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name' },
+    { id: 'greeting', component: 'Text', text: { path: '/booking/guest' }, variant: 'h3' },
+    { id: 'notes', component: 'TextField', label: 'Notes', variant: 'longText', value: { path: '/booking/notes' } },
+    { id: 'window', component: 'CheckBox', label: 'Window seat', value: { path: '/booking/window' } },
+    { id: 'party', component: 'Slider', label: 'Party', value: { path: '/party' }, min: 1, max: 8 },
+    { id: 'fixed', component: 'TextField', label: 'Reference', value: 'LYS-6601' },
+  ] } },
+  { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2 } } },
+] as unknown as Parameters<A2uiSurfaces['apply']>[0][]) formSurfaces.apply(message);
+
+function FormFixture() {
+  const snapshot = useSyncExternalStore(formSurfaces.subscribe, formSurfaces.getSnapshot);
+  const [mounted, setMounted] = useState(true);
+  const [editable, setEditable] = useState(true);
+  const form = snapshot.surfaces[0];
+  return (
+    <section aria-label="Booking form">
+      <button type="button" onClick={() => setMounted((value) => !value)}>Toggle form</button>
+      <button type="button" onClick={() => setEditable((value) => !value)}>Toggle editing</button>
+      <button type="button" onClick={() => formSurfaces.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'form', path: '/booking/guest', value: 'Agent Smith' } } as unknown as Parameters<A2uiSurfaces['apply']>[0])}>Agent sets guest</button>
+      {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} /> : null}
+      <output data-testid="form-model" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(form.dataModel)}</output>
+    </section>
+  );
+}
+
 function A2uiSurfaceFixture() {
   const [rtl, setRtl] = useState(false);
   const [long, setLong] = useState(false);
@@ -54,6 +86,7 @@ function A2uiSurfaceFixture() {
       <label><input type="checkbox" checked={rtl} onChange={(event) => setRtl(event.target.checked)} />Right to left</label>
       <label><input type="checkbox" checked={long} onChange={(event) => { setLong(event.target.checked); setSurface(tripSurface(SUMMARIES[event.target.checked ? 1 : 0])); }} />Long summary</label>
       <A2uiSurface surface={surface} />
+      <FormFixture />
     </main>
   );
 }

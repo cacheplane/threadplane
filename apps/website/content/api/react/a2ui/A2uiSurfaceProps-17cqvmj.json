@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 14
+            "line": 24
           },
           "isReadonly": true,
           "isOptional": true
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 15
+            "line": 25
           },
           "isReadonly": true,
           "isOptional": true
@@ -136,20 +136,58 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 12
+            "line": 16
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "surfaces",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!A2uiSurfaceProps#surfaces:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly surfaces?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiSurfaces",
+              "canonicalReference": "@threadplane/react!~A2uiSurfaces:interface",
+              "href": "/docs/api/content/a2ui/A2uiSurfaces"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The store this snapshot came from. With it, input components write each\nedit into that surface's data model, and the store publishes a new\nsnapshot for you to pass back. Without it the surface is read-only.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/a2ui/surface.tsx",
+            "line": 22
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {
         "path": "libs/react/src/a2ui/surface.tsx",
-        "line": 10
+        "line": 14
       }
     }
   ],
   "source": {
     "path": "libs/react/src/a2ui/surface.tsx",
-    "line": 10
+    "line": 14
   }
 }

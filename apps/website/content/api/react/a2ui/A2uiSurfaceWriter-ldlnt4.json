@@ -1,0 +1,125 @@
+{
+  "name": "A2uiSurfaceWriter",
+  "entrypointId": "react/a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/react/a2ui/A2uiSurfaceWriter",
+  "canonicalReference": "@threadplane/react!A2uiSurfaceWriter:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "What a mounted surface offers its input components.",
+  "declarations": [
+    {
+      "name": "A2uiSurfaceWriter",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!A2uiSurfaceWriter:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiSurfaceWriter "
+        }
+      ],
+      "docs": {
+        "summary": "What a mounted surface offers its input components.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "editable",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!A2uiSurfaceWriter#editable:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly editable: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "False when the surface was given no store: inputs then show values and change nothing.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/a2ui/surface-context.ts",
+            "line": 7
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "write",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!A2uiSurfaceWriter#write:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly write: "
+            },
+            {
+              "kind": "Content",
+              "text": "(path: string | undefined, value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiValue",
+              "canonicalReference": "@threadplane/react!~A2uiValue:type",
+              "href": "/docs/api/content/a2ui/A2uiValue"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Writes one edit at a data model path; a missing path (a literal prop) is ignored.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/a2ui/surface-context.ts",
+            "line": 9
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/a2ui/surface-context.ts",
+        "line": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/a2ui/surface-context.ts",
+    "line": 5
+  }
+}

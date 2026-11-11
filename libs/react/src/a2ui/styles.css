@@ -9,6 +9,9 @@
   --a2ui-primary: #2f6fed;
   --a2ui-label: var(--a2ui-on-surface-variant);
   --a2ui-scrim: rgba(0, 0, 0, 0.4);
+  --a2ui-input-bg: #ffffff;
+  --a2ui-typography-label-size: 13px;
+  --a2ui-typography-label-weight: 500;
   --a2ui-caption: var(--a2ui-on-surface-variant);
   --a2ui-spacing-1: 4px;
   --a2ui-spacing-2: 8px;
@@ -52,6 +55,7 @@
     --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.5);
     --a2ui-primary: #8ab4ff;
     --a2ui-scrim: rgba(0, 0, 0, 0.6);
+    --a2ui-input-bg: #12141a;
   }
 }
 .a2ui-text-h1,
@@ -319,6 +323,65 @@
   font-size: var(--a2ui-typography-caption-size);
   cursor: pointer;
 }
+.a2ui-tf,
+.a2ui-slider {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--a2ui-spacing-1);
+}
+.a2ui-tf__label,
+.a2ui-slider__label {
+  font-size: var(--a2ui-typography-label-size);
+  font-weight: var(--a2ui-typography-label-weight);
+  color: var(--a2ui-label);
+}
+.a2ui-tf__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: var(--a2ui-spacing-2) var(--a2ui-spacing-3);
+  border: 1px solid var(--a2ui-outline);
+  border-radius: var(--a2ui-shape-small);
+  background: var(--a2ui-input-bg);
+  color: var(--a2ui-on-surface);
+  font: inherit;
+  font-size: var(--a2ui-typography-body-size);
+  resize: vertical;
+}
+.a2ui-tf__input:read-only {
+  color: var(--a2ui-on-surface-variant);
+}
+.a2ui-tf__input:focus-visible,
+.a2ui-cb__input:focus-visible,
+.a2ui-slider__input:focus-visible {
+  outline: 2px solid var(--a2ui-primary);
+  outline-offset: 2px;
+}
+.a2ui-cb {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--a2ui-spacing-2);
+  font-size: var(--a2ui-typography-body-size);
+  cursor: pointer;
+}
+.a2ui-cb__input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--a2ui-primary);
+  cursor: inherit;
+}
+.a2ui-cb:has(:disabled) {
+  cursor: default;
+}
+.a2ui-slider__input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--a2ui-primary);
+}
 .a2ui-unsupported {
   display: contents;
 }
@@ -334,6 +397,9 @@
     border-bottom-color: Highlight;
   }
   .a2ui-modal {
+    border-color: CanvasText;
+  }
+  .a2ui-tf__input {
     border-color: CanvasText;
   }
 }

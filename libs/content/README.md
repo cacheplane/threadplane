@@ -55,6 +55,13 @@ already parsed, correctly shaped supported A2UI envelopes. Create one owner per
 caller-selected message and delivery generation. The caller applies envelopes,
 replaces the owner on that lifetime boundary, and disposes the old owner.
 
+`setValue(surfaceId, path, value)` writes one local edit, such as a typed
+character, into a live surface's data model. It replaces the value at `path`
+exactly as an agent `updateDataModel` would, publishes a new snapshot, and sends
+nothing anywhere. It returns `false` and publishes nothing for a surface that is
+not live or a primitive that is already there, and throws for a path that is not
+below the root.
+
 ```ts
 import { createA2uiSurfaces } from '@threadplane/content/a2ui';
 

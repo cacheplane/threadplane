@@ -4831,7 +4831,7 @@
       "canonicalReference": "@threadplane/content!A2uiSurfaces:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots."
+      "summary": "Application-owned accumulator that applies parsed A2UI envelopes and local edits, and publishes immutable live-surface snapshots."
     },
     {
       "name": "A2uiSurfaceSnapshot",
@@ -7151,7 +7151,7 @@
       "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "The display and disclosure part of the A2UI basic catalog: Text, Image, Icon,\nVideo, AudioPlayer, Row, Column, List, Card, Divider, Tabs and Modal. Tabs and\nModal keep their own open state; none of these sends an action."
+      "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox and Slider.\nThe three inputs write to the surface's store when `A2uiSurface` is given\none; none of these sends an action."
     },
     {
       "name": "A2uiSurface",
@@ -7161,7 +7161,7 @@
       "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders one A2UI surface read-only with the basic catalog's display and\ndisclosure components; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet."
+      "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local: nothing is sent to an agent.\nA component the catalog lacks keeps its children. Actions, validation,\nfunction calls and child templates are not handled yet."
     },
     {
       "name": "A2uiSurfaceProps",
@@ -7172,6 +7172,26 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Supplies one published surface snapshot and, optionally, the components that render it."
+    },
+    {
+      "name": "A2uiSurfaceWriter",
+      "entrypointId": "react/a2ui",
+      "kind": "Interface",
+      "href": "/docs/api/react/a2ui/A2uiSurfaceWriter",
+      "canonicalReference": "@threadplane/react!A2uiSurfaceWriter:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "What a mounted surface offers its input components."
+    },
+    {
+      "name": "useA2uiSurfaceWriter",
+      "entrypointId": "react/a2ui",
+      "kind": "Function",
+      "href": "/docs/api/react/a2ui/useA2uiSurfaceWriter",
+      "canonicalReference": "@threadplane/react!useA2uiSurfaceWriter:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "The surrounding surface's write channel; read-only outside an editable `A2uiSurface`."
     },
     {
       "name": "AngularComponentInputs",

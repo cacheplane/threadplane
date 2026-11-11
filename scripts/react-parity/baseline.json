@@ -1,11 +1,23 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "2b9b5bb754f79769105505a8b4fee9033c07e50d",
+  "baselineHead": "e961902e338c8a81359337cffef00769e11e9e6b",
   "sourceState": {
     "modified": [
-      "libs/react/README.md"
+      "libs/content/README.md",
+      "libs/content/src/a2ui/create-surfaces.ts",
+      "libs/content/src/a2ui/types.ts",
+      "libs/react/README.md",
+      "libs/react/src/a2ui/catalog/index.ts",
+      "libs/react/src/a2ui/index.ts",
+      "libs/react/src/a2ui/styles.css",
+      "libs/react/src/a2ui/surface.tsx"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/a2ui/catalog/check-box.tsx",
+      "libs/react/src/a2ui/catalog/slider.tsx",
+      "libs/react/src/a2ui/catalog/text-field.tsx",
+      "libs/react/src/a2ui/surface-context.ts"
+    ]
   },
   "scope": {
     "libraries": [
@@ -581,7 +593,7 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "a8b501adcda583d8aabcf180574a3aa43a35281afe0fa787f8a6b2ace3e41e1e"
+      "sha256": "27a7474580c78166ff6cec98600330669a36bacacde015e58eb983a7e2d362c1"
     },
     {
       "id": "asset:libs/content/package.json",
@@ -851,7 +863,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "63c5e8820df44c855682956466b724a72d679bbb87cc717b2059fc2576858985"
+      "sha256": "49eb54747ede8a72df97bdded9f86d4b76349c8c4d95bcb59c485a3903c190f0"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -869,7 +881,7 @@
       "id": "asset:libs/react/src/a2ui/styles.css",
       "kind": "asset",
       "path": "libs/react/src/a2ui/styles.css",
-      "sha256": "2e5912cf737220f42a8091e829828f24cf47ddd4fcca6c41fd0d734868ff7c19"
+      "sha256": "4edca4a5414f59571f78f8483518fdd1d3069f2345e47171f89d21be2986018d"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",
@@ -9696,7 +9708,7 @@
           "path": "libs/content/src/a2ui/types.ts",
           "symbol": "A2uiSurfaces",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface A2uiSurfaces {\n    readonly getSnapshot: () => A2uiSurfacesSnapshot;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly apply: (message: A2uiMessage) => void;\n    readonly dispose: () => void;\n}"
+          "signature": "export interface A2uiSurfaces {\n    readonly getSnapshot: () => A2uiSurfacesSnapshot;\n    readonly subscribe: (notify: () => void) => () => void;\n    readonly apply: (message: A2uiMessage) => void;\n    readonly setValue: (surfaceId: string, path: string, value: A2uiValue) => boolean;\n    readonly dispose: () => void;\n}"
         }
       ]
     },
@@ -9738,7 +9750,7 @@
           "path": "libs/content/src/a2ui/create-surfaces.ts",
           "symbol": "createA2uiSurfaces",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function createA2uiSurfaces(): A2uiSurfaces {\n    let state: SurfaceState | null = createSurfaceState();\n    let snapshot = surfaceSnapshot(state);\n    let disposed = false, notifying = false, dirty = false;\n    const registrations = new Set<{\n        notify: () => void;\n    }>();\n    function assertActive(): SurfaceState {\n        if (disposed || !state)\n            throw new Error('A2UI surfaces owner is disposed');\n        return state;\n    }\n    function publish(): void {\n        dirty = true;\n        if (notifying)\n            return;\n        notifying = true;\n        try {\n            while (dirty && !disposed) {\n                dirty = false;\n                for (const registration of [...registrations]) {\n                    if (disposed)\n                        break;\n                    if (!registrations.has(registration))\n                        continue;\n                    try {\n                        registration.notify();\n                    }\n                    catch {\n                    }\n                }\n            }\n        }\n        finally {\n            notifying = false;\n        }\n    }\n    return {\n        getSnapshot: () => snapshot,\n        subscribe(notify) {\n            if (disposed)\n                return () => undefined;\n            const registration = { notify };\n            registrations.add(registration);\n            return () => { registrations.delete(registration); };\n        },\n        apply(message) {\n            const next = transition(assertActive(), message);\n            assertActive();\n            state = next.state;\n            if (!next.publish)\n                return;\n            snapshot = surfaceSnapshot(state);\n            publish();\n        },\n        dispose() {\n            disposed = true;\n            dirty = false;\n            registrations.clear();\n            state = null;\n        },\n    };\n}"
+          "signature": "export function createA2uiSurfaces(): A2uiSurfaces {\n    let state: SurfaceState | null = createSurfaceState();\n    let snapshot = surfaceSnapshot(state);\n    let disposed = false, notifying = false, dirty = false;\n    const registrations = new Set<{\n        notify: () => void;\n    }>();\n    function assertActive(): SurfaceState {\n        if (disposed || !state)\n            throw new Error('A2UI surfaces owner is disposed');\n        return state;\n    }\n    function publish(): void {\n        dirty = true;\n        if (notifying)\n            return;\n        notifying = true;\n        try {\n            while (dirty && !disposed) {\n                dirty = false;\n                for (const registration of [...registrations]) {\n                    if (disposed)\n                        break;\n                    if (!registrations.has(registration))\n                        continue;\n                    try {\n                        registration.notify();\n                    }\n                    catch {\n                    }\n                }\n            }\n        }\n        finally {\n            notifying = false;\n        }\n    }\n    return {\n        getSnapshot: () => snapshot,\n        subscribe(notify) {\n            if (disposed)\n                return () => undefined;\n            const registration = { notify };\n            registrations.add(registration);\n            return () => { registrations.delete(registration); };\n        },\n        apply(message) {\n            const next = transition(assertActive(), message);\n            assertActive();\n            state = next.state;\n            if (!next.publish)\n                return;\n            snapshot = surfaceSnapshot(state);\n            publish();\n        },\n        setValue(surfaceId, path, value) {\n            const current = assertActive();\n            if (typeof path !== 'string' || !path.startsWith('/') || !path.split('/').some(Boolean))\n                throw new TypeError('A local A2UI edit needs a path below the data model root');\n            const surface = current.live.get(surfaceId);\n            if (!surface)\n                return false;\n            const next = transition(current, {\n                version: 'v0.9', updateDataModel: { surfaceId, path, value },\n            } as A2uiMessage);\n            if (unchanged(surface.dataModel, next.state.live.get(surfaceId)?.dataModel, path))\n                return false;\n            state = next.state;\n            snapshot = surfaceSnapshot(state);\n            publish();\n            return true;\n        },\n        dispose() {\n            disposed = true;\n            dirty = false;\n            registrations.clear();\n            state = null;\n        },\n    };\n}"
         }
       ]
     },
@@ -16344,7 +16356,7 @@
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/create-surfaces.ts",
-      "sha256": "e68a5392b884457d010ffa35f29f8cec575683091a40b0a461fbde4b1b201e8c"
+      "sha256": "a478f9f3bd4fb13806ef2bbf85ca1e1362d159e0e693e008ebacd750c6d37751"
     },
     {
       "id": "source:libs/content/src/a2ui/index.ts",
@@ -16368,7 +16380,7 @@
       "id": "source:libs/content/src/a2ui/types.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/types.ts",
-      "sha256": "928ebf8c90581f52de36c8bfd2cb5077d5614bd2bff8611e94fe091319986673"
+      "sha256": "9b4163ce36acba856cd6253c733962f74b23a65057641b95b13e6b92e71d5922"
     },
     {
       "id": "source:libs/content/src/index.ts",
@@ -17175,6 +17187,12 @@
       "sha256": "d227081fa3836f41a58f175872b362563b88f6b13f4e677a94f942d8430a7eb7"
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/check-box.tsx",
+      "sha256": "be09d0fd8e2a50b49eb7ff5d94a76908b64369ca7511e1462e863c492fdb62e9"
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/column.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/column.tsx",
@@ -17202,7 +17220,7 @@
       "id": "source:libs/react/src/a2ui/catalog/index.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/index.ts",
-      "sha256": "4ef500a20a6b6c90a5d3a448630125278c20d0fa1547bc341b72fc68a769038a"
+      "sha256": "bfcf9df46c7c653f5214e9a9d4f5c1fc0c0bc6085c0ce3b10e2b06b3d4ebe21e"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/layout.ts",
@@ -17235,10 +17253,22 @@
       "sha256": "909e54ce30093c6f82416cc1b3acbb1bc1cb0089c695ac8873fc1b89b4f05c9e"
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/slider.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/slider.tsx",
+      "sha256": "f1cbcd39e9adcd6726a3876868f6630c78d8ae46a4874afe0fc36d0522f450e4"
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/tabs.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/tabs.tsx",
       "sha256": "b7056733f630a66044bb72a101e5752a499717ff1fb9535875f3d8c56c885223"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text-field.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/text-field.tsx",
+      "sha256": "e32b1b57185323296f6e415d2bd4d193fcbdccf7874dcbaec5337f80896470ac"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/text.tsx",
@@ -17262,7 +17292,13 @@
       "id": "source:libs/react/src/a2ui/index.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/index.ts",
-      "sha256": "9dcc0b77a83b1086de3ce84670b679e6cee4073a2ee36fab246d1e6c74a30d5a"
+      "sha256": "a46ac4935a02346227d5c8cbcde7eea14c20fbdc6e76bbdca37a98584ebcddda"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-context.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/surface-context.ts",
+      "sha256": "4ef71d13ae981f0dc591b74d76bb3fcebcf039818c13af96eb5ec11aae5c17ce"
     },
     {
       "id": "source:libs/react/src/a2ui/surface-spec.ts",
@@ -17274,7 +17310,7 @@
       "id": "source:libs/react/src/a2ui/surface.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/surface.tsx",
-      "sha256": "ecff5a9df4f477f0eab6009a6c7e1ed7192f174124b3882fb78ae303ffbcb740"
+      "sha256": "32c25d02fc3a27067e5dd8a4649516140fe44c47d0bc24b1bc5b512186937e14"
     },
     {
       "id": "source:libs/react/src/chat/activity-summary.ts",

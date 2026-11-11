@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/content!A2uiSurfaces:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots.",
+  "summary": "Application-owned accumulator that applies parsed A2UI envelopes and local edits, and publishes immutable live-surface snapshots.",
   "declarations": [
     {
       "name": "A2uiSurfaces",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots.",
+        "summary": "Application-owned accumulator that applies parsed A2UI envelopes and local edits, and publishes immutable live-surface snapshots.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -106,7 +106,7 @@
           "members": [],
           "source": {
             "path": "libs/content/src/a2ui/types.ts",
-            "line": 36
+            "line": 43
           },
           "isReadonly": true,
           "isOptional": false
@@ -149,6 +149,52 @@
           "source": {
             "path": "libs/content/src/a2ui/types.ts",
             "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "setValue",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiSurfaces#setValue:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly setValue: "
+            },
+            {
+              "kind": "Content",
+              "text": "(surfaceId: string, path: string, value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiValue",
+              "canonicalReference": "@threadplane/content!A2uiValue:type",
+              "href": "/docs/api/content/a2ui/A2uiValue"
+            },
+            {
+              "kind": "Content",
+              "text": ") => boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Writes one local edit into a live surface's data model, with the same\nreplace semantics as an agent `updateDataModel`. Nothing is sent anywhere.\nReturns false, and publishes nothing, for a surface that is not live or a\nvalue that is already there. `path` names one value below the root.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/types.ts",
+            "line": 42
           },
           "isReadonly": true,
           "isOptional": false

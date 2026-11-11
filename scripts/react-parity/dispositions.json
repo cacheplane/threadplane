@@ -1765,9 +1765,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native component. Boolean controlled binding; label/error association and change emission."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
@@ -1865,9 +1865,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native component. Numeric conversion, range/step and accessible value/label binding."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/tabs.component.ts#A2uiTabsComponent",
@@ -1885,9 +1885,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text-field.tsx",
-      "reason": "Native component. Text/multiline/password variants, controlled value, constraints and errors."
+      "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/text.component.ts#A2uiTextComponent",
@@ -4854,9 +4854,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native component. Boolean controlled binding; label/error association and change emission."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiChildren",
@@ -5043,9 +5043,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native component. Numeric conversion, range/step and accessible value/label binding."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiSurface",
@@ -5109,9 +5109,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text-field.tsx",
-      "reason": "Native component. Text/multiline/password variants, controlled value, constraints and errors."
+      "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiTheme",
@@ -16018,6 +16018,13 @@
       "note": "Read-only AudioPlayer view with native controls and a literal description."
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "CheckBox view writing a boolean through the surface write channel."
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/icon.tsx",
       "taskIds": ["T27"],
       "treatment": "react",
@@ -16046,11 +16053,25 @@
       "note": "Modal view: inline trigger and a native modal dialog with local open state."
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/slider.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Slider view writing a clamped number through the surface write channel."
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/tabs.tsx",
       "taskIds": ["T27"],
       "treatment": "react",
       "status": "in-progress",
       "note": "Tabs view: tab list and one panel with local selection and keyboard movement."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text-field.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "TextField view writing each edit through the surface write channel."
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/media-url.ts",
@@ -16079,6 +16100,13 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Private ./a2ui entry exporting A2uiSurface, its props and a2uiBasicCatalog."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-context.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Write channel from a mounted surface to the application-created surfaces store, for input components."
     },
     {
       "id": "source:libs/react/src/a2ui/surface-spec.ts",
