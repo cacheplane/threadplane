@@ -224,11 +224,21 @@ export const CHAT_CITATIONS_PANEL_STYLES = `
   }
   .chat-citations__header {
     display: flex; align-items: center; gap: var(--tplane-chat-space-2);
-    width: 100%;
-    padding: 0 0 var(--tplane-chat-space-3);
+    /* Padded hit area pulled back by the same amount, so the label stays on the
+       text column and the focus ring has room around it. */
+    box-sizing: border-box;
+    width: calc(100% + 2 * var(--tplane-chat-space-1));
+    margin: calc(-1 * var(--tplane-chat-space-1));
+    margin-bottom: var(--tplane-chat-space-2);
+    padding: var(--tplane-chat-space-1);
     background: none; border: 0;
+    border-radius: var(--tplane-chat-radius-button);
     font: inherit; color: inherit;
     cursor: pointer; text-align: left;
+  }
+  .chat-citations__header:focus-visible {
+    outline: 2px solid var(--tplane-chat-focus-ring);
+    outline-offset: 0;
   }
   .chat-citations__heading { font-size: var(--tplane-chat-font-size-sm); font-weight: 600; }
   .chat-citations__count {

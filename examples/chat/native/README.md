@@ -332,7 +332,8 @@ height-limited scrolling suggestion row cannot clip it. Choosing a prompt is a
 local action that goes through the same guarded prefill path: it fills and
 focuses the textarea and nothing more. The picker keeps no selection, so its
 trigger always reads “More prompts”, and any draft disables it. Opening,
-navigating, dismissing and choosing issue no request. It does not select a
+navigating, dismissing and choosing issue no request. Typing a prompt's first
+letters moves focus to it without choosing it. It does not select a
 model or change any backend behavior.
 
 After a locally completed successful text response, Native React uses the

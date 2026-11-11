@@ -20,9 +20,14 @@ import {
   type ToolActivityInfo,
   type ToolActivityOutcome,
 } from './tool-activity.js';
-import { resolveToolOutcome, withoutStaleRetry } from './tool-outcome.js';
+import {
+  citationsWithToolSources,
+  resolveToolOutcome,
+  withoutStaleRetry,
+} from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
+import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
 import {
   approvalRecordsByRow,
@@ -90,6 +95,16 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  /**
+   * App-owned presentation for one tool call, in place of its built-in activity row. Return `undefined` to keep the
+   * built-in row for that call, or `null` to show nothing. A replaced call leaves its group, and `renderToolResult`,
+   * `toolOutcome` previews and retry controls no longer apply to it. Keep stable like renderMessage; custom
+   * renderMessage retains full ownership.
+   */
+  readonly renderToolCall?: (
+    call: NoInfer<RenderRow<TRow>>['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   /** App-owned rich result or action for one tool call, rendered outside technical Details. Keep stable like renderMessage; custom renderMessage retains full ownership. */
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   /**
@@ -97,6 +112,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * nothing is running and no later call repeats the same tool and arguments. Without it no retry control renders. Keep stable.
    */
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
+  /**
+   * Child agents observed for this transcript. A child whose `toolCallId` matches a row's tool call renders as a
+   * subagent card in place of that call's activity; other children are left to the application. Keep the array
+   * stable between updates; custom renderMessage retains full ownership.
+   */
+  readonly subagents?: readonly SubagentInfo[];
   /**
    * Answered approvals, each rendered as a one-line `ApprovalRecord` after the row its `afterId`
    * names, or after the last row when that row is absent. Records stay where the app put them while
@@ -135,7 +156,54 @@ function safeOutcome(
     return undefined;
   }
 }
+/**
+ * @internal True when `message` is word for word the failure a call already shows through `toolOutcome`.
+ * Lets a composition skip a run-error notice that would only say the same thing twice.
+ */
+export function repeatsToolFailure(
+  message: string,
+  rows: readonly MessageRow[],
+  toolOutcome:
+    | ((activity: ToolActivityInfo) => ToolActivityOutcome | undefined)
+    | undefined
+): boolean {
+  const text = message.trim();
+  if (!toolOutcome || !text) return false;
+  return rows.some((row) =>
+    row.toolCalls.some((call) => {
+      if (call.status !== 'complete') return false;
+      const activity: ToolActivityInfo = {
+        id: call.id,
+        name: call.name,
+        phase: toolActivityPhase(call.status, row.message.delivery),
+        argumentsText: literal(call.args),
+        resultText: literal(call.result),
+      };
+      const resolved = resolveToolOutcome(
+        activity,
+        safeOutcome(toolOutcome, activity)
+      );
+      return (
+        resolved.outcome?.status === 'failed' && resolved.errorSummary === text
+      );
+    })
+  );
+}
 const NONE: ReadonlySet<string> = new Set();
+const NO_CITATIONS: readonly never[] = [];
+const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
+/** Each row's children by spawning call. Rows without one share a constant so their memo stays stable. */
+function subagentsByRow(
+  rows: readonly MessageRow[],
+  subagents: readonly SubagentInfo[]
+): readonly (readonly SubagentInfo[])[] {
+  return rows.map((row) => {
+    const own = subagents.filter((subagent) =>
+      row.toolCalls.some((call) => call.id === subagent.toolCallId)
+    );
+    return own.length ? own : NO_SUBAGENTS;
+  });
+}
 /** Per-row retry staleness across the whole transcript: every call while work is active, else calls a later one repeats. */
 function staleRetriesByRow(rows: readonly MessageRow[]): readonly string[] {
   const busy =
@@ -208,9 +276,11 @@ function RowView<TRow extends MessageRow>({
   groupRelatedTools,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
   onToolRetry,
   staleRetries,
+  subagents = NO_SUBAGENTS,
   retrying,
   plan,
   onStop,
@@ -227,10 +297,16 @@ function RowView<TRow extends MessageRow>({
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  readonly renderToolCall?: (
+    call: TRow['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
   readonly staleRetries?: string;
+  /** Children started by this row's tool calls. */
+  readonly subagents?: readonly SubagentInfo[];
   /** Failed call IDs a later running call is repeating, joined by newlines. */
   readonly retrying?: string;
   readonly plan?: readonly AgentPlanStep[];
@@ -241,10 +317,18 @@ function RowView<TRow extends MessageRow>({
     return <>{renderMessage(row, contexts[prevRole ?? 'first'])}</>;
   }
   const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
+  // A call that started a child is shown as that child's card, not as a tool row.
+  const delegated = new Set(subagents.map((subagent) => subagent.toolCallId));
+  const cards = subagents.map((subagent) => (
+    <SubagentCard key={subagent.id} subagent={subagent} />
+  ));
+  const calls = delegated.size
+    ? row.toolCalls.filter((call) => !delegated.has(call.id))
+    : row.toolCalls;
   const repeating = new Set(retrying ? retrying.split('\n') : []);
   // Read the declared label before a running retry withdraws it.
   const retryingLeads = new Map<string, string>();
-  const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
+  const activities: ToolActivityInfo[] = calls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
     const activity: ToolActivityInfo = {
@@ -270,6 +354,27 @@ function RowView<TRow extends MessageRow>({
       ? withoutStaleRetry(resolved, NONE)
       : resolved;
   });
+  // Sources a tool call declares join the message's one Sources panel instead of
+  // repeating as links under the activity.
+  const assistant = row.role === 'assistant';
+  const sourcePlacement = assistant ? 'panel' : 'links';
+  // Consecutive built-in calls share one run; an app-rendered call sits alone, in transcript order.
+  const runs: Array<
+    | { readonly custom: ReactNode; readonly id: string }
+    | { readonly activities: ToolActivityInfo[] }
+  > = [];
+  activities.forEach((activity, index) => {
+    const custom = renderToolCall?.(calls[index], activity);
+    if (custom !== undefined) {
+      runs.push({ custom, id: activity.id });
+      return;
+    }
+    const last = runs.at(-1);
+    if (last && 'activities' in last) last.activities.push(activity);
+    else runs.push({ activities: [activity] });
+  });
+  // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
+  const planGroup = [...runs].reverse().find((run) => 'activities' in run);
   return (
     <ChatMessage
       role={row.role}
@@ -282,34 +387,58 @@ function RowView<TRow extends MessageRow>({
       }
       afterContent={
         <>
-          {row.role === 'assistant' && (
+          {assistant && (
             <Citations
-              citations={row.message.citations ?? []}
+              citations={citationsWithToolSources(
+                row.message.citations ?? NO_CITATIONS,
+                activities,
+                row.markdown
+              )}
               snapshot={row.markdown}
+              collapsible
             />
           )}
           {row.role !== 'tool' &&
-            (groupRelatedTools ? (
-              <ToolActivityGroup
-                activities={activities}
-                renderResult={renderToolResult}
-                onRetry={onToolRetry}
-                retrying={retryingLeads.values().next().value}
-                plan={plan}
-                onStop={onStop}
-              />
-            ) : (
-              activities.map((activity) => (
-                <ToolActivity
-                  key={activity.id}
-                  activity={activity}
+            runs.map((run) =>
+              'custom' in run ? (
+                run.custom != null &&
+                run.custom !== false && (
+                  <div
+                    key={run.id}
+                    className="tp-chat-tool-call"
+                    data-tool-id={run.id}
+                  >
+                    {run.custom}
+                  </div>
+                )
+              ) : groupRelatedTools ? (
+                <ToolActivityGroup
+                  key={run.activities[0].id}
+                  activities={run.activities}
+                  renderResult={renderToolResult}
+                  plan={run === planGroup ? plan : undefined}
+                  onStop={run === planGroup ? onStop : undefined}
                   onRetry={onToolRetry}
-                  retrying={retryingLeads.get(activity.id)}
-                >
-                  {renderToolResult?.(activity)}
-                </ToolActivity>
-              ))
-            ))}
+                  sources={sourcePlacement}
+                  retrying={run.activities
+                    .map((activity) => retryingLeads.get(activity.id))
+                    .find((lead) => lead !== undefined)}
+                />
+              ) : (
+                run.activities.map((activity) => (
+                  <ToolActivity
+                    key={activity.id}
+                    activity={activity}
+                    onRetry={onToolRetry}
+                    sources={sourcePlacement}
+                    retrying={retryingLeads.get(activity.id)}
+                  >
+                    {renderToolResult?.(activity)}
+                  </ToolActivity>
+                ))
+              )
+            )}
+          {row.role !== 'tool' && cards}
         </>
       }
     >
@@ -339,10 +468,12 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   groupRelatedTools = true,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
   onToolRetry,
   plan,
   onStop,
+  subagents,
   approvalRecords,
   children,
   renderScrollControl,
@@ -358,6 +489,10 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
+  );
+  const rowSubagents = useMemo(
+    () => (subagents?.length ? subagentsByRow(rows, subagents) : undefined),
+    [rows, subagents]
   );
   const retrying = useMemo(
     () => (toolOutcome ? retryingByRow(rows) : undefined),
@@ -458,9 +593,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                 groupRelatedTools={groupRelatedTools}
                 toolLabel={toolLabel}
                 toolOutcome={toolOutcome}
+                renderToolCall={renderToolCall}
                 renderToolResult={renderToolResult}
                 onToolRetry={onToolRetry}
                 staleRetries={staleRetries?.[index]}
+                subagents={rowSubagents?.[index]}
                 retrying={retrying?.[index]}
                 plan={index === rows.length - 1 ? plan : undefined}
                 onStop={index === rows.length - 1 ? onStop : undefined}

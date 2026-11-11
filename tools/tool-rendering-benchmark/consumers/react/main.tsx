@@ -10,6 +10,7 @@ import { createSession } from '@threadplane/ag-ui';
 import {
   ChatInput,
   Citations,
+  citationsWithToolSources,
   ToolActivityGroup,
   MessageList,
   toolOutcomes,
@@ -19,6 +20,8 @@ import {
 import '@threadplane/react/chat/styles.css';
 import './shell.css';
 import {
+  benchmarkThread,
+  forgetBenchmarkThread,
   layoutFrom,
   referenceCards,
   toolLabel,
@@ -31,38 +34,15 @@ const layout = layoutFrom(location.search);
 const toolOutcome = toolOutcomes(
   toolDecoders({ retryReads: scenario === 'partial-failure', layout })
 );
-type Source = React.ComponentProps<typeof Citations>['citations'][number];
-const NO_SOURCES: readonly Source[] = [];
-// Agent state carries citations per assistant message; the app accepts only its own declared shape.
-function citationsFor(state: unknown, messageId: string): readonly Source[] {
-  const byMessage =
-    state && typeof state === 'object'
-      ? (state as { citations?: Record<string, unknown> }).citations
-      : undefined;
-  const rows = byMessage?.[messageId];
-  if (!Array.isArray(rows)) return NO_SOURCES;
-  return rows.flatMap((row, index): Source[] =>
-    row &&
-    typeof row.id === 'string' &&
-    typeof row.title === 'string' &&
-    typeof row.url === 'string'
-      ? [
-          {
-            id: row.id,
-            index: index + 1,
-            title: row.title,
-            url: row.url,
-            snippet: typeof row.snippet === 'string' ? row.snippet : undefined,
-          },
-        ]
-      : []
-  );
-}
-function App() {
+// This raw session carries no message citations; the panel lists tool-declared sources.
+const NO_CITATIONS: readonly never[] = [];
+type History = NonNullable<Parameters<typeof createSession>[0]['messages']>;
+function App({ threadId, history }: { threadId?: string; history?: History }) {
   const [session] = useState(() =>
     createSession({
-      threadId: crypto.randomUUID(),
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}&layout=${layout}`,
+      threadId: threadId ?? crypto.randomUUID(),
+      ...(history?.length ? { messages: history } : {}),
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}`,
     })
   );
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
@@ -179,6 +159,7 @@ function App() {
             disposed.current = true;
             pendingFocus.current?.cleanup();
             await session.dispose();
+            forgetBenchmarkThread(scenario);
             await fetch('http://127.0.0.1:4809/reset/threadplane-react', {
               method: 'POST',
             });
@@ -216,6 +197,7 @@ function App() {
                           )
                         )}
                         context={activities}
+                        sources="panel"
                         onRetry={
                           busy
                             ? undefined
@@ -251,7 +233,14 @@ function App() {
                   </p>
                   {message.role === 'assistant' && (
                     <Citations
-                      citations={citationsFor(snapshot.state, message.id)}
+                      citations={citationsWithToolSources(
+                        NO_CITATIONS,
+                        activities.filter((activity) =>
+                          message.toolCalls?.some(
+                            (call) => call.id === activity.id
+                          )
+                        )
+                      )}
                       collapsible
                     />
                   )}
@@ -346,4 +335,24 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById('root')!).render(<App />);
+// A kept thread reloads its parent transcript from the benchmark server before the session starts.
+async function start() {
+  const threadId = benchmarkThread(scenario);
+  let history: History | undefined;
+  if (threadId) {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:4809/threads/threadplane-react/${encodeURIComponent(
+          threadId
+        )}/messages`
+      );
+      if (response.ok) history = (await response.json()).messages;
+    } catch {
+      /* No history: start an empty thread. */
+    }
+  }
+  createRoot(document.getElementById('root')!).render(
+    <App threadId={threadId} history={history} />
+  );
+}
+void start();

@@ -40,6 +40,22 @@ Pass `leading`, `trailing` or `footer` to place application content around the d
 />
 ~~~
 
+Two more slots sit above the input: `banner` for a notice, such as a paused conversation, and `attachments` for what goes with the next message, such as chosen files. `Chat` accepts them as `inputBanner` and `inputAttachments`.
+
+~~~tsx
+<ChatInput
+  onSubmit={(text) => {
+    send(text, files);
+    setFiles([]);
+  }}
+  banner={paused && <p role="status">Replies are paused.</p>}
+  attachments={files.length > 0 && <FileChips files={files} onRemove={remove} />}
+  trailing={<Select label="Model" options={models} value={model} onValueChange={setModel} open={open} onOpenChange={setOpen} />}
+/>
+~~~
+
+`FileChips` stands for your own component. The input never reads, sends or clears your files. Your `onSubmit` does that. A model picker needs no slot of its own: pass a `Select` as `trailing`.
+
 The content stays yours. It keeps its state while the traveler types and sends, and it stays enabled when the input is disabled or busy. It sits inside the composer form, so give its buttons `type="button"` unless they should send the draft.
 
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.

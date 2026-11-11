@@ -80,7 +80,19 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 }]} />
 ```
 
-Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries outside the collapsed technical subtree, with the first three visible and the rest in **More results**. An outcome may declare sources alone by leaving `text` empty.
+
+Inside `MessageList` and `Chat`, declared sources join the message's one **Sources** panel, which is closed until opened and lists each source once beside the message's own citations. A source whose URL the message already cites is not added again. `ToolActivity` and `ToolActivityGroup` used on their own have no message panel, so they keep the sources as links, with the first three visible and the rest in **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. An application that composes its own message can send them to its own panel instead: pass `sources="panel"` to the activity and render `Citations` with `citationsWithToolSources`.
+
+```tsx
+<ToolActivityGroup activities={activities} sources="panel" />
+<Citations
+  citations={citationsWithToolSources(message.citations ?? [], activities)}
+  collapsible
+/>
+```
+
+A source may also carry a `snippet` and an `iconUrl`, which the panel shows on its card. The library never fetches an icon itself. Sources accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 
@@ -172,6 +184,49 @@ When you render `ToolActivityGroup` yourself, pass the same kind of callback as 
 It receives each resolved activity, and a `null` or `undefined` return adds nothing for that call.
 For a single `ToolActivity`, pass the content as its `children` instead.
 
+## Replace one call's row
+
+Some calls deserve more than an activity row.
+A weather lookup reads better as a small forecast card than as "Used 1 tool".
+Pass `renderToolCall` to `MessageList` or `Chat` to draw a call yourself.
+
+```tsx
+import { useCallback } from 'react';
+import type { AgentSession } from '@threadplane/core';
+import { Chat, type ChatProps } from '@threadplane/react/chat';
+
+export function FlightChat({ session }: { readonly session: AgentSession }) {
+  const renderToolCall = useCallback<NonNullable<ChatProps['renderToolCall']>>(
+    (call, activity) =>
+      call.name === 'get_weather' && call.status === 'complete' ? (
+        <section aria-label={activity.label ?? 'Weather'}>
+          <pre>{JSON.stringify(call.result, null, 2)}</pre>
+        </section>
+      ) : undefined,
+    []
+  );
+  return <Chat session={session} renderToolCall={renderToolCall} />;
+}
+```
+
+The callback receives the call as the session observed it, with its arguments and result as values, and the same resolved activity `renderToolResult` gets.
+What you return decides what happens to that call:
+
+- `undefined` keeps the built-in row.
+- `null` shows nothing for the call.
+- Anything else replaces the row.
+
+**Return `undefined`, not `null`, for the calls you do not handle.**
+A `null` hides the call, and a hidden call is hard to notice until someone asks where the tool activity went.
+
+A replaced call leaves its group.
+The calls before it and after it are summarized separately, so the transcript keeps the order the calls were made in.
+The cost is that you own everything about that call's presentation.
+`renderToolResult`, outcome previews, **Details** and the retry control do not apply to it, so show the running and failed states yourself.
+
+In the example, a weather call that is still running returns `undefined` and keeps the built-in row until its result arrives.
+I think that is the easiest way to start, because the built-in row already handles running, stopped and failed.
+
 ## Recover from a partial failure
 
 One read fails, another succeeds, and the user wants the missing piece without losing the rest.
@@ -209,7 +264,7 @@ A running, stopped or already failed call never reaches a decoder, and neither d
 
 Each call keeps its own outcome.
 The successful read keeps its summary and source link beside the failed one, and the group reads **Used 2 tools · 1 failed**.
-Sources render as links outside **Details**, and the literal JSON stays inside it.
+Sources appear in the message's **Sources** panel, and the literal JSON stays inside **Details**.
 
 ### Declare a retry
 
