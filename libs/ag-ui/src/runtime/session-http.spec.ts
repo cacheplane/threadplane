@@ -319,7 +319,16 @@ describe('composed private session over held HTTP', () => {
           [...exchange.body.messages, ...next.body.messages].map((m) => m.id)
         ).size
       ).toBe(next.body.messages.length);
+      // The resumed invocation observes no children yet; the finished one is history.
       expect(owner.getSnapshot().subagents).toEqual([]);
+      expect(settled).not.toHaveProperty('earlierSubagents');
+      expect(settled.subagents[0].terminal?.type).toBe('SUBAGENT_FINISHED');
+      expect(owner.getSnapshot().earlierSubagents).toStrictEqual([
+        settled.subagents[0],
+      ]);
+      expect(owner.getSnapshot().earlierSubagents?.[0]).toBe(
+        settled.subagents[0]
+      );
       expect(owner.getSnapshot().run?.terminal).toBeUndefined();
       next.send(lifecycle(next), lifecycle(next, 'RUN_FINISHED'));
       expect(await bounded(second)).toBe('success');
@@ -328,6 +337,36 @@ describe('composed private session over held HTTP', () => {
       expect(beforeSnapshot.run?.terminal).toBeUndefined();
       expect(settled.run?.outcome).toBe('paused');
       expect(server.exchanges).toHaveLength(2);
+      // A new turn keeps the history, and a child reusing the ID replaces its record there afterwards.
+      const history = owner.getSnapshot().earlierSubagents;
+      const third = owner.submit('again');
+      const again = await server.next(2);
+      expect(owner.getSnapshot().earlierSubagents).toBe(history);
+      again.send(
+        lifecycle(again),
+        { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'again' },
+        { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+        lifecycle(again, 'RUN_FINISHED')
+      );
+      expect(await bounded(third)).toBe('success');
+      expect(owner.getSnapshot().earlierSubagents).toBe(history);
+      const latest = owner.getSnapshot().subagents;
+      expect(latest).toStrictEqual([
+        {
+          started: {
+            type: 'SUBAGENT_STARTED',
+            subagentRunId: 'child',
+            name: 'again',
+          },
+          terminal: { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+        },
+      ]);
+      const fourth = owner.submit('once more');
+      const last = await server.next(3);
+      expect(owner.getSnapshot().subagents).toEqual([]);
+      expect(owner.getSnapshot().earlierSubagents).toStrictEqual(latest);
+      last.send(lifecycle(last), lifecycle(last, 'RUN_FINISHED'));
+      expect(await bounded(fourth)).toBe('success');
     } finally {
       await owner.dispose();
       await Promise.all([first, second]);
