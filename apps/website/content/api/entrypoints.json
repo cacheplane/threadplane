@@ -250,16 +250,6 @@
     "docLibrary": "chat"
   },
   {
-    "id": "react/a2ui",
-    "importPath": "@threadplane/react/a2ui",
-    "packageName": "@threadplane/react",
-    "project": "react",
-    "framework": "react",
-    "version": "0.0.0",
-    "status": "development",
-    "docLibrary": "a2ui"
-  },
-  {
     "id": "render",
     "importPath": "@threadplane/render",
     "packageName": "@threadplane/render",

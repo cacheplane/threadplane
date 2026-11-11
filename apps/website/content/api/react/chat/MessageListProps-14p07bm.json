@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 111
+            "line": 90
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 78
+            "line": 73
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 80
+            "line": 75
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 77
+            "line": 72
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,7 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 103
+            "line": 88
           },
           "isReadonly": true,
           "isOptional": true
@@ -304,7 +304,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 73
+            "line": 68
           },
           "isReadonly": true,
           "isOptional": true
@@ -355,76 +355,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 113
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "renderToolCall",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!MessageListProps#renderToolCall:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly renderToolCall?: "
-            },
-            {
-              "kind": "Content",
-              "text": "(call: "
-            },
-            {
-              "kind": "Reference",
-              "text": "NoInfer",
-              "canonicalReference": "!NoInfer:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "RenderRow",
-              "canonicalReference": "@threadplane/react!~RenderRow:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<TRow>>['toolCalls'][number], activity: "
-            },
-            {
-              "kind": "Reference",
-              "text": "ToolActivityInfo",
-              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
-              "href": "/docs/api/react/chat/ToolActivityInfo"
-            },
-            {
-              "kind": "Content",
-              "text": ") => "
-            },
-            {
-              "kind": "Reference",
-              "text": "ReactNode",
-              "canonicalReference": "@types/react!React.ReactNode:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "App-owned presentation for one tool call, in place of its built-in activity row. Return `undefined` to keep the\nbuilt-in row for that call, or `null` to show nothing. A replaced call leaves its group, and `renderToolResult`,\n`toolOutcome` previews and retry controls no longer apply to it. Keep stable like renderMessage; custom\nrenderMessage retains full ownership.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/message-list.tsx",
-            "line": 93
+            "line": 92
           },
           "isReadonly": true,
           "isOptional": true
@@ -475,7 +406,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 98
+            "line": 83
           },
           "isReadonly": true,
           "isOptional": true
@@ -511,56 +442,10 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 67
+            "line": 62
           },
           "isReadonly": true,
           "isOptional": false
-        },
-        {
-          "name": "subagents",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!MessageListProps#subagents:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly subagents?: "
-            },
-            {
-              "kind": "Content",
-              "text": "readonly "
-            },
-            {
-              "kind": "Reference",
-              "text": "SubagentInfo",
-              "canonicalReference": "@threadplane/react!SubagentInfo:interface",
-              "href": "/docs/api/react/chat/SubagentInfo"
-            },
-            {
-              "kind": "Content",
-              "text": "[]"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Child agents observed for this transcript. A child whose `toolCallId` matches a row's tool call renders as a\nsubagent card in place of that call's activity; other children are left to the application. Keep the array\nstable between updates; custom renderMessage retains full ownership.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/message-list.tsx",
-            "line": 109
-          },
-          "isReadonly": true,
-          "isOptional": true
         },
         {
           "name": "toolLabel",
@@ -573,7 +458,7 @@
             },
             {
               "kind": "Content",
-              "text": "(name: string, args?: unknown) => string | undefined"
+              "text": "(name: string) => string | undefined"
             },
             {
               "kind": "Content",
@@ -581,7 +466,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored human labels from the tool name and the call's arguments, such as \"Read Array.prototype.toSorted\"; keep this function stable like renderMessage.",
+            "summary": "App-authored human labels; keep this function stable like renderMessage.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -593,7 +478,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 82
+            "line": 77
           },
           "isReadonly": true,
           "isOptional": true
@@ -649,7 +534,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 84
+            "line": 79
           },
           "isReadonly": true,
           "isOptional": true
@@ -657,7 +542,7 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 66
+        "line": 61
       },
       "typeParameters": [
         {
@@ -676,6 +561,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 66
+    "line": 61
   }
 }
