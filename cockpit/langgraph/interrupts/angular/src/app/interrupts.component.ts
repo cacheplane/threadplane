@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
@@ -9,7 +9,7 @@ const WELCOME_SUGGESTIONS = [
   {
     label: 'Refund a duplicate charge',
     value: 'Refund $47.50 to customer cus_a8x2k — they were charged twice for the same order.',
-    description: 'Graph pauses at request_approval; approve or edit the amount in the modal.',
+    description: 'Graph pauses at request_approval; approve or edit the amount in the approval panel.',
   },
   {
     label: 'Refund a chargeback',
@@ -25,8 +25,8 @@ const WELCOME_SUGGESTIONS = [
  * `request_approval` with a structured interrupt payload of the form
  * `{ kind: 'refund_approval', amount, customer_id, reason }`.
  *
- * The frontend uses `ChatApprovalCardComponent` to render the native-dialog
- * modal and emit a `ChatApprovalAction` ('approve' | 'edit' | 'cancel').
+ * The frontend uses `ChatApprovalCardComponent` to render an inline approval panel
+ * at the end of the transcript and emit a `ChatApprovalAction` ('approve' | 'edit' | 'cancel').
  * The handler maps each action to a structured resume payload back to the
  * graph.
  *
@@ -39,6 +39,7 @@ const WELCOME_SUGGESTIONS = [
   imports: [
     ChatComponent,
     ChatApprovalCardComponent,
+    ChatInterruptTemplateDirective,
     ChatWelcomeSuggestionComponent,
     ExampleChatLayoutComponent,
     CurrencyPipe,
@@ -95,34 +96,38 @@ const WELCOME_SUGGESTIONS = [
               />
             }
           </div>
-        </chat>
-
-        <!-- #region approval-card -->
-        <chat-approval-card
-          [agent]="agent"
-          matchKind="refund_approval"
-          title="Refund approval required"
-          [showEdit]="true"
-          (action)="onAction($event)"
-        >
-          <ng-template #body let-payload>
-            <div class="body">
-              <div class="field"><span class="field__label">Amount</span><strong class="field__value">{{ payload.amount | currency }}</strong></div>
-              <div class="field"><span class="field__label">Customer</span><code>{{ payload.customer_id }}</code></div>
-              @if (payload.reason) {
-                <div class="reason">{{ payload.reason }}</div>
-              }
-              @if (editing()) {
-                <div class="edit-form">
-                  <label class="edit-form__label">Edit amount</label>
-                  <input type="number" step="0.01" [value]="editAmount() ?? payload.amount" (input)="editAmount.set(+($any($event.target).value))" class="control-input" />
-                  <button type="button" (click)="submitEdit(payload)" class="btn--primary">Save</button>
+          <!-- The approval sits at the end of the transcript, inline. -->
+          <ng-template chatInterruptTemplate>
+            <!-- #region approval-card -->
+            <chat-approval-card
+              [agent]="agent"
+              matchKind="refund_approval"
+              title="Refund approval required"
+              approveLabel="Issue refund"
+              cancelLabel="Don't refund"
+              [showEdit]="true"
+              (action)="onAction($event)"
+            >
+              <ng-template #body let-payload>
+                <div class="body">
+                  <div class="field"><span class="field__label">Amount</span><strong class="field__value">{{ payload.amount | currency }}</strong></div>
+                  <div class="field"><span class="field__label">Customer</span><code>{{ payload.customer_id }}</code></div>
+                  @if (payload.reason) {
+                    <div class="reason">{{ payload.reason }}</div>
+                  }
+                  @if (editing()) {
+                    <div class="edit-form">
+                      <label class="edit-form__label">Edit amount</label>
+                      <input type="number" step="0.01" [value]="editAmount() ?? payload.amount" (input)="editAmount.set(+($any($event.target).value))" class="control-input" />
+                      <button type="button" (click)="submitEdit(payload)" class="btn--primary">Save</button>
+                    </div>
+                  }
                 </div>
-              }
-            </div>
+              </ng-template>
+            </chat-approval-card>
+            <!-- #endregion -->
           </ng-template>
-        </chat-approval-card>
-        <!-- #endregion -->
+        </chat>
       </div>
     </example-chat-layout>
   `,

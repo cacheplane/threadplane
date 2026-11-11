@@ -159,8 +159,8 @@ export class ChatApprovalCardComponent {
   readonly matchKind = input<string | undefined>(undefined);
   readonly title = input<string>('Approval required');
   readonly showEdit = input<boolean>(false);
-  /** `dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript. */
-  readonly presentation = input<ChatApprovalPresentation>('dialog');
+  /** `inline` (default) renders a status panel in place; put the card in a `chatInterruptTemplate` so it sits at the end of the transcript. `dialog` opens a modal instead. */
+  readonly presentation = input<ChatApprovalPresentation>('inline');
   /** Marks an action that cannot be undone: danger tint, the lead "This can't be undone." and a danger primary button. Name the exact effect in `approveLabel`, such as "Delete 12 drafts". */
   readonly destructive = input<boolean>(false);
   /** Primary button text. Name the action, such as "Save note". */
