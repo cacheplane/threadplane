@@ -321,6 +321,10 @@ and disposal. The primitives add no internal lifecycle or network work. This is
 bounded private T22 presentation and T23 native composition; full parity and a
 public release remain open.
 
+The React composer passes its submission status to `ChatInput`'s `footer` slot.
+The persistent live region therefore sits inside the composer form after the
+hint, as it does in Angular, and its text and announcements are unchanged.
+
 Beside the two welcome suggestions, the welcome state composes the controlled
 `Select` as a “More prompts” picker of three app-authored prompts, mirroring the
 Angular demo's overflow select. Its listbox portals to the document body, so the

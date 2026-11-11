@@ -508,6 +508,31 @@ an application callback is preserved, and a replaced composer is never focused.
 The composer also recalculates draft height when its container or viewport
 resizes, retaining the draft and the existing viewport height cap.
 
+`ChatInput` accepts three app-owned slots: `leading` sits before the draft inside
+the input surface, `trailing` sits between the draft and the built-in Stop and
+Send, and `footer` follows the hint. `Chat` passes the same content through
+`inputLeading`, `inputTrailing` and `inputFooter`. An absent, `null` or `false`
+slot adds no element.
+
+```tsx
+<ChatInput
+  onSubmit={accept}
+  trailing={
+    <button type="button" onClick={openTools}>
+      Tools
+    </button>
+  }
+  footer={<p role="status">{status}</p>}
+/>
+```
+
+Slot content sits inside the composer form and is otherwise untouched: it keeps
+its own state across drafts and submissions, stays enabled while the composer is
+`disabled` or `busy`, and supplies its own names and focus styles. Give slot
+buttons `type="button"`; a slot submit button, or Enter in a slot text field,
+sends the draft like Send but never receives the composer's focus return. Keep
+slot controls compact, because the draft takes only the width they leave.
+
 `MessageList` infers the concrete row type from `rows`, including authored fields
 and typed tool contracts, and passes it to `renderMessage`. Keep that callback
 stable so unchanged rows stay memoized. Give the list a bounded height and

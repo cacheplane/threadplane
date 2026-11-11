@@ -5,6 +5,13 @@ installed browser fixture types into a real open list and menu: a character move
 focus to the matching label without selecting, a pause starts a new search, and
 Space still activates the focused option.
 
+`ChatInput` accepts app-owned `leading`, `trailing` and `footer` content, and
+`Chat` passes it through `inputLeading`, `inputTrailing` and `inputFooter`. The
+installed browser fixture covers inline order in both directions, the footer after
+the hint, a slot-free composer adding no slot elements, Tab order, a slot button that
+neither sends nor clears, retained slot state through Send and the Stop swap, and
+a 320px viewport. The native composer passes its submission status as the footer.
+
 The private chat package includes a bounded controlled `MessageRating` with an
 exact readonly prop contract: one identified message, an owner-held `up`, `down`
 or `null` value, and change requests that carry the message identity. The

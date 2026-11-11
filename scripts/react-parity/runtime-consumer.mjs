@@ -713,6 +713,72 @@ export async function runRenameFormScenarios(page, url) {
   console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
 }
 
+export async function runComposerSlotScenarios(page, url) {
+  await page.goto(`${url}/?menu&slots`);
+  await expect(page.getByRole('heading', { name: 'Installed composer slots' })).toBeVisible();
+  const draft = page.getByRole('textbox', { name: 'Message', exact: true });
+  const form = page.locator('form.tp-chat-input').first();
+  const leading = page.getByTestId('slot-leading');
+  const tools = form.getByRole('button', { name: /^Tools/ });
+  const send = form.getByRole('button', { name: 'Send', exact: true });
+  const footer = page.getByTestId('slot-footer');
+  const sent = page.getByTestId('slots-sent');
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom }; });
+  const layout = async () => ({ pill: await rect(form.locator('.tp-chat-input__pill')), leading: await rect(leading), draft: await rect(draft), tools: await rect(tools), send: await rect(send), hint: await rect(form.locator('.tp-chat-input__hint')), footer: await rect(footer) });
+  // Inline order follows the reading direction; the footer follows the hint; every part stays inside the surface.
+  const inside = (box, pill) => box.left >= pill.left && box.right <= pill.right && box.top >= pill.top && box.bottom <= pill.bottom;
+  const ltr = await layout();
+  assert.ok(ltr.leading.right <= ltr.draft.left && ltr.draft.right <= ltr.tools.left && ltr.tools.right <= ltr.send.left, `ltr order ${JSON.stringify(ltr)}`);
+  assert.ok(inside(ltr.leading, ltr.pill) && inside(ltr.tools, ltr.pill) && inside(ltr.send, ltr.pill), `inside surface ${JSON.stringify(ltr)}`);
+  assert.ok(ltr.pill.bottom <= ltr.hint.top && ltr.hint.bottom <= ltr.footer.top, `footer after hint ${JSON.stringify(ltr)}`);
+  assert.ok(ltr.draft.right - ltr.draft.left >= 120, `draft keeps usable width ${JSON.stringify(ltr)}`);
+  // A composer without slots has no slot elements.
+  const plain = page.locator('form.tp-chat-input').nth(1);
+  await expect(plain.locator('.tp-chat-input__leading, .tp-chat-input__trailing, .tp-chat-input__footer')).toHaveCount(0);
+  // Tab order: draft, app control, Send. A slot button keeps focus and never sends or clears.
+  await draft.fill('Keep this');
+  await draft.focus();
+  await page.keyboard.press('Tab'); await expect(tools).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(tools).toHaveText('Tools 1');
+  await expect(tools).toBeFocused();
+  await expect(draft).toHaveValue('Keep this');
+  await expect(sent).toHaveText('[]');
+  await page.keyboard.press('Tab'); await expect(send).toBeFocused();
+  // Send clears, returns focus to the draft and leaves slot state alone.
+  await page.keyboard.press('Enter');
+  await expect(sent).toHaveText(JSON.stringify(['Keep this']));
+  await expect(draft).toHaveValue('');
+  await expect(draft).toBeFocused();
+  await expect(tools).toHaveText('Tools 1');
+  await expect(footer).toHaveText('1 sent');
+  // Busy shows Stop after the app control; the app control stays enabled and mounted.
+  const retained = await tools.elementHandle();
+  await page.getByRole('checkbox', { name: 'Busy' }).check();
+  const stop = form.getByRole('button', { name: 'Stop', exact: true });
+  await expect(stop).toBeVisible();
+  await expect(tools).toBeEnabled();
+  const busy = { tools: await rect(tools), stop: await rect(stop), send: await rect(send) };
+  assert.ok(busy.tools.right <= busy.stop.left && busy.stop.right <= busy.send.left, `busy order ${JSON.stringify(busy)}`);
+  await tools.click();
+  await expect(tools).toHaveText('Tools 2');
+  await stop.click();
+  await expect(stop).toHaveCount(0);
+  assert.equal(await tools.evaluate((node, previous) => node === previous, retained), true);
+  // Right to left mirrors the inline order.
+  await page.getByRole('checkbox', { name: 'Right to left' }).check();
+  const rtl = await layout();
+  assert.ok(rtl.leading.left >= rtl.draft.right && rtl.draft.left >= rtl.tools.right && rtl.tools.left >= rtl.send.right, `rtl order ${JSON.stringify(rtl)}`);
+  await page.getByRole('checkbox', { name: 'Right to left' }).uncheck();
+  // A narrow viewport keeps every part inside the surface without page overflow.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const narrow = await layout();
+  assert.ok(inside(narrow.leading, narrow.pill) && inside(narrow.tools, narrow.pill) && inside(narrow.send, narrow.pill), `narrow inside ${JSON.stringify(narrow)}`);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  if (size) await page.setViewportSize(size);
+}
+
 export async function runMessageRatingScenarios(page, url) {
   await page.goto(`${url}/?menu&rating`);
   await expect(page.getByRole('heading', { name: 'Installed message rating' })).toBeVisible();
@@ -1870,6 +1936,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runSelectScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
+      await runComposerSlotScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }

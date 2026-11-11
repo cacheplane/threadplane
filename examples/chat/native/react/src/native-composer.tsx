@@ -200,11 +200,13 @@ export function NativeComposer({
           onSubmit={(text) =>
             application.canSubmit() && application.submit(text)
           }
+          footer={
+            <p className="submission-status" role="status">
+              {submissionStatus(snapshot)}
+            </p>
+          }
         />
       </Welcome>
-      <p className="submission-status" role="status">
-        {submissionStatus(snapshot)}
-      </p>
     </div>
   );
 }
