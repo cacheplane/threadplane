@@ -89,7 +89,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 144
+            "line": 145
           },
           "isReadonly": false,
           "isOptional": false
@@ -140,7 +140,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 143
+            "line": 144
           },
           "isReadonly": false,
           "isOptional": false
@@ -176,7 +176,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 142
+            "line": 143
           },
           "overloadIndex": 1,
           "isOptional": false,
@@ -232,7 +232,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 140
+            "line": 141
           },
           "isReadonly": false,
           "isOptional": false
@@ -282,7 +282,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 169
+            "line": 170
           },
           "isReadonly": false,
           "isOptional": false
@@ -323,7 +323,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 130
+            "line": 131
           },
           "isReadonly": false,
           "isOptional": false
@@ -364,7 +364,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 138
+            "line": 139
           },
           "overloadIndex": 1,
           "isOptional": false,
@@ -429,7 +429,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 148
+            "line": 149
           },
           "isReadonly": false,
           "isOptional": false
@@ -490,7 +490,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 128
+            "line": 129
           },
           "overloadIndex": 1,
           "isOptional": false,
@@ -520,7 +520,7 @@
       ],
       "source": {
         "path": "libs/ag-ui/src/lib/to-agent.ts",
-        "line": 127
+        "line": 128
       },
       "typeParameters": [
         {
@@ -539,6 +539,6 @@
   ],
   "source": {
     "path": "libs/ag-ui/src/lib/to-agent.ts",
-    "line": 127
+    "line": 128
   }
 }

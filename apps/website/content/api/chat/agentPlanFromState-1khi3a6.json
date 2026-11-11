@@ -1,0 +1,79 @@
+{
+  "name": "agentPlanFromState",
+  "entrypointId": "chat",
+  "kind": "Function",
+  "href": "/docs/api/chat/agentPlanFromState",
+  "canonicalReference": "@threadplane/chat!agentPlanFromState:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list.",
+  "declarations": [
+    {
+      "name": "agentPlanFromState",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/chat!agentPlanFromState:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function agentPlanFromState(state: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentPlan",
+          "canonicalReference": "@threadplane/chat!AgentPlan:type",
+          "href": "/docs/api/chat/AgentPlan"
+        },
+        {
+          "kind": "Content",
+          "text": " | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/chat/src/lib/agent/agent-plan.ts",
+        "line": 20
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "state",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 5
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/chat/src/lib/agent/agent-plan.ts",
+    "line": 20
+  }
+}

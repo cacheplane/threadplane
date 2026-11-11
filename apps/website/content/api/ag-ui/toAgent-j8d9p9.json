@@ -62,7 +62,7 @@
       "members": [],
       "source": {
         "path": "libs/ag-ui/src/lib/to-agent.ts",
-        "line": 191
+        "line": 192
       },
       "overloadIndex": 1,
       "parameters": [
@@ -91,6 +91,6 @@
   ],
   "source": {
     "path": "libs/ag-ui/src/lib/to-agent.ts",
-    "line": 191
+    "line": 192
   }
 }

@@ -63,7 +63,7 @@
       "members": [],
       "source": {
         "path": "libs/chat/src/public-api.ts",
-        "line": 279
+        "line": 283
       },
       "typeParameters": [
         {
@@ -86,6 +86,6 @@
   ],
   "source": {
     "path": "libs/chat/src/public-api.ts",
-    "line": 279
+    "line": 283
   }
 }

@@ -93,6 +93,11 @@ let nextChatToolCallsId = 0;
         display: block;
         margin-bottom: 20px;
       }
+      .ctc__plan-step {
+        margin: 12px 0 0;
+        font-weight: 500;
+        color: var(--tplane-chat-text-muted);
+      }
       .ctc__group {
         margin: 0 0 4px;
         min-inline-size: 0;
@@ -260,6 +265,11 @@ let nextChatToolCallsId = 0;
           } }
         </chat-tool-activity>
         }
+        @if (grouped && summary.active) {
+        <!-- Upcoming steps come only from a plan the agent declared. -->
+        @for (step of upcomingSteps(); track $index) {
+        <p class="ctc__plan-step">{{ step.label }}</p>
+        } }
       </div>
     </div>
       @if (grouped) {
@@ -577,6 +587,8 @@ export class ChatToolCallsComponent {
     return resolveToolOutcome(activity, this.safeOutcome(activity));
   }
   /** Calls whose declared retry is no longer offered: all while the agent works, else those a later call repeats. */
+  /** Pending steps of the plan the agent declared; empty without a plan. */
+  protected readonly upcomingSteps = computed(() => this.agent().plan?.()?.filter((step) => step.status === 'pending') ?? []);
   private readonly staleRetryIds = computed((): ReadonlySet<string> => {
     const agent = this.agent();
     const all = agent.toolCalls();

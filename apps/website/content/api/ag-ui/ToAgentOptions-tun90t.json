@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 82
+            "line": 83
           },
           "isReadonly": false,
           "isOptional": true
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 55
+            "line": 56
           },
           "isReadonly": false,
           "isOptional": true
@@ -136,7 +136,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 53
+            "line": 54
           },
           "isReadonly": false,
           "isOptional": true
@@ -174,7 +174,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 68
+            "line": 69
           },
           "isReadonly": false,
           "isOptional": true
@@ -216,7 +216,7 @@
           "members": [],
           "source": {
             "path": "libs/ag-ui/src/lib/to-agent.ts",
-            "line": 74
+            "line": 75
           },
           "isReadonly": false,
           "isOptional": true
@@ -224,12 +224,12 @@
       ],
       "source": {
         "path": "libs/ag-ui/src/lib/to-agent.ts",
-        "line": 51
+        "line": 52
       }
     }
   ],
   "source": {
     "path": "libs/ag-ui/src/lib/to-agent.ts",
-    "line": 51
+    "line": 52
   }
 }
