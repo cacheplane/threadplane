@@ -232,4 +232,23 @@ describe('ChatComponent — run-slot scrolling', () => {
     live.callback();
     expect(scroll.scrollTop).toBe(0);
   });
+
+  it('asks the person to answer the approval in the composer while one is pending', () => {
+    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
+    const textarea = el(fixture).querySelector('chat-input textarea')!;
+    expect(textarea.getAttribute('placeholder')).toBe('Answer the approval to continue');
+    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.detectChanges();
+    expect(textarea.getAttribute('placeholder')).toBe('Type a message...');
+  });
+
+  it('returns focus to the composer after the approval is answered', async () => {
+    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.detectChanges();
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+    expect(document.activeElement).toBe(el(fixture).querySelector('chat-input textarea'));
+    fixture.nativeElement.remove();
+  });
 });
