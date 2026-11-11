@@ -166,8 +166,10 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:a
 })
 export class ChatToolOutcomesComponent {
   readonly activities = input.required<readonly ToolActivityInfo[]>();
-  readonly outcomes = computed(() => confirmedOutcomes(this.activities()));
-  readonly sources = computed(() => outcomeSources(this.activities()));
+  /** An expanded group shows each call's sources under its row and keeps only the result text below the group. */
+  readonly show = input<'all' | 'outcomes' | 'sources'>('all');
+  readonly outcomes = computed(() => (this.show() === 'sources' ? [] : confirmedOutcomes(this.activities())));
+  readonly sources = computed(() => (this.show() === 'outcomes' ? [] : outcomeSources(this.activities())));
 }
 /** @internal Confirmed-write receipts shared by default rows and grouped presentation. */
 @Component({

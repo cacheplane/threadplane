@@ -253,6 +253,10 @@ let nextChatToolCallsId = 0;
       >
         @for (tc of group.calls; track tc.id) {
         <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" [retrying]="grouped ? undefined : retryingFor([tc])" (toolRetry)="toolRetry.emit($event)">
+          @if (grouped) {
+          <!-- Sources sit under the call that produced them while the group is open. -->
+          <chat-tool-outcomes [activities]="[activityFor(tc)]" show="sources" />
+          }
           @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
           <ng-container
             [ngTemplateOutlet]="resultTemplate"
@@ -270,7 +274,7 @@ let nextChatToolCallsId = 0;
     </div>
       @if (grouped) {
       <p class="tp-tool-activity__status" role="status" aria-live="polite" aria-atomic="true">{{ summary.status }}{{ receiptStatusFor(group.calls) }}</p>
-      <chat-tool-outcomes [activities]="activitiesFor(group.calls)" />
+      <chat-tool-outcomes [activities]="activitiesFor(group.calls)" [show]="expanded ? 'outcomes' : 'all'" />
       @if (summary.phase === 'error') {
       <!-- Ungrouped rows already show their own alert; only a group adds one. -->
       <div chatStatusPanel tone="danger" role="alert" class="tp-tool-activity__error">
