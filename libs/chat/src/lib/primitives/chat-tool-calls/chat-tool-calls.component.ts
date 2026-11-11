@@ -253,7 +253,7 @@ let nextChatToolCallsId = 0;
       >
         @for (tc of group.calls; track tc.id) {
         <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" [retrying]="grouped ? undefined : retryingFor([tc])" (toolRetry)="toolRetry.emit($event)">
-          @if (grouped && expanded) {
+          @if (grouped) {
           <!-- Sources sit under the call that produced them while the group is open. -->
           <chat-tool-outcomes [activities]="[activityFor(tc)]" show="sources" />
           }
