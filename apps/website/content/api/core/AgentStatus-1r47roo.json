@@ -39,7 +39,7 @@
       "members": [],
       "source": {
         "path": "libs/core/src/contracts/agent-snapshot.ts",
-        "line": 7
+        "line": 6
       },
       "typeTokenRange": {
         "startIndex": 1,
@@ -49,6 +49,6 @@
   ],
   "source": {
     "path": "libs/core/src/contracts/agent-snapshot.ts",
-    "line": 7
+    "line": 6
   }
 }

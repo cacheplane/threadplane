@@ -474,7 +474,7 @@ export function isPinned(
               />
             }
             <chat-error [agent]="agent()" [retryHidden]="toolRetryOffered()" (focusin)="errorHadFocus = isKeyboardFocus($event)" (focusout)="onErrorFocusOut($event)" />
-            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
+            <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="composerPlaceholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
                 <chat-select
                   chatInputModelSelect
@@ -658,7 +658,7 @@ export class ChatComponent {
   /** Group built-in tool rows across names per assistant message; false retains adjacent same-name grouping. */
   readonly groupRelatedTools = input(true);
   /** App-authored readable labels; technical names remain in Details. */
-  readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+  readonly toolLabel = input<((name: string, args?: unknown) => string | undefined) | undefined>(undefined);
   /** App-authored confirmed outcome previews for default tool rendering; return `status: 'failed'` to show a completed call as failed. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
   /**
@@ -746,6 +746,10 @@ export class ChatComponent {
 
   private readonly runActivityRegion = viewChild<ElementRef<HTMLElement>>('runActivityRegion');
   private readonly interruptRegion = viewChild<ElementRef<HTMLElement>>('interruptRegion');
+  /** While an approval waits in the transcript, the composer says what unblocks the run. */
+  protected readonly composerPlaceholder = computed(() =>
+    this.interruptContext() ? 'Answer the approval to continue' : this.placeholder()
+  );
 
   /**
    * Builds the activity template context for one assistant message. Tool
@@ -970,6 +974,14 @@ export class ChatComponent {
   });
 
   constructor() {
+    // Answering an approval removes its panel and the focused button with it;
+    // continue in the composer instead of dropping focus to <body>.
+    let hadInterrupt = false;
+    effect(() => {
+      const pending = !!this.interruptContext();
+      if (hadInterrupt && !pending) untracked(() => this.continueInComposer());
+      hadInterrupt = pending;
+    });
     this.destroyRef.onDestroy(() => this.clearClassifiers());
     // Inject the chat lib's root CSS custom properties (--tplane-chat-bg,
     // --tplane-chat-surface, --tplane-chat-radius-input, etc.) the first

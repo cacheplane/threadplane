@@ -1981,7 +1981,17 @@
       "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent:class",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions."
+      "summary": "Displays an approval for a matching agent interrupt, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions."
+    },
+    {
+      "name": "ChatApprovalPresentation",
+      "entrypointId": "chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/chat/ChatApprovalPresentation",
+      "canonicalReference": "@threadplane/chat!ChatApprovalPresentation:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "`dialog` opens a modal; `inline` renders a status panel where the card is placed, such as a `chatInterruptTemplate`."
     },
     {
       "name": "ChatCitationCardTemplateDirective",
@@ -4922,26 +4932,6 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Adapter-classified failure category for connection, authentication, server, or execution termination errors."
-    },
-    {
-      "name": "agentPlanFromState",
-      "entrypointId": "core",
-      "kind": "Function",
-      "href": "/docs/api/core/agentPlanFromState",
-      "canonicalReference": "@threadplane/core!agentPlanFromState:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list."
-    },
-    {
-      "name": "AgentPlanStep",
-      "entrypointId": "core",
-      "kind": "Interface",
-      "href": "/docs/api/core/AgentPlanStep",
-      "canonicalReference": "@threadplane/core!AgentPlanStep:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "One step of the plan an agent declared for its work."
     },
     {
       "name": "AgentRecovery",

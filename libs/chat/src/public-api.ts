@@ -132,7 +132,7 @@ export type { ChatSidenavMode } from './lib/compositions/chat-sidenav/chat-siden
 export { ChatInterruptPanelComponent } from './lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component';
 export type { InterruptAction } from './lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component';
 export { ChatApprovalCardComponent } from './lib/compositions/chat-approval-card/chat-approval-card.component';
-export type { ChatApprovalAction } from './lib/compositions/chat-approval-card/chat-approval-card.component';
+export type { ChatApprovalAction, ChatApprovalPresentation } from './lib/compositions/chat-approval-card/chat-approval-card.component';
 export { ChatToolCallCardComponent } from './lib/compositions/chat-tool-call-card/chat-tool-call-card.component';
 export type { ToolCallInfo } from './lib/compositions/chat-tool-call-card/chat-tool-call-card.component';
 export { ChatSubagentCardComponent, statusColor } from './lib/compositions/chat-subagent-card/chat-subagent-card.component';

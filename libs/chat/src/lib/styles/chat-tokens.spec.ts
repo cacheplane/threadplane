@@ -300,7 +300,7 @@ describe('ROOT_TOKEN_STYLES — status families', () => {
     });
   it.each([
     ['error-text', 'error-bg'], ['warning-text', 'warning-bg'], ['success-text', 'success-bg'],
-    ['text-muted', 'surface'], ['text-muted', 'surface-alt'],
+    ['text-muted', 'surface'], ['text-muted', 'surface-alt'], ['on-destructive', 'destructive'],
   ])('--tplane-chat-%s meets 4.5:1 on --tplane-chat-%s in both themes', (fg, bg) => {
     for (const theme of ['light', 'dark'] as const) {
       expect(contrast(tokenValue(theme, fg), tokenValue(theme, bg))).toBeGreaterThanOrEqual(4.5);
