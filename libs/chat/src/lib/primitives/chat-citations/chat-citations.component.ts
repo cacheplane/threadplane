@@ -1,6 +1,6 @@
 // libs/chat/src/lib/primitives/chat-citations/chat-citations.component.ts
 import {
-  ChangeDetectionStrategy, Component, ContentChild, Directive, TemplateRef,
+  ChangeDetectionStrategy, Component, ContentChild, DestroyRef, Directive, TemplateRef,
   computed, inject, input, signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -9,6 +9,7 @@ import type { Citation } from '../../agent/citation';
 import { ChatCitationsCardComponent } from './chat-citations-card.component';
 import { CitationsResolverService, mdDefToCitation } from '../../markdown/citations-resolver.service';
 import { citationSourceVisual } from '../../agent/citation-display';
+import { toolSourceCitations } from '../chat-tool-activity/tool-outcome';
 import type { CitationTypeIcon } from '../../agent/citation-display';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_CITATIONS_PANEL_STYLES } from '../../styles/chat-citations.styles';
@@ -140,6 +141,7 @@ export class ChatCitationsComponent {
    * Combined citation list:
    *   1. Message.citations (provider-populated, takes precedence by id)
    *   2. Markdown sidecar defs (Pandoc [^id]: lines), merged for unseen ids.
+   *   3. Sources declared by the message's tool outcomes, for URLs not already listed.
    * Sorted by index ascending.
    */
   protected readonly citations = computed<Citation[]>(() => {
@@ -152,8 +154,17 @@ export class ChatCitationsComponent {
         if (!seenIds.has(def.id)) fromMarkdown.push(mdDefToCitation(def));
       }
     }
-    return [...fromMessage, ...fromMarkdown].sort((a, b) => a.index - b.index);
+    const own = [...fromMessage, ...fromMarkdown];
+    // Sources declared by this message's tool calls join the same panel, after its own citations.
+    return [...own, ...toolSourceCitations(own, this.resolver?.toolSources() ?? [])].sort((a, b) => a.index - b.index);
   });
+
+  constructor() {
+    const resolver = this.resolver;
+    if (!resolver) return;
+    resolver.sourcesPanel.set(true);
+    inject(DestroyRef).onDestroy(() => resolver.sourcesPanel.set(false));
+  }
 
   /** First 3 sources, mapped to favicon/monogram chips for the header preview. */
   protected readonly favstack = computed<FavEntry[]>(() =>

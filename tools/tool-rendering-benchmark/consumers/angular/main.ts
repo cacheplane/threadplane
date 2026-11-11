@@ -16,10 +16,12 @@ import {
   ChatToolResultTemplateDirective,
   toolOutcomes,
 } from '@threadplane/chat';
-import { provideAgent, injectAgent } from '@threadplane/ag-ui';
+import { provideAgent, injectAgent, httpReplay } from '@threadplane/ag-ui';
 import '@threadplane/chat/chat.css';
 import './shell.css';
 import {
+  benchmarkThread,
+  forgetBenchmarkThread,
   layoutFrom,
   referenceCards,
   toolLabel,
@@ -28,6 +30,7 @@ import {
 const scenario =
   new URLSearchParams(location.search).get('scenario') ?? 'references';
 const layout = layoutFrom(location.search);
+const threadId = benchmarkThread(scenario);
 class Benchmark {
   agent = injectAgent();
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -117,6 +120,7 @@ class Benchmark {
   async reset() {
     this.disposed = true;
     this.agent.dispose();
+    forgetBenchmarkThread(scenario);
     await fetch('http://127.0.0.1:4809/reset/threadplane-angular', {
       method: 'POST',
     });
@@ -153,8 +157,20 @@ Component({
 bootstrapApplication(Benchmark, {
   providers: [
     provideAgent({
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}&layout=${layout}`,
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}`,
       telemetry: false,
+      // A kept thread reloads its delivered events from the benchmark server.
+      ...(threadId
+        ? {
+            threadId,
+            replay: httpReplay({
+              url: (id) =>
+                `http://127.0.0.1:4809/threads/threadplane-angular/${encodeURIComponent(
+                  id
+                )}/events`,
+            }),
+          }
+        : {}),
     }),
   ],
 });

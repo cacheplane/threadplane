@@ -19,7 +19,7 @@ The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation
 
 ## Review a refund
 
-Choose **Run** and send a fictional request containing a customer identifier, amount and reason. The agent streams an acknowledgement and pauses. The current **Refund approval** card shows those fields. **Approve** accepts the draft; **Edit and approve** submits the edited nonnegative amount; **Cancel refund** declines it. Each action addresses the current native interrupt explicitly.
+Choose **Run** and send a fictional request containing a customer identifier, amount and reason. The agent streams an acknowledgement and pauses. The current **Refund approval** card shows those fields at the end of the transcript. **Issue refund** accepts the draft; **Edit and approve** submits the edited nonnegative amount; the last button declines it. After you answer, the card leaves a one-line record, such as **Declined: Issue refund**. Each action addresses the current native interrupt explicitly.
 
 <ExampleCode file="cockpit/ag-ui/interrupts/react/src/app.tsx" />
 

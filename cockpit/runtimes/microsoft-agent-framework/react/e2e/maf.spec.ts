@@ -138,6 +138,12 @@ for (const scenario of ['approval', 'batch'])
         await expect(page.getByRole('status')).toHaveText(
           'Awaiting your decision.'
         );
+        // The pending approval sits at the end of the transcript.
+        await expect(
+          page
+            .getByRole('region', { name: 'Conversation' })
+            .getByRole('region', { name: 'Expense approval' })
+        ).toBeVisible();
         await expect(
           page.getByRole('button', { name: 'Approve', exact: true })
         ).toBeEnabled();
@@ -262,6 +268,15 @@ for (const scenario of ['approval', 'batch'])
         await expect(
           page.getByRole('button', { name: 'Approve', exact: true })
         ).toHaveCount(0);
+        // The answered approval leaves a one-line record, and focus returns to the composer.
+        await expect(
+          page
+            .getByRole('region', { name: 'Conversation' })
+            .locator('.tp-approval-record')
+        ).toHaveText(decision === 'Approve' ? /^Approved$/ : /^Declined$/);
+        await expect(
+          page.getByRole('textbox', { name: 'Message', exact: true })
+        ).toBeFocused();
         await page.screenshot({
           path: test.info().outputPath('complete-result.png'),
           fullPage: true,

@@ -1,12 +1,14 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
 import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { projectTextTranscript } from '@threadplane/ag-ui';
 import { useAgent } from '@threadplane/react';
 import {
   ApprovalCard,
   ChatInput,
   TextTranscript,
+  type ApprovalRecordEntry,
+  type ChatInputHandle,
 } from '@threadplane/react/chat';
 import {
   createConnectedApplication,
@@ -79,11 +81,40 @@ function StrandsPresentation({
   const snapshot = useAgent(application);
   const generation = snapshot.generation;
   const approval = snapshot.approval;
+  const rows = projectTextTranscript(snapshot.rows);
+  // Answered approvals stay in the transcript as one-line records.
+  const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
+  // Answering removes the card and its focused button; focus returns to the
+  // composer as soon as the composer is enabled again.
+  const composer = useRef<ChatInputHandle>(null);
+  const [focusOwed, setFocusOwed] = useState(false);
+  const pending = approval !== undefined;
+  const composerDisabled = !snapshot.canSend;
+  useEffect(() => {
+    if (!focusOwed || pending || composerDisabled) return;
+    setFocusOwed(false);
+    composer.current?.focus();
+  }, [focusOwed, pending, composerDisabled]);
+  function decide(action: 'approve' | 'decline') {
+    if (!approval) return;
+    const before = application.getSnapshot();
+    const afterId = projectTextTranscript(before.rows).at(-1)?.id;
+    void application.decide(approval, action, generation);
+    // Record only a decision the application admitted.
+    if (before.busy || !application.getSnapshot().busy) return;
+    setRecords((previous) => [
+      ...previous,
+      { afterId, verdict: action === 'approve' ? 'approved' : 'declined' },
+    ]);
+    setFocusOwed(true);
+  }
   useEffect(() => {
     if (application.getSnapshot().status !== 'disposed') onReady();
   }, [application, onReady]);
   useEffect(() => {
     setDraft('');
+    setRecords([]);
+    setFocusOwed(false);
   }, [generation]);
   const status = {
     ready: 'Ready.',
@@ -110,6 +141,8 @@ function StrandsPresentation({
             snapshot.status === 'cleanup-failed'
           }
           onClick={() => {
+            setRecords([]);
+            setFocusOwed(false);
             void application.newConversation();
           }}
         >
@@ -130,9 +163,34 @@ function StrandsPresentation({
         Q3 roadmap review
       </button>
       <TextTranscript
-        messages={projectTextTranscript(snapshot.rows)}
+        messages={rows}
         label="Conversation"
-      />
+        approvalRecords={records}
+      >
+        {approval && (
+          <ApprovalCard
+            title="Meeting approval"
+            disabled={snapshot.busy || !snapshot.canRespond}
+            actions={[
+              {
+                id: 'approve',
+                label: 'Approve',
+                onSelect: () => decide('approve'),
+              },
+              {
+                id: 'decline',
+                label: 'Decline',
+                onSelect: () => decide('decline'),
+              },
+            ]}
+          >
+            <MeetingDetails meeting={approval.meeting} />
+            <p>
+              This decision applies only to the fictional meeting shown here.
+            </p>
+          </ApprovalCard>
+        )}
+      </TextTranscript>
       <section
         aria-label="Last observed schedule"
         className="observed-schedule"
@@ -163,31 +221,6 @@ function StrandsPresentation({
           <p>No booking observed yet.</p>
         )}
       </section>
-      {approval && (
-        <ApprovalCard
-          title="Meeting approval"
-          disabled={snapshot.busy || !snapshot.canRespond}
-          actions={[
-            {
-              id: 'approve',
-              label: 'Approve',
-              onSelect: () => {
-                void application.decide(approval, 'approve', generation);
-              },
-            },
-            {
-              id: 'decline',
-              label: 'Decline',
-              onSelect: () => {
-                void application.decide(approval, 'decline', generation);
-              },
-            },
-          ]}
-        >
-          <MeetingDetails meeting={approval.meeting} />
-          <p>This decision applies only to the fictional meeting shown here.</p>
-        </ApprovalCard>
-      )}
       {snapshot.result !== null && (
         <section
           aria-label="Observed backend result"
@@ -202,11 +235,12 @@ function StrandsPresentation({
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <section aria-label="Compose message">
           <ChatInput
+            ref={composer}
             label="Message"
             placeholder="Ask about a fictional meeting…"
             value={draft}
             onValueChange={setDraft}
-            disabled={!snapshot.canSend}
+            disabled={composerDisabled}
             busy={snapshot.busy}
             onStop={
               snapshot.busy &&

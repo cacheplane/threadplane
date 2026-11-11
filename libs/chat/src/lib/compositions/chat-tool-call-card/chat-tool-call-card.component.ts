@@ -8,6 +8,8 @@ import type { ToolCallStatus } from '../../agent';
 export interface ToolCallInfo {
   id: string;
   name: string;
+  /** App-owned readable label shown in place of the technical name, which then moves into the opened card. */
+  label?: string;
   args: unknown;
   result?: unknown;
   /** Literal diagnostic error, independent of result. */
@@ -30,6 +32,10 @@ export interface ToolCallInfo {
       color: var(--tplane-chat-text-muted);
       font-weight: 400;
       padding-left: 2px;
+    }
+    .tcc__name--label {
+      font-family: inherit;
+      color: var(--tplane-chat-text);
     }
     .tcc__pill {
       display: inline-flex;
@@ -69,7 +75,7 @@ export interface ToolCallInfo {
   template: `
     <chat-trace [state]="state()" [defaultExpanded]="autoExpanded()">
       <span traceLabel>
-        <span class="tcc__name">{{ toolCall().name }}</span>
+        <span class="tcc__name" [class.tcc__name--label]="!!toolCall().label">{{ toolCall().label || toolCall().name }}</span>
         <span class="tcc__pill" [attr.data-status]="status()" [attr.aria-label]="ariaLabel()">
           @switch (status()) {
             @case ('running') {
@@ -91,6 +97,12 @@ export interface ToolCallInfo {
           }
         </span>
       </span>
+      @if (toolCall().label) {
+        <div class="tcc__section">
+          <p class="tcc__section-label">Tool</p>
+          <pre class="tcc__section-body">{{ toolCall().name }}</pre>
+        </div>
+      }
       <div class="tcc__section">
         <p class="tcc__section-label">Inputs</p>
         <pre class="tcc__section-body">{{ formatJson(toolCall().args) }}</pre>
