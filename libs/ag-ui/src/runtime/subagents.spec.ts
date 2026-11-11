@@ -8,8 +8,8 @@ import {
 } from '@ag-ui/client';
 import {
   applySubagent,
+  earlierSubagents,
   ownSubagents,
-  settledSubagents,
   type Subagents,
 } from './subagents';
 
@@ -418,81 +418,74 @@ describe('private native child observation', () => {
     }
   );
 
-  describe('across root invocations', () => {
-    const observed = (): Subagents =>
-      [start('done'), finish('done'), start('failed'), failure('failed'), start('open')].reduce(
-        applySubagent,
-        Object.freeze([]) as Subagents
+  describe('history across root invocations', () => {
+    const observed = (...ids: string[]): Subagents =>
+      ids.reduce<Subagents>(
+        (all, id) =>
+          id.startsWith('open')
+            ? applySubagent(all, start(id))
+            : applySubagent(
+                applySubagent(all, start(id)),
+                id.startsWith('failed') ? failure(id) : finish(id)
+              ),
+        Object.freeze([])
       );
 
-    it('keeps children with terminal evidence as earlier and drops the rest', () => {
-      const previous = observed();
-      const kept = settledSubagents(previous);
-      expect(kept.map((child) => child.started.subagentRunId)).toEqual([
+    it('keeps children with terminal evidence and drops the rest', () => {
+      const current = observed('done', 'failed', 'open');
+      const history = earlierSubagents(undefined, current)!;
+      expect(history.map((child) => child.started.subagentRunId)).toEqual([
         'done',
         'failed',
       ]);
-      expect(kept.every((child) => child.earlier === true)).toBe(true);
-      // Evidence is shared, not copied, and the previous snapshot is untouched.
-      expect(kept[0].started).toBe(previous[0].started);
-      expect(kept[1].terminal).toBe(previous[1].terminal);
-      expect(previous[0].earlier).toBeUndefined();
-      frozen(kept);
-      // Nothing to change: the same array, so an unchanged snapshot stays unchanged.
-      expect(settledSubagents(kept)).toBe(kept);
-      const empty: Subagents = Object.freeze([]);
-      expect(settledSubagents(empty)).toBe(empty);
+      // Records are shared, not copied, and the current list is untouched.
+      expect(history[0]).toBe(current[0]);
+      expect(history[1]).toBe(current[1]);
+      expect(current).toHaveLength(3);
+      frozen(history);
     });
 
-    it('lets a new start reuse an earlier ID, replacing that child at the end of start order', () => {
-      const kept = settledSubagents(observed());
-      const next = applySubagent(kept, start('done'));
-      expect(next.map((child) => child.started.subagentRunId)).toEqual([
-        'failed',
+    it('returns the earlier history itself when the invocation settled nothing', () => {
+      const history = earlierSubagents(undefined, observed('done'))!;
+      expect(earlierSubagents(history, observed('open'))).toBe(history);
+      expect(earlierSubagents(history, Object.freeze([]))).toBe(history);
+      expect(earlierSubagents(undefined, observed('open'))).toBeUndefined();
+      expect(earlierSubagents(undefined, Object.freeze([]))).toBeUndefined();
+    });
+
+    it('appends later children and lets a reused ID replace its earlier record', () => {
+      const first = earlierSubagents(undefined, observed('done', 'failed'))!;
+      const next = observed('failed', 'new');
+      const history = earlierSubagents(first, next)!;
+      expect(history.map((child) => child.started.subagentRunId)).toEqual([
         'done',
+        'failed',
+        'new',
       ]);
-      expect(next[1]).toStrictEqual({ started: start('done') });
-      expect(next[0]).toBe(kept[1]);
-      // The replacement is a current child again: strict within its own invocation.
-      expect(() => applySubagent(next, start('done'))).toThrow(TypeError);
-      expect(applySubagent(next, finish('done'))[1].terminal).toStrictEqual(
-        finish('done')
-      );
+      expect(history[0]).toBe(first[0]);
+      expect(history[1]).toBe(next[0]);
+      expect(history[1]).not.toBe(first[1]);
+      expect(first).toHaveLength(2);
     });
-
-    it.each([finish('done'), failure('done')])(
-      'never applies terminal $type to an earlier child',
-      (terminal) => {
-        const kept = settledSubagents(observed());
-        expect(() => applySubagent(kept, terminal)).toThrow(
-          'Subagent target is missing'
-        );
-        expect(kept[0].terminal).toStrictEqual(finish('done'));
-      }
-    );
   });
 
   describe('restored evidence', () => {
-    it('owns restored children as earlier, with or without terminal evidence', () => {
+    it('owns restored children, with or without terminal evidence', () => {
       const source = [
         { started: start('a'), terminal: finish('a') },
         { started: { ...start('b'), metadata: { nested: { n: 1 } } } },
       ];
-      const owned = ownSubagents(source);
+      const owned = ownSubagents(source)!;
       expect(owned).toStrictEqual([
-        { started: start('a'), terminal: finish('a'), earlier: true },
-        {
-          started: { ...start('b'), metadata: { nested: { n: 1 } } },
-          earlier: true,
-        },
+        { started: start('a'), terminal: finish('a') },
+        { started: { ...start('b'), metadata: { nested: { n: 1 } } } },
       ]);
       frozen(owned);
       expect(owned[0].started).not.toBe(source[0].started);
       (source[1].started.metadata as { nested: { n: number } }).nested.n = 2;
       expect(owned[1].started.metadata).toStrictEqual({ nested: { n: 1 } });
-      // A restored open child does not survive into the next invocation.
-      expect(settledSubagents(owned)).toStrictEqual([owned[0]]);
-      expect(ownSubagents(undefined)).toStrictEqual([]);
+      expect(ownSubagents(undefined)).toBeUndefined();
+      expect(ownSubagents([])).toBeUndefined();
     });
 
     it.each([

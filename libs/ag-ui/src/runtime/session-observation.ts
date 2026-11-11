@@ -48,7 +48,10 @@ export interface SessionSnapshot {
   readonly status: 'idle' | 'running' | 'error';
   readonly transcript: Transcript;
   readonly state: PlainValue;
+  /** Children observed in the current root invocation. */
   readonly subagents: Subagents;
+  /** Children with terminal evidence from earlier invocations, and children supplied at restore. Absent when there are none. */
+  readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
   readonly run?: {
     readonly id: string;
@@ -78,11 +81,13 @@ export function initialObservation(
 ): SessionSnapshot {
   const transcript = ownTranscript(messages);
   assertTranscriptIdentity(transcript);
+  const earlier = ownSubagents(subagents);
   return Object.freeze({
     status: 'idle',
     transcript,
     state: ownState(state),
-    subagents: ownSubagents(subagents),
+    subagents: Object.freeze([]),
+    ...(earlier && { earlierSubagents: earlier }),
   });
 }
 

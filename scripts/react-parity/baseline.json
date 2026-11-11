@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
+  "baselineHead": "9dccfc3a68b782825085f1e673ab49a3eff35b5d",
   "sourceState": {
     "modified": [
       "libs/ag-ui/src/runtime/create-session.ts",
@@ -14454,7 +14454,7 @@
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "1bd777702ee2e6262cf71c914c7802d05a43ec3f709931549334e0f19f4694dd"
+      "sha256": "177c0ba915328152582be5350614ea3df23c87c67f5f313ad2cbf726b43b5b57"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
@@ -14490,7 +14490,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "e7175d2962709a8ff6adbd1da7afd97bf45968e28f2d4d45cc25f3efc112d5cb"
+      "sha256": "21212dbc79e0facef43f8fa706b5010880e4b859bb4af5b4b623960652558d67"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
@@ -14508,7 +14508,7 @@
       "id": "source:libs/ag-ui/src/runtime/subagents.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/subagents.ts",
-      "sha256": "6dd2f3e50ba896c359c9f586121750bb1b1bfb636737ced136d55e5a4c106447"
+      "sha256": "bae60c4838494cda29d0d05e2ba69e5fb040c3e01528bf34cc50181139ac6f46"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
