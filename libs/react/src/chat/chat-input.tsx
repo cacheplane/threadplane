@@ -26,6 +26,17 @@ export interface ChatInputProps {
   readonly placeholder?: string;
   readonly hint?: ReactNode;
   /**
+   * App-owned notice above the input surface, such as a paused or read-only
+   * state. Announce it yourself when it should be spoken, for example with
+   * `role="status"`.
+   */
+  readonly banner?: ReactNode;
+  /**
+   * App-owned content between the banner and the input surface, such as files
+   * chosen for the next message. The composer never reads, sends or clears it.
+   */
+  readonly attachments?: ReactNode;
+  /**
    * App-owned content before the draft, inside the input surface. Slot content
    * sits inside the composer form: give its buttons `type="button"` unless they
    * should send, and it stays enabled when `disabled` or `busy` is set.
@@ -60,6 +71,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       label = 'Message',
       placeholder = 'Write a message…',
       hint,
+      banner,
+      attachments,
       leading,
       trailing,
       footer,
@@ -192,6 +205,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         <label className="tp-chat-input__label" htmlFor={inputId}>
           {label}
         </label>
+        {present(banner) && (
+          <div className="tp-chat-input__banner">{banner}</div>
+        )}
+        {present(attachments) && (
+          <div className="tp-chat-input__attachments">{attachments}</div>
+        )}
         <div className="tp-chat-input__pill">
           {present(leading) && (
             <div className="tp-chat-input__leading">{leading}</div>
