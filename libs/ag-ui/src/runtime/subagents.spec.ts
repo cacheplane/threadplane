@@ -6,7 +6,12 @@ import {
   type SubagentFinishedEvent,
   type SubagentErrorEvent,
 } from '@ag-ui/client';
-import { applySubagent, type Subagents } from './subagents';
+import {
+  applySubagent,
+  earlierSubagents,
+  ownSubagents,
+  type Subagents,
+} from './subagents';
 
 const start = (subagentRunId = 'child'): SubagentStartedEvent => ({
   type: EventType.SUBAGENT_STARTED,
@@ -412,4 +417,88 @@ describe('private native child observation', () => {
       );
     }
   );
+
+  describe('history across root invocations', () => {
+    const observed = (...ids: string[]): Subagents =>
+      ids.reduce<Subagents>(
+        (all, id) =>
+          id.startsWith('open')
+            ? applySubagent(all, start(id))
+            : applySubagent(
+                applySubagent(all, start(id)),
+                id.startsWith('failed') ? failure(id) : finish(id)
+              ),
+        Object.freeze([])
+      );
+
+    it('keeps children with terminal evidence and drops the rest', () => {
+      const current = observed('done', 'failed', 'open');
+      const history = earlierSubagents(undefined, current)!;
+      expect(history.map((child) => child.started.subagentRunId)).toEqual([
+        'done',
+        'failed',
+      ]);
+      // Records are shared, not copied, and the current list is untouched.
+      expect(history[0]).toBe(current[0]);
+      expect(history[1]).toBe(current[1]);
+      expect(current).toHaveLength(3);
+      frozen(history);
+    });
+
+    it('returns the earlier history itself when the invocation settled nothing', () => {
+      const history = earlierSubagents(undefined, observed('done'))!;
+      expect(earlierSubagents(history, observed('open'))).toBe(history);
+      expect(earlierSubagents(history, Object.freeze([]))).toBe(history);
+      expect(earlierSubagents(undefined, observed('open'))).toBeUndefined();
+      expect(earlierSubagents(undefined, Object.freeze([]))).toBeUndefined();
+    });
+
+    it('appends later children and lets a reused ID replace its earlier record', () => {
+      const first = earlierSubagents(undefined, observed('done', 'failed'))!;
+      const next = observed('failed', 'new');
+      const history = earlierSubagents(first, next)!;
+      expect(history.map((child) => child.started.subagentRunId)).toEqual([
+        'done',
+        'failed',
+        'new',
+      ]);
+      expect(history[0]).toBe(first[0]);
+      expect(history[1]).toBe(next[0]);
+      expect(history[1]).not.toBe(first[1]);
+      expect(first).toHaveLength(2);
+    });
+  });
+
+  describe('restored evidence', () => {
+    it('owns restored children, with or without terminal evidence', () => {
+      const source = [
+        { started: start('a'), terminal: finish('a') },
+        { started: { ...start('b'), metadata: { nested: { n: 1 } } } },
+      ];
+      const owned = ownSubagents(source)!;
+      expect(owned).toStrictEqual([
+        { started: start('a'), terminal: finish('a') },
+        { started: { ...start('b'), metadata: { nested: { n: 1 } } } },
+      ]);
+      frozen(owned);
+      expect(owned[0].started).not.toBe(source[0].started);
+      (source[1].started.metadata as { nested: { n: number } }).nested.n = 2;
+      expect(owned[1].started.metadata).toStrictEqual({ nested: { n: 1 } });
+      expect(ownSubagents(undefined)).toBeUndefined();
+      expect(ownSubagents([])).toBeUndefined();
+    });
+
+    it.each([
+      ['a non-array', { started: start() }],
+      ['a missing record', [null]],
+      ['missing start evidence', [{ terminal: finish() }]],
+      ['a start of the wrong type', [{ started: finish() }]],
+      ['a non-string ID', [{ started: { ...start(), subagentRunId: 1 } }]],
+      ['a duplicate ID', [{ started: start() }, { started: start() }]],
+      ['terminal evidence for another child', [{ started: start(), terminal: finish('other') }]],
+      ['terminal evidence of the wrong type', [{ started: start(), terminal: start() }]],
+    ])('rejects %s', (_name, restored) => {
+      expect(() => ownSubagents(restored)).toThrow(TypeError);
+    });
+  });
 });
