@@ -1,14 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "82d133d18b4249563d0dae1ec8d6f028e3b97c1f",
+  "baselineHead": "ee3335d2778272c33f3034803b15fd741e18b8c7",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
@@ -873,7 +867,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "eb157d9badedbc14a7cde39c55fd7414bb63f3cf36e3a89d7b20d668fd0674b1"
+      "sha256": "ca2dd9e87e5586c1c0abafd1e2c168c0668190cebefe22b10d28088fe89540f2"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -11628,7 +11622,7 @@
           "path": "libs/react/src/chat/citation-card.tsx",
           "symbol": "CitationCard",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function CitationCard({ citation, className }: CitationCardProps) {\n    const meta = citationTypeMeta(citation);\n    const domain = deriveDomain(citation.url);\n    const published = formatPublished(citation.publishedAt);\n    const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n    const href = citation.url === undefined ? undefined : markdownUrl(citation.url, 'link');\n    return (<div className={['tp-citation-card', className].filter(Boolean).join(' ')}>\n      <CitationSourceMarker citation={citation} className=\"tp-citation-card__visual\"/>\n      <div className=\"tp-citation-card__body\">\n        <div className=\"tp-citation-card__heading\">\n          <span className=\"tp-citations__index\">[{citation.index}] </span>\n          {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n              {title}\n            </a>)}\n        </div>\n        {(meta.label !== null || Boolean(domain) || published !== null) && (<div className=\"tp-citation-card__metadata\">\n            {meta.label !== null && (<span className={`tp-citations__type tp-citation-card__badge tp-citation-card__badge--${meta.tone}`}>\n                {meta.label}\n              </span>)}\n            {domain && (<span className=\"tp-citation-card__domain\">{domain}</span>)}\n            {published !== null && (<span className=\"tp-citation-card__published\">{published}</span>)}\n          </div>)}\n        {citation.snippet !== undefined && (<p className=\"tp-citations__snippet tp-citation-card__snippet\">\n            {citation.snippet}\n          </p>)}\n      </div>\n    </div>);\n}"
+          "signature": "export function CitationCard({ citation, className }: CitationCardProps) {\n    const meta = citationTypeMeta(citation);\n    const domain = deriveDomain(citation.url);\n    const published = formatPublished(citation.publishedAt);\n    const title = citation.title ?? citation.url ?? `Source ${citation.index}`;\n    const href = citation.url === undefined ? undefined : markdownUrl(citation.url, 'link');\n    return (<div className={['tp-citation-card', className].filter(Boolean).join(' ')}>\n      <span className=\"tp-citations__index tp-citation-card__index\">\n        {citation.index}\n      </span>\n      <div className=\"tp-citation-card__body\">\n        <div className=\"tp-citation-card__metadata\">\n          <CitationSourceMarker citation={citation} className=\"tp-citation-card__visual\"/>\n          {domain && <span className=\"tp-citation-card__domain\">{domain}</span>}\n          {published !== null && (<span className=\"tp-citation-card__published\">{published}</span>)}\n          {meta.label !== null && (<span className={`tp-citations__type tp-citation-card__badge tp-citation-card__badge--${meta.tone}`}>\n              {meta.label}\n            </span>)}\n        </div>\n        <div className=\"tp-citation-card__heading\">\n          {href === undefined ? (<span className=\"tp-citations__title\">{title}</span>) : (<a className=\"tp-citations__title\" href={href} target=\"_blank\" rel=\"noopener noreferrer\">\n              {title}\n            </a>)}\n        </div>\n        {citation.snippet !== undefined && (<p className=\"tp-citations__snippet tp-citation-card__snippet\">\n            {citation.snippet}\n          </p>)}\n      </div>\n    </div>);\n}"
         }
       ]
     },
@@ -17232,7 +17226,7 @@
       "id": "source:libs/react/src/chat/citation-card.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citation-card.tsx",
-      "sha256": "66f38abeb54c24567e91b4b601a41836f63d6851f6de5e7b3c3384d7ed5ce676"
+      "sha256": "a3b78d0d21ab7cf2962e7ba7c329690295e6cc39c2c1e80820b002f860ad846f"
     },
     {
       "id": "source:libs/react/src/chat/citation-preview.tsx",
@@ -17244,7 +17238,7 @@
       "id": "source:libs/react/src/chat/citations.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/citations.tsx",
-      "sha256": "599eb9b7da21d83d9511dae245114a54fbe4e7ed94f3afebc0c8e1c8814aa1f8"
+      "sha256": "a7945f0c10566c48065c7e8cc3829f843dd2991783b0a99b251e52504f871c52"
     },
     {
       "id": "source:libs/react/src/chat/confirm-dialog.tsx",
