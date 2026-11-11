@@ -77,7 +77,10 @@ describe('ChatComponent — answered approval record', () => {
     const record = el(fixture).querySelector<HTMLElement>('.chat-approval-record')!;
     expect(record.dataset['verdict']).toBe('approved');
     const assistantMessage = Array.from(el(fixture).querySelectorAll('chat-message')).at(-1)!;
-    expect(record.previousElementSibling).toBe(assistantMessage);
+    // The record closes the row it followed, after the message's controls.
+    expect(record.parentElement).toBe(assistantMessage);
+    expect(assistantMessage.lastElementChild).toBe(record);
+    expect(record.previousElementSibling?.classList.contains('chat-message__controls')).toBe(true);
   });
 
   it('records a declined approval', () => {
@@ -94,7 +97,11 @@ describe('ChatComponent — answered approval record', () => {
     fixture.detectChanges();
     const record = el(fixture).querySelector<HTMLElement>('.chat-approval-record')!;
     expect(record.textContent!.trim()).toBe('Approved: Save note');
-    expect(record.nextElementSibling?.tagName.toLowerCase()).toBe('chat-message');
+    // The record stays in the row it followed; the new message is the next row.
+    const row = record.parentElement!;
+    expect(row.tagName.toLowerCase()).toBe('chat-message');
+    expect(row.nextElementSibling?.tagName.toLowerCase()).toBe('chat-message');
+    expect(row.nextElementSibling?.querySelector('.chat-approval-record')).toBeNull();
   });
 
   it('reads just "Approved" when the app named no action', () => {
