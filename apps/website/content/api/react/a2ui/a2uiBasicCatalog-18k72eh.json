@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox and Slider.\nThe three inputs write to the surface's store when `A2uiSurface` is given\none; none of these sends an action.",
+  "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox, Slider and\nButton. Inputs write to the surface's store when `A2uiSurface` is given one;\na Button hands its event action to the surface's `onAction`.",
   "declarations": [
     {
       "name": "a2uiBasicCatalog",
@@ -29,7 +29,7 @@
         }
       ],
       "docs": {
-        "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox and Slider.\nThe three inputs write to the surface's store when `A2uiSurface` is given\none; none of these sends an action.",
+        "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox, Slider and\nButton. Inputs write to the surface's store when `A2uiSurface` is given one;\na Button hands its event action to the surface's `onAction`.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -41,7 +41,7 @@
       "members": [],
       "source": {
         "path": "libs/react/src/a2ui/catalog/index.ts",
-        "line": 42
+        "line": 44
       },
       "overloadIndex": 1,
       "parameters": [],
@@ -53,6 +53,6 @@
   ],
   "source": {
     "path": "libs/react/src/a2ui/catalog/index.ts",
-    "line": 42
+    "line": 44
   }
 }

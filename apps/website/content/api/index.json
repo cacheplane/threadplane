@@ -4814,6 +4814,16 @@
       "summary": "Accepted source document and its partial parse tree, syntax-completion flag, and optional diagnostic."
     },
     {
+      "name": "A2uiActionMessage",
+      "entrypointId": "content/a2ui",
+      "kind": "Interface",
+      "href": "/docs/api/content/a2ui/A2uiActionMessage",
+      "canonicalReference": "@threadplane/content!A2uiActionMessage:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "A v0.9 client-to-agent action: which component fired, on which surface, with its context resolved to plain values."
+    },
+    {
       "name": "A2uiComponentSnapshot",
       "entrypointId": "content/a2ui",
       "kind": "Interface",
@@ -4862,6 +4872,16 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Finite plain data. Arrays preserve holes and explicit undefined entries."
+    },
+    {
+      "name": "createA2uiActionMessage",
+      "entrypointId": "content/a2ui",
+      "kind": "Function",
+      "href": "/docs/api/content/a2ui/createA2uiActionMessage",
+      "canonicalReference": "@threadplane/content!createA2uiActionMessage:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Builds the action message for one component's `action.event`, reading every\n`{ path }` in its context from the surface's current data model. Returns\nnull when the component is missing or has no event action. Function-call\ncontext values are left out. Nothing is sent; the caller transports it."
     },
     {
       "name": "createA2uiSurfaces",
@@ -7151,7 +7171,7 @@
       "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox and Slider.\nThe three inputs write to the surface's store when `A2uiSurface` is given\none; none of these sends an action."
+      "summary": "The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,\nColumn, List, Card, Divider, Tabs, Modal, TextField, CheckBox, Slider and\nButton. Inputs write to the surface's store when `A2uiSurface` is given one;\na Button hands its event action to the surface's `onAction`."
     },
     {
       "name": "A2uiSurface",
@@ -7161,7 +7181,7 @@
       "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local: nothing is sent to an agent.\nA component the catalog lacks keeps its children. Actions, validation,\nfunction calls and child templates are not handled yet."
+      "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local. A pressed Button hands its\nresolved action message to `onAction`, and the application transports it.\nA component the catalog lacks keeps its children. Validation, function calls\nand child templates are not handled yet."
     },
     {
       "name": "A2uiSurfaceProps",

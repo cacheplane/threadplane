@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 24
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": true
@@ -98,7 +98,53 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 25
+            "line": 39
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onAction",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!A2uiSurfaceProps#onAction:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onAction?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiActionMessage",
+              "canonicalReference": "@threadplane/react!~A2uiActionMessage:interface",
+              "href": "/docs/api/content/a2ui/A2uiActionMessage"
+            },
+            {
+              "kind": "Content",
+              "text": ") => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Receives the action message when a Button with an event action is\npressed. Its context is resolved from this surface's current data model.\nSending it to the agent is the application's job. Without it, Buttons are\ndisabled.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/a2ui/surface.tsx",
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -136,7 +182,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 16
+            "line": 23
           },
           "isReadonly": true,
           "isOptional": false
@@ -174,7 +220,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/a2ui/surface.tsx",
-            "line": 22
+            "line": 29
           },
           "isReadonly": true,
           "isOptional": true
@@ -182,12 +228,12 @@
       ],
       "source": {
         "path": "libs/react/src/a2ui/surface.tsx",
-        "line": 14
+        "line": 21
       }
     }
   ],
   "source": {
     "path": "libs/react/src/a2ui/surface.tsx",
-    "line": 14
+    "line": 21
   }
 }

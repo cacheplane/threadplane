@@ -31,6 +31,7 @@ describe('A2UI display catalog', () => {
   it('lists every provided component', () => {
     expect(Object.keys(a2uiBasicCatalog()).sort()).toEqual([
       'AudioPlayer',
+      'Button',
       'Card',
       'CheckBox',
       'Column',

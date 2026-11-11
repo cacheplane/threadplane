@@ -1,5 +1,6 @@
 import type { ReactRenderRegistry } from '../../render/index.js';
 import { A2uiAudioPlayer } from './audio-player.js';
+import { A2uiButton } from './button.js';
 import { A2uiCard } from './card.js';
 import { A2uiCheckBox } from './check-box.js';
 import { A2uiColumn } from './column.js';
@@ -17,6 +18,7 @@ import { A2uiVideo } from './video.js';
 
 const CATALOG: ReactRenderRegistry = Object.freeze({
   AudioPlayer: A2uiAudioPlayer,
+  Button: A2uiButton,
   Card: A2uiCard,
   CheckBox: A2uiCheckBox,
   Column: A2uiColumn,
@@ -35,9 +37,9 @@ const CATALOG: ReactRenderRegistry = Object.freeze({
 
 /**
  * The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,
- * Column, List, Card, Divider, Tabs, Modal, TextField, CheckBox and Slider.
- * The three inputs write to the surface's store when `A2uiSurface` is given
- * one; none of these sends an action.
+ * Column, List, Card, Divider, Tabs, Modal, TextField, CheckBox, Slider and
+ * Button. Inputs write to the surface's store when `A2uiSurface` is given one;
+ * a Button hands its event action to the surface's `onAction`.
  */
 export function a2uiBasicCatalog(): ReactRenderRegistry {
   return CATALOG;

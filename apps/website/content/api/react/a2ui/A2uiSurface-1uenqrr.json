@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local: nothing is sent to an agent.\nA component the catalog lacks keeps its children. Actions, validation,\nfunction calls and child templates are not handled yet.",
+  "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local. A pressed Button hands its\nresolved action message to `onAction`, and the application transports it.\nA component the catalog lacks keeps its children. Validation, function calls\nand child templates are not handled yet.",
   "declarations": [
     {
       "name": "A2uiSurface",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local: nothing is sent to an agent.\nA component the catalog lacks keeps its children. Actions, validation,\nfunction calls and child templates are not handled yet.",
+        "summary": "Renders one A2UI surface from a snapshot. Given the store as `surfaces`, its\ninput components write edits into that store; the application keeps passing\nthe store's current snapshot. Edits stay local. A pressed Button hands its\nresolved action message to `onAction`, and the application transports it.\nA component the catalog lacks keeps its children. Validation, function calls\nand child templates are not handled yet.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/a2ui/surface.tsx",
-        "line": 35
+        "line": 50
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ surface, surfaces, catalog, className, }",
+          "parameterName": "{ surface, surfaces, onAction, catalog, className, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/a2ui/surface.tsx",
-    "line": 35
+    "line": 50
   }
 }

@@ -1,22 +1,20 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "e961902e338c8a81359337cffef00769e11e9e6b",
+  "baselineHead": "f6fd573d5037e2a567a69b81a374dc62795e30e1",
   "sourceState": {
     "modified": [
       "libs/content/README.md",
-      "libs/content/src/a2ui/create-surfaces.ts",
-      "libs/content/src/a2ui/types.ts",
+      "libs/content/src/a2ui/index.ts",
       "libs/react/README.md",
       "libs/react/src/a2ui/catalog/index.ts",
-      "libs/react/src/a2ui/index.ts",
+      "libs/react/src/a2ui/catalog/modal.tsx",
       "libs/react/src/a2ui/styles.css",
+      "libs/react/src/a2ui/surface-context.ts",
       "libs/react/src/a2ui/surface.tsx"
     ],
     "untracked": [
-      "libs/react/src/a2ui/catalog/check-box.tsx",
-      "libs/react/src/a2ui/catalog/slider.tsx",
-      "libs/react/src/a2ui/catalog/text-field.tsx",
-      "libs/react/src/a2ui/surface-context.ts"
+      "libs/content/src/a2ui/action-message.ts",
+      "libs/react/src/a2ui/catalog/button.tsx"
     ]
   },
   "scope": {
@@ -593,7 +591,7 @@
       "id": "asset:libs/content/README.md",
       "kind": "asset",
       "path": "libs/content/README.md",
-      "sha256": "27a7474580c78166ff6cec98600330669a36bacacde015e58eb983a7e2d362c1"
+      "sha256": "a9481a3c0e6a80174f40d79402d04d3f782a7a727559a0c9f83a0ace17500745"
     },
     {
       "id": "asset:libs/content/package.json",
@@ -863,7 +861,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "49eb54747ede8a72df97bdded9f86d4b76349c8c4d95bcb59c485a3903c190f0"
+      "sha256": "73fb8cecd39799944a0fa64ddd2dbfe8b984f086784f28977cb58ef940d8ede1"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -881,7 +879,7 @@
       "id": "asset:libs/react/src/a2ui/styles.css",
       "kind": "asset",
       "path": "libs/react/src/a2ui/styles.css",
-      "sha256": "4edca4a5414f59571f78f8483518fdd1d3069f2345e47171f89d21be2986018d"
+      "sha256": "7234916361dd18a6b79eff1228f7aed6bf2ea0355d7c3b4f5b1980a22a542f22"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",
@@ -9671,6 +9669,20 @@
       ]
     },
     {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiActionMessage",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "A2uiActionMessage",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/action-message.ts",
+          "symbol": "A2uiActionMessage",
+          "syntaxKind": "InterfaceDeclaration",
+          "signature": "export interface A2uiActionMessage {\n    readonly version: 'v0.9';\n    readonly action: {\n        readonly name: string;\n        readonly surfaceId: string;\n        readonly sourceComponentId: string;\n        readonly timestamp: string;\n        readonly context: {\n            readonly [key: string]: A2uiValue;\n        };\n        readonly label?: string;\n    };\n    readonly metadata?: {\n        readonly a2uiClientDataModel: {\n            readonly surfaces: {\n                readonly [surfaceId: string]: A2uiValue;\n            };\n        };\n    };\n}"
+        }
+      ]
+    },
+    {
       "id": "export:libs/content/src/a2ui/index.ts#A2uiComponentSnapshot",
       "kind": "export",
       "path": "libs/content/src/a2ui/index.ts",
@@ -9737,6 +9749,20 @@
           "symbol": "A2uiValue",
           "syntaxKind": "TypeAliasDeclaration",
           "signature": "export type A2uiValue = string | number | boolean | null | undefined | {\n    readonly [key: string]: A2uiValue;\n} | readonly A2uiValue[];"
+        }
+      ]
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
+      "kind": "export",
+      "path": "libs/content/src/a2ui/index.ts",
+      "symbol": "createA2uiActionMessage",
+      "declarations": [
+        {
+          "path": "libs/content/src/a2ui/action-message.ts",
+          "symbol": "createA2uiActionMessage",
+          "syntaxKind": "FunctionDeclaration",
+          "signature": "export function createA2uiActionMessage(surface: A2uiSurfaceSnapshot, sourceComponentId: string, timestamp: string = new Date().toISOString()): A2uiActionMessage | null {\n    const source = surface.components.find((item) => item.id === sourceComponentId);\n    const action = source?.['action'];\n    const event = record(action) ? action['event'] : undefined;\n    if (!source || !record(event) || typeof event['name'] !== 'string')\n        return null;\n    const context: Record<string, A2uiValue> = {};\n    const authored = event['context'];\n    if (record(authored))\n        for (const key of Object.keys(authored)) {\n            const value = authored[key];\n            if (record(value) && typeof value['path'] === 'string')\n                context[key] = read(surface.dataModel, value['path']);\n            else if (!(record(value) && typeof value['call'] === 'string'))\n                context[key] = value;\n        }\n    const child = source.component === 'Button' ? source['child'] : undefined;\n    const text = surface.components.find((item) => item.id === child && item.component === 'Text')?.['text'];\n    return Object.freeze({\n        version: 'v0.9',\n        action: Object.freeze({\n            name: event['name'],\n            surfaceId: surface.surfaceId,\n            sourceComponentId,\n            timestamp,\n            context: Object.freeze(context),\n            ...(typeof text === 'string' && text !== '' ? { label: text } : {}),\n        }),\n        ...(surface.sendDataModel === true\n            ? {\n                metadata: Object.freeze({\n                    a2uiClientDataModel: Object.freeze({\n                        surfaces: Object.freeze({ [surface.surfaceId]: surface.dataModel }),\n                    }),\n                }),\n            }\n            : {}),\n    });\n}"
         }
       ]
     },
@@ -16353,6 +16379,12 @@
       "sha256": "c1afeb8d76bb58b54fc601ea871743a500ebdeb54bbe7cde47aa075e64f433e8"
     },
     {
+      "id": "source:libs/content/src/a2ui/action-message.ts",
+      "kind": "source",
+      "path": "libs/content/src/a2ui/action-message.ts",
+      "sha256": "77d92dc9fc87ef03e4a4a54a2e3b2521e72acb688097fcad4078e7633c09a211"
+    },
+    {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/create-surfaces.ts",
@@ -16362,7 +16394,7 @@
       "id": "source:libs/content/src/a2ui/index.ts",
       "kind": "source",
       "path": "libs/content/src/a2ui/index.ts",
-      "sha256": "9242cd797ea4e9e33f7bebaa56024170725f4a529f794e0dc86fa97deac11fb0"
+      "sha256": "0f3a59715267084e5765cb5d1d1fd26e3b5684838caf07bc48c1db38df70a224"
     },
     {
       "id": "source:libs/content/src/a2ui/owned-value.ts",
@@ -17181,6 +17213,12 @@
       "sha256": "475c95c4d45f3e12c4d8bc154ea20325861a3dbb6dd2910f42f4fa345af77523"
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/button.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/button.tsx",
+      "sha256": "d3785867def110125cc790c885c64d0eb5f738eedaf1f65b94ffbe2f52870fcd"
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/card.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/card.tsx",
@@ -17220,7 +17258,7 @@
       "id": "source:libs/react/src/a2ui/catalog/index.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/index.ts",
-      "sha256": "bfcf9df46c7c653f5214e9a9d4f5c1fc0c0bc6085c0ce3b10e2b06b3d4ebe21e"
+      "sha256": "eec9d908f530b4e50d0dd55b3181b94370caba6f78f74dc724e059162a051335"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/layout.ts",
@@ -17244,7 +17282,7 @@
       "id": "source:libs/react/src/a2ui/catalog/modal.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/modal.tsx",
-      "sha256": "290c4785be446bda24bbe05785c07b96c490f93d4e3bf5fa118763808a25d35d"
+      "sha256": "3fb95d94f247def4e9e6dea4704210324a158427e7f6d472e8ea064cd335e26e"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/row.tsx",
@@ -17298,7 +17336,7 @@
       "id": "source:libs/react/src/a2ui/surface-context.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/surface-context.ts",
-      "sha256": "4ef71d13ae981f0dc591b74d76bb3fcebcf039818c13af96eb5ec11aae5c17ce"
+      "sha256": "4c812258e70047555117e6d223bbb4eb6bd96627219574dba5d2c35aa91fff38"
     },
     {
       "id": "source:libs/react/src/a2ui/surface-spec.ts",
@@ -17310,7 +17348,7 @@
       "id": "source:libs/react/src/a2ui/surface.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/surface.tsx",
-      "sha256": "32c25d02fc3a27067e5dd8a4649516140fe44c47d0bc24b1bc5b512186937e14"
+      "sha256": "61a75e5f6adf65162133e7a944f9784249b5aaeefb6b6d85370f142280b45eb5"
     },
     {
       "id": "source:libs/react/src/chat/activity-summary.ts",

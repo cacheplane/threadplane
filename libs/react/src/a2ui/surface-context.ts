@@ -20,3 +20,25 @@ export const A2uiSurfaceContext = createContext<A2uiSurfaceWriter>(READ_ONLY);
 export function useA2uiSurfaceWriter(): A2uiSurfaceWriter {
   return useContext(A2uiSurfaceContext);
 }
+
+/** Internal: which components can send an event action from this surface, and how. */
+export interface A2uiSurfaceActions {
+  readonly actionable: (componentId: string) => boolean;
+  readonly act: (componentId: string) => void;
+}
+
+export const A2uiActionContext = createContext<A2uiSurfaceActions>(
+  Object.freeze({ actionable: () => false, act: () => undefined })
+);
+
+/** Internal: lets a Button used as a Modal's trigger be the one control that opens it. */
+export interface A2uiModalTrigger {
+  readonly expanded: boolean;
+  readonly open: () => void;
+  /** Called while a Button is mounted in the trigger; returns its release. */
+  readonly claim: () => () => void;
+}
+
+export const A2uiModalTriggerContext = createContext<A2uiModalTrigger | null>(
+  null
+);

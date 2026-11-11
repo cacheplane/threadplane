@@ -1,0 +1,171 @@
+{
+  "name": "A2uiActionMessage",
+  "entrypointId": "content/a2ui",
+  "kind": "Interface",
+  "href": "/docs/api/content/a2ui/A2uiActionMessage",
+  "canonicalReference": "@threadplane/content!A2uiActionMessage:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "A v0.9 client-to-agent action: which component fired, on which surface, with its context resolved to plain values.",
+  "declarations": [
+    {
+      "name": "A2uiActionMessage",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/content!A2uiActionMessage:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface A2uiActionMessage "
+        }
+      ],
+      "docs": {
+        "summary": "A v0.9 client-to-agent action: which component fired, on which surface, with its context resolved to plain values.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "action",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiActionMessage#action:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly action: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        readonly name: string;\n        readonly surfaceId: string;\n        readonly sourceComponentId: string;\n        readonly timestamp: string;\n        readonly context: {\n            readonly [key: string]: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiValue",
+              "canonicalReference": "@threadplane/content!A2uiValue:type",
+              "href": "/docs/api/content/a2ui/A2uiValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        };\n        readonly label?: string;\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/action-message.ts",
+            "line": 6
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "metadata",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiActionMessage#metadata:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly metadata?: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n        readonly a2uiClientDataModel: {\n            readonly surfaces: {\n                readonly [surfaceId: string]: "
+            },
+            {
+              "kind": "Reference",
+              "text": "A2uiValue",
+              "canonicalReference": "@threadplane/content!A2uiValue:type",
+              "href": "/docs/api/content/a2ui/A2uiValue"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n            };\n        };\n    }"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Present only when the surface was created with `sendDataModel: true`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/action-message.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "version",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/content!A2uiActionMessage#version:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly version: "
+            },
+            {
+              "kind": "Content",
+              "text": "'v0.9'"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/content/src/a2ui/action-message.ts",
+            "line": 5
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/content/src/a2ui/action-message.ts",
+        "line": 4
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/content/src/a2ui/action-message.ts",
+    "line": 4
+  }
+}

@@ -1553,7 +1553,7 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 
 `a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
 `Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
-`CheckBox` and `Slider`. Spread it into your own registry and pass that as
+`CheckBox`, `Slider` and `Button`. Spread it into your own registry and pass that as
 `catalog` to add or replace components; keep the registry stable. Literal props
 pass through and `{ path }` props read the surface data model, so a new snapshot
 updates bound text. A component the catalog lacks keeps its children and renders
@@ -1592,6 +1592,34 @@ props and reports no per-edit event; read the store's snapshot when you need the
 current data model. Create the store once per conversation or message, outside
 render, and dispose it when that lifetime ends.
 
+### Actions
+
+Pass `onAction` to receive a Button's event action. The surface builds the
+message when the Button is pressed and sends nothing itself:
+
+```tsx
+<A2uiSurface
+  surface={surface}
+  surfaces={surfaces}
+  onAction={(message) => sendToAgent(message)}
+/>
+```
+
+The message is `{ version: 'v0.9', action: { name, surfaceId,
+sourceComponentId, timestamp, context, label? }, metadata? }`. Every `{ path }`
+in the action's context is read from the surface's data model at the moment of
+the press, so it includes the user's edits. `label` is the Button's literal
+text. When the surface was created with `sendDataModel: true`, `metadata`
+carries the whole current data model as `a2uiClientDataModel`. Transport,
+retries and what the conversation shows are your application's decisions.
+`createA2uiActionMessage(surface, componentId)` from
+`@threadplane/content/a2ui` builds the same message outside React.
+
+A Button is disabled when there is no `onAction`, when it has no event action,
+or when its `disabled` prop is true. A Button used as a `Modal` trigger opens
+the modal and needs no action. Validation checks do not gate an action yet, and
+a `functionCall` action is not run.
+
 A component of your own can write the same way with `useA2uiSurfaceWriter()`,
 which returns `{ editable, write(path, value) }`; take the path from the view's
 `bindings`.
@@ -1608,5 +1636,5 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-`Button`, `ChoicePicker`, `DateTimeInput`, actions, validation checks,
+`ChoicePicker`, `DateTimeInput`, validation checks, `functionCall` actions,
 function-call props, child templates and surface themes are not handled yet.
