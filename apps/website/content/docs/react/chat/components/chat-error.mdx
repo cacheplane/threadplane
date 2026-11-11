@@ -24,7 +24,7 @@ export function FailureNotice({ error, retry, checkStatus }: {
 
 The adapter classifies the error before presentation. This component does not coerce unknown exceptions, interpret HTML, infer links, make requests, or own a session. Callbacks receive zero arguments; the application handles async results, deduplication, and lifetime.
 
-`recovery: 'check'` offers **Check status** only when `onCheckStatus` exists. An unavailable check never falls through to Retry. `recovery: 'none'` offers no action even if `retryable` is true. Retry requires `retryable: true`, recovery of `'retry'` or undefined, and an explicit `onRetry`. `disabled` retains the appropriate button while preventing activation. `className` adds classes to the alert. Mounting, updates, and unmounting never dispatch recovery or move focus.
+`recovery: 'check'` offers **Check status** only when `onCheckStatus` exists. An unavailable check never falls through to **Retry response**. `recovery: 'none'` offers no action even if `retryable` is true. **Retry response** requires `retryable: true`, recovery of `'retry'` or undefined, and an explicit `onRetry`. `disabled` retains the appropriate button while preventing activation. `className` adds classes to the alert. Mounting, updates, and unmounting never dispatch recovery or move focus.
 
 Default [Chat](/docs/react/chat/components/chat) presents the session error through this component and forwards the session's optional `checkStatus` capability. Before dispatch it captures that capability and verifies that the session still presents the same error. An optional `Chat.onRetry` forwards an application-owned intent; Chat never replays a draft or calls submit to retry.
 

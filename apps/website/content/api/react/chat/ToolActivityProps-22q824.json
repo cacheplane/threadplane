@@ -185,6 +185,42 @@
           },
           "isReadonly": true,
           "isOptional": true
+        },
+        {
+          "name": "retrying",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#retrying:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retrying?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "\"Retrying toSorted read\" while a later call repeats this failed one.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 91
+          },
+          "isReadonly": true,
+          "isOptional": true
         }
       ],
       "source": {

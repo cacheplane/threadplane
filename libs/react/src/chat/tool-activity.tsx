@@ -87,6 +87,8 @@ export interface ToolActivityProps {
   readonly onRetry?: (activity: ToolActivityInfo) => void;
   /** A row inside a group: only its status word reports a failure, because the group shows one failure panel below it. */
   readonly grouped?: boolean;
+  /** "Retrying toSorted read" while a later call repeats this failed one. */
+  readonly retrying?: string;
 }
 /** Human-readable activity with opt-in literal inspection and a persistent rich-result slot. */
 export function ToolActivity({
@@ -94,6 +96,7 @@ export function ToolActivity({
   children,
   onRetry,
   grouped = false,
+  retrying,
 }: ToolActivityProps) {
   // Direct primitive use gets the same failed-outcome display as projected rows.
   const activity = resolveToolOutcome(input, input.outcome);
@@ -116,6 +119,11 @@ export function ToolActivity({
             </span>
           )}
       </div>
+      {phase === 'error' && !grouped && retrying && (
+        <p className="tp-tool-activity__label tp-tool-activity__retrying" data-active="true">
+          {retrying}
+        </p>
+      )}
       {phase === 'error' && !grouped && (
         <p className="tp-tool-activity__error" role="alert">
           {activity.errorSummary ??
@@ -250,6 +258,8 @@ export interface ToolActivityGroupProps {
   readonly onRetry?: (activity: ToolActivityInfo) => void;
   /** Every observed call in transcript order, so a retry stops being offered once a later call repeats it or work is running. Defaults to this group's activities. */
   readonly context?: readonly ToolActivityInfo[];
+  /** "Retrying toSorted read" while a later call repeats a failed one; leads the failure panel. */
+  readonly retrying?: string;
   readonly children?: ReactNode;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
@@ -259,6 +269,7 @@ export function ToolActivityGroup({
   renderResult,
   onRetry,
   context,
+  retrying,
   children,
 }: ToolActivityGroupProps) {
   // Resolve once so the label, cue, live region and rows agree on each phase.
@@ -336,6 +347,11 @@ export function ToolActivityGroup({
           role="alert"
           className="tp-tool-activity__error"
         >
+          {retrying && (
+            <p className="tp-tool-activity__label tp-tool-activity__retrying" data-active="true">
+              {retrying}
+            </p>
+          )}
           {failures.length > 0 ? (
             failures.flatMap(({ key, text, retry }) => [
               <p key={key}>{text}</p>,
