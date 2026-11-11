@@ -201,6 +201,8 @@ function main(args) {
   if (args.length === 1 && args[0] === '--help') {
     console.log(`Usage: node scripts/react-parity/inventory.mjs --check | --write-baseline
   --check           Read-only drift and planning-ownership validation.
+  --drift warn      With --check: report baseline fact drift without failing.
+                    Scope, schema, provenance and dispositions still fail.
   --write-baseline  Explicitly regenerate facts; never rewrites dispositions.
   --root PATH       Repository root (default: the script's repository).
   --baseline PATH   Inventory facts JSON (default: scripts/react-parity/baseline.json).
@@ -223,7 +225,7 @@ dispositions separately. No research Markdown is read at runtime.`);
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (['--check', '--write-baseline'].includes(arg)) options[arg] = true;
-    else if (['--root', '--baseline', '--dispositions'].includes(arg) && args[index + 1]) options[arg] = args[++index];
+    else if (['--root', '--baseline', '--dispositions', '--drift'].includes(arg) && args[index + 1]) options[arg] = args[++index];
     else throw new Error(`Unknown or incomplete option: ${arg}`);
   }
   if (Boolean(options['--check']) === Boolean(options['--write-baseline'])) throw new Error('Choose --check (read only) or --write-baseline (explicitly update facts; dispositions remain manual).');
@@ -247,7 +249,14 @@ dispositions separately. No research Markdown is read at runtime.`);
   }
   if (!baseline) throw new Error(`Missing baseline: ${baselinePath}`);
   const dispositions = JSON.parse(readFileSync(dispositionsPath, 'utf8'));
-  const errors = [...compareInventories(baseline, actual), ...validateDispositions(actual, dispositions)];
+  if (options['--drift'] !== undefined && options['--drift'] !== 'warn') throw new Error('--drift only accepts "warn".');
+  const drift = compareInventories(baseline, actual);
+  const structural = drift.filter(error => /schemaVersion|scope changed|Duplicate/.test(error));
+  const factDrift = drift.filter(error => !structural.includes(error));
+  const errors = [...structural, ...validateDispositions(actual, dispositions)];
+  if (options['--drift'] === 'warn') {
+    if (factDrift.length) console.warn(`Baseline facts drifted on ${factDrift.length} row(s); informational only. Refresh with --write-baseline when convenient.`);
+  } else errors.unshift(...factDrift);
   if (!/^[a-f0-9]{40}$/.test(baseline.baselineHead ?? '')) errors.push('Missing or invalid baselineHead provenance');
   if (errors.length) throw new Error(errors.join('\n'));
   console.log(`Parity inventory and planning ownership valid (not implementation parity). ${JSON.stringify(summarize(actual))}`);
