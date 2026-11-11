@@ -1,47 +1,17 @@
-import { readFile, writeFile, readdir, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const downloadConfig = 'Acquire::Retries "2";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n';
 
-async function optionalRead(path) {
-  try {
-    return await readFile(path, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT') return null;
-    throw error;
-  }
-}
-
-function rewriteSources(source) {
-  return source.split('\n').map((line) => {
-    // Comments and mirror metadata survive byte-for-byte. Match entire URI
-    // tokens, so lookalike domains and custom repository paths stay untouched.
-    const comment = line.indexOf('#');
-    const active = comment === -1 ? line : line.slice(0, comment);
-    const suffix = comment === -1 ? '' : line.slice(comment);
-    return active.replace(/(^|\s)https?:\/\/(azure\.archive|archive|security)\.ubuntu\.com\/ubuntu(\/?)(?=\s|$)/g,
-      (_, prefix, host, slash) => `${prefix}https://${host === 'security' ? 'security' : 'archive'}.ubuntu.com/ubuntu${slash}`) + suffix;
-  }).join('\n');
-}
-
+// The runner image's package sources are left exactly as GitHub ships them: the
+// Azure mirror first, then the public archive. Pinning either host makes it a
+// single point of failure, and each unreachable fetch costs a full timeout.
+// Only the download limits below are managed, so a stalled mirror gives way to
+// the next one instead of holding the job.
 // The filesystem boundary is injectable for tests; the CLI always uses /etc/apt.
 export async function configureCiApt(aptRoot) {
-  const paths = ['apt-mirrors.txt', 'apt-mirrors-security.txt', 'sources.list'];
-  try {
-    const entries = await readdir(join(aptRoot, 'sources.list.d'));
-    paths.push(...entries.filter((name) => /\.(list|sources)$/.test(name)).map((name) => join('sources.list.d', name)));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-  }
-  for (const path of paths) {
-    const fullPath = join(aptRoot, path);
-    const before = await optionalRead(fullPath);
-    if (before === null) continue;
-    const after = rewriteSources(before);
-    if (after !== before) await writeFile(fullPath, after);
-  }
   await mkdir(join(aptRoot, 'apt.conf.d'), { recursive: true });
   // Hosted Ubuntu runners already have zz-retries; NN-prefixed files load first.
   await writeFile(join(aptRoot, 'apt.conf.d/zz-threadplane-ci-downloads'), downloadConfig, { mode: 0o644 });
