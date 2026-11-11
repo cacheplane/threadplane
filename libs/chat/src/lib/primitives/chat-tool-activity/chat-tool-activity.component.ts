@@ -170,8 +170,10 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:a
 })
 export class ChatToolOutcomesComponent {
   readonly activities = input.required<readonly ToolActivityInfo[]>();
-  readonly outcomes = computed(() => confirmedOutcomes(this.activities()));
-  readonly sources = computed(() => outcomeSources(this.activities()));
+  /** An expanded group shows each call's sources under its row and keeps only the result text below the group. */
+  readonly show = input<'all' | 'outcomes' | 'sources'>('all');
+  readonly outcomes = computed(() => (this.show() === 'sources' ? [] : confirmedOutcomes(this.activities())));
+  readonly sources = computed(() => (this.show() === 'outcomes' ? [] : outcomeSources(this.activities())));
   // Inside a message with a Sources panel, the panel lists these; standalone use keeps the links here.
   private readonly resolver = inject(CitationsResolverService, { optional: true });
   protected readonly inlineSources = computed(() => (this.resolver?.sourcesPanel() ? [] : this.sources()));
