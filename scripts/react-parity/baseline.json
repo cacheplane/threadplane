@@ -1,13 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "45a9c83ab6fc16587f25d2c5e0e4f8b7cfee5728",
+  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
+      "libs/ag-ui/src/runtime/create-session.ts",
+      "libs/ag-ui/src/runtime/session-observation.ts",
+      "libs/ag-ui/src/runtime/subagents.ts"
     ],
     "untracked": []
   },
@@ -14456,7 +14454,7 @@
       "id": "source:libs/ag-ui/src/runtime/create-session.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/create-session.ts",
-      "sha256": "a4e1b2004de27cbccf3f775d1d5c00da0b85aa153a5ef21209a53f61ffcf4485"
+      "sha256": "1bd777702ee2e6262cf71c914c7802d05a43ec3f709931549334e0f19f4694dd"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/decision.ts",
@@ -14492,7 +14490,7 @@
       "id": "source:libs/ag-ui/src/runtime/session-observation.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/session-observation.ts",
-      "sha256": "64db60b84d55fc37dcc7e9d959bdda35a4162b59109ecf9d4ad607a32424b636"
+      "sha256": "e7175d2962709a8ff6adbd1da7afd97bf45968e28f2d4d45cc25f3efc112d5cb"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-publication.ts",
@@ -14510,7 +14508,7 @@
       "id": "source:libs/ag-ui/src/runtime/subagents.ts",
       "kind": "source",
       "path": "libs/ag-ui/src/runtime/subagents.ts",
-      "sha256": "6f3c5582b81cd21fc79b874a0420c5771e2ad3f50763dc413bb0b0494da1ea64"
+      "sha256": "6dd2f3e50ba896c359c9f586121750bb1b1bfb636737ced136d55e5a4c106447"
     },
     {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",

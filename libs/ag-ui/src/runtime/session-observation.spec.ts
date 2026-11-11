@@ -222,6 +222,41 @@ describe('private session observation', () => {
       expect(Object.isFrozen(value.run?.terminal?.metadata?.['m'])).toBe(true);
     }
   );
+  it('restores saved child evidence beside its attributed messages and observes new children after it', () => {
+    const started = {
+      type: E.SUBAGENT_STARTED as const,
+      subagentRunId: 'saved',
+      name: 'reader',
+      parentToolCallId: 'call',
+    };
+    const terminal = {
+      type: E.SUBAGENT_FINISHED as const,
+      subagentRunId: 'saved',
+    };
+    const messages = [
+      { id: 'read', role: 'assistant', content: 'Read it', subagentRunId: 'saved' },
+    ] as Message[];
+    const restored = initialObservation(messages, {}, [{ started, terminal }]);
+    expect(restored.subagents).toStrictEqual([
+      { started, terminal, earlier: true },
+    ]);
+    expect(restored.transcript[0]).toMatchObject({ subagentRunId: 'saved' });
+    expect(Object.isFrozen(restored.subagents)).toBe(true);
+    const live = applyObservation(
+      Object.freeze({ ...restored, status: 'running', run: Object.freeze({ id: 'run' }) }),
+      { type: E.SUBAGENT_STARTED, subagentRunId: 'live', name: 'writer' } as AGUIEvent
+    );
+    expect(live.subagents.map((child) => child.started.subagentRunId)).toEqual([
+      'saved',
+      'live',
+    ]);
+    expect(live.subagents[0]).toBe(restored.subagents[0]);
+    expect(() =>
+      initialObservation(messages, {}, [{ started }, { started }])
+    ).toThrow('Duplicate restored subagent ID');
+    expect(initialObservation().subagents).toStrictEqual([]);
+  });
+
   it('does not retain unselected observations or child interrupts', () => {
     const previous = running();
     for (const event of [

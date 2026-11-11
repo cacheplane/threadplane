@@ -6,7 +6,12 @@ import {
   type SubagentFinishedEvent,
   type SubagentErrorEvent,
 } from '@ag-ui/client';
-import { applySubagent, type Subagents } from './subagents';
+import {
+  applySubagent,
+  ownSubagents,
+  settledSubagents,
+  type Subagents,
+} from './subagents';
 
 const start = (subagentRunId = 'child'): SubagentStartedEvent => ({
   type: EventType.SUBAGENT_STARTED,
@@ -412,4 +417,95 @@ describe('private native child observation', () => {
       );
     }
   );
+
+  describe('across root invocations', () => {
+    const observed = (): Subagents =>
+      [start('done'), finish('done'), start('failed'), failure('failed'), start('open')].reduce(
+        applySubagent,
+        Object.freeze([]) as Subagents
+      );
+
+    it('keeps children with terminal evidence as earlier and drops the rest', () => {
+      const previous = observed();
+      const kept = settledSubagents(previous);
+      expect(kept.map((child) => child.started.subagentRunId)).toEqual([
+        'done',
+        'failed',
+      ]);
+      expect(kept.every((child) => child.earlier === true)).toBe(true);
+      // Evidence is shared, not copied, and the previous snapshot is untouched.
+      expect(kept[0].started).toBe(previous[0].started);
+      expect(kept[1].terminal).toBe(previous[1].terminal);
+      expect(previous[0].earlier).toBeUndefined();
+      frozen(kept);
+      // Nothing to change: the same array, so an unchanged snapshot stays unchanged.
+      expect(settledSubagents(kept)).toBe(kept);
+      const empty: Subagents = Object.freeze([]);
+      expect(settledSubagents(empty)).toBe(empty);
+    });
+
+    it('lets a new start reuse an earlier ID, replacing that child at the end of start order', () => {
+      const kept = settledSubagents(observed());
+      const next = applySubagent(kept, start('done'));
+      expect(next.map((child) => child.started.subagentRunId)).toEqual([
+        'failed',
+        'done',
+      ]);
+      expect(next[1]).toStrictEqual({ started: start('done') });
+      expect(next[0]).toBe(kept[1]);
+      // The replacement is a current child again: strict within its own invocation.
+      expect(() => applySubagent(next, start('done'))).toThrow(TypeError);
+      expect(applySubagent(next, finish('done'))[1].terminal).toStrictEqual(
+        finish('done')
+      );
+    });
+
+    it.each([finish('done'), failure('done')])(
+      'never applies terminal $type to an earlier child',
+      (terminal) => {
+        const kept = settledSubagents(observed());
+        expect(() => applySubagent(kept, terminal)).toThrow(
+          'Subagent target is missing'
+        );
+        expect(kept[0].terminal).toStrictEqual(finish('done'));
+      }
+    );
+  });
+
+  describe('restored evidence', () => {
+    it('owns restored children as earlier, with or without terminal evidence', () => {
+      const source = [
+        { started: start('a'), terminal: finish('a') },
+        { started: { ...start('b'), metadata: { nested: { n: 1 } } } },
+      ];
+      const owned = ownSubagents(source);
+      expect(owned).toStrictEqual([
+        { started: start('a'), terminal: finish('a'), earlier: true },
+        {
+          started: { ...start('b'), metadata: { nested: { n: 1 } } },
+          earlier: true,
+        },
+      ]);
+      frozen(owned);
+      expect(owned[0].started).not.toBe(source[0].started);
+      (source[1].started.metadata as { nested: { n: number } }).nested.n = 2;
+      expect(owned[1].started.metadata).toStrictEqual({ nested: { n: 1 } });
+      // A restored open child does not survive into the next invocation.
+      expect(settledSubagents(owned)).toStrictEqual([owned[0]]);
+      expect(ownSubagents(undefined)).toStrictEqual([]);
+    });
+
+    it.each([
+      ['a non-array', { started: start() }],
+      ['a missing record', [null]],
+      ['missing start evidence', [{ terminal: finish() }]],
+      ['a start of the wrong type', [{ started: finish() }]],
+      ['a non-string ID', [{ started: { ...start(), subagentRunId: 1 } }]],
+      ['a duplicate ID', [{ started: start() }, { started: start() }]],
+      ['terminal evidence for another child', [{ started: start(), terminal: finish('other') }]],
+      ['terminal evidence of the wrong type', [{ started: start(), terminal: start() }]],
+    ])('rejects %s', (_name, restored) => {
+      expect(() => ownSubagents(restored)).toThrow(TypeError);
+    });
+  });
 });

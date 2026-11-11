@@ -319,7 +319,14 @@ describe('composed private session over held HTTP', () => {
           [...exchange.body.messages, ...next.body.messages].map((m) => m.id)
         ).size
       ).toBe(next.body.messages.length);
-      expect(owner.getSnapshot().subagents).toEqual([]);
+      // The finished child outlives the invocation that observed it.
+      expect(owner.getSnapshot().subagents).toStrictEqual([
+        { ...settled.subagents[0], earlier: true },
+      ]);
+      expect(owner.getSnapshot().subagents[0].started).toBe(
+        settled.subagents[0].started
+      );
+      expect(settled.subagents[0].terminal?.type).toBe('SUBAGENT_FINISHED');
       expect(owner.getSnapshot().run?.terminal).toBeUndefined();
       next.send(lifecycle(next), lifecycle(next, 'RUN_FINISHED'));
       expect(await bounded(second)).toBe('success');
@@ -328,6 +335,28 @@ describe('composed private session over held HTTP', () => {
       expect(beforeSnapshot.run?.terminal).toBeUndefined();
       expect(settled.run?.outcome).toBe('paused');
       expect(server.exchanges).toHaveLength(2);
+      // A new turn keeps the earlier child too, and may reuse its ID.
+      const kept = owner.getSnapshot().subagents;
+      const third = owner.submit('again');
+      const again = await server.next(2);
+      expect(owner.getSnapshot().subagents).toBe(kept);
+      again.send(
+        lifecycle(again),
+        { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'again' },
+        { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+        lifecycle(again, 'RUN_FINISHED')
+      );
+      expect(await bounded(third)).toBe('success');
+      expect(owner.getSnapshot().subagents).toStrictEqual([
+        {
+          started: {
+            type: 'SUBAGENT_STARTED',
+            subagentRunId: 'child',
+            name: 'again',
+          },
+          terminal: { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+        },
+      ]);
     } finally {
       await owner.dispose();
       await Promise.all([first, second]);

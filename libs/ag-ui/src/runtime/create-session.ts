@@ -29,6 +29,7 @@ import {
   initialObservation,
   type SessionSnapshot,
 } from './session-observation.js';
+import { settledSubagents, type Subagents } from './subagents.js';
 import { createRun, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
 import type { InterruptMode } from './interrupt-mode.js';
@@ -53,6 +54,8 @@ export interface SessionOptions
   readonly threadId: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
+  /** Child evidence saved with this thread, shown as earlier children. Their attributed messages belong in `messages`. */
+  readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
 }
 export interface Session {
@@ -104,17 +107,27 @@ export function createSession(
     fetch,
     messages,
     state,
+    subagents,
     interruptMode = 'native',
   } = options;
   if (!threadId) throw new TypeError('A nonempty threadId is required');
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   if (catalog !== undefined)
     return createToolsOwner(
-      { threadId, url, headers, fetch, messages, state, interruptMode },
+      {
+        threadId,
+        url,
+        headers,
+        fetch,
+        messages,
+        state,
+        subagents,
+        interruptMode,
+      },
       catalog
     );
   const factory = createRun({ url, headers, fetch, interruptMode });
-  const initial = initialObservation(messages, state);
+  const initial = initialObservation(messages, state, subagents);
   const publication = createPublication(
     catalog === undefined
       ? initial
@@ -371,7 +384,7 @@ export function createSession(
               ...previous,
               decision: claimDecision(decision, captured, id),
               status: 'running',
-              subagents: Object.freeze([]),
+              subagents: settledSubagents(previous.subagents),
               run: Object.freeze({ id }),
             });
           } catch {
@@ -454,7 +467,7 @@ export function createSession(
               status: 'running',
               state,
               transcript: Object.freeze([...previous.transcript, user]),
-              subagents: Object.freeze([]),
+              subagents: settledSubagents(previous.subagents),
               run: Object.freeze({ id }),
             });
           } catch {
@@ -485,7 +498,11 @@ function createToolsOwner(
 ): Session {
   const { threadId, interruptMode = 'native' } = options;
   const factory = createRun(options);
-  const initial = initialObservation(options.messages, options.state);
+  const initial = initialObservation(
+    options.messages,
+    options.state,
+    options.subagents
+  );
   const ledger = createClientToolLedger<Record<string, ToolContract>>(
     [...catalog.keys()],
     initial.transcript
@@ -1023,7 +1040,7 @@ function createToolsOwner(
       Object.freeze({
         ...previous,
         status: 'running',
-        subagents: Object.freeze([]),
+        subagents: settledSubagents(previous.subagents),
         run: Object.freeze({ id }),
         clientTools: ledger.snapshot(),
       })
@@ -1167,7 +1184,7 @@ function createToolsOwner(
                 state,
                 status: 'running',
                 transcript: Object.freeze([...previous.transcript, user]),
-                subagents: Object.freeze([]),
+                subagents: settledSubagents(previous.subagents),
                 run: Object.freeze({ id }),
               }),
               id,
@@ -1239,7 +1256,7 @@ function createToolsOwner(
                 ...previous,
                 decision: claimDecision(decision, captured, id),
                 status: 'running',
-                subagents: Object.freeze([]),
+                subagents: settledSubagents(previous.subagents),
                 run: Object.freeze({ id }),
               }),
               id,

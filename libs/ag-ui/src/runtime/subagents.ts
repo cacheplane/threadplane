@@ -29,10 +29,65 @@ export type ChildError = Pick<
 export interface SubagentObservation {
   readonly started: DeepReadonly<ChildStart>;
   readonly terminal?: DeepReadonly<ChildFinish | ChildError>;
+  /** Evidence carried over from an earlier root invocation or supplied at restore, not observed in the current one. */
+  readonly earlier?: true;
 }
 export type Subagents = readonly SubagentObservation[];
 
+/** Children with terminal evidence, marked as earlier, for the next root invocation.
+ * A child with no terminal evidence is dropped: nothing later can establish what
+ * became of it, and it must not read as running in a run that did not start it.
+ * Returns the input when nothing changes. */
+export function settledSubagents(previous: Subagents): Subagents {
+  if (previous.every((child) => child.terminal && child.earlier))
+    return previous;
+  return Object.freeze(
+    previous
+      .filter((child) => child.terminal)
+      .map((child) =>
+        child.earlier ? child : Object.freeze({ ...child, earlier: true })
+      )
+  );
+}
+
+/** Owns restored evidence as earlier children. Identity is checked as for live
+ * events: one record per ID, and terminal evidence names its own child. */
+export function ownSubagents(restored: unknown): Subagents {
+  if (restored === undefined) return Object.freeze([]);
+  if (!Array.isArray(restored))
+    throw new TypeError('Restored subagents must be an array');
+  const ids = new Set<string>();
+  return Object.freeze(
+    restored.map((record: unknown) => {
+      const { started, terminal } = (record ?? {}) as Partial<SubagentObservation>;
+      const id = started?.subagentRunId;
+      if (started?.type !== 'SUBAGENT_STARTED' || typeof id !== 'string')
+        throw new TypeError('Restored subagent has no start evidence');
+      if (ids.has(id)) throw new TypeError('Duplicate restored subagent ID');
+      ids.add(id);
+      if (
+        terminal !== undefined &&
+        ((terminal.type !== 'SUBAGENT_FINISHED' &&
+          terminal.type !== 'SUBAGENT_ERROR') ||
+          terminal.subagentRunId !== id)
+      )
+        throw new TypeError('Restored subagent terminal evidence is invalid');
+      return Object.freeze({
+        started: copyData(started, true) as SubagentObservation['started'],
+        ...(terminal !== undefined && {
+          terminal: copyData(terminal, true) as NonNullable<
+            SubagentObservation['terminal']
+          >,
+        }),
+        earlier: true as const,
+      });
+    })
+  );
+}
+
 /** Observes native evidence within one root invocation, in start order.
+ * Earlier children are history: a start may reuse an earlier child's ID and
+ * replaces it, and terminal evidence never targets an earlier child.
  * Previous records are owned; only the selected ID is checked for ambiguity.
  * Missing terminal evidence does not establish whether a child is running.
  * Parent links are descriptive; admission and root completion belong to callers. */
@@ -47,6 +102,9 @@ export function applySubagent(
     if (index !== -1) throw new TypeError('Duplicate target subagent ID');
     index = position;
   }
+  // An earlier child is not a target in this invocation.
+  const replaced = index !== -1 && previous[index].earlier ? index : -1;
+  if (replaced !== -1) index = -1;
   const current = index === -1 ? undefined : previous[index];
   if (type === 'SUBAGENT_STARTED') {
     if (current) throw new TypeError('Subagent target already exists');
@@ -99,8 +157,10 @@ export function applySubagent(
   // Capture only selected fields; rawEvent and extensions are not consulted.
   const captured = copyData(selected, true) as DeepReadonly<typeof selected>;
   const next = [...previous];
-  if (captured.type === 'SUBAGENT_STARTED')
+  if (captured.type === 'SUBAGENT_STARTED') {
+    if (replaced !== -1) next.splice(replaced, 1);
     next.push(Object.freeze({ started: captured }));
+  }
   else
     next[index] = Object.freeze({
       started: previous[index].started,

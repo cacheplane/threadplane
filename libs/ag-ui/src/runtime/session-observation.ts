@@ -11,7 +11,7 @@ import type {
   PlainValue,
 } from '@threadplane/core';
 import { ownTranscript, type Transcript } from './transcript.js';
-import { applySubagent, type Subagents } from './subagents.js';
+import { applySubagent, ownSubagents, type Subagents } from './subagents.js';
 import { ownState, applyState } from './state.js';
 import { reconcileTranscript } from './reconcile-transcript.js';
 import { applyTextMessage } from './text-messages.js';
@@ -73,7 +73,8 @@ export function assertTranscriptIdentity(transcript: Transcript): void {
 }
 export function initialObservation(
   messages: readonly Message[] | Transcript = [],
-  state: unknown = {}
+  state: unknown = {},
+  subagents?: unknown
 ): SessionSnapshot {
   const transcript = ownTranscript(messages);
   assertTranscriptIdentity(transcript);
@@ -81,7 +82,7 @@ export function initialObservation(
     status: 'idle',
     transcript,
     state: ownState(state),
-    subagents: Object.freeze([]),
+    subagents: ownSubagents(subagents),
   });
 }
 
