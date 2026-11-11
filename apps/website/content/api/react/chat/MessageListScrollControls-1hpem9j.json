@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 58
+            "line": 57
           },
           "isReadonly": true,
           "isOptional": false
@@ -96,7 +96,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 56
+            "line": 55
           },
           "isReadonly": true,
           "isOptional": false
@@ -132,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 57
+            "line": 56
           },
           "isReadonly": true,
           "isOptional": false
@@ -140,12 +140,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 55
+        "line": 54
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 55
+    "line": 54
   }
 }

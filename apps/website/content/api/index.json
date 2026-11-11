@@ -4934,26 +4934,6 @@
       "summary": "Adapter-classified failure category for connection, authentication, server, or execution termination errors."
     },
     {
-      "name": "agentPlanFromState",
-      "entrypointId": "core",
-      "kind": "Function",
-      "href": "/docs/api/core/agentPlanFromState",
-      "canonicalReference": "@threadplane/core!agentPlanFromState:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list."
-    },
-    {
-      "name": "AgentPlanStep",
-      "entrypointId": "core",
-      "kind": "Interface",
-      "href": "/docs/api/core/AgentPlanStep",
-      "canonicalReference": "@threadplane/core!AgentPlanStep:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "One step of the plan an agent declared for its work."
-    },
-    {
       "name": "AgentRecovery",
       "entrypointId": "core",
       "kind": "TypeAlias",
@@ -5941,7 +5921,7 @@
       "canonicalReference": "@threadplane/react!ApprovalCard:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Inline approval panel with an app-authored body and explicit actions: a warning panel led by\n\"Waiting for your approval.\", or a danger panel for a destructive action. Place it at the end of\nthe transcript, for example through `Chat`'s `approval` slot."
+      "summary": "Inline approval presentation with app-authored body and explicit actions."
     },
     {
       "name": "ApprovalCardAction",
@@ -5951,7 +5931,7 @@
       "canonicalReference": "@threadplane/react!ApprovalCardAction:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "One explicitly authored presentation action; IDs must be unique per card. The first action is the primary one."
+      "summary": "One explicitly authored presentation action; IDs must be unique per card."
     },
     {
       "name": "ApprovalCardProps",
@@ -5962,26 +5942,6 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Borrowed decision presentation; matching, commands and pending state belong to the app."
-    },
-    {
-      "name": "ApprovalRecord",
-      "entrypointId": "react/chat",
-      "kind": "Function",
-      "href": "/docs/api/react/chat/ApprovalRecord",
-      "canonicalReference": "@threadplane/react!ApprovalRecord:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Muted transcript line for an answered approval. The app decides when to render it."
-    },
-    {
-      "name": "ApprovalRecordProps",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/ApprovalRecordProps",
-      "canonicalReference": "@threadplane/react!ApprovalRecordProps:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "The one-line record an answered approval leaves in the transcript: \"Approved: Save note\"."
     },
     {
       "name": "Chat",

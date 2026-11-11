@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 95
+            "line": 90
           },
           "isReadonly": true,
           "isOptional": true
@@ -117,7 +117,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 74
+            "line": 73
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 76
+            "line": 75
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,43 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 73
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "onStop",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!MessageListProps#onStop:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly onStop?: "
-            },
-            {
-              "kind": "Content",
-              "text": "() => void"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Stops the run; the current turn's running group offers it beside the elapsed time.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/message-list.tsx",
-            "line": 80
+            "line": 72
           },
           "isReadonly": true,
           "isOptional": true
@@ -271,53 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 93
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "plan",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!MessageListProps#plan:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly plan?: "
-            },
-            {
-              "kind": "Content",
-              "text": "readonly "
-            },
-            {
-              "kind": "Reference",
-              "text": "AgentPlanStep",
-              "canonicalReference": "@threadplane/react!~AgentPlanStep:interface",
-              "href": "/docs/api/core/AgentPlanStep"
-            },
-            {
-              "kind": "Content",
-              "text": "[]"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Steps the agent declared (`snapshot.plan`); the current turn's running group lists the pending ones.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/message-list.tsx",
-            "line": 78
+            "line": 88
           },
           "isReadonly": true,
           "isOptional": true
@@ -386,7 +304,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 69
+            "line": 68
           },
           "isReadonly": true,
           "isOptional": true
@@ -437,7 +355,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 97
+            "line": 92
           },
           "isReadonly": true,
           "isOptional": true
@@ -488,7 +406,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 88
+            "line": 83
           },
           "isReadonly": true,
           "isOptional": true
@@ -524,7 +442,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 63
+            "line": 62
           },
           "isReadonly": true,
           "isOptional": false
@@ -540,7 +458,7 @@
             },
             {
               "kind": "Content",
-              "text": "(name: string, args?: unknown) => string | undefined"
+              "text": "(name: string) => string | undefined"
             },
             {
               "kind": "Content",
@@ -548,7 +466,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored human labels from the tool name and the call's arguments, such as \"Read Array.prototype.toSorted\"; keep this function stable like renderMessage.",
+            "summary": "App-authored human labels; keep this function stable like renderMessage.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -560,7 +478,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 82
+            "line": 77
           },
           "isReadonly": true,
           "isOptional": true
@@ -616,7 +534,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 84
+            "line": 79
           },
           "isReadonly": true,
           "isOptional": true
@@ -624,7 +542,7 @@
       ],
       "source": {
         "path": "libs/react/src/chat/message-list.tsx",
-        "line": 62
+        "line": 61
       },
       "typeParameters": [
         {
@@ -643,6 +561,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/message-list.tsx",
-    "line": 62
+    "line": 61
   }
 }

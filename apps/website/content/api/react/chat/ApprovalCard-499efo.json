@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!ApprovalCard:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Inline approval panel with an app-authored body and explicit actions: a warning panel led by\n\"Waiting for your approval.\", or a danger panel for a destructive action. Place it at the end of\nthe transcript, for example through `Chat`'s `approval` slot.",
+  "summary": "Inline approval presentation with app-authored body and explicit actions.",
   "declarations": [
     {
       "name": "ApprovalCard",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Inline approval panel with an app-authored body and explicit actions: a warning panel led by\n\"Waiting for your approval.\", or a danger panel for a destructive action. Place it at the end of\nthe transcript, for example through `Chat`'s `approval` slot.",
+        "summary": "Inline approval presentation with app-authored body and explicit actions.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/approval-card.tsx",
-        "line": 35
+        "line": 22
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ children, actions, title, disabled, destructive, autoFocus, className, }",
+          "parameterName": "{ children, actions, title, disabled, className, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/approval-card.tsx",
-    "line": 35
+    "line": 22
   }
 }

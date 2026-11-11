@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 259
+            "line": 239
           },
           "isReadonly": true,
           "isOptional": false
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 273
+            "line": 247
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 266
+            "line": 246
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 260
+            "line": 240
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,89 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 264
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "onStop",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#onStop:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly onStop?: "
-            },
-            {
-              "kind": "Content",
-              "text": "() => void"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Stops the run. Offered beside the elapsed time while the group runs.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 272
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "plan",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#plan:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly plan?: "
-            },
-            {
-              "kind": "Content",
-              "text": "readonly "
-            },
-            {
-              "kind": "Reference",
-              "text": "AgentPlanStep",
-              "canonicalReference": "@threadplane/react!~AgentPlanStep:interface",
-              "href": "/docs/api/core/AgentPlanStep"
-            },
-            {
-              "kind": "Content",
-              "text": "[]"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Steps the agent declared. While the group runs and is open, its pending steps follow the calls, dimmed.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 270
+            "line": 244
           },
           "isReadonly": true,
           "isOptional": true
@@ -368,43 +286,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 262
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "retrying",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#retrying:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly retrying?: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "\"Retrying toSorted read\" while a later call repeats a failed one; leads the failure panel.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 268
+            "line": 242
           },
           "isReadonly": true,
           "isOptional": true
@@ -412,12 +294,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 258
+        "line": 238
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 258
+    "line": 238
   }
 }
