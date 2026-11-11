@@ -1,20 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "883ef640dc456ed8962cc6d0e046aa647788e273",
+  "baselineHead": "3002efb39366f775f3961089602c36952c207acd",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "apps/website/content/docs/react/chat/components/chat-input.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/chat-input.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -880,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "5cedb2e17efb5a5f3a06b657ac7a46becb6178963652a56a990933bd86f9467f"
+      "sha256": "a604b9f0fcc86fc30522a9476bb574688b4014ec59956ec9b05f5d4051d47c31"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -2278,7 +2271,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "e78e0eea4a0cb85165f2aa90c2fa113eb87f7b758dc3870620a19036749a6e27"
+      "sha256": "cd99c12cf32342ded2bbf18dffc7f8f5de6f2af1f87ff6a6d4191f11b757243c"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
@@ -3136,7 +3129,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-error.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-error.mdx",
-      "sha256": "1b32a6c87cf2e228237c9a3aadfd45a642ea45ba20dca8e7533e0ac5fe1aa118"
+      "sha256": "826ed9e08d9763bba960750bcf8647092043821d818bbdda993fab805c59d6e3"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-input.mdx",
@@ -3196,7 +3189,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "c4b33fd631187b499af75738d4b021c54f050628aee807fd807f2b6cd9fff56b"
+      "sha256": "cf9e23ebd1866bad382cd51b4b646fc998002551cc54695d2a8e31de5d0ca95f"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",
@@ -11397,7 +11390,7 @@
           "path": "libs/react/src/chat/error.tsx",
           "symbol": "ChatError",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ChatError({ error, onRetry, onCheckStatus, disabled, className, }: ChatErrorProps) {\n    if (error == null)\n        return null;\n    const retry = error.retryable &&\n        (error.recovery === 'retry' || error.recovery === undefined);\n    const action = error.recovery === 'check' ? onCheckStatus : retry ? onRetry : undefined;\n    return (<div role=\"alert\" className={['tp-chat-error', className].filter(Boolean).join(' ')}>\n      <p className=\"tp-chat-error__message\">{error.message}</p>\n      {action && (<button type=\"button\" disabled={disabled} onClick={() => action()}>\n          {error.recovery === 'check' ? 'Check status' : 'Retry response'}\n        </button>)}\n      {error.detail && <p className=\"tp-chat-error__detail\">{error.detail}</p>}\n    </div>);\n}"
+          "signature": "export function ChatError({ error, onRetry, onCheckStatus, disabled, className, }: ChatErrorProps) {\n    if (error == null)\n        return null;\n    const retry = error.retryable &&\n        (error.recovery === 'retry' || error.recovery === undefined);\n    const action = error.recovery === 'check' ? onCheckStatus : retry ? onRetry : undefined;\n    return (<div role=\"alert\" className={['tp-chat-error', className].filter(Boolean).join(' ')}>\n      <p className=\"tp-chat-error__message\">{error.message}</p>\n      {action && (<button type=\"button\" disabled={disabled} onClick={() => action()}>\n          {error.recovery === 'check' ? 'Check status' : 'Retry'}\n        </button>)}\n      {error.detail && <p className=\"tp-chat-error__detail\">{error.detail}</p>}\n    </div>);\n}"
         }
       ]
     },
@@ -11845,7 +11838,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, renderToolResult, onToolRetry, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const staleRetries = useMemo(() => (onToolRetry ? staleRetriesByRow(rows) : undefined), [onToolRetry, rows]);\n    const retrying = useMemo(() => (toolOutcome ? retryingByRow(rows) : undefined), [toolOutcome, rows]);\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row, index) => (<Row key={row.id} row={row} current={index === rows.length - 1} prevRole={rows[index - 1]?.role} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} staleRetries={staleRetries?.[index]} retrying={retrying?.[index]}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, renderToolResult, onToolRetry, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const staleRetries = useMemo(() => (onToolRetry ? staleRetriesByRow(rows) : undefined), [onToolRetry, rows]);\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row, index) => (<Row key={row.id} row={row} current={index === rows.length - 1} prevRole={rows[index - 1]?.role} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} staleRetries={staleRetries?.[index]}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
         }
       ]
     },
@@ -11859,7 +11852,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>, context: MessageListRowContext) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string, args?: unknown) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onToolRetry?: (activity: ToolActivityInfo) => void;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>, context: MessageListRowContext) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onToolRetry?: (activity: ToolActivityInfo) => void;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
         }
       ]
     },
@@ -12391,7 +12384,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivity",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ToolActivity({ activity: input, children, onRetry, grouped = false, retrying, }: ToolActivityProps) {\n    const activity = resolveToolOutcome(input, input.outcome);\n    const phase = activity.phase ?? 'unknown';\n    const retry = onRetry && !grouped ? activityFailures([activity])[0]?.retry : undefined;\n    return (<section className=\"tp-tool-activity\" data-phase={phase} data-tool-id={activity.id}>\n      <div className=\"tp-tool-activity__heading\">\n        <span>{activity.label ?? 'Tool activity'}</span>\n        <span className=\"tp-tool-activity__phase\">{labels[phase]}</span>\n        {activity.durationMs !== undefined &&\n            Number.isFinite(activity.durationMs) &&\n            activity.durationMs >= 0 && (<span className=\"tp-tool-activity__duration\">\n              {activity.durationMs}ms\n            </span>)}\n      </div>\n      {phase === 'error' && !grouped && retrying && (<p className=\"tp-tool-activity__label tp-tool-activity__retrying\" data-active=\"true\">\n          {retrying}\n        </p>)}\n      {phase === 'error' && !grouped && (<p className=\"tp-tool-activity__error\" role=\"alert\">\n          {activity.errorSummary ??\n                'This tool could not finish. Check Details before retrying.'}\n        </p>)}\n      {retry && onRetry && (<button type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n          {retry.label}\n        </button>)}\n      <details className=\"tp-tool-activity__details\">\n        <summary>Details</summary>\n        <dl>\n          <dt>Tool</dt>\n          <dd>\n            <code>{activity.name}</code>\n          </dd>\n          <dt>Call ID</dt>\n          <dd>\n            <code>{activity.id}</code>\n          </dd>\n        </dl>\n        {activity.argumentsText !== undefined && (<>\n            <p>Arguments</p>\n            <pre>{activity.argumentsText}</pre>\n          </>)}\n        {activity.resultText !== undefined && (<>\n            <p>Result</p>\n            <pre>{activity.resultText}</pre>\n          </>)}\n        {activity.errorText !== undefined && (<>\n            <p>Error</p>\n            <pre>{activity.errorText}</pre>\n          </>)}\n      </details>\n      <ToolOutcomes activities={[activity]}/>\n      <ToolReceipts activities={[activity]}/>\n      {children}\n    </section>);\n}"
+          "signature": "export function ToolActivity({ activity: input, children, onRetry, }: ToolActivityProps) {\n    const activity = resolveToolOutcome(input, input.outcome);\n    const phase = activity.phase ?? 'unknown';\n    const retry = onRetry ? activityFailures([activity])[0]?.retry : undefined;\n    return (<section className=\"tp-tool-activity\" data-phase={phase} data-tool-id={activity.id}>\n      <div className=\"tp-tool-activity__heading\">\n        <span>{activity.label ?? 'Tool activity'}</span>\n        <span className=\"tp-tool-activity__phase\">{labels[phase]}</span>\n        {activity.durationMs !== undefined &&\n            Number.isFinite(activity.durationMs) &&\n            activity.durationMs >= 0 && (<span className=\"tp-tool-activity__duration\">\n              {activity.durationMs}ms\n            </span>)}\n      </div>\n      {phase === 'error' && (<p className=\"tp-tool-activity__error\" role=\"alert\">\n          {activity.errorSummary ??\n                'This tool could not finish. Check Details before retrying.'}\n        </p>)}\n      {retry && onRetry && (<button type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n          {retry.label}\n        </button>)}\n      <details className=\"tp-tool-activity__details\">\n        <summary>Details</summary>\n        <dl>\n          <dt>Tool</dt>\n          <dd>\n            <code>{activity.name}</code>\n          </dd>\n          <dt>Call ID</dt>\n          <dd>\n            <code>{activity.id}</code>\n          </dd>\n        </dl>\n        {activity.argumentsText !== undefined && (<>\n            <p>Arguments</p>\n            <pre>{activity.argumentsText}</pre>\n          </>)}\n        {activity.resultText !== undefined && (<>\n            <p>Result</p>\n            <pre>{activity.resultText}</pre>\n          </>)}\n        {activity.errorText !== undefined && (<>\n            <p>Error</p>\n            <pre>{activity.errorText}</pre>\n          </>)}\n      </details>\n      <ToolOutcomes activities={[activity]}/>\n      <ToolReceipts activities={[activity]}/>\n      {children}\n    </section>);\n}"
         }
       ]
     },
@@ -12419,7 +12412,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityGroup",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function ToolActivityGroup({ activities: input, label, renderResult, onRetry, context, retrying, children, }: ToolActivityGroupProps) {\n    const activities = input.map((activity) => resolveToolOutcome(activity, activity.outcome));\n    const summary = activitySummary(activities, label);\n    const [open, setOpen] = useState(false);\n    const failed = summary.phase === 'error';\n    const failures = activityFailures(activities, context);\n    const receipts = receiptOutcomes(activities);\n    const results = renderResult\n        ? activities.flatMap((activity) => {\n            const result = renderResult(activity);\n            return result === null || result === undefined\n                ? []\n                : [\n                    <div key={activity.id} data-tool-id={activity.id}>\n                {result}\n              </div>,\n                ];\n        })\n        : [];\n    return (<section className=\"tp-tool-activity-group\" data-phase={summary.phase} data-active={summary.active}>\n      {activities.length > 0 && (<details className=\"tp-tool-activity-group__details\" onToggle={(event) => setOpen(event.currentTarget.open)}>\n          <summary>\n            <span className=\"tp-tool-activity__label\" data-active={summary.active}>\n              {summary.label}\n            </span>\n            {summary.cue && (<span className=\"tp-tool-activity__cue\">{summary.cue}</span>)}\n          </summary>\n          <div className=\"tp-tool-activity-group__items\">\n            {activities.map((activity) => (<ToolActivity key={activity.id} activity={{ ...activity, outcome: undefined }} grouped>\n                {open && <ToolOutcomes activities={[activity]} show=\"sources\"/>}\n              </ToolActivity>))}\n          </div>\n        </details>)}\n      {activities.length > 0 && (<p role=\"status\" aria-live=\"polite\" aria-atomic=\"true\" className=\"tp-tool-activity__status\">\n          {summary.status}\n          {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}\n        </p>)}\n      <ToolOutcomes activities={activities} show={open ? 'outcomes' : 'all'}/>\n      {failed && (<StatusPanel tone=\"danger\" role=\"alert\" className=\"tp-tool-activity__error\">\n          {retrying && (<p className=\"tp-tool-activity__label tp-tool-activity__retrying\" data-active=\"true\">\n              {retrying}\n            </p>)}\n          {failures.length > 0 ? (failures.flatMap(({ key, text, retry }) => [\n                <p key={key}>{text}</p>,\n                retry && onRetry && (<button key={`${key}-retry`} type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n                  {retry.label}\n                </button>),\n            ])) : (<p>Some tools could not finish. Check Details before retrying.</p>)}\n        </StatusPanel>)}\n      <ToolReceipts activities={activities}/>\n      {results.length > 0 && (<div className=\"tp-tool-activity__results\">{results}</div>)}\n      {children}\n    </section>);\n}"
+          "signature": "export function ToolActivityGroup({ activities: input, label, renderResult, onRetry, context, children, }: ToolActivityGroupProps) {\n    const activities = input.map((activity) => resolveToolOutcome(activity, activity.outcome));\n    const summary = activitySummary(activities, label);\n    const failed = summary.phase === 'error';\n    const failures = activityFailures(activities, context);\n    const receipts = receiptOutcomes(activities);\n    const results = renderResult\n        ? activities.flatMap((activity) => {\n            const result = renderResult(activity);\n            return result === null || result === undefined\n                ? []\n                : [\n                    <div key={activity.id} data-tool-id={activity.id}>\n                {result}\n              </div>,\n                ];\n        })\n        : [];\n    return (<section className=\"tp-tool-activity-group\" data-phase={summary.phase} data-active={summary.active}>\n      {activities.length > 0 && (<details className=\"tp-tool-activity-group__details\">\n          <summary>\n            <span className=\"tp-tool-activity__label\" data-active={summary.active}>\n              {summary.label}\n            </span>\n            {summary.cue && (<span className=\"tp-tool-activity__cue\">{summary.cue}</span>)}\n          </summary>\n          <div className=\"tp-tool-activity-group__items\">\n            {activities.map((activity) => (<ToolActivity key={activity.id} activity={{ ...activity, outcome: undefined }}/>))}\n          </div>\n        </details>)}\n      {activities.length > 0 && (<p role=\"status\" aria-live=\"polite\" aria-atomic=\"true\" className=\"tp-tool-activity__status\">\n          {summary.status}\n          {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}\n        </p>)}\n      <ToolOutcomes activities={activities}/>\n      {failed && (<StatusPanel tone=\"danger\" role=\"alert\" className=\"tp-tool-activity__error\">\n          {failures.length > 0 ? (failures.flatMap(({ key, text, retry }) => [\n                <p key={key}>{text}</p>,\n                retry && onRetry && (<button key={`${key}-retry`} type=\"button\" className=\"tp-tool-activity__retry\" onClick={() => onRetry(retry.activity)}>\n                  {retry.label}\n                </button>),\n            ])) : (<p>Some tools could not finish. Check Details before retrying.</p>)}\n        </StatusPanel>)}\n      <ToolReceipts activities={activities}/>\n      {results.length > 0 && (<div className=\"tp-tool-activity__results\">{results}</div>)}\n      {children}\n    </section>);\n}"
         }
       ]
     },
@@ -12433,7 +12426,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityGroupProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivityGroupProps {\n    readonly activities: readonly ToolActivityInfo[];\n    readonly label?: string;\n    readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly context?: readonly ToolActivityInfo[];\n    readonly retrying?: string;\n    readonly children?: ReactNode;\n}"
+          "signature": "export interface ToolActivityGroupProps {\n    readonly activities: readonly ToolActivityInfo[];\n    readonly label?: string;\n    readonly renderResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly context?: readonly ToolActivityInfo[];\n    readonly children?: ReactNode;\n}"
         }
       ]
     },
@@ -12489,7 +12482,7 @@
           "path": "libs/react/src/chat/tool-activity.tsx",
           "symbol": "ToolActivityProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ToolActivityProps {\n    readonly activity: ToolActivityInfo;\n    readonly children?: ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n    readonly grouped?: boolean;\n    readonly retrying?: string;\n}"
+          "signature": "export interface ToolActivityProps {\n    readonly activity: ToolActivityInfo;\n    readonly children?: ReactNode;\n    readonly onRetry?: (activity: ToolActivityInfo) => void;\n}"
         }
       ]
     },
@@ -17249,7 +17242,7 @@
       "id": "source:libs/react/src/chat/error.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/error.tsx",
-      "sha256": "9b8a6a5038f3f4d06d0f5696cf9069debee931f7543194c5f21f5050ab8c7026"
+      "sha256": "88a482aecb0470c5d8730f00ba69c2fc77a62e010d40349d4efac623f22fba59"
     },
     {
       "id": "source:libs/react/src/chat/history-search-palette.tsx",
@@ -17315,7 +17308,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "64fe6a228a6099b47f61f4ec8efb28e9f611e5f79eba1b7f9dc9801a95195a9e"
+      "sha256": "e8e30850ad06631f39bd7f2fd1c8d627451d2bfe673e84c2d4efa62fc0c22239"
     },
     {
       "id": "source:libs/react/src/chat/message-rating.tsx",
@@ -17399,7 +17392,7 @@
       "id": "source:libs/react/src/chat/tool-activity.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/tool-activity.tsx",
-      "sha256": "309c3f3372dfac322b7c2dde5c122e6f25966b9abd95fb0b6a621193b0a69462"
+      "sha256": "b4b47893423114869ec7156bc076818a13ff8c54377f3044ba85340c93597e8a"
     },
     {
       "id": "source:libs/react/src/chat/tool-observation.tsx",

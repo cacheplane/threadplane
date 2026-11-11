@@ -458,7 +458,7 @@
             },
             {
               "kind": "Content",
-              "text": "(name: string, args?: unknown) => string | undefined"
+              "text": "(name: string) => string | undefined"
             },
             {
               "kind": "Content",
@@ -466,7 +466,7 @@
             }
           ],
           "docs": {
-            "summary": "App-authored human labels from the tool name and the call's arguments, such as \"Read Array.prototype.toSorted\"; keep this function stable like renderMessage.",
+            "summary": "App-authored human labels; keep this function stable like renderMessage.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
