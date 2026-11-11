@@ -1,5 +1,6 @@
-import { createContext } from 'react';
 import type { Citation } from '@threadplane/core';
+import type { MarkdownSnapshot } from '@threadplane/content/markdown';
+import { definitionToCitation } from '../markdown/citation-source.js';
 import type { ToolActivityInfo } from './tool-activity.js';
 
 /**
@@ -9,6 +10,10 @@ import type { ToolActivityInfo } from './tool-activity.js';
 export interface ToolActivitySource {
   readonly title: string;
   readonly url: string;
+  /** A short excerpt shown on the source's card in the Sources panel. */
+  readonly snippet?: string;
+  /** The source's own icon (absolute URL or `data:` URI) for the Sources panel. Never fetched or guessed by the library. */
+  readonly iconUrl?: string;
 }
 /** An opt-in retry the application declares for one failed call. The label names the call, such as "Retry toSorted read". */
 export interface ToolActivityRetry {
@@ -93,11 +98,6 @@ export function outcomeSources(
     });
 }
 /**
- * @internal True inside a message whose Sources panel already lists tool-declared sources,
- * so activity rows do not repeat them as links. Standalone primitives keep their own links.
- */
-export const ToolSourcesInPanelContext = createContext(false);
-/**
  * Citations for tool-declared sources that the message's own citations do not already cover.
  * Matching is by normalised URL; new entries are numbered after the highest existing index.
  */
@@ -130,9 +130,38 @@ export function toolSourceCitations(
         index: ++index,
         title: source.title,
         url: source.url,
+        ...(source.snippet?.trim() ? { snippet: source.snippet } : {}),
+        ...(source.iconUrl ? { iconUrl: source.iconUrl } : {}),
       },
     ];
   });
+}
+/**
+ * A message's citations plus the sources its tool activities declare, for an application that
+ * renders its own Sources panel. Pass the result to `Citations` and set `sources="panel"` on the
+ * activity so the sources are not repeated as links. A source the message already cites is not
+ * added again; `snapshot` also counts the answer's Markdown source definitions.
+ * Returns `citations` itself when nothing is added.
+ */
+export function citationsWithToolSources(
+  citations: readonly Citation[],
+  activities: readonly ToolActivityInfo[],
+  snapshot?: MarkdownSnapshot
+): readonly Citation[] {
+  const added = toolSourceCitations(
+    [
+      ...citations,
+      ...[...(snapshot?.root?.citations.values() ?? [])].map(
+        definitionToCitation
+      ),
+    ],
+    outcomeSources(
+      activities.map((activity) =>
+        resolveToolOutcome(activity, activity.outcome)
+      )
+    )
+  );
+  return added.length ? [...citations, ...added] : citations;
 }
 /**
  * Attaches an app-declared outcome; a failed outcome turns a complete call into a displayed error without touching technical payloads.

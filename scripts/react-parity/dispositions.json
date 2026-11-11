@@ -93,6 +93,18 @@
       "reason": "Same per-tool decoder registry in both frameworks: parses arguments and result once and runs a decoder only for a completed call of its own tool."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#citationsWithToolSources",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "React-only seam for custom compositions: Angular routes tool-declared sources to the message Sources panel through chat-message; a React app composing its own message opts in with the sources placement option and citationsWithToolSources."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ToolSourcePlacement",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-activity.tsx",
+      "reason": "React-only seam for custom compositions: Angular routes tool-declared sources to the message Sources panel through chat-message; a React app composing its own message opts in with the sources placement option and citationsWithToolSources."
+    },
+    {
       "id": "source:libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
       "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/status-panel.tsx",

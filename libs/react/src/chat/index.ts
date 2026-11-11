@@ -14,7 +14,11 @@ export {
   isTyping,
   type TypingIndicatorProps,
 } from './typing-indicator.js';
-export { resolveToolOutcome, toolOutcomes } from './tool-outcome.js';
+export {
+  citationsWithToolSources,
+  resolveToolOutcome,
+  toolOutcomes,
+} from './tool-outcome.js';
 export {
   StatusPanel,
   type StatusPanelProps,
@@ -34,6 +38,7 @@ export {
   type ToolActivityPhase,
   type ToolActivityProps,
   type ToolActivityGroupProps,
+  type ToolSourcePlacement,
 } from './tool-activity.js';
 export {
   SubagentCard,

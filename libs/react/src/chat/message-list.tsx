@@ -19,13 +19,10 @@ import {
   type ToolActivityOutcome,
 } from './tool-activity.js';
 import {
-  outcomeSources,
+  citationsWithToolSources,
   resolveToolOutcome,
-  toolSourceCitations,
-  ToolSourcesInPanelContext,
   withoutStaleRetry,
 } from './tool-outcome.js';
-import { definitionToCitation } from '../markdown/citation-source.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
@@ -176,6 +173,7 @@ export function repeatsToolFailure(
   );
 }
 const NONE: ReadonlySet<string> = new Set();
+const NO_CITATIONS: readonly never[] = [];
 const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
 /** Each row's children by spawning call. Rows without one share a constant so their memo stays stable. */
 function subagentsByRow(
@@ -336,21 +334,9 @@ function RowView<TRow extends MessageRow>({
       : resolved;
   });
   // Sources a tool call declares join the message's one Sources panel instead of
-  // repeating as links under the activity. Numbering continues after the
-  // message's own citations and any Markdown source definitions.
+  // repeating as links under the activity.
   const assistant = row.role === 'assistant';
-  const cited = assistant ? row.message.citations ?? [] : [];
-  const sources = assistant
-    ? toolSourceCitations(
-        [
-          ...cited,
-          ...[...(row.markdown.root?.citations.values() ?? [])].map(
-            definitionToCitation
-          ),
-        ],
-        outcomeSources(activities)
-      )
-    : [];
+  const sourcePlacement = assistant ? 'panel' : 'links';
   // Consecutive built-in calls share one run; an app-rendered call sits alone, in transcript order.
   const runs: Array<
     | { readonly custom: ReactNode; readonly id: string }
@@ -380,49 +366,53 @@ function RowView<TRow extends MessageRow>({
         <>
           {assistant && (
             <Citations
-              citations={sources.length ? [...cited, ...sources] : cited}
+              citations={citationsWithToolSources(
+                row.message.citations ?? NO_CITATIONS,
+                activities,
+                row.markdown
+              )}
               snapshot={row.markdown}
               collapsible
             />
           )}
-          <ToolSourcesInPanelContext.Provider value={assistant}>
-            {row.role !== 'tool' &&
-              runs.map((run) =>
-                'custom' in run ? (
-                  run.custom != null &&
-                  run.custom !== false && (
-                    <div
-                      key={run.id}
-                      className="tp-chat-tool-call"
-                      data-tool-id={run.id}
-                    >
-                      {run.custom}
-                    </div>
-                  )
-                ) : groupRelatedTools ? (
-                  <ToolActivityGroup
-                    key={run.activities[0].id}
-                    activities={run.activities}
-                    renderResult={renderToolResult}
-                    onRetry={onToolRetry}
-                    retrying={run.activities
-                      .map((activity) => retryingLeads.get(activity.id))
-                      .find((lead) => lead !== undefined)}
-                  />
-                ) : (
-                  run.activities.map((activity) => (
-                    <ToolActivity
-                      key={activity.id}
-                      activity={activity}
-                      onRetry={onToolRetry}
-                      retrying={retryingLeads.get(activity.id)}
-                    >
-                      {renderToolResult?.(activity)}
-                    </ToolActivity>
-                  ))
+          {row.role !== 'tool' &&
+            runs.map((run) =>
+              'custom' in run ? (
+                run.custom != null &&
+                run.custom !== false && (
+                  <div
+                    key={run.id}
+                    className="tp-chat-tool-call"
+                    data-tool-id={run.id}
+                  >
+                    {run.custom}
+                  </div>
                 )
-              )}
-          </ToolSourcesInPanelContext.Provider>
+              ) : groupRelatedTools ? (
+                <ToolActivityGroup
+                  key={run.activities[0].id}
+                  activities={run.activities}
+                  renderResult={renderToolResult}
+                  onRetry={onToolRetry}
+                  sources={sourcePlacement}
+                  retrying={run.activities
+                    .map((activity) => retryingLeads.get(activity.id))
+                    .find((lead) => lead !== undefined)}
+                />
+              ) : (
+                run.activities.map((activity) => (
+                  <ToolActivity
+                    key={activity.id}
+                    activity={activity}
+                    onRetry={onToolRetry}
+                    sources={sourcePlacement}
+                    retrying={retryingLeads.get(activity.id)}
+                  >
+                    {renderToolResult?.(activity)}
+                  </ToolActivity>
+                ))
+              )
+            )}
           {row.role !== 'tool' && cards}
         </>
       }

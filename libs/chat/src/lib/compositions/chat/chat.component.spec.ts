@@ -132,7 +132,7 @@ describe('ChatComponent', () => {
       text: 'Checked',
       sources: [
         { title: 'Same page', url: 'https://angular.dev/guide/signals' },
-        { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted' },
+        { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted', snippet: 'Returns a sorted copy.' },
         { title: 'Unsafe', url: 'javascript:alert(1)' },
       ],
     }));
@@ -150,6 +150,7 @@ describe('ChatComponent', () => {
     expect(text).toContain('toSorted');
     expect(text).not.toContain('Unsafe');
     expect(text.indexOf('Signals guide')).toBeLessThan(text.indexOf('toSorted'));
+    expect(text).toContain('Returns a sorted copy.');
     expect(root.querySelector('a[href^="javascript:"]')).toBeNull();
   });
   it('forwards chatToolResultTemplate to grouped tool rendering and suppresses it under chatActivityTemplate', () => {
