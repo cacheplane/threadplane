@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 499
+            "line": 485
           },
           "overloadIndex": 1,
           "parameters": []
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 307
+            "line": 293
           },
           "isStatic": false,
           "isReadonly": true,
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 342
+            "line": 328
           },
           "isStatic": false,
           "isReadonly": true,
@@ -208,7 +208,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 460
+            "line": 446
           },
           "isStatic": false,
           "isReadonly": true,
@@ -254,7 +254,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 309
+            "line": 295
           },
           "isStatic": false,
           "isReadonly": true,
@@ -300,7 +300,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 314
+            "line": 300
           },
           "isStatic": false,
           "isReadonly": true,
@@ -355,7 +355,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 385
+            "line": 371
           },
           "isStatic": false,
           "isReadonly": true,
@@ -401,7 +401,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 310
+            "line": 296
           },
           "isStatic": false,
           "isReadonly": true,
@@ -457,7 +457,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 308
+            "line": 294
           },
           "isStatic": false,
           "isReadonly": true,
@@ -513,7 +513,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 334
+            "line": 320
           },
           "isStatic": false,
           "isReadonly": true,
@@ -569,7 +569,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 356
+            "line": 342
           },
           "isStatic": false,
           "isReadonly": true,
@@ -614,7 +614,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 462
+            "line": 448
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -684,7 +684,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 376
+            "line": 362
           },
           "isStatic": false,
           "isReadonly": true,
@@ -740,7 +740,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 351
+            "line": 337
           },
           "isStatic": false,
           "isReadonly": true,
@@ -786,7 +786,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 316
+            "line": 302
           },
           "isStatic": false,
           "isReadonly": true,
@@ -852,7 +852,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 320
+            "line": 306
           },
           "isStatic": false,
           "isReadonly": true,
@@ -908,7 +908,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 331
+            "line": 317
           },
           "isStatic": false,
           "isReadonly": true,
@@ -964,7 +964,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-            "line": 325
+            "line": 311
           },
           "isStatic": false,
           "isReadonly": true,
@@ -973,7 +973,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-        "line": 76
+        "line": 69
       },
       "angular": {
         "selector": "chat-tool-calls",
@@ -1052,6 +1052,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-    "line": 76
+    "line": 69
   }
 }
