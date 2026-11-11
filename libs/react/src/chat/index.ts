@@ -36,6 +36,20 @@ export {
   type ToolActivityGroupProps,
 } from './tool-activity.js';
 export {
+  SubagentCard,
+  type SubagentCardProps,
+  type SubagentInfo,
+  type SubagentMessageInfo,
+  type SubagentStatus,
+} from './subagent-card.js';
+export {
+  subagentsFromEvidence,
+  type SubagentEvidence,
+  type SubagentEvidenceMessage,
+  type SubagentEvidenceRecord,
+  type SubagentProjection,
+} from './subagent-evidence.js';
+export {
   Suggestions,
   type SuggestionItem,
   type SuggestionsProps,

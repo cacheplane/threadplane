@@ -18254,6 +18254,126 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/activity-summary.ts",
       "reason": "Internal compact activity summary presentation. Scoped tests verify truthful lifecycle labels, independent active and paused/error cues, and collapsed defaults; execution and approval ownership remain with the application. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentCard",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentCardProps",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentInfo",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentMessageInfo",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentStatus",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#subagentsFromEvidence",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentEvidence",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentEvidenceMessage",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentEvidenceRecord",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SubagentProjection",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "source:libs/react/src/chat/subagent-card.tsx",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-card.tsx",
+      "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
+    },
+    {
+      "id": "source:libs/react/src/chat/subagent-evidence.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/subagent-evidence.ts",
+      "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
     }
   ]
 }

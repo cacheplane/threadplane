@@ -473,6 +473,8 @@ const SUPPORTED_EXPORTS = {
     'toolOutcomes',
     'StatusPanel',
     'ToolObservation',
+    'SubagentCard',
+    'subagentsFromEvidence',
     'Welcome',
     'WelcomeSuggestion',
     'Suggestions',
