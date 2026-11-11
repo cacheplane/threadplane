@@ -53,7 +53,7 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 />;
 ```
 
-`MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel` for app-authored activity wording, or `groupRelatedTools={false}` to render separate activities. A custom `renderMessage` retains presentation ownership.
+`MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel(name, args)` for app-authored activity wording that names what each call did, such as **Read toSorted**, so repeated calls to one tool get their own labels, or `groupRelatedTools={false}` to render separate activities. Inside a group, a failed row shows only its **Failed** status word; the failure message appears once, in the panel below the group. A custom `renderMessage` retains presentation ownership.
 
 While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. When some calls failed it reads **Used 4 tools · 1 failed**. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
 
@@ -78,7 +78,7 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 }]} />
 ```
 
-Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 

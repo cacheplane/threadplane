@@ -73,8 +73,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
-  /** App-authored human labels; keep this function stable like renderMessage. */
-  readonly toolLabel?: (name: string) => string | undefined;
+  /** App-authored human labels from the tool name and the call's arguments, such as "Read Array.prototype.toSorted"; keep this function stable like renderMessage. */
+  readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
   readonly toolOutcome?: (
     activity: ToolActivityInfo
@@ -165,7 +165,7 @@ function RowView<TRow extends MessageRow>({
     context: MessageListRowContext
   ) => ReactNode;
   readonly groupRelatedTools?: boolean;
-  readonly toolLabel?: (name: string) => string | undefined;
+  readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
@@ -185,7 +185,7 @@ function RowView<TRow extends MessageRow>({
     const activity: ToolActivityInfo = {
       id: call.id,
       name: call.name,
-      label: toolLabel?.(call.name),
+      label: toolLabel?.(call.name, call.args),
       phase,
       argumentsText: literal(call.args),
       resultText: call.status === 'complete' ? literal(call.result) : undefined,
