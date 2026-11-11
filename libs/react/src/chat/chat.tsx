@@ -6,7 +6,11 @@ import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
-import { MessageList, type MessageListProps } from './message-list.js';
+import {
+  MessageList,
+  repeatsToolFailure,
+  type MessageListProps,
+} from './message-list.js';
 import { isTyping, TypingIndicator } from './typing-indicator.js';
 import { ScrollBubble } from './scroll-bubble.js';
 
@@ -28,11 +32,19 @@ export interface ChatProps
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable. */
+  /** App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable. */
+  readonly renderToolCall?: MessageListProps['renderToolCall'];
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
+  readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /** App-owned notice above the composer; see `ChatInputProps.banner`. */
+  readonly inputBanner?: ChatInputProps['banner'];
+  /** App-owned content above the input surface; see `ChatInputProps.attachments`. */
+  readonly inputAttachments?: ChatInputProps['attachments'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -52,9 +64,13 @@ export function Chat({
   groupRelatedTools,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
+  subagents,
   onToolRetry,
   onRetry,
+  inputBanner,
+  inputAttachments,
   inputLeading,
   inputTrailing,
   inputFooter,
@@ -66,6 +82,20 @@ export function Chat({
     session.stop().catch(ignore);
   }, [session]);
   const rows = useMessageContent(snapshot, session, content);
+  // A failed call already shows these words, and the notice would add no action or detail of its own.
+  // A custom renderMessage owns that display, so the notice stays whenever one is in use.
+  const error = snapshot.error;
+  const repeated =
+    !!error &&
+    !renderMessage &&
+    !error.detail &&
+    error.recovery !== 'check' &&
+    !(
+      onRetry &&
+      error.retryable &&
+      (error.recovery === 'retry' || error.recovery === undefined)
+    ) &&
+    repeatsToolFailure(error.message, rows, toolOutcome);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
       <MessageList
@@ -74,7 +104,9 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
+        renderToolCall={renderToolCall}
         renderToolResult={renderToolResult}
+        subagents={subagents}
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
@@ -92,7 +124,7 @@ export function Chat({
       />
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
-        error={snapshot.error}
+        error={repeated ? undefined : snapshot.error}
         className="tp-chat__error"
         onRetry={
           onRetry &&
@@ -113,6 +145,8 @@ export function Chat({
       <ChatInput
         key={sessionKey(session)}
         {...input}
+        banner={inputBanner}
+        attachments={inputAttachments}
         leading={inputLeading}
         trailing={inputTrailing}
         footer={inputFooter}

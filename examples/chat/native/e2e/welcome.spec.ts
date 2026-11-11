@@ -579,6 +579,12 @@ test('installed React welcome prefills explicitly and retains composer ownership
       path: testInfo.outputPath('welcome-more-prompts.png'),
       fullPage: false,
     });
+    // Typing a label's first letter moves focus there without choosing it.
+    await page.keyboard.press('s');
+    await expect(
+      prompts.getByRole('option', { name: /^Summarize notes/ })
+    ).toBeFocused();
+    await expect(draft).toHaveValue('');
     await page.keyboard.press('Escape');
     await expect(prompts).toHaveCount(0);
     await expect(more).toBeFocused();

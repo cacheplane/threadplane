@@ -338,7 +338,7 @@ test('installed React ChatMessage preserves roles, direction, controls and readi
     expect(await direction(english)).toBe('ltr');
     await expect(sources).toHaveCSS('direction', 'rtl');
     const sourceToggle = sources.getByRole('button', {
-      name: 'Sources (1)',
+      name: 'Sources 1',
       exact: true,
     });
     await sourceToggle.click();
