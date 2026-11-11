@@ -25,9 +25,21 @@ export interface ChatInputProps {
   readonly label?: string;
   readonly placeholder?: string;
   readonly hint?: ReactNode;
+  /**
+   * App-owned content before the draft, inside the input surface. Slot content
+   * sits inside the composer form: give its buttons `type="button"` unless they
+   * should send, and it stays enabled when `disabled` or `busy` is set.
+   */
+  readonly leading?: ReactNode;
+  /** App-owned controls between the draft and the built-in Stop and Send. */
+  readonly trailing?: ReactNode;
+  /** App-owned content below the input surface and hint, such as a status or disclaimer. */
+  readonly footer?: ReactNode;
   readonly id?: string;
   readonly className?: string;
 }
+const present = (node: ReactNode) => node != null && node !== false;
+
 /** Imperative access to focus the composer's textarea. */
 export interface ChatInputHandle {
   focus(): void;
@@ -48,6 +60,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       label = 'Message',
       placeholder = 'Write a message…',
       hint,
+      leading,
+      trailing,
+      footer,
       id,
       className,
     },
@@ -56,7 +71,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const generated = useId();
     const inputId = id ?? `${generated}-input`;
     const hintId = `${generated}-hint`;
-    const hasHint = hint != null && hint !== false;
+    const hasHint = present(hint);
+    const sendButton = useRef<HTMLButtonElement>(null);
     const textarea = useRef<HTMLTextAreaElement>(null);
     const stopButton = useRef<HTMLButtonElement | null>(null);
     const returnFocus = useRef(false);
@@ -142,7 +158,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       const input = textarea.current;
       const form = input?.form;
       const document = input?.ownerDocument;
-      const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+      // App-owned slot content may hold its own submit button; only the
+      // built-in Send owns the focus this composer restores.
+      const submit = sendButton.current;
       const focused = document?.activeElement;
       const ownedFocus = input != null && (focused === input || focused === submit);
       const stillOwnsFocus = () => {
@@ -175,6 +193,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           {label}
         </label>
         <div className="tp-chat-input__pill">
+          {present(leading) && (
+            <div className="tp-chat-input__leading">{leading}</div>
+          )}
           <textarea
             dir="auto"
             ref={textarea}
@@ -197,6 +218,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             }}
           />
           <div className="tp-chat-input__actions">
+            {present(trailing) && (
+              <div className="tp-chat-input__trailing">{trailing}</div>
+            )}
             {busy && onStop && (
               <button
                 ref={stopRef}
@@ -225,6 +249,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               </button>
             )}
             <button
+              ref={sendButton}
               type="submit"
               className="tp-chat-input__send"
               title="Send"
@@ -254,6 +279,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           <p id={hintId} className="tp-chat-input__hint">
             {hint}
           </p>
+        )}
+        {present(footer) && (
+          <div className="tp-chat-input__footer">{footer}</div>
         )}
       </form>
     );
