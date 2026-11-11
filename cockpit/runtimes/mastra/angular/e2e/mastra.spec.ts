@@ -28,11 +28,11 @@ test.describe('cockpit runtimes/mastra: camping trip planner', () => {
   test('suspended reserve_campsite shows the approval card', async ({ page }) => {
     await page.goto('/');
     await page.getByText('Reserve the campsite').click();
-    const dialog = page.locator('dialog.chat-approval-card');
-    await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await expect(dialog).toContainText('Reservation approval required');
-    await expect(dialog).toContainText('North Pines');
-    await expect(dialog).toContainText('$90.00');
+    const panel = page.locator('.chat-approval-card--inline');
+    await expect(panel).toBeVisible({ timeout: 30_000 });
+    await expect(panel).toContainText('Reservation approval required');
+    await expect(panel).toContainText('North Pines');
+    await expect(panel).toContainText('$90.00');
   });
 
   for (const approved of [true, false]) {
@@ -41,16 +41,16 @@ test.describe('cockpit runtimes/mastra: camping trip planner', () => {
       if (process.env['AIMOCK_MODE'] === 'record') test.setTimeout(120_000);
       await page.goto('/');
       await page.getByText('Reserve the campsite').click();
-      const dialog = page.locator('dialog.chat-approval-card');
-      await expect(dialog).toBeVisible({ timeout: 30_000 });
-      await expect(dialog).toContainText('North Pines');
-      await expect(dialog).toContainText('$90.00');
+      const panel = page.locator('.chat-approval-card--inline');
+      await expect(panel).toBeVisible({ timeout: 30_000 });
+      await expect(panel).toContainText('North Pines');
+      await expect(panel).toContainText('$90.00');
 
       const resumed = page.waitForResponse(response => {
         if (response.request().method() !== 'POST' || !response.url().endsWith('/agent')) return false;
         return response.request().postDataJSON()?.forwardedProps?.command?.resume?.approved === approved;
       });
-      await dialog.getByRole('button', { name: action, exact: true }).click();
+      await panel.getByRole('button', { name: action, exact: true }).click();
       const response = await resumed;
       expect(response.status()).toBe(200);
       const command = response.request().postDataJSON().forwardedProps.command;
@@ -62,7 +62,7 @@ test.describe('cockpit runtimes/mastra: camping trip planner', () => {
       const result = events.find(event => event.type === 'TOOL_CALL_RESULT');
       expect(result?.toolCallId).toBe(command.interruptEvent.toolCallId);
       expect(result?.content).toContain(approved ? 'Reserved North Pines' : 'Nothing was booked.');
-      await expect(dialog).not.toBeVisible();
+      await expect(panel).not.toBeVisible();
       const reply = page.locator('chat-message[data-role="assistant"]').last();
       await expect(reply).toContainText(approved
         ? /reserved|confirmed|booked/i

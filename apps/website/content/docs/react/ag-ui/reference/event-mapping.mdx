@@ -25,6 +25,18 @@ Choose **Run** and send a fictional question. **Shared runtime** uses the existi
 
 The native AG-UI session owns the request, transcript, state and run identity. React reads it through **useAgent** and displays its ordinary root text with **TextTranscript** and **ChatInput**. Markup stays literal text. See the [official AG-UI event documentation](https://docs.ag-ui.com/concepts/events) for text and run lifecycle events.
 
+## Shared state and the plan
+
+`STATE_SNAPSHOT` replaces the session's `state` and `STATE_DELTA` patches it. When that state holds a `todos` list, `[{ content, status }]` with a status of `pending`, `in_progress` or `completed`, the snapshot also carries `plan`: one `{ label, status }` step per valid entry, in order. Entries without text or with another status are skipped, and `plan` is absent when the state holds no such list. A state update that leaves every step unchanged keeps the same `plan` array, so a view that receives it does not re-render.
+
+~~~tsx
+const snapshot = useAgent(session);
+
+<MessageList rows={rows} plan={snapshot.plan} onStop={() => void session.stop()} />
+~~~
+
+While a tool group in the current turn runs, its open view lists the pending steps after the calls. See [Tool calls](/docs/react/chat/components/chat-tool-calls) for the progress view.
+
 ## Keep the current conversation
 
 The first Send creates a local conversation UUID lazily. Later confirmed turns retain the native request history on that same UUID. A reply is complete only when the current run finishes successfully and its terminal thread/run IDs and full ordinary transcript agree with the submitted turn. Missing, stale or truncated results cannot authorize another Send.

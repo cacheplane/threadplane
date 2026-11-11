@@ -41,6 +41,9 @@ export async function createBenchmarkServer({
   const streams = new Set();
   const gates = new Map();
   const recoveries = new Map();
+  // Per-thread AG-UI events in delivery order, for history restore.
+  const threads = new Map();
+  const restores = [];
   let address;
   function stop(run, reason = 'aborted') {
     if (terminal.has(run.record.status)) return;
@@ -98,6 +101,41 @@ export async function createBenchmarkServer({
           200,
           [...runs.values()].map((run) => run.record)
         );
+      if (request.method === 'GET' && url.pathname === '/restores')
+        return json(200, restores);
+      if (request.method === 'GET' && url.pathname === '/notes')
+        return json(200, { count: notes.length });
+      if (request.method === 'GET' && url.pathname.startsWith('/threads/')) {
+        // /threads/<participant>/<threadId>/(events|messages): read-only history.
+        const [participant, threadId, kind, ...rest] = url.pathname
+          .slice('/threads/'.length)
+          .split('/')
+          .map(decodeURIComponent);
+        if (
+          rest.length ||
+          !participantName.test(participant ?? '') ||
+          !threadId ||
+          !['events', 'messages'].includes(kind)
+        )
+          return json(400, { error: 'Invalid thread history request' });
+        const thread = threads.get(JSON.stringify([participant, threadId]));
+        restores.push({
+          participant,
+          threadId,
+          kind,
+          at: Date.now(),
+          found: !!thread,
+          events: thread?.events.length ?? 0,
+        });
+        while (restores.length > 200) restores.shift();
+        if (!thread) return json(404, { error: 'No history for this thread' });
+        return json(
+          200,
+          kind === 'events'
+            ? { events: thread.events }
+            : { messages: threadMessages(thread.events) }
+        );
+      }
       if (request.method !== 'POST')
         return json(405, { error: 'Method not allowed' });
       let body = '';
@@ -120,6 +158,8 @@ export async function createBenchmarkServer({
           if (gate.participant === participant) gate.revoked = true;
         for (const [key, recovery] of recoveries)
           if (recovery.participant === participant) recoveries.delete(key);
+        for (const [key, thread] of threads)
+          if (thread.participant === participant) threads.delete(key);
         return json(200, { reset: true });
       }
       if (url.pathname.startsWith('/approve/')) {
@@ -236,8 +276,14 @@ export async function createBenchmarkServer({
       if (gate) gate.consumed = true;
       const id = randomUUID();
       const nativeRunId = typeof input.runId === 'string' ? input.runId : id;
+      // A scenario with one call gates that call; a longer one marks its gated call.
+      const gated = (call) =>
+        scenario.nativeApproval &&
+        (scenario.calls.length === 1 || call.approval === true);
       const calls = recovery
         ? [{ ...scenario.calls[1], id: 'read-sorted-retry' }]
+        : gate
+        ? scenario.calls.filter(gated)
         : scenario.calls;
       const messageId = id + '-assistant';
       const record = {
@@ -282,6 +328,14 @@ export async function createBenchmarkServer({
         runs.delete(oldest[0]);
       }
       streams.add(run);
+      let thread;
+      if (protocol === 'ag-ui') {
+        thread = threads.get(recoveryKey);
+        if (!thread) {
+          thread = { participant, events: [] };
+          threads.set(recoveryKey, thread);
+        }
+      }
       response.writeHead(200, {
         'content-type': 'text/event-stream',
         'cache-control': 'no-cache, no-transform',
@@ -303,13 +357,39 @@ export async function createBenchmarkServer({
           toolCallId: event.toolCallId,
           at: Date.now(),
         });
-        response.write(
-          'data: ' +
-            JSON.stringify(
-              protocol === 'ag-ui' ? { ...event, timestamp: Date.now() } : event
-            ) +
-            '\n\n'
+        const sent =
+          protocol === 'ag-ui' ? { ...event, timestamp: Date.now() } : event;
+        // History keeps what was delivered. The run input carries the user
+        // turn, which a live client already holds and the stream never sends.
+        thread?.events.push(
+          event.type === 'RUN_STARTED'
+            ? {
+                ...sent,
+                input: {
+                  threadId,
+                  runId: nativeRunId,
+                  state: {},
+                  tools: [],
+                  context: [],
+                  forwardedProps: {},
+                  messages:
+                    !gate && typeof prompt === 'string'
+                      ? [
+                          {
+                            id:
+                              typeof user?.id === 'string'
+                                ? user.id
+                                : id + '-user',
+                            role: 'user',
+                            content: prompt,
+                          },
+                        ]
+                      : [],
+                },
+              }
+            : sent
         );
+        response.write('data: ' + JSON.stringify(sent) + '\n\n');
       };
       const finish = (status) => {
         record.status = status;
@@ -378,7 +458,7 @@ export async function createBenchmarkServer({
           );
         }
         tool.status = 'running';
-        if (scenario.nativeApproval && !gate) {
+        if (gated(call) && !gate) {
           const interruptId = nativeRunId + ':approval:' + id;
           gates.set(interruptId, {
             id: interruptId,
@@ -489,6 +569,109 @@ export async function createBenchmarkServer({
           }
           result = await executeTool(call.name, call.args, {
             approved: record.approved === true,
+            // Runs the delegated child calls as a subagent of this tool call.
+            delegate: call.delegate
+              ? async () => {
+                  const subagentRunId = nativeId + '-subagent';
+                  const childMessageId = subagentRunId + '-message';
+                  const child = { subagentRunId };
+                  const subagent = {
+                    id: subagentRunId,
+                    name: call.delegate.name,
+                    parent: call.id,
+                    status: 'running',
+                  };
+                  (record.subagents ??= []).push(subagent);
+                  emit({
+                    type: 'SUBAGENT_STARTED',
+                    subagentRunId,
+                    name: call.delegate.name,
+                    description: call.delegate.description,
+                    parentToolCallId: nativeId,
+                    parentMessageId: messageId,
+                  });
+                  emit({
+                    type: 'TEXT_MESSAGE_START',
+                    messageId: childMessageId,
+                    role: 'assistant',
+                    ...child,
+                  });
+                  const results = [];
+                  for (const inner of call.delegate.calls) {
+                    if (!active()) throw new Error('Delegation stopped');
+                    const innerId = id + '-' + inner.id;
+                    const entry = {
+                      canonicalId: inner.id,
+                      nativeId: innerId,
+                      name: inner.name,
+                      argsHash: hashValue(inner.args),
+                      status: 'running',
+                      executionCount: 0,
+                      parent: call.id,
+                      subagentRunId,
+                    };
+                    record.tools.push(entry);
+                    emit({
+                      type: 'TOOL_CALL_START',
+                      toolCallId: innerId,
+                      toolCallName: inner.name,
+                      parentMessageId: childMessageId,
+                      ...child,
+                    });
+                    emit({
+                      type: 'TOOL_CALL_ARGS',
+                      toolCallId: innerId,
+                      delta: JSON.stringify(inner.args),
+                      ...child,
+                    });
+                    emit({
+                      type: 'TOOL_CALL_END',
+                      toolCallId: innerId,
+                      ...child,
+                    });
+                    entry.argsCompletedAt = Date.now();
+                    await sleep(
+                      scenario.delayMs ?? toolDelayMs,
+                      run.controller.signal
+                    );
+                    if (!active()) throw new Error('Delegation stopped');
+                    entry.executedAt = Date.now();
+                    entry.executionCount++;
+                    const value = await executeTool(inner.name, inner.args);
+                    entry.status = 'complete';
+                    entry.resultHash = hashValue(value);
+                    entry.resultPublishedAt = Date.now();
+                    emit({
+                      type: 'TOOL_CALL_RESULT',
+                      messageId: innerId + '-result',
+                      toolCallId: innerId,
+                      role: 'tool',
+                      content: JSON.stringify(value),
+                      ...child,
+                    });
+                    results.push(value);
+                  }
+                  emit({
+                    type: 'TEXT_MESSAGE_CONTENT',
+                    messageId: childMessageId,
+                    delta: call.delegate.summary,
+                    ...child,
+                  });
+                  emit({
+                    type: 'TEXT_MESSAGE_END',
+                    messageId: childMessageId,
+                    ...child,
+                  });
+                  emit({
+                    type: 'SUBAGENT_FINISHED',
+                    subagentRunId,
+                    result: { references: results.map((row) => row.id) },
+                    outcome: { type: 'success' },
+                  });
+                  subagent.status = 'complete';
+                  return results;
+                }
+              : undefined,
             save(text) {
               const note = { id: 'note-' + (notes.length + 1), text };
               notes.push(note);
@@ -596,6 +779,7 @@ export async function createBenchmarkServer({
     receipts: () =>
       structuredClone([...runs.values()].map((run) => run.record)),
     savedNotes: () => structuredClone(notes),
+    restores: () => structuredClone(restores),
     activeStreams: () => streams.size,
     async close() {
       for (const run of streams) stop(run);
@@ -603,6 +787,48 @@ export async function createBenchmarkServer({
       await new Promise((done) => server.close(done));
     },
   };
+}
+
+/** Folds delivered parent-transcript events into native AG-UI messages. Child events are left out. */
+export function threadMessages(events) {
+  const messages = [];
+  const assistant = (id) => {
+    let message = messages.find((row) => row.id === id);
+    if (!message) {
+      message = { id, role: 'assistant', content: '' };
+      messages.push(message);
+    }
+    return message;
+  };
+  const calls = new Map();
+  for (const event of events) {
+    if (typeof event.subagentRunId === 'string') continue;
+    if (event.type === 'RUN_STARTED')
+      messages.push(...(event.input?.messages ?? []));
+    // An assistant message takes its place when it first says or calls something,
+    // so a resumed run's answer follows the tool result it waited for.
+    else if (event.type === 'TEXT_MESSAGE_CONTENT')
+      assistant(event.messageId).content += event.delta;
+    else if (event.type === 'TOOL_CALL_START') {
+      const call = {
+        id: event.toolCallId,
+        type: 'function',
+        function: { name: event.toolCallName, arguments: '' },
+      };
+      calls.set(call.id, call);
+      (assistant(event.parentMessageId).toolCalls ??= []).push(call);
+    } else if (event.type === 'TOOL_CALL_ARGS') {
+      const call = calls.get(event.toolCallId);
+      if (call) call.function.arguments += event.delta;
+    } else if (event.type === 'TOOL_CALL_RESULT')
+      messages.push({
+        id: event.messageId,
+        role: 'tool',
+        toolCallId: event.toolCallId,
+        content: event.content,
+      });
+  }
+  return messages;
 }
 
 if (

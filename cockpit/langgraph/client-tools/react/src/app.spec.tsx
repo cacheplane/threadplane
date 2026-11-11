@@ -37,7 +37,7 @@ it('presents native chat, simulated tools, and empty authored panels', () => {
   expect(h.view.getByRole('heading', { name: 'LangGraph client tools' })).toBeTruthy();
   expect(h.view.container.querySelector('.tp-chat-list')).toBeTruthy();
   expect(h.view.getByText('No weather panels yet.')).toBeTruthy();
-  expect(h.view.getByText('No booking decisions yet.')).toBeTruthy();
+  expect(h.view.queryByRole('region', { name: 'Booking decisions' })).toBeNull();
   expect(h.ready).toHaveBeenCalledTimes(1);
 });
 it('keeps browser decisions enabled while chat is busy and retains literal completed panels', async () => {
@@ -51,30 +51,49 @@ it('keeps browser decisions enabled while chat is busy and retains literal compl
   fireEvent.click(h.view.getByRole('button', { name: 'Confirm booking' }));
   await waitFor(() => expect(h.view.getByRole('status').textContent).toBe('Response complete.'));
   expect(h.view.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
-  expect(h.view.getByText('Confirmed')).toBeTruthy();
+  expect(h.view.getByText('Approved: Booking')).toBeTruthy();
   expect(h.view.getByText('<script>Portland</script>')).toBeTruthy();
   fireEvent.click(h.view.getByRole('button', { name: 'New conversation' }));
   await waitFor(() => expect(factory).toHaveBeenCalledTimes(2));
   expect(h.view.getByText('No weather panels yet.')).toBeTruthy();
-  expect(h.view.getByText('No booking decisions yet.')).toBeTruthy();
+  expect(h.view.queryByText('Approved: Booking')).toBeNull();
+});
+it('waits for the booking at the end of the transcript, names both actions and hints the composer', async () => {
+  const h = setup(); await h.send();
+  const conversation = h.view.getByRole('region', { name: 'Conversation' });
+  const card = conversation.querySelector('.tp-approval-card') as HTMLElement;
+  expect(card).toBeTruthy();
+  expect(card.textContent).toContain('Waiting for your approval.');
+  expect(card.textContent).toContain('<img src=x> Fictional booking');
+  expect([...card.querySelectorAll('button')].map((button) => button.textContent)).toEqual(['Confirm booking', "Don't book"]);
+  expect(document.activeElement).toBe(h.view.getByRole('button', { name: 'Confirm booking' }));
+  expect(h.view.getByRole('textbox', { name: 'Message', exact: true }).getAttribute('placeholder')).toBe('Answer the approval to continue');
+});
+it('returns focus to the composer once the answered run completes', async () => {
+  const h = setup(); await h.send();
+  fireEvent.click(h.view.getByRole('button', { name: 'Confirm booking' }));
+  const composer = h.view.getByRole('textbox', { name: 'Message', exact: true });
+  await waitFor(() => expect(document.activeElement).toBe(composer));
+  expect(composer.getAttribute('placeholder')).toBe('Ask for weather or a fictional booking…');
 });
 it('cancels a booking without treating cancellation as a failed conversation', async () => {
   const h = setup(); await h.send();
-  fireEvent.click(h.view.getByRole('button', { name: 'Cancel booking' }));
-  await waitFor(() => expect(h.view.getByText('Cancelled')).toBeTruthy());
+  fireEvent.click(h.view.getByRole('button', { name: "Don't book" }));
+  await waitFor(() => expect(h.view.getByText('Declined: Booking')).toBeTruthy());
   expect(h.view.getByRole('status').textContent).toBe('Response complete.');
 });
 it('Stop revokes the pending decision and requires a replacement conversation', async () => {
   const h = setup(); await h.send();
   fireEvent.click(h.view.getByRole('button', { name: 'Stop', exact: true }));
-  await waitFor(() => expect(h.view.getByText('Aborted')).toBeTruthy());
-  expect(h.view.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
+  await waitFor(() => expect(h.view.queryByRole('button', { name: 'Confirm booking' })).toBeNull());
+  // A revoked booking was never answered, so it leaves no record.
+  expect(h.view.queryByText(/^(Approved|Declined)/)).toBeNull();
   expect(h.view.getByRole('status').textContent).toMatch(/Stopped.*new conversation/);
   expect(h.session.stop).toHaveBeenCalledTimes(1);
 });
 it('does not construct a replacement after unmount during reset', async () => {
   const h = setup(); await h.send();
-  fireEvent.click(h.view.getByRole('button', { name: 'Cancel booking' }));
+  fireEvent.click(h.view.getByRole('button', { name: "Don't book" }));
   await waitFor(() => expect(h.view.getByRole('status').textContent).toBe('Response complete.'));
   let finish!: () => void;
   vi.mocked(h.session.dispose).mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
