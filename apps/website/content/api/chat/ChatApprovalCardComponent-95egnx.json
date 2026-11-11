@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 204
+            "line": 196
           },
           "overloadIndex": 1,
           "parameters": []
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 177
+            "line": 170
           },
           "isStatic": false,
           "isReadonly": true,
@@ -163,7 +163,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 158
+            "line": 157
           },
           "isStatic": false,
           "isReadonly": true,
@@ -209,7 +209,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 167
+            "line": 166
           },
           "isStatic": false,
           "isReadonly": true,
@@ -255,7 +255,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 169
+            "line": 168
           },
           "isStatic": false,
           "isReadonly": true,
@@ -301,7 +301,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 165
+            "line": 164
           },
           "isStatic": false,
           "isReadonly": true,
@@ -347,7 +347,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 159
+            "line": 158
           },
           "isStatic": false,
           "isReadonly": true,
@@ -391,7 +391,7 @@
             }
           ],
           "docs": {
-            "summary": "`inline` (default) renders a status panel in place; put the card in a `chatInterruptTemplate` so it sits at the end of the transcript. `dialog` opens a modal instead.",
+            "summary": "`dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -403,53 +403,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 163
-          },
-          "isStatic": false,
-          "isReadonly": true,
-          "isOptional": false
-        },
-        {
-          "name": "recordLabel",
-          "kind": "Property",
-          "canonicalReference": "@threadplane/chat!ChatApprovalCardComponent#recordLabel:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly recordLabel: "
-            },
-            {
-              "kind": "Content",
-              "text": "import(\"@angular/core\")."
-            },
-            {
-              "kind": "Reference",
-              "text": "InputSignal",
-              "canonicalReference": "@angular/core!InputSignal:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<string | undefined>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Inline only: what the one-line record names once the approval is answered,\nas in \"Approved: Save note\". Defaults to `approveLabel` when the app named\nthe action; otherwise the record reads just \"Approved\" or \"Declined\".",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 175
+            "line": 162
           },
           "isStatic": false,
           "isReadonly": true,
@@ -495,7 +449,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 161
+            "line": 160
           },
           "isStatic": false,
           "isReadonly": true,
@@ -541,7 +495,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-            "line": 160
+            "line": 159
           },
           "isStatic": false,
           "isReadonly": true,
@@ -550,7 +504,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-        "line": 28
+        "line": 27
       },
       "angular": {
         "selector": "chat-approval-card",
@@ -592,12 +546,6 @@
             "type": "ChatApprovalPresentation"
           },
           {
-            "name": "recordLabel",
-            "alias": "recordLabel",
-            "required": false,
-            "type": "string | undefined"
-          },
-          {
             "name": "showEdit",
             "alias": "showEdit",
             "required": false,
@@ -623,6 +571,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-    "line": 28
+    "line": 27
   }
 }

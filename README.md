@@ -255,7 +255,7 @@ hook, projected through the runtime-neutral `Agent` contract.
 
 ### Generated API reference
 
-Run `npm run generate-api-docs` after changing public TypeScript exports or TSDoc. API Extractor reads checked TypeScript declarations and TSDoc directly, without a model. Its output in `apps/website/content/api` drives import-path indexes and symbol pages at `/docs/api`. Run `npm run generate-api-docs:check` to verify the committed reference is current. The website build generates the reference and packages runtime content into the build artifact for search and dynamic routes. Narrative guides remain authored MDX.
+Run `npm run generate-api-docs` after changing public TypeScript exports or TSDoc. API Extractor reads checked TypeScript declarations and TSDoc directly, without a model. Its output in `apps/website/content/api` drives import-path indexes and symbol pages at `/docs/api`. The committed copy may lag behind source; CI and the website build regenerate it, so pull requests do not need to commit it. The website build generates the reference and packages runtime content into the build artifact for search and dynamic routes. Narrative guides remain authored MDX.
 
 
 ---

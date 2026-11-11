@@ -77,7 +77,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 103
+            "line": 95
           },
           "isReadonly": false,
           "isOptional": true
@@ -115,7 +115,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 73
+            "line": 72
           },
           "isReadonly": false,
           "isOptional": true
@@ -166,7 +166,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 35
+            "line": 34
           },
           "isReadonly": false,
           "isOptional": false
@@ -217,7 +217,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 106
+            "line": 98
           },
           "isReadonly": false,
           "isOptional": false
@@ -268,7 +268,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 70
+            "line": 69
           },
           "isReadonly": false,
           "isOptional": true
@@ -309,7 +309,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 34
+            "line": 33
           },
           "isReadonly": false,
           "isOptional": true
@@ -350,7 +350,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 32
+            "line": 31
           },
           "isReadonly": false,
           "isOptional": false
@@ -401,61 +401,10 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 30
+            "line": 29
           },
           "isReadonly": false,
           "isOptional": false
-        },
-        {
-          "name": "plan",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/chat!Agent#plan:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "plan?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "Signal",
-              "canonicalReference": "@angular/core!Signal:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "AgentPlan",
-              "canonicalReference": "@threadplane/chat!AgentPlan:type",
-              "href": "/docs/api/chat/AgentPlan"
-            },
-            {
-              "kind": "Content",
-              "text": " | undefined>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "Optional plan the agent declared for its work, in order. The LangGraph and\nAG-UI adapters read it from a `todos` list in agent state (see\n`agentPlanFromState`); the progress view lists its pending steps as upcoming.\nUndefined when the agent declared no plan.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 86
-          },
-          "isReadonly": false,
-          "isOptional": true
         },
         {
           "name": "regenerate",
@@ -497,7 +446,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 62
+            "line": 61
           },
           "isReadonly": false,
           "isOptional": false
@@ -542,7 +491,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 51
+            "line": 50
           },
           "isReadonly": false,
           "isOptional": false
@@ -583,7 +532,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 37
+            "line": 36
           },
           "isReadonly": false,
           "isOptional": false
@@ -634,7 +583,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 31
+            "line": 30
           },
           "isReadonly": false,
           "isOptional": false
@@ -679,7 +628,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 41
+            "line": 40
           },
           "isReadonly": false,
           "isOptional": false
@@ -739,7 +688,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 71
+            "line": 70
           },
           "isReadonly": false,
           "isOptional": true
@@ -804,7 +753,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 40
+            "line": 39
           },
           "isReadonly": false,
           "isOptional": false
@@ -855,7 +804,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 36
+            "line": 35
           },
           "isReadonly": false,
           "isOptional": false
@@ -906,7 +855,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/agent/agent.ts",
-            "line": 79
+            "line": 78
           },
           "isReadonly": false,
           "isOptional": true
@@ -914,7 +863,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/agent/agent.ts",
-        "line": 28
+        "line": 27
       },
       "typeParameters": [
         {
@@ -933,6 +882,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/agent/agent.ts",
-    "line": 28
+    "line": 27
   }
 }

@@ -1744,46 +1744,6 @@
       "summary": "A runtime interrupt payload, its identifier, and whether the agent can resume it."
     },
     {
-      "name": "agentPlan",
-      "entrypointId": "chat",
-      "kind": "Function",
-      "href": "/docs/api/chat/agentPlan",
-      "canonicalReference": "@threadplane/chat!agentPlan:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "The `plan` signal an adapter exposes on its Agent, derived from its `state`\nsignal. It changes only when a step's text or status changes, so a state\nupdate that leaves the plan alone does not re-render the progress view."
-    },
-    {
-      "name": "AgentPlan",
-      "entrypointId": "chat",
-      "kind": "TypeAlias",
-      "href": "/docs/api/chat/AgentPlan",
-      "canonicalReference": "@threadplane/chat!AgentPlan:type",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "The steps an agent declared, in order."
-    },
-    {
-      "name": "agentPlanFromState",
-      "entrypointId": "chat",
-      "kind": "Function",
-      "href": "/docs/api/chat/agentPlanFromState",
-      "canonicalReference": "@threadplane/chat!agentPlanFromState:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list."
-    },
-    {
-      "name": "AgentPlanStep",
-      "entrypointId": "chat",
-      "kind": "Interface",
-      "href": "/docs/api/chat/AgentPlanStep",
-      "canonicalReference": "@threadplane/chat!AgentPlanStep:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "One step of the plan an agent declared for its work."
-    },
-    {
       "name": "AgentRecovery",
       "entrypointId": "chat",
       "kind": "TypeAlias",
