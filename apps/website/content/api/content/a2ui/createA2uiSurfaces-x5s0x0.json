@@ -41,7 +41,7 @@
       "members": [],
       "source": {
         "path": "libs/content/src/a2ui/create-surfaces.ts",
-        "line": 26
+        "line": 7
       },
       "overloadIndex": 1,
       "parameters": [],
@@ -53,6 +53,6 @@
   ],
   "source": {
     "path": "libs/content/src/a2ui/create-surfaces.ts",
-    "line": 26
+    "line": 7
   }
 }
