@@ -36,6 +36,12 @@ export interface ChatProps
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /** App-owned content before the draft; see `ChatInputProps.leading`. */
+  readonly inputLeading?: ChatInputProps['leading'];
+  /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
+  readonly inputTrailing?: ChatInputProps['trailing'];
+  /** App-owned content below the composer; see `ChatInputProps.footer`. */
+  readonly inputFooter?: ChatInputProps['footer'];
 }
 
 const ignore = () => undefined;
@@ -52,6 +58,9 @@ export function Chat({
   renderToolResult,
   onToolRetry,
   onRetry,
+  inputLeading,
+  inputTrailing,
+  inputFooter,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
@@ -115,6 +124,9 @@ export function Chat({
       <ChatInput
         key={sessionKey(session)}
         {...input}
+        leading={inputLeading}
+        trailing={inputTrailing}
+        footer={inputFooter}
         busy={snapshot.status === 'running'}
         onSubmit={(text) => {
           session.submit(text.trim()).catch(ignore);

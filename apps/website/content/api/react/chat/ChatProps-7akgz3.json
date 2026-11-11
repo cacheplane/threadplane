@@ -169,6 +169,132 @@
           "isOptional": true
         },
         {
+          "name": "inputFooter",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#inputFooter:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputFooter?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInputProps",
+              "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+              "href": "/docs/api/react/chat/ChatInputProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['footer']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned content below the composer; see `ChatInputProps.footer`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 44
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inputLeading",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#inputLeading:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputLeading?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInputProps",
+              "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+              "href": "/docs/api/react/chat/ChatInputProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['leading']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned content before the draft; see `ChatInputProps.leading`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 40
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inputTrailing",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#inputTrailing:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputTrailing?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInputProps",
+              "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+              "href": "/docs/api/react/chat/ChatInputProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['trailing']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned controls before Stop and Send; see `ChatInputProps.trailing`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 42
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "onRetry",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ChatProps#onRetry:member",
