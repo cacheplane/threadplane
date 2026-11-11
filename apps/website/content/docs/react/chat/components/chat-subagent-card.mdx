@@ -64,6 +64,7 @@ import { MessageList, subagentsFromEvidence } from '@threadplane/react/chat';
 
 const { subagents } = subagentsFromEvidence({
   subagents: snapshot.subagents,
+  earlierSubagents: snapshot.earlierSubagents,
   transcript: snapshot.transcript,
   running: snapshot.status === 'running',
   toolLabel: (name) => (name === 'read_reference' ? 'Reading a reference' : undefined),
@@ -76,7 +77,26 @@ const { subagents } = subagentsFromEvidence({
 
 Status follows the evidence you pass. A finished child is **Complete** and a failed child is **Failed**. A child with no terminal evidence is **Running** only while `running` is true; afterwards it is **Status unavailable**, because a missing terminal event does not establish what happened.
 
-Child text renders literally. Pass `renderText` to `SubagentCard` to render it another way, such as Markdown. Restoring child history after a reload is not covered here: the card shows what the open session observed.
+Child text renders literally. Pass `renderText` to `SubagentCard` to render it another way, such as Markdown.
+
+### Keep cards across turns and reloads
+
+An AG-UI session's `subagents` list holds the current run's children only, and it empties when the next run starts. Children that already settled move to `earlierSubagents`. Pass both lists, as the example above does, and a finished child keeps its card when the user sends the next message. Earlier children are listed first. An earlier child is never **Running**, because `running` describes the current run. Omit `earlierSubagents` and a card disappears when the next turn starts.
+
+The same field restores cards after a reload. Save each child's `started` and `terminal` evidence with the thread, along with the transcript that carries the children's tagged messages, and pass both back when you create the session:
+
+```ts
+import { createSession } from '@threadplane/ag-ui';
+
+const session = createSession({
+  url,
+  threadId,
+  messages: saved.messages,
+  subagents: saved.subagents,
+});
+```
+
+The restored children are published as `earlierSubagents`, so the projection above renders them with no further change. Storing that evidence is your application's job: the session does not persist it.
 
 ## Build from source
 
