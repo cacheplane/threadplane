@@ -252,6 +252,16 @@
       "docLibrary": "chat"
     },
     {
+      "id": "react/a2ui",
+      "importPath": "@threadplane/react/a2ui",
+      "packageName": "@threadplane/react",
+      "project": "react",
+      "framework": "react",
+      "version": "0.0.0",
+      "status": "development",
+      "docLibrary": "a2ui"
+    },
+    {
       "id": "render",
       "importPath": "@threadplane/render",
       "packageName": "@threadplane/render",
@@ -7122,6 +7132,36 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Supplies plain before/after states for a bounded JSON Pointer diff and an optional comparison label."
+    },
+    {
+      "name": "a2uiBasicCatalog",
+      "entrypointId": "react/a2ui",
+      "kind": "Function",
+      "href": "/docs/api/react/a2ui/a2uiBasicCatalog",
+      "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "The static part of the A2UI basic catalog: Text, Row, Column, Card and Divider.\nSpread it into your own registry to add or replace components."
+    },
+    {
+      "name": "A2uiSurface",
+      "entrypointId": "react/a2ui",
+      "kind": "Function",
+      "href": "/docs/api/react/a2ui/A2uiSurface",
+      "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come\nfrom the basic catalog; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet."
+    },
+    {
+      "name": "A2uiSurfaceProps",
+      "entrypointId": "react/a2ui",
+      "kind": "Interface",
+      "href": "/docs/api/react/a2ui/A2uiSurfaceProps",
+      "canonicalReference": "@threadplane/react!A2uiSurfaceProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Supplies one published surface snapshot and, optionally, the components that render it."
     },
     {
       "name": "AngularComponentInputs",

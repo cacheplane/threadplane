@@ -1056,6 +1056,10 @@ test('React chat requires its real supported export', () => {
 });
 test('React render requires exactly the pure RenderSpec runtime export', () => {
   const RenderSpec = () => null;
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, surfaceToSpec() {} }), /unexpected/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createStateStore: () => ({}) }), /unexpected/);

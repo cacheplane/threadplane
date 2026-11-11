@@ -27,6 +27,7 @@ const descriptions: Record<string, string> = {
   'react/markdown': 'Render Markdown content in React applications.',
   'react/render': 'Render agent-generated interfaces in React.',
   'react/debug': 'Inspect React conversation state and runtime events.',
+  'react/a2ui': 'Render A2UI surfaces in React applications.',
   render: 'Render agent-generated interfaces in Angular.',
   telemetry: 'Trace agent activity and collect runtime telemetry.',
   'telemetry/browser': 'Collect telemetry in browser applications.',

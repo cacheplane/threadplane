@@ -1,15 +1,27 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "45a9c83ab6fc16587f25d2c5e0e4f8b7cfee5728",
+  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
       "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
+      "libs/react/package.json",
+      "libs/react/project.json",
+      "tsconfig.base.json"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/a2ui/catalog/card.tsx",
+      "libs/react/src/a2ui/catalog/column.tsx",
+      "libs/react/src/a2ui/catalog/divider.tsx",
+      "libs/react/src/a2ui/catalog/index.ts",
+      "libs/react/src/a2ui/catalog/layout.ts",
+      "libs/react/src/a2ui/catalog/row.tsx",
+      "libs/react/src/a2ui/catalog/text.tsx",
+      "libs/react/src/a2ui/default-fallback.tsx",
+      "libs/react/src/a2ui/index.ts",
+      "libs/react/src/a2ui/styles.css",
+      "libs/react/src/a2ui/surface-spec.ts",
+      "libs/react/src/a2ui/surface.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -855,19 +867,25 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "2dcd3e0fcebdcde5f20ee1a54efd8d039debb61f6ab6b75dbcdc3fd3ff6ef811"
+      "sha256": "da9995cc55f3d7af45494684145f84986c65b1c27f9b532d03e4b6326e4f5774"
     },
     {
       "id": "asset:libs/react/package.json",
       "kind": "asset",
       "path": "libs/react/package.json",
-      "sha256": "ebf39f6c799df8d7a2465e32d2f28bde0500ff2075d77e62246114fa1f6f6b91"
+      "sha256": "5edb1e419b6b49b1c4b0f25577ecc632bf9ecb58bae1427a419f1b2f4e31447d"
     },
     {
       "id": "asset:libs/react/project.json",
       "kind": "asset",
       "path": "libs/react/project.json",
-      "sha256": "de9f5b9ac46d2a3b473698a3d1d6679d99af0da97d3102bb1580b01753af6987"
+      "sha256": "af9bb83636c8556074bbe2499b015840b3d20f1b11d0a423022568b9f0be4688"
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/styles.css",
+      "kind": "asset",
+      "path": "libs/react/src/a2ui/styles.css",
+      "sha256": "85df685b6de4536e98c098ae5c16db89b8c05b623b69f99c8a4e54502a438681"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",
@@ -2361,7 +2379,7 @@
       "id": "config:tsconfig.base.json",
       "kind": "config",
       "path": "tsconfig.base.json",
-      "sha256": "3185fa5a70a0434a7e554bb88dbb1b068f8f0ef481d447dc0d7c003f3f796b0d"
+      "sha256": "22a8d776d55d3ccea6acae3f183e92f5a241a4319a974cb21e5acad9b2ead6e3"
     },
     {
       "id": "doc:apps/website/content/docs/angular/a2ui/getting-started/introduction.mdx",
@@ -17145,6 +17163,72 @@
       "kind": "source",
       "path": "libs/middleware/vite.config.mts",
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/card.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/card.tsx",
+      "sha256": "d227081fa3836f41a58f175872b362563b88f6b13f4e677a94f942d8430a7eb7"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/column.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/column.tsx",
+      "sha256": "c18091e7ccd925260cc25e484ef548c5e6a085783fa7107084ff3063753da8f9"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/divider.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/divider.tsx",
+      "sha256": "1a09a930fe33ec02caf19349b0710b917c07b6d107c0be46328a51bb62e4d9d1"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/index.ts",
+      "sha256": "9b908263489d18b14af9457fd09eb036916936e2b8ea199a4de423fd048198cf"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/layout.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/layout.ts",
+      "sha256": "6ff85c74b9ccd688d4cbdcd5ca046b2691154d1f69f98c419945255e875c682d"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/row.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/row.tsx",
+      "sha256": "909e54ce30093c6f82416cc1b3acbb1bc1cb0089c695ac8873fc1b89b4f05c9e"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/text.tsx",
+      "sha256": "3b3a412713a11ba8f5de154920bee502760bb849ec333866a0b8499d33905d0e"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/default-fallback.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/default-fallback.tsx",
+      "sha256": "40860e850a471cbf8e846daafad15401e74ffabe4cb5aa6834d6de45c09c45e4"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/index.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/index.ts",
+      "sha256": "9dcc0b77a83b1086de3ce84670b679e6cee4073a2ee36fab246d1e6c74a30d5a"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-spec.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/surface-spec.ts",
+      "sha256": "36c794cf58e4ed03807372211a5fb7928ae47209afab2ec0f84c7ef47c2c1423"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/surface.tsx",
+      "sha256": "c15212f5cd78182afce190466d6ff67be92e9a6fea19c32727bb2341431e40f2"
     },
     {
       "id": "source:libs/react/src/chat/activity-summary.ts",

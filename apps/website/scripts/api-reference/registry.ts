@@ -35,7 +35,7 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['langgraph', 'angular', 'src/public-api.ts'],
   ['middleware/langgraph', 'backend', 'src/langgraph/index.ts'],
   ['react', 'react', 'src/index.ts'],
-  ...['chat', 'markdown', 'render', 'debug'].map(
+  ...['chat', 'markdown', 'render', 'debug', 'a2ui'].map(
     (name) =>
       [`react/${name}`, 'react', `src/${name}/index.ts`] as [
         string,
@@ -72,6 +72,8 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
       ? 'chat'
       : id === 'react/render'
       ? 'render'
+      : id === 'react/a2ui'
+      ? 'a2ui'
       : project;
     return {
       id,
@@ -103,6 +105,7 @@ export const EXCLUDED_EXPORTS = new Set([
   'chat/themes/material-light.css',
   'react/chat/styles.css',
   'react/debug/styles.css',
+  'react/a2ui/styles.css',
   'middleware/README.md',
   'telemetry/README.md',
 ]);

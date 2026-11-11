@@ -1527,3 +1527,29 @@ existing explicit Refresh recovery. Scope changes, list replacement, Escape,
 drag end, blur and unmount retire local captures. Foreign payloads cannot supply
 conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
 URL and an active response. Shared catalogs and full T29 parity remain open.
+
+## A2UI surfaces
+
+`@threadplane/react/a2ui` renders one A2UI surface read-only. Accumulate wire
+messages with `createA2uiSurfaces()` from `@threadplane/content/a2ui`, then pass
+a published surface to `A2uiSurface`. Import the stylesheet explicitly.
+
+```tsx
+import { A2uiSurface } from '@threadplane/react/a2ui';
+import '@threadplane/react/a2ui/styles.css';
+import type { A2uiSurfacesSnapshot } from '@threadplane/content/a2ui';
+
+export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot }) {
+  return snapshot.surfaces.map((surface) => (
+    <A2uiSurface key={surface.surfaceId} surface={surface} />
+  ));
+}
+```
+
+`a2uiBasicCatalog()` returns the components this first slice provides: `Text`,
+`Row`, `Column`, `Card` and `Divider`. Spread it into your own registry and pass
+that as `catalog` to add or replace components; keep the registry stable. Literal
+props pass through and `{ path }` props read the surface data model, so a new
+snapshot updates bound text. A component the catalog lacks keeps its children
+and renders no control. Actions, inputs, validation, function-call props, child
+templates and surface themes are not handled yet.
