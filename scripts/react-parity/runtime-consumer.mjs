@@ -844,7 +844,7 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(party).toHaveAccessibleName('Party: 4');
   await page.keyboard.press('End');
   await expect(party).toHaveAccessibleName('Party: 8');
-  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8 });
+  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' });
   // A literal value is fixed.
   const reference = form.getByRole('textbox', { name: 'Reference' });
   await expect(reference).toHaveJSProperty('readOnly', true);
@@ -902,6 +902,62 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(bookTrip).toBeDisabled();
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(bookTrip).toBeEnabled();
+  // ChoicePicker: one choice is a native radio group, so arrow keys move and choose.
+  const seat = form.getByRole('radiogroup', { name: 'Seat' });
+  await expect(seat.getByRole('radio', { name: 'Window' })).toBeChecked();
+  await seat.getByRole('radio', { name: 'Window' }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeChecked();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeFocused();
+  assert.deepEqual((await formModel()).prefs.seat, ['aisle']);
+  // Several choices as chips, with a filter that hides options and never changes the selection.
+  const extras = form.getByRole('group', { name: 'Extras' });
+  const chip = (name) => extras.getByRole('button', { name });
+  await expect(extras.getByRole('button')).toHaveCount(3);
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('me');
+  await expect(extras.getByRole('button')).toHaveCount(1);
+  await chip('Meal').focus();
+  await page.keyboard.press('Space');
+  await expect(chip('Meal')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip('Meal')).toBeFocused();
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('nothing');
+  await expect(extras.getByRole('status')).toHaveText('No options match');
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('');
+  await chip('Bike space').click();
+  assert.deepEqual((await formModel()).prefs.extras, ['bike', 'meal']);
+  const chipStyle = async (name) => chip(name).evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
+  const chosen = await chipStyle('Meal'), unchosen = await chipStyle(/^Quiet/);
+  assert.equal(chosen.radius, '16px');
+  assert.notEqual(chosen.background, unchosen.background);
+  await chip('Bike space').click();
+  assert.deepEqual((await formModel()).prefs.extras, ['meal']);
+  // DateTimeInput: an ISO date-time shows its date part; an edit writes the native value.
+  const travel = form.getByLabel('Travel date');
+  await expect(travel).toHaveAttribute('type', 'date');
+  await expect(travel).toHaveValue('2026-03-04');
+  await expect(travel).toHaveAttribute('min', '2026-03-01');
+  await expect(travel).toHaveAttribute('max', '2026-03-31');
+  await travel.fill('2026-03-10');
+  await expect(travel).toHaveValue('2026-03-10');
+  assert.equal((await formModel()).prefs.date, '2026-03-10');
+  // Stepping a date part with the keyboard writes too and keeps focus in the input.
+  // The bounds pin the month, so step the day part.
+  await travel.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowUp');
+  await expect(travel).toBeFocused();
+  const stepped = (await formModel()).prefs.date;
+  assert.match(stepped, /^\d{4}-\d{2}-\d{2}$/);
+  assert.notEqual(stepped, '2026-03-10');
+  await expect(travel).toHaveValue(stepped);
+  // Without the store the pickers are disabled and the date cannot be edited.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeDisabled();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeChecked();
+  await expect(chip('Meal')).toBeDisabled();
+  await expect(travel).toHaveJSProperty('readOnly', true);
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(chip('Meal')).toBeEnabled();
   // The field takes the surface tokens and fits a narrow viewport.
   const fieldStyle = await guest.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, padding: style.paddingLeft }; });
   assert.deepEqual(fieldStyle, { border: '1px', radius: '8px', padding: '12px' });
@@ -929,7 +985,7 @@ export async function runA2uiSurfaceScenarios(page, url) {
   assert.ok(narrow.card.left >= narrow.surface.left - 0.5 && narrow.card.right <= narrow.surface.right + 0.5, `narrow card ${JSON.stringify(narrow)}`);
   // The form's controls stay inside their surface at the narrow width.
   const narrowForm = await rect(form);
-  for (const control of [guest, notes, party]) {
+  for (const control of [guest, notes, party, travel, extras.getByRole('textbox'), chip(/^Quiet/), chip('Meal')]) {
     const box = await rect(control);
     assert.ok(box.left >= narrowForm.left - 0.5 && box.right <= narrowForm.right + 0.5, `narrow control ${JSON.stringify({ narrowForm, box })}`);
   }

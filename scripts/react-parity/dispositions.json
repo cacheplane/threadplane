@@ -1787,9 +1787,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native component. Filter/chips/options and selection limits; single/multi-value binding and keyboard behavior."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/column.component.ts#A2uiColumnComponent",
@@ -1807,9 +1807,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native component. Date/time value conversion, bounds, controlled binding and validation."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/divider.component.ts#A2uiDividerComponent",
@@ -4884,9 +4884,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native component. Filter/chips/options and selection limits; single/multi-value binding and keyboard behavior."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiClientCapabilities",
@@ -4945,9 +4945,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native component. Date/time value conversion, bounds, controlled binding and validation."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiDividerComponent",
@@ -16042,6 +16042,20 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "CheckBox view writing a boolean through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/choice-picker.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "ChoicePicker view writing a string list through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/date-time-input.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "DateTimeInput view writing the native date or time value through the surface write channel."
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/icon.tsx",

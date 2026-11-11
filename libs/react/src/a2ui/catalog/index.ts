@@ -3,7 +3,9 @@ import { A2uiAudioPlayer } from './audio-player.js';
 import { A2uiButton } from './button.js';
 import { A2uiCard } from './card.js';
 import { A2uiCheckBox } from './check-box.js';
+import { A2uiChoicePicker } from './choice-picker.js';
 import { A2uiColumn } from './column.js';
+import { A2uiDateTimeInput } from './date-time-input.js';
 import { A2uiDivider } from './divider.js';
 import { A2uiIcon } from './icon.js';
 import { A2uiImage } from './image.js';
@@ -21,7 +23,9 @@ const CATALOG: ReactRenderRegistry = Object.freeze({
   Button: A2uiButton,
   Card: A2uiCard,
   CheckBox: A2uiCheckBox,
+  ChoicePicker: A2uiChoicePicker,
   Column: A2uiColumn,
+  DateTimeInput: A2uiDateTimeInput,
   Divider: A2uiDivider,
   Icon: A2uiIcon,
   Image: A2uiImage,
@@ -36,9 +40,9 @@ const CATALOG: ReactRenderRegistry = Object.freeze({
 });
 
 /**
- * The A2UI basic catalog so far: Text, Image, Icon, Video, AudioPlayer, Row,
- * Column, List, Card, Divider, Tabs, Modal, TextField, CheckBox, Slider and
- * Button. Inputs write to the surface's store when `A2uiSurface` is given one;
+ * The A2UI basic catalog: Text, Image, Icon, Video, AudioPlayer, Row, Column,
+ * List, Card, Divider, Tabs, Modal, TextField, CheckBox, ChoicePicker,
+ * DateTimeInput, Slider and Button. Inputs write to the surface's store when `A2uiSurface` is given one;
  * a Button hands its event action to the surface's `onAction`.
  */
 export function a2uiBasicCatalog(): ReactRenderRegistry {
