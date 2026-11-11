@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
   "isDeprecated": false,
   "isTypeOnly": false,
-  "summary": "Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come\nfrom the basic catalog; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet.",
+  "summary": "Renders one A2UI surface read-only with the basic catalog's display and\ndisclosure components; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet.",
   "declarations": [
     {
       "name": "A2uiSurface",
@@ -42,7 +42,7 @@
         }
       ],
       "docs": {
-        "summary": "Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come\nfrom the basic catalog; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet.",
+        "summary": "Renders one A2UI surface read-only with the basic catalog's display and\ndisclosure components; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet.",
         "remarks": "",
         "deprecated": "",
         "returns": "",

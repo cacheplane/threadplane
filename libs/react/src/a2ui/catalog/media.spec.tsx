@@ -28,7 +28,7 @@ const one = (component: Record<string, unknown>, dataModel = {}) =>
   ).container.firstElementChild as HTMLElement;
 
 describe('A2UI display catalog', () => {
-  it('lists the ten display components and no control', () => {
+  it('lists the display and disclosure components and no input control', () => {
     expect(Object.keys(a2uiBasicCatalog()).sort()).toEqual([
       'AudioPlayer',
       'Card',
@@ -37,7 +37,9 @@ describe('A2UI display catalog', () => {
       'Icon',
       'Image',
       'List',
+      'Modal',
       'Row',
+      'Tabs',
       'Text',
       'Video',
     ]);

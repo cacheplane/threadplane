@@ -7151,7 +7151,7 @@
       "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "The display part of the A2UI basic catalog: Text, Image, Icon, Video,\nAudioPlayer, Row, Column, List, Card and Divider. None of them is a control.\nSpread it into your own registry to add or replace components."
+      "summary": "The display and disclosure part of the A2UI basic catalog: Text, Image, Icon,\nVideo, AudioPlayer, Row, Column, List, Card, Divider, Tabs and Modal. Tabs and\nModal keep their own open state; none of these sends an action."
     },
     {
       "name": "A2uiSurface",
@@ -7161,7 +7161,7 @@
       "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come\nfrom the basic catalog; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet."
+      "summary": "Renders one A2UI surface read-only with the basic catalog's display and\ndisclosure components; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet."
     },
     {
       "name": "A2uiSurfaceProps",
