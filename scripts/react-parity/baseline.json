@@ -1,22 +1,20 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "dc81c4ca5693947ad3dd75c7d7e89d99888a52f9",
+  "baselineHead": "51fca6309fde196ac6fc01c9a7dcbaa3331ec0cb",
   "sourceState": {
     "modified": [
-      ".github/workflows/ci.yml",
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "libs/react/README.md",
+      "libs/react/src/a2ui/catalog/index.ts",
+      "libs/react/src/a2ui/styles.css"
     ],
-    "untracked": []
+    "untracked": [
+      "libs/react/src/a2ui/catalog/audio-player.tsx",
+      "libs/react/src/a2ui/catalog/icon.tsx",
+      "libs/react/src/a2ui/catalog/image.tsx",
+      "libs/react/src/a2ui/catalog/list.tsx",
+      "libs/react/src/a2ui/catalog/media-url.ts",
+      "libs/react/src/a2ui/catalog/video.tsx"
+    ]
   },
   "scope": {
     "libraries": [
@@ -862,7 +860,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "da9995cc55f3d7af45494684145f84986c65b1c27f9b532d03e4b6326e4f5774"
+      "sha256": "aec62ad5dd543ca093aee45313036db532169f6444a8f4d8d17d00fe1171140f"
     },
     {
       "id": "asset:libs/react/package.json",
@@ -880,7 +878,7 @@
       "id": "asset:libs/react/src/a2ui/styles.css",
       "kind": "asset",
       "path": "libs/react/src/a2ui/styles.css",
-      "sha256": "85df685b6de4536e98c098ae5c16db89b8c05b623b69f99c8a4e54502a438681"
+      "sha256": "2cda5290a4acfd9745799b60ab34778a835b906dc792fb95c88f21c9c8cd0733"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",
@@ -17174,6 +17172,12 @@
       "sha256": "56dba6e5f8e0ec195271f37e8de4cbe0eb98c0ad8f04f60749ea7a54e621384d"
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/audio-player.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/audio-player.tsx",
+      "sha256": "475c95c4d45f3e12c4d8bc154ea20325861a3dbb6dd2910f42f4fa345af77523"
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/card.tsx",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/card.tsx",
@@ -17192,16 +17196,40 @@
       "sha256": "1a09a930fe33ec02caf19349b0710b917c07b6d107c0be46328a51bb62e4d9d1"
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/icon.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/icon.tsx",
+      "sha256": "6f331e73e2d5d53c1b951536bd7e9aae6eccc8ba032fa84c0d16c544d4f0e246"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/image.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/image.tsx",
+      "sha256": "748d39ebcc1cfcbe306e7a23ea8c76b1c3ab4e14d993ad7347d89696a4d3298f"
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/index.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/index.ts",
-      "sha256": "9b908263489d18b14af9457fd09eb036916936e2b8ea199a4de423fd048198cf"
+      "sha256": "0523d2e124ddd9e8d253bc5d74db7ceb470e2b2d613cd8eb3d7c2b7633d6d0fc"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/layout.ts",
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/layout.ts",
       "sha256": "6ff85c74b9ccd688d4cbdcd5ca046b2691154d1f69f98c419945255e875c682d"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/list.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/list.tsx",
+      "sha256": "3d6259882b3f28861ce800897e470da857af7e113d3adb7a8866789b65028c2b"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/media-url.ts",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/media-url.ts",
+      "sha256": "17dac5cf8af2c6b983394b059a30c64d70b9fef6d560878bcd97ea1a49a9888f"
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/row.tsx",
@@ -17214,6 +17242,12 @@
       "kind": "source",
       "path": "libs/react/src/a2ui/catalog/text.tsx",
       "sha256": "3b3a412713a11ba8f5de154920bee502760bb849ec333866a0b8499d33905d0e"
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/video.tsx",
+      "kind": "source",
+      "path": "libs/react/src/a2ui/catalog/video.tsx",
+      "sha256": "3cabb7750723db07699920fcd9f86cfe1e328bbc64c8bf0d03ec517a8ed29bd7"
     },
     {
       "id": "source:libs/react/src/a2ui/default-fallback.tsx",

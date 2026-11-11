@@ -106,7 +106,7 @@ function tripSurface(summary: string) {
   const messages = [
     { version: 'v0.9', createSurface: { surfaceId: 'trip', catalogId: 'basic' } },
     { version: 'v0.9', updateComponents: { surfaceId: 'trip', components: [
-      { id: 'root', component: 'Column', children: ['title', 'card', 'rule', 'row', 'extra'] },
+      { id: 'root', component: 'Column', children: ['title', 'card', 'rule', 'row', 'gallery', 'extra'] },
       { id: 'title', component: 'Text', text: 'Lyon trip', variant: 'h2' },
       { id: 'card', component: 'Card', child: 'summary' },
       { id: 'summary', component: 'Text', text: { path: '/summary' } },
@@ -115,6 +115,10 @@ function tripSurface(summary: string) {
       { id: 'depart', component: 'Text', text: 'Depart', variant: 'caption' },
       { id: 'bar', component: 'Divider', axis: 'vertical' },
       { id: 'time', component: 'Text', text: '09:40' },
+      { id: 'gallery', component: 'List', direction: 'horizontal', align: 'center', children: ['photo', 'pin', 'caption'] },
+      { id: 'photo', component: 'Image', url: PHOTO, description: 'Lyon skyline', variant: 'avatar', fit: 'cover' },
+      { id: 'pin', component: 'Icon', name: { svgPath: 'M480-80 160-400l320-480 320 480L480-80Z' } },
+      { id: 'caption', component: 'Text', text: 'Old town', variant: 'caption' },
       { id: 'extra', component: 'Button', child: 'label', action: { event: { name: 'book' } } },
       { id: 'label', component: 'Text', text: 'Book <b>now</b>' },
     ] } },
@@ -125,6 +129,7 @@ function tripSurface(summary: string) {
   surfaces.dispose();
   return surface;
 }
+const PHOTO = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="teal"/></svg>')}`;
 const SUMMARIES = ['Two nights in Lyon', 'Three-nights-with-an-unbroken-summary-that-must-wrap-inside-the-card-and-never-widen-the-page'];
 
 function A2uiSurfaceFixture() {

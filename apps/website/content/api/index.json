@@ -7151,7 +7151,7 @@
       "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
       "isDeprecated": false,
       "isTypeOnly": false,
-      "summary": "The static part of the A2UI basic catalog: Text, Row, Column, Card and Divider.\nSpread it into your own registry to add or replace components."
+      "summary": "The display part of the A2UI basic catalog: Text, Image, Icon, Video,\nAudioPlayer, Row, Column, List, Card and Divider. None of them is a control.\nSpread it into your own registry to add or replace components."
     },
     {
       "name": "A2uiSurface",

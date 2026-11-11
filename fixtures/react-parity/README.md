@@ -5,9 +5,10 @@ browser fixture accumulates a surface from wire messages with the installed
 content package, then checks heading semantics, column and row order, row
 distribution, both divider axes, the opt-in stylesheet's card tokens in light and
 dark schemes, a path prop following a new snapshot without remounting, an
-unsupported component keeping its child as literal text, right-to-left order and
-a 320px viewport. Actions, inputs, function calls and child templates are not
-part of this slice.
+unsupported component keeping its child as literal text, a horizontal list
+holding a decoded avatar image named by its description, a decorative path icon
+and a caption, right-to-left order and a 320px viewport. Actions, inputs,
+function calls and child templates are not part of this slice.
 
 `ChatInput` accepts app-owned `leading`, `trailing` and `footer` content, and
 `Chat` passes it through `inputLeading`, `inputTrailing` and `inputFooter`. The

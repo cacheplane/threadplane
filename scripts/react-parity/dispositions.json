@@ -1735,9 +1735,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/audio-player.tsx",
-      "reason": "Native component. Native audio controls; safe URL, label, browser-only playback, no autoplay assumption."
+      "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/button.component.ts#A2uiButtonComponent",
@@ -1815,9 +1815,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/icon.tsx",
-      "reason": "Native component. Constrained icon lookup; no arbitrary model HTML injection."
+      "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/image.component.ts#A2uiImageComponent",
@@ -1825,9 +1825,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/image.tsx",
-      "reason": "Native component. Safe source, alt text, fit/size behavior and failed-image presentation."
+      "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/list.component.ts#A2uiListComponent",
@@ -1835,9 +1835,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/list.tsx",
-      "reason": "Native component. Template/repeat scope and identity; verify reorder behavior and binding paths."
+      "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/modal.component.ts#A2uiModalComponent",
@@ -1905,9 +1905,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/video.tsx",
-      "reason": "Native component. Native video controls; safe URL, sizing, loading and accessibility."
+      "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/surface.component.ts#A2uiSurfaceComponent",
@@ -4808,9 +4808,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/audio-player.tsx",
-      "reason": "Native component. Native audio controls; safe URL, label, browser-only playback, no autoplay assumption."
+      "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiButtonComponent",
@@ -4985,9 +4985,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/icon.tsx",
-      "reason": "Native component. Constrained icon lookup; no arbitrary model HTML injection."
+      "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiImageComponent",
@@ -4995,9 +4995,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/image.tsx",
-      "reason": "Native component. Safe source, alt text, fit/size behavior and failed-image presentation."
+      "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiListComponent",
@@ -5005,9 +5005,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/list.tsx",
-      "reason": "Native component. Template/repeat scope and identity; verify reorder behavior and binding paths."
+      "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiModalComponent",
@@ -5127,9 +5127,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/video.tsx",
-      "reason": "Native component. Native video controls; safe URL, sizing, loading and accessibility."
+      "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiViewEntry",
@@ -16009,6 +16009,48 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Read-only Text view with heading semantics for h1 to h5."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/audio-player.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only AudioPlayer view with native controls and a literal description."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/icon.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Icon view: Material Symbols ligature or decorative inline path."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/image.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Image view with alternative text, sizing presets and object fit."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/list.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only List view for static children, vertical or horizontal."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/media-url.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal filter that keeps relative, http(s), blob and same-kind data media URLs."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/video.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Video view with native controls."
     },
     {
       "id": "source:libs/react/src/a2ui/default-fallback.tsx",

@@ -746,6 +746,21 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(unsupported).toHaveText('Book <b>now</b>');
   await expect(surface.getByRole('button')).toHaveCount(0);
   assert.equal(await unsupported.locator('b').count(), 0);
+  // Media: the image carries its description and avatar preset, the path icon is decorative, and the list runs inline.
+  const photo = surface.getByRole('img', { name: 'Lyon skyline' });
+  await expect(photo).toHaveJSProperty('complete', true);
+  assert.ok(await photo.evaluate((node) => node.naturalWidth) > 0, 'image decoded');
+  const photoStyle = await photo.evaluate((node) => { const style = getComputedStyle(node); return { width: style.width, height: style.height, radius: style.borderTopLeftRadius, fit: style.objectFit }; });
+  assert.deepEqual(photoStyle, { width: '40px', height: '40px', radius: '50%', fit: 'cover' });
+  const pin = surface.locator('svg.a2ui-icon--svg');
+  await expect(pin).toHaveAttribute('aria-hidden', 'true');
+  await expect(surface.getByRole('img')).toHaveCount(1);
+  const gallery = { list: await rect(surface.locator('.a2ui-list--horizontal')), photo: await rect(photo), pin: await rect(pin), caption: await rect(surface.getByText('Old town', { exact: true })) };
+  assert.ok(Math.abs(gallery.pin.width - 18) < 0.01 && Math.abs(gallery.pin.height - 18) < 0.01, `icon size ${JSON.stringify(gallery)}`);
+  assert.ok(gallery.photo.right <= gallery.pin.left && gallery.pin.right <= gallery.caption.left, `list order ${JSON.stringify(gallery)}`);
+  const middle = (box) => (box.top + box.bottom) / 2;
+  assert.ok(Math.abs(middle(gallery.photo) - middle(gallery.pin)) < 1 && Math.abs(middle(gallery.photo) - middle(gallery.caption)) < 1, `list centred ${JSON.stringify(gallery)}`);
+  assert.ok(ltr.row.bottom <= gallery.list.top, `list after row ${JSON.stringify(gallery)}`);
   // A new snapshot replaces the bound text without remounting the card.
   const retained = await card.elementHandle();
   await page.getByRole('checkbox', { name: 'Long summary' }).check();

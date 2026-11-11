@@ -140,6 +140,94 @@
   background: var(--a2ui-outline);
   margin: 0 var(--a2ui-spacing-2);
 }
+.a2ui-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--a2ui-shape-extra-small, 4px);
+}
+.a2ui-img--icon {
+  width: 24px;
+  height: 24px;
+}
+.a2ui-img--avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.a2ui-img--smallFeature {
+  width: 120px;
+}
+.a2ui-img--mediumFeature {
+  width: 240px;
+}
+.a2ui-img--largeFeature {
+  width: 400px;
+}
+.a2ui-img--header {
+  width: 100%;
+  aspect-ratio: 16 / 5;
+}
+.a2ui-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.125rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  color: currentColor;
+  user-select: none;
+}
+.a2ui-icon--svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.a2ui-list {
+  display: flex;
+  min-width: 0;
+  gap: var(--a2ui-spacing-1);
+}
+.a2ui-list--vertical {
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 384px;
+}
+.a2ui-list--horizontal {
+  flex-direction: row;
+  overflow-x: auto;
+}
+.a2ui-list--horizontal > * {
+  flex: none;
+}
+.a2ui-video {
+  display: block;
+  width: 100%;
+  border-radius: var(--a2ui-shape-small, 8px);
+}
+.a2ui-audio-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--a2ui-spacing-1);
+}
+.a2ui-audio-description {
+  font-size: var(--a2ui-typography-caption-size);
+  color: var(--a2ui-caption);
+}
+.a2ui-audio {
+  display: block;
+  width: 100%;
+}
 .a2ui-unsupported {
   display: contents;
 }
