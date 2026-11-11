@@ -519,3 +519,33 @@ describe('empty failure copy', () => {
     );
   });
 });
+
+describe('grouped rows', () => {
+  function renderOpenGroup(activities: readonly ToolActivityInfo[]): HTMLElement {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', activities);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    root.querySelector('details')!.open = true;
+    return root;
+  }
+  it('names a failed row only by its status word and leaves the message to the group panel', () => {
+    const root = renderOpenGroup([
+      { id: 'a', name: 'read', label: 'Read toSorted', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+      { id: 'b', name: 'read', label: 'Read toReversed', phase: 'complete' },
+    ]);
+    const list = root.querySelector('.tp-tool-activity-group__items')!;
+    expect(list.querySelector('[role="alert"]')).toBeNull();
+    expect(list.querySelector('.tp-tool-activity__error')).toBeNull();
+    const failedRow = list.querySelector('[data-tool-id="a"]')!;
+    expect(failedRow.querySelector('.tp-tool-activity__phase')!.textContent).toBe('Failed');
+    expect(root.querySelectorAll('[role="alert"]')).toHaveLength(1);
+    expect(root.textContent!.split('Reference B is unavailable.')).toHaveLength(2);
+  });
+  it('still shows the failure on a row outside a group', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', { id: 'a', name: 'read', phase: 'error', errorSummary: 'Reference B is unavailable.' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent.trim()).toBe('Reference B is unavailable.');
+  });
+});
