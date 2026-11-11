@@ -50,6 +50,35 @@ const openSources = (view: { container: HTMLElement }) =>
     )
     .forEach((toggle) => fireEvent.click(toggle));
 describe('MessageList', () => {
+  it('renders answered approval records after their anchor row, and unanchored ones after the last row', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap([msg('a', 'Asking.'), msg('b', 'Refund issued.')])
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        approvalRecords={[
+          { afterId: 'a', verdict: 'approved', label: 'Issue refund' },
+          { afterId: 'gone', verdict: 'declined' },
+        ]}
+      />
+    );
+    const order = Array.from(
+      view.container.querySelectorAll('article, .tp-approval-record')
+    ).map((node) =>
+      node.classList.contains('tp-approval-record')
+        ? node.textContent
+        : node.textContent?.trim()
+    );
+    expect(order).toEqual([
+      'Assistant:Asking.',
+      'Approved: Issue refund',
+      'Assistant:Refund issued.',
+      'Declined',
+    ]);
+    content.dispose();
+  });
   it('derives default previous-role attributes from supplied projected rows, including mismatched payload roles', () => {
     const content = createMessageContent();
     const base = content.project(

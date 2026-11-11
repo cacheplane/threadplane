@@ -1,5 +1,6 @@
 'use client';
 import {
+  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -28,6 +29,11 @@ import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
+import {
+  approvalRecordsByRow,
+  renderApprovalRecords,
+  type ApprovalRecordEntry,
+} from './approval-card.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -112,6 +118,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * stable between updates; custom renderMessage retains full ownership.
    */
   readonly subagents?: readonly SubagentInfo[];
+  /**
+   * Answered approvals, each rendered as a one-line `ApprovalRecord` after the row its `afterId`
+   * names, or after the last row when that row is absent. Records stay where the app put them while
+   * the run continues below.
+   */
+  readonly approvalRecords?: readonly ApprovalRecordEntry[];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -462,9 +474,18 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   plan,
   onStop,
   subagents,
+  approvalRecords,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
+  const recordsAfter = useMemo(
+    () =>
+      approvalRecordsByRow(
+        approvalRecords,
+        rows.map((row) => row.id)
+      ),
+    [approvalRecords, rows]
+  );
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
@@ -551,7 +572,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       el.scrollTop = el.scrollHeight;
       lastScrollTop.current = el.scrollTop;
     }
-  }, [rows, children]);
+  }, [rows, children, approvalRecords]);
   return (
     <>
       <div
@@ -563,25 +584,28 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       >
         <div ref={content}>
           {rows.map((row, index) => (
-            <Row
-              key={row.id}
-              row={row}
-              current={index === rows.length - 1}
-              prevRole={rows[index - 1]?.role}
-              renderMessage={renderMessage}
-              groupRelatedTools={groupRelatedTools}
-              toolLabel={toolLabel}
-              toolOutcome={toolOutcome}
-              renderToolCall={renderToolCall}
-              renderToolResult={renderToolResult}
-              onToolRetry={onToolRetry}
-              staleRetries={staleRetries?.[index]}
-              subagents={rowSubagents?.[index]}
-              retrying={retrying?.[index]}
-              plan={index === rows.length - 1 ? plan : undefined}
-              onStop={index === rows.length - 1 ? onStop : undefined}
-            />
+            <Fragment key={row.id}>
+              <Row
+                row={row}
+                current={index === rows.length - 1}
+                prevRole={rows[index - 1]?.role}
+                renderMessage={renderMessage}
+                groupRelatedTools={groupRelatedTools}
+                toolLabel={toolLabel}
+                toolOutcome={toolOutcome}
+                renderToolCall={renderToolCall}
+                renderToolResult={renderToolResult}
+                onToolRetry={onToolRetry}
+                staleRetries={staleRetries?.[index]}
+                subagents={rowSubagents?.[index]}
+                retrying={retrying?.[index]}
+                plan={index === rows.length - 1 ? plan : undefined}
+                onStop={index === rows.length - 1 ? onStop : undefined}
+              />
+              {renderApprovalRecords(recordsAfter, row.id)}
+            </Fragment>
           ))}
+          {renderApprovalRecords(recordsAfter, undefined)}
           {children}
         </div>
       </div>
