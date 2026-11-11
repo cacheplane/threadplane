@@ -1,20 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "51fca6309fde196ac6fc01c9a7dcbaa3331ec0cb",
+  "baselineHead": "d442bbeedfcb5bc1ba6d58645feb39b9b6442706",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/a2ui/catalog/index.ts",
       "libs/react/src/a2ui/styles.css"
     ],
-    "untracked": [
-      "libs/react/src/a2ui/catalog/audio-player.tsx",
-      "libs/react/src/a2ui/catalog/icon.tsx",
-      "libs/react/src/a2ui/catalog/image.tsx",
-      "libs/react/src/a2ui/catalog/list.tsx",
-      "libs/react/src/a2ui/catalog/media-url.ts",
-      "libs/react/src/a2ui/catalog/video.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -878,7 +869,7 @@
       "id": "asset:libs/react/src/a2ui/styles.css",
       "kind": "asset",
       "path": "libs/react/src/a2ui/styles.css",
-      "sha256": "2cda5290a4acfd9745799b60ab34778a835b906dc792fb95c88f21c9c8cd0733"
+      "sha256": "6cb9e1302dafecc3b010e3b6eda749acaf0ddcef68f6e9802fc0a0351540483a"
     },
     {
       "id": "asset:libs/react/src/chat/styles.css",

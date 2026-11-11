@@ -757,6 +757,7 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(surface.getByRole('img')).toHaveCount(1);
   const gallery = { list: await rect(surface.locator('.a2ui-list--horizontal')), photo: await rect(photo), pin: await rect(pin), caption: await rect(surface.getByText('Old town', { exact: true })) };
   assert.ok(Math.abs(gallery.pin.width - 18) < 0.01 && Math.abs(gallery.pin.height - 18) < 0.01, `icon size ${JSON.stringify(gallery)}`);
+  assert.ok(Math.abs(gallery.pin.left - gallery.photo.right - 4) < 0.01 && Math.abs(gallery.caption.left - gallery.pin.right - 4) < 0.01, `list gap ${JSON.stringify(gallery)}`);
   assert.ok(gallery.photo.right <= gallery.pin.left && gallery.pin.right <= gallery.caption.left, `list order ${JSON.stringify(gallery)}`);
   const middle = (box) => (box.top + box.bottom) / 2;
   assert.ok(Math.abs(middle(gallery.photo) - middle(gallery.pin)) < 1 && Math.abs(middle(gallery.photo) - middle(gallery.caption)) < 1, `list centred ${JSON.stringify(gallery)}`);

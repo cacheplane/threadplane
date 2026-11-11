@@ -6,9 +6,12 @@
   --a2ui-outline: rgba(0, 0, 0, 0.12);
   --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
   --a2ui-caption: var(--a2ui-on-surface-variant);
+  --a2ui-spacing-1: 4px;
   --a2ui-spacing-2: 8px;
   --a2ui-spacing-3: 12px;
   --a2ui-spacing-4: 16px;
+  --a2ui-shape-extra-small: 4px;
+  --a2ui-shape-small: 8px;
   --a2ui-shape-medium: 12px;
   --a2ui-typography-h1-size: 32px;
   --a2ui-typography-h1-weight: 700;
@@ -144,7 +147,7 @@
   display: block;
   max-width: 100%;
   height: auto;
-  border-radius: var(--a2ui-shape-extra-small, 4px);
+  border-radius: var(--a2ui-shape-extra-small);
 }
 .a2ui-img--icon {
   width: 24px;
@@ -212,7 +215,7 @@
 .a2ui-video {
   display: block;
   width: 100%;
-  border-radius: var(--a2ui-shape-small, 8px);
+  border-radius: var(--a2ui-shape-small);
 }
 .a2ui-audio-wrap {
   display: flex;
