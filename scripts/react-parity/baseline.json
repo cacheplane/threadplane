@@ -1,12 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
+  "baselineHead": "4d4ddeb48ae363d3011421473bbdbf807888c390",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/message-list.tsx",
-      "libs/react/src/chat/styles.css"
+      "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx"
     ],
     "untracked": []
   },
@@ -3188,7 +3185,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "048feddc46ee7cf6f4bc5f944286755ef862014d15885940d1d7f7347d25091a"
+      "sha256": "d161ecc16c58fd849084c6ef2fa69a8b5435a1eb94abd3f702a3adb49b9a9743"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",

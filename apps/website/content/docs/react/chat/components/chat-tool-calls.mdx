@@ -202,16 +202,16 @@ What you return decides what happens to that call:
 - `null` shows nothing for the call.
 - Anything else replaces the row.
 
-**Return `undefined`, not `null`, for the calls you don't handle.**
+**Return `undefined`, not `null`, for the calls you do not handle.**
 A `null` hides the call, and a hidden call is hard to notice until someone asks where the tool activity went.
 
 A replaced call leaves its group.
 The calls before it and after it are summarized separately, so the transcript keeps the order the calls were made in.
 The cost is that you own everything about that call's presentation.
-`renderToolResult`, outcome previews, **Details** and the retry control don't apply to it, so show the running and failed states yourself.
+`renderToolResult`, outcome previews, **Details** and the retry control do not apply to it, so show the running and failed states yourself.
 
-In the example, a weather call that's still running returns `undefined` and keeps the built-in row until its result arrives.
-I think that's the easiest way to start, because the built-in row already handles running, stopped and failed.
+In the example, a weather call that is still running returns `undefined` and keeps the built-in row until its result arrives.
+I think that is the easiest way to start, because the built-in row already handles running, stopped and failed.
 
 ## Recover from a partial failure
 
