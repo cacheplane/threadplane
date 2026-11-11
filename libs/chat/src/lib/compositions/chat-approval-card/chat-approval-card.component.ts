@@ -6,6 +6,9 @@ import {
   computed,
   contentChild,
   effect,
+  afterNextRender,
+  Injector,
+  inject,
   input,
   output,
   viewChild,
@@ -13,15 +16,18 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ChatStatusPanelComponent } from '../../primitives/chat-status-panel/chat-status-panel.component';
 
 /** Actions emitted by the approval dialog for the host to handle. */
 export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
+/** `dialog` opens a modal; `inline` renders a status panel where the card is placed, such as a `chatInterruptTemplate`. */
+export type ChatApprovalPresentation = 'dialog' | 'inline';
 
-/** Displays an approval dialog for a matching agent interrupt and emits approve, edit, or cancel actions. */
+/** Displays an approval for a matching agent interrupt, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions. */
 @Component({
   selector: 'chat-approval-card',
   standalone: true,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, ChatStatusPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
     CHAT_HOST_TOKENS,
@@ -94,9 +100,37 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
       padding: 6px 10px;
     }
     .btn-text:hover { color: var(--tplane-chat-text); }
+    .btn:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: 2px; }
+    .btn-danger { background: var(--tplane-chat-destructive); color: var(--tplane-chat-on-destructive); }
+    .chat-approval-card--inline { margin: 8px 0 16px; }
+    .chat-approval-card__request { margin: 0; color: var(--tplane-chat-text); }
+    .chat-approval-card--inline .btn { min-height: 32px; font-size: 13px; }
+    @media (pointer: coarse) { .chat-approval-card--inline .btn { min-height: 44px; } }
+    @media (forced-colors: active) { .btn-primary, .btn-danger { border: 1px solid ButtonText; } }
     `,
   ],
   template: `
+    @if (presentation() === 'inline') {
+      @if (payload(); as p) {
+        <div
+          chatStatusPanel
+          class="chat-approval-card chat-approval-card--inline"
+          [tone]="destructive() ? 'danger' : 'warning'"
+          [lead]="lead()"
+        >
+          <p class="chat-approval-card__request">{{ title() }}</p>
+          @if (bodyTemplate(); as tpl) {
+            <ng-container *ngTemplateOutlet="tpl; context: { $implicit: p }"></ng-container>
+          }
+          <button #firstAction chatStatusPanelActions type="button" class="btn" [class.btn-primary]="!destructive()" [class.btn-danger]="destructive()" (click)="emit('approve')">{{ approveLabel() }}</button>
+          @if (showEdit()) {
+            <button chatStatusPanelActions type="button" class="btn btn-secondary" (click)="emit('edit')">Edit</button>
+          }
+          <button chatStatusPanelActions type="button" class="btn btn-secondary" (click)="emit('cancel')">{{ cancelLabel() }}</button>
+        </div>
+      }
+    }
+    <!-- Always rendered so the dialog exists from creation; it only opens in dialog presentation. -->
     <dialog #dialogEl class="chat-approval-card" (close)="onDialogClose()" (cancel)="onCancelEvent($event)">
       <div class="chat-approval-card__header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -110,11 +144,11 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
         }
       </div>
       <div class="chat-approval-card__actions">
-        <button type="button" class="btn btn-text" (click)="emit('cancel')">Cancel</button>
+        <button type="button" class="btn btn-text" (click)="emit('cancel')">{{ cancelLabel() }}</button>
         @if (showEdit()) {
           <button type="button" class="btn btn-secondary" (click)="emit('edit')">Edit</button>
         }
-        <button type="button" class="btn btn-primary" (click)="emit('approve')">Approve</button>
+        <button type="button" class="btn" [class.btn-primary]="!destructive()" [class.btn-danger]="destructive()" (click)="emit('approve')">{{ approveLabel() }}</button>
       </div>
     </dialog>
   `,
@@ -124,11 +158,25 @@ export class ChatApprovalCardComponent {
   readonly matchKind = input<string | undefined>(undefined);
   readonly title = input<string>('Approval required');
   readonly showEdit = input<boolean>(false);
+  /** `dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript. */
+  readonly presentation = input<ChatApprovalPresentation>('dialog');
+  /** Marks an action that cannot be undone: danger tint, the lead "This can't be undone." and a danger primary button. Name the exact effect in `approveLabel`, such as "Delete 12 drafts". */
+  readonly destructive = input<boolean>(false);
+  /** Primary button text. Name the action, such as "Save note". */
+  readonly approveLabel = input<string>('Approve');
+  /** Secondary button text. Name the alternative, such as "Don't save". */
+  readonly cancelLabel = input<string>('Cancel');
 
   readonly action = output<ChatApprovalAction>();
 
+  protected readonly lead = computed(() =>
+    this.destructive() ? "This can't be undone." : 'Waiting for your approval.'
+  );
+
   protected readonly bodyTemplate = contentChild<TemplateRef<unknown>>('body');
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
+  private readonly firstAction = viewChild<ElementRef<HTMLButtonElement>>('firstAction');
+  private readonly injector = inject(Injector);
 
   private readonly interrupt = computed(() => this.agent().interrupt?.());
 
@@ -146,7 +194,20 @@ export class ChatApprovalCardComponent {
   });
 
   constructor() {
+    // Inline: move focus to the first action once, when an approval appears.
+    let focusedFor: unknown;
     effect(() => {
+      const p = this.payload();
+      if (this.presentation() !== 'inline' || !p) {
+        focusedFor = undefined;
+        return;
+      }
+      if (focusedFor === p) return;
+      focusedFor = p;
+      afterNextRender(() => this.firstAction()?.nativeElement.focus(), { injector: this.injector });
+    });
+    effect(() => {
+      if (this.presentation() !== 'dialog') return;
       const p = this.payload();
       const dialog = this.dialogRef()?.nativeElement;
       if (!dialog) return;
