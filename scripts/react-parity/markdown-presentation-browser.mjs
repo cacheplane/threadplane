@@ -55,6 +55,13 @@ async function verifyDefaultTranscript(page) {
   const rows = fixture.locator('article');
   await rows.first().waitFor();
   assert.equal(await rows.count(), 7);
+  // Default rows keep Sources closed until opened; open each panel to read its entries.
+  const closedSources = fixture.locator(
+    '.tp-citations__toggle[aria-expanded="false"]'
+  );
+  assert.equal(await closedSources.count(), 3, 'Sources start closed');
+  assert.equal(await fixture.locator('.tp-citations a').count(), 0);
+  while (await closedSources.count()) await closedSources.first().click();
   const provider = rows.nth(0),
     markdown = rows.nth(1),
     mixed = rows.nth(2);

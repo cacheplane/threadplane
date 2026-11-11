@@ -1,5 +1,5 @@
-import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { activitySummary } from './activity-summary';
 import {
   ToolActivity,
@@ -538,5 +538,123 @@ describe('empty failure copy', () => {
     expect(view.getByRole('alert').textContent).toBe(
       'This tool could not finish. Check Details before retrying.'
     );
+  });
+});
+
+describe('ToolActivityGroup — quiet rows and sources under their call', () => {
+  const read = (id: string): ToolActivityInfo => ({
+    id,
+    name: 'read_reference',
+    phase: 'complete',
+    outcome: { text: `Read ${id}`, sources: [{ title: `Guide ${id}`, url: `https://angular.dev/guide/${id}` }] },
+  });
+  const links = (el: Element | null) => [...(el?.querySelectorAll('a') ?? [])].map((a) => a.getAttribute('href'));
+  const open = (container: HTMLElement) => {
+    const details = container.querySelector<HTMLDetailsElement>('.tp-tool-activity-group__details')!;
+    act(() => {
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+    });
+  };
+
+  it('reports a grouped failure only with the row status word and one panel below the group', () => {
+    const view = render(
+      <ToolActivityGroup
+        activities={[
+          { id: 'a', name: 'read', phase: 'complete' },
+          { id: 'b', name: 'read', phase: 'error', errorSummary: 'Reference B is unavailable.' },
+        ]}
+      />
+    );
+    const row = view.container.querySelector('[data-tool-id="b"]')!;
+    expect(row.querySelector('[role="alert"]')).toBeNull();
+    expect(row.querySelector('.tp-tool-activity__phase')!.textContent).toBe('Failed');
+    expect(row.textContent).not.toContain('Reference B is unavailable.');
+    expect(view.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  it('lists every source below a collapsed group', () => {
+    const view = render(<ToolActivityGroup activities={[read('a'), read('b')]} />);
+    const below = view.container.querySelector(':scope > .tp-tool-activity-group > .tp-tool-outcomes');
+    expect(links(below)).toEqual(['https://angular.dev/guide/a', 'https://angular.dev/guide/b']);
+    expect(view.container.querySelector('.tp-tool-activity-group__items .tp-tool-outcomes')).toBeNull();
+  });
+
+  it('moves each source under its row once the group is open, keeping result text below', () => {
+    const view = render(<ToolActivityGroup activities={[read('a'), read('b')]} />);
+    open(view.container);
+    expect(links(view.container.querySelector('[data-tool-id="a"]'))).toEqual(['https://angular.dev/guide/a']);
+    expect(links(view.container.querySelector('[data-tool-id="b"]'))).toEqual(['https://angular.dev/guide/b']);
+    const below = view.container.querySelector(':scope > .tp-tool-activity-group > .tp-tool-outcomes')!;
+    expect(links(below)).toEqual([]);
+    expect(below.textContent).toContain('Read a');
+    expect(view.container.querySelector('[data-tool-id="a"]')!.textContent).not.toContain('Read a');
+  });
+});
+
+describe('ToolActivityGroup — progress view', () => {
+  const running = (): ToolActivityInfo[] => [
+    { id: 'a', name: 'read', label: 'Reading toSorted', phase: 'complete' },
+    { id: 'b', name: 'read', label: 'Reading toReversed', phase: 'running' },
+    { id: 'c', name: 'save', label: 'Saving note', phase: 'pending' },
+  ];
+  const plan = [
+    { label: 'Read both', status: 'completed' as const },
+    { label: 'Compare them', status: 'pending' as const },
+    { label: 'Write the note', status: 'pending' as const },
+  ];
+  const summaryLabel = (container: HTMLElement) =>
+    container.querySelector('.tp-tool-activity-group__details > summary .tp-tool-activity__label')!;
+  const openGroup = (container: HTMLElement) => {
+    const details = container.querySelector<HTMLDetailsElement>('.tp-tool-activity-group__details')!;
+    act(() => {
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+    });
+  };
+  afterEach(() => vi.useRealTimers());
+
+  it('collapsed: the current step shimmers, then elapsed time and Stop', () => {
+    vi.useFakeTimers();
+    const onStop = vi.fn();
+    const view = render(<ToolActivityGroup activities={running()} onStop={onStop} />);
+    expect(summaryLabel(view.container).textContent).toBe('Reading toReversed');
+    expect(summaryLabel(view.container).getAttribute('data-active')).toBe('true');
+    const elapsed = () => view.container.querySelector('.tp-tool-activity-group__elapsed')!.textContent;
+    expect(elapsed()).toBe('0s');
+    act(() => vi.advanceTimersByTime(65_000));
+    expect(elapsed()).toBe('1m 05s');
+    const stop = view.getByRole('button', { name: 'Stop' });
+    expect(stop.closest('summary')).toBeNull();
+    fireEvent.click(stop);
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it('open: a static count heading, the shimmer on the running row, then the plan’s pending steps', () => {
+    const view = render(<ToolActivityGroup activities={running()} plan={plan} />);
+    openGroup(view.container);
+    expect(summaryLabel(view.container).textContent).toBe('Working · 1 of 3 done');
+    expect(summaryLabel(view.container).getAttribute('data-active')).toBe('false');
+    const active = [...view.container.querySelectorAll('.tp-tool-activity-group__items [data-active="true"]')];
+    expect(active.map((el) => el.textContent)).toEqual(['Reading toReversed']);
+    expect([...view.container.querySelectorAll('.tp-tool-activity-group__plan-step')].map((p) => p.textContent)).toEqual([
+      'Compare them',
+      'Write the note',
+    ]);
+  });
+
+  it('offers no elapsed time, Stop or upcoming steps once the group finishes', () => {
+    const done = running().map((item) => ({ ...item, phase: 'complete' as const }));
+    const view = render(<ToolActivityGroup activities={done} plan={plan} onStop={() => undefined} />);
+    openGroup(view.container);
+    expect(view.container.querySelector('.tp-tool-activity-group__progress')).toBeNull();
+    expect(view.container.querySelector('.tp-tool-activity-group__plan-step')).toBeNull();
+    expect(summaryLabel(view.container).textContent).toBe('Used 3 tools');
+  });
+
+  it('keeps an app caption over the count heading', () => {
+    const view = render(<ToolActivityGroup activities={running()} label="Checking references" />);
+    openGroup(view.container);
+    expect(summaryLabel(view.container).textContent).toBe('Checking references');
   });
 });

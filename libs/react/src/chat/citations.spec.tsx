@@ -249,7 +249,7 @@ describe('Markdown Sources sidecars', () => {
             }`
         );
     fireEvent.click(view.getByRole('button'));
-    expect(rowContent()).toEqual(['[3] javascript:blocked', '[1] Provider']);
+    expect(rowContent()).toEqual(['javascript:blocked', 'Provider']);
     expect(
       view
         .getAllByRole('listitem')
@@ -260,14 +260,14 @@ describe('Markdown Sources sidecars', () => {
     ).toEqual(['Web', null]);
     view.rerender(sidecars(citations, snapshot));
     expect(
-      view.getByRole('button', { name: 'Sources (5)' })
+      view.getByRole('button', { name: 'Sources 5' })
     ).toBeTruthy();
     expect(rowContent()).toEqual([
-      '[1] Provider',
-      '[1] Constructortail',
-      '[3] javascript:blocked',
-      '[3] Upper',
-      '[4] Lower',
+      'Provider',
+      'Constructortail',
+      'javascript:blocked',
+      'Upper',
+      'Lower',
     ]);
     expect(view.queryByText('hidden snippet')).toBeNull();
     expect(
@@ -297,7 +297,7 @@ describe('Markdown Sources sidecars', () => {
       fireEvent.click(view.getByRole('button'));
       expect(
         view.getAllByRole('listitem').map((item) => item.textContent)
-      ).toEqual(['[1] Source 1', '[2] Source 2']);
+      ).toEqual(['1Source 1', '2Source 2']);
       fireEvent.click(view.getByRole('button'));
     }
     expect(() =>
@@ -335,7 +335,7 @@ describe('Markdown Sources sidecars', () => {
     );
     owners.push(owner);
     const view = render(sidecars([], owner.getSnapshot(), true));
-    const header = view.getByRole('button', { name: 'Sources (1)' });
+    const header = view.getByRole('button', { name: 'Sources 1' });
     fireEvent.click(header);
     const item = view.getByRole('listitem');
     const trigger = view.getByRole('button', {
@@ -350,7 +350,7 @@ describe('Markdown Sources sidecars', () => {
         '[^a]: Corrected [link](/next) corrected snippet\n\n[^b]: Added\n',
     });
     view.rerender(sidecars([], owner.getSnapshot(), true));
-    expect(view.getByRole('button', { name: 'Sources (2)' })).toBe(header);
+    expect(view.getByRole('button', { name: 'Sources 2' })).toBe(header);
     expect(header.getAttribute('aria-expanded')).toBe('true');
     expect(view.getAllByRole('listitem')[0]).toBe(item);
     expect(view.getByRole('dialog')).toBe(card);
@@ -411,7 +411,7 @@ describe('Citations', () => {
     const region = view.getByRole('region', { name: 'Evidence' });
     expect(region.className).toContain('extra');
     expect(view.getByRole('heading').textContent).toBe('Evidence');
-    expect(region.textContent).toContain('[7]');
+    expect(region.querySelector('.tp-citations__index')?.textContent).toBe('7');
     expect(region.textContent).toContain('<b>Source</b>');
     expect(region.textContent).toContain('<img src=x>\nLine');
     expect(region.querySelector('img, script, b')).toBeNull();
@@ -513,7 +513,7 @@ describe('collapsible Citations', () => {
       <Citations citations={sources} collapsible label="<b>Evidence</b>" />
     );
     const header = view.getByRole('button', {
-      name: '<b>Evidence</b> (4)',
+      name: '<b>Evidence</b> 4',
     });
     const stack = header.querySelector('.tp-citations__markers');
     expect(stack?.getAttribute('aria-hidden')).toBe('true');
@@ -544,7 +544,7 @@ describe('collapsible Citations', () => {
       />
     );
     expect(
-      view.getByRole('button', { name: '<b>Evidence</b> (3)' })
+      view.getByRole('button', { name: '<b>Evidence</b> 3' })
     ).toBe(header);
     expect(markers()).toEqual([lower, alpha, upper]);
     expect(lower.classList.contains('tp-citations__marker--app')).toBe(true);
@@ -579,7 +579,7 @@ describe('collapsible Citations', () => {
       />
     );
     const header = view.getByRole('button', {
-      name: 'Sources (3)',
+      name: 'Sources 3',
     });
     const markers = header.querySelectorAll('.tp-citations__marker');
     expect(markers).toHaveLength(3);
@@ -611,7 +611,7 @@ describe('collapsible Citations', () => {
         {panel({ label: 'Evidence' })}
       </StrictMode>
     );
-    const header = view.getByRole('button', { name: 'Sources (1)' });
+    const header = view.getByRole('button', { name: 'Sources 1' });
     expect(header.tagName).toBe('BUTTON');
     expect(header.getAttribute('type')).toBe('button');
     expect(header.parentElement?.tagName).toBe('H4');
@@ -625,7 +625,7 @@ describe('collapsible Citations', () => {
     expect(view.queryByRole('link')).toBeNull();
     expect(
       view
-        .getByRole('button', { name: 'Evidence (1)' })
+        .getByRole('button', { name: 'Evidence 1' })
         .getAttribute('aria-controls')
     ).not.toBe(id);
     fireEvent.click(header);
@@ -650,7 +650,7 @@ describe('collapsible Citations', () => {
         ],
       })
     );
-    expect(view.getByRole('button', { name: 'Sources (2)' })).toBe(header);
+    expect(view.getByRole('button', { name: 'Sources 2' })).toBe(header);
     expect(header.getAttribute('aria-expanded')).toBe('true');
     expect(view.getAllByRole('listitem')[1]).toBe(item);
     expect(item.textContent).toContain('Changed');
@@ -784,7 +784,7 @@ describe('collapsible Citations', () => {
         <button>Outside</button>
       </>
     );
-    const header = view.getByRole('button', { name: 'Sources (1)' });
+    const header = view.getByRole('button', { name: 'Sources 1' });
     fireEvent.click(header);
     view.getByRole('link').focus();
     fireEvent.click(header);
