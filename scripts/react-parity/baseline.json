@@ -1,18 +1,11 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "102b27690464fbe69be7586dfc84e1097732a928",
+  "baselineHead": "2b9b5bb754f79769105505a8b4fee9033c07e50d",
   "sourceState": {
     "modified": [
-      "libs/react/README.md",
-      "libs/react/src/a2ui/catalog/index.ts",
-      "libs/react/src/a2ui/styles.css",
-      "libs/react/src/a2ui/surface-spec.ts",
-      "libs/react/src/a2ui/surface.tsx"
+      "libs/react/README.md"
     ],
-    "untracked": [
-      "libs/react/src/a2ui/catalog/modal.tsx",
-      "libs/react/src/a2ui/catalog/tabs.tsx"
-    ]
+    "untracked": []
   },
   "scope": {
     "libraries": [
@@ -858,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "4a6a6a389b4b893d8a83e94842f17d69262ab85af5583f87a0531d8d3f01c075"
+      "sha256": "63c5e8820df44c855682956466b724a72d679bbb87cc717b2059fc2576858985"
     },
     {
       "id": "asset:libs/react/package.json",
