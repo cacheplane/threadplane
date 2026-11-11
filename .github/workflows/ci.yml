@@ -1437,7 +1437,22 @@ jobs:
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
           rm -rf .vercel/output
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          # `vercel deploy` prints the deployment URL as soon as it exists and
+          # then waits for readiness. That wait has hung after Vercel already
+          # reported the deployment Ready, until the job limit cancelled it.
+          # Bound it, and when it overruns confirm readiness explicitly.
+          deploy_log=$(mktemp)
+          deploy_status=0
+          timeout --kill-after=10s 8m npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --archive=tgz --yes --token=${{ secrets.VERCEL_TOKEN }} > "$deploy_log" || deploy_status=$?
+          url=$(tail -n 1 "$deploy_log")
+          if [ "$deploy_status" -ne 0 ]; then
+            if [ "$deploy_status" -ne 124 ] || [ -z "$url" ]; then
+              echo "::error::vercel deploy failed with status $deploy_status"
+              exit "$deploy_status"
+            fi
+            echo "::warning::vercel deploy did not return within 8 minutes; confirming $url is ready"
+            npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel inspect "$url" --wait --timeout 4m --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          fi
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin Website preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "website deployment: $url"
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.website }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
@@ -1528,7 +1543,22 @@ jobs:
           {"projectId":"${{ secrets.VERCEL_EXAMPLES_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","projectName":"threadplane-examples"}
           EOF
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          url=$(npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          # `vercel deploy` prints the deployment URL as soon as it exists and
+          # then waits for readiness. That wait has hung after Vercel already
+          # reported the deployment Ready, until the job limit cancelled it.
+          # Bound it, and when it overruns confirm readiness explicitly.
+          deploy_log=$(mktemp)
+          deploy_status=0
+          timeout --kill-after=10s 8m npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }} > "$deploy_log" || deploy_status=$?
+          url=$(tail -n 1 "$deploy_log")
+          if [ "$deploy_status" -ne 0 ]; then
+            if [ "$deploy_status" -ne 124 ] || [ -z "$url" ]; then
+              echo "::error::vercel deploy failed with status $deploy_status"
+              exit "$deploy_status"
+            fi
+            echo "::warning::vercel deploy did not return within 8 minutes; confirming $url is ready"
+            npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel inspect "$url" --wait --timeout 4m --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}
+          fi
           url=$(node -e 'const parsed = new URL(process.argv[1]); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) throw new Error("Vercel returned a non-origin examples preview URL"); process.stdout.write(parsed.origin)' "$url")
           echo "examples deployment: $url"
           npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel alias set "$url" "${{ steps.aliases.outputs.examples }}" --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }}

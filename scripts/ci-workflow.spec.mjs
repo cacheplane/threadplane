@@ -271,7 +271,7 @@ it('deploys the Website independently while verification waits for both same-run
   assert.match(producer, /node-version: 22/);
   assert.match(producer, /- run: npm ci/);
   const deploy = readNamedStep(producer, 'Build, deploy, and alias the Website preview');
-  assert.equal(createHash('sha256').update(deploy.trimEnd()).digest('hex'), 'b88c3cb08f471b0507ae07bca41d04e7b93386800a99067b7491449964c080b2', 'preserve the original deployment command and environment');
+  assert.equal(createHash('sha256').update(deploy.trimEnd()).digest('hex'), '1b3ee088594724e2f38fdb25f0689663bf91d42a55472e5eb4ff728c94575587', 'preserve the original deployment command and environment');
   assert.ok(producer.indexOf('Require preview bypass secrets') < producer.indexOf(deploy));
   assert.doesNotMatch(verify, /vercel build|Build, deploy, and alias the Website preview/);
   assert.doesNotMatch(producer, /assemble-examples|download-artifact|playwright|website:deployed-e2e|continue-on-error/);
@@ -471,7 +471,7 @@ it('requires Library validation and its independent package producer for compati
 it('pins every Vercel CLI invocation and its estree dependency to available releases', async () => {
   const workflow = withoutYamlCommentLines(await readFile('.github/workflows/ci.yml', 'utf8'));
   const invocations = [...workflow.matchAll(/\bnpm exec[^\n]*?-- vercel(?=\s)/g)];
-  assert.equal(invocations.length, 17, 'cover every preview, promotion, and demo CLI invocation');
+  assert.equal(invocations.length, 19, 'cover every preview, promotion, and demo CLI invocation');
   for (const invocation of invocations) {
     assert.equal(invocation[0], 'npm exec --yes --package=vercel@64.2.0 --package=@types/estree@1.0.8 -- vercel',
       'keep the verified CLI and avoid the published estree version with a missing tarball');
@@ -1564,6 +1564,17 @@ describe('CI workflow', () => {
     assert.doesNotMatch(website, /--prod/);
     assert.match(website, /set -euo pipefail/);
     assert.match(website, /new URL\(process\.argv\[1\]\)/);
+
+    // `vercel deploy` has hung after Vercel reported the deployment Ready,
+    // until the job limit cancelled the step. Each preview deploy is bounded,
+    // and an overrun that already printed its URL is confirmed explicitly
+    // instead of failing a deployment that succeeded.
+    for (const step of [examples, website]) {
+      assert.match(step, /timeout --kill-after=10s 8m npm exec[^\n]*-- vercel deploy --prebuilt[^\n]*> "\$deploy_log" \|\| deploy_status=\$\?/);
+      assert.doesNotMatch(step, /-- vercel deploy[^\n]*\| tail/);
+      assert.match(step, /\[ "\$deploy_status" -ne 124 \] \|\| \[ -z "\$url" \]/);
+      assert.match(step, /-- vercel inspect "\$url" --wait --timeout 4m --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/);
+    }
     assert.match(
       website,
       /-- vercel alias set "\$url" "\$\{\{ steps\.aliases\.outputs\.website \}\}" --scope=\$\{\{ secrets\.VERCEL_ORG_ID \}\}/

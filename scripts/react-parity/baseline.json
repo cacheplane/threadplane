@@ -1,13 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "45a9c83ab6fc16587f25d2c5e0e4f8b7cfee5728",
+  "baselineHead": "6f14073bf1d3abff58850139f7f22a080d74d4b4",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
+      ".github/workflows/ci.yml"
     ],
     "untracked": []
   },
@@ -2271,7 +2267,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "cd99c12cf32342ded2bbf18dffc7f8f5de6f2af1f87ff6a6d4191f11b757243c"
+      "sha256": "ab15909e57a4cd3045ab3ca329c804395ea0b3ab822652d2d828db8e51a56505"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
