@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 328
+            "line": 251
           },
           "isReadonly": true,
           "isOptional": false
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 330
+            "line": 253
           },
           "isReadonly": true,
           "isOptional": false
@@ -134,7 +134,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 332
+            "line": 255
           },
           "isReadonly": true,
           "isOptional": false
@@ -142,12 +142,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 327
+        "line": 250
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 327
+    "line": 250
   }
 }

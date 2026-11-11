@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-            "line": 103
+            "line": 98
           },
           "overloadIndex": 1,
           "parameters": []
@@ -163,52 +163,6 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
-            "line": 92
-          },
-          "isStatic": false,
-          "isReadonly": true,
-          "isOptional": false
-        },
-        {
-          "name": "toolLabel",
-          "kind": "Property",
-          "canonicalReference": "@threadplane/chat!ChatSubagentCardComponent#toolLabel:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly toolLabel: "
-            },
-            {
-              "kind": "Content",
-              "text": "import(\"@angular/core\")."
-            },
-            {
-              "kind": "Reference",
-              "text": "InputSignal",
-              "canonicalReference": "@angular/core!InputSignal:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<((name: string) => string | undefined) | undefined>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "App-owned readable labels for the subagent's own tool calls. Technical names stay inside each opened call.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts",
             "line": 94
           },
           "isStatic": false,
@@ -228,12 +182,6 @@
             "alias": "subagent",
             "required": true,
             "type": "Subagent"
-          },
-          {
-            "name": "toolLabel",
-            "alias": "toolLabel",
-            "required": false,
-            "type": "((name: string) => string | undefined) | undefined"
           }
         ],
         "outputs": []
