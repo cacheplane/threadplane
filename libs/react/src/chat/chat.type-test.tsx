@@ -28,6 +28,16 @@ const ok: ChatProps = { session };
 ok.onRetry = () => undefined;
 // @ts-expect-error Props are readonly.
 ok.className = 'x';
+<Chat
+  session={session}
+  inputLeading={<span />}
+  inputTrailing={null}
+  inputFooter="Saved"
+/>;
+// @ts-expect-error Chat names composer slots with an input prefix.
+<Chat session={session} leading={<span />} />;
+// @ts-expect-error Slots are content, not render functions.
+<Chat session={session} inputFooter={() => null} />;
 void missing;
 
 import type { ReactNode } from 'react';
