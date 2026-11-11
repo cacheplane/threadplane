@@ -30,6 +30,80 @@
       },
       "members": [
         {
+          "name": "attachments",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#attachments:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly attachments?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned content between the banner and the input surface, such as files\nchosen for the next message. The composer never reads, sends or clears it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 38
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "banner",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatInputProps#banner:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly banner?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned notice above the input surface, such as a paused or read-only\nstate. Announce it yourself when it should be spoken, for example with\n`role=\"status\"`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat-input.tsx",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "busy",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ChatInputProps#busy:member",
@@ -96,7 +170,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 39
+            "line": 50
           },
           "isReadonly": true,
           "isOptional": true
@@ -205,7 +279,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 37
+            "line": 48
           },
           "isReadonly": true,
           "isOptional": true
@@ -278,7 +352,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 38
+            "line": 49
           },
           "isReadonly": true,
           "isOptional": true
@@ -351,7 +425,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 33
+            "line": 44
           },
           "isReadonly": true,
           "isOptional": true
@@ -568,7 +642,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 35
+            "line": 46
           },
           "isReadonly": true,
           "isOptional": true

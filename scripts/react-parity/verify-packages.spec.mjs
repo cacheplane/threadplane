@@ -293,8 +293,8 @@ export interface MessageListScrollControls { readonly pinned: boolean; readonly 
 export interface MessageListRowContext { readonly current: boolean; readonly prevRole?: ChatMessageRole; }
 export interface MessageListProps { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: MessageListRowContext) => import('react').ReactNode; readonly renderScrollControl?: (controls: MessageListScrollControls) => import('react').ReactNode; }
 export declare function isTyping(snapshot: Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>): boolean;
-export interface ChatInputProps { readonly onSubmit: (text: string) => boolean | void; readonly leading?: import('react').ReactNode; readonly trailing?: import('react').ReactNode; readonly footer?: import('react').ReactNode; }
-export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; readonly inputLeading?: ChatInputProps['leading']; readonly inputTrailing?: ChatInputProps['trailing']; readonly inputFooter?: ChatInputProps['footer']; }`;
+export interface ChatInputProps { readonly onSubmit: (text: string) => boolean | void; readonly banner?: import('react').ReactNode; readonly attachments?: import('react').ReactNode; readonly leading?: import('react').ReactNode; readonly trailing?: import('react').ReactNode; readonly footer?: import('react').ReactNode; }
+export interface ChatProps { readonly onRetry?: () => void; readonly renderMessage?: MessageListProps['renderMessage']; readonly inputBanner?: ChatInputProps['banner']; readonly inputAttachments?: ChatInputProps['attachments']; readonly inputLeading?: ChatInputProps['leading']; readonly inputTrailing?: ChatInputProps['trailing']; readonly inputFooter?: ChatInputProps['footer']; }`;
   writeFileSync(join(core, 'index.d.ts'), readFileSync(join(core, 'index.d.ts'), 'utf8') + ' export type Role = "assistant" | "user" | "system" | "tool"; export interface AgentSnapshot { readonly status: "idle" | "running" | "error"; readonly messages: readonly { readonly role: "assistant" | "user" | "system" | "tool"; readonly content: string }[]; readonly toolCalls: readonly unknown[]; }');
   const source = join(consumer, 'index.ts');
   writeFileSync(source, packageVerifier.plainExportTypes(['@threadplane/react/chat']));
@@ -586,6 +586,10 @@ export interface ChatProps { readonly onRetry?: () => void; readonly renderMessa
     ['ChatInputProps', "readonly leading?: import('react').ReactNode;", "leading?: import('react').ReactNode;"],
     ['ChatInputProps', "readonly trailing?: import('react').ReactNode;", "readonly trailing: import('react').ReactNode;"],
     ['ChatInputProps', "readonly footer?: import('react').ReactNode;", 'readonly footer?: string;'],
+    ['ChatInputProps', "readonly banner?: import('react').ReactNode;", ''],
+    ['ChatInputProps', "readonly attachments?: import('react').ReactNode;", 'readonly attachments?: readonly File[];'],
+    ['ChatProps', "readonly inputBanner?: ChatInputProps['banner'];", "inputBanner?: ChatInputProps['banner'];"],
+    ['ChatProps', "readonly inputAttachments?: ChatInputProps['attachments'];", ''],
     ['ChatProps', "readonly inputLeading?: ChatInputProps['leading'];", ''],
     ['ChatProps', "readonly inputTrailing?: ChatInputProps['trailing'];", "inputTrailing?: ChatInputProps['trailing'];"],
     ['ChatProps', "readonly inputFooter?: ChatInputProps['footer'];", 'readonly inputFooter?: () => void;'],
@@ -869,7 +873,8 @@ test('selected public protocol package enumerates its actual legacy ESM root wit
   for (const fields of [{ main: './src/../outside.js' }, { types: './src/../index.d.ts' }, { main: './src\\index.js' }, { main: 'index.js' }, { types: './src/index.ts' }]) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, ...fields }));
 });
 test('A2UI feature exposes exactly its owned factory', () => {
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiSurfaces/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiActionMessage/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }));
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, createOwner() {} }), /unexpected/);
@@ -1032,6 +1037,9 @@ test('React chat requires its real supported export', () => {
   supported.toolActivityPhase = component;
   supported.resolveToolOutcome = component;
   supported.toolOutcomes = component;
+  supported.citationsWithToolSources = component;
+  supported.SubagentCard = component;
+  supported.subagentsFromEvidence = component;
   supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;

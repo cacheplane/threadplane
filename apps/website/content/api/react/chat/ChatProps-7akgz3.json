@@ -83,7 +83,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 24
+            "line": 28
           },
           "isReadonly": true,
           "isOptional": true
@@ -121,7 +121,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 21
+            "line": 25
           },
           "isReadonly": true,
           "isOptional": true
@@ -163,7 +163,91 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 25
+            "line": 29
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inputAttachments",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#inputAttachments:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputAttachments?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInputProps",
+              "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+              "href": "/docs/api/react/chat/ChatInputProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['attachments']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned content above the input surface; see `ChatInputProps.attachments`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 46
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "inputBanner",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#inputBanner:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly inputBanner?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ChatInputProps",
+              "canonicalReference": "@threadplane/react!ChatInputProps:interface",
+              "href": "/docs/api/react/chat/ChatInputProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['banner']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned notice above the composer; see `ChatInputProps.banner`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 44
           },
           "isReadonly": true,
           "isOptional": true
@@ -205,7 +289,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 40
+            "line": 52
           },
           "isReadonly": true,
           "isOptional": true
@@ -247,7 +331,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 36
+            "line": 48
           },
           "isReadonly": true,
           "isOptional": true
@@ -289,7 +373,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 38
+            "line": 50
           },
           "isReadonly": true,
           "isOptional": true
@@ -325,7 +409,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 34
+            "line": 42
           },
           "isReadonly": true,
           "isOptional": true
@@ -367,7 +451,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 32
+            "line": 40
           },
           "isReadonly": true,
           "isOptional": true
@@ -409,7 +493,49 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 23
+            "line": 27
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderToolCall",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#renderToolCall:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderToolCall?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['renderToolCall']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 35
           },
           "isReadonly": true,
           "isOptional": true
@@ -439,7 +565,7 @@
             }
           ],
           "docs": {
-            "summary": "App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable.",
+            "summary": "",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -451,7 +577,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 30
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -489,10 +615,52 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 19
+            "line": 23
           },
           "isReadonly": true,
           "isOptional": false
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ChatProps#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subagents?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MessageListProps",
+              "canonicalReference": "@threadplane/react!MessageListProps:interface",
+              "href": "/docs/api/react/chat/MessageListProps"
+            },
+            {
+              "kind": "Content",
+              "text": "['subagents']"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Child agents shown as subagent cards in place of the tool calls that started them. Keep stable.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/chat.tsx",
+            "line": 38
+          },
+          "isReadonly": true,
+          "isOptional": true
         },
         {
           "name": "toolLabel",
@@ -531,7 +699,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 26
+            "line": 30
           },
           "isReadonly": true,
           "isOptional": true
@@ -573,7 +741,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 28
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -581,12 +749,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/chat.tsx",
-        "line": 13
+        "line": 17
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat.tsx",
-    "line": 13
+    "line": 17
   }
 }

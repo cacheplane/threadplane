@@ -1,4 +1,4 @@
-// Layout comparison for confirmed reference results (`?layout=summary|compact|cards`).
+// Layout comparison for confirmed reference results (`?layout=sources|summary|compact|cards`).
 // Uses real composer input against the scripted local agent, then only reads the
 // rendered turn. It measures visible repetition and checks that every layout keeps
 // the sources, the collapsed activity, the literal details and the failed-call state.
@@ -18,7 +18,7 @@ const hosts = [
   { id: 'threadplane-angular', url: 'http://127.0.0.1:4812/' },
   { id: 'threadplane-react', url: 'http://127.0.0.1:4811/' },
 ];
-const layouts = ['summary', 'compact', 'cards', 'sources'];
+const layouts = ['sources', 'summary', 'compact', 'cards'];
 const views = [
   { id: 'desktop', viewport: { width: 1440, height: 1000 } },
   { id: 'mobile', viewport: { width: 480, height: 900 } },

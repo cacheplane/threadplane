@@ -153,7 +153,7 @@ Component({
 bootstrapApplication(Benchmark, {
   providers: [
     provideAgent({
-      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}&layout=${layout}`,
+      url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-angular&scenario=${scenario}`,
       telemetry: false,
     }),
   ],

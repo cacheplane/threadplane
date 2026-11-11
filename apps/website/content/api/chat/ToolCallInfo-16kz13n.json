@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 11
+            "line": 13
           },
           "isReadonly": false,
           "isOptional": false
@@ -96,7 +96,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 14
+            "line": 16
           },
           "isReadonly": false,
           "isOptional": true
@@ -136,6 +136,42 @@
           },
           "isReadonly": false,
           "isOptional": false
+        },
+        {
+          "name": "label",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/chat!ToolCallInfo#label:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "label?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-owned readable label shown in place of the technical name, which then moves into the opened card.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
+            "line": 12
+          },
+          "isReadonly": false,
+          "isOptional": true
         },
         {
           "name": "name",
@@ -204,7 +240,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 12
+            "line": 14
           },
           "isReadonly": false,
           "isOptional": true
@@ -242,7 +278,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 16
+            "line": 18
           },
           "isReadonly": false,
           "isOptional": true
