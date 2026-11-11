@@ -6,6 +6,11 @@ installed browser fixture covers inline order in both directions, the footer aft
 the hint, a slot-free composer adding no slot elements, Tab order, a slot button that
 neither sends nor clears, retained slot state through Send and the Stop swap, and
 a 320px viewport. The native composer passes its submission status as the footer.
+`banner` and `attachments` (`Chat`: `inputBanner`, `inputAttachments`) sit above
+the input surface. The same fixture covers their stacking order and containment,
+Tab order, removing a file without sending, attachments surviving Send, a
+`Select` model picker as trailing content, and both elements disappearing with
+their content.
 
 The private chat package includes a bounded controlled `MessageRating` with an
 exact readonly prop contract: one identified message, an owner-held `up`, `down`

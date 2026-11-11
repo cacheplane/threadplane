@@ -734,7 +734,45 @@ export async function runComposerSlotScenarios(page, url) {
   assert.ok(ltr.draft.right - ltr.draft.left >= 120, `draft keeps usable width ${JSON.stringify(ltr)}`);
   // A composer without slots has no slot elements.
   const plain = page.locator('form.tp-chat-input').nth(1);
-  await expect(plain.locator('.tp-chat-input__leading, .tp-chat-input__trailing, .tp-chat-input__footer')).toHaveCount(0);
+  await expect(plain.locator('.tp-chat-input__banner, .tp-chat-input__attachments, .tp-chat-input__leading, .tp-chat-input__trailing, .tp-chat-input__footer')).toHaveCount(0);
+  // Banner, then attachments, then the input surface, each within the composer width.
+  const banner = page.getByTestId('slot-banner');
+  const files = page.getByTestId('slot-attachments');
+  const picker = page.locator('form.tp-chat-input').nth(2);
+  const model = picker.locator('.tp-select__trigger');
+  const modelDraft = page.getByRole('textbox', { name: 'Model message', exact: true });
+  const stacked = async () => ({ form: await rect(form), banner: await rect(banner), files: await rect(files), pill: await rect(form.locator('.tp-chat-input__pill')) });
+  const within = (box, outer) => box.left >= outer.left - 0.5 && box.right <= outer.right + 0.5;
+  const above = await stacked();
+  assert.ok(above.banner.bottom <= above.files.top && above.files.bottom <= above.pill.top, `banner, attachments, surface ${JSON.stringify(above)}`);
+  assert.ok(within(above.banner, above.form) && within(above.files, above.form), `above-surface slots within composer ${JSON.stringify(above)}`);
+  // Tab order follows the document: banner control, attachment controls, draft.
+  await banner.getByRole('button', { name: 'Dismiss' }).focus();
+  await page.keyboard.press('Tab'); await expect(files.getByRole('button', { name: 'Remove itinerary.pdf' })).toBeFocused();
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await expect(draft).toBeFocused();
+  // Removing a file is the owner's change: nothing is sent and the draft stays.
+  await draft.fill('With files');
+  await files.getByRole('button', { name: 'Remove itinerary.pdf' }).click();
+  await expect(files.getByRole('listitem')).toHaveCount(1);
+  await expect(draft).toHaveValue('With files');
+  await expect(sent).toHaveText('[]');
+  // A model picker is trailing content: choosing a model neither sends nor clears.
+  await modelDraft.fill('Pick first');
+  await modelDraft.focus();
+  await page.keyboard.press('Tab'); await expect(model).toBeFocused();
+  await page.keyboard.press('Enter');
+  const models = page.getByRole('listbox', { name: 'Model', exact: true });
+  await expect(models).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(models).toHaveCount(0);
+  await expect(model).toContainText('Careful');
+  await expect(model).toBeFocused();
+  await expect(modelDraft).toHaveValue('Pick first');
+  const pickerBox = { pill: await rect(picker.locator('.tp-chat-input__pill')), draft: await rect(modelDraft), model: await rect(model) };
+  assert.ok(inside(pickerBox.model, pickerBox.pill) && pickerBox.draft.right - pickerBox.draft.left >= 120, `model picker inside surface ${JSON.stringify(pickerBox)}`);
+  await expect(draft).toHaveValue('With files');
+  await expect(sent).toHaveText('[]');
   // Tab order: draft, app control, Send. A slot button keeps focus and never sends or clears.
   await draft.fill('Keep this');
   await draft.focus();
@@ -752,6 +790,9 @@ export async function runComposerSlotScenarios(page, url) {
   await expect(draft).toBeFocused();
   await expect(tools).toHaveText('Tools 1');
   await expect(footer).toHaveText('1 sent');
+  // Sending leaves the owner's attachments and banner in place.
+  await expect(files.getByRole('listitem')).toHaveCount(1);
+  await expect(banner).toBeVisible();
   // Busy shows Stop after the app control; the app control stays enabled and mounted.
   const retained = await tools.elementHandle();
   await page.getByRole('checkbox', { name: 'Busy' }).check();
@@ -776,7 +817,13 @@ export async function runComposerSlotScenarios(page, url) {
   const narrow = await layout();
   assert.ok(inside(narrow.leading, narrow.pill) && inside(narrow.tools, narrow.pill) && inside(narrow.send, narrow.pill), `narrow inside ${JSON.stringify(narrow)}`);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  const narrowAbove = await stacked();
+  assert.ok(within(narrowAbove.banner, narrowAbove.form) && within(narrowAbove.files, narrowAbove.form), `narrow above-surface slots ${JSON.stringify(narrowAbove)}`);
   if (size) await page.setViewportSize(size);
+  // Dismissing the banner removes its element; the last file removes the attachments element.
+  await banner.getByRole('button', { name: 'Dismiss' }).click();
+  await files.getByRole('button', { name: /^Remove a-very-long/ }).click();
+  await expect(form.locator('.tp-chat-input__banner, .tp-chat-input__attachments')).toHaveCount(0);
 }
 
 export async function runMessageRatingScenarios(page, url) {

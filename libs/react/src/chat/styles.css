@@ -1208,6 +1208,11 @@
 .tp-chat-input__footer {
   min-width: 0;
 }
+.tp-chat-input__banner,
+.tp-chat-input__attachments {
+  min-width: 0;
+  margin-block-end: 0.5rem;
+}
 .tp-chat-input__send:focus-visible,
 .tp-chat-input__stop:focus-visible {
   outline: 2px solid var(--tp-chat-accent);
