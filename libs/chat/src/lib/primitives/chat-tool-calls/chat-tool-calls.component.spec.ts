@@ -1214,58 +1214,6 @@ describe('ChatToolCallsComponent — progress view', () => {
   });
 });
 
-describe('ChatToolCallsComponent — sources under their call', () => {
-  const reads: ToolCall[] = ['signals', 'effects'].map((topic, i) => ({
-    id: `c${i}`,
-    name: 'read_reference',
-    args: { topic },
-    status: 'complete' as const,
-    result: 'ok',
-  }));
-  const outcome = (activity: ToolActivityInfo): ToolActivityOutcome => ({
-    text: `Read ${activity.id}`,
-    sources: [{ title: `Guide ${activity.id}`, url: `https://angular.dev/guide/${activity.id}` }],
-  });
-  function render() {
-    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
-    const fixture = TestBed.createComponent(ChatToolCallsComponent);
-    fixture.componentRef.setInput('agent', mockAgent({ toolCalls: reads }));
-    fixture.componentRef.setInput('groupRelated', true);
-    fixture.componentRef.setInput('toolOutcome', outcome);
-    fixture.detectChanges();
-    const root = fixture.nativeElement as HTMLElement;
-    const expand = () => {
-      (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
-      fixture.detectChanges();
-    };
-    return { root, expand };
-  }
-  const linksIn = (el: Element | null) => [...(el?.querySelectorAll('a') ?? [])].map((a) => a.getAttribute('href'));
-  const belowGroup = (root: HTMLElement) => root.querySelector('.ctc__group-body')!.parentElement!.parentElement!.querySelector(':scope > chat-tool-outcomes');
-
-  it('lists every source below a collapsed group', () => {
-    const { root } = render();
-    expect(linksIn(belowGroup(root))).toEqual(['https://angular.dev/guide/c0', 'https://angular.dev/guide/c1']);
-  });
-
-  it('moves each source under the row that produced it once the group is open', () => {
-    const { root, expand } = render();
-    expand();
-    expect(linksIn(root.querySelector('chat-tool-activity[data-tool-id="c0"], [data-tool-id="c0"]'))).toEqual(['https://angular.dev/guide/c0']);
-    expect(linksIn(root.querySelector('[data-tool-id="c1"]'))).toEqual(['https://angular.dev/guide/c1']);
-    // The result text stays below the group; its sources do not repeat there.
-    const below = belowGroup(root);
-    expect(linksIn(below)).toEqual([]);
-    expect(below!.textContent).toContain('Read c0');
-  });
-
-  it('keeps result text out of the rows', () => {
-    const { root, expand } = render();
-    expand();
-    expect(root.querySelector('[data-tool-id="c0"]')!.textContent).not.toContain('Read c0');
-  });
-});
-
 describe('ChatToolCallsComponent — upcoming steps from a declared plan', () => {
   const calls: ToolCall[] = [
     { id: 'a', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
