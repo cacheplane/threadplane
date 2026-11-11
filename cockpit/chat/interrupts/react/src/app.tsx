@@ -1,6 +1,6 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
 import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
   ChatInput,
@@ -8,6 +8,8 @@ import {
   MessageList,
   Reasoning,
   Citations,
+  type ApprovalRecordEntry,
+  type ChatInputHandle,
 } from '@threadplane/react/chat';
 import { Markdown } from '@threadplane/react/markdown';
 import type { MessageRow } from '@threadplane/content/messages';
@@ -60,6 +62,22 @@ export function InterruptsDemo({
   const [draft, setDraft] = useState('');
   const snapshot = useAgent(application),
     decision = snapshot.decision;
+  // Answered approvals stay in the transcript as one-line records.
+  const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
+  // Answering removes the card and its focused button; focus returns to the
+  // composer as soon as the composer is enabled again.
+  const composer = useRef<ChatInputHandle>(null);
+  const [focusOwed, setFocusOwed] = useState(false);
+  const composerDisabled = !snapshot.canSubmit && !snapshot.busy;
+  useEffect(() => {
+    if (!focusOwed || decision || composerDisabled) return;
+    setFocusOwed(false);
+    composer.current?.focus();
+  }, [focusOwed, decision, composerDisabled]);
+  useEffect(() => {
+    setRecords([]);
+    setFocusOwed(false);
+  }, [snapshot.viewGeneration]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -88,6 +106,17 @@ export function InterruptsDemo({
     const current = application.getSnapshot();
     if (!decision || current.busy || current.decision !== decision) return;
     void application.decide(decision, value);
+    // Record only a decision the application admitted.
+    if (application.getSnapshot().decision === decision) return;
+    setRecords((previous) => [
+      ...previous,
+      {
+        afterId: current.rows.at(-1)?.id,
+        verdict: value === 'confirm' ? 'approved' : 'declined',
+        label: 'Book flight',
+      },
+    ]);
+    setFocusOwed(true);
   };
   return (
     <ExampleLayout className="interrupts-demo">
@@ -101,6 +130,8 @@ export function InterruptsDemo({
           onClick={() => {
             if (application.getSnapshot().busy) return;
             setDraft('');
+            setRecords([]);
+            setFocusOwed(false);
             void application.newConversation();
           }}
         >
@@ -132,6 +163,7 @@ export function InterruptsDemo({
       <MessageList
         rows={snapshot.rows}
         renderMessage={renderMessage}
+        approvalRecords={records}
         label="Conversation"
       >
         {decision && (
@@ -141,12 +173,12 @@ export function InterruptsDemo({
             actions={[
               {
                 id: 'confirm',
-                label: 'Confirm',
+                label: 'Book flight',
                 onSelect: () => decide('confirm'),
               },
               {
                 id: 'cancel',
-                label: 'Cancel',
+                label: "Don't book",
                 onSelect: () => decide('cancel'),
               },
             ]}
@@ -184,6 +216,7 @@ export function InterruptsDemo({
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput
+          ref={composer}
           key={snapshot.viewGeneration}
           label="Message"
           value={draft}
@@ -191,7 +224,7 @@ export function InterruptsDemo({
           placeholder="Ask about a flight or request a booking…"
           hint="Enter to send. Shift+Enter adds a new line."
           busy={snapshot.busy}
-          disabled={!snapshot.canSubmit && !snapshot.busy}
+          disabled={composerDisabled}
           onStop={
             snapshot.busy && snapshot.activity !== 'replacing'
               ? () => void application.stop()

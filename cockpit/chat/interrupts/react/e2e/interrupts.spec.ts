@@ -19,7 +19,7 @@ async function submit(page: Page, text: string) {
 async function pause(page: Page, text = 'Book padded flight.') {
   await submit(page, text);
   await expect(
-    page.getByRole('button', { name: 'Confirm', exact: true })
+    page.getByRole('button', { name: 'Book flight', exact: true })
   ).toBeEnabled();
 }
 async function saved(page: Page) {
@@ -31,7 +31,7 @@ async function blocked(page: Page) {
   );
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   await expect(
-    page.getByRole('button', { name: 'Confirm', exact: true })
+    page.getByRole('button', { name: 'Book flight', exact: true })
   ).toHaveCount(0);
 }
 test.beforeEach(async ({ request }) => {
@@ -64,11 +64,24 @@ test('installed SDK confirms then cancels real saved pauses on one conversation'
     fullPage: true,
   });
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  // The pending approval sits at the end of the transcript.
+  await expect(
+    conversation(page).getByRole('button', { name: 'Book flight', exact: true })
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Book flight', exact: true }).click();
   await saved(page);
+  // The answered approval leaves a one-line record, and focus returns to the composer.
+  const records = conversation(page).locator('.tp-approval-record');
+  await expect(records).toHaveText([/Approved: Book flight/]);
+  await expect(page.getByLabel('Message', { exact: true })).toBeFocused();
   await pause(page, 'Book AA404.');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: "Don't book", exact: true }).click();
   await saved(page);
+  await expect(records).toHaveText([
+    /Approved: Book flight/,
+    /Declined: Book flight/,
+  ]);
+  await expect(page.getByLabel('Message', { exact: true })).toBeFocused();
   await page.screenshot({
     path: testInfo.outputPath('terminal-desktop.png'),
     fullPage: true,
@@ -112,7 +125,7 @@ test('direct answers and causally completed read tools precede a saved approval'
     'const approved = true;'
   );
   await pause(page, 'Read then book UA123.');
-  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await page.getByRole('button', { name: 'Book flight', exact: true }).click();
   await saved(page);
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire.filter((item) => item.path.endsWith('/threads'))).toHaveLength(1);
@@ -127,7 +140,7 @@ test('an unknown demo flight resolves without inventing approval authority', asy
   await submit(page, 'Book unknown flight.');
   await saved(page);
   await expect(
-    page.getByRole('button', { name: 'Confirm', exact: true })
+    page.getByRole('button', { name: 'Book flight', exact: true })
   ).toHaveCount(0);
 });
 test('two real pending booking calls with one visible interrupt are blocked', async ({
@@ -174,7 +187,7 @@ test('held saved pause disables commands and cannot regain authority after Stop'
     'Confirming saved conversation…'
   );
   await expect(
-    page.getByRole('button', { name: 'Confirm', exact: true })
+    page.getByRole('button', { name: 'Book flight', exact: true })
   ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'New conversation' })
@@ -191,9 +204,9 @@ test('held resume admits one decision and Stop fences late completion', async ({
   await page.goto(base);
   await pause(page);
   await request.post('/__hold-resume');
-  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await page.getByRole('button', { name: 'Book flight', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Confirm', exact: true })
+    page.getByRole('button', { name: 'Book flight', exact: true })
   ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Stop', exact: true })
@@ -212,12 +225,18 @@ test('failed resume is never retried and New only resets local state', async ({
   await page.goto(base);
   await pause(page);
   await request.post('/__fail-resume');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: "Don't book", exact: true }).click();
   await blocked(page);
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire.filter((item) => item.body.command)).toHaveLength(1);
+  await expect(conversation(page).locator('.tp-approval-record')).toHaveText(
+    /Declined: Book flight/
+  );
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(conversation(page).locator('.tp-approval-record')).toHaveCount(
+    0
+  );
   expect(await (await request.get('/__requests')).json()).toEqual(wire);
   await submit(page, 'Explain aviation');
   await saved(page);
@@ -243,7 +262,7 @@ test('metadata failure cannot corrupt the real graph wire or expose a title resp
   await request.post('/__metadata-failure');
   await page.goto(base);
   await pause(page);
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: "Don't book", exact: true }).click();
   await saved(page);
   await expect(conversation(page)).not.toContainText('Authored metadata');
 });
@@ -269,7 +288,7 @@ test('authored developer connection routes only to its configured target', async
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Book UA123.');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await frame.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await frame.getByRole('button', { name: 'Book flight', exact: true }).click();
   await expect(frame.getByRole('status')).toHaveText('Response saved.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(7);
@@ -294,7 +313,9 @@ for (const finish of ['release', 'stop']) {
     await page.goto(base);
     await pause(page);
     await request.post('/__history/hold');
-    await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Book flight', exact: true })
+      .click();
     await expect(page.getByRole('status')).toHaveText(
       'Confirming saved conversation…'
     );

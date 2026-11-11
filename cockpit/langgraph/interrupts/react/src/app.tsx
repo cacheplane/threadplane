@@ -2,7 +2,13 @@
 import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
-import { ApprovalCard, ChatInput, MessageList } from '@threadplane/react/chat';
+import {
+  ApprovalCard,
+  ChatInput,
+  MessageList,
+  type ApprovalRecordEntry,
+  type ChatInputHandle,
+} from '@threadplane/react/chat';
 import type { RefundDecision, RefundResponse } from './application';
 import {
   createConnectedApplication,
@@ -62,14 +68,14 @@ function RefundApproval({
         },
         {
           id: 'decline',
-          label: 'Decline refund',
+          label: "Don't refund",
           onSelect: () => onDecide(decision, { approved: false }),
         },
       ]
     : [
         {
           id: 'approve',
-          label: 'Approve refund',
+          label: 'Issue refund',
           onSelect: () => onDecide(decision, { approved: true }),
         },
         {
@@ -80,7 +86,7 @@ function RefundApproval({
         },
         {
           id: 'decline',
-          label: 'Decline refund',
+          label: "Don't refund",
           onSelect: () => onDecide(decision, { approved: false }),
         },
       ];
@@ -131,6 +137,19 @@ export function InterruptsDemo({
   const [generation, setGeneration] = useState(0);
   const live = useRef(true);
   const snapshot = useAgent(application);
+  // Answered approvals stay in the transcript as one-line records.
+  const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
+  // Answering removes the card and its focused button; focus returns to the
+  // composer as soon as the composer is enabled again.
+  const composer = useRef<ChatInputHandle>(null);
+  const [focusOwed, setFocusOwed] = useState(false);
+  const pending = snapshot.decision !== null;
+  const composerDisabled = resetting || !snapshot.canSubmit;
+  useEffect(() => {
+    if (!focusOwed || pending || composerDisabled) return;
+    setFocusOwed(false);
+    composer.current?.focus();
+  }, [focusOwed, pending, composerDisabled]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -153,6 +172,8 @@ export function InterruptsDemo({
     if (!live.current) return;
     setApplication(createConnectedApplication(connection));
     setGeneration((value) => value + 1);
+    setRecords([]);
+    setFocusOwed(false);
     setResetting(false);
   }
   const status = snapshot.busy
@@ -202,23 +223,43 @@ export function InterruptsDemo({
           ))}
         </div>
       )}
-      <MessageList rows={snapshot.rows} label="Conversation" />
-      {snapshot.decision && (
-        <RefundApproval
-          decision={snapshot.decision}
-          disabled={snapshot.busy || resetting}
-          onDecide={(decision, response) =>
-            void application.decide(decision, response)
-          }
-        />
-      )}
+      <MessageList
+        rows={snapshot.rows}
+        approvalRecords={records}
+        label="Conversation"
+      >
+        {snapshot.decision && (
+          <RefundApproval
+            decision={snapshot.decision}
+            disabled={snapshot.busy || resetting}
+            onDecide={(decision, response) => {
+              const before = application.getSnapshot();
+              if (before.busy) return;
+              const afterId = before.rows.at(-1)?.id;
+              void application.decide(decision, response);
+              // Record only a decision the application admitted.
+              if (application.getSnapshot().activity !== 'decision') return;
+              setRecords((previous) => [
+                ...previous,
+                {
+                  afterId,
+                  verdict: response.approved ? 'approved' : 'declined',
+                  label: 'Issue refund',
+                },
+              ]);
+              setFocusOwed(true);
+            }}
+          />
+        )}
+      </MessageList>
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput
+          ref={composer}
           key={generation}
           label="Message"
           placeholder="Describe a refund request…"
-          disabled={resetting || !snapshot.canSubmit}
+          disabled={composerDisabled}
           busy={snapshot.busy}
           onStop={snapshot.busy ? () => void application.stop() : undefined}
           onSubmit={(text) => {

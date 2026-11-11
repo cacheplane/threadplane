@@ -269,9 +269,9 @@ Running work is collapsed by default and can be expanded.
 
 ### 6.4 Approvals
 
-Approvals are inline status panels in the conversation. No modal. (Today
-`ChatApprovalCardComponent` is a modal `<dialog>` with a blurred backdrop and a
-literal shadow; it moves to this pattern.)
+Approvals are inline status panels in the conversation. No modal.
+(`ChatApprovalCardComponent` defaults to this; `presentation="dialog"` keeps the
+old modal for apps that opt in.)
 
 - Warning panel. Lead: "Waiting for your approval." Then the request in plain
   words: "Save the comparison note to your workspace?"
@@ -347,10 +347,10 @@ Every component change checks:
 | Forced colors | Done. Status panels keep a border | 6.1, 7 |
 | Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
 | Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
-| Tool rows | Done. `toolLabel` receives the call's arguments, grouped rows show only the Failed status word in the danger color, and declared sources are listed once in the message's Sources panel | 6.2 |
-| Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Open: upcoming steps from a declared plan, and elapsed time and Stop on the `chat-tool-activity-group` primitive, which has no agent | 6.3 |
-| Approvals | Partly done. `chat-approval-card` takes `presentation="inline"` (a warning panel, or danger with `destructive`), named action labels, focus on the first action and back to the composer, and the composer hint. Open: the dialog is still the default, and the one-line "Approved: save note" record after answering | 6.4 |
-| Retry and receipts | Done for declared retry and receipts. Open: the "Retrying …" lead while a retry runs, and "Retry response" on run errors | 6.5, 6.6 |
+| Tool rows | Done. `toolLabel` receives the call's arguments, grouped rows show only the Failed status word in the danger color, and declared sources are listed once in the message's Sources panel. Without a panel, an open group lists each call's sources under its row (a collapsed group keeps them below it) | 6.2 |
+| Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Upcoming steps come from the optional `agent.plan` signal, which the LangGraph and AG-UI adapters read from a `todos` list in agent state. The `chat-tool-activity-group` primitive, which has no agent, shows the same elapsed time and working heading, takes `plan`, and offers Stop through `stoppable` and a `(stop)` output | 6.3 |
+| Approvals | Done. `chat-approval-card` defaults to the inline panel (warning, or danger with `destructive`), with named action labels, focus on the first action and back to the composer, the composer hint, and the one-line "Approved: save note" record after answering (session-only; not persisted with the thread). `presentation="dialog"` keeps the modal | 6.4 |
+| Retry and receipts | Done. Declared retry, receipts, the "Retrying toSorted read" lead (with the progress shimmer) while a later call repeats the failed one, and "Retry response" on retryable run errors | 6.5, 6.6 |
 
 The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
 

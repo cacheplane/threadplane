@@ -447,6 +447,7 @@ const SUPPORTED_EXPORTS = {
   react: ['useAgent'],
   'react/chat': [
     'ApprovalCard',
+    'ApprovalRecord',
     'Chat',
     'ChatError',
     'TypingIndicator',

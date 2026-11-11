@@ -19,7 +19,7 @@ The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation
 
 Choose **Run**, select **Book UA123** or **Book AA404**, then send the draft. These flights use demo data; no real ticket is purchased. The agent may look up flight information before pausing for your approval.
 
-The example confirms the saved request before showing **Approve demo booking**. Review the flight details and choose **Confirm** or **Cancel**. Each button sends its fixed scalar decision once. Backend text is displayed literally and never supplies commands or button actions.
+The example confirms the saved request before showing **Approve demo booking**. Review the flight details and choose **Book flight** or the decline button beside it. The answered card leaves a one-line record, such as **Approved: Book flight**. Each button sends its fixed scalar decision once. Backend text is displayed literally and never supplies commands or button actions.
 
 <ExampleCode file="cockpit/chat/interrupts/react/src/app.tsx" />
 
@@ -34,6 +34,14 @@ The owner checks message and tool identities, the confirmed conversation prefix,
 <ExampleCode file="cockpit/chat/interrupts/react/src/authority.ts" />
 
 These checks fence state observed by this page. They are not an atomic checkpoint precondition on the backend resume request; another client changing the same thread without this page observing it is outside this example's guarantee. Each page creates its own fresh thread, and there is no shared-thread picker.
+
+## How the card reads
+
+`ApprovalCard` renders as an inline warning panel. It leads with "Waiting for your approval.", then your `title` as the request in plain words, your body, and the actions. The first action is the primary button, so make it the action itself, such as **Save note**, and name the alternative in the second, such as a button that declines it. Focus moves to the first action when the card appears; pass `autoFocus={false}` when your page manages focus itself.
+
+For an action that cannot be undone, pass `destructive`. The panel switches to the danger tint, leads by saying the action cannot be undone, and draws the primary button in the danger color, so name the exact effect, such as **Delete 12 drafts**.
+
+Pass the card to `Chat` as `approval` to show it at the end of the transcript. While it is set, the composer reads "Answer the approval to continue", and once it clears, focus returns to the composer. After the person answers, add an entry to `approvalRecords`, such as `{ afterId, verdict: 'approved', label: 'Save note' }`, where `afterId` is the id of the message the approval followed. `Chat` and `MessageList` render each entry as a one-line `ApprovalRecord`, such as **Approved: Save note**, directly after that message, so it stays in place while the run continues below. Your application decides when an approval is pending and when to record it.
 
 ## Confirm completion and recover locally
 

@@ -33,7 +33,7 @@ for (const mode of [
       'Start a new conversation to continue.'
     );
     await expect(
-      page.getByRole('button', { name: 'Approve', exact: true })
+      page.getByRole('button', { name: 'Issue refund', exact: true })
     ).toHaveCount(0);
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
     await expect(page.locator('body')).not.toContainText('PRIVATE');
@@ -69,12 +69,14 @@ for (const mode of [
     await expect(page.getByRole('status')).toHaveText(
       'Awaiting your decision.'
     );
-    await page.getByRole('button', { name: 'Approve', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Issue refund', exact: true })
+      .click();
     await expect(page.getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
     await expect(
-      page.getByRole('button', { name: 'Approve', exact: true })
+      page.getByRole('button', { name: 'Issue refund', exact: true })
     ).toHaveCount(0);
     const before: Wire[] = await (await request.get('/__requests')).json();
     expect(before).toHaveLength(2);
@@ -97,7 +99,7 @@ for (const phase of ['draft', 'resume'])
           'Awaiting your decision.'
         );
         await page
-          .getByRole('button', { name: 'Approve', exact: true })
+          .getByRole('button', { name: 'Issue refund', exact: true })
           .click();
       }
       await expect(conversation(page)).toContainText('Live partial');
@@ -134,7 +136,7 @@ test('an incremental draft settles to the current pause and a held resume permit
   await send(page, 'Hold');
   await expect(conversation(page)).toContainText('Live partial');
   await expect(
-    page.getByRole('button', { name: 'Approve', exact: true })
+    page.getByRole('button', { name: 'Issue refund', exact: true })
   ).toHaveCount(0);
   await request.post('/__release');
   await expect(page.getByRole('status')).toHaveText('Awaiting your decision.');
@@ -142,14 +144,14 @@ test('an incremental draft settles to the current pause and a held resume permit
   await page.getByRole('button', { name: 'New conversation' }).click();
   await send(page, 'Resume hold');
   await expect(page.getByRole('status')).toHaveText('Awaiting your decision.');
-  await page.getByRole('button', { name: 'Approve', exact: true }).click();
+  await page.getByRole('button', { name: 'Issue refund', exact: true }).click();
   await expect(conversation(page)).toContainText('Live partial');
   await expect(
-    page.getByRole('button', { name: 'Approve', exact: true })
+    page.getByRole('button', { name: 'Issue refund', exact: true })
   ).toBeDisabled();
   await page.evaluate(() => {
     const button = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Approve'
+      (button) => button.textContent === 'Issue refund'
     );
     button?.click();
   });
@@ -223,7 +225,7 @@ test('the authored developer endpoint handles submit and resume without appearin
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');
   await frame
-    .getByRole('button', { name: 'Cancel refund', exact: true })
+    .getByRole('button', { name: "Don't refund", exact: true })
     .click();
   await expect(frame.getByRole('status')).toHaveText(
     'Refund decision complete.'
@@ -238,7 +240,7 @@ test('the authored developer endpoint handles submit and resume without appearin
   expect(wire[0].body.threadId).toBe(wire[1].body.threadId);
   await expect(frame.locator('body')).not.toContainText('/developer-agent');
 });
-for (const action of ['Approve', 'Edit and approve', 'Cancel refund']) {
+for (const action of ['Issue refund', 'Edit and approve', "Don't refund"]) {
   test(`installed SDK executes an exact native ${action} and keeps the confirmed conversation`, async ({
     page,
     request,
@@ -255,13 +257,24 @@ for (const action of ['Approve', 'Edit and approve', 'Cancel refund']) {
       await page
         .getByRole('spinbutton', { name: 'Edited amount (USD)' })
         .fill('20');
+    // The pending approval sits at the end of the transcript.
+    await expect(
+      conversation(page).getByRole('button', { name: action, exact: true })
+    ).toBeVisible();
     await page.getByRole('button', { name: action, exact: true }).click();
     await expect(page.getByRole('status')).toHaveText(
       'Refund decision complete.'
     );
     await expect(conversation(page).locator('li')).toHaveCount(3);
+    // The answered approval leaves a one-line record, and focus returns to the composer.
+    await expect(conversation(page).locator('.tp-approval-record')).toHaveText(
+      action === "Don't refund"
+        ? /Declined: Issue refund/
+        : /Approved: Issue refund/
+    );
+    await expect(page.getByLabel('Message', { exact: true })).toBeFocused();
     await expect(conversation(page)).toContainText(
-      action === 'Cancel refund'
+      action === "Don't refund"
         ? 'Refund cancelled'
         : action === 'Edit and approve'
         ? '$20.00'
@@ -289,7 +302,7 @@ for (const action of ['Approve', 'Edit and approve', 'Cancel refund']) {
         interruptId: 'interrupt-1',
         status: 'resolved',
         payload:
-          action === 'Cancel refund'
+          action === "Don't refund"
             ? { approved: false }
             : action === 'Edit and approve'
             ? { approved: true, amount: 20 }
@@ -311,6 +324,9 @@ for (const action of ['Approve', 'Edit and approve', 'Cancel refund']) {
     ).toBe(4);
     await page.getByRole('button', { name: 'New conversation' }).click();
     await expect(conversation(page).locator('li')).toHaveCount(0);
+    await expect(conversation(page).locator('.tp-approval-record')).toHaveCount(
+      0
+    );
     await expect(
       page.getByRole('heading', { name: 'Refund approval' })
     ).toHaveCount(0);
