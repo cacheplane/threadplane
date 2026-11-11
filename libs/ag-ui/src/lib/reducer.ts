@@ -143,7 +143,11 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
       store.error.set(undefined);
       store.interrupt.set(undefined);
       store.customEvents.set([]);
-      store.activities.set(new Map());
+      // Activities are run-scoped, except a subagent that already settled: it
+      // is part of the thread's history, like the tool call that spawned it,
+      // so its card stays with that earlier turn. A subagent still running
+      // (suspended or orphaned) is dropped as before; a resume re-announces it.
+      store.activities.set(settledSubagents(store.activities()));
       // A run boundary is the reset point for in-flight args accumulation:
       // a TOOL_CALL_ARGS fragment whose TOOL_CALL_END never arrived (aborted
       // or errored run) must not prefix a same-id call in the next run.
@@ -665,6 +669,17 @@ export function reduceEvent(event: BaseEvent, store: ReducerStore): void {
 
 function randomId(): string {
   return Math.random().toString(36).slice(2);
+}
+
+/** The subagent activities that reached a terminal status, in their existing entries. */
+function settledSubagents(activities: Map<string, ActivityEntry>): Map<string, ActivityEntry> {
+  const kept = new Map<string, ActivityEntry>();
+  for (const [id, entry] of activities) {
+    if (entry.activityType !== 'subagent') continue;
+    const status = entry.content()['status'];
+    if (status === 'complete' || status === 'error') kept.set(id, entry);
+  }
+  return kept;
 }
 
 /** Content events a subagentRunId can route away from the parent transcript. */
