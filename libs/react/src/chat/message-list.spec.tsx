@@ -349,6 +349,77 @@ describe('MessageList', () => {
       content.dispose();
     });
   }
+  describe('while a declared retry runs', () => {
+    const failed = { id: 'c', name: 'read', args: { id: 'sorted' }, status: 'complete' as const, result: { error: 'x' } };
+    const outcome = (label: string) => (activity: { id: string }) =>
+      activity.id === 'c'
+        ? { status: 'failed' as const, text: 'Read unavailable', retry: { label } }
+        : undefined;
+    const rowsWith = (repeatStatus: 'running' | 'complete', repeatArgs: unknown = { id: 'sorted' }) => {
+      const content = createMessageContent();
+      const rows = content.project(
+        snap(
+          [msg('a', 'Answer', { toolCallIds: ['c'] }), msg('b', '', { toolCallIds: ['c2'] })],
+          [failed, { ...failed, id: 'c2', args: repeatArgs, status: repeatStatus, result: repeatStatus === 'complete' ? 'ok' : undefined }] as AgentSnapshot['toolCalls']
+        )
+      );
+      return { content, rows };
+    };
+    const lines = (container: HTMLElement) =>
+      [...container.querySelectorAll('.tp-tool-activity__retrying')].map((p) => p.textContent);
+
+    it.each([true, false])('leads the failure with "Retrying …" from its label (grouped: %s)', (grouped) => {
+      const { content, rows } = rowsWith('running');
+      const view = render(
+        <MessageList rows={rows} groupRelatedTools={grouped} toolOutcome={outcome('Retry sorted read')} onToolRetry={() => undefined} />
+      );
+      expect(lines(view.container)).toEqual(['Retrying sorted read']);
+      const line = view.container.querySelector('.tp-tool-activity__retrying')!;
+      expect(line.getAttribute('data-active')).toBe('true');
+      expect(view.container.textContent).toContain('Read unavailable');
+      expect(view.container.querySelector('.tp-tool-activity__retry')).toBeNull();
+      content.dispose();
+    });
+
+    it('reads a plain "Retrying" when the label does not start with Retry', () => {
+      const { content, rows } = rowsWith('running');
+      const view = render(<MessageList rows={rows} toolOutcome={outcome('Try the read again')} />);
+      expect(lines(view.container)).toEqual(['Retrying']);
+      content.dispose();
+    });
+
+    it('shows no line once the repeat finishes or when nothing repeats the call', () => {
+      for (const [status, args] of [['complete', { id: 'sorted' }], ['running', { id: 'other' }]] as const) {
+        const { content, rows } = rowsWith(status, args);
+        const view = render(<MessageList rows={rows} toolOutcome={outcome('Retry sorted read')} />);
+        expect(lines(view.container)).toEqual([]);
+        view.unmount();
+        content.dispose();
+      }
+    });
+  });
+  it('passes each call its arguments so repeated calls get their own labels', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [msg('a', 'Answer', { toolCallIds: ['r1', 'r2'] })],
+        [
+          { id: 'r1', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
+          { id: 'r2', name: 'read', args: { ref: 'toReversed' }, status: 'complete', result: 'ok' },
+        ]
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        groupRelatedTools={false}
+        toolLabel={(name, args) => `Read ${(args as { ref: string }).ref}`}
+      />
+    );
+    expect(view.getByText('Read toSorted')).toBeTruthy();
+    expect(view.getByText('Read toReversed')).toBeTruthy();
+    content.dispose();
+  });
   it('passes positional context through a custom renderer before accessing default presentation inputs', () => {
     const content = createMessageContent();
     const row = content.project(snap([msg('a', 'Answer')]))[0];
@@ -503,6 +574,52 @@ describe('MessageList', () => {
     expect(toolOutcome).not.toHaveBeenCalled();
     content.dispose();
   });
+  it('renders a child as a subagent card in place of the tool call that started it', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'Answer', { toolCallIds: ['delegate', 'save'] }),
+          msg('b', 'Later'),
+        ],
+        [
+          { id: 'delegate', name: 'delegate', args: {}, status: 'complete', result: 'ok' },
+          { id: 'save', name: 'save', args: {}, status: 'complete', result: 'ok' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const subagents = [
+      { id: 'child', toolCallId: 'delegate', name: 'reader', status: 'complete' as const, messages: [{ id: 'm', text: 'Read it' }] },
+      { id: 'unplaced', name: 'elsewhere', status: 'running' as const, messages: [] },
+    ];
+    const ids = (root: ParentNode) =>
+      [...root.querySelectorAll('.tp-tool-activity')].map((node) => node.getAttribute('data-tool-id'));
+    const view = render(<MessageList rows={rows} subagents={subagents} />);
+    const first = view.container.querySelectorAll('.tp-chat-message')[0];
+    const cards = view.container.querySelectorAll('.tp-subagent-card');
+    // Only the child with a matching call is placed; the other is left to the application.
+    expect(cards).toHaveLength(1);
+    expect(first.contains(cards[0])).toBe(true);
+    expect(cards[0].getAttribute('data-subagent-id')).toBe('child');
+    expect(cards[0].textContent).toContain('reader');
+    // The delegating call is no longer a tool row; its sibling still is.
+    expect(ids(first.querySelector('.tp-tool-activity-group')!)).toEqual(['save']);
+
+    view.rerender(<MessageList rows={rows} subagents={subagents} groupRelatedTools={false} />);
+    expect(view.container.querySelector('.tp-tool-activity-group')).toBeNull();
+    expect(ids(view.container).filter((id) => id === 'delegate')).toEqual([]);
+    expect(view.container.querySelectorAll('.tp-subagent-card')).toHaveLength(1);
+
+    view.rerender(<MessageList rows={rows} />);
+    expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+    expect(ids(view.container)).toEqual(['delegate', 'save']);
+
+    view.rerender(
+      <MessageList rows={rows} subagents={subagents} renderMessage={(row) => <p>{row.id}</p>} />
+    );
+    expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+  });
+
   describe('app-declared tool failures', () => {
     const calls = (results: readonly unknown[]): AgentSnapshot['toolCalls'] =>
       results.map((result, i) => ({
