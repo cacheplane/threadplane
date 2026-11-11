@@ -6544,6 +6544,106 @@
       "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information."
     },
     {
+      "name": "SubagentCard",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/SubagentCard",
+      "canonicalReference": "@threadplane/react!SubagentCard:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "A child agent's name, status and message count, with its messages and tool activity behind one disclosure."
+    },
+    {
+      "name": "SubagentCardProps",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentCardProps",
+      "canonicalReference": "@threadplane/react!SubagentCardProps:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Borrowed child evidence, an optional card class and an optional app-owned text renderer."
+    },
+    {
+      "name": "SubagentEvidence",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentEvidence",
+      "canonicalReference": "@threadplane/react!SubagentEvidence:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Borrowed child evidence and the transcript that carries each child's attributed messages."
+    },
+    {
+      "name": "SubagentEvidenceMessage",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentEvidenceMessage",
+      "canonicalReference": "@threadplane/react!SubagentEvidenceMessage:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "The fields of one transcript message this projection reads; richer native messages are accepted as-is."
+    },
+    {
+      "name": "SubagentEvidenceRecord",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentEvidenceRecord",
+      "canonicalReference": "@threadplane/react!SubagentEvidenceRecord:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "The fields of one observed child this projection reads; richer native records are accepted as-is."
+    },
+    {
+      "name": "SubagentInfo",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentInfo",
+      "canonicalReference": "@threadplane/react!SubagentInfo:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Readonly evidence about one child agent. Does not own execution, sessions or persistence."
+    },
+    {
+      "name": "SubagentMessageInfo",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentMessageInfo",
+      "canonicalReference": "@threadplane/react!SubagentMessageInfo:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "One message a child agent produced, with the tool activity that message requested."
+    },
+    {
+      "name": "SubagentProjection",
+      "entrypointId": "react/chat",
+      "kind": "Interface",
+      "href": "/docs/api/react/chat/SubagentProjection",
+      "canonicalReference": "@threadplane/react!SubagentProjection:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Card data for each child in start order, and the transcript without the children's messages."
+    },
+    {
+      "name": "subagentsFromEvidence",
+      "entrypointId": "react/chat",
+      "kind": "Function",
+      "href": "/docs/api/react/chat/subagentsFromEvidence",
+      "canonicalReference": "@threadplane/react!subagentsFromEvidence:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Group each child's attributed messages under its start evidence, and separate them from the root transcript.\nStatus follows evidence only: finished is complete, an error is error, and a child with no terminal evidence\nis running while the root run is active and unknown afterwards. Messages attributed to a child with no start\nevidence are still removed from the root transcript and belong to no card."
+    },
+    {
+      "name": "SubagentStatus",
+      "entrypointId": "react/chat",
+      "kind": "TypeAlias",
+      "href": "/docs/api/react/chat/SubagentStatus",
+      "canonicalReference": "@threadplane/react!SubagentStatus:type",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads."
+    },
+    {
       "name": "SuggestionItem",
       "entrypointId": "react/chat",
       "kind": "Interface",

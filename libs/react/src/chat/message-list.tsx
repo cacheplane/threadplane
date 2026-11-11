@@ -21,6 +21,7 @@ import {
 import { resolveToolOutcome, withoutStaleRetry } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
+import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
@@ -86,6 +87,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * nothing is running and no later call repeats the same tool and arguments. Without it no retry control renders. Keep stable.
    */
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
+  /**
+   * Child agents observed for this transcript. A child whose `toolCallId` matches a row's tool call renders as a
+   * subagent card in place of that call's activity; other children are left to the application. Keep the array
+   * stable between updates; custom renderMessage retains full ownership.
+   */
+  readonly subagents?: readonly SubagentInfo[];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -119,6 +126,19 @@ function safeOutcome(
   }
 }
 const NONE: ReadonlySet<string> = new Set();
+const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
+/** Each row's children by spawning call. Rows without one share a constant so their memo stays stable. */
+function subagentsByRow(
+  rows: readonly MessageRow[],
+  subagents: readonly SubagentInfo[]
+): readonly (readonly SubagentInfo[])[] {
+  return rows.map((row) => {
+    const own = subagents.filter((subagent) =>
+      row.toolCalls.some((call) => call.id === subagent.toolCallId)
+    );
+    return own.length ? own : NO_SUBAGENTS;
+  });
+}
 /** Per-row retry staleness across the whole transcript: every call while work is active, else calls a later one repeats. */
 function staleRetriesByRow(rows: readonly MessageRow[]): readonly string[] {
   const busy =
@@ -156,6 +176,7 @@ function RowView<TRow extends MessageRow>({
   renderToolResult,
   onToolRetry,
   staleRetries,
+  subagents = NO_SUBAGENTS,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -173,13 +194,23 @@ function RowView<TRow extends MessageRow>({
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
   readonly staleRetries?: string;
+  /** Children started by this row's tool calls. */
+  readonly subagents?: readonly SubagentInfo[];
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
     return <>{renderMessage(row, contexts[prevRole ?? 'first'])}</>;
   }
   const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
-  const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
+  // A call that started a child is shown as that child's card, not as a tool row.
+  const delegated = new Set(subagents.map((subagent) => subagent.toolCallId));
+  const cards = subagents.map((subagent) => (
+    <SubagentCard key={subagent.id} subagent={subagent} />
+  ));
+  const calls = delegated.size
+    ? row.toolCalls.filter((call) => !delegated.has(call.id))
+    : row.toolCalls;
+  const activities: ToolActivityInfo[] = calls.map((call) => {
     const delivery = row.message.delivery;
     const phase = toolActivityPhase(call.status, delivery);
     const activity: ToolActivityInfo = {
@@ -235,6 +266,7 @@ function RowView<TRow extends MessageRow>({
                 </ToolActivity>
               ))
             ))}
+          {row.role !== 'tool' && cards}
         </>
       }
     >
@@ -266,12 +298,17 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   toolOutcome,
   renderToolResult,
   onToolRetry,
+  subagents,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
+  );
+  const rowSubagents = useMemo(
+    () => (subagents?.length ? subagentsByRow(rows, subagents) : undefined),
+    [rows, subagents]
   );
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -371,6 +408,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               renderToolResult={renderToolResult}
               onToolRetry={onToolRetry}
               staleRetries={staleRetries?.[index]}
+              subagents={rowSubagents?.[index]}
             />
           ))}
           {children}

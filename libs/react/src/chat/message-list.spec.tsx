@@ -489,6 +489,52 @@ describe('MessageList', () => {
     expect(toolOutcome).not.toHaveBeenCalled();
     content.dispose();
   });
+  it('renders a child as a subagent card in place of the tool call that started it', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'Answer', { toolCallIds: ['delegate', 'save'] }),
+          msg('b', 'Later'),
+        ],
+        [
+          { id: 'delegate', name: 'delegate', args: {}, status: 'complete', result: 'ok' },
+          { id: 'save', name: 'save', args: {}, status: 'complete', result: 'ok' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const subagents = [
+      { id: 'child', toolCallId: 'delegate', name: 'reader', status: 'complete' as const, messages: [{ id: 'm', text: 'Read it' }] },
+      { id: 'unplaced', name: 'elsewhere', status: 'running' as const, messages: [] },
+    ];
+    const ids = (root: ParentNode) =>
+      [...root.querySelectorAll('.tp-tool-activity')].map((node) => node.getAttribute('data-tool-id'));
+    const view = render(<MessageList rows={rows} subagents={subagents} />);
+    const first = view.container.querySelectorAll('.tp-chat-message')[0];
+    const cards = view.container.querySelectorAll('.tp-subagent-card');
+    // Only the child with a matching call is placed; the other is left to the application.
+    expect(cards).toHaveLength(1);
+    expect(first.contains(cards[0])).toBe(true);
+    expect(cards[0].getAttribute('data-subagent-id')).toBe('child');
+    expect(cards[0].textContent).toContain('reader');
+    // The delegating call is no longer a tool row; its sibling still is.
+    expect(ids(first.querySelector('.tp-tool-activity-group')!)).toEqual(['save']);
+
+    view.rerender(<MessageList rows={rows} subagents={subagents} groupRelatedTools={false} />);
+    expect(view.container.querySelector('.tp-tool-activity-group')).toBeNull();
+    expect(ids(view.container).filter((id) => id === 'delegate')).toEqual([]);
+    expect(view.container.querySelectorAll('.tp-subagent-card')).toHaveLength(1);
+
+    view.rerender(<MessageList rows={rows} />);
+    expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+    expect(ids(view.container)).toEqual(['delegate', 'save']);
+
+    view.rerender(
+      <MessageList rows={rows} subagents={subagents} renderMessage={(row) => <p>{row.id}</p>} />
+    );
+    expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+  });
+
   describe('app-declared tool failures', () => {
     const calls = (results: readonly unknown[]): AgentSnapshot['toolCalls'] =>
       results.map((result, i) => ({

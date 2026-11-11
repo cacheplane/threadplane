@@ -28,6 +28,8 @@ export interface ChatProps
   readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable. */
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
+  readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
@@ -52,6 +54,7 @@ export function Chat({
   toolLabel,
   toolOutcome,
   renderToolResult,
+  subagents,
   onToolRetry,
   onRetry,
   inputLeading,
@@ -70,6 +73,7 @@ export function Chat({
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolResult={renderToolResult}
+        subagents={subagents}
         onToolRetry={onToolRetry}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
