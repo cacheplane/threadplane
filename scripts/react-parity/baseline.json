@@ -1,19 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "6587ede652560ade6d69e02f16de5668745b0f65",
+  "baselineHead": "3002efb39366f775f3961089602c36952c207acd",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "apps/website/content/docs/react/chat/components/chat-input.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/chat-input.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -2277,7 +2271,7 @@
       "id": "config:.github/workflows/ci.yml",
       "kind": "config",
       "path": ".github/workflows/ci.yml",
-      "sha256": "ab15909e57a4cd3045ab3ca329c804395ea0b3ab822652d2d828db8e51a56505"
+      "sha256": "cd99c12cf32342ded2bbf18dffc7f8f5de6f2af1f87ff6a6d4191f11b757243c"
     },
     {
       "id": "config:.github/workflows/publish-middleware-npm.yml",
