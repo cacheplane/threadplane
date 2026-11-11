@@ -4101,7 +4101,7 @@
       "canonicalReference": "@threadplane/chat!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolArgs",
@@ -6194,16 +6194,6 @@
       "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions."
     },
     {
-      "name": "citationsWithToolSources",
-      "entrypointId": "react/chat",
-      "kind": "Function",
-      "href": "/docs/api/react/chat/citationsWithToolSources",
-      "canonicalReference": "@threadplane/react!citationsWithToolSources:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "A message's citations plus the sources its tool activities declare, for an application that\nrenders its own Sources panel. Pass the result to `Citations` and set `sources=\"panel\"` on the\nactivity so the sources are not repeated as links. A source the message already cites is not\nadded again; `snapshot` also counts the answer's Markdown source definitions.\nReturns `citations` itself when nothing is added."
-    },
-    {
       "name": "ConfirmDialog",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6801,7 +6791,7 @@
       "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolObservation",
@@ -6852,16 +6842,6 @@
       "isDeprecated": false,
       "isTypeOnly": false,
       "summary": "Builds a `toolOutcome` callback from one decoder per tool name.\nA decoder runs only for a complete call of its own tool that has a result, so\nrunning, stopped and failed calls and every undeclared tool stay literal.\nParsing is done once here; values such as `false`, `0`, `\"\"`, `[]` and `null`\nreach the decoder unchanged and mean nothing until it says so."
-    },
-    {
-      "name": "ToolSourcePlacement",
-      "entrypointId": "react/chat",
-      "kind": "TypeAlias",
-      "href": "/docs/api/react/chat/ToolSourcePlacement",
-      "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Where an activity's declared sources appear. `links` (the default) shows them under the activity.\n`panel` shows none here, for an application that lists them in its own Sources panel with\n`citationsWithToolSources`. `MessageList` and `Chat` already do this."
     },
     {
       "name": "TypingIndicator",
