@@ -70,3 +70,19 @@ export function activitySummary(
     status: `${label}. ${activityProgress(activities)}.`,
   };
 }
+/** The expanded heading while work runs: "Working · 1 of 3 done". Failed and stopped calls count as done. */
+export function workingLabel(activities: readonly ToolActivityInfo[]): string {
+  const done = activities.filter(
+    (item) =>
+      item.phase === 'complete' ||
+      item.phase === 'error' ||
+      item.phase === 'stopped'
+  ).length;
+  return `Working · ${done} of ${activities.length} done`;
+}
+/** Elapsed time for the progress view: "45s" or "1m 05s". */
+export function formatElapsed(ms: number): string {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
+}

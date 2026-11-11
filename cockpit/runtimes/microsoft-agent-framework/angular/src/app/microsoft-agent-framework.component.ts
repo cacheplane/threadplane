@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
@@ -50,6 +50,7 @@ interface ExpenseDraft {
   imports: [
     ChatComponent,
     ChatApprovalCardComponent,
+    ChatInterruptTemplateDirective,
     ChatWelcomeSuggestionComponent,
     ExampleChatLayoutComponent,
     CurrencyPipe,
@@ -73,8 +74,39 @@ interface ExpenseDraft {
               />
             }
           </div>
+          <!-- The approval sits at the end of the transcript, inline. -->
+          <ng-template chatInterruptTemplate>
+            <chat-approval-card
+              [agent]="agent"
+              title="Expense approval required"
+              (action)="onAction($event)"
+            >
+              <ng-template #body>
+                <div class="approval-body">
+                  @if (approvalExpense(); as e) {
+                    <div class="approval-row">
+                      <span class="approval-label">Amount</span>
+                      <strong>{{ e.amount_usd | currency }}</strong>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">Vendor</span>
+                      <strong>{{ e.vendor }}</strong>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">Category</span>
+                      <code class="approval-code">{{ e.category }}</code>
+                    </div>
+                    @if (e.memo) {
+                      <div class="approval-memo">{{ e.memo }}</div>
+                    }
+                  } @else {
+                    <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
+                  }
+                </div>
+              </ng-template>
+            </chat-approval-card>
+          </ng-template>
         </chat>
-
         <!-- #region shared-state-panel -->
         <aside class="state-panel" data-testid="expense-state">
           <h2 class="state-title">Shared state — expense</h2>
@@ -91,35 +123,6 @@ interface ExpenseDraft {
         </aside>
         <!-- #endregion -->
 
-        <chat-approval-card
-          [agent]="agent"
-          title="Expense approval required"
-          (action)="onAction($event)"
-        >
-          <ng-template #body>
-            <div class="approval-body">
-              @if (approvalExpense(); as e) {
-                <div class="approval-row">
-                  <span class="approval-label">Amount</span>
-                  <strong>{{ e.amount_usd | currency }}</strong>
-                </div>
-                <div class="approval-row">
-                  <span class="approval-label">Vendor</span>
-                  <strong>{{ e.vendor }}</strong>
-                </div>
-                <div class="approval-row">
-                  <span class="approval-label">Category</span>
-                  <code class="approval-code">{{ e.category }}</code>
-                </div>
-                @if (e.memo) {
-                  <div class="approval-memo">{{ e.memo }}</div>
-                }
-              } @else {
-                <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
-              }
-            </div>
-          </ng-template>
-        </chat-approval-card>
       </div>
     </example-chat-layout>
   `,

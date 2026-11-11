@@ -14,7 +14,7 @@ Use interrupts when an agent action is irreversible (sending an email, placing a
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition in front of a refund graph served over AG-UI. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: a modal card appears with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons — Cancel, Edit, and Approve.
+The Run tab shows the prebuilt `<chat>` composition in front of a refund graph served over AG-UI. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: an approval panel appears at the end of the conversation with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons: Issue refund, Edit, and one that declines the refund.
 
 Two welcome suggestions set it up. "Refund a duplicate charge" asks for $47.50 back to customer `cus_a8x2k`, and "Refund a chargeback" asks for $129.00 with a different justification, so you can watch the same pause fire on two different payloads.
 
@@ -90,7 +90,7 @@ provideAgent({
 
 ### The approval card
 
-`<chat-approval-card>` from `@threadplane/chat` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a matching payload arrives it opens a native modal dialog, and when the interrupt resolves it closes again. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
+`<chat-approval-card>` from `@threadplane/chat` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a matching payload arrives it shows an approval panel, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript, and use `approveLabel` and `cancelLabel` to name the two actions. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
 
 <ExampleCode file="interrupts.component.ts" region="approval-card" title="interrupts.component.ts — the card" />
 
@@ -98,7 +98,7 @@ The card owns the chrome and the buttons; the `#body` template owns the content,
 
 ### Showing the approval in the transcript
 
-Set `presentation="inline"` and put the card in a `chatInterruptTemplate`, and the approval appears as a panel at the end of the conversation instead of a modal. It leads with "Waiting for your approval.", then the `title` as the request, the `#body` content, and the actions. Focus moves to the first action when the panel appears. While it waits, the composer reads "Answer the approval to continue", and after you answer, focus returns to the composer.
+The panel leads with "Waiting for your approval.", then the `title` as the request, the `#body` content, and the actions. Focus moves to the first action when the panel appears. While it waits, the composer reads "Answer the approval to continue", and after you answer, focus returns to the composer.
 
 Name both actions. `approveLabel` says what approving does, `cancelLabel` names the alternative:
 
@@ -108,7 +108,6 @@ Name both actions. `approveLabel` says what approving does, `cancelLabel` names 
     <chat-approval-card
       [agent]="agent"
       matchKind="refund_approval"
-      presentation="inline"
       title="Refund $47.50 to cus_a8x2k?"
       approveLabel="Issue refund"
       cancelLabel="Don't refund"
@@ -123,6 +122,10 @@ Name both actions. `approveLabel` says what approving does, `cancelLabel` names 
 ```
 
 For an action that cannot be undone, add `[destructive]="true"`. The panel switches to the danger tint, leads by saying the action cannot be undone, and draws the primary button in the destructive color, so give it the exact effect, such as "Delete 12 drafts". `destructive` and the two labels apply to the dialog too.
+
+To show the approval as a modal instead, set `presentation="dialog"`. The card then opens a native dialog wherever it sits in your template, and records nothing in the transcript.
+
+Once the person answers, the inline panel shrinks to one muted line after the message it followed, such as "Approved: Refund $47.50" or "Declined: Refund $47.50". The line names `approveLabel` unless you set `recordLabel`, and reads just "Approved" or "Declined" when the button keeps its default text. The record lasts for the session: it is not stored with the thread, so it is gone after a reload. Edit leaves no record, because the approval stays open.
 
 ### Resuming with the decision
 

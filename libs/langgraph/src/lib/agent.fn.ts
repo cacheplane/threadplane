@@ -49,7 +49,7 @@ import type {
   AgentSubmitOptions,
   MessageDelivery,
 } from '@threadplane/chat';
-import { AgentError, staticDelivery, ɵcreateDevtoolsEmitter, ɵdevtoolsScriptedRuns } from '@threadplane/chat';
+import { AgentError, agentPlan, staticDelivery, ɵcreateDevtoolsEmitter, ɵdevtoolsScriptedRuns } from '@threadplane/chat';
 import type { ɵDevtoolsPseudoEvent } from '@threadplane/chat';
 
 import {
@@ -526,6 +526,7 @@ export function agent<
     error:     errorSig,
     toolCalls: toolCallsNeutral,
     state:     stateNeutral as Signal<T>,
+    plan:      agentPlan(stateNeutral),
     interrupt: interruptNeutral,
     subagents: subagentsNeutral,
     events$,

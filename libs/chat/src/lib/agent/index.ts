@@ -20,6 +20,8 @@ export type {
 } from './agent-event';
 export type { AgentCheckpoint } from './agent-checkpoint';
 export type { AgentUsage, AgentUsageEntry } from './agent-usage';
+export type { AgentPlan, AgentPlanStep } from './agent-plan';
+export { agentPlan, agentPlanFromState } from './agent-plan';
 export type { AgentWithHistory } from './agent-with-history';
 export type { AgentRef } from './agent-ref';
 export { createAgentRef } from './agent-ref';

@@ -63,7 +63,7 @@ test('switching away releases a held React decision and returning starts fresh',
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await frame.getByRole('button', { name: 'Approve refund' }).click();
+  await frame.getByRole('button', { name: 'Issue refund' }).click();
   await expect(frame.getByRole('status')).toHaveText('Sending decision…');
   const oldFrame = await page.locator('iframe').elementHandle();
   await selectFramework(page, 'angular');
@@ -83,7 +83,7 @@ test('switching away releases a held React decision and returning starts fresh',
   ).toHaveCount(0);
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await frame.getByRole('button', { name: 'Decline refund' }).click();
+  await frame.getByRole('button', { name: "Don't refund" }).click();
   await expect(frame.getByRole('status')).toHaveText('Response complete.');
   const proof = await (
     await request.get('http://127.0.0.1:4601/__requests')

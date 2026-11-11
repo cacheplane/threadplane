@@ -59,9 +59,9 @@ test('uncertain thread creation is protected and never replayed', async ({
     )
   ).toHaveLength(0);
 });
-for (const [label, response, final] of [
-  ['Approve refund', { approved: true }, 'Simulated refund of $47.50'],
-  ['Decline refund', { approved: false }, 'Refund cancelled'],
+for (const [label, response, final, record] of [
+  ['Issue refund', { approved: true }, 'Simulated refund of $47.50', /Approved: Issue refund/],
+  ["Don't refund", { approved: false }, 'Refund cancelled', /Declined: Issue refund/],
 ] as const) {
   test(`real SDK ${label} resumes the same confirmed thread without text`, async ({
     page,
@@ -78,11 +78,23 @@ for (const [label, response, final] of [
       page.locator('script').filter({ hasText: 'literal refund reason' })
     ).toHaveCount(0);
     await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
+    // The pending approval sits at the end of the transcript.
+    await expect(
+      page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('region', { name: 'Refund approval required' })
+    ).toBeVisible();
     await page.getByRole('button', { name: label }).click();
     await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
     await expect(
       page.getByRole('region', { name: 'Conversation' })
     ).toContainText(final);
+    // The answered approval leaves a one-line record, and focus returns to the composer.
+    await expect(page.locator('.tp-approval-record')).toHaveText(record);
+    await expect(
+      page.getByRole('region', { name: 'Refund approval required' })
+    ).toHaveCount(0);
+    await expect(page.getByLabel('Message', { exact: true })).toBeFocused();
     const proof = await (await request.get('/__requests')).json();
     const streams = proof.filter((entry: { path: string }) =>
       entry.path.endsWith('/runs/stream')
@@ -133,7 +145,7 @@ test('held decision blocks duplicate clicks and Stop requires explicit fresh wor
 }) => {
   await request.post('/__hold-resume');
   await pause(page);
-  const button = page.getByRole('button', { name: 'Approve refund' });
+  const button = page.getByRole('button', { name: 'Issue refund' });
   await button.evaluate((element: HTMLButtonElement) => {
     element.click();
     element.click();
@@ -194,7 +206,7 @@ test('uncertain resume fails without replay or leaked diagnostics', async ({
 }) => {
   await request.post('/__fail-resume');
   await pause(page);
-  await page.getByRole('button', { name: 'Approve refund' }).click();
+  await page.getByRole('button', { name: 'Issue refund' }).click();
   await expect(page.getByRole('alert')).toHaveText(
     'The LangGraph request failed.'
   );
@@ -212,7 +224,7 @@ test('pagehide disposes a held resume and fences late publication', async ({
 }) => {
   await request.post('/__hold-resume');
   await pause(page);
-  await page.getByRole('button', { name: 'Approve refund' }).click();
+  await page.getByRole('button', { name: 'Issue refund' }).click();
   await expect
     .poll(async () => (await (await request.get('/__lifetime')).json()).active)
     .toBe(true);
@@ -252,7 +264,7 @@ test('uses developer bridge headers while keeping credentials out of the body', 
   const frame = page.frameLocator('#pilot');
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await frame.getByRole('button', { name: 'Decline refund' }).click();
+  await frame.getByRole('button', { name: "Don't refund" }).click();
   await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
   const proof = await (await request.get('/__requests')).json();
   expect(

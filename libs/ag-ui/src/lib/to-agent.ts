@@ -16,6 +16,7 @@ import {
   AGENT_ERROR_MESSAGES,
   AGENT_RECOVERY_MESSAGES,
   AGENT_RECOVERY_DETAILS,
+  agentPlan,
   ɵcreateDevtoolsEmitter,
   ɵdevtoolsScriptedRuns,
 } from '@threadplane/chat';
@@ -1188,6 +1189,7 @@ function createAgentAdapter(
     error:     store.error,
     toolCalls: store.toolCalls,
     state:     store.state,
+    plan:      agentPlan(store.state),
     usage:     store.usage,
     interrupt: store.interrupt,
     events$:      store.events$.asObservable(),

@@ -10,6 +10,7 @@ import type { AgentSubmitInput, AgentSubmitOptions } from './agent-submit';
 import type { ClientToolsCapability } from '../client-tools/client-tools-capability';
 import type { AgentError } from './agent-error';
 import type { AgentUsage } from './agent-usage';
+import type { AgentPlan } from './agent-plan';
 
 /**
  * Runtime-neutral contract chat primitives consume.
@@ -76,6 +77,13 @@ export interface Agent<TState = unknown> {
    * `undefined` while a run is in flight and after a run that reported none.
    */
   usage?: Signal<AgentUsage | undefined>;
+  /**
+   * Optional plan the agent declared for its work, in order. The LangGraph and
+   * AG-UI adapters read it from a `todos` list in agent state (see
+   * `agentPlanFromState`); the progress view lists its pending steps as upcoming.
+   * Undefined when the agent declared no plan.
+   */
+  plan?: Signal<AgentPlan | undefined>;
 
   /**
    * Optional read-only reconciliation of an uncertain run outcome, offered when
