@@ -11,6 +11,8 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
+  effect,
+  DestroyRef,
   isDevMode,
   type TemplateRef,
 } from '@angular/core';
@@ -36,7 +38,7 @@ import {
   withoutStaleRetry,
   type ToolActivityFailure,
 } from '../chat-tool-activity/tool-outcome';
-import { activitySummary } from '../chat-tool-activity/activity-summary';
+import { activitySummary, formatElapsed, workingLabel } from '../chat-tool-activity/activity-summary';
 import {
   ChatStatusPanelComponent,
   STATUS_PANEL_CONTENT_STYLES,
@@ -117,8 +119,46 @@ let nextChatToolCallsId = 0;
       .ctc__group-body[hidden] {
         display: none;
       }
-      .ctc__group-header[hidden] {
+      .ctc__group-header[hidden],
+      .ctc__group-bar[hidden] {
         display: none;
+      }
+      .ctc__group-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-inline-size: 0;
+      }
+      .ctc__group-bar > .ctc__group-header {
+        flex: 1 1 auto;
+        width: auto;
+      }
+      .ctc__group-elapsed {
+        flex: none;
+        color: var(--tplane-chat-text-muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .ctc__group-stop {
+        flex: none;
+        min-height: 32px;
+        padding: 4px 12px;
+        border: 1px solid var(--tplane-chat-border);
+        border-radius: var(--tplane-chat-radius-sm);
+        background: var(--tplane-chat-surface);
+        color: var(--tplane-chat-text);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .ctc__group-stop:focus-visible {
+        outline: 2px solid var(--tplane-chat-focus-ring);
+        outline-offset: 2px;
+      }
+      @media (pointer: coarse) {
+        .ctc__group-stop {
+          min-height: 44px;
+        }
       }
       .ctc__group--single {
         border: 0;
@@ -156,36 +196,43 @@ let nextChatToolCallsId = 0;
       [attr.data-group]="grouped ? true : null"
       [attr.data-expanded]="expanded"
     >
-      <button
-        type="button"
-        [hidden]="!grouped"
-        class="ctc__group-header"
-        [attr.aria-expanded]="expanded"
-        [attr.aria-controls]="expanded ? groupBodyId($index) : null"
-        (click)="toggleGroup(group.key)"
-      >
-        <svg
-          class="ctc__group-chevron"
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+      <div class="ctc__group-bar" [hidden]="!grouped">
+        <button
+          type="button"
+          [hidden]="!grouped"
+          class="ctc__group-header"
+          [attr.aria-expanded]="expanded"
+          [attr.aria-controls]="expanded ? groupBodyId($index) : null"
+          (click)="toggleGroup(group.key)"
         >
-          <path d="M4 2l4 4-4 4" />
-        </svg>
-        <span
-          class="tp-tool-activity__label"
-          [attr.data-active]="summary.active"
-          >{{ summary.label }}</span
-        >
-        @if (summary.cue) {<span class="tp-tool-activity__cue">{{
-          summary.cue
-        }}</span
-        >}
-      </button>
+          <svg
+            class="ctc__group-chevron"
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 2l4 4-4 4" />
+          </svg>
+          <span
+            class="tp-tool-activity__label"
+            [attr.data-active]="summary.active && !expanded"
+            >{{ summary.active && expanded && !groupSummary() ? working(group.calls) : summary.label }}</span
+          >
+          @if (summary.cue) {<span class="tp-tool-activity__cue">{{
+            summary.cue
+          }}</span
+          >}
+        </button>
+        @if (grouped && summary.active) {
+        <span class="ctc__group-elapsed">{{ elapsedFor(group.key) }}</span>
+        @if (agent().isLoading()) {
+        <button type="button" class="ctc__group-stop" (click)="stop()">Stop</button>
+        } }
+      </div>
       <div
         class="ctc__group-body"
         [hidden]="!expanded"
@@ -193,7 +240,7 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc, !grouped)" (toolRetry)="toolRetry.emit($event)">
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" (toolRetry)="toolRetry.emit($event)">
           @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
           <ng-container
             [ngTemplateOutlet]="resultTemplate"
@@ -251,9 +298,9 @@ export class ChatToolCallsComponent {
   >(undefined);
   /** Group default tool rows across names; false retains adjacent same-name grouping. None disables all grouping. */
   readonly groupRelated = input(true);
-  /** App-owned readable labels. Technical names remain in Details. */
+  /** App-owned readable labels. Receives the call's arguments so repeated calls to one tool can say what each did, such as "Read toSorted". Technical names remain in Details. */
   readonly toolLabel = input<
-    ((name: string) => string | undefined) | undefined
+    ((name: string, args?: unknown) => string | undefined) | undefined
   >(undefined);
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; custom tool templates keep ownership. */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
@@ -417,6 +464,49 @@ export class ChatToolCallsComponent {
     return `chat-tool-calls-${this.instanceId}-group-${index}`;
   }
 
+  protected working(calls: readonly ToolCall[]): string {
+    return workingLabel(this.activitiesFor(calls));
+  }
+
+  /** Stops the run from the activity group; the same action as the composer's Stop. */
+  protected stop(): void {
+    void this.agent().stop();
+  }
+
+  /** Client-observed start of each group's running stretch, and a clock that ticks only while one runs. */
+  private readonly runStarts = new Map<string, number>();
+  private readonly now = signal(Date.now());
+  private readonly activeGroupKeys = computed(() =>
+    this.groups()
+      .filter((group) => !group.templateRef && !group.subagent)
+      .filter((group) => this.activitiesFor(group.calls).some((item) => item.phase === 'running'))
+      .map((group) => group.key)
+  );
+  constructor() {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const clear = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    inject(DestroyRef).onDestroy(clear);
+    effect(() => {
+      const active = this.activeGroupKeys();
+      const now = Date.now();
+      for (const key of [...this.runStarts.keys()])
+        if (!active.includes(key)) this.runStarts.delete(key);
+      for (const key of active) if (!this.runStarts.has(key)) this.runStarts.set(key, now);
+      this.now.set(now);
+      if (active.length && timer === undefined)
+        timer = setInterval(() => this.now.set(Date.now()), 1000);
+      else if (!active.length) clear();
+    });
+  }
+
+  protected elapsedFor(key: string): string {
+    const now = this.now();
+    return formatElapsed(now - (this.runStarts.get(key) ?? now));
+  }
+
   protected summaryFor(name: string, calls: readonly ToolCall[]) {
     return activitySummary(
       this.activitiesFor(calls),
@@ -456,7 +546,7 @@ export class ChatToolCallsComponent {
     const activity: ToolActivityInfo = {
       id: tc.id,
       name: tc.name,
-      label: this.toolLabel()?.(tc.name),
+      label: this.toolLabel()?.(tc.name, tc.args),
       phase,
       argumentsText: literal(tc.args),
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
