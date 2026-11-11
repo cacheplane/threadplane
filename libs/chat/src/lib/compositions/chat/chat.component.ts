@@ -57,6 +57,7 @@ import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from 
 import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext } from './chat-run-activity-template.directive';
 import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from './chat-interrupt-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
+import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords, approvalRecordText, type ChatApprovalRecord } from '../chat-approval-card/approval-records';
 
 interface OwnedMarkdownPresentation {
   content: string;
@@ -151,6 +152,7 @@ export function isPinned(
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     { provide: CHAT_LIFECYCLE, useFactory: createChatLifecycle },
+    { provide: CHAT_APPROVAL_RECORDS, useFactory: () => new ChatApprovalRecords() },
     {
       provide: DEVELOPMENT_COLLECTION_POLICY,
       useFactory: () => {
@@ -229,6 +231,21 @@ export function isPinned(
       line-height: var(--tplane-chat-line-height-tight);
     }
     .chat-stopped-notice svg { width: 12px; height: 12px; flex: none; }
+    /* An answered inline approval, shrunk to one muted line. */
+    .chat-approval-record {
+      margin: 0;
+      color: var(--tplane-chat-text-muted);
+      font-size: var(--tplane-chat-font-size-sm);
+      line-height: var(--tplane-chat-line-height-tight);
+    }
+    .chat-approval-record[data-verdict='approved']::before { content: '✓ ' / ''; }
+    .chat-approval-record--floor {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: var(--tplane-chat-max-width);
+      margin: 0 auto;
+      padding: 0 var(--tplane-chat-space-6);
+    }
     .chat-sr-only {
       position: absolute;
       width: 1px;
@@ -413,6 +430,17 @@ export function isPinned(
                       (contentCopied)="onCopy(message, $event)"
                     />
                   }
+                  <!-- Answered approvals render inside the row, after its controls. As
+                       siblings of every row they made a long transcript far slower to
+                       build, and most chats never answer one: a single boolean read
+                       keeps the repeater out of every message until one does. -->
+                  <ng-container ngProjectAs="[chatAfterMessage]">
+                    @if (hasApprovalRecords()) {
+                      @for (record of approvalRecordsAfter(message.id); track record.id) {
+                        <p class="chat-approval-record" [attr.data-verdict]="record.verdict">{{ recordText(record) }}</p>
+                      }
+                    }
+                  </ng-container>
                 </chat-message>
               </ng-template>
 
@@ -443,6 +471,11 @@ export function isPinned(
                    noise rather than richer feedback. See
                    currentAssistantStreaming() on the component class. -->
               <chat-typing-indicator [agent]="agent()" />
+            }
+
+            <!-- Answered approvals with no assistant message to follow. -->
+            @for (record of approvalRecordsAfter(undefined); track record.id) {
+              <p class="chat-approval-record chat-approval-record--floor" [attr.data-verdict]="record.verdict">{{ recordText(record) }}</p>
             }
 
             <!-- A projected chatInterruptTemplate renders the pending
@@ -759,6 +792,30 @@ export class ChatComponent {
         a === b || (!!a && !!b && a.$implicit === b.$implicit && a.interrupt === b.interrupt),
     },
   );
+
+  private readonly approvalRecords = inject(CHAT_APPROVAL_RECORDS, { optional: true });
+  /** Answered inline approvals, keyed by the assistant message they followed. */
+  private readonly approvalRecordsByMessage = computed(() => {
+    const byMessage = new Map<string | undefined, ChatApprovalRecord[]>();
+    const records = this.approvalRecords?.records() ?? [];
+    // Most chats never answer an inline approval: skip the message read entirely.
+    if (records.length === 0) return byMessage;
+    const ids = new Set(this.agent().messages().map((m) => m.id));
+    for (const record of records) {
+      // A record whose message is gone (another thread) is not shown.
+      if (record.afterMessageId !== undefined && !ids.has(record.afterMessageId)) continue;
+      const list = byMessage.get(record.afterMessageId) ?? [];
+      list.push(record);
+      byMessage.set(record.afterMessageId, list);
+    }
+    return byMessage;
+  });
+  protected readonly hasApprovalRecords = computed(() => (this.approvalRecords?.records().length ?? 0) > 0);
+  private static readonly NO_RECORDS: readonly ChatApprovalRecord[] = [];
+  protected approvalRecordsAfter(messageId: string | undefined): readonly ChatApprovalRecord[] {
+    return this.approvalRecordsByMessage().get(messageId) ?? ChatComponent.NO_RECORDS;
+  }
+  protected readonly recordText = approvalRecordText;
 
   private readonly runActivityRegion = viewChild<ElementRef<HTMLElement>>('runActivityRegion');
   private readonly interruptRegion = viewChild<ElementRef<HTMLElement>>('interruptRegion');

@@ -6,6 +6,7 @@ import type {
   CustomEvent,
 } from '@ag-ui/client';
 import type {
+  AgentPlanStep,
   CompleteOutcome,
   DeepReadonly,
   PlainValue,
@@ -48,6 +49,8 @@ export interface SessionSnapshot {
   readonly status: 'idle' | 'running' | 'error';
   readonly transcript: Transcript;
   readonly state: PlainValue;
+  /** Steps the agent declared in the state's `todos` list, `[{ content, status }]`. Absent when the state holds no such list. */
+  readonly plan?: readonly AgentPlanStep[];
   /** Children observed in the current root invocation. */
   readonly subagents: Subagents;
   /** Children with terminal evidence from earlier invocations, and children supplied at restore. Absent when there are none. */
