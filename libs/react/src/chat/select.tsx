@@ -27,6 +27,9 @@ export interface SelectProps {
   readonly menuClassName?: string;
 }
 
+// Typeahead matches the option label, never its description.
+const optionLabel = (option: HTMLElement) =>
+  option.querySelector('.tp-select__option-label')?.textContent ?? '';
 const selected = (menu: HTMLElement) =>
   menu.querySelector<HTMLElement>('[aria-selected="true"]:not(:disabled)');
 
@@ -67,6 +70,7 @@ export function Select({
     side: 'above',
     gap: 8,
     initialFocus: selected,
+    itemText: optionLabel,
   });
   const current = options.find((option) => option.value === value);
   return (
