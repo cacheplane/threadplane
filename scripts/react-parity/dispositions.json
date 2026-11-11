@@ -15629,6 +15629,33 @@
       "reason": "Readonly body/action presentation props; application supplies disabled state and handles callback errors."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalRecord",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "One-line record of an answered approval; the application decides when to render it."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalRecordProps",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly verdict and label for the answered-approval record."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ApprovalRecordEntry",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Answered-approval record anchored after a transcript row for MessageList and Chat approvalRecords."
+    },
+    {
       "id": "source:libs/react/src/chat/approval-card.tsx",
       "taskIds": [
         "T28"

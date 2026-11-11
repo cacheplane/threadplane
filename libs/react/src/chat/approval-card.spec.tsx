@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApprovalCard } from './index';
+import { ApprovalCard, ApprovalRecord } from './index';
 
 afterEach(cleanup);
 describe('ApprovalCard', () => {
@@ -157,5 +157,46 @@ describe('ApprovalCard', () => {
     view.unmount();
     render(<ApprovalCard actions={actions}>Reason</ApprovalCard>);
     expect(callback).not.toHaveBeenCalled();
+  });
+});
+
+describe('ApprovalCard as an inline status panel', () => {
+  const actions = [
+    { id: 'save', label: 'Save note', onSelect: () => undefined },
+    { id: 'skip', label: "Don't save", onSelect: () => undefined },
+  ];
+  it('leads a warning panel with "Waiting for your approval." and focuses the first action', () => {
+    const view = render(<ApprovalCard title="Save the note?" actions={actions}>body</ApprovalCard>);
+    const region = view.getByRole('region', { name: 'Save the note?' });
+    expect(region.getAttribute('data-tone')).toBe('warning');
+    expect(region.querySelector('.tp-status-panel__lead')!.textContent).toBe('Waiting for your approval.');
+    const save = view.getByRole('button', { name: 'Save note' });
+    expect(document.activeElement).toBe(save);
+    expect(save.classList.contains('tp-approval-card__action--primary')).toBe(true);
+    expect(view.getByRole('button', { name: "Don't save" }).className).toBe('tp-approval-card__action');
+  });
+  it('uses the danger tint, says the action cannot be undone, and draws a danger primary', () => {
+    const view = render(<ApprovalCard destructive title="Delete drafts?" actions={actions}>body</ApprovalCard>);
+    const region = view.getByRole('region', { name: 'Delete drafts?' });
+    expect(region.getAttribute('data-tone')).toBe('danger');
+    expect(region.querySelector('.tp-status-panel__lead')!.textContent).toBe("This can't be undone.");
+    expect(view.getByRole('button', { name: 'Save note' }).classList.contains('tp-approval-card__action--danger')).toBe(true);
+  });
+  it('leaves focus alone with autoFocus false', () => {
+    const view = render(<ApprovalCard autoFocus={false} actions={actions}>body</ApprovalCard>);
+    expect(document.activeElement).not.toBe(view.getByRole('button', { name: 'Save note' }));
+  });
+});
+
+describe('ApprovalRecord', () => {
+  it.each([
+    ['approved', 'Save note', 'Approved: Save note'],
+    ['declined', 'Save note', 'Declined: Save note'],
+    ['approved', undefined, 'Approved'],
+  ] as const)('%s %s reads "%s"', (verdict, label, text) => {
+    const view = render(<ApprovalRecord verdict={verdict} label={label} />);
+    const line = view.container.querySelector('.tp-approval-record')!;
+    expect(line.textContent).toBe(text);
+    expect(line.getAttribute('data-verdict')).toBe(verdict);
   });
 });
