@@ -46,7 +46,7 @@ export function extractErrorMessage(error: unknown): string | null {
             <button type="button" class="chat-error__check" (click)="agent().checkStatus!()">Check status</button>
           }
         } @else if (err.retryable && !retryHidden()) {
-          <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry</button>
+          <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry response</button>
         }
         @if (err.detail) {
           <span class="chat-error__detail">{{ err.detail }}</span>

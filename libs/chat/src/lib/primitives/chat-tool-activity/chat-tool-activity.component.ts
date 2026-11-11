@@ -116,6 +116,7 @@ summary > span + span { margin-inline-start:12px; }
 dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; } dd { margin:0; overflow-wrap:anywhere; }
 pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; font:12px/1.6 var(--tplane-chat-font-mono); margin:4px 0 12px; padding:8px; border-radius:var(--tplane-chat-radius-card); background:var(--tplane-chat-surface-alt); }
 .tp-tool-activity__error { color:var(--tplane-chat-error-text); font-size:13px; margin:8px 0; }
+.tp-tool-activity__retrying { display:block; margin:8px 0 0; font-size:13px; font-weight:500; color:var(--tplane-chat-text); }
 @media (forced-colors:active) { .tp-tool-activity__error { border:1px solid CanvasText; } }
 .tp-tool-outcomes { margin-block:8px 16px; overflow-wrap:anywhere; }
 .tp-tool-outcomes p { margin:4px 0; }
@@ -219,6 +220,9 @@ export class ChatToolReceiptsComponent {
       <span class="tp-tool-activity__duration">{{ duration() }}ms</span> }
     </div>
     @if (phase() === 'error' && !grouped()) {
+    @if (retrying(); as retryingText) {
+    <p class="tp-tool-activity__label tp-tool-activity__retrying" data-active="true">{{ retryingText }}</p>
+    }
     <p role="alert" class="tp-tool-activity__error">
       {{
         resolved().errorSummary ??
@@ -260,6 +264,8 @@ export class ChatToolActivityComponent {
   readonly activity = input.required<ToolActivityInfo>();
   /** Set when an enclosing group shows the failure in its own panel; the row then names the failure only by its status word. */
   readonly grouped = input(false);
+  /** Set by `chat-tool-calls` while a later call repeats this failed one: "Retrying toSorted read". */
+  readonly retrying = input<string | undefined>(undefined);
   /** Direct primitive use gets the same failed-outcome display as projected rows. */
   protected readonly resolved = computed(() => {
     const activity = this.activity();
