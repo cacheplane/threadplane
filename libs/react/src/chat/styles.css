@@ -1017,23 +1017,49 @@
   background: var(--tp-chat-surface, var(--ds-surface, Canvas));
   border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
   border-radius: var(--tp-chat-radius-card, 0.5rem);
+  /* The title link covers the card, so the whole card opens the source. */
+  position: relative;
+}
+.tp-citation-card a.tp-citations__title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.tp-citation-card:has(a.tp-citations__title:hover) {
+  border-color: var(--tp-chat-accent, var(--ds-accent, currentColor));
+}
+.tp-citation-card__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin-block-start: 0.0625rem;
+  padding-inline: 0.1875rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1;
 }
 .tp-citation-card__visual {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 1.125rem;
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-  margin-block-start: 0.0625rem;
+  flex: 0 0 0.875rem;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
   border-radius: var(--tp-chat-radius-sm, 0.25rem);
-  font-size: 0.625rem;
+  font-size: 0.5rem;
   font-weight: 600;
   line-height: 1;
 }
 .tp-citation-card__visual svg {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
 }
 .tp-citations__marker--web,
 .tp-citation-card__visual--web {
@@ -1091,8 +1117,6 @@
   line-height: 1.45;
 }
 .tp-citation-card__metadata {
-  /* Shown above the title, as the Angular card does; reading order is unchanged. */
-  order: -1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2047,6 +2071,15 @@
   overflow-wrap: anywhere;
   font-size: var(--tp-chat-font-size-sm, 0.875rem);
   font-weight: 600;
+}
+.tp-citations__count {
+  display: inline-block;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 999px;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.35;
 }
 .tp-citations__markers {
   display: inline-flex;

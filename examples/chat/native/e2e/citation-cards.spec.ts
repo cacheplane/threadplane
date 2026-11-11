@@ -207,7 +207,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         )
       ).toBe(true);
     };
-    await expect(header).toHaveAccessibleName('Sources (6)');
+    await expect(header).toHaveAccessibleName('Sources 6');
     const markers = header.locator('.tp-citations__marker');
     const chevron = header.locator('.tp-citations__chevron');
     await expect(header.locator('.tp-citations__markers')).toHaveAttribute(
@@ -240,9 +240,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
     await expect(
       providerCard.locator('.tp-citation-card__visual')
     ).toHaveAttribute('aria-hidden', 'true');
-    await expect(providerCard.locator('.tp-citations__index')).toHaveText(
-      '[2]'
-    );
+    await expect(providerCard.locator('.tp-citations__index')).toHaveText('2');
     await expect(providerCard.locator('.tp-citations__title')).toHaveText(
       '<b>Provider</b>'
     );
@@ -621,9 +619,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
         await expect(providerCard.locator('.tp-citations__title')).toHaveText(
           'Corrected provider'
         );
-        await expect(providerCard.locator('.tp-citations__index')).toHaveText(
-          '[7]'
-        );
+        await expect(providerCard.locator('.tp-citations__index')).toHaveText('7');
         expect(
           await wrappers.evaluateAll((nodes) =>
             nodes.map((node) => node.getAttribute('data-source-id'))
@@ -652,7 +648,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
             .evaluate((node, original) => node === original, emptyMarker)
         ).toBe(true);
         await expect(markers.nth(2)).toHaveClass(/--generic/);
-        await expect(header).toHaveAccessibleName('Sources (6)');
+        await expect(header).toHaveAccessibleName('Sources 6');
         await expect(dialog).toHaveAttribute('aria-label', 'Source 7');
         await expect(
           previewSummary.locator('.tp-citation-source-summary__type')
@@ -749,7 +745,7 @@ test('installed custom citation cards retain metadata, preview lifetime and safe
           (node as HTMLButtonElement).click()
         );
         await expect(dialog).toHaveCount(0);
-        await expect(header).toHaveAccessibleName('Sources (5)');
+        await expect(header).toHaveAccessibleName('Sources 5');
         await expect(markers).toHaveCount(3);
         expect(
           await markers
