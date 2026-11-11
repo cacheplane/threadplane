@@ -430,10 +430,18 @@ export function isPinned(
                       (contentCopied)="onCopy(message, $event)"
                     />
                   }
+                  <!-- Answered approvals render inside the row, after its controls. As
+                       siblings of every row they made a long transcript far slower to
+                       build, and most chats never answer one: a single boolean read
+                       keeps the repeater out of every message until one does. -->
+                  <ng-container ngProjectAs="[chatAfterMessage]">
+                    @if (hasApprovalRecords()) {
+                      @for (record of approvalRecordsAfter(message.id); track record.id) {
+                        <p class="chat-approval-record" [attr.data-verdict]="record.verdict">{{ recordText(record) }}</p>
+                      }
+                    }
+                  </ng-container>
                 </chat-message>
-                @for (record of approvalRecordsAfter(message.id); track record.id) {
-                  <p class="chat-approval-record" [attr.data-verdict]="record.verdict">{{ recordText(record) }}</p>
-                }
               </ng-template>
 
               <ng-template chatMessageTemplate="tool" let-message>
@@ -786,6 +794,7 @@ export class ChatComponent {
     }
     return byMessage;
   });
+  protected readonly hasApprovalRecords = computed(() => (this.approvalRecords?.records().length ?? 0) > 0);
   private static readonly NO_RECORDS: readonly ChatApprovalRecord[] = [];
   protected approvalRecordsAfter(messageId: string | undefined): readonly ChatApprovalRecord[] {
     return this.approvalRecordsByMessage().get(messageId) ?? ChatComponent.NO_RECORDS;
