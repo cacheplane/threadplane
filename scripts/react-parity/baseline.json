@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "d442bbeedfcb5bc1ba6d58645feb39b9b6442706",
+  "baselineHead": "102b27690464fbe69be7586dfc84e1097732a928",
   "sourceState": {
     "modified": [
-      "libs/react/src/a2ui/styles.css"
+      "libs/react/README.md"
     ],
     "untracked": []
   },
@@ -851,7 +851,7 @@
       "id": "asset:libs/react/README.md",
       "kind": "asset",
       "path": "libs/react/README.md",
-      "sha256": "aec62ad5dd543ca093aee45313036db532169f6444a8f4d8d17d00fe1171140f"
+      "sha256": "5d95d33ae21821a7bab841b1fead05744500a2e080ce3c957d45bdaae7521df7"
     },
     {
       "id": "asset:libs/react/package.json",

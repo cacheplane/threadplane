@@ -1534,6 +1534,11 @@ URL and an active response. Shared catalogs and full T29 parity remain open.
 messages with `createA2uiSurfaces()` from `@threadplane/content/a2ui`, then pass
 a published surface to `A2uiSurface`. Import the stylesheet explicitly.
 
+This entry needs `@threadplane/a2ui` installed. It is an optional peer of
+`@threadplane/content`, so applications that never import
+`@threadplane/react/a2ui` do not need it; one that does and leaves it out fails
+to type-check.
+
 ```tsx
 import { A2uiSurface } from '@threadplane/react/a2ui';
 import '@threadplane/react/a2ui/styles.css';

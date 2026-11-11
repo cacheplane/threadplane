@@ -1,7 +1,10 @@
 # React parity foundations
 
-`@threadplane/react/a2ui` renders one A2UI surface read-only. The installed
-browser fixture accumulates a surface from wire messages with the installed
+`@threadplane/react/a2ui` renders one A2UI surface read-only. Its fixture lives in
+`runtime/react-a2ui-surface.tsx` and is copied only into the plain-package
+consumer, which installs the optional `@threadplane/a2ui` package; the LangGraph
+candidate and review consumers do not install it. The installed browser fixture
+accumulates a surface from wire messages with the installed
 content package, then checks heading semantics, column and row order, row
 distribution, both divider axes, the opt-in stylesheet's card tokens in light and
 dark schemes, a path prop following a new snapshot without remounting, an
