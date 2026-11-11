@@ -788,10 +788,10 @@ export async function runProductionProofs(browser, retained) {
             exact: true,
           });
           const disclosure = sources.getByRole('button', {
-            name: 'Sources (5)',
+            name: 'Sources 5',
             exact: true,
           });
-          await expect(disclosure).toHaveAccessibleName('Sources (5)');
+          await expect(disclosure).toHaveAccessibleName('Sources 5');
           const headerMarkers = disclosure.locator('.tp-citations__marker');
           const headerChevron = disclosure.locator('.tp-citations__chevron');
           await expect(headerMarkers).toHaveCount(3);
@@ -822,7 +822,7 @@ export async function runProductionProofs(browser, retained) {
           );
           const sourceRows = sources.getByRole('listitem');
           await expect(sourceRows.locator('.tp-citation-card__heading')).toHaveText([
-            '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
+            'Blocked source', '', '', 'Markdown sidecar', '<b>Supplied source</b>',
           ]);
           await expect(sourceRows.getByRole('button')).toHaveText([
             '[2] Blocked source', '[3] ', '[4] ', '[5] Markdown sidecar', '[7] <b>Supplied source</b>',
@@ -1256,7 +1256,7 @@ export async function runProductionProofs(browser, retained) {
         if (retained.framework === 'react') {
           const disclosure = page
             .getByRole('region', { name: 'Sources', exact: true })
-            .getByRole('button', { name: 'Sources (5)', exact: true });
+            .getByRole('button', { name: 'Sources 5', exact: true });
           await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
           await disclosure.click();
           await expect(disclosure).toHaveAttribute('aria-expanded', 'true');

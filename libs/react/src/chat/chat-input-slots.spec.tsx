@@ -241,4 +241,136 @@ describe('ChatInput slots', () => {
     expect(html.indexOf('Trail')).toBeGreaterThan(html.indexOf('<textarea'));
     expect(html.indexOf('Foot')).toBeGreaterThan(html.indexOf('Trail'));
   });
+
+  it('places banner then attachments above the input surface', () => {
+    const view = render(
+      <ChatInput
+        onSubmit={() => undefined}
+        hint="Enter sends"
+        banner={<p role="status">Paused</p>}
+        attachments={<ul aria-label="Attached files" />}
+        footer={<p>Foot</p>}
+      />
+    );
+    const form = view.container.querySelector('form');
+    expect(classes(form)).toEqual([
+      'tp-chat-input__label',
+      'tp-chat-input__banner',
+      'tp-chat-input__attachments',
+      'tp-chat-input__pill',
+      'tp-chat-input__hint',
+      'tp-chat-input__footer',
+    ]);
+    expect(view.getByRole('status').parentElement?.className).toBe(
+      'tp-chat-input__banner'
+    );
+    expect(
+      view.getByRole('list', { name: 'Attached files' }).parentElement
+        ?.className
+    ).toBe('tp-chat-input__attachments');
+    // The draft is still named by its label and described only by the hint.
+    const input = box(view);
+    expect(input.getAttribute('aria-describedby')).toBe(
+      view.container.querySelector('.tp-chat-input__hint')?.id
+    );
+  });
+
+  it('adds no banner or attachments element for absent, null or false content', () => {
+    const view = render(
+      <ChatInput onSubmit={() => undefined} banner={null} attachments={false} />
+    );
+    expect(classes(view.container.querySelector('form'))).toEqual([
+      'tp-chat-input__label',
+      'tp-chat-input__pill',
+    ]);
+    view.rerender(<ChatInput onSubmit={() => undefined} attachments="a.txt" />);
+    expect(classes(view.container.querySelector('form'))).toEqual([
+      'tp-chat-input__label',
+      'tp-chat-input__attachments',
+      'tp-chat-input__pill',
+    ]);
+  });
+
+  it('never reads, sends or clears attachments: the owner removes them', () => {
+    const sent: Array<[string, readonly string[]]> = [];
+    function Owner() {
+      const [files, setFiles] = useState(['a.txt', 'b.txt']);
+      return (
+        <ChatInput
+          onSubmit={(text) => {
+            sent.push([text, files]);
+          }}
+          attachments={
+            <ul aria-label="Attached files">
+              {files.map((file) => (
+                <li key={file}>
+                  {file}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFiles((all) => all.filter((name) => name !== file))
+                    }
+                  >
+                    Remove {file}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          }
+        />
+      );
+    }
+    const view = render(<Owner />);
+    const input = box(view);
+    type(input, 'Hello');
+    fireEvent.click(view.getByRole('button', { name: 'Remove a.txt' }));
+    // Removing a file neither sends nor clears the draft.
+    expect(sent).toEqual([]);
+    expect(input.value).toBe('Hello');
+    expect(view.getAllByRole('listitem')).toHaveLength(1);
+    fireEvent.submit(input.form as HTMLFormElement);
+    expect(sent).toEqual([['Hello', ['b.txt']]]);
+    expect(input.value).toBe('');
+    // The composer cleared its draft, not the owner's files.
+    expect(view.getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('keeps banner and attachment controls enabled and mounted while disabled or busy', () => {
+    const dismiss = vi.fn();
+    const tree = (state: { busy?: boolean; disabled?: boolean }) => (
+      <ChatInput
+        onSubmit={() => undefined}
+        onStop={() => undefined}
+        {...state}
+        banner={
+          <button type="button" onClick={dismiss}>
+            Dismiss
+          </button>
+        }
+        attachments={<button type="button">Remove file</button>}
+      />
+    );
+    const view = render(tree({}));
+    const button = view.getByRole('button', { name: 'Dismiss' });
+    const remove = view.getByRole('button', { name: 'Remove file' });
+    view.rerender(tree({ disabled: true }));
+    view.rerender(tree({ busy: true }));
+    expect(view.getByRole('button', { name: 'Dismiss' })).toBe(button);
+    expect(view.getByRole('button', { name: 'Remove file' })).toBe(remove);
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(button);
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('server renders banner and attachments before the draft', () => {
+    const html = renderToString(
+      <ChatInput
+        onSubmit={() => undefined}
+        banner="Paused"
+        attachments="a.txt"
+      />
+    );
+    expect(html.indexOf('Paused')).toBeLessThan(html.indexOf('a.txt'));
+    expect(html.indexOf('a.txt')).toBeLessThan(html.indexOf('<textarea'));
+  });
 });

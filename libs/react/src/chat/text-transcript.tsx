@@ -1,9 +1,19 @@
+import type { ReactNode } from 'react';
 import type { Message } from '@threadplane/core';
+import {
+  approvalRecordsByRow,
+  renderApprovalRecords,
+  type ApprovalRecordEntry,
+} from './approval-card.js';
 
 /** Readonly text rows with IDs unique within this list. Lifetime belongs to the caller. */
 export interface TextTranscriptProps {
   readonly messages: readonly Pick<Message, 'id' | 'role' | 'content'>[];
   readonly label?: string;
+  /** Answered approvals as one-line records after the message each follows; see `MessageListProps.approvalRecords`. */
+  readonly approvalRecords?: readonly ApprovalRecordEntry[];
+  /** Application-owned content after the messages, such as a pending `ApprovalCard`. */
+  readonly children?: ReactNode;
 }
 const speakers = {
   user: 'User',
@@ -16,7 +26,13 @@ const speakers = {
 export function TextTranscript({
   messages,
   label = 'Conversation',
+  approvalRecords,
+  children,
 }: TextTranscriptProps) {
+  const records = approvalRecordsByRow(
+    approvalRecords,
+    messages.map((message) => message.id)
+  );
   return (
     <section
       aria-label={label}
@@ -39,9 +55,12 @@ export function TextTranscript({
             >
               {message.content}
             </p>
+            {renderApprovalRecords(records, message.id)}
           </li>
         ))}
       </ol>
+      {renderApprovalRecords(records, undefined)}
+      {children}
     </section>
   );
 }

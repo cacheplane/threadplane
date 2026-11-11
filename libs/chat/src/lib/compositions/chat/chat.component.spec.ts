@@ -103,7 +103,55 @@ describe('ChatComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
     expect(root.querySelector('.tp-tool-outcomes')?.textContent).toContain('Reference verified');
     expect(root.querySelector('.tp-tool-outcomes')?.closest('[hidden], details')).toBeNull();
-    expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeTruthy();
+    // The declared source joins the message's one Sources panel, closed until opened,
+    // and is not repeated as a link under the activity. Two calls declare it; it is listed once.
+    TestBed.tick();
+    fixture.detectChanges();
+    expect(root.querySelector('.tp-tool-outcomes a')).toBeNull();
+    expect(root.querySelector('a[href="https://angular.dev/guide/signals"]')).toBeNull();
+    const sources = root.querySelector<HTMLButtonElement>('chat-citations .chat-citations__header')!;
+    expect(sources.getAttribute('aria-expanded')).toBe('false');
+    expect(sources.querySelector('.chat-citations__count')?.textContent).toBe('1');
+    sources.click();
+    fixture.detectChanges();
+    const links = root.querySelectorAll('chat-citations a[href="https://angular.dev/guide/signals"]');
+    expect(links.length).toBe(1);
+    expect(root.querySelector('chat-citations')?.textContent).toContain('Signals');
+  });
+  it('lists a tool-declared source once beside the message citations and numbers it after them', () => {
+    const fixture = TestBed.createComponent(ChatComponent);
+    const agent = mockAgent({
+      messages: [{
+        id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'success'),
+        citations: [{ id: 'own', index: 3, title: 'Signals guide', url: 'https://angular.dev/guide/signals' }],
+      }],
+      toolCalls: [{ id: 'c', name: 'lookup', args: {}, status: 'complete' as const, result: 'ok' }],
+    });
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('toolOutcome', () => ({
+      text: 'Checked',
+      sources: [
+        { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+        { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted', snippet: 'Returns a sorted copy.' },
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+      ],
+    }));
+    fixture.detectChanges();
+    TestBed.tick();
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const sources = root.querySelector<HTMLButtonElement>('chat-citations .chat-citations__header')!;
+    expect(sources.querySelector('.chat-citations__count')?.textContent).toBe('2');
+    sources.click();
+    fixture.detectChanges();
+    const text = root.querySelector('chat-citations')!.textContent!;
+    expect(text).toContain('Signals guide');
+    expect(text).not.toContain('Same page');
+    expect(text).toContain('toSorted');
+    expect(text).not.toContain('Unsafe');
+    expect(text.indexOf('Signals guide')).toBeLessThan(text.indexOf('toSorted'));
+    expect(text).toContain('Returns a sorted copy.');
+    expect(root.querySelector('a[href^="javascript:"]')).toBeNull();
   });
   it('forwards chatToolResultTemplate to grouped tool rendering and suppresses it under chatActivityTemplate', () => {
     @Component({
@@ -152,7 +200,9 @@ describe('ChatComponent', () => {
     fixture.componentRef.setInput('toolOutcome', () => ({ status: 'failed', text: 'Read unavailable', retry: { label: 'Retry sorted read' } }));
     fixture.detectChanges();
     expect(root.querySelector('button.chat-error__retry')).toBeNull();
-    expect(root.querySelector('.chat-error__msg')?.textContent).toContain('Read unavailable');
+    // The failed call already says "Read unavailable"; the run notice would only repeat it.
+    expect(root.querySelector('chat-error')).toBeNull();
+    expect(root.querySelector('[chatStatusPanel][role="alert"]')?.textContent).toContain('Read unavailable');
     const button = root.querySelector<HTMLButtonElement>('button.tp-tool-activity__retry');
     expect(button?.textContent?.trim()).toBe('Retry sorted read');
     button!.click();
@@ -220,6 +270,25 @@ describe('ChatComponent', () => {
       fixture.detectChanges();
       expect(retryingLines(root)).toEqual([]);
     });
+  });
+  it('keeps the run notice when it says or offers more than the failed call', () => {
+    const calls = [{ id: 'c', name: 'read', args: { id: 'sorted' }, status: 'complete' as const, result: { error: 'x' } }];
+    const messages = [{ id: 'a', role: 'assistant' as const, content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'error') }];
+    const notice = (error: AgentError, text: string) => {
+      const fixture = TestBed.createComponent(ChatComponent);
+      fixture.componentRef.setInput('agent', mockAgent({ status: 'error', error, messages, toolCalls: calls }));
+      fixture.componentRef.setInput('toolOutcome', () => ({ status: 'failed', text }));
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).querySelector('.chat-error');
+    };
+    const plain = { kind: 'server' as const, message: 'Read unavailable', retryable: false };
+    // Same words, nothing to add: one alert is enough.
+    expect(notice(new AgentError(plain), ' Read unavailable ')).toBeNull();
+    // Different words, a detail, a status check or the notice's own Retry all keep it.
+    expect(notice(new AgentError(plain), 'Reference missing')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, detail: 'HTTP 503' }), 'Read unavailable')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, recovery: 'check' }), 'Read unavailable')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, retryable: true }), 'Read unavailable')?.querySelector('button')).toBeTruthy();
   });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
