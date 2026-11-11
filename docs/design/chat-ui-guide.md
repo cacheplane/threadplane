@@ -336,21 +336,21 @@ Every component change checks:
 
 ## 8. Gap list (Angular)
 
-| Area                        | Status                                                                                                                                                                   | Target section |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
-| Status reds and greens      | Done. Components read the status tokens. `success-bg`, `success-border` and `warning-border` are declared for the phase 3 status panels, and no component reads them yet | 2.2            |
-| Focus ring                  | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset                                                                                                              | 2.3            |
-| Radii                       | Done. Components use the radius tokens                                                                                                                                   | 2.4            |
-| Shadows                     | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases                                                                              | 2.5            |
-| Motion                      | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease`                                                                           | 2.6            |
-| Layers                      | Done. Every cross-component layer reads a named `--tplane-chat-z-*` token; local 0 to 2 stacking values remain inside components                                         | 2.7            |
-| Forced colors               | Done. Status panels keep a border                                                                                                                                        | 6.1, 7         |
-| Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties                                                                         | 2.6            |
-| Grouped failure alert       | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity                                          | 6.2            |
-| Tool rows                   | Open. Generic labels; failure text repeats when expanded                                                                                                                 | 6.2            |
-| Progress                    | Open. No step list, no elapsed time, no Stop in the activity group                                                                                                       | 6.3            |
-| Approvals                   | Open. Modal dialog                                                                                                                                                       | 6.4            |
-| Retry and receipts          | Open. Not provided by the library                                                                                                                                        | 6.5, 6.6       |
+| Area | Status | Target section |
+| --- | --- | --- |
+| Status reds and greens | Done. Components read the status tokens, and the status panel takes its background and border from each tone's `-bg` and `-border` pair | 2.2 |
+| Focus ring | Done. One `--tplane-chat-focus-ring`, 2px with a 2px offset | 2.3 |
+| Radii | Done. Components use the radius tokens | 2.4 |
+| Shadows | Done. Floating UI uses `--tplane-chat-elevation-float`; the three shadow tokens are aliases | 2.5 |
+| Motion | Done. Transitions use `--tplane-chat-motion-duration`, `-slow` and `--tplane-chat-motion-ease` | 2.6 |
+| Layers | Done. Every cross-component layer reads a named `--tplane-chat-z-*` token; local 0 to 2 stacking values remain inside components | 2.7 |
+| Forced colors | Done. Status panels keep a border | 6.1, 7 |
+| Layout-property transitions | Open. Transitions on `margin-right`, `right` and `bottom` still animate non-transform properties | 2.6 |
+| Grouped failure alert | Open. `div.tp-tool-activity__error` in chat-tool-calls has no styles because the class is styled only inside chat-tool-activity | 6.2 |
+| Tool rows | Done. `toolLabel` receives the call's arguments, grouped rows show only the Failed status word in the danger color, and declared sources are listed once in the message's Sources panel | 6.2 |
+| Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Open: upcoming steps from a declared plan, and elapsed time and Stop on the `chat-tool-activity-group` primitive, which has no agent | 6.3 |
+| Approvals | Partly done. `chat-approval-card` takes `presentation="inline"` (a warning panel, or danger with `destructive`), named action labels, focus on the first action and back to the composer, and the composer hint. Open: the dialog is still the default, and the one-line "Approved: save note" record after answering | 6.4 |
+| Retry and receipts | Done for declared retry and receipts. Open: the "Retrying …" lead while a retry runs, and "Retry response" on run errors | 6.5, 6.6 |
 
 The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
 
