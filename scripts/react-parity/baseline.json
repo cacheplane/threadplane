@@ -1,14 +1,8 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "82d133d18b4249563d0dae1ec8d6f028e3b97c1f",
+  "baselineHead": "b126beacd4c819617b65c037ec632948c382ac40",
   "sourceState": {
-    "modified": [
-      "apps/website/content/docs/react/chat/components/chat-input.mdx",
-      "libs/react/README.md",
-      "libs/react/src/chat/chat-input.tsx",
-      "libs/react/src/chat/chat.tsx",
-      "libs/react/src/chat/styles.css"
-    ],
+    "modified": [],
     "untracked": []
   },
   "scope": {
