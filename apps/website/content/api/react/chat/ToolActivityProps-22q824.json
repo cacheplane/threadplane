@@ -105,6 +105,42 @@
           "isOptional": true
         },
         {
+          "name": "grouped",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#grouped:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly grouped?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "A row inside a group: only its status word reports a failure, because the group shows one failure panel below it.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 91
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
           "name": "onRetry",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ToolActivityProps#onRetry:member",
@@ -146,6 +182,80 @@
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
             "line": 87
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "retrying",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#retrying:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retrying?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "\"Retrying toSorted read\" while a later call repeats this failed one.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 93
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "sources",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityProps#sources:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly sources?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolSourcePlacement",
+              "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
+              "href": "/docs/api/react/chat/ToolSourcePlacement"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Where declared sources appear. Defaults to links under the activity; see `ToolSourcePlacement`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 89
           },
           "isReadonly": true,
           "isOptional": true

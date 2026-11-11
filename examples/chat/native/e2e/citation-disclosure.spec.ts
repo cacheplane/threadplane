@@ -230,7 +230,8 @@ test('installed Sources disclosure keeps native activation, previews, and local 
     await header.hover();
     await expect(header).toHaveCSS('color', 'rgb(245, 245, 245)');
     await expect(header).toHaveCSS('background-color', 'rgb(28, 28, 28)');
-    await expect(header).toHaveCSS('border-color', 'rgb(69, 69, 69)');
+    // The header is a quiet row: its border stays clear, hovered or not.
+    await expect(header).toHaveCSS('border-color', 'rgba(0, 0, 0, 0)');
     await draft.hover();
     await header.focus();
     await page.keyboard.press('Tab');

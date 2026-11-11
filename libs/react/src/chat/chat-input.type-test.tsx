@@ -9,6 +9,8 @@ ok.busy = true;
 <ChatInput onSubmit={() => undefined} value={1} />;
 <ChatInput
   onSubmit={() => undefined}
+  banner="Paused"
+  attachments={<ul />}
   leading={<span />}
   trailing={null}
   footer="Saved"
@@ -17,6 +19,8 @@ ok.busy = true;
 <ChatInput onSubmit={() => undefined} leading={() => null} />;
 // @ts-expect-error Slots are readonly.
 ok.footer = null;
-// @ts-expect-error Attachments are not a ChatInput slot.
-<ChatInput onSubmit={() => undefined} attachments={<span />} />;
+// @ts-expect-error Attachments are content, not a file list.
+<ChatInput onSubmit={() => undefined} attachments={() => []} />;
+// @ts-expect-error A model picker is trailing content, not a separate slot.
+<ChatInput onSubmit={() => undefined} modelSelect={<span />} />;
 void missing;

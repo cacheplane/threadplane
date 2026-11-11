@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-            "line": 10
+            "line": 11
           },
           "isReadonly": false,
           "isOptional": false
@@ -98,7 +98,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-            "line": 9
+            "line": 10
           },
           "isReadonly": false,
           "isOptional": false
@@ -106,12 +106,12 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-        "line": 8
+        "line": 9
       }
     }
   ],
   "source": {
     "path": "libs/chat/src/lib/markdown/citations-resolver.service.ts",
-    "line": 8
+    "line": 9
   }
 }

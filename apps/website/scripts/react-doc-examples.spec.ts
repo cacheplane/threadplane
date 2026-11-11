@@ -15,6 +15,7 @@ const pages = [
   'chat/components/typing-indicator',
   'chat/components/scroll-bubble',
   'chat/components/chat-message',
+  'chat/components/chat-select',
   'chat/concepts/message-model',
   'render/getting-started/quickstart',
   'render/guides/events',
