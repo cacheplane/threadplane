@@ -97,6 +97,10 @@ export const contracts = [
   // @ts-expect-error A panel tone is one of the four meanings.
   <StatusPanel tone="info" />,
   <ToolActivity activity={info} />,
+  <ToolActivity activity={info} sources="panel" />,
+  <ToolActivityGroup activities={[info]} sources="links" />,
+  // @ts-expect-error Sources are shown as links or left to a panel.
+  <ToolActivityGroup activities={[info]} sources="hidden" />,
   <ToolActivityGroup activities={[info]}>
     <button>Approve</button>
   </ToolActivityGroup>,

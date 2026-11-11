@@ -1009,7 +1009,10 @@
   opacity: 0.6;
 }
 .tp-citations {
-  margin-block: 0.75rem;
+  margin-block: 1.25rem 0.75rem;
+  padding-block-start: 0.5rem;
+  border-block-start: 1px solid
+    var(--tp-chat-border, var(--ds-border, GrayText));
   overflow-wrap: anywhere;
 }
 .tp-citations__heading,
@@ -1019,7 +1022,10 @@
 .tp-citations__list {
   display: grid;
   gap: 0.5rem;
-  padding-inline-start: 1.25rem;
+  /* Each source is numbered in its own row, so list markers would repeat that. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .tp-citations__title {
   white-space: pre-wrap;
@@ -1034,7 +1040,7 @@
 .tp-citation-card {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-width: 0;
   max-inline-size: 100%;
   box-sizing: border-box;
@@ -1044,20 +1050,49 @@
   background: var(--tp-chat-surface, var(--ds-surface, Canvas));
   border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
   border-radius: var(--tp-chat-radius-card, 0.5rem);
+  /* The title link covers the card, so the whole card opens the source. */
+  position: relative;
+}
+.tp-citation-card a.tp-citations__title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.tp-citation-card:has(a.tp-citations__title:hover) {
+  border-color: var(--tp-chat-accent, var(--ds-accent, currentColor));
+}
+.tp-citation-card__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin-block-start: 0.0625rem;
+  padding-inline: 0.1875rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1;
 }
 .tp-citation-card__visual {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 2.25rem;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
+  flex: 0 0 0.875rem;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
   border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-size: 0.5rem;
   font-weight: 600;
+  line-height: 1;
 }
 .tp-citation-card__visual svg {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
 }
 .tp-citations__marker--web,
 .tp-citation-card__visual--web {
@@ -1095,37 +1130,48 @@
 }
 .tp-citation-card__body {
   display: grid;
-  gap: 0.375rem;
+  gap: 0.25rem;
   min-width: 0;
   flex: 1;
 }
 .tp-citation-card__heading {
   min-width: 0;
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
   font-weight: 600;
+  line-height: 1.35;
 }
 .tp-citation-card__snippet {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  line-height: 1.45;
 }
 .tp-citation-card__metadata {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.375rem 0.625rem;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
   min-width: 0;
   font-size: var(--tp-chat-font-size-xs, 0.75rem);
+}
+.tp-citation-card__domain,
+.tp-citation-card__published {
+  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
 }
 .tp-citation-card__metadata > * {
   min-width: 0;
   max-inline-size: 100%;
 }
 .tp-citation-card__badge {
-  margin-inline-start: 0;
+  /* The type sits at the far edge of the source line. */
+  order: 1;
+  margin-inline-start: auto;
   padding-inline: 0.375rem;
   border: 1px solid currentColor;
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  border-radius: 999px;
 }
 .tp-citation-card .tp-citation-card__badge {
   /* Text follows scoped card themes; category colors remain decorative. */
@@ -1240,6 +1286,11 @@
 }
 .tp-chat-input__footer {
   min-width: 0;
+}
+.tp-chat-input__banner,
+.tp-chat-input__attachments {
+  min-width: 0;
+  margin-block-end: 0.5rem;
 }
 .tp-chat-input__send:focus-visible,
 .tp-chat-input__stop:focus-visible {
@@ -2034,15 +2085,34 @@
   outline-offset: -3px;
 }
 
-/* The disclosure uses the resolved source order and local decorative markers. */
+/* The disclosure uses the resolved source order and local decorative markers.
+   It reads as a quiet full-width row under the answer, not a boxed button. The
+   surface stays painted so a theme scoped to Sources keeps its own contrast. */
+.tp-citations__toggle,
+.tp-citations__toggle:hover:not(:disabled) {
+  border-color: transparent;
+}
 .tp-citations__toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
+  inline-size: 100%;
+  padding-inline: 0.25rem;
 }
 .tp-citations__label {
   min-inline-size: 0;
   overflow-wrap: anywhere;
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-weight: 600;
+}
+.tp-citations__count {
+  display: inline-block;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 999px;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.35;
 }
 .tp-citations__markers {
   display: inline-flex;
@@ -2072,6 +2142,7 @@
   flex: 0 0 16px;
   inline-size: 16px;
   block-size: 16px;
+  margin-inline-start: auto;
 }
 .tp-citations__toggle[aria-expanded='true'] .tp-citations__chevron {
   transform: rotate(180deg);
@@ -2083,6 +2154,9 @@
   }
 }
 .tp-tool-activity,
+.tp-chat-tool-call {
+  min-width: 0;
+}
 .tp-tool-activity-group {
   min-width: 0;
   color: var(--tp-chat-text, CanvasText);
@@ -2211,6 +2285,91 @@
 }
 .tp-tool-activity-group__items > .tp-tool-activity + .tp-tool-activity {
   margin-block-start: 12px;
+}
+.tp-subagent-card {
+  min-width: 0;
+  color: var(--tp-chat-text, CanvasText);
+  font: inherit;
+}
+.tp-subagent-card__details > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.tp-subagent-card__details > summary::-webkit-details-marker { display:none; }
+.tp-subagent-card__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
+.tp-subagent-card__details[open] > summary::before { transform:rotate(45deg); }
+.tp-subagent-card__details > summary:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, Highlight);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.tp-subagent-card__name {
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-weight: 500;
+}
+.tp-subagent-card__status {
+  padding: 1px 8px;
+  border-radius: 9999px;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 500;
+  background: var(--tp-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c));
+  color: var(--tp-chat-muted, GrayText);
+}
+.tp-subagent-card[data-status='running'] .tp-subagent-card__status {
+  background: light-dark(#fffbeb, #3a2a06);
+  color: light-dark(#b45309, #fcd34d);
+}
+.tp-subagent-card[data-status='complete'] .tp-subagent-card__status {
+  background: transparent;
+  color: light-dark(#15803d, #86efac);
+}
+.tp-subagent-card[data-status='error'] .tp-subagent-card__status {
+  background: light-dark(#fef2f2, #3b1512);
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+.tp-subagent-card__count {
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  color: var(--tp-chat-muted, GrayText);
+}
+.tp-subagent-card__body {
+  padding: 4px 12px 12px;
+}
+.tp-subagent-card__description,
+.tp-subagent-card__reasoning {
+  margin: 0 0 4px;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  color: var(--tp-chat-muted, GrayText);
+}
+.tp-subagent-card__reasoning {
+  font-style: italic;
+}
+.tp-subagent-card__message {
+  padding: 6px 0;
+}
+.tp-subagent-card__message + .tp-subagent-card__message {
+  border-top: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+}
+.tp-subagent-card__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tp-subagent-card__error {
+  margin: 4px 0 0;
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
+@media (forced-colors: active) {
+  .tp-subagent-card__status {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
 }
 .tp-tool-activity dl {
   display: grid;
