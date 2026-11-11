@@ -342,6 +342,28 @@ describe('MessageList', () => {
       content.dispose();
     });
   }
+  it('passes each call its arguments so repeated calls get their own labels', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [msg('a', 'Answer', { toolCallIds: ['r1', 'r2'] })],
+        [
+          { id: 'r1', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
+          { id: 'r2', name: 'read', args: { ref: 'toReversed' }, status: 'complete', result: 'ok' },
+        ]
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        groupRelatedTools={false}
+        toolLabel={(name, args) => `Read ${(args as { ref: string }).ref}`}
+      />
+    );
+    expect(view.getByText('Read toSorted')).toBeTruthy();
+    expect(view.getByText('Read toReversed')).toBeTruthy();
+    content.dispose();
+  });
   it('passes positional context through a custom renderer before accessing default presentation inputs', () => {
     const content = createMessageContent();
     const row = content.project(snap([msg('a', 'Answer')]))[0];

@@ -2068,6 +2068,9 @@
   font-size: 12px;
   font-weight: 400;
 }
+.tp-tool-activity[data-phase='error'] .tp-tool-activity__phase {
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+}
 .tp-tool-activity summary,
 .tp-tool-activity-group summary {
   cursor: pointer;
