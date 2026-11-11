@@ -22,6 +22,7 @@ export default defineConfig({
       'ci-workflow.spec.mjs',
       'commit-staged-via-api.spec.mjs',
       'configure-ci-apt.spec.mjs',
+      'install-ci-browser.spec.mjs',
       'cockpit-matrix.spec.mjs',
       'cockpit-dependencies.spec.mjs',
       'cockpit-frontend-matrix.spec.mjs',
