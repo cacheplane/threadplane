@@ -53,6 +53,31 @@ The existing shared backend runs c-subagents. Runtime settings can select a deve
 
 <ExampleCode file="cockpit/chat/subagents/react/src/connection.ts" />
 
+## Render a child agent as a card
+
+`SubagentCard` shows one child agent: its name, a status, a message count, and the child's messages and tool activity behind a closed disclosure. It only presents the data you pass it. Your application still owns the run, the session and any saved history.
+
+Pass `subagents` to `MessageList` or `Chat` to place cards for you. A child whose `toolCallId` matches a tool call in a row renders as a card in place of that call's activity. A child with no matching call is not placed; render `SubagentCard` yourself where it belongs.
+
+```tsx
+import { MessageList, subagentsFromEvidence } from '@threadplane/react/chat';
+
+const { subagents } = subagentsFromEvidence({
+  subagents: snapshot.subagents,
+  transcript: snapshot.transcript,
+  running: snapshot.status === 'running',
+  toolLabel: (name) => (name === 'read_reference' ? 'Reading a reference' : undefined),
+});
+
+<MessageList rows={rows} subagents={subagents} />;
+```
+
+`subagentsFromEvidence` groups messages tagged with a child's run ID under that child and returns the transcript without them, so child messages do not also appear as top-level rows. Memoize its result: `MessageList` re-renders the rows that hold a card whenever the `subagents` array changes.
+
+Status follows the evidence you pass. A finished child is **Complete** and a failed child is **Failed**. A child with no terminal evidence is **Running** only while `running` is true; afterwards it is **Status unavailable**, because a missing terminal event does not establish what happened.
+
+Child text renders literally. Pass `renderText` to `SubagentCard` to render it another way, such as Markdown. Restoring child history after a reload is not covered here: the card shows what the open session observed.
+
 ## Build from source
 
 From a Threadplane checkout with dependencies installed:
