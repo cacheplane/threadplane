@@ -84,6 +84,11 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly plan?: readonly AgentPlanStep[];
   /** Stops the run; the current turn's running group offers it beside the elapsed time. */
   readonly onStop?: () => void;
+  /**
+   * The session is still working (`snapshot.status === 'running'`). A call still running after its
+   * message completed, such as a browser client tool, then shows as running instead of unknown.
+   */
+  readonly running?: boolean;
   /** App-authored human labels from the tool name and the call's arguments, such as "Read Array.prototype.toSorted"; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
@@ -214,6 +219,7 @@ function RowView<TRow extends MessageRow>({
   retrying,
   plan,
   onStop,
+  running,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -235,6 +241,8 @@ function RowView<TRow extends MessageRow>({
   readonly retrying?: string;
   readonly plan?: readonly AgentPlanStep[];
   readonly onStop?: () => void;
+  /** True only for a row holding a running call while the session runs, so other rows keep their memo. */
+  readonly running?: boolean;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -246,7 +254,7 @@ function RowView<TRow extends MessageRow>({
   const retryingLeads = new Map<string, string>();
   const activities: ToolActivityInfo[] = row.toolCalls.map((call) => {
     const delivery = row.message.delivery;
-    const phase = toolActivityPhase(call.status, delivery);
+    const phase = toolActivityPhase(call.status, delivery, running);
     const activity: ToolActivityInfo = {
       id: call.id,
       name: call.name,
@@ -343,6 +351,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   onToolRetry,
   plan,
   onStop,
+  running = false,
   approvalRecords,
   children,
   renderScrollControl,
@@ -464,6 +473,10 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                 retrying={retrying?.[index]}
                 plan={index === rows.length - 1 ? plan : undefined}
                 onStop={index === rows.length - 1 ? onStop : undefined}
+                running={
+                  running &&
+                  row.toolCalls.some((call) => call.status === 'running')
+                }
               />
               {renderApprovalRecords(recordsAfter, row.id)}
             </Fragment>

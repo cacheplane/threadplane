@@ -110,6 +110,7 @@ export function Chat({
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
+        running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
