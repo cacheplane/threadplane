@@ -47,7 +47,7 @@ Normal tools return results to another model run in the same confirmed conversat
 
 ## Booking decisions and ownership
 
-Each fictional booking gets a separate **Confirm booking** or **Cancel booking** card. These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries. Completed weather panels and booking outcomes remain visible until **New conversation**.
+A fictional booking is an approval, so it follows the same pattern as the other examples: its `ApprovalCard` waits at the end of the transcript (through `MessageList` children) with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the approval to continue". These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the first takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. Focus returns to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
 
 React borrows snapshots through useAgent and renders native MessageList, ChatInput, and ApprovalCard. Weather details and booking summaries render as literal text. This preview uses authored functions and example-owned presentation; it does not implement a general view-tool or ask-tool registry or infer schemas from TypeScript.
 

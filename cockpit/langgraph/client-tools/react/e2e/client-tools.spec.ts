@@ -60,15 +60,22 @@ test('mixed snapshot and normal tools follow up as one batch with exact result i
   expect(entries.filter((entry) => entry.path.endsWith('/state'))).toHaveLength(0);
   expect(runs[1].body.input!.messages.map((message) => message.tool_call_id).sort()).toEqual(['snapshot-1', 'weather-1']);
 });
-test('identical parallel bookings independently confirm and cancel before one follow-up', async ({ page, request }) => {
+test('identical parallel bookings wait in the transcript, confirm and decline independently, and leave records', async ({ page, request }) => {
   await send(page, 'Bookings');
-  await expect(page.getByRole('button', { name: 'Confirm booking' })).toHaveCount(2);
+  const conversation = page.getByRole('region', { name: 'Conversation' });
+  await expect(conversation.getByRole('button', { name: 'Confirm booking' })).toHaveCount(2);
+  await expect(conversation.locator('.tp-approval-card').first()).toContainText('Waiting for your approval.');
+  // The first card takes focus; the second does not steal it.
+  await expect(page.getByRole('button', { name: 'Confirm booking' }).nth(0)).toBeFocused();
+  await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the approval to continue');
   await page.getByRole('button', { name: 'Confirm booking' }).nth(0).click();
-  await expect(page.getByText('Confirmed', { exact: true })).toBeVisible();
+  await expect(conversation.getByText('Approved: Booking', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Cancel booking' }).click();
+  await page.getByRole('button', { name: "Don't book" }).click();
   await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
-  await expect(page.getByText('Cancelled', { exact: true })).toBeVisible();
+  await expect(conversation.getByText('Declined: Booking', { exact: true })).toBeVisible();
+  await expect(conversation.locator('.tp-approval-card')).toHaveCount(0);
+  await expect(page.getByLabel('Message', { exact: true })).toBeFocused();
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
   expect(runs[1].body.input!.messages).toEqual(expect.arrayContaining([
