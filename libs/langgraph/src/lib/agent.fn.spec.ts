@@ -109,6 +109,20 @@ describe('agent', () => {
     expect((ref.value() as any).count).toBe(99);
   });
 
+  it('exposes a todos list in graph state as the plan, following values events', async () => {
+    const transport = new MockAgentTransport();
+    const ref = withInjectionContext(() => agent({ apiUrl: '', assistantId: 'a', transport }));
+    expect(ref.plan?.()).toBeUndefined();
+    ref.submit({ message: 'compare the drafts' });
+    transport.emit([{ type: 'values', values: { todos: [{ content: 'Compare them', status: 'in_progress' }, { content: 'Write the note', status: 'pending' }] } }]);
+    transport.close();
+    await new Promise(r => setTimeout(r, 20));
+    expect(ref.plan?.()).toEqual([
+      { label: 'Compare them', status: 'in_progress' },
+      { label: 'Write the note', status: 'pending' },
+    ]);
+  });
+
   describe('neutral message delivery', () => {
     it('projects restored assistant, user, tool, and system messages as static success', async () => {
       const transport = new MockAgentTransport();
