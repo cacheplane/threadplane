@@ -52,7 +52,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 988
+            "line": 992
           },
           "overloadIndex": 1,
           "parameters": []
@@ -279,7 +279,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1658
+            "line": 1670
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -338,7 +338,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1694
+            "line": 1706
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -380,7 +380,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 917
+            "line": 921
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -422,7 +422,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1432
+            "line": 1444
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1174,7 +1174,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1722
+            "line": 1734
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1251,7 +1251,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1727
+            "line": 1739
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1334,7 +1334,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1744
+            "line": 1756
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1409,7 +1409,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1739
+            "line": 1751
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1476,7 +1476,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1732
+            "line": 1744
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1545,7 +1545,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1704
+            "line": 1716
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -1664,7 +1664,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1298
+            "line": 1310
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -2030,7 +2030,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1336
+            "line": 1348
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -2273,7 +2273,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat/chat.component.ts",
-            "line": 1418
+            "line": 1430
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -2471,7 +2471,7 @@
             },
             {
               "kind": "Content",
-              "text": "<((name: string) => string | undefined) | undefined>"
+              "text": "<((name: string, args?: unknown) => string | undefined) | undefined>"
             },
             {
               "kind": "Content",
@@ -2952,7 +2952,7 @@
             "name": "toolLabel",
             "alias": "toolLabel",
             "required": false,
-            "type": "((name: string) => string | undefined) | undefined"
+            "type": "((name: string, args?: unknown) => string | undefined) | undefined"
           },
           {
             "name": "toolOutcome",
