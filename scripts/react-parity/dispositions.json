@@ -18116,6 +18116,16 @@
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
+      "id": "doc:apps/website/content/docs/react/chat/components/chat-select.mdx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/select.tsx",
+      "reason": "Task-led guide to the bounded controlled Select as a composer model picker: owner-held value and open state, refusing a change, keyboard, body-level list and naming. Its single example compiles against source. A live example and full parity remain open."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageListScrollControls",
       "taskIds": [
         "T23"
