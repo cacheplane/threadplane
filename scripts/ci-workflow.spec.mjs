@@ -742,12 +742,16 @@ async function runPostgresPreparation(failingCommand, failedPullImages = []) {
 }
 
 describe('CI workflow', () => {
-  it('commits regenerated API docs through the signing GitHub API, never an unsigned git push', async () => {
+  it('never commits regenerated API docs back to a PR or requires them committed', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'website');
-    const step = withoutYamlCommentLines(readNamedStep(job, 'Commit generated API docs to same-repo PR'));
-    assert.match(step, /node scripts\/commit-staged-via-api\.mjs/);
-    assert.match(step, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
-    assert.doesNotMatch(step, /git (commit|push)\b/, 'a bot git commit lands unsigned and blocks the merge');
+    assert.doesNotMatch(job, /commit-staged-via-api|git diff --exit-code -- apps\/website\/content\/api/,
+      'generated API docs churn in every PR and make queued PRs conflict');
+    assert.match(job, /npx nx run website:generate-api-docs\n\s+- run: npx nx test website/);
+  });
+
+  it('reports react-parity baseline drift without failing the Library lane', async () => {
+    const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
+    assert.match(job, /node scripts\/react-parity\/inventory\.mjs --check --drift warn\n/);
   });
 
   it('requires unconditional pinned PostgreSQL preparation immediately before the real durable tool verifier', async () => {
