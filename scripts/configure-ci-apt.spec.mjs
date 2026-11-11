@@ -14,42 +14,35 @@ async function fixture(t) {
   return root;
 }
 
-test('rewrites only active exact official Ubuntu URLs and preserves source metadata, custom config and permissions', async (t) => {
+test('leaves every package source as the runner image ships it and writes only the download limits', async (t) => {
   const root = await fixture(t);
   const files = {
-    'apt-mirrors.txt': '# http://azure.archive.ubuntu.com/ubuntu\nhttp://azure.archive.ubuntu.com/ubuntu priority:1\nhttps://custom.example/ubuntu\n',
+    'apt-mirrors.txt': 'http://azure.archive.ubuntu.com/ubuntu/ priority:1\nhttps://archive.ubuntu.com/ubuntu/ priority:2\nhttps://security.ubuntu.com/ubuntu/ priority:3\n',
     'apt-mirrors-security.txt': 'http://security.ubuntu.com/ubuntu/ priority:2\n',
-    'sources.list': 'deb [arch=amd64 signed-by=/key.gpg] http://azure.archive.ubuntu.com/ubuntu noble main # http://archive.ubuntu.com/ubuntu\n',
-    'sources.list.d/ubuntu.sources': 'Types: deb\nURIs: http://archive.ubuntu.com/ubuntu https://azure.archive.ubuntu.com/ubuntu/\nSuites: noble noble-updates\nComponents: main universe\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n',
-    'sources.list.d/custom.list': 'deb https://archive.ubuntu.com.evil/ubuntu noble main\ndeb http://archive.ubuntu.com/ubuntu-extra noble main\ndeb http://custom.example/ubuntu noble main\n',
-    'sources.list.d/ignored.save': 'http://azure.archive.ubuntu.com/ubuntu\n',
+    'sources.list': 'deb [arch=amd64 signed-by=/key.gpg] http://azure.archive.ubuntu.com/ubuntu noble main\n',
+    'sources.list.d/ubuntu.sources': 'Types: deb\nURIs: mirror+file:/etc/apt/apt-mirrors.txt\nSuites: noble noble-updates\nComponents: main universe\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n',
+    'sources.list.d/custom.list': 'deb http://custom.example/ubuntu noble main\n',
     'apt.conf.d/99custom': 'Acquire::Retries "5";\n',
     'apt.conf': 'APT::Get::Assume-Yes "false";\n',
   };
   for (const [path, content] of Object.entries(files)) await writeFile(join(root, path), content);
   await chmod(join(root, 'sources.list'), 0o640);
   await configureCiApt(root);
-  assert.equal(await readFile(join(root, 'sources.list'), 'utf8'), 'deb [arch=amd64 signed-by=/key.gpg] https://archive.ubuntu.com/ubuntu noble main # http://archive.ubuntu.com/ubuntu\n');
-  assert.equal(await readFile(join(root, 'apt-mirrors.txt'), 'utf8'), '# http://azure.archive.ubuntu.com/ubuntu\nhttps://archive.ubuntu.com/ubuntu priority:1\nhttps://custom.example/ubuntu\n');
-  assert.equal(await readFile(join(root, 'apt-mirrors-security.txt'), 'utf8'), 'https://security.ubuntu.com/ubuntu/ priority:2\n');
-  assert.equal(await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8'), files['sources.list.d/ubuntu.sources'].replace('http://archive.ubuntu.com', 'https://archive.ubuntu.com').replace('https://azure.archive.ubuntu.com', 'https://archive.ubuntu.com'));
-  for (const path of ['sources.list.d/custom.list', 'sources.list.d/ignored.save', 'apt.conf.d/99custom', 'apt.conf']) assert.equal(await readFile(join(root, path), 'utf8'), files[path]);
+  // The Azure mirror stays first with the public archive behind it, so neither host is a single point of failure.
+  for (const [path, content] of Object.entries(files)) assert.equal(await readFile(join(root, path), 'utf8'), content);
   assert.equal((await stat(join(root, 'sources.list'))).mode & 0o777, 0o640);
   const config = await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8');
   assert.equal(config, 'Acquire::Retries "2";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n');
   assert.equal((await stat(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'))).mode & 0o777, 0o644);
-  const first = await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8');
   await configureCiApt(root);
-  assert.equal(await readFile(join(root, 'sources.list.d/ubuntu.sources'), 'utf8'), first);
   assert.equal(await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8'), config);
 });
 
-test('handles missing optional source files and surfaces filesystem errors', async (t) => {
+test('creates the configuration directory when missing and surfaces filesystem errors', async (t) => {
   const root = await fixture(t);
-  await rm(join(root, 'sources.list.d'), { recursive: true });
+  await rm(join(root, 'apt.conf.d'), { recursive: true });
   await configureCiApt(root);
   assert.match(await readFile(join(root, 'apt.conf.d/zz-threadplane-ci-downloads'), 'utf8'), /Timeout "30"/);
-  await writeFile(join(root, 'sources.list'), '\0', 'utf8');
   await rm(join(root, 'apt.conf.d'), { recursive: true });
   await writeFile(join(root, 'apt.conf.d'), 'not a directory');
   await assert.rejects(configureCiApt(root));
