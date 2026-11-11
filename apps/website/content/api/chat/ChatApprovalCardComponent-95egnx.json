@@ -391,7 +391,7 @@
             }
           ],
           "docs": {
-            "summary": "`dialog` (default) opens a modal. `inline` renders a status panel in place; put it in a `chatInterruptTemplate` so it sits at the end of the transcript.",
+            "summary": "`inline` (default) renders a status panel in place; put the card in a `chatInterruptTemplate` so it sits at the end of the transcript. `dialog` opens a modal instead.",
             "remarks": "",
             "deprecated": "",
             "returns": "",

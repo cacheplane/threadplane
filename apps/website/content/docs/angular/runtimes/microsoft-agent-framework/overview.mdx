@@ -13,7 +13,7 @@ This page describes the canonical Angular/provider example, including its wrappe
 
 The Run tab shows the prebuilt `<chat>` composition in front of an expense approval copilot served over AG-UI, with a shared-state panel beside it. Two starter suggestions are offered: "File a team dinner expense" and "File a monitor purchase". Pick either one and the agent researches the reimbursement policy, delegating part of that work to a specialist agent and calling a server-side policy tool, then drafts the expense: vendor, category, amount, and memo appear in the side panel while the model is still writing the tool call, before the tool has been invoked.
 
-The draft never submits itself. `submit_expense` requires human approval, so the run pauses and a modal approval card shows the amount, vendor, category, and memo with Cancel and Approve buttons. Approve it and the agent confirms the submission in one sentence; cancel it and the agent acknowledges that nothing was filed.
+The draft never submits itself. `submit_expense` requires human approval, so the run pauses and an approval panel at the end of the conversation shows the amount, vendor, category, and memo with Approve and Cancel buttons. Approve it and the agent confirms the submission in one sentence; cancel it and the agent acknowledges that nothing was filed.
 
 ## How it is built
 
@@ -103,7 +103,7 @@ The adapter applies every `STATE_SNAPSHOT` and `STATE_DELTA` to one store and pr
 
 ### Approving the tool call
 
-`<chat-approval-card>` renders the pending approval as a modal dialog and emits `'approve'` or `'cancel'`. Its body template is yours to write, and this one reads the pending tool call out of `agent.interrupt()`, whose `value` the adapter sets to `{ interrupts: [...], runId }`, and each entry's `metadata.agent_framework.function_call` carries the tool name and its parsed arguments.
+`<chat-approval-card>` renders the pending approval as an inline panel at the end of the transcript and emits `'approve'` or `'cancel'`. Its body template is yours to write, and this one reads the pending tool call out of `agent.interrupt()`, whose `value` the adapter sets to `{ interrupts: [...], runId }`, and each entry's `metadata.agent_framework.function_call` carries the tool name and its parsed arguments.
 
 <ExampleCode file="microsoft-agent-framework.component.ts" region="approval-wiring" title="microsoft-agent-framework.component.ts — the approval wiring" />
 

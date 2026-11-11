@@ -11,7 +11,7 @@ description: How the AWS Strands example books meetings over AG-UI, and why its 
 
 The Run tab shows the prebuilt `<chat>` composition in front of a Strands agent served over AG-UI, with a side panel titled "Shared state — schedule" to the right of the transcript. Two welcome suggestions set it up: "Book the Q3 roadmap review" asks for a Tuesday meeting with the platform team, and "Book a design critique" runs the same two steps for the web team on Thursday.
 
-The agent calls `check_availability` for the requested weekday, and that day and its open slots appear in the side panel. Then it calls `book_meeting`, the run stops, and a modal card titled "Booking approval required" shows the topic and the chosen slot above two buttons, Cancel and Approve. Approve resumes the run and the agent confirms the booking in one sentence; Cancel resumes it with a rejection and nothing is booked. The Angular presentation uses the agent's confirmation sentence for final status. The wire also carries the canonical booking tool result. The last schedule snapshot may remain pending after a sequential booking, or become final when a later batch availability lookup publishes state; it is an observation, not a required final-state hook.
+The agent calls `check_availability` for the requested weekday, and that day and its open slots appear in the side panel. Then it calls `book_meeting`, the run stops, and an approval panel titled "Booking approval required" appears at the end of the conversation with the topic and the chosen slot above two buttons, Approve and Cancel. Approve resumes the run and the agent confirms the booking in one sentence; Cancel resumes it with a rejection and nothing is booked. The Angular presentation uses the agent's confirmation sentence for final status. The wire also carries the canonical booking tool result. The last schedule snapshot may remain pending after a sequential booking, or become final when a later batch availability lookup publishes state; it is an observation, not a required final-state hook.
 
 Delegation is the third thing to try. Type a research request instead, for example "Find a slot for Ada and Grace next week — research their availability first", and the agent calls `research_availability`. That call renders as a subagent card carrying the specialist's own answer, streamed token by token inside the card rather than into the parent bubble.
 
@@ -93,7 +93,7 @@ The panel itself is plain Angular template code reading those two Signals, with 
 
 ### The approval card
 
-`<chat-approval-card>` opens as a modal whenever the agent has a pending interrupt, and the `#body` template names what is being approved. This one renders the topic and the slot.
+`<chat-approval-card>` shows an inline panel at the end of the transcript whenever the agent has a pending interrupt, and the `#body` template names what is being approved. This one renders the topic and the slot.
 
 <ExampleCode file="aws-strands.component.ts" region="approval-card" title="aws-strands.component.ts — the approval card" />
 
