@@ -28,6 +28,20 @@ export function TripComposer({ busy, accept, stop }: {
 }
 ~~~
 
+## Add your own controls
+
+Pass `leading`, `trailing` or `footer` to place application content around the draft. `leading` sits before the text, `trailing` sits before Stop and Send, and `footer` follows the hint. `Chat` accepts the same content as `inputLeading`, `inputTrailing` and `inputFooter`.
+
+~~~tsx
+<ChatInput
+  onSubmit={accept}
+  trailing={<button type="button" onClick={openTools}>Tools</button>}
+  footer={<p role="status">{status}</p>}
+/>
+~~~
+
+The content stays yours. It keeps its state while the traveler types and sends, and it stays enabled when the input is disabled or busy. It sits inside the composer form, so give its buttons `type="button"` unless they should send the draft.
+
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try the composer
