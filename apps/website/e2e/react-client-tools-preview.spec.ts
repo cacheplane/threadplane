@@ -37,7 +37,7 @@ test('switching away disposes pending browser decisions and returning starts emp
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await selectFramework(page, 'react');
   await expect(frame.locator('footer').getByRole('status')).toHaveText('Ready.');
-  await expect(frame.getByRole('region', { name: 'Booking decisions' })).toContainText('No booking decisions yet.');
+  await expect(frame.getByRole('button', { name: 'Confirm booking' })).toHaveCount(0);
   const before = await (await request.get('http://127.0.0.1:4603/__requests')).json();
   expect(before.filter((entry: { path: string }) => entry.path.endsWith('/runs/stream'))).toHaveLength(1);
   await frame.getByLabel('Message', { exact: true }).fill('Weather');

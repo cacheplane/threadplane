@@ -475,3 +475,173 @@ test('long mixed read workload continues after a recoverable failure and retains
   assert.equal(events(text).at(-1).type, 'RUN_FINISHED');
   assert.ok(record.tools.every((tool) => tool.executionCount === 1));
 });
+
+async function deepRun(server, participant) {
+  const response = await submit(server, 'ag-ui', participant, 'deep-workflow');
+  assert.equal(response.status, 200);
+  const wire = events(await response.text());
+  return { wire, interruptId: wire.at(-1).outcome.interrupts[0].id };
+}
+const deepResume = (server, participant, interruptId, payload) =>
+  submit(server, 'ag-ui', participant, 'deep-workflow', {
+    body: JSON.stringify({
+      ...input(participant, getScenario('deep-workflow').prompt),
+      runId: 'resume-' + participant,
+      resume: [{ interruptId, status: 'resolved', payload }],
+    }),
+  });
+const history = async (server, participant, kind) =>
+  fetch(`${server.url}/threads/${participant}/thread-${participant}/${kind}`);
+
+test('deep workflow plans, delegates attributed child reads, reads, then pauses before the only write', async (t) => {
+  const server = await fixture(t);
+  const { wire } = await deepRun(server, 'deep');
+  const receipt = server.receipts()[0];
+  assert.equal(receipt.status, 'paused');
+  assert.deepEqual(
+    receipt.tools.map((tool) => [
+      tool.canonicalId,
+      tool.status,
+      tool.executionCount,
+      tool.parent,
+    ]),
+    [
+      ['plan', 'complete', 1, undefined],
+      ['delegate-reading', 'complete', 1, undefined],
+      ['child-read-angular', 'complete', 1, 'delegate-reading'],
+      ['child-read-sorted', 'complete', 1, 'delegate-reading'],
+      ['check-sorted', 'complete', 1, undefined],
+      ['save-comparison', 'waiting', 0, undefined],
+    ]
+  );
+  assert.deepEqual(
+    receipt.subagents.map(({ name, parent, status }) => [name, parent, status]),
+    [['reference-reader', 'delegate-reading', 'complete']]
+  );
+  assert.equal(server.savedNotes().length, 0);
+  // Child events carry the subagent run; the parent's delegate result follows them.
+  const started = wire.findIndex((event) => event.type === 'SUBAGENT_STARTED');
+  const finished = wire.findIndex(
+    (event) => event.type === 'SUBAGENT_FINISHED'
+  );
+  const delegate = receipt.tools[1].nativeId;
+  assert.equal(wire[started].parentToolCallId, delegate);
+  const childEvents = wire.slice(started + 1, finished);
+  assert.ok(childEvents.length > 0);
+  assert.ok(
+    childEvents.every(
+      (event) => event.subagentRunId === wire[started].subagentRunId
+    )
+  );
+  const delegateResult = wire.findIndex(
+    (event) =>
+      event.type === 'TOOL_CALL_RESULT' && event.toolCallId === delegate
+  );
+  assert.ok(delegateResult > finished);
+  assert.deepEqual(JSON.parse(wire[delegateResult].content), {
+    delegated: true,
+    references: ['angular-signals', 'array-to-sorted'],
+  });
+  assert.deepEqual(
+    JSON.parse(
+      wire.find(
+        (event) =>
+          event.type === 'TOOL_CALL_RESULT' &&
+          event.toolCallId === receipt.tools[0].nativeId
+      ).content
+    ).steps.map((step) => step.id),
+    ['step-1', 'step-2', 'step-3']
+  );
+});
+
+test('deep workflow approval saves once and its history restores the whole thread without running anything', async (t) => {
+  const server = await fixture(t);
+  const { wire, interruptId } = await deepRun(server, 'deep');
+  const resumed = await deepResume(server, 'deep', interruptId, true);
+  assert.equal(resumed.status, 200);
+  const resumedWire = events(await resumed.text());
+  assert.equal(server.savedNotes().length, 1);
+  const receipt = server.receipts().at(-1);
+  assert.equal(receipt.status, 'complete');
+  // Only the gated call runs again; earlier work is not repeated.
+  assert.deepEqual(
+    receipt.tools.map((tool) => [tool.canonicalId, tool.executionCount]),
+    [['save-comparison', 1]]
+  );
+  assert.equal(server.receipts().length, 2);
+
+  const replay = await history(server, 'deep', 'events');
+  assert.equal(replay.status, 200);
+  const { events: stored } = await replay.json();
+  assert.deepEqual(
+    stored.map((event) => event.type),
+    [...wire, ...resumedWire].map((event) => event.type)
+  );
+  const runs = stored.filter((event) => event.type === 'RUN_STARTED');
+  assert.deepEqual(
+    runs.map((event) => event.input.messages.map((row) => row.content)),
+    [[getScenario('deep-workflow').prompt], []]
+  );
+  assert.equal(runs[0].input.messages[0].id, 'user-deep');
+
+  const { messages } = await (await history(server, 'deep', 'messages')).json();
+  assert.deepEqual(
+    messages.map((message) => message.role),
+    ['user', 'assistant', 'tool', 'tool', 'tool', 'tool', 'assistant']
+  );
+  // Parent transcript only: the child reads stay with the subagent.
+  assert.deepEqual(
+    messages[1].toolCalls.map((call) => call.function.name),
+    ['plan_workflow', 'delegate_research', 'read_reference', 'save_note']
+  );
+  assert.deepEqual(JSON.parse(messages[1].toolCalls[3].function.arguments), {
+    text: getScenario('deep-workflow').calls[3].args.text,
+  });
+  assert.deepEqual(JSON.parse(messages[5].content), {
+    saved: true,
+    id: 'note-1',
+  });
+  assert.equal(messages[6].content, getScenario('deep-workflow').conclusion);
+  // Reading history is not a run and writes nothing.
+  assert.equal(server.receipts().length, 2);
+  assert.equal(server.savedNotes().length, 1);
+  assert.deepEqual(
+    server.restores().map(({ kind, found }) => [kind, found]),
+    [
+      ['events', true],
+      ['messages', true],
+    ]
+  );
+});
+
+test('deep workflow denial writes nothing, and reset removes the thread history', async (t) => {
+  const server = await fixture(t);
+  const { interruptId } = await deepRun(server, 'deep');
+  const denied = await deepResume(server, 'deep', interruptId, false);
+  assert.equal(denied.status, 200);
+  await denied.text();
+  assert.equal(server.savedNotes().length, 0);
+  const receipt = server.receipts().at(-1);
+  assert.equal(receipt.status, 'denied');
+  assert.deepEqual(
+    receipt.tools.map((tool) => [tool.canonicalId, tool.executionCount]),
+    [['save-comparison', 0]]
+  );
+  const { messages } = await (await history(server, 'deep', 'messages')).json();
+  assert.deepEqual(JSON.parse(messages.at(-2).content), {
+    saved: false,
+    cancelled: true,
+  });
+  assert.equal(messages.at(-1).content, 'Saving the note was cancelled.');
+  assert.equal(
+    (await history(server, 'other', 'events')).status,
+    404,
+    'another participant has no history'
+  );
+  await fetch(server.url + '/reset/deep', { method: 'POST' });
+  assert.equal((await history(server, 'deep', 'events')).status, 404);
+  assert.equal(
+    (await fetch(server.url + '/threads/deep/thread-deep/other')).status,
+    400
+  );
+});

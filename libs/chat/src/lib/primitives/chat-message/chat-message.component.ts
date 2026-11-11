@@ -51,6 +51,9 @@ const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You'
     <div class="chat-message__controls">
       <ng-content select="[chatMessageControls]" />
     </div>
+    <!-- Notes that follow the whole message, such as an answered-approval record.
+         They live inside the row so a long transcript gains no extra list children. -->
+    <ng-content select="[chatAfterMessage]" />
   `,
 })
 export class ChatMessageComponent {

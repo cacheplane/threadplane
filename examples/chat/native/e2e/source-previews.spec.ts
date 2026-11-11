@@ -100,7 +100,7 @@ test('installed source previews contain keyboard and pointer interaction without
     const textarea = await draft.elementHandle();
     assert.ok(textarea);
     const sources = page.getByRole('button', {
-      name: 'Sources (2)',
+      name: 'Sources 2',
       exact: true,
     });
     await expect(sources).toHaveAttribute('aria-expanded', 'false');

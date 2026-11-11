@@ -25,6 +25,8 @@ export type {
   AgentCheckpoint,
   AgentUsage,
   AgentUsageEntry,
+  AgentPlan,
+  AgentPlanStep,
   AgentRuntimeTelemetryEvent,
   AgentRuntimeTelemetryPayload,
   AgentRuntimeTelemetryProperties,
@@ -45,6 +47,8 @@ export {
   AGENT_RECOVERY_DETAILS,
   toAgentError,
   isAbortError,
+  agentPlan,
+  agentPlanFromState,
 } from './lib/agent';
 export type { AgentRef } from './lib/agent';
 export type { AgentErrorKind, AgentRecovery } from './lib/agent';

@@ -11,7 +11,7 @@ import {
   createMessageContent,
   type MessageContent,
 } from '@threadplane/content/messages';
-import { Chat } from './index';
+import { ApprovalCard, Chat } from './index';
 
 const created = vi.hoisted(() => [] as MessageContent[]);
 vi.mock('@threadplane/content/messages', async (importOriginal) => {
@@ -588,5 +588,39 @@ describe('Chat', () => {
     expect(created).toHaveLength(2);
     expect(disposed(created[0])).toBe(true);
     expect(disposed(created[1])).toBe(false);
+  });
+});
+
+describe('Chat approval slot', () => {
+  const card = (
+    <ApprovalCard title="Save the note?" actions={[{ id: 'save', label: 'Save note', onSelect: () => undefined }]}>
+      <code>save_note</code>
+    </ApprovalCard>
+  );
+  it('shows a pending approval at the end of the transcript and points the composer at it', () => {
+    const { session } = fakeSession({ messages: [assistant('a', 'Saving.')] });
+    const view = render(<Chat session={session} approval={card} />);
+    const region = view.getByRole('region', { name: 'Save the note?' });
+    expect(region.closest('.tp-chat-list')).toBeTruthy();
+    const textbox = view.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textbox.placeholder).toBe('Answer the approval to continue');
+    expect(document.activeElement).toBe(view.getByRole('button', { name: 'Save note' }));
+  });
+  it('returns focus to the composer once the approval clears', () => {
+    const { session } = fakeSession();
+    const view = render(<Chat session={session} approval={card} placeholder="Ask anything" />);
+    view.rerender(<Chat session={session} placeholder="Ask anything" />);
+    const textbox = view.getByRole('textbox') as HTMLTextAreaElement;
+    expect(view.queryByRole('region', { name: 'Save the note?' })).toBeNull();
+    expect(textbox.placeholder).toBe('Ask anything');
+    expect(document.activeElement).toBe(textbox);
+  });
+  it('renders answered approval records in the transcript', () => {
+    const { session } = fakeSession({ messages: [assistant('a', 'Saving.')] });
+    const view = render(
+      <Chat session={session} approvalRecords={[{ afterId: 'a', verdict: 'approved', label: 'Save note' }]} />
+    );
+    const record = view.getByText('Approved: Save note');
+    expect(record.closest('.tp-chat-list')).toBeTruthy();
   });
 });

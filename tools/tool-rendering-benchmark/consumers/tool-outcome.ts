@@ -56,7 +56,27 @@ export const toolLabel = (name: string) =>
     ? 'Finding reference sources'
     : name === 'read_reference'
     ? 'Reading reference sources'
+    : name === 'plan_workflow'
+    ? 'Planning the work'
+    : name === 'delegate_research'
+    ? 'Delegating the reading'
     : undefined;
+/**
+ * The deep-workflow scenario keeps one thread across a reload so its history
+ * can be restored; every other scenario starts a fresh thread per page load.
+ */
+export function benchmarkThread(scenario: string): string | undefined {
+  if (scenario !== 'deep-workflow') return undefined;
+  const key = 'benchmark-thread:' + scenario;
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+export const forgetBenchmarkThread = (scenario: string) =>
+  sessionStorage.removeItem('benchmark-thread:' + scenario);
 type Outcome =
   | {
       text: string;
@@ -162,6 +182,26 @@ export const toolDecoders = (options: {
           ? { label: `Retry ${id} read` }
           : undefined,
     };
+  },
+  plan_workflow: ({ result }) => {
+    const steps = record(result)?.steps;
+    if (!Array.isArray(steps) || !steps.length) return undefined;
+    const texts = steps.map((step) => record(step)?.text);
+    return texts.every((text) => typeof text === 'string' && text)
+      ? {
+          text:
+            'Plan: ' +
+            texts.map((text, index) => `${index + 1}. ${text}`).join(' · '),
+        }
+      : undefined;
+  },
+  delegate_research: ({ result }) => {
+    const row = record(result);
+    return row && row.delegated === true && Array.isArray(row.references)
+      ? {
+          text: `The reader checked ${row.references.length} references.`,
+        }
+      : undefined;
   },
   save_note: ({ result }) => {
     if (saveDeclined(result))

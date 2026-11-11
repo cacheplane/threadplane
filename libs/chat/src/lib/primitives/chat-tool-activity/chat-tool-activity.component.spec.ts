@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ChatToolActivityComponent,
   ChatToolActivityGroupComponent,
@@ -547,5 +547,114 @@ describe('grouped rows', () => {
     fixture.componentRef.setInput('activity', { id: 'a', name: 'read', phase: 'error', errorSummary: 'Reference B is unavailable.' });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]').textContent.trim()).toBe('Reference B is unavailable.');
+  });
+});
+
+describe('group progress', () => {
+  const running: readonly ToolActivityInfo[] = [
+    { id: 'a', name: 'read', label: 'Read toSorted', phase: 'complete' },
+    { id: 'b', name: 'read', label: 'Read toReversed', phase: 'running' },
+    { id: 'c', name: 'read', label: 'Read with', phase: 'pending' },
+  ];
+  const plan = [
+    { label: 'Read the proposals', status: 'completed' },
+    { label: 'Compare the two drafts', status: 'pending' },
+    { label: 'Write the summary', status: 'pending' },
+  ] as const;
+  function render(activities: readonly ToolActivityInfo[], inputs: Record<string, unknown> = {}) {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', activities);
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    fixture.detectChanges();
+    return fixture;
+  }
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-11T12:00:00Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the elapsed time while running and ticks it once a second', () => {
+    const fixture = render(running);
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity-group__elapsed')!.textContent!.trim()).toBe('0s');
+    vi.advanceTimersByTime(65_000);
+    fixture.detectChanges();
+    expect(root.querySelector('.tp-tool-activity-group__elapsed')!.textContent!.trim()).toBe('1m 05s');
+    // The progress sits outside the disclosure, so it never toggles it.
+    expect(root.querySelector('.tp-tool-activity-group__progress')!.closest('details')).toBeNull();
+  });
+
+  it('drops the elapsed time and stops ticking once the group settles, and restarts on the next run', () => {
+    const fixture = render(running);
+    vi.advanceTimersByTime(5_000);
+    fixture.componentRef.setInput('activities', running.map((item) => ({ ...item, phase: 'complete' as const })));
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity-group__progress')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    fixture.componentRef.setInput('activities', running);
+    fixture.detectChanges();
+    expect(root.querySelector('.tp-tool-activity-group__elapsed')!.textContent!.trim()).toBe('0s');
+  });
+
+  it('offers Stop only when stoppable, and emits stop without toggling the group', () => {
+    const fixture = render(running);
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity-group__stop')).toBeNull();
+    fixture.componentRef.setInput('stoppable', true);
+    fixture.detectChanges();
+    let stops = 0;
+    fixture.componentInstance.stop.subscribe(() => stops++);
+    const stop = root.querySelector<HTMLButtonElement>('.tp-tool-activity-group__stop')!;
+    expect(stop.textContent!.trim()).toBe('Stop');
+    expect(stop.type).toBe('button');
+    stop.click();
+    expect(stops).toBe(1);
+    expect(root.querySelector('details')!.open).toBe(false);
+  });
+
+  it('hides Stop once the group settles', () => {
+    const fixture = render(running, { stoppable: true });
+    fixture.componentRef.setInput('activities', running.map((item) => ({ ...item, phase: 'complete' as const })));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tp-tool-activity-group__stop')).toBeNull();
+  });
+
+  it('reads "Working · 1 of 3 done" while open and running, and keeps an app caption', () => {
+    const fixture = render(running);
+    const root: HTMLElement = fixture.nativeElement;
+    const details = root.querySelector('details')!;
+    const label = () => root.querySelector('summary .tp-tool-activity__label')!;
+    expect(label().textContent!.trim()).toBe('Read toReversed');
+    expect(label().getAttribute('data-active')).toBe('true');
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+    fixture.detectChanges();
+    expect(label().textContent!.trim()).toBe('Working · 1 of 3 done');
+    expect(label().getAttribute('data-active')).toBe('false');
+    fixture.componentRef.setInput('label', 'Preparing report');
+    fixture.detectChanges();
+    expect(label().textContent!.trim()).toBe('Preparing report');
+  });
+
+  it('lists pending plan steps after the calls only while running', () => {
+    const fixture = render(running, { plan });
+    const root: HTMLElement = fixture.nativeElement;
+    const steps = () =>
+      [...root.querySelectorAll('.tp-tool-activity-group__items .tp-tool-activity-group__plan-step')].map((step) =>
+        step.textContent!.trim()
+      );
+    expect(steps()).toEqual(['Compare the two drafts', 'Write the summary']);
+    fixture.componentRef.setInput('activities', running.map((item) => ({ ...item, phase: 'complete' as const })));
+    fixture.detectChanges();
+    expect(steps()).toEqual([]);
+  });
+
+  it('lists no steps without a plan', () => {
+    const fixture = render(running);
+    expect(fixture.nativeElement.querySelectorAll('.tp-tool-activity-group__plan-step')).toHaveLength(0);
   });
 });
