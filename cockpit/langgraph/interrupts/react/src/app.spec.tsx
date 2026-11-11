@@ -84,7 +84,7 @@ describe('native React refund approval', () => {
   it('keeps the admitted decision status through a synchronous duplicate click', async () => {
     const s = setup();
     await s.pause();
-    const button = s.view.getByRole('button', { name: 'Approve refund' });
+    const button = s.view.getByRole('button', { name: 'Issue refund' });
     await act(async () => {
       button.click();
       button.click();
@@ -112,8 +112,8 @@ describe('native React refund approval', () => {
     ).toBe(true);
   });
   it.each([
-    ['Approve refund', true],
-    ['Decline refund', false],
+    ['Issue refund', true],
+    ["Don't refund", false],
   ] as const)(
     'sends only the %s decision and blocks further actions while pending',
     async (label, approved) => {
@@ -125,9 +125,7 @@ describe('native React refund approval', () => {
         expect.any(Object)
       );
       expect(s.session.submit).toHaveBeenCalledTimes(1);
-      expect(
-        s.view.queryByRole('button', { name: 'Approve refund' })
-      ).toBeNull();
+      expect(s.view.queryByRole('button', { name: 'Issue refund' })).toBeNull();
       expect(
         (
           s.view.getByRole('button', {
@@ -137,14 +135,37 @@ describe('native React refund approval', () => {
       ).toBe(true);
       await s.complete();
       expect(s.view.getByRole('status').textContent).toBe('Response complete.');
+      const composer = s.view.getByRole('textbox', {
+        name: 'Message',
+        exact: true,
+      }) as HTMLTextAreaElement;
+      expect(composer.disabled).toBe(false);
+      // Focus returns to the composer once it is enabled again.
+      expect(document.activeElement).toBe(composer);
+    }
+  );
+  it.each([
+    ['Issue refund', 'approved', 'Approved: Issue refund'],
+    ["Don't refund", 'declined', 'Declined: Issue refund'],
+  ] as const)(
+    'leaves a one-line record after %s inside the transcript',
+    async (label, verdict, text) => {
+      const s = setup();
+      await s.pause();
+      const transcript = s.view.getByRole('region', { name: 'Conversation' });
       expect(
-        (
-          s.view.getByRole('textbox', {
-            name: 'Message',
-            exact: true,
-          }) as HTMLTextAreaElement
-        ).disabled
-      ).toBe(false);
+        transcript.contains(
+          s.view.getByRole('region', { name: 'Refund approval required' })
+        )
+      ).toBe(true);
+      fireEvent.click(s.view.getByRole('button', { name: label }));
+      await s.complete();
+      const record = transcript.querySelector('.tp-approval-record');
+      expect(record?.textContent).toBe(text);
+      expect(record?.getAttribute('data-verdict')).toBe(verdict);
+      expect(transcript.querySelectorAll('.tp-approval-record')).toHaveLength(
+        1
+      );
     }
   );
   it('requires a nonblank finite nonnegative edit and submits an explicit edited amount', async () => {

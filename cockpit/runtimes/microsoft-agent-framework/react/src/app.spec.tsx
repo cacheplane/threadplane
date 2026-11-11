@@ -315,3 +315,54 @@ it('survives actual StrictMode rehearsal without implicit commands and releases 
   for (const h of stores.filter((h) => h.app.subscribe))
     expect(h.app.getSnapshot().status).toBe('disposed');
 });
+it.each([
+  ['Approve', 'approved'],
+  ['Decline', 'declined'],
+] as const)(
+  'records %s in the transcript and returns focus to the enabled composer',
+  (name, verdict) => {
+    const value = approval();
+    const rows = [{ id: 'ask', role: 'user' as const, content: 'File it.' }];
+    const h = setup({
+      rows,
+      approval: value,
+      canRespond: true,
+      canSend: false,
+      status: 'pending',
+    });
+    const transcript = h.view.getByRole('region', { name: 'Conversation' });
+    // The pending approval renders at the end of the transcript.
+    expect(
+      transcript.contains(
+        h.view.getByRole('region', { name: 'Expense approval' })
+      )
+    ).toBe(true);
+    h.app.decide.mockImplementation(async () =>
+      h.update({ busy: true, canRespond: false, status: 'running' })
+    );
+    fireEvent.click(h.view.getByRole('button', { name }));
+    act(() =>
+      h.update({
+        rows: [
+          ...rows,
+          { id: 'reply', role: 'assistant' as const, content: 'Settled.' },
+        ],
+        approval: undefined,
+        busy: false,
+        canSend: true,
+        status: verdict,
+      })
+    );
+    const records = transcript.querySelectorAll('.tp-approval-record');
+    expect(records).toHaveLength(1);
+    expect(records[0].textContent).toBe(
+      verdict === 'approved' ? 'Approved' : 'Declined'
+    );
+    expect(records[0].closest('li')?.textContent).toContain('File it.');
+    expect(document.activeElement).toBe(
+      h.view.getByRole('textbox', { name: 'Message' })
+    );
+    act(() => h.update({ generation: 8 }));
+    expect(transcript.querySelector('.tp-approval-record')).toBeNull();
+  }
+);

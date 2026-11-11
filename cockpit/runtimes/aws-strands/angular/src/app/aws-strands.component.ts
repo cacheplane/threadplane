@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
 import { injectAgent } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
@@ -54,6 +54,7 @@ interface Booking {
   imports: [
     ChatComponent,
     ChatApprovalCardComponent,
+    ChatInterruptTemplateDirective,
     ChatWelcomeSuggestionComponent,
     ExampleChatLayoutComponent,
   ],
@@ -76,8 +77,32 @@ interface Booking {
               />
             }
           </div>
+          <!-- The approval sits at the end of the transcript, inline. -->
+          <ng-template chatInterruptTemplate>
+            <chat-approval-card
+              [agent]="agent"
+              title="Booking approval required"
+              (action)="onAction($event)"
+            >
+              <ng-template #body>
+                <div class="approval-body">
+                  @if (approvalBooking(); as b) {
+                    <div class="approval-row">
+                      <span class="approval-label">Topic</span>
+                      <strong>{{ b.topic }}</strong>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">Slot</span>
+                      <strong>{{ b.slot }}</strong>
+                    </div>
+                  } @else {
+                    <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
+                  }
+                </div>
+              </ng-template>
+            </chat-approval-card>
+          </ng-template>
         </chat>
-
         <aside class="state-panel" data-testid="schedule-state">
           <h2 class="state-title">Shared state — schedule</h2>
           @if (availability(); as a) {
@@ -105,28 +130,6 @@ interface Booking {
         </aside>
 
         <!-- region approval-card -->
-        <chat-approval-card
-          [agent]="agent"
-          title="Booking approval required"
-          (action)="onAction($event)"
-        >
-          <ng-template #body>
-            <div class="approval-body">
-              @if (approvalBooking(); as b) {
-                <div class="approval-row">
-                  <span class="approval-label">Topic</span>
-                  <strong>{{ b.topic }}</strong>
-                </div>
-                <div class="approval-row">
-                  <span class="approval-label">Slot</span>
-                  <strong>{{ b.slot }}</strong>
-                </div>
-              } @else {
-                <p>The agent requests approval for <code class="approval-code">{{ approvalToolName() }}</code>.</p>
-              }
-            </div>
-          </ng-template>
-        </chat-approval-card>
         <!-- endregion -->
       </div>
     </example-chat-layout>

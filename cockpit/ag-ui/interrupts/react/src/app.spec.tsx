@@ -186,9 +186,9 @@ it('renders the native approval with three explicit authored actions and literal
   expect(h.view.getByRole('status').textContent).toBe(
     'Awaiting your decision.'
   );
-  fireEvent.click(h.view.getByRole('button', { name: 'Approve' }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Issue refund' }));
   expect(h.application.respond).toHaveBeenCalledWith(approval, 'approve');
-  fireEvent.click(h.view.getByRole('button', { name: 'Cancel refund' }));
+  fireEvent.click(h.view.getByRole('button', { name: "Don't refund" }));
   expect(h.application.respond).toHaveBeenCalledWith(approval, 'cancel');
 });
 it('captures a valid edited amount once and leaves invalid edits unclaimed', () => {
@@ -216,11 +216,11 @@ it('disables all approval actions while resuming and drops the card on New', () 
     busy: true,
     activity: 'running',
   });
-  for (const name of ['Approve', 'Edit and approve', 'Cancel refund'])
+  for (const name of ['Issue refund', 'Edit and approve', "Don't refund"])
     expect(
       (h.view.getByRole('button', { name }) as HTMLButtonElement).disabled
     ).toBe(true);
-  fireEvent.click(h.view.getByRole('button', { name: 'Approve' }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Issue refund' }));
   expect(h.application.respond).not.toHaveBeenCalled();
   act(() =>
     h.update({
@@ -232,3 +232,53 @@ it('disables all approval actions while resuming and drops the card on New', () 
   );
   expect(h.view.queryByRole('heading', { name: 'Refund approval' })).toBeNull();
 });
+it.each([
+  ['Issue refund', 'approved', 'Approved: Issue refund'],
+  ['Edit and approve', 'approved', 'Approved: Issue refund'],
+  ["Don't refund", 'declined', 'Declined: Issue refund'],
+] as const)(
+  'records %s in the transcript and returns focus to the enabled composer',
+  (name, verdict, text) => {
+    const h = setup({
+      rows: [{ id: 'draft', role: 'assistant', content: 'Draft ready.' }],
+      approval,
+      canRespond: true,
+      canSubmit: false,
+    });
+    const transcript = h.view.getByRole('region', { name: 'Conversation' });
+    // The pending approval renders at the end of the transcript.
+    expect(
+      transcript.contains(
+        h.view.getByRole('heading', { name: 'Refund approval' })
+      )
+    ).toBe(true);
+    h.application.respond.mockImplementation(async () => {
+      h.update({ busy: true, canRespond: false, activity: 'running' });
+    });
+    fireEvent.click(h.view.getByRole('button', { name }));
+    expect(h.application.respond).toHaveBeenCalledTimes(1);
+    act(() =>
+      h.update({
+        rows: [
+          { id: 'draft', role: 'assistant', content: 'Draft ready.' },
+          { id: 'done', role: 'assistant', content: 'Refund settled.' },
+        ],
+        approval: undefined,
+        busy: false,
+        canSubmit: true,
+        activity: 'idle',
+        outcome: 'success',
+      })
+    );
+    const record = transcript.querySelector('.tp-approval-record');
+    expect(record?.textContent).toBe(text);
+    expect(record?.getAttribute('data-verdict')).toBe(verdict);
+    // The record stays after the row the approval followed.
+    expect(record?.closest('li')?.textContent).toContain('Draft ready.');
+    expect(document.activeElement).toBe(
+      h.view.getByRole('textbox', { name: 'Message' })
+    );
+    act(() => h.update({ viewGeneration: 1 }));
+    expect(transcript.querySelector('.tp-approval-record')).toBeNull();
+  }
+);

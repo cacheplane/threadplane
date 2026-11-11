@@ -47,6 +47,7 @@ interface Agent {
 
   interrupt?: Signal<AgentInterrupt | undefined>;
   subagents?: Signal<Map<string, Subagent>>;
+  plan?: Signal<AgentPlan | undefined>;
   clientTools?: ClientToolsCapability;
 
   events$: Observable<AgentEvent>;
@@ -96,8 +97,11 @@ Signals are the stable read model.
 | `state()` | Backend-defined state snapshot as a plain object. |
 | `interrupt?.()` | Current human-in-the-loop pause, if supported. |
 | `subagents?.()` | Delegated work keyed by tool-call id, if supported. |
+| `plan?.()` | The steps the agent declared for its work, each with a label and a `pending`, `in_progress` or `completed` status, if supported. |
 
 `checkStatus?()` sits alongside them as an optional action: a read-only reconciliation of an uncertain run outcome, offered when `error().recovery` is `check`. It never resubmits the request and never appends a message, and adapters expose it only when their transport can answer.
+
+The LangGraph and AG-UI adapters fill `plan` from a `todos` list in agent state, the shape a deep-agents style to-do tool writes: `[{ content, status }]`. A custom adapter can do the same with `plan: agentPlan(state)`, which derives the signal from any state signal and changes only when a step does.
 
 The optional signals matter. A simple echo adapter should not fake interrupts or subagents. Components that need those concepts feature-detect the signal and render a neutral fallback when it is absent.
 

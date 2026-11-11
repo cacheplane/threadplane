@@ -10,11 +10,11 @@ test.describe('cockpit runtimes/microsoft-agent-framework: expense approval', ()
   test('approval card displays the pending submit_expense call', async ({ page }) => {
     await page.goto('/');
     await page.getByText('File a team dinner expense').click();
-    const dialog = page.locator('dialog.chat-approval-card');
-    await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await expect(dialog).toContainText('Expense approval required');
-    await expect(dialog).toContainText('Blue Finch Bistro');
-    await expect(dialog).toContainText('meals');
+    const panel = page.locator('.chat-approval-card--inline');
+    await expect(panel).toBeVisible({ timeout: 30_000 });
+    await expect(panel).toContainText('Expense approval required');
+    await expect(panel).toContainText('Blue Finch Bistro');
+    await expect(panel).toContainText('meals');
   });
 
   test('shared state panel mirrors the drafted expense', async ({ page }) => {
@@ -28,9 +28,9 @@ test.describe('cockpit runtimes/microsoft-agent-framework: expense approval', ()
   test('Approve resumes the run and the expense is submitted', async ({ page }) => {
     await page.goto('/');
     await page.getByText('File a team dinner expense').click();
-    const dialog = page.locator('dialog.chat-approval-card');
-    await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await dialog.getByRole('button', { name: 'Approve' }).click();
+    const panel = page.locator('.chat-approval-card--inline');
+    await expect(panel).toBeVisible({ timeout: 30_000 });
+    await panel.getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText(/has been submitted for reimbursement/i)).toBeVisible({ timeout: 30_000 });
   });
 });

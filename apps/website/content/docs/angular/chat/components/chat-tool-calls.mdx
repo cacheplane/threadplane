@@ -44,7 +44,7 @@ Pass a stable `toolOutcome(activity)` callback to `<chat>` or `<chat-tool-calls>
 
 `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` accept the same metadata in `ToolActivityInfo.outcome`. Only complete activities expose previews. Group previews remain visible outside technical Details; the first three summaries are visible, with the rest under **More results**. An outcome may declare sources alone by leaving `text` empty.
 
-Inside `<chat>` and any `<chat-message>` that receives its `message`, declared sources join the message's one **Sources** panel, which is closed until opened and lists each source once beside the message's own citations. A source whose URL the message already cites is not added again. The activity primitives used on their own have no message panel, so they keep the sources as links under the activity, with the first three visible and the rest under **More sources**. A source may also carry a `snippet` and an `iconUrl`, which the panel shows on its card. The library never fetches an icon itself. Sources require absolute HTTP(S) URLs without credentials. Mixed groups announce concise status counts politely without announcing raw streaming payloads.
+Inside `<chat>` and any `<chat-message>` that receives its `message`, declared sources join the message's one **Sources** panel, which is closed until opened and lists each source once beside the message's own citations. A source whose URL the message already cites is not added again. The activity primitives used on their own have no message panel, so they keep the sources as links under the activity, with the first three visible and the rest under **More sources**. In `<chat-tool-calls>` without a panel, a collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. A source may also carry a `snippet` and an `iconUrl`, which the panel shows on its card. The library never fetches an icon itself. Sources require absolute HTTP(S) URLs without credentials. Mixed groups announce concise status counts politely without announcing raw streaming payloads.
 
 Custom tool templates retain ownership. Project approval controls outside technical Details and dispatch decisions through the current adapter interrupt generation. A failed read can offer an explicit retry while retaining the successful prefix and failed attempt. Reconcile an uncertain write before retrying it.
 
@@ -162,8 +162,9 @@ It hides it while anything is running, and removes it once a later call repeats 
 Your handler decides what a retry does.
 Send it as a new request in the same conversation, and have your backend run only the failed read again as a new call.
 Name the call in the label, such as **Retry toSorted read**, because the group may be collapsed above it.
+While that repeat call is still running, the failure panel leads with **Retrying toSorted read**, built from your label, and the line shimmers like the current step in the progress view. A label that does not start with "Retry" gives a plain **Retrying**.
 `<chat-tool-activity-group>` emits the same `(toolRetry)`, and takes a `context` input with every observed call so it can apply the same rule across messages.
-While a per-call retry is offered, the `<chat>` error banner drops its own **Retry**, because that one re-sends the whole request.
+While a per-call retry is offered, the `<chat>` error banner drops its own **Retry response**, because that one re-sends the whole request.
 
 I would not declare a retry for a write.
 A write that failed with an uncertain acknowledgment needs reconciliation before another attempt.
@@ -292,7 +293,7 @@ Set `[groupRelated]="false"` to retain same-name adjacency grouping: `search_web
 
 ## Default group summaries
 
-While a tool is running, the collapsed row shows the current call's `toolLabel` with a subtle text shimmer, falling back to **Running tools…**, followed by the elapsed time and a **Stop** button that stops the run, like the composer's Stop. Expanded, the row reads **Working · 1 of 3 done**: finished calls show a tick, the running call carries the shimmer and pending calls are dimmed. The elapsed time is measured in the browser from when the group starts running. Screen readers hear the current step through the polite status region, not the animation. Explicitly completed calls settle to **Used 4 tools**, with the appropriate count; when some failed it reads **Used 4 tools · 1 failed**. There is no additional completion-count subline. A tool count does not establish a successful business operation or persisted write.
+While a tool is running, the collapsed row shows the current call's `toolLabel` with a subtle text shimmer, falling back to **Running tools…**, followed by the elapsed time and a **Stop** button that stops the run, like the composer's Stop. Expanded, the row reads **Working · 1 of 3 done**: finished calls show a tick, the running call carries the shimmer and pending calls are dimmed. When the agent declared a plan (`agent.plan`), its pending steps follow the calls, dimmed, so the list shows what is still to come. Without a plan, the list holds only the calls that have started. The elapsed time is measured in the browser from when the group starts running. Screen readers hear the current step through the polite status region, not the animation. Explicitly completed calls settle to **Used 4 tools**, with the appropriate count; when some failed it reads **Used 4 tools · 1 failed**. There is no additional completion-count subline. A tool count does not establish a successful business operation or persisted write.
 
 Queued, paused, stopped and unavailable activity uses static wording. **Tool activity paused** does not imply approval. A failed call can coexist with running work; the activity row preserves a static failure cue while actual work remains active. Reduced motion and forced colors use readable static text. Meaningful state changes remain available in a polite status region without raw payloads or timer ticks.
 
@@ -309,7 +310,20 @@ const summarize = (name: string, count: number): string =>
     : `${name} × ${count}`;
 ```
 
-The `<chat>` composition defaults `groupRelatedTools` to `true` and forwards it with `toolLabel` to its per-message activity region. Set `[groupRelatedTools]="false"` to retain same-name grouping. `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` are also available as readonly presentation primitives. Supply literal evidence and an explicit `phase`; omitted status is shown as unavailable. Their projected content stays mounted outside technical Details, so a rich result or approval control can remain visible. Inside a group, rows name a failure only by their **Failed** status word; the failure message and any retry appear once, in the group's danger panel. Set `[grouped]="true"` on `ChatToolActivityComponent` when you render rows inside your own group panel. These primitives never execute, resume, approve, or persist work. A tool result is separate from application confirmation of saved data.
+The `<chat>` composition defaults `groupRelatedTools` to `true` and forwards it with `toolLabel` to its per-message activity region. Set `[groupRelatedTools]="false"` to retain same-name grouping. `ChatToolActivityComponent` and `ChatToolActivityGroupComponent` are also available as readonly presentation primitives. Supply literal evidence and an explicit `phase`; omitted status is shown as unavailable. Their projected content stays mounted outside technical Details, so a rich result or approval control can remain visible. Inside a group, rows name a failure only by their **Failed** status word; the failure message and any retry appear once, in the group's danger panel. Set `[grouped]="true"` on `ChatToolActivityComponent` when you render rows inside your own group panel.
+
+`ChatToolActivityGroupComponent` has no agent, so it shows the progress view from inputs. While its activities run it shows the elapsed time, measured in the browser from when the group starts running. Set `[stoppable]="true"` to add a **Stop** button beside it and handle `(stop)`; the group only emits, and your handler decides what stopping does. Pass `[plan]` to list the pending steps after the calls while the group runs and is open, and opened while running, the heading reads **Working · 1 of 3 done** unless you set a `label`.
+
+```html
+<chat-tool-activity-group
+  [activities]="activities()"
+  [plan]="agent.plan?.()"
+  [stoppable]="agent.isLoading()"
+  (stop)="agent.stop()"
+/>
+```
+
+These primitives never execute, resume, approve, or persist work. A tool result is separate from application confirmation of saved data.
 
 For AG-UI, `TOOL_CALL_END` closes argument streaming. The adapter keeps execution running until `TOOL_CALL_RESULT`; it does not infer execution success from finalized arguments. Stopped, interrupted and paused response outcomes remain distinct.
 

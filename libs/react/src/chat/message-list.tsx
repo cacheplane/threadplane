@@ -1,5 +1,6 @@
 'use client';
 import {
+  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -9,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { MessageRow } from '@threadplane/content/messages';
+import type { AgentPlanStep } from '@threadplane/core';
 import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import {
@@ -27,6 +29,11 @@ import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
+import {
+  approvalRecordsByRow,
+  renderApprovalRecords,
+  type ApprovalRecordEntry,
+} from './approval-card.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -78,6 +85,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
+  /** Steps the agent declared (`snapshot.plan`); the current turn's running group lists the pending ones. */
+  readonly plan?: readonly AgentPlanStep[];
+  /** Stops the run; the current turn's running group offers it beside the elapsed time. */
+  readonly onStop?: () => void;
   /** App-authored human labels from the tool name and the call's arguments, such as "Read Array.prototype.toSorted"; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
@@ -107,6 +118,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * stable between updates; custom renderMessage retains full ownership.
    */
   readonly subagents?: readonly SubagentInfo[];
+  /**
+   * Answered approvals, each rendered as a one-line `ApprovalRecord` after the row its `afterId`
+   * names, or after the last row when that row is absent. Records stay where the app put them while
+   * the run continues below.
+   */
+  readonly approvalRecords?: readonly ApprovalRecordEntry[];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -265,6 +282,8 @@ function RowView<TRow extends MessageRow>({
   staleRetries,
   subagents = NO_SUBAGENTS,
   retrying,
+  plan,
+  onStop,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -290,6 +309,8 @@ function RowView<TRow extends MessageRow>({
   readonly subagents?: readonly SubagentInfo[];
   /** Failed call IDs a later running call is repeating, joined by newlines. */
   readonly retrying?: string;
+  readonly plan?: readonly AgentPlanStep[];
+  readonly onStop?: () => void;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -352,6 +373,8 @@ function RowView<TRow extends MessageRow>({
     if (last && 'activities' in last) last.activities.push(activity);
     else runs.push({ activities: [activity] });
   });
+  // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
+  const planGroup = [...runs].reverse().find((run) => 'activities' in run);
   return (
     <ChatMessage
       role={row.role}
@@ -393,6 +416,8 @@ function RowView<TRow extends MessageRow>({
                   key={run.activities[0].id}
                   activities={run.activities}
                   renderResult={renderToolResult}
+                  plan={run === planGroup ? plan : undefined}
+                  onStop={run === planGroup ? onStop : undefined}
                   onRetry={onToolRetry}
                   sources={sourcePlacement}
                   retrying={run.activities
@@ -446,10 +471,21 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderToolCall,
   renderToolResult,
   onToolRetry,
+  plan,
+  onStop,
   subagents,
+  approvalRecords,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
+  const recordsAfter = useMemo(
+    () =>
+      approvalRecordsByRow(
+        approvalRecords,
+        rows.map((row) => row.id)
+      ),
+    [approvalRecords, rows]
+  );
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
@@ -536,7 +572,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       el.scrollTop = el.scrollHeight;
       lastScrollTop.current = el.scrollTop;
     }
-  }, [rows, children]);
+  }, [rows, children, approvalRecords]);
   return (
     <>
       <div
@@ -548,23 +584,28 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       >
         <div ref={content}>
           {rows.map((row, index) => (
-            <Row
-              key={row.id}
-              row={row}
-              current={index === rows.length - 1}
-              prevRole={rows[index - 1]?.role}
-              renderMessage={renderMessage}
-              groupRelatedTools={groupRelatedTools}
-              toolLabel={toolLabel}
-              toolOutcome={toolOutcome}
-              renderToolCall={renderToolCall}
-              renderToolResult={renderToolResult}
-              onToolRetry={onToolRetry}
-              staleRetries={staleRetries?.[index]}
-              subagents={rowSubagents?.[index]}
-              retrying={retrying?.[index]}
-            />
+            <Fragment key={row.id}>
+              <Row
+                row={row}
+                current={index === rows.length - 1}
+                prevRole={rows[index - 1]?.role}
+                renderMessage={renderMessage}
+                groupRelatedTools={groupRelatedTools}
+                toolLabel={toolLabel}
+                toolOutcome={toolOutcome}
+                renderToolCall={renderToolCall}
+                renderToolResult={renderToolResult}
+                onToolRetry={onToolRetry}
+                staleRetries={staleRetries?.[index]}
+                subagents={rowSubagents?.[index]}
+                retrying={retrying?.[index]}
+                plan={index === rows.length - 1 ? plan : undefined}
+                onStop={index === rows.length - 1 ? onStop : undefined}
+              />
+              {renderApprovalRecords(recordsAfter, row.id)}
+            </Fragment>
           ))}
+          {renderApprovalRecords(recordsAfter, undefined)}
           {children}
         </div>
       </div>

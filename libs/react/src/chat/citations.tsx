@@ -177,7 +177,8 @@ function Disclosure({
           }}
         >
           <span className="tp-citations__label">
-            {label} ({citations.length})
+            {label}{' '}
+            <span className="tp-citations__count">{citations.length}</span>
           </span>
           <span className="tp-citations__markers" aria-hidden="true">
             {citations.slice(0, 3).map((citation) => (

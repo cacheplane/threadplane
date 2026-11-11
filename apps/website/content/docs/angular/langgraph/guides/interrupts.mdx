@@ -20,7 +20,7 @@ The interrupt belongs to agent state; it is not another chat message. Keep the c
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition in front of a refund graph. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: a modal card appears with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons — Cancel, Edit, and Approve.
+The Run tab shows the prebuilt `<chat>` composition in front of a refund graph. Ask for a refund and the agent acknowledges the draft in the transcript, and then the run stops: an approval panel appears at the end of the conversation with the amount, the customer identifier, and the reason the agent extracted from your request, above three buttons: Issue refund, Edit, and one that declines the refund.
 
 Two welcome suggestions set it up. "Refund a duplicate charge" asks for $47.50 back to customer `cus_a8x2k`, and "Refund a chargeback" asks for $129.00 with a different justification, so you can watch the same pause fire on two different payloads.
 
@@ -93,7 +93,7 @@ Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deploy
 
 ### The approval card
 
-`<chat-approval-card>` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a payload arrives it opens a native modal dialog, and when the interrupt resolves it closes again. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
+`<chat-approval-card>` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a payload arrives it shows an approval panel, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript. `approveLabel` and `cancelLabel` name the two actions, and `presentation="dialog"` opens a modal instead. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
 
 <ExampleCode file="interrupts.component.ts" region="approval-card" title="interrupts.component.ts — the card" />
 
@@ -123,7 +123,7 @@ A node reasons about the request and produces the structured payload that descri
 A node calls `interrupt({...})`, which freezes the graph. The payload is persisted in the checkpoint and streamed to the client.
 </Step>
 <Step title="The UI shows the decision">
-`injectAgent()` updates the `interrupt()` signal. The approval card reads it, matches on `kind`, and opens its dialog.
+`injectAgent()` updates the `interrupt()` signal. The approval card reads it, matches on `kind`, and shows its panel.
 </Step>
 <Step title="The person decides">
 Approve, Edit, or Cancel. The component calls `agent.submit({ resume })` with a payload carrying the decision.
