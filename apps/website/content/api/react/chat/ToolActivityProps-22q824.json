@@ -105,42 +105,6 @@
           "isOptional": true
         },
         {
-          "name": "grouped",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ToolActivityProps#grouped:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly grouped?: "
-            },
-            {
-              "kind": "Content",
-              "text": "boolean"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "A row inside a group: only its status word reports a failure, because the group shows one failure panel below it.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 89
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
           "name": "onRetry",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ToolActivityProps#onRetry:member",
