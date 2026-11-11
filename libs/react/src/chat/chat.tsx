@@ -5,7 +5,11 @@ import { useAgent } from '../use-agent.js';
 import { ChatInput, type ChatInputProps } from './chat-input.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
-import { MessageList, type MessageListProps } from './message-list.js';
+import {
+  MessageList,
+  repeatsToolFailure,
+  type MessageListProps,
+} from './message-list.js';
 import { isTyping, TypingIndicator } from './typing-indicator.js';
 import { ScrollBubble } from './scroll-bubble.js';
 
@@ -73,6 +77,20 @@ export function Chat({
 }: ChatProps) {
   const snapshot = useAgent(session);
   const rows = useMessageContent(snapshot, session, content);
+  // A failed call already shows these words, and the notice would add no action or detail of its own.
+  // A custom renderMessage owns that display, so the notice stays whenever one is in use.
+  const error = snapshot.error;
+  const repeated =
+    !!error &&
+    !renderMessage &&
+    !error.detail &&
+    error.recovery !== 'check' &&
+    !(
+      onRetry &&
+      error.retryable &&
+      (error.recovery === 'retry' || error.recovery === undefined)
+    ) &&
+    repeatsToolFailure(error.message, rows, toolOutcome);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
       <MessageList
@@ -99,7 +117,7 @@ export function Chat({
       />
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
-        error={snapshot.error}
+        error={repeated ? undefined : snapshot.error}
         className="tp-chat__error"
         onRetry={
           onRetry &&

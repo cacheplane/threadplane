@@ -98,20 +98,51 @@ it('forwards previous-role context to custom Chat renderers as the transcript ch
   expect(raw.stop).not.toHaveBeenCalled();
 });
 it('forwards authored outcome previews through Chat without executing additional commands', () => {
-  const { session, raw } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
-  const view = render(<Chat session={session} toolOutcome={() => ({ text: 'Reference verified' })} />);
-  const details = view.container.querySelector('.tp-tool-activity-group__details') as HTMLDetailsElement;
+  const { session, raw } = fakeSession({
+    messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }],
+    toolCalls: [
+      {
+        id: 'call',
+        name: 'lookup',
+        args: {},
+        status: 'complete',
+        result: 'ok',
+      },
+    ],
+  });
+  const view = render(
+    <Chat
+      session={session}
+      toolOutcome={() => ({ text: 'Reference verified' })}
+    />
+  );
+  const details = view.container.querySelector(
+    '.tp-tool-activity-group__details'
+  ) as HTMLDetailsElement;
   expect(details).toBeTruthy();
   expect(details.open).toBe(false);
   expect(view.getByText('Reference verified').closest('details')).toBeNull();
   expect(raw.submit).not.toHaveBeenCalled();
 });
 it('forwards renderToolResult through Chat', () => {
-  const { session } = fakeSession({ messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }], toolCalls: [{ id: 'call', name: 'lookup', args: {}, status: 'complete', result: 'ok' }] });
+  const { session } = fakeSession({
+    messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }],
+    toolCalls: [
+      {
+        id: 'call',
+        name: 'lookup',
+        args: {},
+        status: 'complete',
+        result: 'ok',
+      },
+    ],
+  });
   const view = render(
     <Chat
       session={session}
-      renderToolResult={(activity) => <button type="button">Act on {activity.id}</button>}
+      renderToolResult={(activity) => (
+        <button type="button">Act on {activity.id}</button>
+      )}
     />
   );
   expect(view.getByRole('button', { name: 'Act on call' })).toBeTruthy();
@@ -426,6 +457,56 @@ describe('Chat', () => {
     } as Partial<AgentSnapshot>);
     const view = render(<Chat session={session} />);
     expect(view.getByRole('alert').textContent).toBe('Server failed');
+  });
+
+  it('skips a run notice that only repeats a failed call, and keeps one that adds anything', () => {
+    const base = {
+      kind: 'server',
+      message: 'Read unavailable',
+      retryable: true,
+    } as const;
+    const alerts = (
+      error: AgentError,
+      props: Partial<Parameters<typeof Chat>[0]> = {},
+      text = ' Read unavailable '
+    ) => {
+      const { session } = fakeSession({
+        status: 'error',
+        error: Object.freeze(error),
+        messages: [{ ...assistant('answer', 'Answer'), toolCallIds: ['call'] }],
+        toolCalls: [
+          {
+            id: 'call',
+            name: 'read',
+            args: {},
+            status: 'complete',
+            result: { error: 'x' },
+          },
+        ],
+      } as Partial<AgentSnapshot>);
+      const view = render(
+        <Chat
+          session={session}
+          toolOutcome={() => ({ status: 'failed', text })}
+          {...props}
+        />
+      );
+      const found = view.container.querySelectorAll('.tp-chat__error').length;
+      const all = view.container.querySelectorAll(
+        '.tp-status-panel[role="alert"]'
+      ).length;
+      view.unmount();
+      return [found, all];
+    };
+    // Same words and no action to offer: the call's failure panel stands alone.
+    expect(alerts(base)).toEqual([0, 1]);
+    // Different words, a detail, a status check or an app retry all keep the notice.
+    expect(alerts(base, {}, 'Reference missing')[0]).toBe(1);
+    expect(alerts({ ...base, detail: 'HTTP 503' })[0]).toBe(1);
+    expect(alerts({ ...base, recovery: 'check' })[0]).toBe(1);
+    expect(alerts(base, { onRetry: () => undefined })[0]).toBe(1);
+    // A custom renderMessage owns failure display, so nothing is assumed shown.
+    expect(alerts(base, { renderMessage: () => null })[0]).toBe(1);
   });
 
   it('swallows a rejected submit', () => {

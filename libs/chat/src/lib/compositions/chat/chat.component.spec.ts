@@ -199,7 +199,9 @@ describe('ChatComponent', () => {
     fixture.componentRef.setInput('toolOutcome', () => ({ status: 'failed', text: 'Read unavailable', retry: { label: 'Retry sorted read' } }));
     fixture.detectChanges();
     expect(root.querySelector('button.chat-error__retry')).toBeNull();
-    expect(root.querySelector('.chat-error__msg')?.textContent).toContain('Read unavailable');
+    // The failed call already says "Read unavailable"; the run notice would only repeat it.
+    expect(root.querySelector('chat-error')).toBeNull();
+    expect(root.querySelector('[chatStatusPanel][role="alert"]')?.textContent).toContain('Read unavailable');
     const button = root.querySelector<HTMLButtonElement>('button.tp-tool-activity__retry');
     expect(button?.textContent?.trim()).toBe('Retry sorted read');
     button!.click();
@@ -208,6 +210,25 @@ describe('ChatComponent', () => {
     agent.isLoading.set(true);
     fixture.detectChanges();
     expect(root.querySelector('button.tp-tool-activity__retry')).toBeNull();
+  });
+  it('keeps the run notice when it says or offers more than the failed call', () => {
+    const calls = [{ id: 'c', name: 'read', args: { id: 'sorted' }, status: 'complete' as const, result: { error: 'x' } }];
+    const messages = [{ id: 'a', role: 'assistant' as const, content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'error') }];
+    const notice = (error: AgentError, text: string) => {
+      const fixture = TestBed.createComponent(ChatComponent);
+      fixture.componentRef.setInput('agent', mockAgent({ status: 'error', error, messages, toolCalls: calls }));
+      fixture.componentRef.setInput('toolOutcome', () => ({ status: 'failed', text }));
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).querySelector('.chat-error');
+    };
+    const plain = { kind: 'server' as const, message: 'Read unavailable', retryable: false };
+    // Same words, nothing to add: one alert is enough.
+    expect(notice(new AgentError(plain), ' Read unavailable ')).toBeNull();
+    // Different words, a detail, a status check or the notice's own Retry all keep it.
+    expect(notice(new AgentError(plain), 'Reference missing')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, detail: 'HTTP 503' }), 'Read unavailable')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, recovery: 'check' }), 'Read unavailable')).toBeTruthy();
+    expect(notice(new AgentError({ ...plain, retryable: true }), 'Read unavailable')?.querySelector('button')).toBeTruthy();
   });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
