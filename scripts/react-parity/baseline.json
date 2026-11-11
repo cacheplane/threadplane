@@ -1,19 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineHead": "c0054d31b6ffefbc7c0aa092f629181c51ce7260",
+  "baselineHead": "3002efb39366f775f3961089602c36952c207acd",
   "sourceState": {
     "modified": [
-      "apps/website/content/docs/angular/ag-ui/guides/interrupts.mdx",
-      "apps/website/content/docs/angular/chat/components/chat-tool-calls.mdx",
-      "apps/website/content/docs/angular/chat/guides/theming.mdx",
-      "libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
-      "libs/chat/src/lib/compositions/chat/chat.component.ts",
-      "libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/activity-summary.ts",
-      "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-      "libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts",
-      "libs/chat/src/lib/styles/chat-tokens.ts",
-      "libs/chat/src/public-api.ts"
+      "apps/website/content/docs/react/chat/components/chat-input.mdx",
+      "libs/react/README.md",
+      "libs/react/src/chat/chat-input.tsx",
+      "libs/react/src/chat/chat.tsx",
+      "libs/react/src/chat/styles.css"
     ],
     "untracked": []
   },
@@ -879,7 +873,7 @@
       "id": "asset:libs/react/src/chat/styles.css",
       "kind": "asset",
       "path": "libs/react/src/chat/styles.css",
-      "sha256": "16c4ca718d7417d304f638e4b832f302435f6d51f3a7eefb176f5334ebf73ed3"
+      "sha256": "a604b9f0fcc86fc30522a9476bb574688b4014ec59956ec9b05f5d4051d47c31"
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",
@@ -3195,7 +3189,7 @@
       "id": "doc:apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
       "kind": "doc",
       "path": "apps/website/content/docs/react/chat/components/chat-tool-calls.mdx",
-      "sha256": "d161ecc16c58fd849084c6ef2fa69a8b5435a1eb94abd3f702a3adb49b9a9743"
+      "sha256": "cf9e23ebd1866bad382cd51b4b646fc998002551cc54695d2a8e31de5d0ca95f"
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-trace.mdx",
@@ -11382,7 +11376,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "Chat",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, toolOutcome, renderToolCall, renderToolResult, onToolRetry, onRetry, inputLeading, inputTrailing, inputFooter, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolCall={renderToolCall} renderToolResult={renderToolResult} onToolRetry={onToolRetry} renderScrollControl={(controls) => controls.pinned ? null : (<ScrollBubble mode={snapshot.status === 'running' ? 'streaming' : 'idle'} onClick={() => {\n                controls.scrollToLatest();\n                controls.focus();\n            }}/>)}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} leading={inputLeading} trailing={inputTrailing} footer={inputFooter} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
+          "signature": "export function Chat({ session, content, renderMessage, className, groupRelatedTools, toolLabel, toolOutcome, renderToolResult, onToolRetry, onRetry, inputLeading, inputTrailing, inputFooter, ...input }: ChatProps) {\n    const snapshot = useAgent(session);\n    const rows = useMessageContent(snapshot, session, content);\n    return (<div className={['tp-chat', className].filter(Boolean).join(' ')}>\n      <MessageList rows={rows} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} renderScrollControl={(controls) => controls.pinned ? null : (<ScrollBubble mode={snapshot.status === 'running' ? 'streaming' : 'idle'} onClick={() => {\n                controls.scrollToLatest();\n                controls.focus();\n            }}/>)}/>\n      <TypingIndicator active={isTyping(snapshot)}/>\n      <ChatError error={snapshot.error} className=\"tp-chat__error\" onRetry={onRetry &&\n            (() => {\n                if (session.getSnapshot().error === snapshot.error)\n                    onRetry();\n            })} onCheckStatus={session.checkStatus &&\n            (() => {\n                const checkStatus = session.checkStatus;\n                if (checkStatus && session.getSnapshot().error === snapshot.error) {\n                    checkStatus.call(session).catch(ignore);\n                }\n            })}/>\n      <ChatInput key={sessionKey(session)} {...input} leading={inputLeading} trailing={inputTrailing} footer={inputFooter} busy={snapshot.status === 'running'} onSubmit={(text) => {\n            session.submit(text.trim()).catch(ignore);\n        }} onStop={() => {\n            session.stop().catch(ignore);\n        }}/>\n    </div>);\n}"
         }
       ]
     },
@@ -11536,7 +11530,7 @@
           "path": "libs/react/src/chat/chat.tsx",
           "symbol": "ChatProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: MessageListProps['renderMessage'];\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly renderToolCall?: MessageListProps['renderToolCall'];\n    readonly renderToolResult?: MessageListProps['renderToolResult'];\n    readonly onToolRetry?: MessageListProps['onToolRetry'];\n    readonly onRetry?: () => void;\n    readonly inputLeading?: ChatInputProps['leading'];\n    readonly inputTrailing?: ChatInputProps['trailing'];\n    readonly inputFooter?: ChatInputProps['footer'];\n}"
+          "signature": "export interface ChatProps extends Pick<ChatInputProps, 'label' | 'placeholder' | 'hint' | 'submitOnEnter'> {\n    readonly session: AgentSession;\n    readonly content?: MessageContent;\n    readonly renderMessage?: MessageListProps['renderMessage'];\n    readonly className?: string;\n    readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];\n    readonly toolLabel?: MessageListProps['toolLabel'];\n    readonly toolOutcome?: MessageListProps['toolOutcome'];\n    readonly renderToolResult?: MessageListProps['renderToolResult'];\n    readonly onToolRetry?: MessageListProps['onToolRetry'];\n    readonly onRetry?: () => void;\n    readonly inputLeading?: ChatInputProps['leading'];\n    readonly inputTrailing?: ChatInputProps['trailing'];\n    readonly inputFooter?: ChatInputProps['footer'];\n}"
         }
       ]
     },
@@ -11844,7 +11838,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageList",
           "syntaxKind": "FunctionDeclaration",
-          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, renderToolCall, renderToolResult, onToolRetry, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const staleRetries = useMemo(() => (onToolRetry ? staleRetriesByRow(rows) : undefined), [onToolRetry, rows]);\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row, index) => (<Row key={row.id} row={row} current={index === rows.length - 1} prevRole={rows[index - 1]?.role} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolCall={renderToolCall} renderToolResult={renderToolResult} onToolRetry={onToolRetry} staleRetries={staleRetries?.[index]}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
+          "signature": "export function MessageList<TRow extends MessageRow = MessageRow>({ rows, renderMessage, label = 'Conversation', className, groupRelatedTools = true, toolLabel, toolOutcome, renderToolResult, onToolRetry, children, renderScrollControl, }: MessageListProps<TRow>) {\n    const staleRetries = useMemo(() => (onToolRetry ? staleRetriesByRow(rows) : undefined), [onToolRetry, rows]);\n    const container = useRef<HTMLDivElement>(null);\n    const content = useRef<HTMLDivElement>(null);\n    const pinned = useRef(true);\n    const [isPinned, setIsPinned] = useState(true);\n    const active = useRef(false);\n    const lastScrollTop = useRef(0);\n    const setPinned = useCallback((value: boolean) => {\n        if (pinned.current !== value) {\n            pinned.current = value;\n            setIsPinned(value);\n        }\n    }, []);\n    const scrollToLatest = useCallback(() => {\n        const el = container.current;\n        if (!active.current || !el)\n            return;\n        setPinned(true);\n        el.scrollTop = el.scrollHeight;\n        lastScrollTop.current = el.scrollTop;\n    }, [setPinned]);\n    const focus = useCallback(() => {\n        if (active.current)\n            container.current?.focus({ preventScroll: true });\n    }, []);\n    const controls = useMemo<MessageListScrollControls>(() => ({ pinned: isPinned, scrollToLatest, focus }), [isPinned, scrollToLatest, focus]);\n    useIsomorphicLayoutEffect(() => {\n        active.current = true;\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    useEffect(() => {\n        const el = container.current;\n        if (!el)\n            return;\n        let listening = true;\n        const onScroll = () => {\n            if (!listening || !active.current)\n                return;\n            const max = Math.max(0, el.scrollHeight - el.clientHeight);\n            if (el.scrollTop < Math.min(lastScrollTop.current, max) - 1)\n                setPinned(false);\n            else if (max - el.scrollTop <= PIN_THRESHOLD)\n                setPinned(true);\n            lastScrollTop.current = el.scrollTop;\n        };\n        el.addEventListener('scroll', onScroll, { passive: true });\n        return () => {\n            listening = false;\n            el.removeEventListener('scroll', onScroll);\n        };\n    }, [setPinned]);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        const body = content.current;\n        if (!el || !body || typeof ResizeObserver === 'undefined')\n            return;\n        let active = true;\n        const observer = new ResizeObserver(() => {\n            if (active && pinned.current) {\n                el.scrollTop = el.scrollHeight;\n                lastScrollTop.current = el.scrollTop;\n            }\n        });\n        observer.observe(body);\n        observer.observe(el);\n        return () => {\n            active = false;\n            observer.disconnect();\n        };\n    }, []);\n    useIsomorphicLayoutEffect(() => {\n        const el = container.current;\n        if (el && pinned.current) {\n            el.scrollTop = el.scrollHeight;\n            lastScrollTop.current = el.scrollTop;\n        }\n    }, [rows, children]);\n    return (<>\n      <div ref={container} role=\"region\" tabIndex={0} aria-label={label} className={['tp-chat-list', className].filter(Boolean).join(' ')}>\n        <div ref={content}>\n          {rows.map((row, index) => (<Row key={row.id} row={row} current={index === rows.length - 1} prevRole={rows[index - 1]?.role} renderMessage={renderMessage} groupRelatedTools={groupRelatedTools} toolLabel={toolLabel} toolOutcome={toolOutcome} renderToolResult={renderToolResult} onToolRetry={onToolRetry} staleRetries={staleRetries?.[index]}/>))}\n          {children}\n        </div>\n      </div>\n      {renderScrollControl?.(controls)}\n    </>);\n}"
         }
       ]
     },
@@ -11858,7 +11852,7 @@
           "path": "libs/react/src/chat/message-list.tsx",
           "symbol": "MessageListProps",
           "syntaxKind": "InterfaceDeclaration",
-          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>, context: MessageListRowContext) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly renderToolCall?: (call: NoInfer<RenderRow<TRow>>['toolCalls'][number], activity: ToolActivityInfo) => ReactNode;\n    readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onToolRetry?: (activity: ToolActivityInfo) => void;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
+          "signature": "export interface MessageListProps<TRow extends MessageRow = MessageRow> {\n    readonly rows: readonly TRow[];\n    readonly renderMessage?: (row: NoInfer<RenderRow<TRow>>, context: MessageListRowContext) => ReactNode;\n    readonly label?: string;\n    readonly className?: string;\n    readonly groupRelatedTools?: boolean;\n    readonly toolLabel?: (name: string) => string | undefined;\n    readonly toolOutcome?: (activity: ToolActivityInfo) => ToolActivityOutcome | undefined;\n    readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;\n    readonly onToolRetry?: (activity: ToolActivityInfo) => void;\n    readonly children?: ReactNode;\n    readonly renderScrollControl?: (controls: MessageListScrollControls) => ReactNode;\n}"
         }
       ]
     },
@@ -17218,7 +17212,7 @@
       "id": "source:libs/react/src/chat/chat.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/chat.tsx",
-      "sha256": "767f10b1871521ae258287c44e724b928bd5ead2ea32426fb70f0476b67ebf14"
+      "sha256": "8f9d96fa724d42c7a3a7adc33be0eabf9a96a0c1573fced50902a7bd62519ee6"
     },
     {
       "id": "source:libs/react/src/chat/citation-card.tsx",
@@ -17314,7 +17308,7 @@
       "id": "source:libs/react/src/chat/message-list.tsx",
       "kind": "source",
       "path": "libs/react/src/chat/message-list.tsx",
-      "sha256": "443a307708f905aa1ad7069a8b906f33ca9dc2e286a408dea41e5c28da2e570b"
+      "sha256": "e8e30850ad06631f39bd7f2fd1c8d627451d2bfe673e84c2d4efa62fc0c22239"
     },
     {
       "id": "source:libs/react/src/chat/message-rating.tsx",

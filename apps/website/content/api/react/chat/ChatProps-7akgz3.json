@@ -205,7 +205,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 42
+            "line": 40
           },
           "isReadonly": true,
           "isOptional": true
@@ -247,7 +247,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 38
+            "line": 36
           },
           "isReadonly": true,
           "isOptional": true
@@ -289,7 +289,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 40
+            "line": 38
           },
           "isReadonly": true,
           "isOptional": true
@@ -325,7 +325,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 36
+            "line": 34
           },
           "isReadonly": true,
           "isOptional": true
@@ -367,7 +367,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 34
+            "line": 32
           },
           "isReadonly": true,
           "isOptional": true
@@ -415,48 +415,6 @@
           "isOptional": true
         },
         {
-          "name": "renderToolCall",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!ChatProps#renderToolCall:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly renderToolCall?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "MessageListProps",
-              "canonicalReference": "@threadplane/react!MessageListProps:interface",
-              "href": "/docs/api/react/chat/MessageListProps"
-            },
-            {
-              "kind": "Content",
-              "text": "['renderToolCall']"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/chat.tsx",
-            "line": 31
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
           "name": "renderToolResult",
           "kind": "PropertySignature",
           "canonicalReference": "@threadplane/react!ChatProps#renderToolResult:member",
@@ -481,7 +439,7 @@
             }
           ],
           "docs": {
-            "summary": "",
+            "summary": "App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable.",
             "remarks": "",
             "deprecated": "",
             "returns": "",
@@ -493,7 +451,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat.tsx",
-            "line": 32
+            "line": 30
           },
           "isReadonly": true,
           "isOptional": true

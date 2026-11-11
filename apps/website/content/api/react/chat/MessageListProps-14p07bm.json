@@ -81,7 +81,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 100
+            "line": 90
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,7 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 98
+            "line": 88
           },
           "isReadonly": true,
           "isOptional": true
@@ -355,76 +355,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 102
-          },
-          "isReadonly": true,
-          "isOptional": true
-        },
-        {
-          "name": "renderToolCall",
-          "kind": "PropertySignature",
-          "canonicalReference": "@threadplane/react!MessageListProps#renderToolCall:member",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "readonly renderToolCall?: "
-            },
-            {
-              "kind": "Content",
-              "text": "(call: "
-            },
-            {
-              "kind": "Reference",
-              "text": "NoInfer",
-              "canonicalReference": "!NoInfer:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "RenderRow",
-              "canonicalReference": "@threadplane/react!~RenderRow:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<TRow>>['toolCalls'][number], activity: "
-            },
-            {
-              "kind": "Reference",
-              "text": "ToolActivityInfo",
-              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
-              "href": "/docs/api/react/chat/ToolActivityInfo"
-            },
-            {
-              "kind": "Content",
-              "text": ") => "
-            },
-            {
-              "kind": "Reference",
-              "text": "ReactNode",
-              "canonicalReference": "@types/react!React.ReactNode:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "docs": {
-            "summary": "App-owned presentation for one tool call, in place of its built-in activity row. Return `undefined` to keep the\nbuilt-in row for that call, or `null` to show nothing. A replaced call leaves its group, and `renderToolResult`,\n`toolOutcome` previews and retry controls no longer apply to it. Keep stable like renderMessage; custom\nrenderMessage retains full ownership.",
-            "remarks": "",
-            "deprecated": "",
-            "returns": "",
-            "examples": [],
-            "see": [],
-            "params": [],
-            "typeParams": []
-          },
-          "members": [],
-          "source": {
-            "path": "libs/react/src/chat/message-list.tsx",
-            "line": 88
+            "line": 92
           },
           "isReadonly": true,
           "isOptional": true
@@ -475,7 +406,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/message-list.tsx",
-            "line": 93
+            "line": 83
           },
           "isReadonly": true,
           "isOptional": true
