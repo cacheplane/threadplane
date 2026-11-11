@@ -810,7 +810,45 @@ export async function runComposerSlotScenarios(page, url) {
   assert.ok(ltr.draft.right - ltr.draft.left >= 120, `draft keeps usable width ${JSON.stringify(ltr)}`);
   // A composer without slots has no slot elements.
   const plain = page.locator('form.tp-chat-input').nth(1);
-  await expect(plain.locator('.tp-chat-input__leading, .tp-chat-input__trailing, .tp-chat-input__footer')).toHaveCount(0);
+  await expect(plain.locator('.tp-chat-input__banner, .tp-chat-input__attachments, .tp-chat-input__leading, .tp-chat-input__trailing, .tp-chat-input__footer')).toHaveCount(0);
+  // Banner, then attachments, then the input surface, each within the composer width.
+  const banner = page.getByTestId('slot-banner');
+  const files = page.getByTestId('slot-attachments');
+  const picker = page.locator('form.tp-chat-input').nth(2);
+  const model = picker.locator('.tp-select__trigger');
+  const modelDraft = page.getByRole('textbox', { name: 'Model message', exact: true });
+  const stacked = async () => ({ form: await rect(form), banner: await rect(banner), files: await rect(files), pill: await rect(form.locator('.tp-chat-input__pill')) });
+  const within = (box, outer) => box.left >= outer.left - 0.5 && box.right <= outer.right + 0.5;
+  const above = await stacked();
+  assert.ok(above.banner.bottom <= above.files.top && above.files.bottom <= above.pill.top, `banner, attachments, surface ${JSON.stringify(above)}`);
+  assert.ok(within(above.banner, above.form) && within(above.files, above.form), `above-surface slots within composer ${JSON.stringify(above)}`);
+  // Tab order follows the document: banner control, attachment controls, draft.
+  await banner.getByRole('button', { name: 'Dismiss' }).focus();
+  await page.keyboard.press('Tab'); await expect(files.getByRole('button', { name: 'Remove itinerary.pdf' })).toBeFocused();
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await expect(draft).toBeFocused();
+  // Removing a file is the owner's change: nothing is sent and the draft stays.
+  await draft.fill('With files');
+  await files.getByRole('button', { name: 'Remove itinerary.pdf' }).click();
+  await expect(files.getByRole('listitem')).toHaveCount(1);
+  await expect(draft).toHaveValue('With files');
+  await expect(sent).toHaveText('[]');
+  // A model picker is trailing content: choosing a model neither sends nor clears.
+  await modelDraft.fill('Pick first');
+  await modelDraft.focus();
+  await page.keyboard.press('Tab'); await expect(model).toBeFocused();
+  await page.keyboard.press('Enter');
+  const models = page.getByRole('listbox', { name: 'Model', exact: true });
+  await expect(models).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(models).toHaveCount(0);
+  await expect(model).toContainText('Careful');
+  await expect(model).toBeFocused();
+  await expect(modelDraft).toHaveValue('Pick first');
+  const pickerBox = { pill: await rect(picker.locator('.tp-chat-input__pill')), draft: await rect(modelDraft), model: await rect(model) };
+  assert.ok(inside(pickerBox.model, pickerBox.pill) && pickerBox.draft.right - pickerBox.draft.left >= 120, `model picker inside surface ${JSON.stringify(pickerBox)}`);
+  await expect(draft).toHaveValue('With files');
+  await expect(sent).toHaveText('[]');
   // Tab order: draft, app control, Send. A slot button keeps focus and never sends or clears.
   await draft.fill('Keep this');
   await draft.focus();
@@ -828,6 +866,9 @@ export async function runComposerSlotScenarios(page, url) {
   await expect(draft).toBeFocused();
   await expect(tools).toHaveText('Tools 1');
   await expect(footer).toHaveText('1 sent');
+  // Sending leaves the owner's attachments and banner in place.
+  await expect(files.getByRole('listitem')).toHaveCount(1);
+  await expect(banner).toBeVisible();
   // Busy shows Stop after the app control; the app control stays enabled and mounted.
   const retained = await tools.elementHandle();
   await page.getByRole('checkbox', { name: 'Busy' }).check();
@@ -852,7 +893,13 @@ export async function runComposerSlotScenarios(page, url) {
   const narrow = await layout();
   assert.ok(inside(narrow.leading, narrow.pill) && inside(narrow.tools, narrow.pill) && inside(narrow.send, narrow.pill), `narrow inside ${JSON.stringify(narrow)}`);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  const narrowAbove = await stacked();
+  assert.ok(within(narrowAbove.banner, narrowAbove.form) && within(narrowAbove.files, narrowAbove.form), `narrow above-surface slots ${JSON.stringify(narrowAbove)}`);
   if (size) await page.setViewportSize(size);
+  // Dismissing the banner removes its element; the last file removes the attachments element.
+  await banner.getByRole('button', { name: 'Dismiss' }).click();
+  await files.getByRole('button', { name: /^Remove a-very-long/ }).click();
+  await expect(form.locator('.tp-chat-input__banner, .tp-chat-input__attachments')).toHaveCount(0);
 }
 
 export async function runMessageRatingScenarios(page, url) {
@@ -929,6 +976,42 @@ export async function runMessageRatingScenarios(page, url) {
   await page.screenshot({ path: join(tmpdir(), 'react-message-rating.png'), fullPage: false });
   const count = JSON.parse(await requests.textContent()).length;
   assert.equal(count, 7, 'disabled and layout interaction requested nothing');
+}
+
+export async function runMenuTypeaheadScenarios(page, url) {
+  await page.goto(`${url}/?menu&select`);
+  const trigger = page.locator('.tp-select__trigger');
+  const list = page.getByRole('listbox', { name: 'Fixture tone', exact: true });
+  const value = page.getByTestId('select-value');
+  const before = await value.textContent();
+  await trigger.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(list.getByRole('option', { name: /^Plain literal <&>/ })).toBeFocused();
+  // A typed character moves real focus to the matching label without selecting it.
+  await page.keyboard.press('f');
+  await expect(list.getByRole('option', { name: 'Formal', exact: true })).toBeFocused();
+  // After a pause a new search starts; a quick second character extends it.
+  await page.waitForTimeout(650);
+  await page.keyboard.press('a');
+  await expect(list.getByRole('option', { name: /^A long wrapping tone label/ })).toBeFocused();
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(650);
+  await expect(list).toHaveCount(0);
+  assert.notEqual(await value.textContent(), before, 'Space still activates the focused option');
+  await expect(trigger).toBeFocused();
+  // The command menu shares the engine.
+  await page.goto(`${url}/?menu`);
+  const menuTrigger = page.locator('.tp-overflow-menu__trigger').first();
+  await menuTrigger.focus();
+  await page.keyboard.press('ArrowDown');
+  const items = page.getByRole('menu').getByRole('menuitem');
+  const labels = await items.evaluateAll((nodes) => nodes.filter((node) => !node.disabled).map((node) => node.textContent.trim()));
+  const target = labels.at(-1);
+  await page.keyboard.press(target[0].toLowerCase());
+  const focused = await page.evaluate(() => document.activeElement.textContent.trim());
+  assert.ok(focused.toLowerCase().startsWith(target[0].toLowerCase()), `menu typeahead focused ${focused} for ${target}`);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
 }
 
 export async function runSelectScenarios(page, url) {
@@ -1976,6 +2059,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runOverflowMenuScenarios(page, server.url);
       await runSelectScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
+      await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);
       if (a2ui) await runA2uiSurfaceScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);

@@ -222,6 +222,42 @@ describe('private session observation', () => {
       expect(Object.isFrozen(value.run?.terminal?.metadata?.['m'])).toBe(true);
     }
   );
+  it('restores saved child evidence as history, apart from children observed live', () => {
+    const started = {
+      type: E.SUBAGENT_STARTED as const,
+      subagentRunId: 'saved',
+      name: 'reader',
+      parentToolCallId: 'call',
+    };
+    const terminal = {
+      type: E.SUBAGENT_FINISHED as const,
+      subagentRunId: 'saved',
+    };
+    const messages = [
+      { id: 'read', role: 'assistant', content: 'Read it', subagentRunId: 'saved' },
+    ] as Message[];
+    const restored = initialObservation(messages, {}, [{ started, terminal }]);
+    expect(restored.earlierSubagents).toStrictEqual([{ started, terminal }]);
+    expect(restored.subagents).toStrictEqual([]);
+    expect(restored.transcript[0]).toMatchObject({ subagentRunId: 'saved' });
+    expect(Object.isFrozen(restored.earlierSubagents)).toBe(true);
+    // A live child, even one reusing a saved ID, is observed without touching history.
+    const live = applyObservation(
+      Object.freeze({ ...restored, status: 'running', run: Object.freeze({ id: 'run' }) }),
+      { type: E.SUBAGENT_STARTED, subagentRunId: 'saved', name: 'writer' } as AGUIEvent
+    );
+    expect(live.subagents).toStrictEqual([
+      { started: { type: E.SUBAGENT_STARTED, subagentRunId: 'saved', name: 'writer' } },
+    ]);
+    expect(live.earlierSubagents).toBe(restored.earlierSubagents);
+    expect(() =>
+      initialObservation(messages, {}, [{ started }, { started }])
+    ).toThrow('Duplicate restored subagent ID');
+    // No history is no field, so existing snapshots keep their exact shape.
+    expect(initialObservation()).not.toHaveProperty('earlierSubagents');
+    expect(initialObservation([], {}, [])).not.toHaveProperty('earlierSubagents');
+  });
+
   it('does not retain unselected observations or child interrupts', () => {
     const previous = running();
     for (const event of [

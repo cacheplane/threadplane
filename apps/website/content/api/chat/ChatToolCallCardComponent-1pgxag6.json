@@ -69,7 +69,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 133
+            "line": 145
           },
           "isStatic": false,
           "isReadonly": true,
@@ -115,7 +115,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 127
+            "line": 139
           },
           "isStatic": false,
           "isReadonly": true,
@@ -161,7 +161,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 110
+            "line": 122
           },
           "isStatic": false,
           "isReadonly": true,
@@ -206,7 +206,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 142
+            "line": 154
           },
           "overloadIndex": 1,
           "isStatic": false,
@@ -276,7 +276,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 118
+            "line": 130
           },
           "isStatic": false,
           "isReadonly": true,
@@ -332,7 +332,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 112
+            "line": 124
           },
           "isStatic": false,
           "isReadonly": true,
@@ -388,7 +388,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-            "line": 109
+            "line": 121
           },
           "isStatic": false,
           "isReadonly": true,
@@ -397,7 +397,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-        "line": 20
+        "line": 22
       },
       "angular": {
         "selector": "chat-tool-call-card",
@@ -421,6 +421,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts",
-    "line": 20
+    "line": 22
   }
 }

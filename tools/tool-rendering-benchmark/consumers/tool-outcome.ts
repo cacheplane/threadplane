@@ -58,7 +58,10 @@ export const toolLabel = (name: string) =>
     ? 'Reading reference sources'
     : undefined;
 type Outcome =
-  | { text: string; sources?: { title: string; url: string }[] }
+  | {
+      text: string;
+      sources?: { title: string; url: string; snippet?: string }[];
+    }
   | { status: 'failed'; text: string; retry?: { label: string } }
   | { status: 'receipt'; text: string };
 type Decoder = (call: {
@@ -71,19 +74,18 @@ const record = (value: unknown): Record<string, unknown> | undefined =>
     : undefined;
 /**
  * How a confirmed reference result is arranged beside the assistant's answer.
- * `summary` repeats each reference's summary above the answer; `compact`
- * leaves the statement to the answer and keeps only the source links;
- * `cards` shows one card per distinct reference in the per-call result slot;
- * `sources` shows nothing per call and leaves the references to the library's
- * Sources panel, which the scripted agent feeds with message citations.
+ * `sources` (the default) shows nothing per call: the references are listed
+ * once in the message's Sources panel. `summary` repeats each reference's
+ * summary above the answer; `compact` shows one "Sources checked." line;
+ * `cards` shows one card per distinct reference in the per-call result slot.
  * A layout only changes this application's presentation of its own schema.
  */
-export type Layout = 'summary' | 'compact' | 'cards' | 'sources';
+export type Layout = 'sources' | 'summary' | 'compact' | 'cards';
 export const layoutFrom = (search: string): Layout => {
   const value = new URLSearchParams(search).get('layout');
-  return value === 'compact' || value === 'cards' || value === 'sources'
+  return value === 'summary' || value === 'compact' || value === 'cards'
     ? value
-    : 'summary';
+    : 'sources';
 };
 const referenceRecords = (result: unknown): Reference[] | undefined => {
   const records = Array.isArray(result) ? result : [result];
@@ -93,14 +95,21 @@ const references =
   (layout: Layout): Decoder =>
   ({ result }) => {
     const records = referenceRecords(result);
-    if (!records || layout === 'cards' || layout === 'sources')
-      return undefined;
+    if (!records || layout === 'cards') return undefined;
+    // The library lists declared sources once in the message's Sources panel.
+    const sources = records.map(({ title, url, summary }) => ({
+      title,
+      url,
+      snippet: summary,
+    }));
     return {
       text:
-        layout === 'compact'
+        layout === 'sources'
+          ? ''
+          : layout === 'compact'
           ? 'Sources checked.'
           : records.map((row) => row.summary).join(' '),
-      sources: records.map(({ title, url }) => ({ title, url })),
+      sources,
     };
   };
 /**
@@ -137,11 +146,11 @@ export const toolDecoders = (options: {
   readonly retryReads: boolean;
   readonly layout?: Layout;
 }): Record<string, Decoder> => ({
-  search_reference: references(options.layout ?? 'summary'),
+  search_reference: references(options.layout ?? 'sources'),
   read_reference: (call) => {
     const error = recoverableReadError(call.result);
     if (error === undefined)
-      return references(options.layout ?? 'summary')(call);
+      return references(options.layout ?? 'sources')(call);
     const id = record(call.args)?.id;
     return {
       status: 'failed',

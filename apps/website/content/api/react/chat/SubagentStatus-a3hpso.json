@@ -1,0 +1,54 @@
+{
+  "name": "SubagentStatus",
+  "entrypointId": "react/chat",
+  "kind": "TypeAlias",
+  "href": "/docs/api/react/chat/SubagentStatus",
+  "canonicalReference": "@threadplane/react!SubagentStatus:type",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads.",
+  "declarations": [
+    {
+      "name": "SubagentStatus",
+      "kind": "TypeAlias",
+      "canonicalReference": "@threadplane/react!SubagentStatus:type",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export type SubagentStatus = "
+        },
+        {
+          "kind": "Content",
+          "text": "'pending' | 'running' | 'complete' | 'error' | 'unknown'"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/react/src/chat/subagent-card.tsx",
+        "line": 6
+      },
+      "typeTokenRange": {
+        "startIndex": 1,
+        "endIndex": 2
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/subagent-card.tsx",
+    "line": 6
+  }
+}

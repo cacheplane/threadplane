@@ -71,11 +71,29 @@ try {
         `${host.id} ${scenario} ${status}`
       );
     }
+    // Declared sources sit in the message's Sources panel, closed until opened.
+    const signals = 'a[href="https://angular.dev/guide/signals"]';
+    async function openSources() {
+      const toggles = page.locator(
+        '.chat-citations__header, .tp-citations__toggle'
+      );
+      await toggles.first().waitFor({ state: 'visible' });
+      for (let index = 0; index < (await toggles.count()); index++) {
+        const toggle = toggles.nth(index);
+        if ((await toggle.getAttribute('aria-expanded')) === 'true') continue;
+        await toggle.focus();
+        await page.keyboard.press('Enter');
+        // One press per panel: wait for it to report open before moving on.
+        await page.waitForFunction(
+          (el) => el.getAttribute('aria-expanded') === 'true',
+          await toggle.elementHandle()
+        );
+      }
+    }
     await start('references');
     await finished('references', 'complete');
-    const source = page
-      .getByRole('link', { name: 'Angular signals', exact: true })
-      .first();
+    await openSources();
+    const source = page.locator(signals).first();
     await source.waitFor({ state: 'visible' });
     const groups = page.locator(
       '.tp-tool-activity-group__details > summary, .ctc__group-header:not([hidden])'
@@ -84,13 +102,15 @@ try {
     const group = groups.first();
     await group.focus();
     await page.keyboard.press('Enter');
-    assert.equal(
-      await group.evaluate((el) =>
-        el.tagName === 'SUMMARY'
-          ? el.parentElement.open
-          : el.getAttribute('aria-expanded') === 'true'
-      ),
-      true,
+    // The host may apply the toggle on its next render; observe it rather than race it.
+    await until(
+      () =>
+        group.evaluate((el) =>
+          el.tagName === 'SUMMARY'
+            ? el.parentElement.open
+            : el.getAttribute('aria-expanded') === 'true'
+        ),
+      (open) => open === true,
       'Enter opens group'
     );
     assert.equal(
@@ -444,10 +464,9 @@ try {
       .getByText('Used 2 tools · 1 failed', { exact: true })
       .first()
       .waitFor({ state: 'visible' });
+    await openSources();
     assert.ok(
-      await page
-        .getByRole('link', { name: 'Angular signals', exact: true })
-        .count(),
+      await page.locator(signals).count(),
       'Successful read keeps its source beside the failed read'
     );
     // The retry names its call and sits outside the collapsed Details.
@@ -473,9 +492,7 @@ try {
     assert.equal(retried.tools[0].canonicalId, 'read-sorted-retry');
     assert.notEqual(retried.tools[0].nativeId, failed.tools.at(-1).nativeId);
     assert.ok(
-      await page
-        .getByRole('link', { name: 'Angular signals', exact: true })
-        .count(),
+      await page.locator(signals).count(),
       'Successful prefix remains visible'
     );
     assert.equal(

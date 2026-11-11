@@ -1,0 +1,168 @@
+{
+  "name": "SubagentCardProps",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SubagentCardProps",
+  "canonicalReference": "@threadplane/react!SubagentCardProps:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Borrowed child evidence, an optional card class and an optional app-owned text renderer.",
+  "declarations": [
+    {
+      "name": "SubagentCardProps",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SubagentCardProps:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SubagentCardProps "
+        }
+      ],
+      "docs": {
+        "summary": "Borrowed child evidence, an optional card class and an optional app-owned text renderer.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "className",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentCardProps#className:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly className?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 47
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "renderText",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentCardProps#renderText:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly renderText?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(message: "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentMessageInfo",
+              "canonicalReference": "@threadplane/react!SubagentMessageInfo:interface",
+              "href": "/docs/api/react/chat/SubagentMessageInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "ReactNode",
+              "canonicalReference": "@types/react!React.ReactNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Replace literal child text, for example with app-owned Markdown. Keep stable.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 49
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "subagent",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentCardProps#subagent:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subagent: "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentInfo",
+              "canonicalReference": "@threadplane/react!SubagentInfo:interface",
+              "href": "/docs/api/react/chat/SubagentInfo"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 46
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/subagent-card.tsx",
+        "line": 45
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/subagent-card.tsx",
+    "line": 45
+  }
+}

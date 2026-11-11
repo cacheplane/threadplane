@@ -148,3 +148,28 @@ export type RenderToolResultContract = Assert<
     }
   >
 >;
+
+export type RenderToolCallContract = Assert<
+  Equal<
+    Pick<MessageListProps, 'renderToolCall'>,
+    {
+      readonly renderToolCall?: (
+        call: MessageRow['toolCalls'][number],
+        activity: ToolActivityInfo
+      ) => ReactNode;
+    }
+  >
+>;
+<MessageList
+  rows={[]}
+  renderToolCall={(call, activity) => {
+    const name: string = call.name;
+    const id: string = activity.id;
+    return call.status === 'complete' ? `${name}:${id}` : undefined;
+  }}
+/>;
+<MessageList rows={[]} renderToolCall={() => null} />;
+// @ts-expect-error A tool-call renderer is a function, not a map of names.
+<MessageList rows={[]} renderToolCall={{ weather: () => null }} />;
+// @ts-expect-error The activity is readonly evidence.
+<MessageList rows={[]} renderToolCall={(_, activity) => (activity.id = 'x')} />;
