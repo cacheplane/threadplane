@@ -5423,6 +5423,14 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/chat/src/public-api.ts#ChatApprovalPresentation",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/chat/src/public-api.ts#ChatApprovalCardComponent",
       "taskIds": [
         "T28"
