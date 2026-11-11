@@ -91,7 +91,7 @@
       "members": [],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-        "line": 286
+        "line": 256
       },
       "overloadIndex": 1,
       "parameters": [
@@ -112,6 +112,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-activity/tool-outcome.ts",
-    "line": 286
+    "line": 256
   }
 }

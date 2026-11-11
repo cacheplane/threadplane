@@ -62,7 +62,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 84
+            "line": 83
           },
           "isReadonly": true,
           "isOptional": false
@@ -99,7 +99,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 86
+            "line": 85
           },
           "isReadonly": true,
           "isOptional": true
@@ -145,7 +145,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 88
+            "line": 87
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,12 +153,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 83
+        "line": 82
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 83
+    "line": 82
   }
 }
