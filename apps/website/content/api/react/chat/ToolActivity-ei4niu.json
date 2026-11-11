@@ -54,12 +54,12 @@
       "members": [],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 90
+        "line": 92
       },
       "overloadIndex": 1,
       "parameters": [
         {
-          "parameterName": "{ activity: input, children, onRetry, }",
+          "parameterName": "{ activity: input, children, onRetry, grouped, }",
           "parameterTypeTokenRange": {
             "startIndex": 0,
             "endIndex": 0
@@ -83,6 +83,6 @@
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 90
+    "line": 92
   }
 }
