@@ -14,7 +14,11 @@ export {
   isTyping,
   type TypingIndicatorProps,
 } from './typing-indicator.js';
-export { resolveToolOutcome, toolOutcomes } from './tool-outcome.js';
+export {
+  citationsWithToolSources,
+  resolveToolOutcome,
+  toolOutcomes,
+} from './tool-outcome.js';
 export {
   StatusPanel,
   type StatusPanelProps,
@@ -34,7 +38,22 @@ export {
   type ToolActivityPhase,
   type ToolActivityProps,
   type ToolActivityGroupProps,
+  type ToolSourcePlacement,
 } from './tool-activity.js';
+export {
+  SubagentCard,
+  type SubagentCardProps,
+  type SubagentInfo,
+  type SubagentMessageInfo,
+  type SubagentStatus,
+} from './subagent-card.js';
+export {
+  subagentsFromEvidence,
+  type SubagentEvidence,
+  type SubagentEvidenceMessage,
+  type SubagentEvidenceRecord,
+  type SubagentProjection,
+} from './subagent-evidence.js';
 export {
   Suggestions,
   type SuggestionItem,
@@ -102,8 +121,11 @@ export {
 } from './message-rating.js';
 export {
   ApprovalCard,
+  ApprovalRecord,
   type ApprovalCardAction,
   type ApprovalCardProps,
+  type ApprovalRecordEntry,
+  type ApprovalRecordProps,
 } from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';
 export { ChatError, type ChatErrorProps } from './error.js';

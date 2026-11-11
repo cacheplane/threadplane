@@ -14,6 +14,28 @@ const messages: TextTranscriptProps['messages'] = Object.freeze([
   Object.freeze({ id: 'policy', role: 'system', content: 'Policy' }),
 ]);
 describe('TextTranscript', () => {
+  it('renders answered approval records after their message and app content after the list', () => {
+    const view = render(
+      <TextTranscript
+        messages={messages}
+        approvalRecords={[
+          { afterId: 'a', verdict: 'approved', label: 'Issue refund' },
+          { afterId: 'missing', verdict: 'declined' },
+        ]}
+      >
+        <p>Pending card</p>
+      </TextTranscript>
+    );
+    const rows = within(view.getByRole('list')).getAllByRole('listitem');
+    expect(rows[0].querySelector('.tp-approval-record')?.textContent).toBe(
+      'Approved: Issue refund'
+    );
+    const region = view.getByRole('region', { name: 'Conversation' });
+    const tail = Array.from(region.children)
+      .slice(1)
+      .map((node) => node.textContent);
+    expect(tail).toEqual(['Declined', 'Pending card']);
+  });
   it('renders every supplied row as escaped text in a named ordered conversation', () => {
     const view = render(<TextTranscript messages={messages} />);
     const region = view.getByRole('region', { name: 'Conversation' });
