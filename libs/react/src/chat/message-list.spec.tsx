@@ -391,6 +391,39 @@ describe('MessageList', () => {
       }
     });
   });
+  it('gives the declared plan and Stop only to the current turn', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'Earlier', { toolCallIds: ['r1'] }),
+          msg('b', '', { toolCallIds: ['r2'] }),
+        ],
+        [
+          { id: 'r1', name: 'read', args: {}, status: 'running' },
+          { id: 'r2', name: 'read', args: { n: 2 }, status: 'running' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        plan={[{ label: 'Write the note', status: 'pending' }]}
+        onStop={() => undefined}
+      />
+    );
+    for (const details of view.container.querySelectorAll<HTMLDetailsElement>('.tp-tool-activity-group__details')) {
+      act(() => {
+        details.open = true;
+        details.dispatchEvent(new Event('toggle'));
+      });
+    }
+    expect(view.getAllByText('Write the note')).toHaveLength(1);
+    expect(view.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
+    const groups = view.container.querySelectorAll('.tp-tool-activity-group');
+    expect(groups[1].textContent).toContain('Write the note');
+    content.dispose();
+  });
   it('passes each call its arguments so repeated calls get their own labels', () => {
     const content = createMessageContent();
     const rows = content.project(

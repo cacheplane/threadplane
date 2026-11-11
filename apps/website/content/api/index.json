@@ -4924,6 +4924,26 @@
       "summary": "Adapter-classified failure category for connection, authentication, server, or execution termination errors."
     },
     {
+      "name": "agentPlanFromState",
+      "entrypointId": "core",
+      "kind": "Function",
+      "href": "/docs/api/core/agentPlanFromState",
+      "canonicalReference": "@threadplane/core!agentPlanFromState:function(1)",
+      "isDeprecated": false,
+      "isTypeOnly": false,
+      "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list."
+    },
+    {
+      "name": "AgentPlanStep",
+      "entrypointId": "core",
+      "kind": "Interface",
+      "href": "/docs/api/core/AgentPlanStep",
+      "canonicalReference": "@threadplane/core!AgentPlanStep:interface",
+      "isDeprecated": false,
+      "isTypeOnly": true,
+      "summary": "One step of the plan an agent declared for its work."
+    },
+    {
       "name": "AgentRecovery",
       "entrypointId": "core",
       "kind": "TypeAlias",

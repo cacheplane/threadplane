@@ -1,0 +1,83 @@
+{
+  "name": "agentPlanFromState",
+  "entrypointId": "core",
+  "kind": "Function",
+  "href": "/docs/api/core/agentPlanFromState",
+  "canonicalReference": "@threadplane/core!agentPlanFromState:function(1)",
+  "isDeprecated": false,
+  "isTypeOnly": false,
+  "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list.",
+  "declarations": [
+    {
+      "name": "agentPlanFromState",
+      "kind": "Function",
+      "canonicalReference": "@threadplane/core!agentPlanFromState:function(1)",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export declare function agentPlanFromState(state: "
+        },
+        {
+          "kind": "Content",
+          "text": "unknown"
+        },
+        {
+          "kind": "Content",
+          "text": "): "
+        },
+        {
+          "kind": "Content",
+          "text": "readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentPlanStep",
+          "canonicalReference": "@threadplane/core!AgentPlanStep:interface",
+          "href": "/docs/api/core/AgentPlanStep"
+        },
+        {
+          "kind": "Content",
+          "text": "[] | undefined"
+        },
+        {
+          "kind": "Content",
+          "text": ";"
+        }
+      ],
+      "docs": {
+        "summary": "Reads a plan from agent state: the `todos` list a deep-agents style to-do\ntool writes, `[{ content, status }]`. Entries without text or with an unknown\nstatus are skipped. Undefined when the state holds no such list.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [],
+      "source": {
+        "path": "libs/core/src/contracts/plan.ts",
+        "line": 15
+      },
+      "overloadIndex": 1,
+      "parameters": [
+        {
+          "parameterName": "state",
+          "parameterTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "isOptional": false
+        }
+      ],
+      "returnTypeTokenRange": {
+        "startIndex": 3,
+        "endIndex": 6
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/core/src/contracts/plan.ts",
+    "line": 15
+  }
+}

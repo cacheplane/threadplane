@@ -1,4 +1,5 @@
 'use client';
+import { useCallback } from 'react';
 import type { AgentSession } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
@@ -60,6 +61,10 @@ export function Chat({
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  // Stable so the current transcript row keeps its memo while work runs.
+  const stop = useCallback(() => {
+    session.stop().catch(ignore);
+  }, [session]);
   const rows = useMessageContent(snapshot, session, content);
   return (
     <div className={['tp-chat', className].filter(Boolean).join(' ')}>
@@ -71,6 +76,8 @@ export function Chat({
         toolOutcome={toolOutcome}
         renderToolResult={renderToolResult}
         onToolRetry={onToolRetry}
+        plan={snapshot.plan}
+        onStop={snapshot.status === 'running' ? stop : undefined}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble

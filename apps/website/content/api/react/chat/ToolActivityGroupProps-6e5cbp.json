@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 253
+            "line": 259
           },
           "isReadonly": true,
           "isOptional": false
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 263
+            "line": 273
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 260
+            "line": 266
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 254
+            "line": 260
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,7 +235,89 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 258
+            "line": 264
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "onStop",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#onStop:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly onStop?: "
+            },
+            {
+              "kind": "Content",
+              "text": "() => void"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Stops the run. Offered beside the elapsed time while the group runs.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 272
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "plan",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#plan:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly plan?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "AgentPlanStep",
+              "canonicalReference": "@threadplane/react!~AgentPlanStep:interface",
+              "href": "/docs/api/core/AgentPlanStep"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Steps the agent declared. While the group runs and is open, its pending steps follow the calls, dimmed.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 270
           },
           "isReadonly": true,
           "isOptional": true
@@ -286,7 +368,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 256
+            "line": 262
           },
           "isReadonly": true,
           "isOptional": true
@@ -322,7 +404,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 262
+            "line": 268
           },
           "isReadonly": true,
           "isOptional": true
@@ -330,12 +412,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 252
+        "line": 258
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 252
+    "line": 258
   }
 }

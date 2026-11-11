@@ -1,5 +1,6 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import type { AgentPlanStep } from '@threadplane/core';
 import {
   activityFailures,
   confirmedOutcomes,
@@ -8,7 +9,7 @@ import {
   resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
-import { activitySummary } from './activity-summary.js';
+import { activitySummary, formatElapsed, workingLabel } from './activity-summary.js';
 import { StatusPanel } from './status-panel.js';
 export type {
   ToolActivityOutcome,
@@ -109,7 +110,12 @@ export function ToolActivity({
       data-tool-id={activity.id}
     >
       <div className="tp-tool-activity__heading">
-        <span>{activity.label ?? 'Tool activity'}</span>
+        <span
+          className={grouped ? 'tp-tool-activity__label' : undefined}
+          data-active={grouped ? phase === 'running' : undefined}
+        >
+          {activity.label ?? 'Tool activity'}
+        </span>
         <span className="tp-tool-activity__phase">{labels[phase]}</span>
         {activity.durationMs !== undefined &&
           Number.isFinite(activity.durationMs) &&
@@ -260,7 +266,28 @@ export interface ToolActivityGroupProps {
   readonly context?: readonly ToolActivityInfo[];
   /** "Retrying toSorted read" while a later call repeats a failed one; leads the failure panel. */
   readonly retrying?: string;
+  /** Steps the agent declared. While the group runs and is open, its pending steps follow the calls, dimmed. */
+  readonly plan?: readonly AgentPlanStep[];
+  /** Stops the run. Offered beside the elapsed time while the group runs. */
+  readonly onStop?: () => void;
   readonly children?: ReactNode;
+}
+/** Seconds since `active` last became true, ticking once a second; undefined while idle. */
+function useElapsed(active: boolean): string | undefined {
+  const [start, setStart] = useState<number>();
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      setStart(undefined);
+      return;
+    }
+    const begun = Date.now();
+    setStart(begun);
+    setNow(begun);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [active]);
+  return active && start !== undefined ? formatElapsed(now - start) : undefined;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
 export function ToolActivityGroup({
@@ -270,6 +297,8 @@ export function ToolActivityGroup({
   onRetry,
   context,
   retrying,
+  plan,
+  onStop,
   children,
 }: ToolActivityGroupProps) {
   // Resolve once so the label, cue, live region and rows agree on each phase.
@@ -279,6 +308,10 @@ export function ToolActivityGroup({
   const summary = activitySummary(activities, label);
   // Sources move under their row while the group is open.
   const [open, setOpen] = useState(false);
+  const elapsed = useElapsed(summary.active);
+  const upcoming = summary.active
+    ? plan?.filter((step) => step.status === 'pending') ?? []
+    : [];
   const failed = summary.phase === 'error';
   const failures = activityFailures(activities, context);
   const receipts = receiptOutcomes(activities);
@@ -306,11 +339,14 @@ export function ToolActivityGroup({
           onToggle={(event) => setOpen(event.currentTarget.open)}
         >
           <summary>
+            {/* Open while running: a static count; the current step shimmers in its row. */}
             <span
               className="tp-tool-activity__label"
-              data-active={summary.active}
+              data-active={summary.active && !open}
             >
-              {summary.label}
+              {summary.active && open && label === undefined
+                ? workingLabel(activities)
+                : summary.label}
             </span>
             {summary.cue && (
               <span className="tp-tool-activity__cue">{summary.cue}</span>
@@ -326,8 +362,29 @@ export function ToolActivityGroup({
                 {open && <ToolOutcomes activities={[activity]} show="sources" />}
               </ToolActivity>
             ))}
+            {upcoming.map((step, index) => (
+              <p key={index} className="tp-tool-activity-group__plan-step">
+                {step.label}
+              </p>
+            ))}
           </div>
         </details>
+      )}
+      {summary.active && (elapsed !== undefined || onStop) && (
+        <div className="tp-tool-activity-group__progress">
+          {elapsed !== undefined && (
+            <span className="tp-tool-activity-group__elapsed">{elapsed}</span>
+          )}
+          {onStop && (
+            <button
+              type="button"
+              className="tp-tool-activity-group__stop"
+              onClick={onStop}
+            >
+              Stop
+            </button>
+          )}
+        </div>
       )}
       {activities.length > 0 && (
         <p

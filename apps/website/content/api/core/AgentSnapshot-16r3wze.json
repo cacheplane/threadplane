@@ -100,7 +100,17 @@
         },
         {
           "kind": "Content",
-          "text": ";\n} : never"
+          "text": ";\n    readonly plan?: readonly "
+        },
+        {
+          "kind": "Reference",
+          "text": "AgentPlanStep",
+          "canonicalReference": "@threadplane/core!AgentPlanStep:interface",
+          "href": "/docs/api/core/AgentPlanStep"
+        },
+        {
+          "kind": "Content",
+          "text": "[];\n} : never"
         },
         {
           "kind": "Content",
@@ -120,7 +130,7 @@
       "members": [],
       "source": {
         "path": "libs/core/src/contracts/agent-snapshot.ts",
-        "line": 11
+        "line": 12
       },
       "typeParameters": [
         {
@@ -137,12 +147,12 @@
       ],
       "typeTokenRange": {
         "startIndex": 10,
-        "endIndex": 19
+        "endIndex": 21
       }
     }
   ],
   "source": {
     "path": "libs/core/src/contracts/agent-snapshot.ts",
-    "line": 11
+    "line": 12
   }
 }
