@@ -14,13 +14,13 @@ Run the repository example to use them; they are not an npm installation recipe.
 
 - Put a model picker inside the composer.
 - Hold the chosen value and the open list in your own state.
-- Refuse a change when the application can't accept it.
+- Refuse a change when the application cannot accept it.
 - Know what the keyboard does before you ship it.
 
 ## Add a model picker to the composer
 
 `Select` is a small dropdown for one choice out of a few.
-The most common home for it is the composer, so let's start there.
+The most common home for it is the composer, so that is where this page starts.
 Pass it to [`ChatInput`](/docs/react/chat/components/chat-input) as `trailing` content and it sits between the draft and Send.
 
 ~~~tsx
@@ -66,7 +66,7 @@ There are two pieces of state here, and both are yours.
 `Select` never keeps either one for you.
 
 The model travels with the message because your `onSubmit` reads it.
-`Select` doesn't know about the agent, and choosing an option never starts any work.
+`Select` does not know about the agent, and choosing an option never starts any work.
 
 ## Why do I have to hold the open state?
 
@@ -74,11 +74,11 @@ For me, this is the part that feels like extra typing at first.
 It earns its keep the first time you need to close the list from somewhere else.
 
 A new conversation, a route change or a finished response can all set `open` to `false`.
-You don't need a ref or an imperative handle to do it.
+You do not need a ref or an imperative handle to do it.
 The cost is one more `useState` in every place you use a `Select`.
 
 **Always pass the value you get from `onOpenChange` back to `open`, or decide on purpose not to.**
-If you ignore it, the list won't open, and it won't close.
+If you ignore it, the list will not open, and it will not close.
 
 ## Refuse a change
 
@@ -86,16 +86,16 @@ If you ignore it, the list won't open, and it won't close.
 The trigger keeps showing the option that matches `value` until you change `value` yourself.
 
 In the example above, a choice made while a response is running is dropped.
-The list still closes, and the trigger still shows the model that's in use.
+The list still closes, and the trigger still shows the model that is in use.
 I think this is the right default for a model picker, because a model that changes halfway through an answer is hard to explain to the traveler.
 
-Choosing the option that's already selected closes the list and doesn't call `onValueChange`.
-A `disabled` option stays visible, can't be chosen and is skipped by the arrow keys.
+Choosing the option that is already selected closes the list and does not call `onValueChange`.
+A `disabled` option stays visible, cannot be chosen and is skipped by the arrow keys.
 
 ## What does the keyboard do?
 
 The trigger is a native button, so Tab reaches it in document order.
-Inside the composer, that's after the draft and before Send.
+Inside the composer, that is after the draft and before Send.
 
 - **Enter**, **Space** or **Arrow Down** on the trigger opens the list.
 - Focus starts on the selected option, or on the first enabled one.
@@ -113,11 +113,11 @@ The trigger and every option are `type="button"`, so a `Select` inside the compo
 The list renders at the end of the document body, not inside the composer.
 A composer usually sits in a scrolling column at the bottom of the window, and a list rendered in place would be clipped by it.
 
-The list opens above the trigger by default, since that's where the room is (a composer at the bottom of the screen doesn't leave much below it).
-It flips below when there isn't space above, and it stays inside the viewport on a narrow screen.
+The list opens above the trigger by default, since that is where the room is (a composer at the bottom of the screen does not leave much below it).
+It flips below when there is not space above, and it stays inside the viewport on a narrow screen.
 
 The catch is styling.
-A class on the composer won't reach the list, because the list isn't a descendant of the composer.
+A class on the composer will not reach the list, because the list is not a descendant of the composer.
 Use `className` for the trigger and `menuClassName` for the list.
 The list keeps the text direction, color scheme and font of the place it was opened from.
 
@@ -127,7 +127,7 @@ The list keeps the text direction, color scheme and font of the place it was ope
 The trigger reads the current option's label, or `placeholder` when `value` matches nothing.
 
 Option labels and descriptions are text.
-They're rendered as written, so markup in a label shows up as characters.
+They are rendered as written, so markup in a label shows up as characters.
 
 ## Conclusion
 
@@ -140,4 +140,4 @@ For a model picker, that means the model is one more piece of state your `onSubm
 - [ChatInput](/docs/react/chat/components/chat-input) covers the other places you can put your own controls around the draft.
 - The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) shows where a submitted message goes next.
 
-If the keyboard or the positioning doesn't hold up in your layout, let me know where it breaks.
+If the keyboard or the positioning does not hold up in your layout, let me know where it breaks.
