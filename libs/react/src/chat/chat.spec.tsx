@@ -368,6 +368,37 @@ describe('Chat', () => {
     expect(view.container.firstElementChild?.className).toBe('tp-chat mine');
   });
 
+  it('passes app-owned composer slots through and keeps them across snapshots', () => {
+    const { session, set } = fakeSession();
+    const view = render(
+      <Chat
+        session={session}
+        inputLeading={<span>Lead</span>}
+        inputTrailing={<button type="button">Tools</button>}
+        inputFooter={<p>Foot</p>}
+      />
+    );
+    const tools = view.getByRole('button', { name: 'Tools' });
+    expect(view.getByText('Lead').parentElement?.className).toBe(
+      'tp-chat-input__leading'
+    );
+    expect(tools.parentElement?.className).toBe('tp-chat-input__trailing');
+    expect(view.getByText('Foot').parentElement?.className).toBe(
+      'tp-chat-input__footer'
+    );
+    act(() => set({ status: 'running' }));
+    expect(view.getByRole('button', { name: 'Tools' })).toBe(tools);
+    expect(
+      Array.from(
+        view.container.querySelectorAll('.tp-chat-input__actions > *')
+      ).map((el) => el.className)
+    ).toEqual([
+      'tp-chat-input__trailing',
+      'tp-chat-input__stop',
+      'tp-chat-input__send',
+    ]);
+  });
+
   it('shows the session error as an alert', () => {
     const { session } = fakeSession({
       status: 'error',
