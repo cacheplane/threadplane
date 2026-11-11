@@ -62,6 +62,13 @@ const stableText = (value: unknown): string => {
     return String(value);
   }
 };
+/** Two calls repeat each other when they share a tool name and arguments. */
+const repeatKey = (call: ToolCall): string => call.name + '\0' + stableText(call.args);
+/** "Retrying toSorted read" from a declared label such as "Retry toSorted read". */
+const retryingText = (label: string): string => {
+  const rest = /^retry\b\s*(.*)$/i.exec(label.trim())?.[1];
+  return rest ? `Retrying ${rest}` : 'Retrying';
+};
 // Unique per instance, so each group body id is unique on the page.
 let nextChatToolCallsId = 0;
 
@@ -240,7 +247,7 @@ let nextChatToolCallsId = 0;
         (focusin)="keepGroupOpen(group.key)"
       >
         @for (tc of group.calls; track tc.id) {
-        <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" (toolRetry)="toolRetry.emit($event)">
+        <chat-tool-activity [activity]="activityFor(tc, !grouped)" [grouped]="grouped" [retrying]="grouped ? undefined : retryingFor([tc])" (toolRetry)="toolRetry.emit($event)">
           @if (!grouped) { @let resultTemplate = resultTemplateFor(tc.name); @if (resultTemplate) {
           <ng-container
             [ngTemplateOutlet]="resultTemplate"
@@ -257,6 +264,9 @@ let nextChatToolCallsId = 0;
       @if (summary.phase === 'error') {
       <!-- Ungrouped rows already show their own alert; only a group adds one. -->
       <div chatStatusPanel tone="danger" role="alert" class="tp-tool-activity__error">
+        @if (retryingFor(group.calls); as retryingLine) {
+        <p class="tp-tool-activity__label tp-tool-activity__retrying" data-active="true">{{ retryingLine }}</p>
+        }
         @for (failure of failuresFor(group.calls); track failure.key) {
         <p>{{ failure.text }}</p>
         @if (failure.retry; as retry) {
@@ -524,15 +534,23 @@ export class ChatToolCallsComponent {
       error: tc.error,
     };
   }
-  private readonly projectedActivities = computed(() => new Map(
+  /** Each call with the app's outcome applied, before a stale retry is withdrawn. */
+  private readonly resolvedActivities = computed(() => new Map(
     this.groups().filter(group => !group.templateRef && !group.subagent)
-      .flatMap(group => group.calls.map(call => [call.id, this.projectActivity(call)] as const))
+      .flatMap(group => group.calls.map(call => [call.id, this.resolveActivity(call)] as const))
   ));
+  private resolvedFor(tc: ToolCall): ToolActivityInfo {
+    return this.resolvedActivities().get(tc.id) ?? this.resolveActivity(tc);
+  }
   protected activityFor(tc: ToolCall, withOutcome = true): ToolActivityInfo {
-    const activity = this.projectedActivities().get(tc.id) ?? this.projectActivity(tc);
+    const resolved = this.resolvedFor(tc);
+    // Read agent-wide state only for a call that declares a retry, so ordinary rows stay isolated from later activity.
+    const declaresRetry = resolved.outcome?.status === 'failed' && !!resolved.outcome.retry;
+    const activity = declaresRetry && this.staleRetryIds().has(tc.id) ? withoutStaleRetry(resolved, NONE) : resolved;
     return withOutcome ? activity : { ...activity, outcome: undefined };
   }
-  private projectActivity(tc: ToolCall): ToolActivityInfo {
+  /** The call with the app's outcome applied, before a stale retry is withdrawn. */
+  private resolveActivity(tc: ToolCall): ToolActivityInfo {
     const delivery = this.message()?.delivery;
     const phase = toolActivityPhase(tc.status, delivery);
     const literal = (value: unknown): string => {
@@ -552,21 +570,36 @@ export class ChatToolCallsComponent {
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
       errorText: tc.error === undefined ? undefined : literal(tc.error),
     };
-    const resolved = resolveToolOutcome(activity, this.safeOutcome(activity));
-    // Read agent-wide state only for a call that declares a retry, so ordinary rows stay isolated from later activity.
-    const declaresRetry = resolved.outcome?.status === 'failed' && !!resolved.outcome.retry;
-    return declaresRetry && this.staleRetryIds().has(tc.id) ? withoutStaleRetry(resolved, NONE) : resolved;
+    return resolveToolOutcome(activity, this.safeOutcome(activity));
   }
   /** Calls whose declared retry is no longer offered: all while the agent works, else those a later call repeats. */
   private readonly staleRetryIds = computed((): ReadonlySet<string> => {
     const agent = this.agent();
     const all = agent.toolCalls();
     if (agent.isLoading()) return new Set(all.map((call) => call.id));
-    const key = (call: ToolCall) => call.name + '\0' + stableText(call.args);
     const last = new Map<string, string>();
-    for (const call of all) last.set(key(call), call.id);
-    return new Set(all.filter((call) => last.get(key(call)) !== call.id).map((call) => call.id));
+    for (const call of all) last.set(repeatKey(call), call.id);
+    return new Set(all.filter((call) => last.get(repeatKey(call)) !== call.id).map((call) => call.id));
   });
+  /**
+   * "Retrying toSorted read" while a later call repeats a failed call that declared a retry and has not
+   * finished yet. Reads agent-wide calls only for a group holding such a failure.
+   */
+  protected retryingFor(calls: readonly ToolCall[]): string | undefined {
+    const declared = calls.flatMap((call) => {
+      // The retry is withdrawn while the agent works, which is when it runs: read the declaration itself.
+      const outcome = this.resolvedFor(call).outcome;
+      return outcome?.status === 'failed' && outcome.retry ? [{ call, label: outcome.retry.label }] : [];
+    });
+    if (declared.length === 0) return undefined;
+    const all = this.agent().toolCalls();
+    for (const { call, label } of declared) {
+      const key = repeatKey(call);
+      const after = all.slice(all.findIndex((c) => c.id === call.id) + 1);
+      if (after.some((c) => repeatKey(c) === key && (c.status === 'pending' || c.status === 'running'))) return retryingText(label);
+    }
+    return undefined;
+  }
   /** A throwing app hook must not break the transcript; the call keeps its core phase. */
   private safeOutcome(activity: ToolActivityInfo): ToolActivityOutcome | undefined {
     try {

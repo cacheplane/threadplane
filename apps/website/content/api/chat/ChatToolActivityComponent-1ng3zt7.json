@@ -79,7 +79,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 246
+            "line": 250
           },
           "isStatic": false,
           "isReadonly": true,
@@ -125,7 +125,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 261
+            "line": 267
           },
           "isStatic": false,
           "isReadonly": true,
@@ -171,7 +171,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 248
+            "line": 252
           },
           "isStatic": false,
           "isReadonly": true,
@@ -227,7 +227,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 254
+            "line": 260
           },
           "isStatic": false,
           "isReadonly": true,
@@ -273,7 +273,53 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 255
+            "line": 261
+          },
+          "isStatic": false,
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "retrying",
+          "kind": "Property",
+          "canonicalReference": "@threadplane/chat!ChatToolActivityComponent#retrying:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retrying: "
+            },
+            {
+              "kind": "Content",
+              "text": "import(\"@angular/core\")."
+            },
+            {
+              "kind": "Reference",
+              "text": "InputSignal",
+              "canonicalReference": "@angular/core!InputSignal:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string | undefined>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Set by `chat-tool-calls` while a later call repeats this failed one: \"Retrying toSorted read\".",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
+            "line": 254
           },
           "isStatic": false,
           "isReadonly": true,
@@ -329,7 +375,7 @@
           "members": [],
           "source": {
             "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-            "line": 257
+            "line": 263
           },
           "isStatic": false,
           "isReadonly": true,
@@ -338,7 +384,7 @@
       ],
       "source": {
         "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-        "line": 187
+        "line": 188
       },
       "angular": {
         "selector": "chat-tool-activity",
@@ -354,6 +400,12 @@
             "alias": "grouped",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "retrying",
+            "alias": "retrying",
+            "required": false,
+            "type": "string | undefined"
           }
         ],
         "outputs": [
@@ -369,6 +421,6 @@
   ],
   "source": {
     "path": "libs/chat/src/lib/primitives/chat-tool-activity/chat-tool-activity.component.ts",
-    "line": 187
+    "line": 188
   }
 }

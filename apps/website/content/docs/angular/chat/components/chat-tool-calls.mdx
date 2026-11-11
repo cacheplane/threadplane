@@ -160,8 +160,9 @@ It hides it while anything is running, and removes it once a later call repeats 
 Your handler decides what a retry does.
 Send it as a new request in the same conversation, and have your backend run only the failed read again as a new call.
 Name the call in the label, such as **Retry toSorted read**, because the group may be collapsed above it.
+While that repeat call is still running, the failure panel leads with **Retrying toSorted read**, built from your label, and the line shimmers like the current step in the progress view. A label that does not start with "Retry" gives a plain **Retrying**.
 `<chat-tool-activity-group>` emits the same `(toolRetry)`, and takes a `context` input with every observed call so it can apply the same rule across messages.
-While a per-call retry is offered, the `<chat>` error banner drops its own **Retry**, because that one re-sends the whole request.
+While a per-call retry is offered, the `<chat>` error banner drops its own **Retry response**, because that one re-sends the whole request.
 
 I would not declare a retry for a write.
 A write that failed with an uncertain acknowledgment needs reconciliation before another attempt.

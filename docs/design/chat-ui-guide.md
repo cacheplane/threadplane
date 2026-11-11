@@ -347,7 +347,7 @@ Every component change checks:
 | Tool rows | Partly done. `toolLabel` receives the call's arguments, and grouped rows show only the Failed status word in the danger color. Open: sources still collect below the group instead of under their call | 6.2 |
 | Progress | Done in `chat-tool-calls`: current step with shimmer, elapsed time and Stop when collapsed; "Working · 1 of 3 done" and a step list when expanded. Open: upcoming steps from a declared plan, and elapsed time and Stop on the `chat-tool-activity-group` primitive, which has no agent | 6.3 |
 | Approvals | Mostly done. `chat-approval-card` takes `presentation="inline"` (a warning panel, or danger with `destructive`), named action labels, focus on the first action and back to the composer, the composer hint, and the one-line "Approved: save note" record after answering (session-only; not persisted with the thread). Open: the dialog is still the default | 6.4 |
-| Retry and receipts | Done for declared retry and receipts. Open: the "Retrying …" lead while a retry runs, and "Retry response" on run errors | 6.5, 6.6 |
+| Retry and receipts | Done. Declared retry, receipts, the "Retrying toSorted read" lead (with the progress shimmer) while a later call repeats the failed one, and "Retry response" on retryable run errors | 6.5, 6.6 |
 
 The viewport, welcome and sidebar-width tokens (`viewport-height`, `viewport-top`, `sidebar-width-drawer`, `welcome-*`) are set at runtime or are consumer knobs, so they have no default declaration by design.
 

@@ -162,6 +162,65 @@ describe('ChatComponent', () => {
     fixture.detectChanges();
     expect(root.querySelector('button.tp-tool-activity__retry')).toBeNull();
   });
+  describe('while a declared retry runs', () => {
+    const failedRead = { id: 'c', name: 'read', args: { id: 'sorted' }, status: 'complete' as const, result: { error: 'x' } };
+    function retrying(grouped: boolean, label = 'Retry sorted read') {
+      const agent = mockAgent({
+        messages: [
+          { id: 'a', role: 'assistant', content: 'Answer', toolCallIds: ['c'], delivery: completeDelivery('g', 'success') },
+          { id: 'b', role: 'assistant', content: '', toolCallIds: ['c2'], delivery: completeDelivery('g2', 'success') },
+        ],
+        toolCalls: [failedRead, { ...failedRead, id: 'c2', status: 'running' as const, result: undefined }],
+      });
+      agent.isLoading.set(true);
+      const fixture = TestBed.createComponent(ChatComponent);
+      fixture.componentRef.setInput('agent', agent);
+      fixture.componentRef.setInput('groupRelatedTools', grouped);
+      fixture.componentRef.setInput('toolOutcome', (activity: { id: string }) =>
+        activity.id === 'c' ? { status: 'failed', text: 'Read unavailable', retry: { label } } : undefined);
+      fixture.detectChanges();
+      return { agent, fixture, root: fixture.nativeElement as HTMLElement };
+    }
+    const retryingLines = (root: HTMLElement) =>
+      [...root.querySelectorAll<HTMLElement>('.tp-tool-activity__retrying')].map((line) => line.textContent!.trim());
+
+    it('leads the failed call with "Retrying …" from its label, with the progress shimmer', () => {
+      const { root } = retrying(false);
+      expect(retryingLines(root)).toEqual(['Retrying sorted read']);
+      const line = root.querySelector<HTMLElement>('.tp-tool-activity__retrying')!;
+      expect(line.dataset['active']).toBe('true');
+      expect(line.classList.contains('tp-tool-activity__label')).toBe(true);
+      // The explanation stays; the control itself is withdrawn while the agent works.
+      expect(root.textContent).toContain('Read unavailable');
+      expect(root.querySelector('button.tp-tool-activity__retry')).toBeNull();
+    });
+
+    it('leads a grouped failure panel the same way', () => {
+      const { root } = retrying(true);
+      expect(retryingLines(root)).toEqual(['Retrying sorted read']);
+      expect(root.querySelector('.tp-tool-activity__retrying')!.closest('[chatStatusPanel]')).toBeTruthy();
+    });
+
+    it('drops the line once the repeat call finishes', () => {
+      const { agent, fixture, root } = retrying(false);
+      agent.toolCalls.update((calls) => calls.map((call) => (call.id === 'c2' ? { ...call, status: 'complete' as const, result: 'ok' } : call)));
+      agent.isLoading.set(false);
+      fixture.detectChanges();
+      expect(retryingLines(root)).toEqual([]);
+    });
+
+    it('reads a plain "Retrying" when the label does not start with Retry', () => {
+      const { root } = retrying(false, 'Try the read again');
+      expect(retryingLines(root)).toEqual(['Retrying']);
+    });
+
+    it('shows no line when nothing repeats the failed call', () => {
+      const { agent, fixture, root } = retrying(false);
+      agent.toolCalls.update((calls) => calls.map((call) => (call.id === 'c2' ? { ...call, args: { id: 'other' } } : call)));
+      fixture.detectChanges();
+      expect(retryingLines(root)).toEqual([]);
+    });
+  });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
   });
