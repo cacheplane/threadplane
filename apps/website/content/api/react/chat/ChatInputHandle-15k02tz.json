@@ -60,7 +60,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/chat-input.tsx",
-            "line": 56
+            "line": 45
           },
           "overloadIndex": 1,
           "isOptional": false,
@@ -73,12 +73,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/chat-input.tsx",
-        "line": 55
+        "line": 44
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/chat-input.tsx",
-    "line": 55
+    "line": 44
   }
 }

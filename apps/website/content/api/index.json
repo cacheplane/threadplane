@@ -252,16 +252,6 @@
       "docLibrary": "chat"
     },
     {
-      "id": "react/a2ui",
-      "importPath": "@threadplane/react/a2ui",
-      "packageName": "@threadplane/react",
-      "project": "react",
-      "framework": "react",
-      "version": "0.0.0",
-      "status": "development",
-      "docLibrary": "a2ui"
-    },
-    {
       "id": "render",
       "importPath": "@threadplane/render",
       "packageName": "@threadplane/render",
@@ -4111,7 +4101,7 @@
       "canonicalReference": "@threadplane/chat!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolArgs",
@@ -6204,16 +6194,6 @@
       "summary": "Borrowed unique provider citations and optional accepted Markdown source definitions."
     },
     {
-      "name": "citationsWithToolSources",
-      "entrypointId": "react/chat",
-      "kind": "Function",
-      "href": "/docs/api/react/chat/citationsWithToolSources",
-      "canonicalReference": "@threadplane/react!citationsWithToolSources:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "A message's citations plus the sources its tool activities declare, for an application that\nrenders its own Sources panel. Pass the result to `Citations` and set `sources=\"panel\"` on the\nactivity so the sources are not repeated as links. A source the message already cites is not\nadded again; `snapshot` also counts the answer's Markdown source definitions.\nReturns `citations` itself when nothing is added."
-    },
-    {
       "name": "ConfirmDialog",
       "entrypointId": "react/chat",
       "kind": "Function",
@@ -6574,106 +6554,6 @@
       "summary": "Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information."
     },
     {
-      "name": "SubagentCard",
-      "entrypointId": "react/chat",
-      "kind": "Function",
-      "href": "/docs/api/react/chat/SubagentCard",
-      "canonicalReference": "@threadplane/react!SubagentCard:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "A child agent's name, status and message count, with its messages and tool activity behind one disclosure."
-    },
-    {
-      "name": "SubagentCardProps",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentCardProps",
-      "canonicalReference": "@threadplane/react!SubagentCardProps:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Borrowed child evidence, an optional card class and an optional app-owned text renderer."
-    },
-    {
-      "name": "SubagentEvidence",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentEvidence",
-      "canonicalReference": "@threadplane/react!SubagentEvidence:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Borrowed child evidence and the transcript that carries each child's attributed messages."
-    },
-    {
-      "name": "SubagentEvidenceMessage",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentEvidenceMessage",
-      "canonicalReference": "@threadplane/react!SubagentEvidenceMessage:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "The fields of one transcript message this projection reads; richer native messages are accepted as-is."
-    },
-    {
-      "name": "SubagentEvidenceRecord",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentEvidenceRecord",
-      "canonicalReference": "@threadplane/react!SubagentEvidenceRecord:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "The fields of one observed child this projection reads; richer native records are accepted as-is."
-    },
-    {
-      "name": "SubagentInfo",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentInfo",
-      "canonicalReference": "@threadplane/react!SubagentInfo:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Readonly evidence about one child agent. Does not own execution, sessions or persistence."
-    },
-    {
-      "name": "SubagentMessageInfo",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentMessageInfo",
-      "canonicalReference": "@threadplane/react!SubagentMessageInfo:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "One message a child agent produced, with the tool activity that message requested."
-    },
-    {
-      "name": "SubagentProjection",
-      "entrypointId": "react/chat",
-      "kind": "Interface",
-      "href": "/docs/api/react/chat/SubagentProjection",
-      "canonicalReference": "@threadplane/react!SubagentProjection:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Card data for each child in start order, and the transcript without the children's messages."
-    },
-    {
-      "name": "subagentsFromEvidence",
-      "entrypointId": "react/chat",
-      "kind": "Function",
-      "href": "/docs/api/react/chat/subagentsFromEvidence",
-      "canonicalReference": "@threadplane/react!subagentsFromEvidence:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Group each child's attributed messages under its start evidence, and separate them from the root transcript.\nStatus follows evidence only: finished is complete, an error is error, and a child with no terminal evidence\nis running while the root run is active and unknown afterwards. Messages attributed to a child with no start\nevidence are still removed from the root transcript and belong to no card."
-    },
-    {
-      "name": "SubagentStatus",
-      "entrypointId": "react/chat",
-      "kind": "TypeAlias",
-      "href": "/docs/api/react/chat/SubagentStatus",
-      "canonicalReference": "@threadplane/react!SubagentStatus:type",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Explicit presentation state supplied by an application or adapter, never inferred from literal payloads."
-    },
-    {
       "name": "SuggestionItem",
       "entrypointId": "react/chat",
       "kind": "Interface",
@@ -6911,7 +6791,7 @@
       "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
       "isDeprecated": false,
       "isTypeOnly": true,
-      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links."
+      "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links."
     },
     {
       "name": "ToolObservation",
@@ -6962,16 +6842,6 @@
       "isDeprecated": false,
       "isTypeOnly": false,
       "summary": "Builds a `toolOutcome` callback from one decoder per tool name.\nA decoder runs only for a complete call of its own tool that has a result, so\nrunning, stopped and failed calls and every undeclared tool stay literal.\nParsing is done once here; values such as `false`, `0`, `\"\"`, `[]` and `null`\nreach the decoder unchanged and mean nothing until it says so."
-    },
-    {
-      "name": "ToolSourcePlacement",
-      "entrypointId": "react/chat",
-      "kind": "TypeAlias",
-      "href": "/docs/api/react/chat/ToolSourcePlacement",
-      "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Where an activity's declared sources appear. `links` (the default) shows them under the activity.\n`panel` shows none here, for an application that lists them in its own Sources panel with\n`citationsWithToolSources`. `MessageList` and `Chat` already do this."
     },
     {
       "name": "TypingIndicator",
@@ -7262,36 +7132,6 @@
       "isDeprecated": false,
       "isTypeOnly": true,
       "summary": "Supplies plain before/after states for a bounded JSON Pointer diff and an optional comparison label."
-    },
-    {
-      "name": "a2uiBasicCatalog",
-      "entrypointId": "react/a2ui",
-      "kind": "Function",
-      "href": "/docs/api/react/a2ui/a2uiBasicCatalog",
-      "canonicalReference": "@threadplane/react!a2uiBasicCatalog:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "The display part of the A2UI basic catalog: Text, Image, Icon, Video,\nAudioPlayer, Row, Column, List, Card and Divider. None of them is a control.\nSpread it into your own registry to add or replace components."
-    },
-    {
-      "name": "A2uiSurface",
-      "entrypointId": "react/a2ui",
-      "kind": "Function",
-      "href": "/docs/api/react/a2ui/A2uiSurface",
-      "canonicalReference": "@threadplane/react!A2uiSurface:function(1)",
-      "isDeprecated": false,
-      "isTypeOnly": false,
-      "summary": "Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come\nfrom the basic catalog; a component the catalog lacks keeps its children.\nActions, inputs, function calls and child templates are not handled yet."
-    },
-    {
-      "name": "A2uiSurfaceProps",
-      "entrypointId": "react/a2ui",
-      "kind": "Interface",
-      "href": "/docs/api/react/a2ui/A2uiSurfaceProps",
-      "canonicalReference": "@threadplane/react!A2uiSurfaceProps:interface",
-      "isDeprecated": false,
-      "isTypeOnly": true,
-      "summary": "Supplies one published surface snapshot and, optionally, the components that render it."
     },
     {
       "name": "AngularComponentInputs",
