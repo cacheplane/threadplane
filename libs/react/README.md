@@ -526,6 +526,14 @@ slot adds no element.
 />
 ```
 
+Two more slots sit above the input surface: `banner` for a notice such as a
+paused or read-only state, then `attachments` for content that belongs to the
+next message, such as chosen files (`Chat`: `inputBanner`, `inputAttachments`).
+The composer never reads, sends or clears either one. Your `onSubmit` sends the
+files you hold and clears them, and a banner that should be announced carries
+its own `role="status"`. A model picker needs no slot of its own: pass a
+`Select` as `trailing`.
+
 Slot content sits inside the composer form and is otherwise untouched: it keeps
 its own state across drafts and submissions, stays enabled while the composer is
 `disabled` or `busy`, and supplies its own names and focus styles. Give slot

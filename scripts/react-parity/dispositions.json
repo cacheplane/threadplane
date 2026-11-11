@@ -2387,7 +2387,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/input.tsx",
-      "reason": "Native component. Draft control, all projection slots, IME/Shift+Enter, input blocking, stop, resize and focus ref. React ChatInput now has leading, trailing and footer slots; banner, attachment and model-select slots remain open."
+      "reason": "Native component. Draft control, all projection slots, IME/Shift+Enter, input blocking, stop, resize and focus ref. React ChatInput now has banner, attachments, leading, trailing and footer slots; a model picker is trailing content (verified with the installed Select), not a separate slot."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-interrupt/chat-interrupt.component.ts#ChatInterruptComponent",
@@ -5546,7 +5546,7 @@
       "treatment": "react",
       "status": "planned",
       "target": "libs/react/src/chat/input.tsx",
-      "reason": "Native component. Draft control, all projection slots, IME/Shift+Enter, input blocking, stop, resize and focus ref. React ChatInput now has leading, trailing and footer slots; banner, attachment and model-select slots remain open."
+      "reason": "Native component. Draft control, all projection slots, IME/Shift+Enter, input blocking, stop, resize and focus ref. React ChatInput now has banner, attachments, leading, trailing and footer slots; a model picker is trailing content (verified with the installed Select), not a separate slot."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatInterruptComponent",
@@ -14624,7 +14624,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned banner and attachments slots above the input surface (Chat: inputBanner, inputAttachments) are verified in DOM and an installed browser fixture. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatInputHandle",
@@ -14635,7 +14635,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; deferred submit focus preserves user/application handoffs and ignores unmounted/replaced composers. Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned banner and attachments slots above the input surface (Chat: inputBanner, inputAttachments) are verified in DOM and an installed browser fixture. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatInputProps",
@@ -14646,7 +14646,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned banner and attachments slots above the input surface (Chat: inputBanner, inputAttachments) are verified in DOM and an installed browser fixture. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#MessageList",
@@ -14821,7 +14821,7 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Presentational chat composer (props only): draft, submit/stop, IME-safe keys; composed by Chat and styled by the opt-in chat stylesheet.",
-      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
+      "note": "Draft handling, IME-safe keys, submit/stop/busy gating, focus return and auto-resize are verified with real DOM tests; Chat composition is verified in chat.spec. SSR and publication remain incomplete. App-owned banner and attachments slots above the input surface (Chat: inputBanner, inputAttachments) are verified in DOM and an installed browser fixture. App-owned leading, trailing and footer slots (Chat: inputLeading, inputTrailing, inputFooter) are verified with DOM, StrictMode, server-render and packed-declaration tests and dogfooded by the native submission status; banner, attachment and model-select slots remain open."
     },
     {
       "id": "source:libs/react/src/chat/chat.tsx",

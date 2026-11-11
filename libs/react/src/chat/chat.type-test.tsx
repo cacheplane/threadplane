@@ -30,6 +30,8 @@ ok.onRetry = () => undefined;
 ok.className = 'x';
 <Chat
   session={session}
+  inputBanner="Paused"
+  inputAttachments={<ul />}
   inputLeading={<span />}
   inputTrailing={null}
   inputFooter="Saved"

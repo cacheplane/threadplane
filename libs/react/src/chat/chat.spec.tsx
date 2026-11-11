@@ -373,6 +373,8 @@ describe('Chat', () => {
     const view = render(
       <Chat
         session={session}
+        inputBanner={<p>Notice</p>}
+        inputAttachments={<p>Files</p>}
         inputLeading={<span>Lead</span>}
         inputTrailing={<button type="button">Tools</button>}
         inputFooter={<p>Foot</p>}
@@ -383,6 +385,12 @@ describe('Chat', () => {
       'tp-chat-input__leading'
     );
     expect(tools.parentElement?.className).toBe('tp-chat-input__trailing');
+    expect(view.getByText('Notice').parentElement?.className).toBe(
+      'tp-chat-input__banner'
+    );
+    expect(view.getByText('Files').parentElement?.className).toBe(
+      'tp-chat-input__attachments'
+    );
     expect(view.getByText('Foot').parentElement?.className).toBe(
       'tp-chat-input__footer'
     );
