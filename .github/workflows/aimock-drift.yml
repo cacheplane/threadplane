@@ -46,7 +46,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Run @drift subset against the live provider
         id: drift-run
         env:

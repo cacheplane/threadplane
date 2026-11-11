@@ -51,7 +51,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
+    'bba29d60e65dd96a1700a2bd18850d179ab73d3f19178d687de05d9e7380af24',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
@@ -2465,11 +2465,13 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
     assert.equal(installs.length, file === 'ci.yml' ? 12 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
+      // The helper keeps the command when the package hosts resolve and avoids APT when they do not.
+      assert.match(step, /^        run: node scripts\/install-ci-browser\.mjs npx playwright install --with-deps (chromium|firefox)$/m);
       assert.match(steps[index - 1], /name: Configure bounded Ubuntu package downloads/);
       assert.match(steps[index - 1], /sudo "\$\(command -v node\)" scripts\/configure-ci-apt\.mjs/);
       assert.equal(steps[index - 1].match(/^        if: (.*)$/m)?.[1], step.match(/^        if: (.*)$/m)?.[1], 'setup and installation share any existing guard');
     }
   }
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs scripts\/install-ci-browser\.spec\.mjs/);
 });

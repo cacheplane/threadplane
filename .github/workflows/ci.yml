@@ -101,7 +101,7 @@ jobs:
       # classifier walk.
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-ci-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
@@ -320,7 +320,7 @@ jobs:
       - name: Install Chromium for packed runtime consumers
         if: matrix.lane == 'packages'
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Verify native same-document session bindings
         if: matrix.lane == 'packages'
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
@@ -441,7 +441,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Verify native conversation example
         run: |
           # React workers reuse verified output with independent fixture ports.
@@ -483,7 +483,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Generate, install, build, and run consumer
         run: >-
           npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
@@ -766,7 +766,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
       - name: Configure bounded Ubuntu package downloads
         if: matrix.shard == 1
@@ -774,7 +774,7 @@ jobs:
       - name: Install Firefox for the Angular list layout regression
         if: matrix.shard == 1
         timeout-minutes: 10
-        run: npx playwright install --with-deps firefox
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps firefox
       - name: Verify Angular list wrappers in Firefox
         if: matrix.shard == 1
         run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"
@@ -862,7 +862,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache --skipInstall
       - name: Upload Playwright trace on failure
         if: failure()
@@ -1054,7 +1054,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Verify React cockpit source
         if: endsWith(matrix.cap.angular, '-react')
         run: |
@@ -1189,7 +1189,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Run local Website suite
         run: |
           preparation=$(mktemp -d)
@@ -1231,7 +1231,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       # The public-copy gate reads served output, and `next dev` serves a
       # different bundle than production. Run it a second time against a real
       # production build so a claim that only appears in the built output — in a
@@ -1458,7 +1458,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
@@ -1905,7 +1905,7 @@ jobs:
       - name: Install Playwright browsers
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Prepare website Vercel project
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: |
@@ -2321,7 +2321,7 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: node scripts/install-ci-browser.mjs npx playwright install --with-deps chromium
       - name: Run production smoke tests
         run: npx playwright test apps/website/e2e/platform-production-smoke.spec.ts --config apps/website/playwright.config.ts --reporter=list
         env:
