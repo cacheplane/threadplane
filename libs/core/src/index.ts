@@ -4,6 +4,8 @@ export type {
   AgentSubmitOptions,
 } from './contracts/agent-session.js';
 export type { AgentSnapshot, AgentStatus } from './contracts/agent-snapshot.js';
+export type { AgentPlanStep } from './contracts/plan.js';
+export { agentPlanFromState } from './contracts/plan.js';
 export type { Message, Role } from './contracts/message.js';
 export type { Citation } from './contracts/citation.js';
 export {

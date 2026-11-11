@@ -2187,6 +2187,61 @@
   list-style: none;
 }
 .tp-tool-activity-group__details > summary::-webkit-details-marker { display:none; }
+/* Progress view: elapsed time and Stop sit on the summary's line while work runs. */
+.tp-tool-activity-group[data-active='true'] {
+  position: relative;
+}
+.tp-tool-activity-group[data-active='true'] > .tp-tool-activity-group__details > summary {
+  padding-inline-end: 8rem;
+}
+.tp-tool-activity-group__progress {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.tp-tool-activity-group__elapsed {
+  color: var(--tp-chat-muted, GrayText);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tp-tool-activity-group__stop {
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 1px solid var(--tp-chat-border, CanvasText);
+  border-radius: var(--tp-chat-radius-sm);
+  background: transparent;
+  color: var(--tp-chat-text, CanvasText);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tp-tool-activity-group__stop:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.tp-tool-activity__heading > .tp-tool-activity__label {
+  white-space: normal;
+}
+.tp-tool-activity-group__items .tp-tool-activity[data-phase='complete'] > .tp-tool-activity__heading > .tp-tool-activity__label::before {
+  content: '✓' / '';
+  margin-inline-end: 6px;
+  color: var(--tp-chat-success, light-dark(#15803d, #4ade80));
+}
+.tp-tool-activity-group__items .tp-tool-activity[data-phase='pending'] > .tp-tool-activity__heading > .tp-tool-activity__label,
+.tp-tool-activity-group__plan-step {
+  color: var(--tp-chat-muted, GrayText);
+}
+.tp-tool-activity-group__plan-step {
+  margin: 12px 0 0;
+  font-weight: 500;
+}
+@media (pointer: coarse) {
+  .tp-tool-activity-group__stop { min-height: 44px; }
+}
 .tp-tool-activity-group__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
 .tp-tool-activity-group__details[open] > summary::before { transform:rotate(45deg); }
 .tp-tool-activity-group__details > summary > span + span {

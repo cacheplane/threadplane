@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { MessageRow } from '@threadplane/content/messages';
+import type { AgentPlanStep } from '@threadplane/core';
 import { Markdown } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import {
@@ -78,6 +79,10 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
+  /** Steps the agent declared (`snapshot.plan`); the current turn's running group lists the pending ones. */
+  readonly plan?: readonly AgentPlanStep[];
+  /** Stops the run; the current turn's running group offers it beside the elapsed time. */
+  readonly onStop?: () => void;
   /** App-authored human labels from the tool name and the call's arguments, such as "Read Array.prototype.toSorted"; keep this function stable like renderMessage. */
   readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed. Keep stable; custom renderMessage retains full ownership. */
@@ -265,6 +270,8 @@ function RowView<TRow extends MessageRow>({
   staleRetries,
   subagents = NO_SUBAGENTS,
   retrying,
+  plan,
+  onStop,
 }: {
   readonly row: TRow;
   readonly current: boolean;
@@ -290,6 +297,8 @@ function RowView<TRow extends MessageRow>({
   readonly subagents?: readonly SubagentInfo[];
   /** Failed call IDs a later running call is repeating, joined by newlines. */
   readonly retrying?: string;
+  readonly plan?: readonly AgentPlanStep[];
+  readonly onStop?: () => void;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -352,6 +361,8 @@ function RowView<TRow extends MessageRow>({
     if (last && 'activities' in last) last.activities.push(activity);
     else runs.push({ activities: [activity] });
   });
+  // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
+  const planGroup = [...runs].reverse().find((run) => 'activities' in run);
   return (
     <ChatMessage
       role={row.role}
@@ -393,6 +404,8 @@ function RowView<TRow extends MessageRow>({
                   key={run.activities[0].id}
                   activities={run.activities}
                   renderResult={renderToolResult}
+                  plan={run === planGroup ? plan : undefined}
+                  onStop={run === planGroup ? onStop : undefined}
                   onRetry={onToolRetry}
                   sources={sourcePlacement}
                   retrying={run.activities
@@ -446,6 +459,8 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   renderToolCall,
   renderToolResult,
   onToolRetry,
+  plan,
+  onStop,
   subagents,
   children,
   renderScrollControl,
@@ -563,6 +578,8 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               staleRetries={staleRetries?.[index]}
               subagents={rowSubagents?.[index]}
               retrying={retrying?.[index]}
+              plan={index === rows.length - 1 ? plan : undefined}
+              onStop={index === rows.length - 1 ? onStop : undefined}
             />
           ))}
           {children}

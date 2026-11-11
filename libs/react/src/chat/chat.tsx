@@ -1,4 +1,5 @@
 'use client';
+import { useCallback } from 'react';
 import type { AgentSession } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
@@ -76,6 +77,10 @@ export function Chat({
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  // Stable so the current transcript row keeps its memo while work runs.
+  const stop = useCallback(() => {
+    session.stop().catch(ignore);
+  }, [session]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -103,6 +108,8 @@ export function Chat({
         renderToolResult={renderToolResult}
         subagents={subagents}
         onToolRetry={onToolRetry}
+        plan={snapshot.plan}
+        onStop={snapshot.status === 'running' ? stop : undefined}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
