@@ -10295,6 +10295,14 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/chat/src/lib/compositions/chat-approval-card/approval-records.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
       "id": "source:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts",
       "taskIds": [
         "T28"
