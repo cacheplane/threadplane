@@ -260,6 +260,26 @@ test('CLI check fails on drift without changing either manifest', t => {
   assert.deepEqual(['baseline.json', 'dispositions.json'].map(path => readFileSync(join(root, path), 'utf8')), before);
 });
 
+test('CLI check with --drift warn reports fact drift but still enforces ownership', t => {
+  const { root, collect, put } = fixture(t), baseline = collect();
+  execFileSync('git', ['add', '.'], { cwd: root });
+  execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture'], { cwd: root });
+  baseline.baselineHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  put('baseline.json', JSON.stringify(baseline));
+  put('dispositions.json', JSON.stringify(ownership(baseline)));
+  const check = () => spawnSync(process.execPath, ['scripts/react-parity/inventory.mjs', '--check', '--drift', 'warn', '--root', root, '--baseline', join(root, 'baseline.json'), '--dispositions', join(root, 'dispositions.json')], { encoding: 'utf8' });
+  const edited = baseline.rows.find(row => row.kind === 'source' || row.path?.startsWith('libs/sample/src/'));
+  put(edited.path, `${readFileSync(join(root, edited.path), 'utf8')}\n// edited\n`);
+  const drifted = check();
+  assert.equal(drifted.status, 0, drifted.stderr);
+  assert.match(drifted.stderr, /Baseline facts drifted on \d+ row/);
+  put('libs/sample/src/new.ts', 'export const newFile = true;');
+  const unowned = check();
+  assert.equal(unowned.status, 1);
+  assert.match(unowned.stderr, /Missing disposition: source:libs\/sample\/src\/new.ts/);
+  assert.doesNotMatch(unowned.stderr, /Added source:/);
+});
+
 test('CLI help documents check, explicit fact regeneration, and scope without scanning', () => {
   const result = spawnSync(process.execPath, ['scripts/react-parity/inventory.mjs', '--help'], { encoding: 'utf8' });
   assert.equal(result.status, 0);
