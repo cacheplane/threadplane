@@ -98,8 +98,60 @@ export interface ApprovalRecordProps {
   readonly className?: string;
 }
 
+/**
+ * One answered approval for `MessageList`'s and `Chat`'s `approvalRecords`: rendered as an
+ * `ApprovalRecord` directly after the row whose id is `afterId`, usually the assistant message the
+ * approval followed. Without `afterId`, or when that row is gone, it renders after the last row.
+ */
+export interface ApprovalRecordEntry extends ApprovalRecordProps {
+  readonly afterId?: string;
+}
+
+/**
+ * Groups records by the row they follow; a record whose `afterId` names no present row goes under
+ * `undefined`, rendered after the last row.
+ * @internal
+ */
+export function approvalRecordsByRow(
+  records: readonly ApprovalRecordEntry[] | undefined,
+  rowIds: Iterable<string>
+): ReadonlyMap<string | undefined, readonly ApprovalRecordEntry[]> {
+  const after = new Map<string | undefined, ApprovalRecordEntry[]>();
+  if (!records?.length) return after;
+  const ids = new Set(rowIds);
+  for (const record of records) {
+    const anchor =
+      record.afterId !== undefined && ids.has(record.afterId)
+        ? record.afterId
+        : undefined;
+    after.set(anchor, [...(after.get(anchor) ?? []), record]);
+  }
+  return after;
+}
+
+/** Renders the records grouped under one anchor. @internal */
+export function renderApprovalRecords(
+  grouped: ReadonlyMap<string | undefined, readonly ApprovalRecordEntry[]>,
+  anchor: string | undefined
+): ReactNode {
+  return grouped
+    .get(anchor)
+    ?.map((record, index) => (
+      <ApprovalRecord
+        key={`record-${index}`}
+        verdict={record.verdict}
+        label={record.label}
+        className={record.className}
+      />
+    ));
+}
+
 /** Muted transcript line for an answered approval. The app decides when to render it. */
-export function ApprovalRecord({ verdict, label, className }: ApprovalRecordProps) {
+export function ApprovalRecord({
+  verdict,
+  label,
+  className,
+}: ApprovalRecordProps) {
   const verb = verdict === 'approved' ? 'Approved' : 'Declined';
   return (
     <p

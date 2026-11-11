@@ -1,5 +1,6 @@
 'use client';
 import {
+  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -23,6 +24,11 @@ import { resolveToolOutcome, withoutStaleRetry } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
 import { Citations } from './citations.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
+import {
+  approvalRecordsByRow,
+  renderApprovalRecords,
+  type ApprovalRecordEntry,
+} from './approval-card.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -91,6 +97,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * nothing is running and no later call repeats the same tool and arguments. Without it no retry control renders. Keep stable.
    */
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
+  /**
+   * Answered approvals, each rendered as a one-line `ApprovalRecord` after the row its `afterId`
+   * names, or after the last row when that row is absent. Records stay where the app put them while
+   * the run continues below.
+   */
+  readonly approvalRecords?: readonly ApprovalRecordEntry[];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -166,7 +178,9 @@ function retryingByRow(rows: readonly MessageRow[]): readonly string[] {
   calls.forEach(({ call }, i) => {
     if (
       call.status === 'error' || call.status === 'complete'
-        ? calls.slice(i + 1).some((later) => later.running && key(later.call) === key(call))
+        ? calls
+            .slice(i + 1)
+            .some((later) => later.running && key(later.call) === key(call))
         : false
     )
       repeating.add(call.id);
@@ -329,9 +343,18 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   onToolRetry,
   plan,
   onStop,
+  approvalRecords,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
+  const recordsAfter = useMemo(
+    () =>
+      approvalRecordsByRow(
+        approvalRecords,
+        rows.map((row) => row.id)
+      ),
+    [approvalRecords, rows]
+  );
   const staleRetries = useMemo(
     () => (onToolRetry ? staleRetriesByRow(rows) : undefined),
     [onToolRetry, rows]
@@ -414,7 +437,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       el.scrollTop = el.scrollHeight;
       lastScrollTop.current = el.scrollTop;
     }
-  }, [rows, children]);
+  }, [rows, children, approvalRecords]);
   return (
     <>
       <div
@@ -426,23 +449,26 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       >
         <div ref={content}>
           {rows.map((row, index) => (
-            <Row
-              key={row.id}
-              row={row}
-              current={index === rows.length - 1}
-              prevRole={rows[index - 1]?.role}
-              renderMessage={renderMessage}
-              groupRelatedTools={groupRelatedTools}
-              toolLabel={toolLabel}
-              toolOutcome={toolOutcome}
-              renderToolResult={renderToolResult}
-              onToolRetry={onToolRetry}
-              staleRetries={staleRetries?.[index]}
-              retrying={retrying?.[index]}
-              plan={index === rows.length - 1 ? plan : undefined}
-              onStop={index === rows.length - 1 ? onStop : undefined}
-            />
+            <Fragment key={row.id}>
+              <Row
+                row={row}
+                current={index === rows.length - 1}
+                prevRole={rows[index - 1]?.role}
+                renderMessage={renderMessage}
+                groupRelatedTools={groupRelatedTools}
+                toolLabel={toolLabel}
+                toolOutcome={toolOutcome}
+                renderToolResult={renderToolResult}
+                onToolRetry={onToolRetry}
+                staleRetries={staleRetries?.[index]}
+                retrying={retrying?.[index]}
+                plan={index === rows.length - 1 ? plan : undefined}
+                onStop={index === rows.length - 1 ? onStop : undefined}
+              />
+              {renderApprovalRecords(recordsAfter, row.id)}
+            </Fragment>
           ))}
+          {renderApprovalRecords(recordsAfter, undefined)}
           {children}
         </div>
       </div>

@@ -518,4 +518,12 @@ describe('Chat approval slot', () => {
     expect(textbox.placeholder).toBe('Ask anything');
     expect(document.activeElement).toBe(textbox);
   });
+  it('renders answered approval records in the transcript', () => {
+    const { session } = fakeSession({ messages: [assistant('a', 'Saving.')] });
+    const view = render(
+      <Chat session={session} approvalRecords={[{ afterId: 'a', verdict: 'approved', label: 'Save note' }]} />
+    );
+    const record = view.getByText('Approved: Save note');
+    expect(record.closest('.tp-chat-list')).toBeTruthy();
+  });
 });

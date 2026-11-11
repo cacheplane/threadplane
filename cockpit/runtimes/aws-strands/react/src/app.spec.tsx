@@ -199,3 +199,62 @@ it('cleanup failure requires reload and leaves Send, New and decision controls r
   h.view.unmount();
   expect(h.app.dispose).toHaveBeenCalledTimes(1);
 });
+it.each([
+  ['Approve', 'approved'],
+  ['Decline', 'declined'],
+] as const)(
+  'records %s in the transcript and returns focus to the enabled composer',
+  (name, verdict) => {
+    const h = setup(),
+      a = captureApproval(
+        paused(),
+        captureTurn(running(), 'thread', undefined, [])!
+      )!;
+    const rows = [
+      { id: 'ask', role: 'user' as const, content: 'Book the review.' },
+    ];
+    act(() =>
+      h.update({
+        rows,
+        status: 'pending',
+        canSend: false,
+        canRespond: true,
+        approval: a,
+      })
+    );
+    const transcript = h.view.getByRole('region', { name: 'Conversation' });
+    // The pending approval renders at the end of the transcript.
+    expect(
+      transcript.contains(
+        h.view.getByRole('region', { name: 'Meeting approval' })
+      )
+    ).toBe(true);
+    h.app.decide.mockImplementation(async () =>
+      h.update({ busy: true, canRespond: false, status: 'running' })
+    );
+    fireEvent.click(h.view.getByRole('button', { name }));
+    act(() =>
+      h.update({
+        rows: [
+          ...rows,
+          { id: 'reply', role: 'assistant' as const, content: 'Settled.' },
+        ],
+        approval: undefined,
+        busy: false,
+        canSend: true,
+        status: verdict,
+      })
+    );
+    const records = transcript.querySelectorAll('.tp-approval-record');
+    expect(records).toHaveLength(1);
+    expect(records[0].textContent).toBe(
+      verdict === 'approved' ? 'Approved' : 'Declined'
+    );
+    expect(records[0].closest('li')?.textContent).toContain('Book the review.');
+    expect(document.activeElement).toBe(
+      h.view.getByRole('textbox', { name: 'Message' })
+    );
+    act(() => h.update({ generation: 5 }));
+    expect(transcript.querySelector('.tp-approval-record')).toBeNull();
+  }
+);

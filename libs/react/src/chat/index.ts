@@ -105,6 +105,7 @@ export {
   ApprovalRecord,
   type ApprovalCardAction,
   type ApprovalCardProps,
+  type ApprovalRecordEntry,
   type ApprovalRecordProps,
 } from './approval-card.js';
 export { Chat, type ChatProps } from './chat.js';

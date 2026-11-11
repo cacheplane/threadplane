@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { AgentSession } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
-import { ChatInput, type ChatInputHandle, type ChatInputProps } from './chat-input.js';
+import {
+  ChatInput,
+  type ChatInputHandle,
+  type ChatInputProps,
+} from './chat-input.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import { MessageList, type MessageListProps } from './message-list.js';
@@ -39,6 +43,8 @@ export interface ChatProps
    * composer. The app decides when it is pending and what answering does.
    */
   readonly approval?: ReactNode;
+  /** Answered approvals as one-line records in the transcript; see `MessageListProps.approvalRecords`. */
+  readonly approvalRecords?: MessageListProps['approvalRecords'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -65,6 +71,7 @@ export function Chat({
   inputTrailing,
   inputFooter,
   approval,
+  approvalRecords,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
@@ -74,7 +81,8 @@ export function Chat({
   }, [session]);
   // Answering removes the approval and its focused button; continue in the composer.
   const composer = useRef<ChatInputHandle>(null);
-  const pending = approval !== undefined && approval !== null && approval !== false;
+  const pending =
+    approval !== undefined && approval !== null && approval !== false;
   const hadApproval = useRef(pending);
   useEffect(() => {
     if (hadApproval.current && !pending) composer.current?.focus();
@@ -93,6 +101,7 @@ export function Chat({
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
+        approvalRecords={approvalRecords}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
@@ -131,7 +140,9 @@ export function Chat({
         ref={composer}
         key={sessionKey(session)}
         {...input}
-        placeholder={pending ? 'Answer the approval to continue' : input.placeholder}
+        placeholder={
+          pending ? 'Answer the approval to continue' : input.placeholder
+        }
         leading={inputLeading}
         trailing={inputTrailing}
         footer={inputFooter}
