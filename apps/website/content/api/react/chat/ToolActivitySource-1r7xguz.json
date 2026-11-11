@@ -6,7 +6,7 @@
   "canonicalReference": "@threadplane/react!ToolActivitySource:interface",
   "isDeprecated": false,
   "isTypeOnly": true,
-  "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links.",
+  "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links.",
   "declarations": [
     {
       "name": "ToolActivitySource",
@@ -19,7 +19,7 @@
         }
       ],
       "docs": {
-        "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs render as links.",
+        "summary": "An application-authored source for a confirmed tool outcome. Only absolute HTTP(S) URLs are shown.\nInside a message, declared sources are listed once in its Sources panel; a standalone activity shows them as links.",
         "remarks": "",
         "deprecated": "",
         "returns": "",
@@ -29,6 +29,78 @@
         "typeParams": []
       },
       "members": [
+        {
+          "name": "iconUrl",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivitySource#iconUrl:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly iconUrl?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "The source's own icon (absolute URL or `data:` URI) for the Sources panel. Never fetched or guessed by the library.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 16
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "snippet",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivitySource#snippet:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly snippet?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "A short excerpt shown on the source's card in the Sources panel.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-outcome.ts",
+            "line": 14
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
         {
           "name": "title",
           "kind": "PropertySignature",
@@ -60,7 +132,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 5
+            "line": 11
           },
           "isReadonly": true,
           "isOptional": false
@@ -96,7 +168,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-outcome.ts",
-            "line": 6
+            "line": 12
           },
           "isReadonly": true,
           "isOptional": false
@@ -104,12 +176,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-outcome.ts",
-        "line": 4
+        "line": 10
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-outcome.ts",
-    "line": 4
+    "line": 10
   }
 }

@@ -16,6 +16,7 @@ import {
   receiptOutcomes,
   retryableToolIds,
   toolOutcomes,
+  toolSourceCitations,
   withoutStaleRetry,
 } from './tool-outcome';
 
@@ -50,7 +51,10 @@ const saved: ToolActivityInfo = {
 describe('toolOutcomes', () => {
   const decode = vi.fn(({ args, result }) =>
     (result as { error?: string } | null)?.error
-      ? { status: 'failed' as const, text: `${(args as { id: string }).id} failed` }
+      ? {
+          status: 'failed' as const,
+          text: `${(args as { id: string }).id} failed`,
+        }
       : undefined
   );
   const outcome = toolOutcomes({ read_reference: decode });
@@ -63,9 +67,15 @@ describe('toolOutcomes', () => {
     ...patch,
   });
   it('hands a complete call of a declared tool its parsed arguments and result', () => {
-    expect(outcome(call({}))).toEqual({ status: 'failed', text: 'sorted failed' });
+    expect(outcome(call({}))).toEqual({
+      status: 'failed',
+      text: 'sorted failed',
+    });
     expect(decode).toHaveBeenLastCalledWith(
-      expect.objectContaining({ args: { id: 'sorted' }, result: { error: 'x' } })
+      expect.objectContaining({
+        args: { id: 'sorted' },
+        result: { error: 'x' },
+      })
     );
   });
   it('never runs a decoder for another tool, an unsettled call or a missing result', () => {
@@ -93,8 +103,18 @@ describe('toolOutcomes', () => {
     for (const resultText of ['false', '0', '""', '[]', 'null', 'plain text'])
       literal(call({ resultText, argumentsText: '{' }));
     expect(seen).toEqual([
-      false, undefined, 0, undefined, '', undefined, [], undefined, null, undefined,
-      'plain text', undefined,
+      false,
+      undefined,
+      0,
+      undefined,
+      '',
+      undefined,
+      [],
+      undefined,
+      null,
+      undefined,
+      'plain text',
+      undefined,
     ]);
   });
 });
@@ -104,15 +124,23 @@ describe('declared retry rules', () => {
     const failed = read('a', 'sorted', 'error');
     expect([...retryableToolIds([failed])]).toEqual(['a']);
     expect([
-      ...retryableToolIds([failed], [
-        failed,
-        { ...read('b', 'sorted', 'complete'), argumentsText: '{ "id": "sorted" }' },
-      ]),
+      ...retryableToolIds(
+        [failed],
+        [
+          failed,
+          {
+            ...read('b', 'sorted', 'complete'),
+            argumentsText: '{ "id": "sorted" }',
+          },
+        ]
+      ),
     ]).toEqual([]);
     expect([
       ...retryableToolIds([failed], [failed, read('b', 'signals', 'complete')]),
     ]).toEqual(['a']);
-    expect([...retryableToolIds([read('a', 'sorted', 'error', false)])]).toEqual([]);
+    expect([
+      ...retryableToolIds([read('a', 'sorted', 'error', false)]),
+    ]).toEqual([]);
   });
   it('offers nothing while any call is pending or running', () => {
     const failed = read('a', 'sorted', 'error');
@@ -152,12 +180,26 @@ describe('declared retry rules', () => {
 
 @Component({
   standalone: true,
-  imports: [ChatToolActivityComponent, ChatToolActivityGroupComponent, ChatStatusPanelComponent],
-  template: `<chat-tool-activity-group [activities]="activities()" (toolRetry)="retried.push($event.id)" />
+  imports: [
+    ChatToolActivityComponent,
+    ChatToolActivityGroupComponent,
+    ChatStatusPanelComponent,
+  ],
+  template: `<chat-tool-activity-group
+      [activities]="activities()"
+      (toolRetry)="retried.push($event.id)"
+    />
     @if (single(); as activity) {
-    <chat-tool-activity [activity]="activity" (toolRetry)="retried.push($event.id)" />
+    <chat-tool-activity
+      [activity]="activity"
+      (toolRetry)="retried.push($event.id)"
+    />
     }
-    <chat-status-panel tone="warning" lead="Waiting for your approval." role="status">
+    <chat-status-panel
+      tone="warning"
+      lead="Waiting for your approval."
+      role="status"
+    >
       <p>Save the comparison note?</p>
       <button chatStatusPanelActions type="button">Save note</button>
     </chat-status-panel>
@@ -175,8 +217,9 @@ describe('declared retry and receipts in the primitives', () => {
     fixture.detectChanges();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   };
-  const retryButton = (el: HTMLElement) =>
-    [...el.querySelectorAll<HTMLButtonElement>('button.tp-tool-activity__retry')];
+  const retryButton = (el: HTMLElement) => [
+    ...el.querySelectorAll<HTMLButtonElement>('button.tp-tool-activity__retry'),
+  ];
   it('renders the retry after the explanation, outside Details, and emits the activity', () => {
     const { fixture, el } = setup();
     fixture.componentInstance.activities.set([
@@ -184,12 +227,18 @@ describe('declared retry and receipts in the primitives', () => {
       read('a', 'sorted', 'error'),
     ]);
     fixture.detectChanges();
-    const panel = el.querySelector('chat-tool-activity-group [chatStatusPanel]') as HTMLElement;
+    const panel = el.querySelector(
+      'chat-tool-activity-group [chatStatusPanel]'
+    ) as HTMLElement;
     expect(panel.getAttribute('role')).toBe('alert');
     expect(panel.getAttribute('data-tone')).toBe('danger');
     expect(panel.classList.contains('tp-tool-activity__error')).toBe(true);
     expect(
-      [...panel.children].filter((child) => !child.classList.contains('tp-status-panel__actions')).map((child) => child.tagName)
+      [...panel.children]
+        .filter(
+          (child) => !child.classList.contains('tp-status-panel__actions')
+        )
+        .map((child) => child.tagName)
     ).toEqual(['P', 'BUTTON']);
     const [button] = retryButton(el);
     expect(button.textContent?.trim()).toBe('Retry sorted read');
@@ -200,10 +249,16 @@ describe('declared retry and receipts in the primitives', () => {
   it('hides the retry while another call runs or a later call repeats it', () => {
     const { fixture, el } = setup();
     const failed = read('a', 'sorted', 'error');
-    fixture.componentInstance.activities.set([failed, read('b', 'signals', 'running')]);
+    fixture.componentInstance.activities.set([
+      failed,
+      read('b', 'signals', 'running'),
+    ]);
     fixture.detectChanges();
     expect(retryButton(el)).toHaveLength(0);
-    fixture.componentInstance.activities.set([failed, read('b', 'sorted', 'complete')]);
+    fixture.componentInstance.activities.set([
+      failed,
+      read('b', 'sorted', 'complete'),
+    ]);
     fixture.detectChanges();
     expect(retryButton(el)).toHaveLength(0);
     expect(el.textContent).toContain('Read unavailable');
@@ -222,7 +277,9 @@ describe('declared retry and receipts in the primitives', () => {
     fixture.componentInstance.activities.set([saved]);
     fixture.detectChanges();
     const group = el.querySelector('chat-tool-activity-group') as HTMLElement;
-    const panel = group.querySelector('.tp-tool-activity__receipt') as HTMLElement;
+    const panel = group.querySelector(
+      '.tp-tool-activity__receipt'
+    ) as HTMLElement;
     expect(panel.getAttribute('data-tone')).toBe('success');
     expect(panel.textContent).toBe('Saved.Note note-1 in the local store.');
     expect(panel.hasAttribute('role')).toBe(false);
@@ -238,26 +295,35 @@ describe('declared retry and receipts in the primitives', () => {
   });
   it('renders a status panel lead, detail and actions with its tone', () => {
     const { el } = setup();
-    const panel = el.querySelector('chat-status-panel[role="status"]') as HTMLElement;
+    const panel = el.querySelector(
+      'chat-status-panel[role="status"]'
+    ) as HTMLElement;
     expect(panel.getAttribute('data-tone')).toBe('warning');
     expect(panel.classList.contains('tp-status-panel')).toBe(true);
-    expect([...panel.children].map((child) => child.className || child.tagName)).toEqual([
-      'tp-status-panel__lead',
-      'P',
-      'tp-status-panel__actions',
-    ]);
-    expect(panel.querySelector('.tp-status-panel__actions button')?.textContent).toBe('Save note');
+    expect(
+      [...panel.children].map((child) => child.className || child.tagName)
+    ).toEqual(['tp-status-panel__lead', 'P', 'tp-status-panel__actions']);
+    expect(
+      panel.querySelector('.tp-status-panel__actions button')?.textContent
+    ).toBe('Save note');
     const plain = el.querySelector('#plain') as HTMLElement;
     expect(plain.getAttribute('data-tone')).toBe('neutral');
     expect(plain.querySelector('.tp-status-panel__lead')).toBeNull();
-    expect(plain.querySelector('.tp-status-panel__actions')?.children).toHaveLength(0);
+    expect(
+      plain.querySelector('.tp-status-panel__actions')?.children
+    ).toHaveLength(0);
   });
 });
 
 @Component({
   standalone: true,
   imports: [ChatToolCallsComponent],
-  template: `<chat-tool-calls [agent]="agent" [toolOutcome]="outcome" [groupRelated]="grouped" (toolRetry)="retried.push($event.id)" />`,
+  template: `<chat-tool-calls
+    [agent]="agent"
+    [toolOutcome]="outcome"
+    [groupRelated]="grouped"
+    (toolRetry)="retried.push($event.id)"
+  />`,
 })
 class CallsHost {
   agent: Agent = mockAgent();
@@ -278,7 +344,13 @@ class CallsHost {
         : undefined,
   });
 }
-const failedRead: ToolCall = { id: 'c0', name: 'read', args: { id: 'sorted' }, status: 'complete', result: { error: 'x' } };
+const failedRead: ToolCall = {
+  id: 'c0',
+  name: 'read',
+  args: { id: 'sorted' },
+  status: 'complete',
+  result: { error: 'x' },
+};
 
 describe('ChatToolCallsComponent — declared retry and receipts', () => {
   const setup = (toolCalls: ToolCall[], isLoading = false, grouped = true) => {
@@ -290,18 +362,30 @@ describe('ChatToolCallsComponent — declared retry and receipts', () => {
     return { fixture, agent, el: fixture.nativeElement as HTMLElement };
   };
   const retries = (el: HTMLElement) =>
-    [...el.querySelectorAll<HTMLButtonElement>('button.tp-tool-activity__retry')].filter(
-      (button) => !button.closest('[hidden]')
-    );
+    [
+      ...el.querySelectorAll<HTMLButtonElement>(
+        'button.tp-tool-activity__retry'
+      ),
+    ].filter((button) => !button.closest('[hidden]'));
   it('offers the retry in the danger panel below a collapsed group and emits the activity', () => {
     const { fixture, el } = setup([
-      { id: 'ok', name: 'read', args: { id: 'signals' }, status: 'complete', result: { title: 'Signals' } },
+      {
+        id: 'ok',
+        name: 'read',
+        args: { id: 'signals' },
+        status: 'complete',
+        result: { title: 'Signals' },
+      },
       failedRead,
     ]);
     expect(el.textContent).toContain('Used 2 tools · 1 failed');
-    const panel = el.querySelector('div[chatStatusPanel][role="alert"]') as HTMLElement;
+    const panel = el.querySelector(
+      'div[chatStatusPanel][role="alert"]'
+    ) as HTMLElement;
     expect(panel.getAttribute('data-tone')).toBe('danger');
-    expect(panel.querySelector(':scope > p')?.textContent).toBe('Read unavailable');
+    expect(panel.querySelector(':scope > p')?.textContent).toBe(
+      'Read unavailable'
+    );
     const [button] = retries(el);
     expect(button.textContent?.trim()).toBe('Retry sorted read');
     expect(panel.contains(button)).toBe(true);
@@ -317,14 +401,26 @@ describe('ChatToolCallsComponent — declared retry and receipts', () => {
     agent.isLoading.set(false);
     agent.toolCalls.set([
       failedRead,
-      { id: 'c1', name: 'read', args: { id: 'sorted' }, status: 'complete', result: { title: 'ok' } },
+      {
+        id: 'c1',
+        name: 'read',
+        args: { id: 'sorted' },
+        status: 'complete',
+        result: { title: 'ok' },
+      },
     ]);
     fixture.detectChanges();
     expect(retries(el)).toHaveLength(0);
     expect(el.textContent).toContain('Read unavailable');
     agent.toolCalls.set([
       failedRead,
-      { id: 'c1', name: 'read', args: { id: 'signals' }, status: 'complete', result: { title: 'ok' } },
+      {
+        id: 'c1',
+        name: 'read',
+        args: { id: 'signals' },
+        status: 'complete',
+        result: { title: 'ok' },
+      },
     ]);
     fixture.detectChanges();
     expect(retries(el)).toHaveLength(1);
@@ -338,27 +434,53 @@ describe('ChatToolCallsComponent — declared retry and receipts', () => {
   });
   it('shows a receipt only for a decoded saved result', () => {
     const { fixture, agent, el } = setup([
-      { id: 's', name: 'save', args: {}, status: 'complete', result: { saved: true, id: 'note-1' } },
+      {
+        id: 's',
+        name: 'save',
+        args: {},
+        status: 'complete',
+        result: { saved: true, id: 'note-1' },
+      },
     ]);
-    const receipt = el.querySelector('.tp-tool-activity__receipt') as HTMLElement;
+    const receipt = el.querySelector(
+      '.tp-tool-activity__receipt'
+    ) as HTMLElement;
     expect(receipt.textContent).toBe('Saved.Note note-1.');
     expect(el.querySelector('[role="alert"]')).toBeNull();
     agent.toolCalls.set([
-      { id: 's', name: 'save', args: {}, status: 'complete', result: { saved: false, cancelled: true } },
+      {
+        id: 's',
+        name: 'save',
+        args: {},
+        status: 'complete',
+        result: { saved: false, cancelled: true },
+      },
     ]);
     fixture.detectChanges();
     expect(el.querySelector('.tp-tool-activity__receipt')).toBeNull();
-    agent.toolCalls.set([{ id: 's', name: 'save', args: {}, status: 'running' }]);
+    agent.toolCalls.set([
+      { id: 's', name: 'save', args: {}, status: 'running' },
+    ]);
     fixture.detectChanges();
     expect(el.querySelector('.tp-tool-activity__receipt')).toBeNull();
   });
   it('reports whether a per-call retry is currently offered', () => {
-    const outcome = TestBed.createComponent(CallsHost).componentInstance.outcome;
+    const outcome =
+      TestBed.createComponent(CallsHost).componentInstance.outcome;
     expect(offersToolRetry([failedRead], outcome)).toBe(true);
     expect(offersToolRetry([failedRead], undefined)).toBe(false);
     expect(
       offersToolRetry(
-        [failedRead, { id: 'c1', name: 'read', args: { id: 'sorted' }, status: 'complete', result: {} }],
+        [
+          failedRead,
+          {
+            id: 'c1',
+            name: 'read',
+            args: { id: 'sorted' },
+            status: 'complete',
+            result: {},
+          },
+        ],
         outcome
       )
     ).toBe(false);
@@ -367,5 +489,61 @@ describe('ChatToolCallsComponent — declared retry and receipts', () => {
         throw new Error('decoder');
       })
     ).toBe(false);
+  });
+});
+
+describe('toolSourceCitations', () => {
+  const sources = [
+    { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+    { title: 'toSorted', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Again', url: 'https://developer.mozilla.org/toSorted' },
+    { title: 'Not a URL', url: 'nope' },
+  ];
+  it('adds only sources the message does not already cite and numbers them after its citations', () => {
+    expect(
+      toolSourceCitations(
+        [{ index: 4, url: 'https://angular.dev/guide/signals' }, { index: 2 }],
+        sources
+      )
+    ).toEqual([
+      {
+        id: 'tool-source:https://developer.mozilla.org/toSorted',
+        index: 5,
+        title: 'toSorted',
+        url: 'https://developer.mozilla.org/toSorted',
+      },
+    ]);
+  });
+  it('starts at 1 when the message cites nothing', () => {
+    expect(
+      toolSourceCitations([], sources).map(({ index, title }) => [index, title])
+    ).toEqual([
+      [1, 'Same page'],
+      [2, 'toSorted'],
+    ]);
+  });
+});
+
+describe('tool sources outside a message', () => {
+  it("keeps a standalone group's declared sources as its own links", () => {
+    const fixture = TestBed.createComponent(ChatToolActivityGroupComponent);
+    fixture.componentRef.setInput('activities', [
+      {
+        id: 'c',
+        name: 'lookup',
+        phase: 'complete',
+        outcome: {
+          text: 'Checked',
+          sources: [
+            { title: 'Signals', url: 'https://angular.dev/guide/signals' },
+          ],
+        },
+      },
+    ]);
+    fixture.detectChanges();
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      '.tp-tool-outcomes a[href="https://angular.dev/guide/signals"]'
+    );
+    expect(link?.textContent?.trim()).toBe('Signals');
   });
 });

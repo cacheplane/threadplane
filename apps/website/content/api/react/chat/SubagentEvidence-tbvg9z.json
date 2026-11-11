@@ -1,0 +1,230 @@
+{
+  "name": "SubagentEvidence",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SubagentEvidence",
+  "canonicalReference": "@threadplane/react!SubagentEvidence:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "Borrowed child evidence and the transcript that carries each child's attributed messages.",
+  "declarations": [
+    {
+      "name": "SubagentEvidence",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SubagentEvidence:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SubagentEvidence<TMessage extends "
+        },
+        {
+          "kind": "Reference",
+          "text": "SubagentEvidenceMessage",
+          "canonicalReference": "@threadplane/react!SubagentEvidenceMessage:interface",
+          "href": "/docs/api/react/chat/SubagentEvidenceMessage"
+        },
+        {
+          "kind": "Content",
+          "text": " = "
+        },
+        {
+          "kind": "Reference",
+          "text": "SubagentEvidenceMessage",
+          "canonicalReference": "@threadplane/react!SubagentEvidenceMessage:interface",
+          "href": "/docs/api/react/chat/SubagentEvidenceMessage"
+        },
+        {
+          "kind": "Content",
+          "text": "> "
+        }
+      ],
+      "docs": {
+        "summary": "Borrowed child evidence and the transcript that carries each child's attributed messages.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "running",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentEvidence#running:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly running?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "True while the root run is active. Without it a child with no terminal evidence is `unknown`, not `running`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-evidence.ts",
+            "line": 36
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "subagents",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentEvidence#subagents:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly subagents: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "SubagentEvidenceRecord",
+              "canonicalReference": "@threadplane/react!SubagentEvidenceRecord:interface",
+              "href": "/docs/api/react/chat/SubagentEvidenceRecord"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-evidence.ts",
+            "line": 33
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "toolLabel",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentEvidence#toolLabel:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly toolLabel?: "
+            },
+            {
+              "kind": "Content",
+              "text": "(name: string) => string | undefined"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "App-authored human labels for the children's own tool calls.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-evidence.ts",
+            "line": 38
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "transcript",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentEvidence#transcript:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly transcript: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly TMessage[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-evidence.ts",
+            "line": 34
+          },
+          "isReadonly": true,
+          "isOptional": false
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/subagent-evidence.ts",
+        "line": 30
+      },
+      "typeParameters": [
+        {
+          "typeParameterName": "TMessage",
+          "constraintTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          },
+          "defaultTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/subagent-evidence.ts",
+    "line": 30
+  }
+}

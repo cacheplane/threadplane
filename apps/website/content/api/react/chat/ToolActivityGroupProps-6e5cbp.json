@@ -70,7 +70,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 239
+            "line": 272
           },
           "isReadonly": true,
           "isOptional": false
@@ -107,7 +107,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 247
+            "line": 284
           },
           "isReadonly": true,
           "isOptional": true
@@ -153,7 +153,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 246
+            "line": 279
           },
           "isReadonly": true,
           "isOptional": true
@@ -189,7 +189,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 240
+            "line": 273
           },
           "isReadonly": true,
           "isOptional": true
@@ -235,7 +235,7 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 244
+            "line": 277
           },
           "isReadonly": true,
           "isOptional": true
@@ -286,7 +286,81 @@
           "members": [],
           "source": {
             "path": "libs/react/src/chat/tool-activity.tsx",
-            "line": 242
+            "line": 275
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "retrying",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#retrying:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly retrying?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "\"Retrying toSorted read\" while a later call repeats a failed one; leads the failure panel.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 283
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "sources",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!ToolActivityGroupProps#sources:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly sources?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolSourcePlacement",
+              "canonicalReference": "@threadplane/react!ToolSourcePlacement:type",
+              "href": "/docs/api/react/chat/ToolSourcePlacement"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Where declared sources appear. Defaults to links under the group; see `ToolSourcePlacement`.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/tool-activity.tsx",
+            "line": 281
           },
           "isReadonly": true,
           "isOptional": true
@@ -294,12 +368,12 @@
       ],
       "source": {
         "path": "libs/react/src/chat/tool-activity.tsx",
-        "line": 238
+        "line": 271
       }
     }
   ],
   "source": {
     "path": "libs/react/src/chat/tool-activity.tsx",
-    "line": 238
+    "line": 271
   }
 }

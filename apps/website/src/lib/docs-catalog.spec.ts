@@ -36,7 +36,7 @@ describe('explicit narrative document catalog', () => {
     expect(documentCatalog).toHaveLength(122);
     expect(new Set(documentCatalog.map(doc => doc.id)).size).toBe(documentCatalog.length);
     const variants = getNarrativeDocuments();
-    expect(variants).toHaveLength(191);
+    expect(variants).toHaveLength(192);
     expect(getDocumentVariant('chat/components/chat-message', 'react')).toMatchObject({
       source: 'react/chat/components/chat-message.mdx',
       apiEntrypointIds: ['react/chat'],

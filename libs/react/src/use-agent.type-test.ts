@@ -4,6 +4,7 @@ import type {
   PlainValue,
 } from '@threadplane/core';
 import { useAgent } from './index.js';
+import { subagentsFromEvidence, type SubagentInfo } from './chat/index.js';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This type-only integration probe observes the actual private factory through the borrowed fixture.
 import type { bindingFixture } from '../../langgraph/src/runtime/testing/binding-fixture';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only admission proof for the actual private native owner, not a production dependency.
@@ -146,6 +147,13 @@ export function useNativeSession(session: ReturnType<typeof createSession>) {
     // @ts-expect-error Root terminal fields are readonly.
     terminal.runId = runId;
   }
+  // The chat projection borrows the native snapshot without conversion.
+  const cards: readonly SubagentInfo[] = subagentsFromEvidence({
+    subagents: snapshot.subagents,
+    transcript: snapshot.transcript,
+    running: snapshot.status === 'running',
+  }).subagents;
+  void cards;
   const child = snapshot.subagents[0]?.terminal;
   if (child?.type === 'SUBAGENT_ERROR') {
     const error: string = child.message;

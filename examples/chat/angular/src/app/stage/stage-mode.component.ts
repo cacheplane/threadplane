@@ -243,9 +243,6 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
       .stage__column > chat { flex: 1; min-height: 0; }
       .stage__interrupt:empty { display: none; }
       .stage__interrupt { padding: 8px 12px 0; }
-      /* The stage presents the workflow; raw call IDs remain in devtools.
-         Hiding them here also keeps the subagent heading readable on phones. */
-      :host ::ng-deep chat-subagent-card .sac__id { display: none; }
     `,
   ],
 })

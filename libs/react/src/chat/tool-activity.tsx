@@ -1,5 +1,5 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   activityFailures,
   confirmedOutcomes,
@@ -85,17 +85,33 @@ export interface ToolActivityProps {
   readonly children?: ReactNode;
   /** Application-owned handler for a declared retry. Without it no retry control renders. */
   readonly onRetry?: (activity: ToolActivityInfo) => void;
+  /** Where declared sources appear. Defaults to links under the activity; see `ToolSourcePlacement`. */
+  readonly sources?: ToolSourcePlacement;
+  /** A row inside a group: only its status word reports a failure, because the group shows one failure panel below it. */
+  readonly grouped?: boolean;
+  /** "Retrying toSorted read" while a later call repeats this failed one. */
+  readonly retrying?: string;
 }
+/**
+ * Where an activity's declared sources appear. `links` (the default) shows them under the activity.
+ * `panel` shows none here, for an application that lists them in its own Sources panel with
+ * `citationsWithToolSources`. `MessageList` and `Chat` already do this.
+ */
+export type ToolSourcePlacement = 'links' | 'panel';
 /** Human-readable activity with opt-in literal inspection and a persistent rich-result slot. */
 export function ToolActivity({
   activity: input,
   children,
   onRetry,
+  sources,
+  grouped = false,
+  retrying,
 }: ToolActivityProps) {
   // Direct primitive use gets the same failed-outcome display as projected rows.
   const activity = resolveToolOutcome(input, input.outcome);
   const phase = activity.phase ?? 'unknown';
-  const retry = onRetry ? activityFailures([activity])[0]?.retry : undefined;
+  const retry =
+    onRetry && !grouped ? activityFailures([activity])[0]?.retry : undefined;
   return (
     <section
       className="tp-tool-activity"
@@ -113,7 +129,15 @@ export function ToolActivity({
             </span>
           )}
       </div>
-      {phase === 'error' && (
+      {phase === 'error' && !grouped && retrying && (
+        <p
+          className="tp-tool-activity__label tp-tool-activity__retrying"
+          data-active="true"
+        >
+          {retrying}
+        </p>
+      )}
+      {phase === 'error' && !grouped && (
         <p className="tp-tool-activity__error" role="alert">
           {activity.errorSummary ??
             'This tool could not finish. Check Details before retrying.'}
@@ -159,7 +183,7 @@ export function ToolActivity({
           </>
         )}
       </details>
-      <ToolOutcomes activities={[activity]} />
+      <ToolOutcomes activities={[activity]} placement={sources} />
       <ToolReceipts activities={[activity]} />
       {children}
     </section>
@@ -167,11 +191,20 @@ export function ToolActivity({
 }
 function ToolOutcomes({
   activities,
+  placement,
+  show = 'all',
 }: {
   readonly activities: readonly ToolActivityInfo[];
+  readonly placement?: ToolSourcePlacement;
+  /** An open group shows each call's sources under its row and keeps only the result text below the group. */
+  readonly show?: 'all' | 'outcomes' | 'sources';
 }) {
-  const outcomes = confirmedOutcomes(activities);
-  const sources = outcomeSources(activities);
+  const outcomes = show === 'sources' ? [] : confirmedOutcomes(activities);
+  // A Sources panel that already lists these would otherwise show each source twice.
+  const sources =
+    placement === 'panel' || show === 'outcomes'
+      ? []
+      : outcomeSources(activities);
   if (!outcomes.length && !sources.length) return null;
   return (
     <div className="tp-tool-outcomes">
@@ -244,6 +277,10 @@ export interface ToolActivityGroupProps {
   readonly onRetry?: (activity: ToolActivityInfo) => void;
   /** Every observed call in transcript order, so a retry stops being offered once a later call repeats it or work is running. Defaults to this group's activities. */
   readonly context?: readonly ToolActivityInfo[];
+  /** Where declared sources appear. Defaults to links under the group; see `ToolSourcePlacement`. */
+  readonly sources?: ToolSourcePlacement;
+  /** "Retrying toSorted read" while a later call repeats a failed one; leads the failure panel. */
+  readonly retrying?: string;
   readonly children?: ReactNode;
 }
 /** Opt-in message/turn group. Individual disclosure state follows call IDs. */
@@ -253,6 +290,8 @@ export function ToolActivityGroup({
   renderResult,
   onRetry,
   context,
+  sources,
+  retrying,
   children,
 }: ToolActivityGroupProps) {
   // Resolve once so the label, cue, live region and rows agree on each phase.
@@ -260,6 +299,8 @@ export function ToolActivityGroup({
     resolveToolOutcome(activity, activity.outcome)
   );
   const summary = activitySummary(activities, label);
+  // Sources move under their row while the group is open.
+  const [open, setOpen] = useState(false);
   const failed = summary.phase === 'error';
   const failures = activityFailures(activities, context);
   const receipts = receiptOutcomes(activities);
@@ -282,7 +323,10 @@ export function ToolActivityGroup({
       data-active={summary.active}
     >
       {activities.length > 0 && (
-        <details className="tp-tool-activity-group__details">
+        <details
+          className="tp-tool-activity-group__details"
+          onToggle={(event) => setOpen(event.currentTarget.open)}
+        >
           <summary>
             <span
               className="tp-tool-activity__label"
@@ -299,7 +343,16 @@ export function ToolActivityGroup({
               <ToolActivity
                 key={activity.id}
                 activity={{ ...activity, outcome: undefined }}
-              />
+                grouped
+              >
+                {open && (
+                  <ToolOutcomes
+                    activities={[activity]}
+                    placement={sources}
+                    show="sources"
+                  />
+                )}
+              </ToolActivity>
             ))}
           </div>
         </details>
@@ -315,13 +368,25 @@ export function ToolActivityGroup({
           {receipts.map((receipt) => ` ${receipt.lead} ${receipt.text}`)}
         </p>
       )}
-      <ToolOutcomes activities={activities} />
+      <ToolOutcomes
+        activities={activities}
+        placement={sources}
+        show={open ? 'outcomes' : 'all'}
+      />
       {failed && (
         <StatusPanel
           tone="danger"
           role="alert"
           className="tp-tool-activity__error"
         >
+          {retrying && (
+            <p
+              className="tp-tool-activity__label tp-tool-activity__retrying"
+              data-active="true"
+            >
+              {retrying}
+            </p>
+          )}
           {failures.length > 0 ? (
             failures.flatMap(({ key, text, retry }) => [
               <p key={key}>{text}</p>,
