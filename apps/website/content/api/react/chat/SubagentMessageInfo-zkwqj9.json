@@ -1,0 +1,197 @@
+{
+  "name": "SubagentMessageInfo",
+  "entrypointId": "react/chat",
+  "kind": "Interface",
+  "href": "/docs/api/react/chat/SubagentMessageInfo",
+  "canonicalReference": "@threadplane/react!SubagentMessageInfo:interface",
+  "isDeprecated": false,
+  "isTypeOnly": true,
+  "summary": "One message a child agent produced, with the tool activity that message requested.",
+  "declarations": [
+    {
+      "name": "SubagentMessageInfo",
+      "kind": "Interface",
+      "canonicalReference": "@threadplane/react!SubagentMessageInfo:interface",
+      "excerptTokens": [
+        {
+          "kind": "Content",
+          "text": "export interface SubagentMessageInfo "
+        }
+      ],
+      "docs": {
+        "summary": "One message a child agent produced, with the tool activity that message requested.",
+        "remarks": "",
+        "deprecated": "",
+        "returns": "",
+        "examples": [],
+        "see": [],
+        "params": [],
+        "typeParams": []
+      },
+      "members": [
+        {
+          "name": "activities",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentMessageInfo#activities:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly activities?: "
+            },
+            {
+              "kind": "Content",
+              "text": "readonly "
+            },
+            {
+              "kind": "Reference",
+              "text": "ToolActivityInfo",
+              "canonicalReference": "@threadplane/react!ToolActivityInfo:interface",
+              "href": "/docs/api/react/chat/ToolActivityInfo"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 20
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "id",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentMessageInfo#id:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly id: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 15
+          },
+          "isReadonly": true,
+          "isOptional": false
+        },
+        {
+          "name": "reasoning",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentMessageInfo#reasoning:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly reasoning?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Backend-supplied reasoning display text.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 19
+          },
+          "isReadonly": true,
+          "isOptional": true
+        },
+        {
+          "name": "text",
+          "kind": "PropertySignature",
+          "canonicalReference": "@threadplane/react!SubagentMessageInfo#text:member",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "readonly text?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "docs": {
+            "summary": "Literal child text. Empty or absent text renders nothing.",
+            "remarks": "",
+            "deprecated": "",
+            "returns": "",
+            "examples": [],
+            "see": [],
+            "params": [],
+            "typeParams": []
+          },
+          "members": [],
+          "source": {
+            "path": "libs/react/src/chat/subagent-card.tsx",
+            "line": 17
+          },
+          "isReadonly": true,
+          "isOptional": true
+        }
+      ],
+      "source": {
+        "path": "libs/react/src/chat/subagent-card.tsx",
+        "line": 14
+      }
+    }
+  ],
+  "source": {
+    "path": "libs/react/src/chat/subagent-card.tsx",
+    "line": 14
+  }
+}

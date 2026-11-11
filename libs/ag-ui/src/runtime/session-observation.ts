@@ -11,7 +11,7 @@ import type {
   PlainValue,
 } from '@threadplane/core';
 import { ownTranscript, type Transcript } from './transcript.js';
-import { applySubagent, type Subagents } from './subagents.js';
+import { applySubagent, ownSubagents, type Subagents } from './subagents.js';
 import { ownState, applyState } from './state.js';
 import { reconcileTranscript } from './reconcile-transcript.js';
 import { applyTextMessage } from './text-messages.js';
@@ -48,7 +48,10 @@ export interface SessionSnapshot {
   readonly status: 'idle' | 'running' | 'error';
   readonly transcript: Transcript;
   readonly state: PlainValue;
+  /** Children observed in the current root invocation. */
   readonly subagents: Subagents;
+  /** Children with terminal evidence from earlier invocations, and children supplied at restore. Absent when there are none. */
+  readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
   readonly run?: {
     readonly id: string;
@@ -73,15 +76,18 @@ export function assertTranscriptIdentity(transcript: Transcript): void {
 }
 export function initialObservation(
   messages: readonly Message[] | Transcript = [],
-  state: unknown = {}
+  state: unknown = {},
+  subagents?: unknown
 ): SessionSnapshot {
   const transcript = ownTranscript(messages);
   assertTranscriptIdentity(transcript);
+  const earlier = ownSubagents(subagents);
   return Object.freeze({
     status: 'idle',
     transcript,
     state: ownState(state),
     subagents: Object.freeze([]),
+    ...(earlier && { earlierSubagents: earlier }),
   });
 }
 
