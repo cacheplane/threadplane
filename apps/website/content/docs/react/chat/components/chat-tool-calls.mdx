@@ -225,6 +225,7 @@ It hides it while anything is running, and removes it once a later call repeats 
 Your handler decides what a retry does.
 Send it as a new request in the same conversation, and have your backend run only the failed read again as a new call.
 Name the call in the label, such as **Retry toSorted read**, because the group may be collapsed above it.
+While that repeat call is still running, the failure panel leads with **Retrying toSorted read**, built from your label, with the same shimmer as a running step. A label that does not start with "Retry" gives a plain **Retrying**. `ToolActivity` and `ToolActivityGroup` take that line as a `retrying` prop when you render them yourself.
 `ToolActivityGroup` takes the same handler as `onRetry`, plus a `context` prop with every observed call so it can apply the same rule across messages.
 
 I would not declare a retry for a write.

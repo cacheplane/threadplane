@@ -37,7 +37,7 @@ export function ChatError({
       <p className="tp-chat-error__message">{error.message}</p>
       {action && (
         <button type="button" disabled={disabled} onClick={() => action()}>
-          {error.recovery === 'check' ? 'Check status' : 'Retry'}
+          {error.recovery === 'check' ? 'Check status' : 'Retry response'}
         </button>
       )}
       {error.detail && <p className="tp-chat-error__detail">{error.detail}</p>}

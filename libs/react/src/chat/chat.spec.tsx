@@ -265,7 +265,7 @@ describe('Chat', () => {
     const { session, raw } = fakeSession({ error: failure() });
     const retry = vi.fn();
     const view = render(<Chat session={session} onRetry={retry} />);
-    fireEvent.click(view.getByRole('button', { name: 'Retry' }));
+    fireEvent.click(view.getByRole('button', { name: 'Retry response' }));
     expect(retry).toHaveBeenCalledExactlyOnceWith();
     expect(raw.submit).not.toHaveBeenCalled();
     expect(view.getByRole('alert').classList.contains('tp-chat__error')).toBe(
@@ -278,7 +278,7 @@ describe('Chat', () => {
     (recovery) => {
       const { session } = fakeSession({ error: failure(recovery) });
       const view = render(<Chat session={session} onRetry={vi.fn()} />);
-      expect(view.queryByRole('button', { name: 'Retry' })).toBeNull();
+      expect(view.queryByRole('button', { name: 'Retry response' })).toBeNull();
       expect(view.queryByRole('button', { name: 'Check status' })).toBeNull();
     }
   );
@@ -305,7 +305,7 @@ describe('Chat', () => {
       Object.assign(session, { checkStatus: request });
       const view = render(<Chat session={session} onRetry={request} />);
       const button = view.getByRole('button', {
-        name: recovery === 'check' ? 'Check status' : 'Retry',
+        name: recovery === 'check' ? 'Check status' : 'Retry response',
       });
       const presented = session.getSnapshot();
       for (const error of [failure(recovery), undefined]) {
