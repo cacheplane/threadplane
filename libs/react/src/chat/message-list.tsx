@@ -86,6 +86,16 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  /**
+   * App-owned presentation for one tool call, in place of its built-in activity row. Return `undefined` to keep the
+   * built-in row for that call, or `null` to show nothing. A replaced call leaves its group, and `renderToolResult`,
+   * `toolOutcome` previews and retry controls no longer apply to it. Keep stable like renderMessage; custom
+   * renderMessage retains full ownership.
+   */
+  readonly renderToolCall?: (
+    call: NoInfer<RenderRow<TRow>>['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   /** App-owned rich result or action for one tool call, rendered outside technical Details. Keep stable like renderMessage; custom renderMessage retains full ownership. */
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   /**
@@ -168,7 +178,9 @@ function retryingByRow(rows: readonly MessageRow[]): readonly string[] {
   calls.forEach(({ call }, i) => {
     if (
       call.status === 'error' || call.status === 'complete'
-        ? calls.slice(i + 1).some((later) => later.running && key(later.call) === key(call))
+        ? calls
+            .slice(i + 1)
+            .some((later) => later.running && key(later.call) === key(call))
         : false
     )
       repeating.add(call.id);
@@ -196,6 +208,7 @@ function RowView<TRow extends MessageRow>({
   groupRelatedTools,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
   onToolRetry,
   staleRetries,
@@ -213,6 +226,10 @@ function RowView<TRow extends MessageRow>({
   readonly toolOutcome?: (
     activity: ToolActivityInfo
   ) => ToolActivityOutcome | undefined;
+  readonly renderToolCall?: (
+    call: TRow['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
@@ -270,6 +287,21 @@ function RowView<TRow extends MessageRow>({
         outcomeSources(activities)
       )
     : [];
+  // Consecutive built-in calls share one run; an app-rendered call sits alone, in transcript order.
+  const runs: Array<
+    | { readonly custom: ReactNode; readonly id: string }
+    | { readonly activities: ToolActivityInfo[] }
+  > = [];
+  activities.forEach((activity, index) => {
+    const custom = renderToolCall?.(row.toolCalls[index], activity);
+    if (custom !== undefined) {
+      runs.push({ custom, id: activity.id });
+      return;
+    }
+    const last = runs.at(-1);
+    if (last && 'activities' in last) last.activities.push(activity);
+    else runs.push({ activities: [activity] });
+  });
   return (
     <ChatMessage
       role={row.role}
@@ -291,25 +323,41 @@ function RowView<TRow extends MessageRow>({
           )}
           <ToolSourcesInPanelContext.Provider value={assistant}>
             {row.role !== 'tool' &&
-              (groupRelatedTools ? (
-                <ToolActivityGroup
-                  activities={activities}
-                  renderResult={renderToolResult}
-                  onRetry={onToolRetry}
-                  retrying={retryingLeads.values().next().value}
-                />
-              ) : (
-                activities.map((activity) => (
-                  <ToolActivity
-                    key={activity.id}
-                    activity={activity}
+              runs.map((run) =>
+                'custom' in run ? (
+                  run.custom != null &&
+                  run.custom !== false && (
+                    <div
+                      key={run.id}
+                      className="tp-chat-tool-call"
+                      data-tool-id={run.id}
+                    >
+                      {run.custom}
+                    </div>
+                  )
+                ) : groupRelatedTools ? (
+                  <ToolActivityGroup
+                    key={run.activities[0].id}
+                    activities={run.activities}
+                    renderResult={renderToolResult}
                     onRetry={onToolRetry}
-                    retrying={retryingLeads.get(activity.id)}
-                  >
-                    {renderToolResult?.(activity)}
-                  </ToolActivity>
-                ))
-              ))}
+                    retrying={run.activities
+                      .map((activity) => retryingLeads.get(activity.id))
+                      .find((lead) => lead !== undefined)}
+                  />
+                ) : (
+                  run.activities.map((activity) => (
+                    <ToolActivity
+                      key={activity.id}
+                      activity={activity}
+                      onRetry={onToolRetry}
+                      retrying={retryingLeads.get(activity.id)}
+                    >
+                      {renderToolResult?.(activity)}
+                    </ToolActivity>
+                  ))
+                )
+              )}
           </ToolSourcesInPanelContext.Provider>
         </>
       }
@@ -340,6 +388,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   groupRelatedTools = true,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
   onToolRetry,
   children,
@@ -448,6 +497,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
               groupRelatedTools={groupRelatedTools}
               toolLabel={toolLabel}
               toolOutcome={toolOutcome}
+              renderToolCall={renderToolCall}
               renderToolResult={renderToolResult}
               onToolRetry={onToolRetry}
               staleRetries={staleRetries?.[index]}

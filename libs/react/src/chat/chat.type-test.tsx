@@ -86,3 +86,15 @@ export type SearchShortcutContract = Assert<
     { readonly searchShortcut?: boolean }
   >
 >;
+const renderToolCall: NonNullable<ChatProps['renderToolCall']> = (
+  call,
+  activity
+) =>
+  call.name === 'get_weather' && call.status === 'complete' ? (
+    <section aria-label={activity.label ?? 'Weather'}>
+      <pre>{JSON.stringify(call.result, null, 2)}</pre>
+    </section>
+  ) : undefined;
+<Chat session={session} renderToolCall={renderToolCall} />;
+// @ts-expect-error A tool-call renderer is a function.
+<Chat session={session} renderToolCall="weather" />;

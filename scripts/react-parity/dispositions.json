@@ -2570,9 +2570,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/tool-calls.tsx",
-      "reason": "Named/wildcard renderer map. Replace named/wildcard template directive with typed renderer map."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "MessageList and Chat accept renderToolCall(call, activity): undefined keeps the built-in row, null hides the call, other content replaces it. One function covers named and wildcard matching, receives the projected typed call, and splits built-in groups around a replaced call in transcript order. Verified in DOM and SSR. Subagent-scoped calls and full parity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts#ChatToolCallsComponent",
@@ -5911,9 +5911,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/tool-calls.tsx",
-      "reason": "Named/wildcard renderer map. Replace named/wildcard template directive with typed renderer map."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "MessageList and Chat accept renderToolCall(call, activity): undefined keeps the built-in row, null hides the call, other content replaces it. One function covers named and wildcard matching, receives the projected typed call, and splits built-in groups around a replaced call in transcript order. Verified in DOM and SSR. Subagent-scoped calls and full parity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatToolCallsComponent",
