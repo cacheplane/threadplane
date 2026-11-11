@@ -27,6 +27,8 @@ export interface ChatProps
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
   /** App-owned rich result or action per tool call; execution and retry intent remain app-owned. Keep stable. */
+  /** App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable. */
+  readonly renderToolCall?: MessageListProps['renderToolCall'];
   readonly renderToolResult?: MessageListProps['renderToolResult'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
@@ -51,6 +53,7 @@ export function Chat({
   groupRelatedTools,
   toolLabel,
   toolOutcome,
+  renderToolCall,
   renderToolResult,
   onToolRetry,
   onRetry,
@@ -69,6 +72,7 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
+        renderToolCall={renderToolCall}
         renderToolResult={renderToolResult}
         onToolRetry={onToolRetry}
         renderScrollControl={(controls) =>
