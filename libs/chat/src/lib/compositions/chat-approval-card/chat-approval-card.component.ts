@@ -1,7 +1,6 @@
 import {
   Component,
   ChangeDetectionStrategy,
-  DestroyRef,
   ElementRef,
   TemplateRef,
   computed,
@@ -25,7 +24,7 @@ export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';
 /** `dialog` opens a modal; `inline` renders a status panel where the card is placed, such as a `chatInterruptTemplate`. */
 export type ChatApprovalPresentation = 'dialog' | 'inline';
 
-/** Displays an approval for a matching agent interrupt or an app-supplied `request`, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions. */
+/** Displays an approval for a matching agent interrupt, as a modal dialog or an inline panel, and emits approve, edit, or cancel actions. */
 @Component({
   selector: 'chat-approval-card',
   standalone: true,
@@ -174,12 +173,6 @@ export class ChatApprovalCardComponent {
    * the action; otherwise the record reads just "Approved" or "Declined".
    */
   readonly recordLabel = input<string | undefined>(undefined);
-  /**
-   * An approval that is not an agent interrupt, such as a yes-or-no client-tool `ask`.
-   * While set, the card shows it in place of the interrupt and ignores `matchKind`; the
-   * body template receives it as its payload. Clear it once the request is answered.
-   */
-  readonly request = input<unknown>(undefined);
 
   readonly action = output<ChatApprovalAction>();
 
@@ -196,8 +189,6 @@ export class ChatApprovalCardComponent {
   private readonly interrupt = computed(() => this.agent().interrupt?.());
 
   protected readonly payload = computed(() => {
-    const request = this.request();
-    if (request !== undefined && request !== null) return request;
     const i = this.interrupt();
     if (!i) return undefined;
     const v = i.value as { kind?: unknown } | undefined;
@@ -211,12 +202,6 @@ export class ChatApprovalCardComponent {
   });
 
   constructor() {
-    // Tell the chat while an inline approval waits, so the composer can say what unblocks the run.
-    const records = this.records;
-    if (records) {
-      effect(() => records.setWaiting(this, this.presentation() === 'inline' && !!this.payload()));
-      inject(DestroyRef).onDestroy(() => records.setWaiting(this, false));
-    }
     // Inline: move focus to the first action once, when an approval appears.
     let focusedFor: unknown;
     effect(() => {

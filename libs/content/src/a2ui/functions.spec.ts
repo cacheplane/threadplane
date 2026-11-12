@@ -104,6 +104,19 @@ describe('resolveA2uiValue', () => {
     expect(call('regex', { value: 'vip', pattern: '^v' })).toBe(true);
   });
 
+  it('reads paths without a leading slash from a template item', () => {
+    const inside = (value: unknown) => resolveA2uiValue(at, value as A2uiValue, '/tags/1');
+    expect(inside({ path: '' })).toBe('late');
+    expect(inside({ path: '.' })).toBe('late');
+    expect(inside({ path: '/guest/name' })).toBe('Ada');
+    expect(resolveA2uiValue(at, { path: 'name' }, '/guest')).toBe('Ada');
+    expect(resolveA2uiValue(at, { call: 'formatString', args: { value: '${name} of ${/count}' } }, '/guest')).toBe('Ada of 1');
+    expect(resolveA2uiValue(at, [{ path: 'name' }], '/guest')).toEqual(['Ada']);
+    expect(resolveA2uiValue(at, { call: 'required', args: { value: { path: 'missing' } } }, '/guest')).toBe(false);
+    // Outside a template an empty path is not the whole model.
+    expect(run({ path: '' })).toBeUndefined();
+  });
+
   it('returns frozen lists', () => {
     expect(Object.isFrozen(run([1, { path: '/count' }]))).toBe(true);
   });

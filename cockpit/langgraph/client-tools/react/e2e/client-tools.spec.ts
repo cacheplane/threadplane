@@ -226,7 +226,7 @@ test('a planned trip shows Chat progress with plan steps, waits for the booking,
   // Opened while running: a static count, then the plan's pending steps after the calls.
   await group.locator('.tp-tool-activity-group__details > summary').click();
   await expect(group.locator('.tp-tool-activity-group__details > summary')).toContainText('Working · 1 of 2 done');
-  await expect(group.locator('.tp-tool-activity-group__plan-step')).toHaveText(['Summarize the results']);
+  await expect(group.locator('.tp-tool-activity-group__plan-step')).toHaveText(['Write the trip summary', 'Suggest what to pack']);
   await page.getByRole('button', { name: 'Confirm booking' }).click();
   await expect(conversation.getByText('Approved: Booking', { exact: true })).toBeVisible();
   await expect(status(page)).toHaveText('Response complete.');

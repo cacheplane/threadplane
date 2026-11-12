@@ -1209,7 +1209,7 @@ const agUiClientToolsReact = (() => {
     ...canonical, id: 'ag-ui-client-tools-python-react', frontend: 'react',
     title: 'AG-UI Client Tools (React preview)',
     codeAssetPaths: [
-      ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+      ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
       'cockpit/ag-ui/client-tools/react/project.json',
       ...canonical.promptAssetPaths,
     ],

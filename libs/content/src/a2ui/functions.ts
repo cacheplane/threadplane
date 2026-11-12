@@ -5,6 +5,17 @@ export const record = (
 ): value is { readonly [key: string]: A2uiValue } =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/**
+ * A path as written inside a template item, as a path from the root. A path
+ * with a leading slash already is one; an empty path or `.` is the item itself.
+ */
+export const absolute = (basePath: string, path: string): string =>
+  path.startsWith('/')
+    ? path
+    : basePath !== '' && (path === '' || path === '.')
+    ? basePath
+    : `${basePath}/${path}`;
+
 /** Reads one JSON Pointer; a path without a leading slash is read from the root. */
 export function read(model: A2uiValue, path: string): A2uiValue {
   let value: A2uiValue = model;
@@ -290,18 +301,27 @@ function invoke(
 }
 
 /** A literal, a `{ path }` read from the model, a `{ call }`, or a list of those. */
-export function resolve(value: A2uiValue, model: A2uiValue, depth = 0): A2uiValue {
+export function resolve(
+  value: A2uiValue,
+  model: A2uiValue,
+  depth = 0,
+  basePath = ''
+): A2uiValue {
   if (Array.isArray(value))
-    return Object.freeze(value.map((item) => resolve(item, model, depth + 1)));
+    return Object.freeze(
+      value.map((item) => resolve(item, model, depth + 1, basePath))
+    );
   if (!record(value)) return value;
   if (typeof value['call'] === 'string')
     return invoke(
       value['call'],
       record(value['args']) ? value['args'] : {},
-      (item) => resolve(item, model, depth + 1),
+      (item) => resolve(item, model, depth + 1, basePath),
       depth
     );
-  return typeof value['path'] === 'string' ? read(model, value['path']) : value;
+  return typeof value['path'] === 'string'
+    ? read(model, absolute(basePath, value['path']))
+    : value;
 }
 
 /**
@@ -312,11 +332,19 @@ export function resolve(value: A2uiValue, model: A2uiValue, depth = 0): A2uiValu
  * `formatDate`, `pluralize`, `and`, `or`, `not`, `required`, `regex`,
  * `length`, `numeric` and `email`. Numbers and plurals use the viewer's
  * locale. An unknown function, or one whose arguments it cannot use, gives
- * undefined.
+ * undefined. For a value inside a child template, `basePath` is its list
+ * item's path (for example `/items/0`): paths without a leading slash are then
+ * read from that item.
  */
 export function resolveA2uiValue(
   surface: A2uiSurfaceSnapshot,
-  value: A2uiValue
+  value: A2uiValue,
+  basePath = ''
 ): A2uiValue {
-  return resolve(value, record(surface.dataModel) ? surface.dataModel : {});
+  return resolve(
+    value,
+    record(surface.dataModel) ? surface.dataModel : {},
+    0,
+    basePath
+  );
 }

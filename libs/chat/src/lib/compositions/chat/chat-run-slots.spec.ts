@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ChatComponent } from './chat.component';
 import { ChatRunActivityTemplateDirective } from './chat-run-activity-template.directive';
 import { ChatInterruptTemplateDirective } from './chat-interrupt-template.directive';
-import { ChatApprovalCardComponent } from '../chat-approval-card/chat-approval-card.component';
 import { mockAgent, type MockAgent } from '../../testing/mock-agent';
 import { staticDelivery, type Message } from '../../agent';
 
@@ -251,62 +250,5 @@ describe('ChatComponent — run-slot scrolling', () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     expect(document.activeElement).toBe(el(fixture).querySelector('chat-input textarea'));
     fixture.nativeElement.remove();
-  });
-});
-
-@Component({
-  standalone: true,
-  imports: [ChatComponent, ChatApprovalCardComponent],
-  template: `
-    <chat [agent]="agent">
-      <div chatFooterStatus>
-        <chat-approval-card [agent]="agent" [request]="request()" approveLabel="Confirm booking" recordLabel="Booking" />
-      </div>
-    </chat>
-  `,
-})
-class RequestCardHost {
-  agent: MockAgent = mockAgent({ messages: [user('u1'), assistant('a1')] });
-  readonly request = signal<unknown>(undefined);
-}
-
-describe('ChatComponent — an approval card with an app-supplied request', () => {
-  const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
-  function render() {
-    const fixture = TestBed.createComponent(RequestCardHost);
-    document.body.appendChild(fixture.nativeElement);
-    fixture.componentInstance.agent.isLoading.set(true);
-    fixture.componentInstance.request.set({ summary: 'Fictional trip' });
-    fixture.detectChanges();
-    TestBed.tick();
-    return fixture;
-  }
-  afterEach(() => document.body.querySelectorAll('[ng-version]').forEach((node) => node.remove()));
-
-  it('asks the person to answer it in the composer while it waits', () => {
-    const fixture = render();
-    const textarea = (fixture.nativeElement as HTMLElement).querySelector('chat-input textarea')!;
-    expect(textarea.getAttribute('placeholder')).toBe('Answer the approval to continue');
-    fixture.componentInstance.request.set(undefined);
-    fixture.detectChanges();
-    expect(textarea.getAttribute('placeholder')).toBe('Type a message...');
-  });
-
-  it('returns focus to the composer once the run that follows the answer finishes', async () => {
-    const fixture = render();
-    const root = fixture.nativeElement as HTMLElement;
-    root.querySelector<HTMLButtonElement>('.chat-approval-card--inline button')!.click();
-    fixture.componentInstance.request.set(undefined);
-    fixture.detectChanges();
-    await frame();
-    // The run continues after the answer and a browser cannot focus the disabled
-    // composer (jsdom can), so model the failed first attempt with a blur.
-    (document.activeElement as HTMLElement | null)?.blur();
-    expect(document.activeElement).toBe(document.body);
-    fixture.componentInstance.agent.isLoading.set(false);
-    fixture.detectChanges();
-    await frame();
-    expect(document.activeElement).toBe(root.querySelector('chat-input textarea'));
-    expect(root.textContent).toContain('Approved: Booking');
   });
 });

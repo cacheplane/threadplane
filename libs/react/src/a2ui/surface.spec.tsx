@@ -225,7 +225,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(Object.keys(spec?.elements ?? {})).toEqual(['first', 'second']);
   });
 
-  it('keeps each reachable component once and drops cycles, missing ids and templates', () => {
+  it('keeps each reachable component once and drops cycles, missing ids and a template without a list', () => {
     const { spec } = a2uiSurfaceSpec(
       surface([
         { id: 'root', component: 'Column', children: ['a', 'missing', 'a', 'list'] },
@@ -244,6 +244,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(a2uiSurfaceSpec(surface([], 'text'))).toEqual({
       spec: null,
       state: {},
+      sources: new Map(),
     });
   });
 });

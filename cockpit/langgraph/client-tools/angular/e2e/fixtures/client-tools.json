@@ -27,14 +27,6 @@
     {
       "match": { "userMessage": "Book a table for two at 7pm" },
       "response": { "toolCalls": [ { "name": "confirm_booking", "arguments": { "summary": "Table for two at 7pm" } } ] }
-    },
-    {
-      "match": { "userMessage": "Plan a trip to Portland", "hasToolResult": true },
-      "response": { "content": "Portland is 68°F and sunny, and your fictional trip is booked." }
-    },
-    {
-      "match": { "userMessage": "Plan a trip to Portland" },
-      "response": { "toolCalls": [ { "name": "get_weather", "arguments": { "location": "Portland" } }, { "name": "confirm_booking", "arguments": { "summary": "Fictional trip to Portland" } } ] }
     }
   ]
 }

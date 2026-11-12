@@ -25,12 +25,15 @@ export interface A2uiActionMessage {
  * Builds the action message for one component's `action.event`, resolving
  * every context value against the surface's current data model as
  * `resolveA2uiValue` does. Returns null when the component is missing or has
- * no event action. Nothing is sent; the caller transports it.
+ * no event action. For a component stamped from a child template, `basePath`
+ * is its list item's path, and the message names the template component.
+ * Nothing is sent; the caller transports it.
  */
 export function createA2uiActionMessage(
   surface: A2uiSurfaceSnapshot,
   sourceComponentId: string,
-  timestamp: string = new Date().toISOString()
+  timestamp: string = new Date().toISOString(),
+  basePath = ''
 ): A2uiActionMessage | null {
   const source = surface.components.find((item) => item.id === sourceComponentId);
   const action = source?.['action'];
@@ -40,7 +43,7 @@ export function createA2uiActionMessage(
   const authored = event['context'];
   if (record(authored))
     for (const key of Object.keys(authored))
-      context[key] = resolveA2uiValue(surface, authored[key]);
+      context[key] = resolveA2uiValue(surface, authored[key], basePath);
   const child = source.component === 'Button' ? source['child'] : undefined;
   const text = surface.components.find(
     (item) => item.id === child && item.component === 'Text'

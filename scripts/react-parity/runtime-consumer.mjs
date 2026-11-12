@@ -844,7 +844,7 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(party).toHaveAccessibleName('Party: 4');
   await page.keyboard.press('End');
   await expect(party).toHaveAccessibleName('Party: 8');
-  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' });
+  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle', stops: [{ city: 'Dijon', platform: '2' }, { city: 'Macon-with-an-unbroken-name-that-must-wrap-inside-the-form-and-never-widen-the-page', platform: '5' }] });
   // A literal value is fixed.
   const reference = form.getByRole('textbox', { name: 'Reference' });
   await expect(reference).toHaveJSProperty('readOnly', true);
@@ -953,6 +953,38 @@ export async function runA2uiSurfaceScenarios(page, url) {
   assert.deepEqual(await page.evaluate(() => window.__opened), [['https://example.test/trips/8', '_blank', 'noopener,noreferrer']]);
   await expect(form.getByRole('button', { name: 'Unsafe link' })).toBeDisabled();
   assert.notEqual(await page.title(), 'opened');
+  // Child template: one row per list item, reading and writing its own item.
+  const dijon = form.getByRole('textbox', { name: 'Dijon' });
+  await expect(form.getByText('Dijon for Grace Hopper', { exact: true })).toBeVisible();
+  await expect(dijon).toHaveValue('2');
+  await expect(form.getByRole('textbox', { name: /^Macon/ })).toHaveValue('5');
+  await dijon.focus();
+  await page.keyboard.press('End');
+  await page.keyboard.type('B');
+  await expect(dijon).toBeFocused();
+  assert.deepEqual((await formModel()).stops.map((stop) => stop.platform), ['2B', '5']);
+  // A press in a row sends that row's context under the template's component id.
+  await form.getByRole('button', { name: 'Board at Dijon' }).click();
+  const boarded = (await formActions()).at(-1).action;
+  assert.equal((await formActions()).length, 4);
+  assert.deepEqual({ name: boarded.name, source: boarded.sourceComponentId, context: boarded.context }, { name: 'stop', source: 'stopPick', context: { city: 'Dijon', platform: '2B' } });
+  // The agent appends an item: a new row mounts, the edited row keeps its element, and its failing check blocks the next press on that row only.
+  await dijon.evaluate((node) => { node.dataset.kept = 'yes'; });
+  await page.getByRole('button', { name: 'Agent adds stop' }).click();
+  const lyon = form.getByRole('textbox', { name: 'Lyon' });
+  await expect(lyon).toHaveValue('');
+  await expect(dijon).toHaveAttribute('data-kept', 'yes');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.click();
+  await expect(form.getByRole('alert')).toHaveText('Platform needed');
+  await expect(lyon).toHaveAttribute('aria-invalid', 'true');
+  await expect(dijon).not.toHaveAttribute('aria-invalid', 'true');
+  assert.equal((await formActions()).length, 4);
+  assert.equal((await formErrors()).at(-1).error.path, '/stops/2/platform');
+  await lyon.fill('9');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 5);
   // Without a handler the same Button is disabled.
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(bookTrip).toBeDisabled();

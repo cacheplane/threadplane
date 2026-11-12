@@ -1929,7 +1929,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; theme identity and child templates remain open."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; child templates are stamped per list item; theme identity remains open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -16402,7 +16402,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Custom function registries, an explicit locale and template scopes remain open."
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Paths inside a child template resolve from the item path. Custom function registries and an explicit locale remain open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#evaluateA2uiChecks",
@@ -16432,13 +16432,22 @@
       "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
     },
     {
+      "id": "source:libs/content/src/a2ui/templates.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral child template expansion over one surface snapshot: every component a template stamps, once per list item with its item path, nested templates followed and self-reference bounded by the data. Used by check evaluation; stable item keys beyond list position remain open."
+    },
+    {
       "id": "source:libs/content/src/a2ui/functions.ts",
       "taskIds": [
         "T19"
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Custom function registries, an explicit locale and template scopes remain open."
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Paths inside a child template resolve from the item path. Custom function registries and an explicit locale remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/checks.ts",

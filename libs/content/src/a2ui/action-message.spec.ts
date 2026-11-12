@@ -51,6 +51,19 @@ describe('createA2uiActionMessage', () => {
     expect(message?.action.context['unknown']).toBeUndefined();
   });
 
+  it('resolves context from a template item and names the template component', () => {
+    const owner = surface(
+      [
+        { id: 'root', component: 'List', children: { path: '/rows', componentId: 'pick' } },
+        { id: 'pick', component: 'Button', child: 'l', action: { event: { name: 'pick', context: { id: { path: 'id' }, line: { call: 'formatString', args: { value: '${name} (${/kind})' } }, kind: { path: '/kind' } } } } },
+        { id: 'l', component: 'Text', text: { path: 'name' } },
+      ],
+      { kind: 'train', rows: [{ id: 'a', name: 'First' }, { id: 'b', name: 'Second' }] }
+    );
+    const message = createA2uiActionMessage(owner.getSnapshot().surfaces[0], 'pick', AT, '/rows/1');
+    expect(message?.action).toEqual({ name: 'pick', surfaceId: 's', sourceComponentId: 'pick', timestamp: AT, context: { id: 'b', line: 'Second (train)', kind: 'train' } });
+  });
+
   it('attaches the whole data model only when the surface asked for it', () => {
     const snapshot = (flag?: boolean) => surface(book, data, flag).getSnapshot().surfaces[0];
     expect(createA2uiActionMessage(snapshot(), 'go', AT)?.metadata).toBeUndefined();

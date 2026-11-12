@@ -9,11 +9,7 @@ export function createClientToolsFixture() {
   };
   const event = (type, data) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
   const weather = { location: 'Portland', temperatureF: 68, conditions: 'Sunny', humidity: 55, windMph: 8 };
-  // Mirrors the deployed graph's plan (cockpit/langgraph/client-tools/python/src/graph.py).
-  const stepLabel = ({ name, args }) => {
-    const where = typeof args?.location === 'string' && args.location.trim() ? ` for ${args.location}` : '';
-    return ({ get_weather: `Check the weather${where}`, weather_card: `Show the weather card${where}`, weather_snapshot: `Show a weather snapshot${where}`, confirm_booking: 'Confirm the booking with you', slow_status_check: 'Run the status check' })[name] ?? name;
-  };
+  const trip = ['Check the weather and your booking', 'Write the trip summary', 'Suggest what to pack'];
   const names = ['get_weather', 'slow_status_check', 'weather_card', 'weather_snapshot', 'confirm_booking'];
   function calls(text) {
     const call = (id, name, args) => ({ id: sequence === 1 ? id : `${id}-${sequence}`, name, args, type: 'tool_call' });
@@ -89,12 +85,9 @@ export function createClientToolsFixture() {
       state.messages.push(...body.input.messages);
       response.write(event('values', state));
       const toolCalls = message.type === 'tool' || message.role === 'tool' ? [] : calls(message.content);
-      // A plan in the deep-agents `todos` shape, as the deployed graph writes it: several calls in one response
-      // declare it, the answer after their results completes it, and a new user turn clears it.
-      const isTool = message.type === 'tool' || message.role === 'tool';
-      if (toolCalls.length >= 2) state.todos = [...toolCalls.map((call) => ({ content: stepLabel(call), status: 'in_progress' })), { content: 'Summarize the results', status: 'pending' }];
-      else if (state.todos?.length && isTool && toolCalls.length === 0) state.todos = state.todos.map((todo) => ({ ...todo, status: 'completed' }));
-      else if (state.todos?.length && !isTool) state.todos = [];
+      // A plan in the deep-agents `todos` shape: declared with the Trip calls, all done after their follow-up.
+      if (message.content === 'Trip') state.todos = trip.map((content, index) => ({ content, status: index ? 'pending' : 'in_progress' }));
+      else if (state.todos && toolCalls.length === 0) state.todos = trip.map((content) => ({ content, status: 'completed' }));
       const answer = { type: 'ai', id: 'answer-' + runId, content: toolCalls.length ? '' : 'Browser result received.', ...(toolCalls.length ? { tool_calls: toolCalls } : {}) };
       if (toolCalls.length) {
         // This partial fragment is deliberately not actionable until final values.

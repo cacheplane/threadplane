@@ -155,4 +155,47 @@ describe('evaluateA2uiChecks', () => {
     ).toEqual([{ componentId: 'root', message: 'real' }]);
     expect(evaluateA2uiChecks(surface([{ id: 'root', component: 'Slider', value: 3, checks: 'nope' }]))).toEqual([]);
   });
+
+  describe('child templates', () => {
+    const rows = (data: unknown, extra: readonly Record<string, unknown>[] = []) =>
+      surface(
+        [
+          { id: 'root', component: 'Column', children: ['list', 'top'] },
+          { id: 'top', component: 'TextField', value: { path: '/title' }, checks: [required('/title', 'Title')] },
+          { id: 'list', component: 'List', children: { path: '/rows', componentId: 'row' } },
+          { id: 'row', component: 'Row', children: ['name'] },
+          { id: 'name', component: 'TextField', value: { path: 'name' }, validationRegexp: '^[A-Z]', checks: [required('name', 'Name')] },
+          ...extra,
+        ],
+        data
+      );
+
+    it('evaluates a templated component once per item, after the others, with the item path', () => {
+      expect(evaluateA2uiChecks(rows({ title: '', rows: [{ name: 'Ada' }, { name: '' }, { name: 'grace' }] }))).toEqual([
+        { componentId: 'top', message: 'Title', path: '/title' },
+        { componentId: 'name', message: 'Name', path: '/rows/1/name', basePath: '/rows/1' },
+        { componentId: 'name', message: 'Invalid format', path: '/rows/2/name', basePath: '/rows/2' },
+      ]);
+    });
+
+    it('does not evaluate template content outside an item, even for an empty or missing list', () => {
+      expect(evaluateA2uiChecks(rows({ title: 'x', rows: [] }))).toEqual([]);
+      expect(evaluateA2uiChecks(rows({ title: 'x' }))).toEqual([]);
+      expect(evaluateA2uiChecks(rows({ title: 'x', rows: 'no list' }))).toEqual([]);
+    });
+
+    it('follows nested templates and ends a template that names itself with its data', () => {
+      const failures = evaluateA2uiChecks(
+        surface(
+          [
+            { id: 'root', component: 'List', children: { path: '/tree', componentId: 'node' } },
+            { id: 'node', component: 'Column', children: { path: 'kids', componentId: 'node' }, checks: [required('label', 'Label')] },
+            { id: 'loop', component: 'List', children: { path: '/tree', componentId: 'loop' } },
+          ],
+          { tree: [{ label: 'a', kids: [{ label: '' }, { label: 'c', kids: [{ label: '' }] }] }] }
+        )
+      );
+      expect(failures.map((failure) => failure.basePath)).toEqual(['/tree/0/kids/0', '/tree/0/kids/1/kids/0']);
+    });
+  });
 });

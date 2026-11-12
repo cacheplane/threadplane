@@ -282,7 +282,7 @@ it('renders every native AG-UI Client Tools include from exact registered source
   if (!context) throw new Error('Missing native AG-UI Client Tools source context');
   const article = readFileSync(join(WORKSPACE_ROOT, 'apps/website/content/docs/react/ag-ui/guides/client-tools.mdx'), 'utf8');
   const includes = includesIn(article);
-  expect(includes).toHaveLength(10);
+  expect(includes).toHaveLength(11);
   for (const include of includes) {
     const asset = resolveExampleFile(include.file, context);
     expect(context.sources[asset]).toBe(readFileSync(join(WORKSPACE_ROOT, asset), 'utf8'));
