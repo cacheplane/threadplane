@@ -9,7 +9,7 @@ const styles = `
 :host {
   --tp-status-tone: var(--tplane-chat-text-muted);
   --tp-status-bg: var(--tplane-chat-surface-alt);
-  --tp-status-border: var(--tplane-chat-border);
+  --tp-status-border: var(--tplane-chat-separator);
   display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:8px 0; padding:8px 12px;
   border:1px solid var(--tp-status-border);
   border-radius:var(--tplane-chat-radius-card);
@@ -30,7 +30,7 @@ export const STATUS_PANEL_CONTENT_STYLES = `
 .tp-status-panel > p { margin:0; }
 .tp-tool-activity__error.tp-status-panel > p { color:var(--tplane-chat-error-text); font-weight:500; }
 .tp-tool-activity__retry {
-  min-height:32px; padding:4px 12px; border:1px solid var(--tplane-chat-border);
+  min-height:32px; padding:4px 12px; border:1px solid var(--tplane-chat-separator);
   border-radius:var(--tplane-chat-radius-sm); background:var(--tplane-chat-surface);
   color:var(--tplane-chat-text); font:inherit; cursor:pointer;
 }

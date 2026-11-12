@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChatWindow, LauncherButton, ChatInput, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
+import { ChatWindow, LauncherButton, ChatInput, GenerativeUiSkeleton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -16,6 +16,8 @@ export function OverflowMenuFixture() {
     return <SelectFixture />;
   if (new URLSearchParams(window.location.search).has('shell'))
     return <ShellFixture />;
+  if (new URLSearchParams(window.location.search).has('primitives'))
+    return <PrimitivesFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
     return <RatingFixture />;
   if (new URLSearchParams(window.location.search).has('slots'))
@@ -389,6 +391,38 @@ function ShellFixture() {
           </div>
         </ChatWindow>
       </div>
+    </main>
+  );
+}
+
+const CHECKPOINTS: readonly TimelineItem[] = [
+  { id: 'cp-1', label: 'Search flights', description: 'Two results' },
+  { id: 'cp-2', label: 'Pick-a-seat-with-an-unbroken-checkpoint-label-that-must-wrap-inside-the-row-and-never-widen-the-page', disabled: true },
+  { id: 'cp-3', label: 'Book' },
+];
+const TRACE_STATES: readonly TraceState[] = ['pending', 'running', 'done', 'error'];
+
+/** Installed Timeline requests, GenerativeUiSkeleton and Trace; no backend or session commands. */
+function PrimitivesFixture() {
+  const [selected, setSelected] = useState('cp-1');
+  const [actions, setActions] = useState(true);
+  const [requests, setRequests] = useState<string[]>([]);
+  const [state, setState] = useState<TraceState>('pending');
+  const request = (kind: string) => (id: string) => setRequests((values) => [...values, `${kind}:${id}`]);
+  return (
+    <main>
+      <h1>Installed primitives</h1>
+      <button type="button" onClick={() => setActions((value) => !value)}>Toggle timeline actions</button>
+      <Timeline items={CHECKPOINTS} selectedId={selected} onSelect={setSelected} onReplay={actions ? request('replay') : undefined} onFork={actions ? request('fork') : undefined} />
+      <output data-testid="timeline-selected">{selected}</output>
+      <output data-testid="timeline-requests">{JSON.stringify(requests)}</output>
+      <GenerativeUiSkeleton label="Drawing-the-seat-map-with-an-unbroken-label-that-must-wrap-inside-the-card-and-never-widen-the-page" />
+      {TRACE_STATES.map((next) => (
+        <button key={next} type="button" onClick={() => setState(next)}>{`Trace ${next}`}</button>
+      ))}
+      <Trace state={state} icon="*" meta="2s" label="Search-flights-with-an-unbroken-step-label-that-must-wrap-inside-the-toggle-and-never-widen-the-page">
+        <p style={{ margin: 0, blockSize: 600 }}>Trace detail</p>
+      </Trace>
     </main>
   );
 }

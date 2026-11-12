@@ -1402,6 +1402,125 @@ export async function runShellScenarios(page, url) {
   await page.mouse.move(0, 0);
 }
 
+/** Installed Timeline requests, GenerativeUiSkeleton and Trace: layout, wrapping, keyboard, motion and state styling. */
+export async function runPrimitiveScenarios(page, url) {
+  await page.goto(`${url}/?menu&primitives`);
+  await expect(page.getByRole('heading', { name: 'Installed primitives' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const style = (locator, property) => locator.evaluate((node, name) => getComputedStyle(node)[name], property);
+  const fits = async (locator, name) => {
+    const box = await rect(locator), width = page.viewportSize().width;
+    assert.ok(box.left >= -0.5 && box.right <= width + 0.5, `${name} stays inside a ${width}px viewport`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `${name} does not widen the page at ${width}px`);
+  };
+  const timeline = page.getByRole('list', { name: 'Checkpoints' });
+  const selectButton = (name) => timeline.getByRole('button', { name, exact: false }).and(page.locator('.tp-timeline__button'));
+  const replay = (label) => timeline.getByRole('button', { name: new RegExp(`^Replay from ${label}`) });
+  const fork = (label) => timeline.getByRole('button', { name: new RegExp(`^Fork from ${label}`) });
+  const requests = async () => JSON.parse(await page.getByTestId('timeline-requests').textContent());
+  const skeleton = page.locator('.tp-genui-skeleton');
+  const trace = page.locator('.tp-trace');
+  const toggle = trace.getByRole('button');
+  const content = trace.locator('.tp-trace__content');
+  const traceLabel = trace.locator('.tp-trace__label');
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    // Timeline: each row keeps its actions beside or below the selection button and inside the page.
+    await expect(timeline.locator('.tp-timeline__action')).toHaveCount(6);
+    for (const row of await timeline.locator('.tp-timeline__row').all()) await fits(row, 'timeline row');
+    const first = await rect(selectButton('Search flights')), firstReplay = await rect(replay('Search flights'));
+    assert.ok(firstReplay.left >= first.right - 0.5 || firstReplay.top >= first.bottom - 0.5, 'actions never overlap the selection button');
+    if (width === 1280) assert.ok(firstReplay.top < first.bottom, 'a wide row keeps its actions on the same line');
+    await fits(skeleton, 'skeleton');
+    await fits(trace, 'trace');
+  }
+  // Keyboard: Tab moves selection button, Replay, Fork; Enter requests once and selects nothing.
+  await selectButton('Search flights').focus();
+  await page.keyboard.press('Tab');
+  await expect(replay('Search flights')).toBeFocused();
+  assert.equal(await style(replay('Search flights'), 'outlineStyle'), 'solid');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await expect(fork('Search flights')).toBeFocused();
+  await page.keyboard.press('Space');
+  await fork('Book').click();
+  assert.deepEqual(await requests(), ['replay:cp-1', 'fork:cp-1', 'fork:cp-3']);
+  await expect(page.getByTestId('timeline-selected')).toHaveText('cp-1');
+  await expect(selectButton('Search flights')).toHaveAttribute('aria-current', 'true');
+  // A disabled item disables its actions, and they look disabled.
+  await expect(replay('Pick-a-seat')).toBeDisabled();
+  await expect(fork('Pick-a-seat')).toBeDisabled();
+  assert.ok(Number(await style(replay('Pick-a-seat'), 'opacity')) < 1);
+  // Without the callbacks the plain row returns.
+  await page.getByRole('button', { name: 'Toggle timeline actions' }).click();
+  await expect(timeline.locator('.tp-timeline__action')).toHaveCount(0);
+  await expect(timeline.locator('.tp-timeline__row')).toHaveCount(0);
+  await expect(timeline.getByRole('button')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Toggle timeline actions' }).click();
+  // Skeleton: a polite status with three decorative rows of 70, 90 and 50 percent that shimmer.
+  await expect(skeleton).toHaveAttribute('role', 'status');
+  await expect(skeleton).toHaveText(/^Drawing-the-seat-map/);
+  const rows = skeleton.locator('.tp-genui-skeleton__row');
+  await expect(rows).toHaveCount(3);
+  const rowsWidth = (await rect(skeleton.locator('.tp-genui-skeleton__rows'))).width;
+  const shares = [];
+  for (const row of await rows.all()) shares.push(Math.round(((await rect(row)).width / rowsWidth) * 100));
+  assert.deepEqual(shares, [70, 90, 50]);
+  assert.ok((await rect(rows.first())).height >= 8);
+  assert.equal(await style(rows.first(), 'animationName'), 'tp-genui-skeleton-shimmer');
+  assert.notEqual(await style(rows.first(), 'backgroundImage'), 'none');
+  const label = skeleton.locator('.tp-genui-skeleton__label');
+  assert.ok((await rect(label)).right <= (await rect(skeleton)).right + 0.5, 'skeleton label wraps inside the card');
+  assert.ok((await rect(label)).bottom <= (await rect(rows.first())).top, 'skeleton label sits above the rows');
+  // Trace: closed while pending, with the toggle named by its label and meta.
+  await expect(toggle).toHaveAccessibleName(/^Search-flights-with-an-unbroken-step-label.* 2s$/);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(content).toBeHidden();
+  const closedChevron = await style(trace.locator('.tp-trace__chevron'), 'transform');
+  const meta = trace.locator('.tp-trace__meta');
+  assert.ok((await rect(meta)).right <= (await rect(toggle)).right + 0.5, 'trace meta stays inside the toggle');
+  assert.ok((await rect(traceLabel)).right <= (await rect(meta)).left + 0.5, 'trace label wraps before the meta');
+  // Running opens it, pulses the label and turns the chevron; the detail scrolls inside 250px.
+  await page.getByRole('button', { name: 'Trace running' }).click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(content).toBeVisible();
+  assert.equal(await style(traceLabel, 'animationName'), 'tp-trace-pulse');
+  await expect.poll(() => style(trace.locator('.tp-trace__chevron'), 'transform')).not.toBe(closedChevron);
+  const scroll = await content.evaluate((node) => ({ client: node.clientHeight, scroll: node.scrollHeight }));
+  assert.ok(scroll.client <= 250 && scroll.scroll > scroll.client, 'trace detail scrolls inside 250px');
+  await fits(trace, 'open trace');
+  // The keyboard closes it, the choice survives finishing, and an error reopens it in the danger colour.
+  await page.getByRole('button', { name: 'Trace error' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(toggle).toBeFocused();
+  assert.equal(await style(toggle, 'outlineStyle'), 'solid');
+  await page.keyboard.press('Enter');
+  await expect(content).toBeHidden();
+  await expect(toggle).toBeFocused();
+  await page.getByRole('button', { name: 'Trace done' }).click();
+  await expect(content).toBeHidden();
+  assert.equal(await style(traceLabel, 'animationName'), 'none');
+  const doneColor = await style(traceLabel, 'color');
+  await page.getByRole('button', { name: 'Trace error' }).click();
+  await expect(content).toBeVisible();
+  assert.notEqual(await style(traceLabel, 'color'), doneColor);
+  // Reduced motion stops the shimmer and the pulse.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Trace running' }).click();
+  assert.equal(await style(rows.first(), 'animationName'), 'none');
+  assert.equal(await style(traceLabel, 'animationName'), 'none');
+  assert.equal(await style(trace.locator('.tp-trace__chevron'), 'transitionDuration'), '0s');
+  await page.emulateMedia({ reducedMotion: null });
+  // Right to left: the chevron mirrors while closed.
+  await page.getByRole('button', { name: 'Trace pending' }).click();
+  await expect(content).toBeHidden();
+  await page.evaluate(() => { document.documentElement.dir = 'rtl'; });
+  await expect.poll(() => style(trace.locator('.tp-trace__chevron'), 'transform')).not.toBe(closedChevron);
+  await fits(trace, 'right-to-left trace');
+  await fits(timeline, 'right-to-left timeline');
+  await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
+}
+
 export async function runSelectScenarios(page, url) {
   await page.goto(`${url}/?menu&select`);
   const trigger = page.locator('.tp-select__trigger');
@@ -2447,6 +2566,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runOverflowMenuScenarios(page, server.url);
       await runSelectScenarios(page, server.url);
       await runShellScenarios(page, server.url);
+      await runPrimitiveScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);

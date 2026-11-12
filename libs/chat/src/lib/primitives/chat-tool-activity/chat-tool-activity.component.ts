@@ -126,7 +126,7 @@ summary > span + span { margin-inline-start:12px; }
 .tp-tool-activity-group[data-active='true'] > .tp-tool-activity-group__details > summary { padding-inline-end:8rem; }
 .tp-tool-activity-group__progress { position:absolute; inset-block-start:0; inset-inline-end:0; display:flex; align-items:center; gap:8px; min-height:40px; }
 .tp-tool-activity-group__elapsed { color:var(--tplane-chat-text-muted); font-size:12px; font-variant-numeric:tabular-nums; }
-.tp-tool-activity-group__stop { min-height:28px; padding:2px 10px; border:1px solid var(--tplane-chat-border); border-radius:var(--tplane-chat-radius-sm); background:var(--tplane-chat-surface); color:var(--tplane-chat-text); font:inherit; font-size:12px; cursor:pointer; }
+.tp-tool-activity-group__stop { min-height:28px; padding:2px 10px; border:1px solid var(--tplane-chat-separator); border-radius:var(--tplane-chat-radius-sm); background:var(--tplane-chat-surface); color:var(--tplane-chat-text); font:inherit; font-size:12px; cursor:pointer; }
 .tp-tool-activity-group__stop:focus-visible { outline:2px solid var(--tplane-chat-focus-ring); outline-offset:2px; }
 @media (pointer: coarse) { .tp-tool-activity-group__stop { min-height:44px; } }
 .tp-tool-activity-group__plan-step { margin:12px 0 0; font-weight:500; color:var(--tplane-chat-text-muted); }
