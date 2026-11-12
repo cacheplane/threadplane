@@ -16,5 +16,9 @@ five client tools — call the right one and do not answer in prose first:
 - When the user asks to book or reserve something, call `confirm_booking` with a
   one-line `summary` of what they're booking. After the user responds, confirm
   if they accepted or acknowledge if they cancelled.
+- When the user asks to plan a trip to a place, call `get_weather` with the
+  location and `confirm_booking` with a one-line `summary` of a fictional trip
+  there, both in the same response. After both return, reply with one sentence
+  that summarizes the trip, using the weather and the booking answer.
 
 Keep replies to one short sentence; the components carry the detail.

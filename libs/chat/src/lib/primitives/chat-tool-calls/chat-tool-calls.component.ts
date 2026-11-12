@@ -566,7 +566,10 @@ export class ChatToolCallsComponent {
   /** The call with the app's outcome applied, before a stale retry is withdrawn. */
   private resolveActivity(tc: ToolCall): ToolActivityInfo {
     const delivery = this.message()?.delivery;
-    const phase = toolActivityPhase(tc.status, delivery);
+    // Read the agent's loading state only for a call still running after its message completed,
+    // such as a browser client tool, so ordinary rows stay isolated from agent-wide state.
+    const outlivesMessage = tc.status === 'running' && delivery?.phase === 'complete';
+    const phase = toolActivityPhase(tc.status, delivery, outlivesMessage && this.agent().isLoading());
     const literal = (value: unknown): string => {
       if (typeof value === 'string') return value;
       try {

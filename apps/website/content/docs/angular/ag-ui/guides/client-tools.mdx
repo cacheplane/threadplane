@@ -18,7 +18,7 @@ One user turn can contain several model calls and browser-tool continuations. A 
 
 The Run tab shows the prebuilt `<chat>` composition wired to five browser-executed tools. Ask "What is the weather in Denver?" and the model calls `get_weather`, whose handler runs in the page and returns a reading the model then summarizes in one sentence.
 
-Ask it to *show* a weather card and the model calls `weather_card` instead, filling an Angular component's inputs with the readings it invents; the card renders inline in the transcript. Ask it to book something and `confirm_booking` mounts a card with Confirm and Cancel buttons, and whichever you click becomes the tool result that resumes the run. Two further prompts exercise the edges: a terminal snapshot that ends the turn without a spoken summary, and a slow status check you can interrupt with the stop button.
+Ask it to *show* a weather card and the model calls `weather_card` instead, filling an Angular component's inputs with the readings it invents; the card renders inline in the transcript. Ask it to book something and `confirm_booking` waits in the inline approval panel with a **Confirm booking** action and a cancel action, and whichever you click becomes the tool result that resumes the run. Ask it to plan a trip and the model calls `get_weather` and `confirm_booking` together, so the graph writes a plan, and its pending step shows below the booking while the booking waits. Two further prompts exercise the edges: a terminal snapshot that ends the turn without a spoken summary, and a slow status check you can interrupt with the stop button.
 
 ## How it is built
 
@@ -27,6 +27,8 @@ Seven files carry the feature: a graph that binds the browser's tool declaration
 ### The graph binds client stubs and ends the turn
 
 The graph has one node. Its `State` declares a `tools` channel alongside `messages`, because that is where the client tool catalog arrives, and `bind_client_tools` reads it there to bind the declarations onto the model for this invocation. There are no server tools, so `route` returns `END` unconditionally.
+
+The `todos` channel holds a plan. When one response requests two or more browser tools, `next_todos` writes one in-progress step per call and a pending **Summarize the results** step, in the `[{content, status}]` shape a to-do tool writes. The answer after the results completes the plan, and the next user message clears it. `ag-ui-langgraph` publishes the state, and the session reads `todos` as `agent.plan()`.
 
 <ExampleCode file="graph.py" />
 
@@ -94,13 +96,15 @@ Inputs are optional because props arrive while the call streams, so the card rea
 
 ### The ask component that resumes the run
 
-`confirm_booking` is an `ask`: the model fills `summary`, and the run waits for a person. The component injects the render host and calls `result({ confirmed })`, which the coordinator matches to the pending call by tool name and settles as that call's result.
+`confirm_booking` is an `ask`: the model fills `summary`, and the run waits for a person. The component passes the ask to `chat-approval-card` as its `request`, so the booking reads like every other approval in the transcript. The panel names its actions, takes focus on the first one, and the composer says **Answer the approval to continue** while it waits. The card's `(action)` handler calls the render host's `result({ confirmed })`, which the coordinator matches to the pending call by tool name and settles as that call's result.
 
 <ExampleCode file="confirm-booking.component.ts" />
 
-<Callout type="tip" title="Why the card freezes after the answer">
-Settling writes the emitted value onto the local tool call, and the mounted component is re-rendered with the merged props. That is why `confirmed` is declared with a default of `undefined`: while it is undefined the buttons are live, and once the user answers the template branches to a frozen line with no buttons.
+<Callout type="tip" title="Why the panel gives way to a record">
+Settling writes the emitted value onto the local tool call, and the mounted component is re-rendered with the merged props. That is why `confirmed` is declared with a default of `undefined`: while it is undefined the component passes a `request`, and once the person answers the request clears. The panel then gives way to the one-line **Approved: Booking** record, and the composer takes focus back when the follow-up run finishes.
 </Callout>
+
+While the booking waits, the run has ended, so no tool group is running to list the plan. `<chat>` lists the plan's pending steps after the waiting panel instead, until the person answers.
 
 ### Stopping a tool that is still running
 
