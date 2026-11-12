@@ -6,7 +6,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
-import type { Agent, Message, MessageDelivery, Subagent } from '../../agent';
+import type { Agent, AgentPlanStep, Message, MessageDelivery, Subagent } from '../../agent';
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/render';
 import type { A2uiActionMessage } from '@threadplane/a2ui';
@@ -215,6 +215,8 @@ export function isPinned(
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
+    .chat-plan-steps { margin: 0 0 20px; }
+    .chat-plan-steps__step { margin: 12px 0 0; font-weight: 500; color: var(--tplane-chat-text-muted); }
     .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: -2px; }
     .chat-stopped-notice {
       display: flex;
@@ -381,6 +383,14 @@ export function isPinned(
                     [handlers]="currentHandlers"
                     (events)="onClientToolEvent($event)"
                   />
+                  @if (trailingPlan(); as tail) { @if (tail.messageId === message.id) {
+                    <!-- Upcoming steps come only from a plan the agent declared. -->
+                    <div class="chat-plan-steps">
+                      @for (step of tail.steps; track $index) {
+                        <p class="chat-plan-steps__step">{{ step.label }}</p>
+                      }
+                    </div>
+                  } }
                   </ng-container>
                   <ng-container ngProjectAs="[chatAfterMarkdown]">
                   @if (presentation.spec; as spec) {
@@ -666,6 +676,32 @@ export class ChatComponent {
     ...this.genuiToolNames(),
     ...this.viewToolNames(),
   ]);
+
+  /**
+   * While the latest turn waits on a browser view (such as a client-tool ask),
+   * the run has ended and no tool group is running to list the plan, so the
+   * plan's pending steps follow that message until the browser answers.
+   */
+  protected readonly trailingPlan = computed((): { readonly messageId: string; readonly steps: readonly AgentPlanStep[] } | undefined => {
+    const agent = this.agent();
+    // A client tool is pending only once the run has ended and before the browser settles it.
+    const waiting = agent.clientTools?.pending() ?? [];
+    if (waiting.length === 0) return undefined;
+    const views = new Set(this.viewToolNames());
+    const waitingViews = new Set(waiting.filter((call) => views.has(call.name)).map((call) => call.id));
+    if (waitingViews.size === 0) return undefined;
+    const steps = agent.plan?.()?.filter((step) => step.status === 'pending') ?? [];
+    if (steps.length === 0) return undefined;
+    const messages = agent.messages();
+    let latest: Message | undefined;
+    for (let i = messages.length - 1; i >= 0 && !latest; i--) {
+      if (messages[i].role === 'assistant') latest = messages[i];
+    }
+    if (!latest) return undefined;
+    return resolveMessageToolCalls(agent, latest).some((call) => waitingViews.has(call.id))
+      ? { messageId: latest.id, steps }
+      : undefined;
+  });
 
   readonly messageContent = messageContent;
 

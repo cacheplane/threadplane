@@ -297,6 +297,8 @@ While a tool is running, the collapsed row shows the current call's `toolLabel` 
 
 A browser client tool runs after the model message that requested it has finished. While `agent.isLoading()` is true, such a call shows as running and its group gets the progress view. Once the agent settles, a call still marked running reads **Status unavailable**.
 
+A turn can also wait on a browser view, such as a client-tool `ask`. The run has ended by then, so no group is running to list the plan. While the view waits, `<chat>` lists the plan's pending steps after it, dimmed, until the person answers.
+
 Queued, paused, stopped and unavailable activity uses static wording. **Tool activity paused** does not imply approval. A failed call can coexist with running work; the activity row preserves a static failure cue while actual work remains active. Reduced motion and forced colors use readable static text. Meaningful state changes remain available in a polite status region without raw payloads or timer ticks.
 
 Tool-name prefixes do not prove whether a call searched sites, read files, or completed a business operation. Pass `groupSummary` for application-specific wording; explicit summary overrides retain precedence:
