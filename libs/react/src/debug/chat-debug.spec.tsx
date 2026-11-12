@@ -187,6 +187,92 @@ it('suppresses mismatched context, page, row and error inspection', () => {
     expect(v.queryByText('stale failure')).toBeNull();
   }
 });
+it('offers replay and fork only when asked, and notifies once with the exact row token', () => {
+  const onInspect = vi.fn(() => undefined);
+  const onReplay = vi.fn(() => undefined);
+  const onFork = vi.fn(() => undefined);
+  const plain = render(<ChatDebug {...base} onInspect={onInspect} />);
+  fireEvent.click(plain.getByRole('tab', { name: 'Timeline' }));
+  expect(plain.queryByRole('button', { name: /^(Replay|Fork) / })).toBeNull();
+  plain.unmount();
+  const v = render(
+    <ChatDebug
+      {...base}
+      onInspect={onInspect}
+      onReplay={onReplay}
+      onFork={onFork}
+    />
+  );
+  fireEvent.click(v.getByRole('tab', { name: 'Timeline' }));
+  expect(onReplay).not.toHaveBeenCalled();
+  const row = v
+    .getByRole('button', { name: 'Inspect Checkpoint A' })
+    .closest('li') as HTMLElement;
+  expect(
+    [...row.querySelectorAll('button')].map((node) => node.textContent)
+  ).toEqual([
+    'Inspect Checkpoint A',
+    'Replay Checkpoint A',
+    'Fork Checkpoint A',
+  ]);
+  for (const node of row.querySelectorAll('button'))
+    expect(node.getAttribute('type')).toBe('button');
+  fireEvent.click(v.getByRole('button', { name: 'Replay Checkpoint A' }));
+  fireEvent.click(v.getByRole('button', { name: 'Fork Checkpoint A' }));
+  expect(onReplay.mock.calls).toEqual([[selection]]);
+  expect(onFork.mock.calls).toEqual([[selection]]);
+  expect(onInspect).not.toHaveBeenCalled();
+  v.rerender(<ChatDebug {...base} onFork={onFork} />);
+  expect(v.queryByRole('button', { name: 'Replay Checkpoint A' })).toBeNull();
+  expect(v.getByRole('button', { name: 'Fork Checkpoint A' })).toBeTruthy();
+});
+it('disables replay and fork while busy and for a row that cannot be inspected', () => {
+  const onReplay = vi.fn(() => undefined);
+  const onFork = vi.fn(() => undefined);
+  const page = {
+    ...base.checkpointPage!,
+    rows: [
+      { rowKey: 'row', label: 'Checkpoint A', inspectable: true },
+      { rowKey: 'dup', label: 'Checkpoint B', inspectable: false },
+    ],
+  };
+  const v = render(
+    <ChatDebug
+      {...base}
+      checkpointPage={page}
+      onReplay={onReplay}
+      onFork={onFork}
+    />
+  );
+  fireEvent.click(v.getByRole('tab', { name: 'Timeline' }));
+  const disabled = (name: string) =>
+    (v.getByRole('button', { name }) as HTMLButtonElement).disabled;
+  expect([
+    disabled('Replay Checkpoint A'),
+    disabled('Fork Checkpoint A'),
+  ]).toEqual([false, false]);
+  expect([
+    disabled('Replay Checkpoint B'),
+    disabled('Fork Checkpoint B'),
+  ]).toEqual([true, true]);
+  fireEvent.click(v.getByRole('button', { name: 'Fork Checkpoint B' }));
+  v.rerender(
+    <ChatDebug
+      {...base}
+      checkpointPage={page}
+      activity={{ busy: true }}
+      onReplay={onReplay}
+      onFork={onFork}
+    />
+  );
+  expect([
+    disabled('Replay Checkpoint A'),
+    disabled('Fork Checkpoint A'),
+  ]).toEqual([true, true]);
+  fireEvent.click(v.getByRole('button', { name: 'Replay Checkpoint A' }));
+  expect(onReplay).not.toHaveBeenCalled();
+  expect(onFork).not.toHaveBeenCalled();
+});
 it('only explicit refresh and inspect notify once with exact tokens', () => {
   const onRefresh = vi.fn(() => undefined);
   const onInspect = vi.fn(() => undefined);

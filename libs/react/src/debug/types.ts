@@ -80,6 +80,13 @@ export interface ChatDebugProps {
   readonly activity?: { readonly busy: boolean; readonly status?: string };
   readonly onInspect?: (selection: DebugSelection) => undefined;
   readonly onRefresh?: (request: DebugRefreshRequest) => undefined;
+  /**
+   * Adds a Replay button to each inspectable row. A notification like
+   * `onInspect`: it carries the row's ownership token and starts nothing.
+   */
+  readonly onReplay?: (selection: DebugSelection) => undefined;
+  /** Adds a Fork button to each inspectable row, in the same way. */
+  readonly onFork?: (selection: DebugSelection) => undefined;
   readonly defaultOpen?: boolean;
   readonly storageKey?: string;
   readonly className?: string;
