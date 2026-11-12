@@ -134,6 +134,11 @@ export {
 export { Chat, type ChatProps } from './chat.js';
 export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
+export {
+  LauncherButton,
+  type LauncherButtonProps,
+} from './launcher-button.js';
+export { ChatWindow, type ChatWindowProps } from './window.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
 export {
   ChatSidenav,

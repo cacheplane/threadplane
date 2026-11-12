@@ -289,6 +289,10 @@ export type MessageListRowContextContract = Assert<Equal<import('@threadplane/re
 export type MessageListRenderMessageContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderMessage'>, { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: import('@threadplane/react/chat').MessageListRowContext) => ReactNode }>>;
 export type ChatRenderMessageContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'renderMessage'>, Pick<import('@threadplane/react/chat').MessageListProps, 'renderMessage'>>>;
 export type MessageListRenderScrollControlContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderScrollControl'>, { readonly renderScrollControl?: (controls: import('@threadplane/react/chat').MessageListScrollControls) => ReactNode }>>;
+export type LauncherButtonContract = Assert<Equal<import('@threadplane/react/chat').LauncherButtonProps, { readonly onClick: () => void; readonly label?: string; readonly expanded?: boolean; readonly controls?: string; readonly className?: string }>>;
+export type LauncherButtonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').LauncherButton>, [import('@threadplane/react/chat').LauncherButtonProps]>>;
+export type ChatWindowContract = Assert<Equal<import('@threadplane/react/chat').ChatWindowProps, { readonly header?: ReactNode; readonly footer?: ReactNode; readonly className?: string; readonly children?: ReactNode }>>;
+export type ChatWindowParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatWindow>, [import('@threadplane/react/chat').ChatWindowProps]>>;
 export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonContract = Assert<Equal<import('@threadplane/react/chat').GenerativeUiSkeletonProps, { readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').GenerativeUiSkeleton>, [import('@threadplane/react/chat').GenerativeUiSkeletonProps]>>;
@@ -462,6 +466,8 @@ const SUPPORTED_EXPORTS = {
     'ChatMessage',
     'isTyping',
     'ChatPopup',
+    'LauncherButton',
+    'ChatWindow',
     'ChatSidebar',
     'ChatSidenav',
     'ChatSidenavScrim',

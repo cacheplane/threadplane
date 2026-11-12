@@ -281,6 +281,10 @@ export interface CitationsProps { readonly citations: readonly import('@threadpl
 export declare function Citations(props: CitationsProps): unknown;
 export interface ChatErrorProps { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string; }
 export declare function ChatError(props: ChatErrorProps): unknown;
+export interface LauncherButtonProps { readonly onClick: () => void; readonly label?: string; readonly expanded?: boolean; readonly controls?: string; readonly className?: string; }
+export declare function LauncherButton(props: LauncherButtonProps): unknown;
+export interface ChatWindowProps { readonly header?: import('react').ReactNode; readonly footer?: import('react').ReactNode; readonly className?: string; readonly children?: import('react').ReactNode; }
+export declare function ChatWindow(props: ChatWindowProps): unknown;
 export interface TypingIndicatorProps { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string; }
 export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
 export interface GenerativeUiSkeletonProps { readonly label?: string; readonly announce?: boolean; readonly className?: string; }
@@ -1030,7 +1034,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { LauncherButton: component, ChatWindow: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.Select = component;
   supported.MessageRating = component;

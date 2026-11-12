@@ -2417,9 +2417,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/launcher-button.tsx",
-      "reason": "Native component. Accessible open trigger and badge/status styling."
+      "reason": "LauncherButton: a named native icon button with optional aria-expanded and aria-controls, positioned by the application. ChatPopup keeps its own text launcher; badge and status styling remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts#ChatMessageActionsComponent",
@@ -2652,9 +2652,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/window.tsx",
-      "reason": "Native component. Structural chat container, scoped tokens and projected sections."
+      "reason": "ChatWindow: header, body and footer regions as props with a decorative footer fade, usable outside a Chat root. The Chat composition keeps its own layout."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/overlay/connected-overlay.directive.ts#ChatConnectedOverlayDirective",
@@ -5622,9 +5622,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/launcher-button.tsx",
-      "reason": "Native component. Accessible open trigger and badge/status styling."
+      "reason": "LauncherButton: a named native icon button with optional aria-expanded and aria-controls, positioned by the application. ChatPopup keeps its own text launcher; badge and status styling remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatLifecycle",
@@ -6029,9 +6029,9 @@
         "T22"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/window.tsx",
-      "reason": "Native component. Structural chat container, scoped tokens and projected sections."
+      "reason": "ChatWindow: header, body and footer regions as props with a decorative footer fade, usable outside a Chat root. The Chat composition keeps its own layout."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#Citation",
@@ -15622,6 +15622,66 @@
       "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
       "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open.",
       "target": "libs/react/src/markdown/markdown.tsx"
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#LauncherButton",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/launcher-button.tsx",
+      "reason": "Controlled open-chat icon button with no state or placement."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#LauncherButtonProps",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/launcher-button.tsx",
+      "reason": "Readonly onClick/label/expanded/controls/className contract."
+    },
+    {
+      "id": "source:libs/react/src/chat/launcher-button.tsx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/launcher-button.tsx",
+      "reason": "Pure native button presentation; no subscriptions, timers or commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatWindow",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/window.tsx",
+      "reason": "Stateless header/body/footer column for application-composed chat."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatWindowProps",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/window.tsx",
+      "reason": "Readonly header/footer/className/children contract."
+    },
+    {
+      "id": "source:libs/react/src/chat/window.tsx",
+      "taskIds": [
+        "T22"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/window.tsx",
+      "reason": "Pure structural layout; no state, roles or handlers."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Reasoning",

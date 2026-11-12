@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChatInput, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
+import { ChatWindow, LauncherButton, ChatInput, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, type MessageRatingValue } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -14,6 +14,8 @@ export function OverflowMenuFixture() {
     return <ConfirmDialogFixture />;
   if (new URLSearchParams(window.location.search).has('select'))
     return <SelectFixture />;
+  if (new URLSearchParams(window.location.search).has('shell'))
+    return <ShellFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
     return <RatingFixture />;
   if (new URLSearchParams(window.location.search).has('slots'))
@@ -356,5 +358,37 @@ function ThreadContextMenuFixture() {
         }}
       />
     </section>
+  );
+}
+
+/** Installed LauncherButton and ChatWindow; no backend or session commands. */
+function ShellFixture() {
+  const [open, setOpen] = useState(false);
+  const [presses, setPresses] = useState(0);
+  const [header, setHeader] = useState(true);
+  return (
+    <main>
+      <h1>Installed shell</h1>
+      <button type="button" onClick={() => setHeader((value) => !value)}>Toggle window header</button>
+      <LauncherButton
+        expanded={open}
+        controls="shell-window"
+        onClick={() => {
+          setOpen((value) => !value);
+          setPresses((value) => value + 1);
+        }}
+      />
+      <output data-testid="launcher-presses">{presses}</output>
+      <div id="shell-window" data-testid="shell-frame" style={{ blockSize: 400, border: '1px solid gray' }}>
+        <ChatWindow
+          header={header ? <strong>Trip-with-an-unbroken-window-title-that-must-wrap-inside-the-header-and-never-widen-the-page</strong> : undefined}
+          footer={<textarea aria-label="Message" rows={2} style={{ display: 'block', boxSizing: 'border-box', inlineSize: '100%' }} />}
+        >
+          <div data-testid="shell-list" style={{ flex: 1, minBlockSize: 0, overflow: 'auto' }}>
+            <p style={{ margin: 0, blockSize: 900 }}>Messages</p>
+          </div>
+        </ChatWindow>
+      </div>
+    </main>
   );
 }
