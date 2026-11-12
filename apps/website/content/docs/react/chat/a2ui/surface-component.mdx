@@ -1,0 +1,232 @@
+---
+title: "A2uiSurface"
+description: "Render the surfaces your agent sends, keep the traveler's edits in your own store, and decide what leaves the page."
+---
+
+# React A2uiSurface preview
+
+Render the surfaces your agent sends, keep the traveler's edits in your own store, and decide what leaves the page.
+
+The native React APIs on this page are experimental, private source-build packages.
+Run the repository example to use them; they are not an npm installation recipe.
+
+## Goals
+
+- Render every surface the agent has sent.
+- Keep edits in a store that your application owns.
+- Send an action to the agent when a button is pressed, and only then.
+- Know what a failing check, a function call, a repeated row and a theme do before you ship them.
+
+## Render the surfaces your agent sends
+
+An A2UI surface is a small interface the agent describes with data: a list of components and a data model they read from.
+Two pieces turn that data into a page.
+`createA2uiSurfaces()` is a store that takes the agent's messages, and `A2uiSurface` renders one surface from it.
+
+~~~tsx
+import { useSyncExternalStore } from 'react';
+import {
+  createA2uiSurfaces,
+  type A2uiActionMessage,
+  type A2uiSurfaces,
+} from '@threadplane/content/a2ui';
+import { A2uiSurface } from '@threadplane/react/a2ui';
+import '@threadplane/react/a2ui/styles.css';
+
+type A2uiMessage = Parameters<A2uiSurfaces['apply']>[0];
+
+const surfaces = createA2uiSurfaces();
+
+/** Call this with each parsed A2UI message your agent sends. */
+export function receive(message: A2uiMessage) {
+  surfaces.apply(message);
+}
+
+const functions = {
+  share: (args: { readonly [name: string]: unknown }) => {
+    void navigator.clipboard.writeText(String(args['text'] ?? ''));
+  },
+};
+
+export function TripSurfaces({ send }: {
+  readonly send: (action: A2uiActionMessage) => void;
+}) {
+  const snapshot = useSyncExternalStore(
+    surfaces.subscribe,
+    surfaces.getSnapshot,
+    surfaces.getSnapshot
+  );
+  return (
+    <>
+      {snapshot.surfaces.map((surface) => (
+        <A2uiSurface
+          key={surface.surfaceId}
+          surface={surface}
+          surfaces={surfaces}
+          onAction={send}
+          onValidationError={(error) => console.warn(error.error.message)}
+          functions={functions}
+        />
+      ))}
+    </>
+  );
+}
+~~~
+
+The store is the only thing that changes.
+Each message, and each edit, publishes a new snapshot, and `useSyncExternalStore` hands the current one to `A2uiSurface`.
+A surface appears in `snapshot.surfaces` once the agent has created it and sent its root component.
+
+The basic catalog is built in, so the 18 standard components render without any setup: `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card`, `Tabs`, `Modal`, `Divider`, `Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Slider` and `DateTimeInput`.
+A component the catalog does not know still renders its children.
+
+## Who owns the edits?
+
+Your store does.
+Passing `surfaces` to `A2uiSurface` is what makes its inputs editable.
+Each keystroke, tick or choice is written to the data model path the input is bound to, and nothing is sent anywhere.
+
+I think this is the right split, even though it means one more prop.
+The agent can update the same data model later, and its update replaces what the traveler typed at that path, the same way it would replace its own earlier value.
+The cost is that you hold a store per conversation and dispose it when the conversation goes away.
+
+**Leave `surfaces` out only when you want a read-only surface.**
+Without it every input shows its value and changes nothing, which is what you want for an older message in the history.
+
+An input bound to a literal value, or to a function call, is fixed for the same reason: there is no path to write to.
+
+## Send an action to the agent
+
+A `Button` with an `event` action calls `onAction` with a message that is ready to send.
+`A2uiSurface` never sends it for you.
+
+~~~json
+{
+  "version": "v0.9",
+  "action": {
+    "name": "book",
+    "surfaceId": "trip",
+    "sourceComponentId": "book-button",
+    "timestamp": "2026-03-04T09:30:00.000Z",
+    "context": { "guest": "Grace Hopper", "party": 2 }
+  }
+}
+~~~
+
+The `context` is read from the data model at the moment of the press, so it carries the traveler's latest edits.
+When the agent created the surface with `sendDataModel: true`, the whole data model rides along as `metadata.a2uiClientDataModel`.
+
+How the message reaches the agent is your decision (most applications send it as the next turn of the conversation).
+Without `onAction`, buttons that would send an action are disabled, so a read-only surface cannot look pressable.
+
+## What happens when a check fails?
+
+The agent can attach `checks` to an input: conditions such as `required`, `email`, `length`, `numeric` or `regex`, each with a message.
+A press is blocked while any input's checks fail.
+
+When that happens, three things follow.
+`onAction` is not called.
+Each failing input shows the message of its first failing check and is marked invalid for assistive technology.
+`onValidationError` receives the first failure as a `VALIDATION_FAILED` error, with the surface, the data model path and the message.
+
+Messages stay hidden until a press is blocked.
+For me, that is the kindest behavior, because nobody wants to be told a field is wrong before they have reached it.
+After a blocked press the messages follow the data model, so one disappears as soon as its input passes.
+
+A `Button` can carry its own `checks` too.
+A button whose checks fail is disabled and shows no message.
+
+Whether to tell the agent about a blocked press is up to you.
+The example above only logs it.
+
+## Run a function in the page
+
+Some buttons should not involve the agent at all.
+A `Button` whose action is a `functionCall` runs in the page, through the `functions` prop, and sends nothing.
+
+Each function receives the call's arguments, already resolved from the data model.
+In the example, a button that calls `share` copies its `text` argument to the clipboard.
+
+`openUrl` is built in.
+It opens an `http`, `https`, `mailto` or `tel` address in a new tab with no opener, and it ignores every other kind of address.
+The address comes from the agent, which is why the list is short.
+If you pass your own `openUrl` in `functions`, yours runs and receives the address unchecked, so the checking becomes your job.
+
+A button whose function nothing can run is disabled.
+Keep the `functions` object stable between renders, as the example does by declaring it outside the component.
+
+Function calls also work as values.
+A prop written as a call to `formatString`, `formatNumber`, `formatCurrency`, `formatDate` or `pluralize` shows the result and follows the data model.
+
+~~~json
+{
+  "id": "summary",
+  "component": "Text",
+  "text": {
+    "call": "formatString",
+    "args": { "value": "${/party} ${pluralize(value:${/party}, one:'seat', other:'seats')}" }
+  }
+}
+~~~
+
+Numbers, currency and plural forms use the viewer's locale.
+
+## Repeat a row for each item
+
+A `Row`, `Column` or `List` can stamp one component for every item of a list in the data model.
+
+~~~json
+[
+  { "id": "stops", "component": "List", "children": { "path": "/stops", "componentId": "stop" } },
+  { "id": "stop", "component": "Row", "children": ["stop-name", "stop-platform"] },
+  { "id": "stop-name", "component": "Text", "text": { "path": "city" } },
+  { "id": "stop-platform", "component": "TextField", "label": "Platform", "value": { "path": "platform" } }
+]
+~~~
+
+Inside the template, a path without a leading slash belongs to the item.
+In the second stop, `city` reads `/stops/1/city` and the platform field writes `/stops/1/platform`.
+A path with a leading slash still reads from the root, and `.` is the item itself, which is how you show a list of plain strings.
+
+Rows stay interactive.
+A failing check marks its own row, and a button sends the context of its own item.
+
+There is one catch, and it is worth knowing early.
+An action from a row reports the template component's id, not the row.
+Ask the agent to put whatever identifies the item in the action's `context`.
+
+Rows are matched by position in the list.
+An item inserted in the middle moves the local state of later rows, such as a selected tab, to their neighbor.
+
+## Let the agent set the accent
+
+A surface created with a `theme` uses it without any prop.
+A hex `primaryColor` becomes the accent for that surface's buttons, tabs, sliders and focus rings, and the text on it is chosen as white or near-black for contrast.
+`agentDisplayName` and `iconUrl` show as one small line above the content.
+
+Only a hex color is accepted.
+Anything else is ignored, so text from the agent never reaches a style attribute.
+
+To restyle a surface yourself, set the `--a2ui-*` custom properties through `className`.
+An agent's hex color is an inline style, so it wins over yours for that one property.
+
+## Bring your own components
+
+`catalog` replaces the components by A2UI name.
+Spread `a2uiBasicCatalog()` and override what you need, and keep the object stable between renders.
+
+A component of your own receives its resolved `props`, its `children` and the `bindings` that say which prop came from which data model path.
+To write an edit the way the built-in inputs do, call `useA2uiSurfaceWriter()` and pass it the path from `bindings`.
+
+## Conclusion
+
+`A2uiSurface` renders what the agent described and keeps every decision about sending with you.
+Edits live in your store, an action is a message you choose to forward, and a function call runs in the page.
+Start with the example on this page, then add `functions` and your own components when a surface asks for them.
+
+## What's Next
+
+- The [A2UI overview](/docs/react/chat/a2ui/overview) walks through a flight-search form inside a running conversation.
+- The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) shows where a forwarded action goes next.
+
+If a surface your agent sends does not render the way you expect, let me know what it looked like.

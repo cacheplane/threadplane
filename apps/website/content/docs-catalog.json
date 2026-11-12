@@ -1771,6 +1771,14 @@
           "chat/debug",
           "chat/testing"
         ]
+      },
+      "react": {
+        "source": "react/chat/a2ui/surface-component.mdx",
+        "description": "Render the surfaces your agent sends, keep the traveler's edits in your own store, and decide what leaves the page.",
+        "apiEntrypointIds": [
+          "content/a2ui",
+          "react/render"
+        ]
       }
     }
   },

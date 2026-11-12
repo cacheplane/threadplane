@@ -18501,6 +18501,16 @@
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
+      "id": "doc:apps/website/content/docs/react/chat/a2ui/surface-component.mdx",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/a2ui/surface.tsx",
+      "reason": "Task-led guide to A2uiSurface with the application-owned surfaces store: rendering live surfaces, local edits, forwarding actions, validation, function calls, child templates, themes and custom components. Its single example compiles against source. A live example remains open."
+    },
+    {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-select.mdx",
       "taskIds": [
         "T22"
