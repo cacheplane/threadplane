@@ -8,6 +8,8 @@ import React, {
 import { createRoot } from 'react-dom/client';
 import { createSession } from '@threadplane/ag-ui';
 import {
+  ApprovalCard,
+  ApprovalRecord,
   ChatInput,
   Citations,
   citationsWithToolSources,
@@ -57,6 +59,10 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
   const busy = snapshot.status === 'running';
   const [decisionError, setDecisionError] = useState('');
   const [copiedId, setCopiedId] = useState('');
+  // Answered approvals of this page load, each shown after the message it followed.
+  const [records, setRecords] = useState<
+    readonly { verdict: 'approved' | 'declined'; afterId?: string }[]
+  >([]);
   const decision = snapshot.decision;
   // Each child agent becomes one card holding its own messages and reads. Restored
   // children arrive as earlier ones, so a reload keeps their cards.
@@ -66,9 +72,8 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
     transcript: snapshot.transcript,
     running: busy,
     toolLabel,
+    toolOutcome,
   });
-  // A card stands in for the call that started its child.
-  const delegated = new Set(subagents.map((child) => child.toolCallId));
   // Every observed parent call in transcript order, paired with its tool message.
   const activities: ToolActivityInfo[] = transcript.flatMap((message) =>
     message.role === 'assistant'
@@ -102,6 +107,26 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
         })
       : []
   );
+  // A child's card keeps the place of the call that started it; the calls around it group separately.
+  const callRuns = (calls: readonly { readonly id: string }[]) => {
+    const runs: (
+      | { readonly ids: string[] }
+      | { readonly child: (typeof subagents)[number] }
+    )[] = [];
+    for (const call of calls) {
+      const children = subagents.filter(
+        (child) => child.toolCallId === call.id
+      );
+      if (children.length) {
+        for (const child of children) runs.push({ child });
+        continue;
+      }
+      const last = runs.at(-1);
+      if (last && 'ids' in last) last.ids.push(call.id);
+      else runs.push({ ids: [call.id] });
+    }
+    return runs;
+  };
   // The cards layout shows each distinct reference once, on the last call that returned it.
   const cards = layout === 'cards' ? referenceCards(activities) : undefined;
   const root = useRef<HTMLElement>(null);
@@ -129,7 +154,7 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
   async function decide(approved: boolean) {
     if (decision?.kind !== 'native') return;
     const document = root.current?.ownerDocument;
-    const approval = document?.activeElement?.closest('.benchmark-decision');
+    const approval = document?.activeElement?.closest('.tp-approval-card');
     const focus = {
       owned: !!approval && !!root.current?.contains(approval),
       cleanup: () => document?.removeEventListener('focusin', onFocus),
@@ -141,6 +166,9 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
     pendingFocus.current?.cleanup();
     pendingFocus.current = focus;
     setDecisionError('');
+    const afterId = [...transcript]
+      .reverse()
+      .find((message) => message.role === 'assistant')?.id;
     try {
       await session.resume(
         decision.id,
@@ -150,7 +178,13 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
           payload: approved,
         }))
       );
-      if (!disposed.current) setFocusCommit((commit) => commit + 1);
+      if (!disposed.current) {
+        setRecords((all) => [
+          ...all,
+          { verdict: approved ? 'approved' : 'declined', afterId },
+        ]);
+        setFocusCommit((commit) => commit + 1);
+      }
     } catch (error) {
       focus.cleanup();
       if (pendingFocus.current === focus) pendingFocus.current = undefined;
@@ -207,57 +241,50 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
                   key={message.id}
                 >
                   {message.role === 'assistant' &&
-                    message.toolCalls?.some(
-                      (call) => !delegated.has(call.id)
-                    ) && (
-                      <ToolActivityGroup
-                        activities={activities.filter(
-                          (activity) =>
-                            !delegated.has(activity.id) &&
-                            message.toolCalls?.some(
-                              (call) => call.id === activity.id
-                            )
-                        )}
-                        context={activities}
-                        sources="panel"
-                        onRetry={
-                          busy
-                            ? undefined
-                            : () =>
-                                void session.submit(
-                                  'Retry the failed read explicitly.'
-                                )
-                        }
-                      >
-                        {(message.toolCalls ?? [])
-                          .flatMap((call) => cards?.get(call.id) ?? [])
-                          .map((card) => (
-                            <article
-                              className="benchmark-reference"
-                              key={card.url}
-                            >
-                              <a
-                                href={card.url}
-                                target="_blank"
-                                rel="noreferrer"
+                    callRuns(message.toolCalls ?? []).map((run) =>
+                      'child' in run ? (
+                        <SubagentCard
+                          key={run.child.id}
+                          subagent={run.child}
+                          sources="panel"
+                        />
+                      ) : (
+                        <ToolActivityGroup
+                          key={run.ids[0]}
+                          activities={activities.filter((activity) =>
+                            run.ids.includes(activity.id)
+                          )}
+                          context={activities}
+                          sources="panel"
+                          onRetry={
+                            busy
+                              ? undefined
+                              : () =>
+                                  void session.submit(
+                                    'Retry the failed read explicitly.'
+                                  )
+                          }
+                        >
+                          {run.ids
+                            .flatMap((id) => cards?.get(id) ?? [])
+                            .map((card) => (
+                              <article
+                                className="benchmark-reference"
+                                key={card.url}
                               >
-                                {card.title}
-                              </a>
-                              <p>{card.summary}</p>
-                            </article>
-                          ))}
-                      </ToolActivityGroup>
-                    )}
-                  {message.role === 'assistant' &&
-                    subagents
-                      .filter((child) =>
-                        message.toolCalls?.some(
-                          (call) => call.id === child.toolCallId
-                        )
+                                <a
+                                  href={card.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {card.title}
+                                </a>
+                                <p>{card.summary}</p>
+                              </article>
+                            ))}
+                        </ToolActivityGroup>
                       )
-                      .map((child) => (
-                        <SubagentCard key={child.id} subagent={child} />
-                      ))}
+                    )}
                   <p className="benchmark-message-text">
                     {typeof message.content === 'string'
                       ? message.content
@@ -265,14 +292,25 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
                   </p>
                   {message.role === 'assistant' && (
                     <Citations
-                      citations={citationsWithToolSources(
-                        NO_CITATIONS,
-                        activities.filter((activity) =>
+                      citations={citationsWithToolSources(NO_CITATIONS, [
+                        ...activities.filter((activity) =>
                           message.toolCalls?.some(
                             (call) => call.id === activity.id
                           )
-                        )
-                      )}
+                        ),
+                        // What a child read counts as a source of the message that delegated to it.
+                        ...subagents
+                          .filter((child) =>
+                            message.toolCalls?.some(
+                              (call) => call.id === child.toolCallId
+                            )
+                          )
+                          .flatMap((child) =>
+                            child.messages.flatMap(
+                              (row) => row.activities ?? []
+                            )
+                          ),
+                      ])}
                       collapsible
                     />
                   )}
@@ -318,30 +356,38 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
                         </button>
                       </div>
                     )}
+                  {records
+                    .filter((record) => record.afterId === message.id)
+                    .map((record, index) => (
+                      <ApprovalRecord
+                        key={index}
+                        verdict={record.verdict}
+                        label="Save note"
+                      />
+                    ))}
                 </article>
               ))}
             {decision?.kind === 'native' && (
-              <section
-                className="benchmark-decision"
-                aria-label="Save approval"
+              <ApprovalCard
+                title="Approve saving the comparison note?"
+                disabled={busy || !!decision.attempt}
+                actions={[
+                  {
+                    id: 'approve',
+                    label: 'Approve save',
+                    onSelect: () => void decide(true),
+                  },
+                  {
+                    id: 'deny',
+                    label: 'Deny save',
+                    onSelect: () => void decide(false),
+                  },
+                ]}
               >
-                <h2>Approve saving the comparison note?</h2>
-                <p>The note is saved only after your approval.</p>
-                <div>
-                  <button
-                    disabled={busy || !!decision.attempt}
-                    onClick={() => void decide(true)}
-                  >
-                    Approve save
-                  </button>
-                  <button
-                    disabled={busy || !!decision.attempt}
-                    onClick={() => void decide(false)}
-                  >
-                    Deny save
-                  </button>
-                </div>
-              </section>
+                <p className="benchmark-approval-note">
+                  The note is saved only after your approval.
+                </p>
+              </ApprovalCard>
             )}
             {decisionError && <p role="alert">{decisionError}</p>}
             {snapshot.status === 'error' && (

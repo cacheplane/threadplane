@@ -689,6 +689,11 @@ describe('MessageList', () => {
     expect(cards[0].textContent).toContain('reader');
     // The delegating call is no longer a tool row; its sibling still is.
     expect(ids(first.querySelector('.tp-tool-activity-group')!)).toEqual(['save']);
+    // The card keeps the delegating call's place, ahead of the call that followed it.
+    expect(
+      cards[0].compareDocumentPosition(first.querySelector('.tp-tool-activity-group')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
     view.rerender(<MessageList rows={rows} subagents={subagents} groupRelatedTools={false} />);
     expect(view.container.querySelector('.tp-tool-activity-group')).toBeNull();
@@ -703,6 +708,45 @@ describe('MessageList', () => {
       <MessageList rows={rows} subagents={subagents} renderMessage={(row) => <p>{row.id}</p>} />
     );
     expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+  });
+
+  it('lists sources a child read in the Sources panel of the message that delegated to it', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [msg('a', 'Answer', { toolCallIds: ['delegate'] })],
+        [{ id: 'delegate', name: 'delegate', args: {}, status: 'complete', result: 'ok' }] as AgentSnapshot['toolCalls']
+      )
+    );
+    const subagents = [
+      {
+        id: 'child',
+        toolCallId: 'delegate',
+        name: 'reader',
+        status: 'complete' as const,
+        messages: [
+          {
+            id: 'm',
+            activities: [
+              {
+                id: 'read',
+                name: 'read',
+                phase: 'complete' as const,
+                outcome: { text: '', sources: [{ title: 'Signals guide', url: 'https://example.com/signals' }] },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const view = render(<MessageList rows={rows} subagents={subagents} />);
+    openSources(view);
+    const links = [...view.container.querySelectorAll('a[href="https://example.com/signals"]')];
+    // Listed once, in the panel, and not repeated as a link inside the card.
+    expect(links).toHaveLength(1);
+    expect(links[0].closest('.tp-citations')).toBeTruthy();
+    expect(links[0].closest('.tp-subagent-card')).toBeNull();
+    content.dispose();
   });
 
   it('keeps a finished child card when the next turn starts, given the earlier children', () => {
