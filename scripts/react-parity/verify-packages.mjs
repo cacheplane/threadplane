@@ -287,6 +287,8 @@ export type MessageListRenderMessageContract = Assert<Equal<Pick<import('@thread
 export type ChatRenderMessageContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'renderMessage'>, Pick<import('@threadplane/react/chat').MessageListProps, 'renderMessage'>>>;
 export type MessageListRenderScrollControlContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderScrollControl'>, { readonly renderScrollControl?: (controls: import('@threadplane/react/chat').MessageListScrollControls) => ReactNode }>>;
 export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
+export type GenerativeUiSkeletonContract = Assert<Equal<import('@threadplane/react/chat').GenerativeUiSkeletonProps, { readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
+export type GenerativeUiSkeletonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').GenerativeUiSkeleton>, [import('@threadplane/react/chat').GenerativeUiSkeletonProps]>>;
 export type TypingIndicatorParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').TypingIndicator>, [import('@threadplane/react/chat').TypingIndicatorProps]>>;
 export type IsTypingParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').isTyping>, [Pick<import('@threadplane/core').AgentSnapshot, 'status' | 'messages'>]>>;
 export type IsTypingResultContract = Assert<Equal<ReturnType<typeof import('@threadplane/react/chat').isTyping>, boolean>>;
@@ -452,6 +454,7 @@ const SUPPORTED_EXPORTS = {
     'Chat',
     'ChatError',
     'TypingIndicator',
+    'GenerativeUiSkeleton',
     'ScrollBubble',
     'ChatMessage',
     'isTyping',

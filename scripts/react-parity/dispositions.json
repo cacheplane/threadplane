@@ -2377,9 +2377,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/genui-skeleton.tsx",
-      "reason": "Native component. Loading placeholder without false mount acknowledgement; reduced motion."
+      "reason": "GenerativeUiSkeleton: a labelled placeholder card with decorative shimmer rows, an optional polite announcement, reduced-motion and forced-colors handling. It owns no work and acknowledges nothing; composing it into a pending generated-UI slot stays with the application."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-history-search-palette/chat-history-search-palette.component.ts#ChatHistorySearchPaletteComponent",
@@ -5572,9 +5572,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/genui-skeleton.tsx",
-      "reason": "Native component. Loading placeholder without false mount acknowledgement; reduced motion."
+      "reason": "GenerativeUiSkeleton: a labelled placeholder card with decorative shimmer rows, an optional polite announcement, reduced-motion and forced-colors handling. It owns no work and acknowledges nothing; composing it into a pending generated-UI slot stays with the application."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatHistorySearchPaletteComponent",
@@ -18404,6 +18404,30 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/typing-indicator.tsx",
       "reason": "Pure text-only core snapshot projection with exact status/messages input and boolean result; full T23 and legacy typing/runtime parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#GenerativeUiSkeleton",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Controlled placeholder presentation for pending generated UI with no ownership or commands. Full T25 remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#GenerativeUiSkeletonProps",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Exact readonly label/announce/className contract for the pending generated-UI placeholder. Full T25 remains open."
+    },
+    {
+      "id": "source:libs/react/src/chat/genui-skeleton.tsx",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Controlled placeholder presentation for pending generated UI, with no subscriptions, timers or commands. Full T25 remains open."
     },
     {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",

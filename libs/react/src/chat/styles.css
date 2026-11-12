@@ -2555,3 +2555,54 @@
 @media (forced-colors: active) {
   .tp-typing-indicator { color: CanvasText; }
 }
+
+.tp-genui-skeleton {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.75rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-muted, GrayText);
+  font: inherit;
+}
+.tp-genui-skeleton__label {
+  display: block;
+  margin-block-end: 0.625rem;
+  font-size: 0.8125em;
+  overflow-wrap: anywhere;
+}
+.tp-genui-skeleton__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.tp-genui-skeleton__row {
+  display: block;
+  block-size: 0.625rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, currentColor 22%, transparent) 0%,
+    color-mix(in srgb, currentColor 10%, transparent) 50%,
+    color-mix(in srgb, currentColor 22%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: tp-genui-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.tp-genui-skeleton__row:nth-child(1) { inline-size: 70%; }
+.tp-genui-skeleton__row:nth-child(2) { inline-size: 90%; }
+.tp-genui-skeleton__row:nth-child(3) { inline-size: 50%; }
+@keyframes tp-genui-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-genui-skeleton__row { animation: none; }
+}
+@media (forced-colors: active) {
+  .tp-genui-skeleton { color: CanvasText; }
+  .tp-genui-skeleton__row { background: GrayText; }
+}

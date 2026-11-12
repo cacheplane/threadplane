@@ -15,6 +15,10 @@ export {
   type TypingIndicatorProps,
 } from './typing-indicator.js';
 export {
+  GenerativeUiSkeleton,
+  type GenerativeUiSkeletonProps,
+} from './genui-skeleton.js';
+export {
   citationsWithToolSources,
   resolveToolOutcome,
   toolOutcomes,
