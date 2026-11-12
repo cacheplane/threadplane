@@ -1566,10 +1566,19 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 }
 ```
 
-`a2uiBasicCatalog()` returns the components this first slice provides: `Text`,
-`Row`, `Column`, `Card` and `Divider`. Spread it into your own registry and pass
-that as `catalog` to add or replace components; keep the registry stable. Literal
-props pass through and `{ path }` props read the surface data model, so a new
-snapshot updates bound text. A component the catalog lacks keeps its children
-and renders no control. Actions, inputs, validation, function-call props, child
-templates and surface themes are not handled yet.
+`a2uiBasicCatalog()` returns the display components: `Text`, `Image`, `Icon`,
+`Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card` and `Divider`. Spread it
+into your own registry and pass that as `catalog` to add or replace components;
+keep the registry stable. Literal props pass through and `{ path }` props read
+the surface data model, so a new snapshot updates bound text. A component the
+catalog lacks keeps its children and renders no control.
+
+Media loads only from relative, `http(s)` and `blob` URLs and from `data:` URLs
+of the element's own kind; any other URL renders nothing. `Video` and
+`AudioPlayer` use the browser's controls and never start by themselves. A named
+`Icon` is a Material Symbols ligature, so load that font in your application; an
+`Icon` given `{ svgPath }` needs no font.
+
+Controls (`Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Slider`,
+`DateTimeInput`), `Tabs`, `Modal`, actions, validation, function-call props,
+child templates and surface themes are not handled yet.
