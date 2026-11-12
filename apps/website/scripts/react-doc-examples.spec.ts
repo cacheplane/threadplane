@@ -16,6 +16,7 @@ const pages = [
   'chat/components/scroll-bubble',
   'chat/components/chat-message',
   'chat/components/chat-select',
+  'chat/a2ui/surface-component',
   'chat/concepts/message-model',
   'render/getting-started/quickstart',
   'render/guides/events',

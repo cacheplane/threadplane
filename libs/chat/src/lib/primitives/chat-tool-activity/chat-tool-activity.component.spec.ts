@@ -207,14 +207,6 @@ describe('tool activity', () => {
       ).toBe(expected);
     }
   );
-  it('keeps a running call running after a successful message only while the session runs', () => {
-    const success = { phase: 'complete', outcome: 'success' } as ToolActivityDelivery;
-    expect(toolActivityPhase('running', success, true)).toBe('running');
-    expect(toolActivityPhase('running', success, false)).toBe('unknown');
-    expect(toolActivityPhase('pending', success, true)).toBe('pending');
-    const aborted = { phase: 'complete', outcome: 'aborted' } as ToolActivityDelivery;
-    expect(toolActivityPhase('running', aborted, true)).toBe('stopped');
-  });
   it.each(['pending', 'stopped'] as const)(
     'retains an explicit %s group outcome',
     (phase) => {

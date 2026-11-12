@@ -63,11 +63,31 @@ not live or a primitive that is already there, and throws for a path that is not
 below the root.
 
 `createA2uiActionMessage(surface, componentId)` builds the v0.9 action message
-for one component's `action.event` from a surface snapshot. Context paths are
-read from the snapshot's data model, the Button's literal text becomes `label`,
+for one component's `action.event` from a surface snapshot. Context values are
+resolved against the snapshot's data model, the Button's literal text becomes `label`,
 and the data model is attached as `metadata.a2uiClientDataModel` only when the
 surface was created with `sendDataModel: true`. It returns `null` when there is
 no event action, and sends nothing.
+
+`evaluateA2uiChecks(surface)` returns the first failing validation check of each
+component as `{ componentId, message, path? }`, evaluated against the snapshot's
+data model. A check passes only when its condition resolves to `true`. It
+stores nothing and sends nothing.
+
+`resolveA2uiValue(surface, value)` resolves one authored value against the
+snapshot's data model: a literal is returned as it is, `{ path }` is read from
+the data model, a list is resolved item by item, and `{ call, args }` runs one
+of the basic catalog's functions (`formatString`, `formatNumber`,
+`formatCurrency`, `formatDate`, `pluralize`, `and`, `or`, `not`, `required`,
+`regex`, `length`, `numeric`, `email`). Numbers and plural forms use the
+viewer's locale. An unknown function gives `undefined`.
+
+Child templates (`children: { path, componentId }`) are understood by all
+three functions. `evaluateA2uiChecks` evaluates a templated component once per
+list item and reports that item's path as `basePath`.
+`createA2uiActionMessage` and `resolveA2uiValue` take the item's path as a last
+`basePath` argument, and then read paths without a leading slash from that
+item.
 
 ```ts
 import { createA2uiSurfaces } from '@threadplane/content/a2ui';

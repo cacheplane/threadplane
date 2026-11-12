@@ -249,7 +249,7 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
 export interface HistorySearchResult { readonly id: string; readonly title: string; readonly subtitle?: string; }
 export interface HistorySearchPaletteProps { readonly open: boolean; readonly query: string; readonly results: readonly HistorySearchResult[]; readonly onQueryChange: (query: string) => void; readonly onSelect: (id: string) => void; readonly onClose: () => void; readonly loading?: boolean; readonly label?: string; readonly description?: string; readonly placeholder?: string; readonly closeLabel?: string; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }
 export interface TimelineItem { readonly id: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
-export interface TimelineProps { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode; }
+export interface TimelineProps { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly onReplay?: (id: string) => void; readonly onFork?: (id: string) => void; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode; }
 export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export interface SelectOption { readonly value: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
@@ -878,8 +878,10 @@ test('A2UI feature exposes exactly its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiActionMessage/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, createOwner() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }), /evaluateA2uiChecks/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {} }), /resolveA2uiValue/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {}, createOwner() {} }), /unexpected/);
 });
 test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
   const manifests = {

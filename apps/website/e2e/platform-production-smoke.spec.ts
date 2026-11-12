@@ -453,8 +453,7 @@ test.describe('Production: live AG-UI provider canaries', () => {
             expect.objectContaining({ type: 'CUSTOM', name: 'on_interrupt' }),
           ])
         );
-        // Approvals render inline in the transcript (#1540), not as a modal.
-        const dialog = page.locator('.chat-approval-card--inline');
+        const dialog = page.locator('dialog.chat-approval-card');
         await expect(dialog).toBeVisible();
         await expect(dialog).toContainText(
           mastra ? 'Reservation approval required' : 'Refund approval required'
@@ -465,13 +464,7 @@ test.describe('Production: live AG-UI provider canaries', () => {
         await expect(dialog).toContainText(mastra ? '$90.00' : '$47.50');
 
         const resumedResponse = nextAgentResponse(page);
-        // The refund example names its actions; Mastra keeps the defaults.
-        const label = mastra
-          ? action
-          : approved
-            ? 'Issue refund'
-            : "Don't refund";
-        await dialog.getByRole('button', { name: label, exact: true }).click();
+        await dialog.getByRole('button', { name: action, exact: true }).click();
         const response = await resumedResponse;
         const command = response.request().postDataJSON()
           .forwardedProps.command;

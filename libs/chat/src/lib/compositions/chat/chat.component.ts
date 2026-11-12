@@ -6,7 +6,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
-import type { Agent, AgentPlanStep, Message, MessageDelivery, Subagent } from '../../agent';
+import type { Agent, Message, MessageDelivery, Subagent } from '../../agent';
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/render';
 import type { A2uiActionMessage } from '@threadplane/a2ui';
@@ -215,8 +215,6 @@ export function isPinned(
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
-    .chat-plan-steps { margin: 0 0 20px; }
-    .chat-plan-steps__step { margin: 12px 0 0; font-weight: 500; color: var(--tplane-chat-text-muted); }
     .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: -2px; }
     .chat-stopped-notice {
       display: flex;
@@ -383,14 +381,6 @@ export function isPinned(
                     [handlers]="currentHandlers"
                     (events)="onClientToolEvent($event)"
                   />
-                  @if (trailingPlan(); as tail) { @if (tail.messageId === message.id) {
-                    <!-- Upcoming steps come only from a plan the agent declared. -->
-                    <div class="chat-plan-steps">
-                      @for (step of tail.steps; track $index) {
-                        <p class="chat-plan-steps__step">{{ step.label }}</p>
-                      }
-                    </div>
-                  } }
                   </ng-container>
                   <ng-container ngProjectAs="[chatAfterMarkdown]">
                   @if (presentation.spec; as spec) {
@@ -677,32 +667,6 @@ export class ChatComponent {
     ...this.viewToolNames(),
   ]);
 
-  /**
-   * While the latest turn waits on a browser view (such as a client-tool ask),
-   * the run has ended and no tool group is running to list the plan, so the
-   * plan's pending steps follow that message until the browser answers.
-   */
-  protected readonly trailingPlan = computed((): { readonly messageId: string; readonly steps: readonly AgentPlanStep[] } | undefined => {
-    const agent = this.agent();
-    // A client tool is pending only once the run has ended and before the browser settles it.
-    const waiting = agent.clientTools?.pending() ?? [];
-    if (waiting.length === 0) return undefined;
-    const views = new Set(this.viewToolNames());
-    const waitingViews = new Set(waiting.filter((call) => views.has(call.name)).map((call) => call.id));
-    if (waitingViews.size === 0) return undefined;
-    const steps = agent.plan?.()?.filter((step) => step.status === 'pending') ?? [];
-    if (steps.length === 0) return undefined;
-    const messages = agent.messages();
-    let latest: Message | undefined;
-    for (let i = messages.length - 1; i >= 0 && !latest; i--) {
-      if (messages[i].role === 'assistant') latest = messages[i];
-    }
-    if (!latest) return undefined;
-    return resolveMessageToolCalls(agent, latest).some((call) => waitingViews.has(call.id))
-      ? { messageId: latest.id, steps }
-      : undefined;
-  });
-
   readonly messageContent = messageContent;
 
   /**
@@ -855,13 +819,9 @@ export class ChatComponent {
 
   private readonly runActivityRegion = viewChild<ElementRef<HTMLElement>>('runActivityRegion');
   private readonly interruptRegion = viewChild<ElementRef<HTMLElement>>('interruptRegion');
-  /** A pending interrupt, or an inline approval card that waits on an app-supplied request. */
-  private readonly awaitingApproval = computed(
-    () => !!this.interruptContext() || !!this.approvalRecords?.waiting()
-  );
   /** While an approval waits in the transcript, the composer says what unblocks the run. */
   protected readonly composerPlaceholder = computed(() =>
-    this.awaitingApproval() ? 'Answer the approval to continue' : this.placeholder()
+    this.interruptContext() ? 'Answer the approval to continue' : this.placeholder()
   );
 
   /**
@@ -1088,25 +1048,12 @@ export class ChatComponent {
 
   constructor() {
     // Answering an approval removes its panel and the focused button with it;
-    // continue in the composer instead of dropping focus to <body>. The run that
-    // follows the answer may keep the composer disabled, so focus stays owed
-    // until it is enabled again, unless another approval appears first.
-    let hadApproval = false;
-    let focusOwed = false;
+    // continue in the composer instead of dropping focus to <body>.
+    let hadInterrupt = false;
     effect(() => {
-      const pending = this.awaitingApproval();
-      const agent = this.agent();
-      const enabled = !agent.isLoading() && !agent.isInputBlocked?.();
-      if (hadApproval && !pending) {
-        focusOwed = true;
-        untracked(() => this.continueInComposer());
-      } else if (pending) {
-        focusOwed = false;
-      } else if (focusOwed && enabled) {
-        focusOwed = false;
-        untracked(() => this.continueInComposer());
-      }
-      hadApproval = pending;
+      const pending = !!this.interruptContext();
+      if (hadInterrupt && !pending) untracked(() => this.continueInComposer());
+      hadInterrupt = pending;
     });
     this.destroyRef.onDestroy(() => this.clearClassifiers());
     // Inject the chat lib's root CSS custom properties (--tplane-chat-bg,

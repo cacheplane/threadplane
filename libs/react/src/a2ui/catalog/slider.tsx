@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { RenderViewProps } from '../../render/index.js';
 import { useA2uiSurfaceWriter } from '../surface-context.js';
+import { useA2uiCheckError } from './check-error.js';
 
 const finite = (value: unknown, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -10,8 +11,9 @@ const finite = (value: unknown, fallback: number) =>
  * movement is written as a number to the data model path its `value` is bound
  * to; a slider with a literal value, or in a read-only surface, is disabled.
  */
-export function A2uiSlider({ props, bindings }: RenderViewProps) {
+export function A2uiSlider({ props, bindings, elementKey }: RenderViewProps) {
   const id = useId();
+  const error = useA2uiCheckError(elementKey);
   const { editable, write } = useA2uiSurfaceWriter();
   const path = bindings?.['value'];
   const min = finite(props['min'], 0);
@@ -34,8 +36,10 @@ export function A2uiSlider({ props, bindings }: RenderViewProps) {
         value={value}
         disabled={!editable || path === undefined}
         aria-label={label === '' ? 'Value' : undefined}
+        {...error.control}
         onChange={(event) => write(path, Number(event.currentTarget.value))}
       />
+      {error.message}
     </div>
   );
 }

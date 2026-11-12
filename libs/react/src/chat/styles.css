@@ -1854,6 +1854,42 @@
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+.tp-timeline .tp-timeline__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tp-timeline .tp-timeline__row > .tp-timeline__button {
+  flex: 1 1 12rem;
+  width: auto;
+}
+.tp-timeline .tp-timeline__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+}
+.tp-timeline .tp-timeline__action {
+  padding-block: 0.375rem;
+  padding-inline: 0.625rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  font: inherit;
+  font-size: 0.875em;
+  cursor: pointer;
+}
+.tp-timeline .tp-timeline__action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.tp-timeline .tp-timeline__action:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
 .tp-timeline .tp-timeline__marker {
   flex: 0 0 auto;
   min-width: 1.5em;

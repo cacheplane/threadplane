@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { RenderViewProps } from '../../render/index.js';
 import { useA2uiSurfaceWriter } from '../surface-context.js';
+import { useA2uiCheckError } from './check-error.js';
 
 const TYPES: Readonly<Record<string, string>> = {
   shortText: 'text',
@@ -19,8 +20,13 @@ const text = (value: unknown) =>
  * field. Each edit is written to the data model path its `value` is bound to;
  * a field with a literal value, or in a read-only surface, cannot be edited.
  */
-export function A2uiTextField({ props, bindings }: RenderViewProps) {
+export function A2uiTextField({
+  props,
+  bindings,
+  elementKey,
+}: RenderViewProps) {
   const id = useId();
+  const error = useA2uiCheckError(elementKey);
   const { editable, write } = useA2uiSurfaceWriter();
   const path = bindings?.['value'];
   const variant = props['variant'];
@@ -32,6 +38,7 @@ export function A2uiTextField({ props, bindings }: RenderViewProps) {
     placeholder: text(props['placeholder']) || undefined,
     readOnly: !editable || path === undefined,
     'aria-label': label === '' ? 'Text' : undefined,
+    ...error.control,
   };
   return (
     <div className="a2ui-tf">
@@ -57,6 +64,7 @@ export function A2uiTextField({ props, bindings }: RenderViewProps) {
           onChange={(event) => write(path, event.currentTarget.value)}
         />
       )}
+      {error.message}
     </div>
   );
 }

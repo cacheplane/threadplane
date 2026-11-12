@@ -1,3 +1,4 @@
+import { record, resolveA2uiValue } from './functions.js';
 import type { A2uiSurfaceSnapshot, A2uiValue } from './types.js';
 
 /** A v0.9 client-to-agent action: which component fired, on which surface, with its context resolved to plain values. */
@@ -20,31 +21,19 @@ export interface A2uiActionMessage {
   };
 }
 
-const record = (
-  value: A2uiValue | undefined
-): value is { readonly [key: string]: A2uiValue } =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-function read(model: A2uiValue, path: string): A2uiValue {
-  let value = model;
-  for (const key of path.split('/').filter(Boolean)) {
-    if (value === null || typeof value !== 'object' || !Object.hasOwn(value, key))
-      return undefined;
-    value = (value as Record<string, A2uiValue>)[key];
-  }
-  return value;
-}
-
 /**
- * Builds the action message for one component's `action.event`, reading every
- * `{ path }` in its context from the surface's current data model. Returns
- * null when the component is missing or has no event action. Function-call
- * context values are left out. Nothing is sent; the caller transports it.
+ * Builds the action message for one component's `action.event`, resolving
+ * every context value against the surface's current data model as
+ * `resolveA2uiValue` does. Returns null when the component is missing or has
+ * no event action. For a component stamped from a child template, `basePath`
+ * is its list item's path, and the message names the template component.
+ * Nothing is sent; the caller transports it.
  */
 export function createA2uiActionMessage(
   surface: A2uiSurfaceSnapshot,
   sourceComponentId: string,
-  timestamp: string = new Date().toISOString()
+  timestamp: string = new Date().toISOString(),
+  basePath = ''
 ): A2uiActionMessage | null {
   const source = surface.components.find((item) => item.id === sourceComponentId);
   const action = source?.['action'];
@@ -53,13 +42,8 @@ export function createA2uiActionMessage(
   const context: Record<string, A2uiValue> = {};
   const authored = event['context'];
   if (record(authored))
-    for (const key of Object.keys(authored)) {
-      const value = authored[key];
-      if (record(value) && typeof value['path'] === 'string')
-        context[key] = read(surface.dataModel, value['path']);
-      else if (!(record(value) && typeof value['call'] === 'string'))
-        context[key] = value;
-    }
+    for (const key of Object.keys(authored))
+      context[key] = resolveA2uiValue(surface, authored[key], basePath);
   const child = source.component === 'Button' ? source['child'] : undefined;
   const text = surface.components.find(
     (item) => item.id === child && item.component === 'Text'

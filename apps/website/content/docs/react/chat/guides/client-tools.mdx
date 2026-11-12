@@ -47,7 +47,7 @@ Normal tools return results to another model run in the same confirmed conversat
 
 ## Progress and the plan
 
-Ask for **Trip** in the local preview. The model calls `get_weather` and `confirm_booking` together, and the graph state declares a plan in the `todos` shape that a deep-agents style to-do tool writes. While the browser runs the calls, `Chat` shows the progress view on the tool group: the current step, the elapsed time and a **Stop** button that stops the run like the composer. Open the group and its heading reads **Working · 1 of 2 done**, followed by the plan's pending steps, dimmed. The deployed client-tools graph writes this plan whenever one response requests two or more browser tools: one step per call while the browser runs it, then **Summarize the results**. The answer after the results completes the plan, and a new message clears it. In the live preview, ask it to plan a trip to a place to see the same view.
+Ask for **Trip** in the local preview. The model calls `get_weather` and `confirm_booking` together, and the graph state declares a plan in the `todos` shape that a deep-agents style to-do tool writes. While the browser runs the calls, `Chat` shows the progress view on the tool group: the current step, the elapsed time and a **Stop** button that stops the run like the composer. Open the group and its heading reads **Working · 1 of 2 done**, followed by the plan's pending steps, dimmed. The local fixture supplies this plan; the deployed client-tools graph does not write `todos`, so its runs show calls without upcoming steps.
 
 ## Booking decisions and ownership
 

@@ -246,11 +246,14 @@ export type CitationSourceVisualFunctionContract = CitationDisplayAssert<Citatio
   const a2ui = specifiers.includes('@threadplane/react/a2ui') ? `
 type A2uiEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type A2uiAssert<T extends true> = T;
-export type A2uiSurfacePropsContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceProps, { readonly surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot; readonly surfaces?: import('@threadplane/content/a2ui').A2uiSurfaces; readonly onAction?: (message: import('@threadplane/content/a2ui').A2uiActionMessage) => void; readonly catalog?: import('@threadplane/react/render').ReactRenderRegistry; readonly className?: string }>>;
+export type A2uiSurfacePropsContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceProps, { readonly surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot; readonly surfaces?: import('@threadplane/content/a2ui').A2uiSurfaces; readonly onAction?: (message: import('@threadplane/content/a2ui').A2uiActionMessage) => void; readonly onValidationError?: (error: import('@threadplane/content/a2ui').A2uiValidationErrorMessage) => void; readonly functions?: { readonly [name: string]: (args: { readonly [name: string]: import('@threadplane/content/a2ui').A2uiValue }) => void }; readonly catalog?: import('@threadplane/react/render').ReactRenderRegistry; readonly className?: string }>>;
 export type A2uiSurfaceParameterContract = A2uiAssert<A2uiEqual<Parameters<typeof import('@threadplane/react/a2ui').A2uiSurface>[0], import('@threadplane/react/a2ui').A2uiSurfaceProps>>;
 export type A2uiSurfaceWriterContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceWriter, { readonly editable: boolean; readonly write: (path: string | undefined, value: import('@threadplane/content/a2ui').A2uiValue) => void }>>;
 export type A2uiSurfacesSetValueContract = A2uiAssert<A2uiEqual<import('@threadplane/content/a2ui').A2uiSurfaces['setValue'], (surfaceId: string, path: string, value: import('@threadplane/content/a2ui').A2uiValue) => boolean>>;
-export type A2uiCreateActionMessageContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/content/a2ui').createA2uiActionMessage, (surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot, sourceComponentId: string, timestamp?: string) => import('@threadplane/content/a2ui').A2uiActionMessage | null>>;
+export type A2uiCreateActionMessageContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/content/a2ui').createA2uiActionMessage, (surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot, sourceComponentId: string, timestamp?: string, basePath?: string) => import('@threadplane/content/a2ui').A2uiActionMessage | null>>;
+export type A2uiResolveValueContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/content/a2ui').resolveA2uiValue, (surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot, value: import('@threadplane/content/a2ui').A2uiValue, basePath?: string) => import('@threadplane/content/a2ui').A2uiValue>>;
+export type A2uiEvaluateChecksContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/content/a2ui').evaluateA2uiChecks, (surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot) => readonly import('@threadplane/content/a2ui').A2uiCheckFailure[]>>;
+export type A2uiValidationErrorContract = A2uiAssert<A2uiEqual<import('@threadplane/content/a2ui').A2uiValidationErrorMessage, { readonly version: 'v0.9'; readonly error: { readonly code: 'VALIDATION_FAILED'; readonly surfaceId: string; readonly path?: string; readonly message: string } }>>;
 export type A2uiBasicCatalogContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/react/a2ui').a2uiBasicCatalog, () => import('@threadplane/react/render').ReactRenderRegistry>>;
 ` : '';
   const debug = specifiers.includes('@threadplane/react/debug') ? `
@@ -311,7 +314,7 @@ export type WelcomeSuggestionContract = Assert<Equal<WelcomeSuggestionProps, { r
 export type WelcomeParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Welcome>[0], WelcomeProps>>;
 export type WelcomeSuggestionParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').WelcomeSuggestion>[0], WelcomeSuggestionProps>>;
 export type TimelineItemContract = Assert<Equal<TimelineItem, { readonly id: string; readonly label: string; readonly description?: string; readonly disabled?: boolean }>>;
-export type TimelineContract = Assert<Equal<TimelineProps, { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => ReactNode }>>;
+export type TimelineContract = Assert<Equal<TimelineProps, { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly onReplay?: (id: string) => void; readonly onFork?: (id: string) => void; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => ReactNode }>>;
 export type HistorySearchResultContract = Assert<Equal<HistorySearchResult, { readonly id: string; readonly title: string; readonly subtitle?: string }>>;
 export type HistorySearchPaletteContract = Assert<Equal<HistorySearchPaletteProps, { readonly open: boolean; readonly query: string; readonly results: readonly HistorySearchResult[]; readonly onQueryChange: (query: string) => void; readonly onSelect: (id: string) => void; readonly onClose: () => void; readonly loading?: boolean; readonly label?: string; readonly description?: string; readonly placeholder?: string; readonly closeLabel?: string; readonly className?: string; readonly returnFocusTo?: HTMLElement | null }>>;
 export type ConfirmDialogContract = Assert<Equal<ConfirmDialogProps, { readonly open: boolean; readonly title: string; readonly onConfirm: () => void; readonly onCancel: () => void; readonly body?: string; readonly confirmLabel?: string; readonly cancelLabel?: string; readonly tone?: 'normal' | 'destructive'; readonly pending?: boolean; readonly className?: string; readonly returnFocusTo?: HTMLElement | null }>>;
@@ -500,7 +503,7 @@ const SUPPORTED_EXPORTS = {
   'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog', 'useA2uiSurfaceWriter'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
   'content/json': ['createJson'],
-  'content/a2ui': ['createA2uiActionMessage', 'createA2uiSurfaces'],
+  'content/a2ui': ['createA2uiActionMessage', 'createA2uiSurfaces', 'evaluateA2uiChecks', 'resolveA2uiValue'],
   'content/render-state': ['createRenderState'],
 };
 

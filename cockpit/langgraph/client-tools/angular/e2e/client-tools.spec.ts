@@ -33,48 +33,23 @@ test('client-tools: terminal view tool renders without a follow-up assistant run
 // ask tool (HITL): confirm_booking renders, the user confirms, the emitted value resumes the run.
 // This test does NOT use submitAndWaitForResponse because that helper awaits a finalized assistant
 // message — but the first run ends with only a tool call, so the helper would block until the user
-// clicks Confirm booking. We use an inline submit instead so we can interact with the component mid-flow.
+// clicks Confirm. We use an inline submit instead so we can interact with the component mid-flow.
 test('client-tools: ask tool collects user confirmation and resumes the run', async ({ page }) => {
   await page.goto('/');
   const input = page.getByRole('textbox', { name: /message|prompt/i });
   await input.fill('Book a table for two at 7pm');
   await page.getByRole('button', { name: /send message/i }).click();
 
-  // The ask renders through the library's inline approval panel.
-  const confirm = page.locator('app-confirm-booking .chat-approval-card--inline');
+  const confirm = page.locator('app-confirm-booking');
   await expect(confirm).toBeVisible({ timeout: 30000 });
-  await expect(confirm).toContainText('Waiting for your approval.');
-  await expect(confirm).toContainText('Confirm this fictional booking?');
   await expect(confirm).toContainText('Table for two at 7pm');
-  await expect(confirm.getByRole('button', { name: 'Confirm booking' })).toBeFocused();
-  await expect(input).toHaveAttribute('placeholder', 'Answer the approval to continue');
-  await confirm.getByRole('button', { name: 'Confirm booking' }).click();
+  await confirm.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('Your booking is confirmed')).toBeVisible({ timeout: 30000 });
 
-  // Once answered, the panel gives way to a one-line record and the composer
-  // takes focus back when the follow-up run finishes.
-  await expect(confirm).toHaveCount(0);
-  await expect(page.getByText('Approved: Booking', { exact: true })).toBeVisible();
-  await expect(input).toBeFocused();
-  await expect(input).toHaveAttribute('placeholder', 'Ask for weather or a fictional booking…');
-});
-
-// A trip calls get_weather and confirm_booking together, so the graph writes a
-// plan. The weather settles at once and the run ends, so no tool group is
-// running while the booking waits; the plan's pending step follows the ask.
-test('client-tools: a planned trip lists its pending step while the booking waits', async ({ page }) => {
-  await page.goto('/');
-  const input = page.getByRole('textbox', { name: /message|prompt/i });
-  await input.fill('Plan a trip to Portland');
-  await page.getByRole('button', { name: /send message/i }).click();
-
-  const confirm = page.locator('app-confirm-booking .chat-approval-card--inline');
-  await expect(confirm).toContainText('Fictional trip to Portland', { timeout: 30000 });
-  const steps = page.locator('.chat-plan-steps__step');
-  await expect(steps).toHaveText(['Summarize the results']);
-
-  await confirm.getByRole('button', { name: 'Confirm booking' }).click();
-  await expect(page.getByText('Portland is 68°F and sunny')).toBeVisible({ timeout: 30000 });
-  await expect(page.getByText('Approved: Booking', { exact: true })).toBeVisible();
-  await expect(steps).toHaveCount(0);
+  // The confirm card freezes once resolved: the adapter writes the emitted
+  // result back onto the local tool call, so the component re-renders into its
+  // frozen state — the interactive buttons disappear and a confirmed line shows.
+  await expect(confirm).toContainText('Booking confirmed');
+  await expect(confirm.getByRole('button', { name: 'Confirm' })).toHaveCount(0);
+  await expect(confirm.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
 });

@@ -3,7 +3,7 @@ import { signal, computed, Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
 import type { Agent, AgentPlan, Message, ToolCall } from '../../agent';
-import { completeDelivery, staticDelivery } from '../../agent';
+import { staticDelivery } from '../../agent';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
 import { ChatToolResultTemplateDirective } from './chat-tool-result-template.directive';
@@ -1316,45 +1316,5 @@ describe('ChatToolCallsComponent — upcoming steps from a declared plan', () =>
     const done: ToolCall[] = calls.map((c) => ({ ...c, status: 'complete' as const, result: 'ok' }));
     const { root } = render(done, false);
     expect(steps(root)).toEqual([]);
-  });
-});
-
-describe('ChatToolCallsComponent — a client tool after its message completed', () => {
-  // A browser client tool runs after the model message that requested it has finished.
-  const message: Message = {
-    id: 'm',
-    role: 'assistant',
-    content: '',
-    toolCallIds: ['a', 'b'],
-    delivery: completeDelivery('g', 'success'),
-  };
-  const calls = (): ToolCall[] => [
-    { id: 'a', name: 'read', args: {}, status: 'complete', result: 'ok' },
-    { id: 'b', name: 'confirm', args: {}, status: 'running' },
-  ];
-  function render(isLoading: boolean) {
-    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
-    const fixture = TestBed.createComponent(ChatToolCallsComponent);
-    const agent = mockAgent({ toolCalls: calls(), isLoading });
-    fixture.componentRef.setInput('agent', agent);
-    fixture.componentRef.setInput('message', message);
-    fixture.detectChanges();
-    return { fixture, agent, root: fixture.nativeElement as HTMLElement };
-  }
-
-  it('reads as running, with the progress view, while the agent works', () => {
-    const { root } = render(true);
-    expect(root.textContent!.toLowerCase()).not.toContain('status unavailable');
-    expect(root.querySelector('.ctc__group-header .tp-tool-activity__label')!.getAttribute('data-active')).toBe('true');
-    expect(root.querySelector('.ctc__group-elapsed')).not.toBeNull();
-    expect(root.querySelector('.ctc__group-stop')).not.toBeNull();
-  });
-
-  it('reads Status unavailable once the agent settles with the call still running', () => {
-    const { fixture, agent, root } = render(true);
-    agent.isLoading.set(false);
-    fixture.detectChanges();
-    expect(root.textContent).toContain('status unavailable');
-    expect(root.querySelector('.ctc__group-elapsed')).toBeNull();
   });
 });

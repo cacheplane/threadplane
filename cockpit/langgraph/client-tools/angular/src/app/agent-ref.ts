@@ -8,13 +8,10 @@ import type { BaseMessage } from '@langchain/core/messages';
  * `messages` is the LangChain message channel (add_messages-annotated list).
  * `client_tools` carries the browser-declared tool catalog that the
  * `@threadplane/langgraph` adapter ships as `input.client_tools`.
- * `todos` is the plan the graph writes when one response requests several
- * browser tools; the adapter reads it as `agent.plan`.
  */
 export interface ClientToolsState {
   messages: BaseMessage[];
   client_tools: unknown[];
-  todos?: { content: string; status: 'pending' | 'in_progress' | 'completed' }[];
 }
 
 /**

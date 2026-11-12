@@ -13,8 +13,6 @@ import {
   citationsWithToolSources,
   ToolActivityGroup,
   MessageList,
-  SubagentCard,
-  subagentsFromEvidence,
   toolOutcomes,
   type ToolActivityInfo,
   type ChatInputHandle,
@@ -38,18 +36,12 @@ const toolOutcome = toolOutcomes(
 );
 // This raw session carries no message citations; the panel lists tool-declared sources.
 const NO_CITATIONS: readonly never[] = [];
-type SessionOptions = Parameters<typeof createSession>[0];
-/** A kept thread's transcript, child messages included, and each child's start and terminal evidence. */
-interface History {
-  readonly messages?: NonNullable<SessionOptions['messages']>;
-  readonly subagents?: SessionOptions['subagents'];
-}
+type History = NonNullable<Parameters<typeof createSession>[0]['messages']>;
 function App({ threadId, history }: { threadId?: string; history?: History }) {
   const [session] = useState(() =>
     createSession({
       threadId: threadId ?? crypto.randomUUID(),
-      ...(history?.messages?.length ? { messages: history.messages } : {}),
-      ...(history?.subagents?.length ? { subagents: history.subagents } : {}),
+      ...(history?.length ? { messages: history } : {}),
       url: `http://127.0.0.1:4809/ag-ui?participant=threadplane-react&scenario=${scenario}`,
     })
   );
@@ -58,49 +50,39 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
   const [decisionError, setDecisionError] = useState('');
   const [copiedId, setCopiedId] = useState('');
   const decision = snapshot.decision;
-  // Each child agent becomes one card holding its own messages and reads. Restored
-  // children arrive as earlier ones, so a reload keeps their cards.
-  const { subagents, transcript } = subagentsFromEvidence({
-    subagents: snapshot.subagents,
-    earlierSubagents: snapshot.earlierSubagents,
-    transcript: snapshot.transcript,
-    running: busy,
-    toolLabel,
-  });
-  // A card stands in for the call that started its child.
-  const delegated = new Set(subagents.map((child) => child.toolCallId));
-  // Every observed parent call in transcript order, paired with its tool message.
-  const activities: ToolActivityInfo[] = transcript.flatMap((message) =>
-    message.role === 'assistant'
-      ? (message.toolCalls ?? []).map((call) => {
-          const result = transcript.find(
-            (message) =>
-              message.role === 'tool' && message.toolCallId === call.id
-          );
-          const activity: ToolActivityInfo = {
-            id: call.id,
-            name: call.function.name,
-            label: toolLabel(call.function.name),
-            phase: result
-              ? 'complete'
-              : busy
-              ? 'running'
-              : decision?.kind === 'native' ||
-                snapshot.run?.outcome === 'paused'
-              ? 'waiting'
-              : snapshot.run?.outcome === 'aborted'
-              ? 'stopped'
-              : 'unknown',
-            argumentsText: call.function.arguments,
-            resultText:
-              result && typeof result.content === 'string'
-                ? result.content
-                : undefined,
-          };
-          // A declared failed outcome turns the complete call into a failed row.
-          return { ...activity, outcome: toolOutcome(activity) };
-        })
-      : []
+  // Every observed call in transcript order, paired with its tool message.
+  const activities: ToolActivityInfo[] = snapshot.transcript.flatMap(
+    (message) =>
+      message.role === 'assistant'
+        ? (message.toolCalls ?? []).map((call) => {
+            const result = snapshot.transcript.find(
+              (message) =>
+                message.role === 'tool' && message.toolCallId === call.id
+            );
+            const activity: ToolActivityInfo = {
+              id: call.id,
+              name: call.function.name,
+              label: toolLabel(call.function.name),
+              phase: result
+                ? 'complete'
+                : busy
+                ? 'running'
+                : decision?.kind === 'native' ||
+                  snapshot.run?.outcome === 'paused'
+                ? 'waiting'
+                : snapshot.run?.outcome === 'aborted'
+                ? 'stopped'
+                : 'unknown',
+              argumentsText: call.function.arguments,
+              resultText:
+                result && typeof result.content === 'string'
+                  ? result.content
+                  : undefined,
+            };
+            // A declared failed outcome turns the complete call into a failed row.
+            return { ...activity, outcome: toolOutcome(activity) };
+          })
+        : []
   );
   // The cards layout shows each distinct reference once, on the last call that returned it.
   const cards = layout === 'cards' ? referenceCards(activities) : undefined;
@@ -199,7 +181,7 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
       >
         <div className="tp-chat">
           <MessageList rows={[]}>
-            {transcript
+            {snapshot.transcript
               .filter((message) => message.role !== 'tool')
               .map((message) => (
                 <article
@@ -207,16 +189,12 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
                   key={message.id}
                 >
                   {message.role === 'assistant' &&
-                    message.toolCalls?.some(
-                      (call) => !delegated.has(call.id)
-                    ) && (
+                    !!message.toolCalls?.length && (
                       <ToolActivityGroup
-                        activities={activities.filter(
-                          (activity) =>
-                            !delegated.has(activity.id) &&
-                            message.toolCalls?.some(
-                              (call) => call.id === activity.id
-                            )
+                        activities={activities.filter((activity) =>
+                          message.toolCalls?.some(
+                            (call) => call.id === activity.id
+                          )
                         )}
                         context={activities}
                         sources="panel"
@@ -248,16 +226,6 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
                           ))}
                       </ToolActivityGroup>
                     )}
-                  {message.role === 'assistant' &&
-                    subagents
-                      .filter((child) =>
-                        message.toolCalls?.some(
-                          (call) => call.id === child.toolCallId
-                        )
-                      )
-                      .map((child) => (
-                        <SubagentCard key={child.id} subagent={child} />
-                      ))}
                   <p className="benchmark-message-text">
                     {typeof message.content === 'string'
                       ? message.content
@@ -367,7 +335,7 @@ function App({ threadId, history }: { threadId?: string; history?: History }) {
     </>
   );
 }
-// A kept thread reloads its transcript and child evidence from the benchmark server before the session starts.
+// A kept thread reloads its parent transcript from the benchmark server before the session starts.
 async function start() {
   const threadId = benchmarkThread(scenario);
   let history: History | undefined;
@@ -378,7 +346,7 @@ async function start() {
           threadId
         )}/messages`
       );
-      if (response.ok) history = await response.json();
+      if (response.ok) history = (await response.json()).messages;
     } catch {
       /* No history: start an empty thread. */
     }
