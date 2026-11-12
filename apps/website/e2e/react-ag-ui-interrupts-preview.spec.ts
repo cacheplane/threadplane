@@ -71,7 +71,7 @@ for (const phase of ['paused', 'resume']) {
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');
     if (phase === 'resume') {
-      await frame.getByRole('button', { name: 'Approve', exact: true }).click();
+      await frame.getByRole('button', { name: 'Issue refund', exact: true }).click();
       await expect(frame.getByRole('region', { name: 'Conversation', exact: true })).toContainText('Live partial');
       expect((await (await request.get(origin + '/__lifetime')).json()).active).toBe(true);
     }
