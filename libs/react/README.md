@@ -1644,10 +1644,68 @@ retries and what the conversation shows are your application's decisions.
 `createA2uiActionMessage(surface, componentId)` from
 `@threadplane/content/a2ui` builds the same message outside React.
 
-A Button is disabled when there is no `onAction`, when it has no event action,
-or when its `disabled` prop is true. A Button used as a `Modal` trigger opens
-the modal and needs no action. Validation checks do not gate an action yet, and
-a `functionCall` action is not run.
+A Button with an event action is disabled when there is no `onAction`. A
+Button with no action, or whose `disabled` prop is true, is disabled too. A
+Button used as a `Modal` trigger opens the modal and needs no action.
+
+### Function calls
+
+A prop written as `{ call, args }` shows the function's current value and
+follows the data model like a bound prop. It is a computed value, so an input
+whose `value` is a call cannot be edited. The functions are the basic
+catalog's: `formatString`, `formatNumber`, `formatCurrency`, `formatDate` and
+`pluralize`, plus the validators and logic functions listed under Validation.
+`formatString` replaces each `${...}` with a data model path or a nested call,
+for example
+`"${/party} ${pluralize(value:${/party}, one:'seat', other:'seats')}"`.
+Numbers, currency and plural forms use the viewer's locale; `formatDate` reads
+a pattern such as `MMM d, yyyy` in local time with English month and day
+names. A call to an unknown function, or with arguments it cannot use, has no
+value and the prop is left out. Event action context values and check
+conditions are resolved the same way, and `resolveA2uiValue(surface, value)`
+from `@threadplane/content/a2ui` does it for any value.
+
+A Button whose action is a `functionCall` runs in the page and sends nothing
+to the agent. Pass `functions` to handle them by name:
+
+```tsx
+<A2uiSurface
+  surface={surface}
+  functions={{ share: (args) => navigator.share({ title: String(args.title) }) }}
+/>
+```
+
+Each function receives the call's arguments resolved from the data model at
+the moment of the press. `openUrl` is built in: it opens an `http(s)`,
+`mailto` or `tel` address from its `url` argument in a new tab with no opener,
+and ignores every other kind of address; a function you name `openUrl`
+replaces it and receives the address unchecked. A Button whose function
+nothing can run is disabled. A function-call press is not held back by failing
+checks on inputs, because nothing is submitted; a Button's own failing checks
+still disable it. Keep the `functions` object stable between renders.
+
+### Validation
+
+A component's `checks` are evaluated against the surface's current data model.
+Conditions usually call `required`, `regex`, `length`, `numeric`, `email`,
+`and`, `or` and `not`; a check passes only when its condition is `true`. A `TextField` with `validationRegexp` and a bound
+value has one more check, with the message "Invalid format".
+
+Pressing a Button while any input's checks fail sends nothing: `onAction` is
+not called, each failing input shows the message of its first failing check,
+and `onValidationError` receives the first failure as
+`{ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId, path?, message } }`.
+Sending that error to the agent is your application's decision. Messages stay
+hidden until a press is blocked. After that they follow the data model, so a
+message leaves when its input passes, and all of them are hidden again once an
+action is sent. Checks on inputs block every Button on the surface, including
+inputs in an unselected tab. A Button whose own checks fail is disabled and
+shows no message.
+
+The surface stores nothing for this: `evaluateA2uiChecks(surface)` from
+`@threadplane/content/a2ui` returns the same failures for any snapshot. A
+`regex` pattern comes from the agent and runs in the browser against what the
+user typed.
 
 A component of your own can write the same way with `useA2uiSurfaceWriter()`,
 which returns `{ editable, write(path, value) }`; take the path from the view's
@@ -1665,5 +1723,36 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-`ChoicePicker`, `DateTimeInput`, validation checks, `functionCall` actions,
-function-call props, child templates and surface themes are not handled yet.
+### Child templates
+
+A `Row`, `Column` or `List` whose `children` is `{ path, componentId }` shows
+that component once for each item of the list at `path`, in list order, and
+follows the list as items are added or removed. Inside the template a path
+without a leading slash belongs to the item: `{ path: 'name' }` in the item at
+`/stops/1` reads `/stops/1/name`, and `{ path: '.' }` is the item itself. A
+path with a leading slash still reads from the root. This holds for bound
+props, function calls, `formatString` text, checks and action context, and a
+template may contain another template.
+
+An input inside a template writes to its own item. A Button inside a template
+sends its action with context from its item, and `sourceComponentId` is the
+template component's id, so include what identifies the row in the action's
+`context`. A failing check inside a template shows its message on that row
+only, and its `VALIDATION_FAILED` error carries the item's full path. Rows are
+keyed by position in the list, so an item inserted in the middle moves later
+rows' own state, such as a selected tab, to the item before it.
+
+### Theme
+
+A surface created with a `theme` uses it without any prop. A `primaryColor`
+that is a hex colour (`#0b6b3a`) becomes that surface's accent: `--a2ui-primary`
+is set on the surface element, with `--a2ui-on-primary` chosen as white or
+near-black for contrast and a matching hover colour. Any other value is
+ignored, so nothing but a hex colour reaches a style attribute.
+`agentDisplayName` and `iconUrl` show as one small line above the content; the
+icon follows the media URL rules above and is decorative. A surface without a
+theme renders exactly as before. To restyle further, set the `--a2ui-*`
+properties from your own CSS through `className`; an agent's hex colour is an
+inline style and wins over them.
+
+Functions of your own inside props are not handled yet.

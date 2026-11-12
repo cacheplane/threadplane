@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import type { RenderViewProps } from '../../render/index.js';
 import { useA2uiSurfaceWriter } from '../surface-context.js';
+import { useA2uiCheckError } from './check-error.js';
 
 interface Option {
   readonly label: string;
@@ -44,8 +45,13 @@ function selection(value: unknown): readonly string[] {
  * list to the data model path its `value` is bound to; a picker with a literal
  * value, or in a read-only surface, is disabled.
  */
-export function A2uiChoicePicker({ props, bindings }: RenderViewProps) {
+export function A2uiChoicePicker({
+  props,
+  bindings,
+  elementKey,
+}: RenderViewProps) {
   const id = useId();
+  const error = useA2uiCheckError(elementKey);
   const [filter, setFilter] = useState('');
   const { editable, write } = useA2uiSurfaceWriter();
   const path = bindings?.['value'];
@@ -82,6 +88,7 @@ export function A2uiChoicePicker({ props, bindings }: RenderViewProps) {
       role={single && !chips ? 'radiogroup' : 'group'}
       aria-labelledby={label === '' ? undefined : `${id}-label`}
       aria-label={label === '' ? 'Choices' : undefined}
+      {...error.control}
     >
       {label === '' ? null : (
         <span id={`${id}-label`} className="a2ui-cp__label">
@@ -141,6 +148,7 @@ export function A2uiChoicePicker({ props, bindings }: RenderViewProps) {
           ))}
         </div>
       )}
+      {error.message}
     </div>
   );
 }

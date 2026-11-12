@@ -133,10 +133,7 @@ export async function createBenchmarkServer({
           200,
           kind === 'events'
             ? { events: thread.events }
-            : {
-                messages: threadMessages(thread.events),
-                subagents: threadSubagents(thread.events),
-              }
+            : { messages: threadMessages(thread.events) }
         );
       }
       if (request.method !== 'POST')
@@ -792,33 +789,26 @@ export async function createBenchmarkServer({
   };
 }
 
-/**
- * Folds delivered events into native AG-UI messages. A child's messages keep its
- * `subagentRunId`, so a restored session attributes them to that child again.
- */
+/** Folds delivered parent-transcript events into native AG-UI messages. Child events are left out. */
 export function threadMessages(events) {
   const messages = [];
-  // Present only on a child's event; spreading it tags the message it produces.
-  const owner = (event) =>
-    typeof event.subagentRunId === 'string'
-      ? { subagentRunId: event.subagentRunId }
-      : {};
-  const assistant = (id, event) => {
+  const assistant = (id) => {
     let message = messages.find((row) => row.id === id);
     if (!message) {
-      message = { id, role: 'assistant', content: '', ...owner(event) };
+      message = { id, role: 'assistant', content: '' };
       messages.push(message);
     }
     return message;
   };
   const calls = new Map();
   for (const event of events) {
+    if (typeof event.subagentRunId === 'string') continue;
     if (event.type === 'RUN_STARTED')
       messages.push(...(event.input?.messages ?? []));
     // An assistant message takes its place when it first says or calls something,
     // so a resumed run's answer follows the tool result it waited for.
     else if (event.type === 'TEXT_MESSAGE_CONTENT')
-      assistant(event.messageId, event).content += event.delta;
+      assistant(event.messageId).content += event.delta;
     else if (event.type === 'TOOL_CALL_START') {
       const call = {
         id: event.toolCallId,
@@ -826,7 +816,7 @@ export function threadMessages(events) {
         function: { name: event.toolCallName, arguments: '' },
       };
       calls.set(call.id, call);
-      (assistant(event.parentMessageId, event).toolCalls ??= []).push(call);
+      (assistant(event.parentMessageId).toolCalls ??= []).push(call);
     } else if (event.type === 'TOOL_CALL_ARGS') {
       const call = calls.get(event.toolCallId);
       if (call) call.function.arguments += event.delta;
@@ -836,27 +826,9 @@ export function threadMessages(events) {
         role: 'tool',
         toolCallId: event.toolCallId,
         content: event.content,
-        ...owner(event),
       });
   }
   return messages;
-}
-
-/** Each child's start and terminal evidence in start order, as a native session restores it. */
-export function threadSubagents(events) {
-  const children = new Map();
-  for (const event of events) {
-    if (event.type === 'SUBAGENT_STARTED')
-      children.set(event.subagentRunId, { started: event });
-    else if (
-      event.type === 'SUBAGENT_FINISHED' ||
-      event.type === 'SUBAGENT_ERROR'
-    ) {
-      const child = children.get(event.subagentRunId);
-      if (child) child.terminal = event;
-    }
-  }
-  return [...children.values()];
 }
 
 if (
