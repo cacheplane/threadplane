@@ -51,21 +51,23 @@ body {
 .client-tools-demo button:disabled {
   cursor: default;
 }
-.client-tools-demo section[aria-label='Conversation'] {
+.client-tools-demo .tp-chat-list {
   flex: 1;
   min-height: 8rem;
   max-height: 55dvh;
 }
-.client-tools-demo section {
+/* The page's own panels; Chat styles its sections itself. */
+.client-tools-demo .tp-example__content > section {
   border: 1px solid var(--ds-border, light-dark(#dce1e6, #666666));
   border-radius: 0.5rem;
   padding: 1rem;
 }
-.client-tools-demo section h2 {
+.client-tools-demo .tp-example__content > section h2 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
 }
-.client-tools-demo section p + p {
+.client-tools-demo .tp-example__content > section p + p,
+.client-tools-demo [aria-label='Local tool evidence'] p + p {
   margin-top: 0.5rem;
 }
 .client-tools-demo [role='alert'] {
@@ -103,16 +105,13 @@ body {
     align-items: flex-start;
   }
 }
-.client-tools-conversation {
-  min-height: 12rem;
-  overflow: auto;
+.client-tools-demo [aria-label='Local tool evidence'] {
+  margin-block: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
-.client-tools-conversation > ol {
-  list-style: none;
-  padding: 0;
+.client-tools-demo [aria-label='Local tool evidence'] p {
   margin: 0;
-  display: grid;
-  gap: 1rem;
 }
 .weather-card {
   padding: 1rem;
@@ -129,16 +128,12 @@ body {
 .weather-card dd {
   margin: 0;
 }
-.client-tools-conversation details {
-  margin-block: 0.5rem;
-}
 
 .prompt-presets {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.prompt-presets button,
-.booking-panel button {
+.prompt-presets button {
   padding: 0.4rem 0.6rem;
 }

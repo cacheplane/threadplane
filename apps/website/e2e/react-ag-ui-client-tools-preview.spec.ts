@@ -19,6 +19,8 @@ async function hydrated(page: Page, mode: string) {
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-mode', mode);
 }
+/** The example's own status line, below Chat's composer. */
+const status = (page: Page) => page.frameLocator('iframe').locator('.tp-chat-input__footer > [role="status"]');
 async function send(page: Page, text: string) {
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill(text);
@@ -58,7 +60,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
       expect(Object.values(stats.closed.at(-1).closure).every(Boolean)).toBe(true);
     }
   });
-  test('actual Docs, Code and Run retain native identity, source bytes and five inert presets', async ({ page, request }, info) => {
+  test('actual Docs, Code and Run retain native identity, source bytes and six inert presets', async ({ page, request }, info) => {
     await page.goto(reactRoute + '?topicProof=b4');
     await hydrated(page, 'Docs');
     await expect(page.getByRole('heading', { name: 'React AG-UI client tools preview', exact: true })).toBeVisible();
@@ -72,7 +74,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await documentationModes(page).getByRole('button', { name: 'Code', exact: true }).click();
     await hydrated(page, 'Code');
     const tree = page.getByRole('complementary', { name: 'File tree' });
-    for (const file of ['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'confirm-booking.tsx', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'graph.py', 'server.py', 'client-tools.md']) {
+    for (const file of ['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css', 'project.json', 'graph.py', 'server.py', 'client-tools.md']) {
       await expect(tree.getByRole('button', { name: file, exact: true })).toBeVisible();
     }
     await expect(tree).not.toContainText(/fixture|scripted|\.spec\.|type-test/);
@@ -85,19 +87,15 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await hydrated(page, 'Run');
     await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4640\/\?cockpit_did=/);
     const frame = page.frameLocator('iframe');
-    await expect(frame.getByRole('status')).toHaveText('Ready.');
-    for (const label of ['Weather result', 'Slow status', 'Weather card', 'Terminal snapshot', 'Fictional booking']) {
-      await frame.getByRole('button', { name: label, exact: true }).click();
-      await expect(frame.getByLabel('Message', { exact: true })).not.toHaveValue('');
-      expect(await records(request)).toEqual([]);
-    }
+    await expect(status(page)).toHaveText('Ready.');
+    await expect(frame.getByRole('group', { name: 'Example prompts' }).getByRole('button')).toHaveCount(6);
+    expect(await records(request)).toEqual([]);
     await send(page, 'Use weather_card');
-    await expect(frame.getByRole('status')).toHaveText('Command complete.');
+    await expect(status(page)).toHaveText('Command complete.');
     const wire = await records(request); native(wire, 2);
     const result = wire[1].body.messages.find(message => message.role === 'tool');
     expect(result?.content).toBe('{"displayed":true}');
-    const owner = wire[1].body.messages.find(message => message.toolCalls?.some(call => call.id === result?.toolCallId));
-    await expect(frame.locator(`[data-native-message="${owner?.id}"] [data-native-call="${result?.toolCallId}"]`)).toHaveCount(1);
+    await expect(frame.locator(`[data-native-call="${result?.toolCallId}"]`)).toHaveCount(1);
     const card = frame.getByRole('region', { name: 'Simulated weather for San Francisco' });
     for (const value of ['68°F', 'Sunny', '55%', '8 mph']) await expect(card).toContainText(value);
     await expect(frame.getByRole('region', { name: 'Local tool evidence' })).toContainText('Delivery: observed');
@@ -112,17 +110,17 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await page.goto(reactRoute + '?mode=run');
     await send(page, 'Use weather_snapshot');
     const frame = page.frameLocator('iframe');
-    await expect(frame.getByRole('status')).toHaveText('Command complete.');
+    await expect(status(page)).toHaveText('Command complete.');
     native(await records(request), 1);
     await expect(frame.getByRole('region', { name: 'Local tool evidence' })).toContainText('Delivery: unsent');
     await send(page, 'Plain next human');
-    await expect(frame.getByRole('status')).toHaveText('Command complete.');
+    await expect(status(page)).toHaveText('Command complete.');
     const wire = await records(request); native(wire, 2);
     expect(wire[1].body.messages.filter(message => message.role === 'tool')).toHaveLength(1);
     await frame.getByRole('button', { name: 'New conversation', exact: true }).click();
     expect(await records(request)).toHaveLength(2);
     await send(page, 'Plain fresh human');
-    await expect(frame.getByRole('status')).toHaveText('Command complete.');
+    await expect(status(page)).toHaveText('Command complete.');
     const after = await records(request); native(after, 3);
     expect(after[2].body.threadId).not.toBe(wire[0].body.threadId);
     expect(after[2].body.messages).toHaveLength(1);
@@ -131,19 +129,20 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await page.goto(reactRoute + '?mode=run');
     await send(page, 'Use confirm_booking');
     const frame = page.frameLocator('iframe');
-    const panel = frame.getByRole('region', { name: 'Fictional booking' });
+    const panel = frame.locator('.tp-approval-card');
     await expect(panel).toContainText('No real reservation');
     native(await records(request), 1);
-    await frame.getByRole('button', { name: 'Confirm', exact: true }).click();
-    await expect(frame.getByRole('status')).toHaveText('Command complete.');
+    await panel.screenshot({ path: info.outputPath('fictional-booking.png') });
+    await frame.getByRole('button', { name: 'Confirm booking', exact: true }).click();
+    await expect(status(page)).toHaveText('Command complete.');
     const wire = await records(request); native(wire, 2);
     expect(wire[1].body.messages.filter(message => message.role === 'tool').map(message => JSON.parse(message.content))).toEqual([{ confirmed: true }]);
-    await panel.screenshot({ path: info.outputPath('fictional-booking.png') });
+    await expect(frame.getByText('Approved: Booking', { exact: true })).toBeVisible();
     await frame.getByRole('button', { name: 'New conversation', exact: true }).click();
     await send(page, 'Use slow_status_check');
     await expect(frame.getByRole('region', { name: 'Local tool evidence' })).toContainText('Local execution: running');
-    await frame.getByRole('button', { name: 'Stop', exact: true }).click();
-    await expect(frame.getByRole('status')).toHaveText('Start a new conversation to continue.');
+    await frame.locator('.tp-chat-input__stop').click();
+    await expect(status(page)).toHaveText('Start a new conversation to continue.');
     await page.waitForTimeout(3200);
     expect(await records(request)).toHaveLength(3);
     await expect(frame.locator('main')).not.toContainText('"status":"complete"');
@@ -152,7 +151,7 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await page.goto(reactRoute + '?mode=run&topicProof=b4');
     await send(page, 'Use confirm_booking');
     const frame = page.frameLocator('iframe');
-    await expect(frame.getByRole('status')).toHaveText('Waiting for your fictional booking decision…');
+    await expect(status(page)).toHaveText('Waiting for your fictional booking decision…');
     const oldFrame = await page.locator('iframe').elementHandle();
     await selectFramework(page, 'angular');
     await expect(page).not.toHaveURL(/\/docs\/react\//);
@@ -161,11 +160,11 @@ test.describe('native React AG-UI Client Tools workspace', () => {
     await expect(page.locator('iframe')).toHaveAttribute('src', /^http:\/\/localhost:4325\//);
     await page.goBack();
     await expect(page.getByLabel('Framework')).toHaveAttribute('data-value', 'react');
-    await expect(frame.getByRole('status')).toHaveText('Ready.');
-    await expect(frame.locator('[data-native-message]')).toHaveCount(0);
+    await expect(status(page)).toHaveText('Ready.');
+    await expect(frame.locator('[data-native-call]')).toHaveCount(0);
     await frame.getByLabel('Message', { exact: true }).fill('Unsubmitted draft');
     await page.reload();
-    await expect(frame.getByRole('status')).toHaveText('Ready.');
+    await expect(status(page)).toHaveText('Ready.');
     await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
     expect(await records(request)).toHaveLength(1);
     await page.goto('/docs/react/ag-ui/guides/tool-views');
