@@ -106,6 +106,8 @@ class CockpitModel(ScriptedModel):
             names = [('unknown_weather', {})]
         elif 'Mixed' in text:
             names = [('weather_snapshot', reading), ('get_weather', {'location': 'San Francisco'})]
+        elif 'Plan a trip' in text:
+            names = [('get_weather', {'location': 'Portland'}), ('confirm_booking', {'summary': 'Fictional trip to Portland'})]
         elif 'Bookings' in text:
             names = [('confirm_booking', {'summary': 'Fictional dinner A'}), ('confirm_booking', {'summary': 'Fictional dinner B'})]
         elif 'confirm_booking' in text:

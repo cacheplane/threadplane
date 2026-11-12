@@ -1,18 +1,19 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useEffect, useState } from 'react';
+import { ExampleLayout } from '../../../../shared/react-example';
+import { useCallback, useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
-  ChatInput,
-  TextTranscript,
-  ToolObservation,
+  ApprovalCard,
+  Chat,
+  type ApprovalRecordEntry,
+  type ToolActivityInfo,
 } from '@threadplane/react/chat';
 import {
   createConnectedApplication,
   type ClientToolsConnection,
 } from './connection';
 import { WeatherCard } from './weather-card';
-import { ConfirmBooking } from './confirm-booking';
+import type { BookingPanel } from './tools';
 const prompts = Object.freeze([
   {
     label: 'Weather result',
@@ -34,6 +35,10 @@ const prompts = Object.freeze([
     label: 'Fictional booking',
     text: 'Ask me to confirm a fictional dinner booking with confirm_booking.',
   },
+  {
+    label: 'Plan a trip',
+    text: 'Plan a trip to Portland: check the weather, then book it.',
+  },
 ]);
 export function ClientToolsDemo({
   connection,
@@ -43,8 +48,9 @@ export function ClientToolsDemo({
   readonly onReady: () => void;
 }) {
   const [application] = useState(() => createConnectedApplication(connection));
-  const [draft, setDraft] = useState('');
   const snapshot = useAgent(application);
+  // Answered bookings stay in the transcript as one-line records.
+  const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -55,12 +61,44 @@ export function ClientToolsDemo({
     [application]
   );
   useEffect(() => {
-    setDraft('');
+    setRecords([]);
   }, [snapshot.viewGeneration]);
+  function decide(row: BookingPanel, confirmed: boolean) {
+    const afterId = application.agent.getSnapshot().messages.at(-1)?.id;
+    // Record only a decision the application admitted.
+    if (!application.respond(row.token, confirmed)) return;
+    setRecords((previous) => [
+      ...previous,
+      { afterId, verdict: confirmed ? 'approved' : 'declined', label: 'Booking' },
+    ]);
+  }
+  // Local execution evidence and a validated weather reading under each call.
+  const { views } = snapshot;
+  const renderToolResult = useCallback(
+    (activity: ToolActivityInfo) => {
+      const tool = views
+        .flatMap((message) => message.tools)
+        .find((entry) => entry.id === activity.id);
+      if (!tool) return undefined;
+      return (
+        <div data-native-call={tool.id}>
+          {tool.local && (
+            <section aria-label="Local tool evidence">
+              <p>Local execution: {tool.local.status}</p>
+              <p>Delivery: {tool.local.delivery}</p>
+            </section>
+          )}
+          {tool.weather && <WeatherCard reading={tool.weather} />}
+        </div>
+      );
+    },
+    [views]
+  );
+  const pending = snapshot.bookings.filter((row) => row.status === 'pending');
   const status = snapshot.busy
     ? snapshot.activity === 'replacing'
       ? 'Starting a new conversation…'
-      : snapshot.bookings.some((row) => row.status === 'pending')
+      : pending.length
       ? 'Waiting for your fictional booking decision…'
       : 'Running client tools…'
     : !snapshot.canSubmit
@@ -83,8 +121,8 @@ export function ClientToolsDemo({
         </button>
       </header>
       <p>
-        Five browser tools demonstrate simulated weather, a cancellable status
-        check and an explicit fictional booking decision.
+        Six example prompts demonstrate simulated weather, a cancellable status
+        check, a fictional booking decision and a trip that plans its steps.
       </p>
       <section aria-label="Runtime connection">
         <h2>Runtime connection</h2>
@@ -95,78 +133,53 @@ export function ClientToolsDemo({
           <button
             key={prompt.label}
             type="button"
-            disabled={snapshot.busy}
-            onClick={() => setDraft(prompt.text)}
+            disabled={!snapshot.canSubmit}
+            onClick={() => void application.submit(prompt.text)}
           >
             {prompt.label}
           </button>
         ))}
       </div>
-      <section aria-label="Conversation" className="client-tools-conversation">
-        <ol>
-          {snapshot.views.map((message) => (
-            <li key={message.id} data-native-message={message.id}>
-              {message.text && (
-                <TextTranscript
-                  messages={[message.text]}
-                  label="Message text"
-                />
-              )}
-              {message.tools.map((tool) => (
-                <div key={tool.id} data-native-call={tool.id}>
-                  <ToolObservation
-                    name={tool.name}
-                    argumentsText={tool.argumentsText}
-                    resultText={tool.resultText}
-                  />
-                  {tool.local && (
-                    <section aria-label="Local tool evidence">
-                      <p>Local execution: {tool.local.status}</p>
-                      <p>Delivery: {tool.local.delivery}</p>
-                    </section>
-                  )}
-                  {tool.weather && <WeatherCard reading={tool.weather} />}
-                  {snapshot.bookings
-                    .filter(
-                      (booking) =>
-                        booking.assistantMessageId === message.id &&
-                        booking.callId === tool.id &&
-                        booking.sourceRunId === tool.sourceRunId &&
-                        tool.local?.name === 'confirm_booking'
-                    )
-                    .map((booking) => (
-                      <ConfirmBooking
-                        key={booking.token}
-                        booking={booking}
-                        respond={(token, confirmed) => {
-                          application.respond(token, confirmed);
-                        }}
-                      />
-                    ))}
-                </div>
-              ))}
-            </li>
-          ))}
-        </ol>
-      </section>
-      <ExampleFooter>
-        {snapshot.error && <p role="alert">{snapshot.error}</p>}
-        <ChatInput
-          label="Message"
-          placeholder="Try an example prompt…"
-          value={draft}
-          onValueChange={setDraft}
-          disabled={!snapshot.canSubmit}
-          busy={snapshot.busy}
-          onStop={snapshot.busy ? () => void application.stop() : undefined}
-          onSubmit={(text) => {
-            if (!application.getSnapshot().canSubmit) return false;
-            void application.submit(text);
-            return application.getSnapshot().busy;
-          }}
-        />
-        <p role="status">{status}</p>
-      </ExampleFooter>
+      {/*
+        Chat owns the transcript, the progress view and the composer. The
+        application is its session; a booking waits at the end of the
+        transcript through the approval slot, which also hints the composer
+        and returns focus to it once the composer is enabled again.
+      */}
+      <Chat
+        session={application.agent}
+        className="client-tools-chat"
+        label="Message"
+        placeholder="Try an example prompt…"
+        disabled={!snapshot.canSubmit}
+        renderToolResult={renderToolResult}
+        approvalRecords={records}
+        approval={
+          pending.length
+            ? pending.map((row, index) => (
+                <ApprovalCard
+                  key={row.token}
+                  title="Confirm this fictional booking?"
+                  disabled={!snapshot.busy}
+                  autoFocus={index === 0}
+                  actions={[
+                    { id: 'confirm', label: 'Confirm booking', onSelect: () => decide(row, true) },
+                    { id: 'cancel', label: "Don't book", onSelect: () => decide(row, false) },
+                  ]}
+                >
+                  <p>{row.summary}</p>
+                  <p>No real reservation is made.</p>
+                </ApprovalCard>
+              ))
+            : undefined
+        }
+        inputFooter={
+          <>
+            {snapshot.error && <p role="alert">{snapshot.error}</p>}
+            <p role="status">{status}</p>
+          </>
+        }
+      />
     </ExampleLayout>
   );
 }
