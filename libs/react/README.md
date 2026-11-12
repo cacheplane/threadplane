@@ -192,8 +192,11 @@ anchor a citation stays a noninteractive marker. Replacing/removing metadata tak
 effect on the next render, with no metadata fetching or owner lifecycle. Missing,
 blocked and failed images show an accessible alt-text fallback. Destination
 classification is the fixed [`content/markdown` policy](../content/README.md),
-including exclusion of data images. The root binding stays headless; rich math,
-syntax highlighting, custom node registries, legacy migration,
+including exclusion of data images. A fenced code block's `<code>` carries the
+conventional `language-*` class from the first word of its info string when
+that is a plain identifier, so your own highlighter can find it; the binding
+does no highlighting itself. The root binding stays headless; rich math,
+custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
 
 Set readonly `citationPreview` to `true` to replace resolved inline markers outside

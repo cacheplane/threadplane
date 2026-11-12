@@ -44,6 +44,19 @@ const dispositions = {
 } satisfies Record<MarkdownNode['type'], string>;
 
 describe('Markdown', () => {
+  it('marks a fenced block with its language for an application highlighter', () => {
+    const code = (content: string) =>
+      render(<Markdown snapshot={snapshot(content)} />).container.querySelector('pre code') as HTMLElement;
+    expect(code('```ts\nconst a = 1;\n```').className).toBe('language-ts');
+    expect(code('```c++\nint a;\n```').className).toBe('language-c++');
+    expect(code('```objective-c\nint a;\n```').className).toBe('language-objective-c');
+    // No language, or one that is not a plain identifier, adds no class.
+    expect(code('```\nplain\n```').hasAttribute('class')).toBe(false);
+    expect(code('```"><b>x\nlet a;\n```').hasAttribute('class')).toBe(false);
+    expect(code(`\`\`\`${'a'.repeat(33)}\nlet a;\n\`\`\``).hasAttribute('class')).toBe(false);
+    expect(code('```ts\n<b>x</b>\n```').querySelector('b')).toBeNull();
+  });
+
   it('keeps source code left-to-right within an RTL response', () => {
     const view = render(
       <Markdown
