@@ -96,6 +96,7 @@ Rendering a card directly needs only the subagent:
 |-------|------|---------|-------------|
 | `subagent` | `Subagent` | **Required** | The subagent to display |
 | `toolLabel` | `(name: string) => string \| undefined` | `undefined` | Readable labels for the subagent's own tool calls. `<chat>` and `<chat-tool-calls>` pass their `toolLabel` through. A labelled call shows its technical name inside the opened call |
+| `toolOutcome` | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Outcomes for the subagent's own completed calls. `<chat>` and `<chat-tool-calls>` pass their `toolOutcome` through. Sources an outcome declares are listed in the Sources panel of the message that started the subagent |
 
 The component exposes no outputs.
 

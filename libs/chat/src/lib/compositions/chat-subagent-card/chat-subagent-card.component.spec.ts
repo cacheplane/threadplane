@@ -5,7 +5,9 @@ import { By } from '@angular/platform-browser';
 import { ChatSubagentCardComponent, statusColor } from './chat-subagent-card.component';
 import type { Subagent } from '../../agent/subagent';
 import { ChatStreamingMdComponent } from '../../streaming/streaming-markdown.component';
-import { completeDelivery, staticDelivery, streamingDelivery } from '../../agent';
+import { completeDelivery, staticDelivery, streamingDelivery, type ToolCall } from '../../agent';
+import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
+import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 
 describe('ChatSubagentCardComponent', () => {
   it('is defined', () => {
@@ -81,6 +83,46 @@ describe('ChatSubagentCardComponent', () => {
       { generation: 'nested-1', phase: 'streaming', content: 'searching' },
       { generation: 'nested-2', phase: 'complete', content: 'done' },
     ]);
+  });
+
+  it('hands sources declared for its completed calls to the message Sources panel', () => {
+    const calls = signal<ToolCall[]>([
+      { id: 't1', name: 'read', args: { id: 1 }, status: 'complete', result: { url: 'https://example.com/signals' } },
+      { id: 't2', name: 'read', args: { id: 2 }, status: 'running' },
+    ]);
+    const subagent: Subagent = {
+      toolCallId: 'tc-root',
+      status: signal('complete'),
+      messages: signal([]),
+      toolCalls: calls,
+      state: signal({}),
+    };
+    TestBed.configureTestingModule({ imports: [ChatSubagentCardComponent], providers: [CitationsResolverService] });
+    const resolver = TestBed.inject(CitationsResolverService);
+    const fixture = TestBed.createComponent(ChatSubagentCardComponent);
+    fixture.componentRef.setInput('subagent', subagent);
+    fixture.detectChanges();
+    // Nothing is declared without the app's outcome callback.
+    expect(resolver.toolSources()).toEqual([]);
+
+    fixture.componentRef.setInput('toolOutcome', (activity: ToolActivityInfo) => ({
+      text: '',
+      sources: [{ title: 'Signals', url: JSON.parse(activity.resultText ?? '{}').url }],
+    }));
+    fixture.detectChanges();
+    // Only the completed call contributes.
+    expect(resolver.toolSources()).toEqual([{ title: 'Signals', url: 'https://example.com/signals' }]);
+
+    fixture.componentRef.setInput('toolOutcome', () => {
+      throw new Error('bad decoder');
+    });
+    fixture.detectChanges();
+    expect(resolver.toolSources()).toEqual([]);
+
+    fixture.componentRef.setInput('toolOutcome', () => ({ text: '', sources: [{ title: 'Signals', url: 'https://example.com/signals' }] }));
+    fixture.detectChanges();
+    fixture.destroy();
+    expect(resolver.toolSources()).toEqual([]);
   });
 
   it('shows the message count in the collapsed summary when complete', async () => {

@@ -215,6 +215,14 @@ export function isPinned(
     }
     .chat-footer-wrap { position: relative; }
     .chat-run-activity, .chat-interrupt-region { display: block; }
+    /* A pending approval sits in the transcript column, not edge to edge. */
+    .chat-interrupt-region {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: var(--tplane-chat-max-width);
+      margin: 0 auto;
+      padding: 0 var(--tplane-chat-space-6);
+    }
     .chat-plan-steps { margin: 0 0 20px; }
     .chat-plan-steps__step { margin: 12px 0 0; font-weight: 500; color: var(--tplane-chat-text-muted); }
     .chat-scroll:focus-visible { outline: 2px solid var(--tplane-chat-focus-ring); outline-offset: -2px; }
@@ -236,6 +244,8 @@ export function isPinned(
     /* An answered inline approval, shrunk to one muted line. */
     .chat-approval-record {
       margin: 0;
+      /* The assistant body's own inset, so the record lines up with the reply text. */
+      padding-inline-start: 4px;
       color: var(--tplane-chat-text-muted);
       font-size: var(--tplane-chat-font-size-sm);
       line-height: var(--tplane-chat-line-height-tight);
@@ -246,7 +256,7 @@ export function isPinned(
       width: 100%;
       max-width: var(--tplane-chat-max-width);
       margin: 0 auto;
-      padding: 0 var(--tplane-chat-space-6);
+      padding: 0 var(--tplane-chat-space-6) 0 calc(var(--tplane-chat-space-6) + 4px);
     }
     .chat-sr-only {
       position: absolute;

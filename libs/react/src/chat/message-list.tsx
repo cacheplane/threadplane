@@ -327,9 +327,6 @@ function RowView<TRow extends MessageRow>({
   const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
   // A call that started a child is shown as that child's card, not as a tool row.
   const delegated = new Set(subagents.map((subagent) => subagent.toolCallId));
-  const cards = subagents.map((subagent) => (
-    <SubagentCard key={subagent.id} subagent={subagent} />
-  ));
   const calls = delegated.size
     ? row.toolCalls.filter((call) => !delegated.has(call.id))
     : row.toolCalls;
@@ -366,13 +363,29 @@ function RowView<TRow extends MessageRow>({
   // repeating as links under the activity.
   const assistant = row.role === 'assistant';
   const sourcePlacement = assistant ? 'panel' : 'links';
+  // What a child read counts as a source of the message that delegated to it.
+  const childActivities = subagents.flatMap((subagent) =>
+    subagent.messages.flatMap((message) => message.activities ?? [])
+  );
   // Consecutive built-in calls share one run; an app-rendered call sits alone, in transcript order.
+  // A child's card sits where the call that started it was, between the calls around it.
   const runs: Array<
     | { readonly custom: ReactNode; readonly id: string }
     | { readonly activities: ToolActivityInfo[] }
+    | { readonly child: SubagentInfo }
   > = [];
-  activities.forEach((activity, index) => {
-    const custom = renderToolCall?.(calls[index], activity);
+  const activityById = new Map(
+    activities.map((activity) => [activity.id, activity])
+  );
+  row.toolCalls.forEach((call) => {
+    if (delegated.has(call.id)) {
+      for (const child of subagents)
+        if (child.toolCallId === call.id) runs.push({ child });
+      return;
+    }
+    const activity = activityById.get(call.id);
+    if (!activity) return;
+    const custom = renderToolCall?.(call, activity);
     if (custom !== undefined) {
       runs.push({ custom, id: activity.id });
       return;
@@ -399,7 +412,9 @@ function RowView<TRow extends MessageRow>({
             <Citations
               citations={citationsWithToolSources(
                 row.message.citations ?? NO_CITATIONS,
-                activities,
+                childActivities.length
+                  ? [...activities, ...childActivities]
+                  : activities,
                 row.markdown
               )}
               snapshot={row.markdown}
@@ -408,7 +423,13 @@ function RowView<TRow extends MessageRow>({
           )}
           {row.role !== 'tool' &&
             runs.map((run) =>
-              'custom' in run ? (
+              'child' in run ? (
+                <SubagentCard
+                  key={run.child.id}
+                  subagent={run.child}
+                  sources={sourcePlacement}
+                />
+              ) : 'custom' in run ? (
                 run.custom != null &&
                 run.custom !== false && (
                   <div
@@ -446,7 +467,6 @@ function RowView<TRow extends MessageRow>({
                 ))
               )
             )}
-          {row.role !== 'tool' && cards}
         </>
       }
     >

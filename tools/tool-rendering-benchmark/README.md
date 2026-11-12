@@ -88,7 +88,9 @@ For this scenario each target consumer keeps its thread ID in `sessionStorage` a
 - `GET /threads/<participant>/<threadId>/events` returns `{ events }`. The Angular consumer passes it to `provideAgent` through `httpReplay`.
 - `GET /threads/<participant>/<threadId>/messages` returns `{ messages, subagents }`. `messages` is the transcript folded into native AG-UI messages; a child's messages keep its `subagentRunId`. `subagents` is each child's start and terminal evidence. The React consumer passes both to its session, which publishes the restored children as `earlierSubagents`.
 
-The React consumer renders each child with `subagentsFromEvidence` and `SubagentCard`. The card stands in for the delegating call's row, as it does in the Angular `chat` composition, and it is still there after a reload.
+The React consumer renders each child with `subagentsFromEvidence` and `SubagentCard`. The card stands in for the delegating call's row, as it does in the Angular `chat` composition, and it is still there after a reload. The calls before and after it group separately, so the card keeps the delegating call's place. Both consumers pass their `toolOutcome` to the child's calls, so the references the child read are listed in the message's Sources panel.
+
+Both consumers ask for the save with the library's inline approval: `chat-approval-card` in the Angular interrupt template, and `ApprovalCard` in React. An answered approval leaves an "Approved: Save note" or "Declined: Save note" record after the message it followed. The record is session-only and is not restored by a reload.
 
 Reading history is not a run. `GET /restores` lists the history requests and `GET /notes` returns the saved-note count, so a driver can show that a reload ran no tool and wrote nothing. "New conversation" forgets the kept thread, and a participant reset deletes its history.
 

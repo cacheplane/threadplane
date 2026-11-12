@@ -1,6 +1,10 @@
 'use client';
 import type { ReactNode } from 'react';
-import { ToolActivity, type ToolActivityInfo } from './tool-activity.js';
+import {
+  ToolActivity,
+  type ToolActivityInfo,
+  type ToolSourcePlacement,
+} from './tool-activity.js';
 
 /** Explicit presentation state supplied by an application or adapter, never inferred from literal payloads. */
 export type SubagentStatus =
@@ -47,6 +51,11 @@ export interface SubagentCardProps {
   readonly className?: string;
   /** Replace literal child text, for example with app-owned Markdown. Keep stable. */
   readonly renderText?: (message: SubagentMessageInfo) => ReactNode;
+  /**
+   * Where sources declared by the child's calls appear. Defaults to links under each call. `panel`
+   * shows none here, for a message whose Sources panel lists them; `MessageList` and `Chat` do this.
+   */
+  readonly sources?: ToolSourcePlacement;
 }
 
 /** A child agent's name, status and message count, with its messages and tool activity behind one disclosure. */
@@ -54,6 +63,7 @@ export function SubagentCard({
   subagent,
   className,
   renderText,
+  sources,
 }: SubagentCardProps) {
   const count = subagent.messages.length;
   return (
@@ -97,7 +107,11 @@ export function SubagentCard({
                     <p className="tp-subagent-card__text">{message.text}</p>
                   )}
               {message.activities?.map((activity) => (
-                <ToolActivity key={activity.id} activity={activity} />
+                <ToolActivity
+                  key={activity.id}
+                  activity={activity}
+                  sources={sources}
+                />
               ))}
             </div>
           ))}
