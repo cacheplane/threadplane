@@ -1735,4 +1735,17 @@ only, and its `VALIDATION_FAILED` error carries the item's full path. Rows are
 keyed by position in the list, so an item inserted in the middle moves later
 rows' own state, such as a selected tab, to the item before it.
 
-Surface themes and functions of your own inside props are not handled yet.
+### Theme
+
+A surface created with a `theme` uses it without any prop. A `primaryColor`
+that is a hex colour (`#0b6b3a`) becomes that surface's accent: `--a2ui-primary`
+is set on the surface element, with `--a2ui-on-primary` chosen as white or
+near-black for contrast and a matching hover colour. Any other value is
+ignored, so nothing but a hex colour reaches a style attribute.
+`agentDisplayName` and `iconUrl` show as one small line above the content; the
+icon follows the media URL rules above and is decorative. A surface without a
+theme renders exactly as before. To restyle further, set the `--a2ui-*`
+properties from your own CSS through `className`; an agent's hex colour is an
+inline style and wins over them.
+
+Functions of your own inside props are not handled yet.

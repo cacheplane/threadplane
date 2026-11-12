@@ -20,6 +20,7 @@ import {
   type A2uiSurfaceActions,
   type A2uiSurfaceWriter,
 } from './surface-context.js';
+import { a2uiSurfaceTheme } from './surface-theme.js';
 import {
   a2uiElementKey,
   a2uiSurfaceSpec,
@@ -151,6 +152,8 @@ export interface A2uiSurfaceProps {
  * inputs. Function-call props show their current value. A component the
  * catalog lacks keeps its children. A child template is stamped once per
  * item of its list; inputs, checks and actions inside it work on that item.
+ * The surface's `theme` sets the accent colour from a hex `primaryColor` and
+ * shows `agentDisplayName` and `iconUrl` as a small line above the content.
  */
 export function A2uiSurface({
   surface,
@@ -247,11 +250,28 @@ export function A2uiSurface({
     }),
     [handled, sendable, runnable, failures, shown]
   );
+  const theme = useMemo(() => a2uiSurfaceTheme(surface), [surface]);
   return (
     <div
       className={['a2ui-surface', className].filter(Boolean).join(' ')}
       data-surface-id={surface.surfaceId}
+      style={theme.style}
     >
+      {theme.name === '' && theme.iconUrl === undefined ? null : (
+        <div className="a2ui-surface-chrome">
+          {theme.iconUrl === undefined ? null : (
+            <img
+              className="a2ui-surface-chrome__icon"
+              src={theme.iconUrl}
+              alt=""
+              referrerPolicy="no-referrer"
+            />
+          )}
+          {theme.name === '' ? null : (
+            <span className="a2ui-surface-chrome__name">{theme.name}</span>
+          )}
+        </div>
+      )}
       <A2uiSurfaceContext.Provider value={writer}>
         <A2uiActionContext.Provider value={actions}>
           <RenderSpec

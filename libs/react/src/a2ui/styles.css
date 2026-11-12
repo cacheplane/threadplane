@@ -50,6 +50,26 @@
   min-width: 0;
   color: var(--a2ui-on-surface);
 }
+.a2ui-surface-chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--a2ui-spacing-2);
+  min-width: 0;
+  margin-bottom: var(--a2ui-spacing-2);
+  color: var(--a2ui-label);
+  font-size: var(--a2ui-typography-label-size);
+}
+.a2ui-surface-chrome__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.a2ui-surface-chrome__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 @media (prefers-color-scheme: dark) {
   .a2ui-surface {
     --a2ui-surface: #1a1d23;

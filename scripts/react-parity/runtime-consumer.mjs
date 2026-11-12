@@ -776,6 +776,15 @@ export async function runA2uiSurfaceScenarios(page, url) {
   assert.equal(await panel.getAttribute('aria-labelledby'), await tab('Outbound').getAttribute('id'));
   const underline = (locator) => locator.evaluate((node) => getComputedStyle(node).borderBottomColor);
   assert.notEqual(await underline(tab('Outbound')), await underline(tab('Return')));
+  // Theme: the agent's hex colour is this surface's accent only, and its name and icon sit above the content.
+  assert.equal(await underline(tab('Outbound')), 'rgb(11, 107, 58)');
+  const chrome = surface.locator('.a2ui-surface-chrome');
+  await expect(chrome).toHaveText(/^Rail-desk-with-an-unbroken-agent-name/);
+  await expect(chrome.locator('img')).toHaveAttribute('alt', '');
+  assert.ok((await rect(chrome)).bottom <= (await rect(title)).top, 'agent line is above the content');
+  assert.ok((await rect(chrome)).right <= (await rect(surface)).right + 0.5, 'agent name wraps inside the surface');
+  assert.equal((await rect(chrome.locator('img'))).width, 16);
+  assert.equal(await page.locator('.a2ui-surface[data-surface-id="form"]').evaluate((node) => node.style.getPropertyValue('--a2ui-primary')), '');
   await tab('Return').click();
   await expect(panel).toHaveText('Train 6624');
   await expect(tab('Outbound')).toHaveAttribute('tabindex', '-1');
