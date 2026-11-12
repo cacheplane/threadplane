@@ -2602,9 +2602,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/tool-views.tsx",
-      "reason": "Native component. Args/result/lifecycle projection and per-call host identity, not name-only result routing."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Covered by renderToolCall and renderToolResult on MessageList and Chat: the application draws one call from its observed arguments, result and resolved activity, keyed per call. No name-keyed view registry is planned."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-trace/chat-trace.component.ts#ChatTraceComponent",
@@ -5979,9 +5979,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/tool-views.tsx",
-      "reason": "Native component. Args/result/lifecycle projection and per-call host identity, not name-only result routing."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/message-list.tsx",
+      "reason": "Covered by renderToolCall and renderToolResult on MessageList and Chat: the application draws one call from its observed arguments, result and resolved activity, keyed per call. No name-keyed view registry is planned."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTraceComponent",

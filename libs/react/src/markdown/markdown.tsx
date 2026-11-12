@@ -150,7 +150,7 @@ function NodeView({
           dir="ltr"
           style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
         >
-          <code>{node.text}</code>
+          <code className={languageClass(node.language)}>{node.text}</code>
         </pre>
       );
     case 'thematic-break':
@@ -205,7 +205,7 @@ function NodeView({
                     node={row}
                     citations={citations}
                     sources={sources}
-                      citationPreview={citationPreview}
+                    citationPreview={citationPreview}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -219,7 +219,7 @@ function NodeView({
                     node={row}
                     citations={citations}
                     sources={sources}
-                      citationPreview={citationPreview}
+                    citationPreview={citationPreview}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -289,4 +289,17 @@ function NodeView({
       return exhaustive;
     }
   }
+}
+
+/**
+ * The conventional `language-*` class for a fenced block, so an application's
+ * highlighter can find it. The language is the author's text, so only its first
+ * word is used, and only when it is a plain identifier.
+ */
+function languageClass(language: unknown): string | undefined {
+  if (typeof language !== 'string') return undefined;
+  const name = /^[A-Za-z0-9_+#.-]{1,32}$/.exec(
+    language.trim().split(/\s/, 1)[0]
+  )?.[0];
+  return name === undefined ? undefined : `language-${name}`;
 }
