@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@threadplane/react/a2ui';
 import '@threadplane/react/a2ui/styles.css';
-import { createA2uiSurfaces, type A2uiActionMessage, type A2uiSurfaces } from '@threadplane/content/a2ui';
+import { createA2uiSurfaces, type A2uiActionMessage, type A2uiSurfaces, type A2uiValidationErrorMessage } from '@threadplane/content/a2ui';
 
 // Only consumers that install the optional A2UI protocol package load this file.
 /** One static surface accumulated from wire messages by the installed content package. */
@@ -51,7 +51,7 @@ for (const message of [
   { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic', sendDataModel: true } },
   { version: 'v0.9', updateComponents: { surfaceId: 'form', components: [
     { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'seat', 'extras', 'date', 'fixed', 'book', 'idle'] },
-    { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name' },
+    { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name', checks: [{ condition: { call: 'required', args: { value: { path: '/booking/guest' } } }, message: 'Guest-name-is-required-and-this-unbroken-message-must-wrap-inside-the-form' }] },
     { id: 'greeting', component: 'Text', text: { path: '/booking/guest' }, variant: 'h3' },
     { id: 'notes', component: 'TextField', label: 'Notes', variant: 'longText', value: { path: '/booking/notes' } },
     { id: 'window', component: 'CheckBox', label: 'Window seat', value: { path: '/booking/window' } },
@@ -73,14 +73,16 @@ function FormFixture() {
   const [mounted, setMounted] = useState(true);
   const [editable, setEditable] = useState(true);
   const [actions, setActions] = useState<A2uiActionMessage[]>([]);
+  const [errors, setErrors] = useState<A2uiValidationErrorMessage[]>([]);
   const form = snapshot.surfaces[0];
   return (
     <section aria-label="Booking form">
       <button type="button" onClick={() => setMounted((value) => !value)}>Toggle form</button>
       <button type="button" onClick={() => setEditable((value) => !value)}>Toggle editing</button>
       <button type="button" onClick={() => formSurfaces.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'form', path: '/booking/guest', value: 'Agent Smith' } } as unknown as Parameters<A2uiSurfaces['apply']>[0])}>Agent sets guest</button>
-      {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} onAction={editable ? (message) => setActions((values) => [...values, message]) : undefined} /> : null}
+      {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} onAction={editable ? (message) => setActions((values) => [...values, message]) : undefined} onValidationError={(error) => setErrors((values) => [...values, error])} /> : null}
       <output data-testid="form-actions" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(actions)}</output>
+      <output data-testid="form-errors" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(errors)}</output>
       <output data-testid="form-model" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(form.dataModel)}</output>
     </section>
   );

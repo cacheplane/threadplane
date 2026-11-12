@@ -1639,8 +1639,30 @@ retries and what the conversation shows are your application's decisions.
 
 A Button is disabled when there is no `onAction`, when it has no event action,
 or when its `disabled` prop is true. A Button used as a `Modal` trigger opens
-the modal and needs no action. Validation checks do not gate an action yet, and
-a `functionCall` action is not run.
+the modal and needs no action. A `functionCall` action is not run.
+
+### Validation
+
+A component's `checks` are evaluated against the surface's current data model.
+Conditions may use `required`, `regex`, `length`, `numeric`, `email`, `and`,
+`or` and `not`; a condition that calls any other function does not pass. A `TextField` with `validationRegexp` and a bound
+value has one more check, with the message "Invalid format".
+
+Pressing a Button while any input's checks fail sends nothing: `onAction` is
+not called, each failing input shows the message of its first failing check,
+and `onValidationError` receives the first failure as
+`{ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId, path?, message } }`.
+Sending that error to the agent is your application's decision. Messages stay
+hidden until a press is blocked. After that they follow the data model, so a
+message leaves when its input passes, and all of them are hidden again once an
+action is sent. Checks on inputs block every Button on the surface, including
+inputs in an unselected tab. A Button whose own checks fail is disabled and
+shows no message.
+
+The surface stores nothing for this: `evaluateA2uiChecks(surface)` from
+`@threadplane/content/a2ui` returns the same failures for any snapshot. A
+`regex` pattern comes from the agent and runs in the browser against what the
+user typed.
 
 A component of your own can write the same way with `useA2uiSurfaceWriter()`,
 which returns `{ editable, write(path, value) }`; take the path from the view's
@@ -1658,5 +1680,5 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-`ChoicePicker`, `DateTimeInput`, validation checks, `functionCall` actions,
-function-call props, child templates and surface themes are not handled yet.
+`functionCall` actions, function-call props outside checks, child templates
+and surface themes are not handled yet.
