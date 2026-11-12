@@ -62,6 +62,13 @@ nothing anywhere. It returns `false` and publishes nothing for a surface that is
 not live or a primitive that is already there, and throws for a path that is not
 below the root.
 
+`createA2uiActionMessage(surface, componentId)` builds the v0.9 action message
+for one component's `action.event` from a surface snapshot. Context paths are
+read from the snapshot's data model, the Button's literal text becomes `label`,
+and the data model is attached as `metadata.a2uiClientDataModel` only when the
+surface was created with `sendDataModel: true`. It returns `null` when there is
+no event action, and sends nothing.
+
 ```ts
 import { createA2uiSurfaces } from '@threadplane/content/a2ui';
 

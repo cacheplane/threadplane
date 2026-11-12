@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@threadplane/react/a2ui';
 import '@threadplane/react/a2ui/styles.css';
-import { createA2uiSurfaces, type A2uiSurfaces } from '@threadplane/content/a2ui';
+import { createA2uiSurfaces, type A2uiActionMessage, type A2uiSurfaces } from '@threadplane/content/a2ui';
 
 // Only consumers that install the optional A2UI protocol package load this file.
 /** One static surface accumulated from wire messages by the installed content package. */
@@ -27,10 +27,11 @@ function tripSurface(summary: string) {
       { id: 'legs', component: 'Tabs', tabs: [{ title: 'Outbound', child: 'out' }, { title: { path: '/returnTitle' }, child: 'back' }] },
       { id: 'out', component: 'Text', text: 'Train 6601' },
       { id: 'back', component: 'Text', text: 'Train 6624' },
-      { id: 'rules', component: 'Modal', trigger: 'rulesLabel', content: 'rulesBody' },
+      { id: 'rules', component: 'Modal', trigger: 'rulesButton', content: 'rulesBody' },
+      { id: 'rulesButton', component: 'Button', child: 'rulesLabel', variant: 'borderless' },
       { id: 'rulesLabel', component: 'Text', text: 'Fare rules' },
       { id: 'rulesBody', component: 'Text', text: 'Refundable until departure' },
-      { id: 'extra', component: 'Button', child: 'label', action: { event: { name: 'book' } } },
+      { id: 'extra', component: 'Carousel', child: 'label', action: { event: { name: 'book' } } },
       { id: 'label', component: 'Text', text: 'Book <b>now</b>' },
     ] } },
     { version: 'v0.9', updateDataModel: { surfaceId: 'trip', path: '/summary', value: summary } },
@@ -47,15 +48,19 @@ const SUMMARIES = ['Two nights in Lyon', 'Three-nights-with-an-unbroken-summary-
 /** One long-lived store: the form's edits live here, not in the page. */
 const formSurfaces = createA2uiSurfaces();
 for (const message of [
-  { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic' } },
+  { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic', sendDataModel: true } },
   { version: 'v0.9', updateComponents: { surfaceId: 'form', components: [
-    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'fixed'] },
+    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'fixed', 'book', 'idle'] },
     { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name' },
     { id: 'greeting', component: 'Text', text: { path: '/booking/guest' }, variant: 'h3' },
     { id: 'notes', component: 'TextField', label: 'Notes', variant: 'longText', value: { path: '/booking/notes' } },
     { id: 'window', component: 'CheckBox', label: 'Window seat', value: { path: '/booking/window' } },
     { id: 'party', component: 'Slider', label: 'Party', value: { path: '/party' }, min: 1, max: 8 },
     { id: 'fixed', component: 'TextField', label: 'Reference', value: 'LYS-6601' },
+    { id: 'book', component: 'Button', child: 'bookLabel', variant: 'primary', action: { event: { name: 'book', context: { guest: { path: '/booking/guest' }, party: { path: '/party' }, source: 'form' } } } },
+    { id: 'bookLabel', component: 'Text', text: 'Book trip' },
+    { id: 'idle', component: 'Button', child: 'idleLabel' },
+    { id: 'idleLabel', component: 'Text', text: 'No action' },
   ] } },
   { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2 } } },
 ] as unknown as Parameters<A2uiSurfaces['apply']>[0][]) formSurfaces.apply(message);
@@ -64,13 +69,15 @@ function FormFixture() {
   const snapshot = useSyncExternalStore(formSurfaces.subscribe, formSurfaces.getSnapshot);
   const [mounted, setMounted] = useState(true);
   const [editable, setEditable] = useState(true);
+  const [actions, setActions] = useState<A2uiActionMessage[]>([]);
   const form = snapshot.surfaces[0];
   return (
     <section aria-label="Booking form">
       <button type="button" onClick={() => setMounted((value) => !value)}>Toggle form</button>
       <button type="button" onClick={() => setEditable((value) => !value)}>Toggle editing</button>
       <button type="button" onClick={() => formSurfaces.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'form', path: '/booking/guest', value: 'Agent Smith' } } as unknown as Parameters<A2uiSurfaces['apply']>[0])}>Agent sets guest</button>
-      {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} /> : null}
+      {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} onAction={editable ? (message) => setActions((values) => [...values, message]) : undefined} /> : null}
+      <output data-testid="form-actions" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(actions)}</output>
       <output data-testid="form-model" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(form.dataModel)}</output>
     </section>
   );

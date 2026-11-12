@@ -119,7 +119,7 @@ describe('A2uiSurface', () => {
       <A2uiSurface
         surface={surface([
           { id: 'root', component: 'Column', children: ['button', 'after'] },
-          { id: 'button', component: 'Button', child: 'label', action: { event: { name: 'go' } } },
+          { id: 'button', component: 'Carousel', child: 'label', action: { event: { name: 'go' } } },
           { id: 'label', component: 'Text', text: 'Book' },
           { id: 'after', component: 'Text', text: 'After' },
         ])}

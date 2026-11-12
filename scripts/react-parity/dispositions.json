@@ -1757,9 +1757,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/button.tsx",
-      "reason": "Native component. Variant/disabled/loading semantics; child rendering and scoped press action."
+      "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/card.component.ts#A2uiCardComponent",
@@ -4830,9 +4830,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/button.tsx",
-      "reason": "Native component. Variant/disabled/loading semantics; child rendering and scoped press action."
+      "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiCardComponent",
@@ -16110,6 +16110,13 @@
       "note": "Read-only AudioPlayer view with native controls and a literal description."
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/button.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Button view sending its event action through the surface and opening a Modal as its trigger."
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
       "taskIds": ["T27"],
       "treatment": "react",
@@ -16348,6 +16355,33 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiActionMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/action-message.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",

@@ -17,8 +17,11 @@ second surface is a form on a long-lived store: typing (including mid-string, wi
 the caret kept), a multi-line field, a checkbox and a slider by keyboard write to
 that store and update a sibling bound to the same path; a literal value is
 fixed; edits survive unmounting the surface; an agent update replaces an edited
-value; and without the store the same controls change nothing. Actions, validation,
-function calls and child templates are not part of this slice.
+value; and without the store the same controls change nothing. A Button hands
+the page one action per press, with context and the attached data model read from
+the store at that moment, and is disabled without a handler or an event action.
+The modal's trigger is a Button, which is then the only control that opens it. Validation, function
+calls and child templates are not part of this slice.
 
 The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The
 installed browser fixture types into a real open list and menu: a character moves

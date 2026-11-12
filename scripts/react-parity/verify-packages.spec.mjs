@@ -873,9 +873,11 @@ test('selected public protocol package enumerates its actual legacy ESM root wit
   for (const fields of [{ main: './src/../outside.js' }, { types: './src/../index.d.ts' }, { main: './src\\index.js' }, { main: 'index.js' }, { types: './src/index.ts' }]) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, ...fields }));
 });
 test('A2UI feature exposes exactly its owned factory', () => {
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiSurfaces/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createOwner() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiActionMessage/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, createOwner() {} }), /unexpected/);
 });
 test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
   const manifests = {

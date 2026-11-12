@@ -8,7 +8,7 @@ const model = (value: unknown): A2uiMessage => ({ version: 'v0.9', updateDataMod
 
 describe('createA2uiSurfaces', () => {
   it('exposes one runtime factory and retains identity across staged commands', () => {
-    expect(Object.keys(entry)).toEqual(['createA2uiSurfaces']);
+    expect(Object.keys(entry).sort()).toEqual(['createA2uiActionMessage', 'createA2uiSurfaces']);
     const owner = entry.createA2uiSurfaces();
     const empty = owner.getSnapshot();
     const notify = vi.fn();

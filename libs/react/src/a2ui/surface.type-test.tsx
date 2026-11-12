@@ -1,4 +1,5 @@
 import type {
+  A2uiActionMessage,
   A2uiSurfaces,
   A2uiSurfaceSnapshot,
   A2uiValue,
@@ -23,6 +24,7 @@ export type PropsContract = Assert<
     {
       readonly surface: A2uiSurfaceSnapshot;
       readonly surfaces?: A2uiSurfaces;
+      readonly onAction?: (message: A2uiActionMessage) => void;
       readonly catalog?: ReactRenderRegistry;
       readonly className?: string;
     }
@@ -43,8 +45,21 @@ props.surface = surface;
 <A2uiSurface surface={{ surfaces: [surface] }} />;
 // @ts-expect-error A catalog maps names to components, not to elements.
 <A2uiSurface surface={surface} catalog={{ Text: <span /> }} />;
-// @ts-expect-error Actions are not handled yet.
-<A2uiSurface surface={surface} onAction={() => undefined} />;
+<A2uiSurface
+  surface={surface}
+  onAction={(message) => {
+    const name: string = message.action.name;
+    const guest = message.action.context['guest'];
+    const model = message.metadata?.a2uiClientDataModel.surfaces['s'];
+    void [name, guest, model];
+    // @ts-expect-error A message is immutable.
+    message.action.name = 'other';
+  }}
+/>;
+// @ts-expect-error The handler receives a message, not a name and context.
+<A2uiSurface surface={surface} onAction={(name: string, context: object) => undefined} />;
+// @ts-expect-error Validation failures are not reported yet.
+<A2uiSurface surface={surface} onValidationError={() => undefined} />;
 // @ts-expect-error The catalog is readonly.
 a2uiBasicCatalog()['Text'] = () => null;
 export type WriterContract = Assert<

@@ -747,8 +747,9 @@ export async function runA2uiSurfaceScenarios(page, url) {
   // A component this slice lacks keeps its child as literal text and adds no control.
   const unsupported = surface.locator('[data-a2ui-unsupported="extra"]');
   await expect(unsupported).toHaveText('Book <b>now</b>');
-  // The only button is the modal trigger; the unsupported Button adds none.
+  // The only button is the modal's Button trigger; the unsupported component adds none.
   await expect(surface.getByRole('button')).toHaveCount(1);
+  assert.equal(await surface.getByRole('button').evaluate((node) => node.tagName), 'BUTTON');
   assert.equal(await unsupported.locator('b').count(), 0);
   // Media: the image carries its description and avatar preset, the path icon is decorative, and the list runs inline.
   const photo = surface.getByRole('img', { name: 'Lyon skyline' });
@@ -870,6 +871,37 @@ export async function runA2uiSurfaceScenarios(page, url) {
   assert.equal((await formModel()).booking.guest, 'Agent Smith');
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(windowSeat).toBeEnabled();
+  // Button: one press hands the app one action, with context and data model read from the store at that moment.
+  const formActions = async () => JSON.parse(await page.getByTestId('form-actions').textContent());
+  const bookTrip = form.getByRole('button', { name: 'Book trip' });
+  await expect(bookTrip).toBeEnabled();
+  await expect(form.getByRole('button', { name: 'No action' })).toBeDisabled();
+  assert.deepEqual(await formActions(), []);
+  await guest.fill('Grace Hopper');
+  await bookTrip.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('form-actions')).toContainText('Grace Hopper');
+  const sent = await formActions();
+  assert.equal(sent.length, 1);
+  assert.ok(!Number.isNaN(Date.parse(sent[0].action.timestamp)), 'action carries a timestamp');
+  delete sent[0].action.timestamp;
+  assert.deepEqual(sent[0], {
+    version: 'v0.9',
+    action: { name: 'book', surfaceId: 'form', sourceComponentId: 'book', context: { guest: 'Grace Hopper', party: 8, source: 'form' }, label: 'Book trip' },
+    metadata: { a2uiClientDataModel: { surfaces: { form: await formModel() } } },
+  });
+  // The press sent nothing by itself and changed nothing in the store.
+  assert.equal((await formModel()).booking.guest, 'Grace Hopper');
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 2);
+  const primary = await bookTrip.evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
+  assert.equal(primary.radius, '8px');
+  assert.notEqual(primary.background, 'rgba(0, 0, 0, 0)');
+  // Without a handler the same Button is disabled.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(bookTrip).toBeDisabled();
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(bookTrip).toBeEnabled();
   // The field takes the surface tokens and fits a narrow viewport.
   const fieldStyle = await guest.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, padding: style.paddingLeft }; });
   assert.deepEqual(fieldStyle, { border: '1px', radius: '8px', padding: '12px' });
