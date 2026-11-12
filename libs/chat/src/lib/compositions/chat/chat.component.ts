@@ -819,9 +819,13 @@ export class ChatComponent {
 
   private readonly runActivityRegion = viewChild<ElementRef<HTMLElement>>('runActivityRegion');
   private readonly interruptRegion = viewChild<ElementRef<HTMLElement>>('interruptRegion');
+  /** A pending interrupt, or an inline approval card that waits on an app-supplied request. */
+  private readonly awaitingApproval = computed(
+    () => !!this.interruptContext() || !!this.approvalRecords?.waiting()
+  );
   /** While an approval waits in the transcript, the composer says what unblocks the run. */
   protected readonly composerPlaceholder = computed(() =>
-    this.interruptContext() ? 'Answer the approval to continue' : this.placeholder()
+    this.awaitingApproval() ? 'Answer the approval to continue' : this.placeholder()
   );
 
   /**
@@ -1048,12 +1052,25 @@ export class ChatComponent {
 
   constructor() {
     // Answering an approval removes its panel and the focused button with it;
-    // continue in the composer instead of dropping focus to <body>.
-    let hadInterrupt = false;
+    // continue in the composer instead of dropping focus to <body>. The run that
+    // follows the answer may keep the composer disabled, so focus stays owed
+    // until it is enabled again, unless another approval appears first.
+    let hadApproval = false;
+    let focusOwed = false;
     effect(() => {
-      const pending = !!this.interruptContext();
-      if (hadInterrupt && !pending) untracked(() => this.continueInComposer());
-      hadInterrupt = pending;
+      const pending = this.awaitingApproval();
+      const agent = this.agent();
+      const enabled = !agent.isLoading() && !agent.isInputBlocked?.();
+      if (hadApproval && !pending) {
+        focusOwed = true;
+        untracked(() => this.continueInComposer());
+      } else if (pending) {
+        focusOwed = false;
+      } else if (focusOwed && enabled) {
+        focusOwed = false;
+        untracked(() => this.continueInComposer());
+      }
+      hadApproval = pending;
     });
     this.destroyRef.onDestroy(() => this.clearClassifiers());
     // Inject the chat lib's root CSS custom properties (--tplane-chat-bg,
