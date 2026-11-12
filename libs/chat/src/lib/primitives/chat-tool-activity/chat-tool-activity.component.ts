@@ -56,13 +56,19 @@ export type ToolActivityDelivery =
         | 'interrupted'
         | 'paused';
     };
-/** Display-only reconciliation. Completed tools retain their outcome after a later Stop. */
+/**
+ * Display-only reconciliation. Completed tools retain their outcome after a later Stop.
+ * `sessionRunning` says the agent is still working: a call still running after its message
+ * completed, such as a browser client tool, is then running rather than unknown.
+ */
 export function toolActivityPhase(
   phase: ToolActivityPhase | undefined,
-  delivery?: ToolActivityDelivery
+  delivery?: ToolActivityDelivery,
+  sessionRunning = false
 ): ToolActivityPhase {
   if (phase !== 'pending' && phase !== 'running') return phase ?? 'unknown';
   if (delivery?.phase !== 'complete') return phase;
+  if (phase === 'running' && sessionRunning && delivery.outcome === 'success') return 'running';
   return delivery.outcome === 'aborted'
     ? 'stopped'
     : delivery.outcome === 'paused'
