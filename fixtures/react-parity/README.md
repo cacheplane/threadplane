@@ -12,7 +12,12 @@ unsupported component keeping its child as literal text, a horizontal list
 holding a decoded avatar image named by its description, a decorative path icon
 and a caption, tabs with a bound title selected by click and arrow keys in both
 directions, a native modal dialog opened and dismissed by pointer and keyboard
-with focus returned to its trigger, right-to-left order and a 320px viewport. Actions, inputs,
+with focus returned to its trigger, right-to-left order and a 320px viewport. A
+second surface is a form on a long-lived store: typing (including mid-string, with
+the caret kept), a multi-line field, a checkbox and a slider by keyboard write to
+that store and update a sibling bound to the same path; a literal value is
+fixed; edits survive unmounting the surface; an agent update replaces an edited
+value; and without the store the same controls change nothing. Actions, validation,
 function calls and child templates are not part of this slice.
 
 The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The

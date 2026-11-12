@@ -719,7 +719,7 @@ export async function runRenameFormScenarios(page, url) {
 export async function runA2uiSurfaceScenarios(page, url) {
   await page.goto(`${url}/?menu&a2ui`);
   await expect(page.getByRole('heading', { name: 'Installed A2UI surface' })).toBeVisible();
-  const surface = page.locator('.a2ui-surface');
+  const surface = page.locator('.a2ui-surface[data-surface-id="trip"]');
   await expect(surface).toHaveAttribute('data-surface-id', 'trip');
   const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
   const title = surface.getByRole('heading', { name: 'Lyon trip', exact: true });
@@ -812,6 +812,69 @@ export async function runA2uiSurfaceScenarios(page, url) {
   // A press on the backdrop dismisses it.
   await page.mouse.click(4, 4);
   await expect(rulesDialog).toHaveCount(0);
+  // Inputs: edits are written to the app-created store, reach a sibling bound to the same path, and stay local.
+  const form = page.locator('.a2ui-surface[data-surface-id="form"]');
+  const formModel = async () => JSON.parse(await page.getByTestId('form-model').textContent());
+  const guest = form.getByRole('textbox', { name: 'Guest' });
+  await expect(guest).toHaveValue('Ada');
+  await guest.click();
+  await guest.press('End');
+  await page.keyboard.type(' Lovelace');
+  await expect(guest).toHaveValue('Ada Lovelace');
+  await expect(guest).toBeFocused();
+  await expect(form.getByRole('heading', { name: 'Ada Lovelace', exact: true })).toHaveAttribute('aria-level', '3');
+  // Typing in the middle keeps the caret where the user put it.
+  await guest.evaluate((node) => node.setSelectionRange(3, 3));
+  await page.keyboard.type('!');
+  await expect(guest).toHaveValue('Ada! Lovelace');
+  assert.equal(await guest.evaluate((node) => node.selectionStart), 4);
+  const notes = form.getByRole('textbox', { name: 'Notes' });
+  assert.equal(await notes.evaluate((node) => node.tagName), 'TEXTAREA');
+  await notes.fill('Aisle\nQuiet');
+  const windowSeat = form.getByRole('checkbox', { name: 'Window seat' });
+  await windowSeat.focus();
+  await page.keyboard.press('Space');
+  await expect(windowSeat).toBeChecked();
+  const party = form.getByRole('slider');
+  await expect(party).toHaveAccessibleName('Party: 2');
+  await party.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await expect(party).toHaveAccessibleName('Party: 4');
+  await page.keyboard.press('End');
+  await expect(party).toHaveAccessibleName('Party: 8');
+  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8 });
+  // A literal value is fixed.
+  const reference = form.getByRole('textbox', { name: 'Reference' });
+  await expect(reference).toHaveJSProperty('readOnly', true);
+  await reference.focus();
+  await page.keyboard.type('x');
+  await expect(reference).toHaveValue('LYS-6601');
+  // The store keeps the edits while the surface is unmounted.
+  await page.getByRole('button', { name: 'Toggle form' }).click();
+  await expect(form).toHaveCount(0);
+  await page.getByRole('button', { name: 'Toggle form' }).click();
+  await expect(guest).toHaveValue('Ada! Lovelace');
+  await expect(windowSeat).toBeChecked();
+  // A later agent update replaces the edited value.
+  await page.getByRole('button', { name: 'Agent sets guest' }).click();
+  await expect(guest).toHaveValue('Agent Smith');
+  await expect(form.getByRole('heading', { name: 'Agent Smith', exact: true })).toBeVisible();
+  // Without the store the same surface shows values and changes nothing.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(guest).toHaveJSProperty('readOnly', true);
+  await expect(windowSeat).toBeDisabled();
+  await expect(party).toBeDisabled();
+  await guest.focus();
+  await page.keyboard.type('zzz');
+  assert.equal((await formModel()).booking.guest, 'Agent Smith');
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(windowSeat).toBeEnabled();
+  // The field takes the surface tokens and fits a narrow viewport.
+  const fieldStyle = await guest.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, padding: style.paddingLeft }; });
+  assert.deepEqual(fieldStyle, { border: '1px', radius: '8px', padding: '12px' });
+  const formBox = await rect(form), guestBox = await rect(guest);
+  assert.ok(Math.abs(guestBox.width - formBox.width) < 1, `field fills the surface ${JSON.stringify({ formBox, guestBox })}`);
   // A new snapshot replaces the bound text without remounting the card.
   const retained = await card.elementHandle();
   await page.getByRole('checkbox', { name: 'Long summary' }).check();
@@ -832,6 +895,12 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await page.setViewportSize({ width: 320, height: 640 });
   const narrow = await layout();
   assert.ok(narrow.card.left >= narrow.surface.left - 0.5 && narrow.card.right <= narrow.surface.right + 0.5, `narrow card ${JSON.stringify(narrow)}`);
+  // The form's controls stay inside their surface at the narrow width.
+  const narrowForm = await rect(form);
+  for (const control of [guest, notes, party]) {
+    const box = await rect(control);
+    assert.ok(box.left >= narrowForm.left - 0.5 && box.right <= narrowForm.right + 0.5, `narrow control ${JSON.stringify({ narrowForm, box })}`);
+  }
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
   if (size) await page.setViewportSize(size);
   // The dark scheme swaps the surface token.

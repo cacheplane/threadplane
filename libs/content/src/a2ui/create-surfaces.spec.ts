@@ -145,4 +145,95 @@ describe('createA2uiSurfaces', () => {
     owner.apply(model('still active'));
     expect(remaining).toHaveBeenCalledTimes(2);
   });
+
+  describe('setValue', () => {
+    const live = () => {
+      const owner = entry.createA2uiSurfaces();
+      owner.apply(create());
+      owner.apply(root());
+      owner.apply(model({ form: { name: 'Ada', tags: ['a', 'b'] }, keep: 1 }));
+      return owner;
+    };
+    const data = (owner: ReturnType<typeof live>) => owner.getSnapshot().surfaces[0].dataModel;
+
+    it('replaces one value, publishes once and shares untouched branches', () => {
+      const owner = live();
+      const before = owner.getSnapshot();
+      const notify = vi.fn();
+      owner.subscribe(notify);
+      expect(owner.setValue('a', '/form/name', 'Grace')).toBe(true);
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(owner.getSnapshot()).not.toBe(before);
+      expect(data(owner)).toEqual({ form: { name: 'Grace', tags: ['a', 'b'] }, keep: 1 });
+      const tags = (value: unknown) => (value as { form: { tags: unknown } }).form.tags;
+      expect(tags(data(owner))).toBe(tags(before.surfaces[0].dataModel));
+      expect(Object.isFrozen(data(owner))).toBe(true);
+      // The earlier snapshot is untouched.
+      expect(before.surfaces[0].dataModel).toEqual({ form: { name: 'Ada', tags: ['a', 'b'] }, keep: 1 });
+    });
+
+    it('creates missing parents, writes array entries and captures the value', () => {
+      const owner = live();
+      expect(owner.setValue('a', '/new/deep', true)).toBe(true);
+      expect(owner.setValue('a', '/form/tags/1', 'z')).toBe(true);
+      const input = { list: [1] };
+      expect(owner.setValue('a', '/object', input)).toBe(true);
+      input.list.push(2);
+      expect(data(owner)).toEqual({ form: { name: 'Ada', tags: ['a', 'z'] }, keep: 1, new: { deep: true }, object: { list: [1] } });
+    });
+
+    it('publishes nothing when a primitive is rewritten unchanged or an absent value is deleted', () => {
+      const owner = live();
+      const before = owner.getSnapshot();
+      const notify = vi.fn();
+      owner.subscribe(notify);
+      expect(owner.setValue('a', '/form/name', 'Ada')).toBe(false);
+      expect(owner.setValue('a', '/keep', 1)).toBe(false);
+      expect(owner.setValue('a', '/absent', undefined)).toBe(false);
+      expect(owner.getSnapshot()).toBe(before);
+      expect(notify).not.toHaveBeenCalled();
+      // A present value written as null, or deleted, is a change.
+      expect(owner.setValue('a', '/keep', null)).toBe(true);
+      expect(owner.setValue('a', '/keep', undefined)).toBe(true);
+      expect(data(owner)).toEqual({ form: { name: 'Ada', tags: ['a', 'b'] } });
+      expect(notify).toHaveBeenCalledTimes(2);
+    });
+
+    it('ignores a surface that is not live and never stages one', () => {
+      const owner = live();
+      const before = owner.getSnapshot();
+      expect(owner.setValue('missing', '/x', 1)).toBe(false);
+      const staged = entry.createA2uiSurfaces();
+      staged.apply(create('b'));
+      expect(staged.setValue('b', '/x', 1)).toBe(false);
+      staged.apply(root('b'));
+      expect(staged.getSnapshot().surfaces[0].dataModel).toEqual({});
+      expect(owner.getSnapshot()).toBe(before);
+    });
+
+    it('rejects a root or relative path and an unsupported value without changing anything', () => {
+      const owner = live();
+      const before = owner.getSnapshot();
+      for (const path of ['', '/', '//', 'form/name', undefined as unknown as string])
+        expect(() => owner.setValue('a', path, 1)).toThrow(/below the data model root/);
+      expect(() => owner.setValue('a', '/x', Number.NaN)).toThrow(/finite plain data/);
+      expect(() => owner.setValue('a', '/x', new Date() as never)).toThrow();
+      expect(owner.getSnapshot()).toBe(before);
+    });
+
+    it('is replaced by a later agent update at the same path, and replaces an earlier one', () => {
+      const owner = live();
+      owner.setValue('a', '/form/name', 'Grace');
+      owner.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'a', path: '/form/name', value: 'Agent' } });
+      expect((data(owner) as { form: { name: string } }).form.name).toBe('Agent');
+      owner.setValue('a', '/form/name', 'User');
+      expect((data(owner) as { form: { name: string } }).form.name).toBe('User');
+    });
+
+    it('throws after disposal', () => {
+      const owner = live();
+      owner.dispose();
+      expect(() => owner.setValue('a', '/x', 1)).toThrow(/disposed/);
+    });
+  });
 });

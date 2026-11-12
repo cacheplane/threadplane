@@ -1545,7 +1545,7 @@ URL and an active response. Shared catalogs and full T29 parity remain open.
 
 ## A2UI surfaces
 
-`@threadplane/react/a2ui` renders one A2UI surface read-only. Accumulate wire
+`@threadplane/react/a2ui` renders one A2UI surface. Accumulate wire
 messages with `createA2uiSurfaces()` from `@threadplane/content/a2ui`, then pass
 a published surface to `A2uiSurface`. Import the stylesheet explicitly.
 
@@ -1566,13 +1566,50 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 }
 ```
 
-`a2uiBasicCatalog()` returns the display and disclosure components: `Text`,
-`Image`, `Icon`, `Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card`,
-`Divider`, `Tabs` and `Modal`. Spread it into your own registry and pass that as
+`a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
+`Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
+`CheckBox` and `Slider`. Spread it into your own registry and pass that as
 `catalog` to add or replace components; keep the registry stable. Literal props
 pass through and `{ path }` props read the surface data model, so a new snapshot
 updates bound text. A component the catalog lacks keeps its children and renders
 no control.
+
+### Editable surfaces
+
+Your application owns the store; the surface writes edits into it. Pass the
+store as `surfaces` and keep passing its current snapshot:
+
+```tsx
+import { useSyncExternalStore } from 'react';
+import { A2uiSurface } from '@threadplane/react/a2ui';
+import type { A2uiSurfaces } from '@threadplane/content/a2ui';
+
+export function Surfaces({ surfaces }: { readonly surfaces: A2uiSurfaces }) {
+  const snapshot = useSyncExternalStore(surfaces.subscribe, surfaces.getSnapshot);
+  return snapshot.surfaces.map((surface) => (
+    <A2uiSurface key={surface.surfaceId} surface={surface} surfaces={surfaces} />
+  ));
+}
+```
+
+Each keystroke, toggle or slider movement calls
+`surfaces.setValue(surfaceId, path, value)` for the path the control's `value`
+is bound to. The store publishes a new snapshot, so every component bound to
+that path updates. The edit is local: nothing is sent to an agent. Because the
+store holds the edit, it survives the surface unmounting, and it lasts as long
+as the store you created. An agent `updateDataModel` applied later replaces the
+value at its path, including one the user edited.
+
+Without `surfaces` the surface is read-only: text fields are read-only and
+checkboxes and sliders are disabled. A control whose `value` is a literal, not a
+`{ path }`, is fixed in the same way. The surface takes no edited values back as
+props and reports no per-edit event; read the store's snapshot when you need the
+current data model. Create the store once per conversation or message, outside
+render, and dispose it when that lifetime ends.
+
+A component of your own can write the same way with `useA2uiSurfaceWriter()`,
+which returns `{ editable, write(path, value) }`; take the path from the view's
+`bindings`.
 
 Media loads only from relative, `http(s)` and `blob` URLs and from `data:` URLs
 of the element's own kind; any other URL renders nothing. `Video` and
@@ -1586,6 +1623,5 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-Controls (`Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Slider`,
-`DateTimeInput`), actions, validation, function-call props, child templates and
-surface themes are not handled yet.
+`Button`, `ChoicePicker`, `DateTimeInput`, actions, validation checks,
+function-call props, child templates and surface themes are not handled yet.

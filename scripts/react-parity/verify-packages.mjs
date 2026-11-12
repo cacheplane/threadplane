@@ -246,8 +246,10 @@ export type CitationSourceVisualFunctionContract = CitationDisplayAssert<Citatio
   const a2ui = specifiers.includes('@threadplane/react/a2ui') ? `
 type A2uiEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type A2uiAssert<T extends true> = T;
-export type A2uiSurfacePropsContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceProps, { readonly surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot; readonly catalog?: import('@threadplane/react/render').ReactRenderRegistry; readonly className?: string }>>;
+export type A2uiSurfacePropsContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceProps, { readonly surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot; readonly surfaces?: import('@threadplane/content/a2ui').A2uiSurfaces; readonly catalog?: import('@threadplane/react/render').ReactRenderRegistry; readonly className?: string }>>;
 export type A2uiSurfaceParameterContract = A2uiAssert<A2uiEqual<Parameters<typeof import('@threadplane/react/a2ui').A2uiSurface>[0], import('@threadplane/react/a2ui').A2uiSurfaceProps>>;
+export type A2uiSurfaceWriterContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceWriter, { readonly editable: boolean; readonly write: (path: string | undefined, value: import('@threadplane/content/a2ui').A2uiValue) => void }>>;
+export type A2uiSurfacesSetValueContract = A2uiAssert<A2uiEqual<import('@threadplane/content/a2ui').A2uiSurfaces['setValue'], (surfaceId: string, path: string, value: import('@threadplane/content/a2ui').A2uiValue) => boolean>>;
 export type A2uiBasicCatalogContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/react/a2ui').a2uiBasicCatalog, () => import('@threadplane/react/render').ReactRenderRegistry>>;
 ` : '';
   const debug = specifiers.includes('@threadplane/react/debug') ? `
@@ -491,7 +493,7 @@ const SUPPORTED_EXPORTS = {
   'react/debug': ['ChatDebug', 'StateDiff'],
   'react/markdown': ['Markdown'],
   'react/render': ['RenderSpec'],
-  'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog'],
+  'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog', 'useA2uiSurfaceWriter'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
   'content/json': ['createJson'],
   'content/a2ui': ['createA2uiSurfaces'],
