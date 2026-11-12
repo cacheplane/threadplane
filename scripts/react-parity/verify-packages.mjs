@@ -243,6 +243,13 @@ export type CitationTypeMetaFunctionContract = CitationDisplayAssert<CitationDis
 export type CitationTypeLabelContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').citationTypeLabel, (citation: DisplayCitation) => string | null>>;
 export type CitationSourceVisualFunctionContract = CitationDisplayAssert<CitationDisplayEqual<typeof import('@threadplane/content/messages').citationSourceVisual, (citation: DisplayCitation) => CitationSourceVisual>>;
 ` : '';
+  const a2ui = specifiers.includes('@threadplane/react/a2ui') ? `
+type A2uiEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type A2uiAssert<T extends true> = T;
+export type A2uiSurfacePropsContract = A2uiAssert<A2uiEqual<import('@threadplane/react/a2ui').A2uiSurfaceProps, { readonly surface: import('@threadplane/content/a2ui').A2uiSurfaceSnapshot; readonly catalog?: import('@threadplane/react/render').ReactRenderRegistry; readonly className?: string }>>;
+export type A2uiSurfaceParameterContract = A2uiAssert<A2uiEqual<Parameters<typeof import('@threadplane/react/a2ui').A2uiSurface>[0], import('@threadplane/react/a2ui').A2uiSurfaceProps>>;
+export type A2uiBasicCatalogContract = A2uiAssert<A2uiEqual<typeof import('@threadplane/react/a2ui').a2uiBasicCatalog, () => import('@threadplane/react/render').ReactRenderRegistry>>;
+` : '';
   const debug = specifiers.includes('@threadplane/react/debug') ? `
 import type { StateDiffProps, DebugValue } from '@threadplane/react/debug';
 type DebugEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
@@ -258,7 +265,7 @@ type MarkdownAssert<T extends true> = T;
 export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean }>>;
 export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<typeof import('@threadplane/react/markdown').Markdown>[0], import('@threadplane/react/markdown').MarkdownProps>>;
 ` : '';
-  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + markdown + citationDisplay;
+  const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + a2ui + markdown + citationDisplay;
   if (!specifiers.includes('@threadplane/react/chat')) return namespaces;
   return `${namespaces}
 import type { WelcomeProps, WelcomeSuggestionProps, TimelineItem, TimelineProps, HistorySearchPaletteProps, HistorySearchResult, ProjectNameFormProps, ProjectListItem, ProjectListProps, ConfirmDialogProps, ChatSidebarProps, ChatSidenavMode, ChatSidenavProps, ChatSidenavScrimProps, ThreadListItem, ThreadListProps, ThreadRenameFormProps, OverflowMenuItem, OverflowMenuProps, SelectOption, SelectProps, MessageRatingProps, MessageRatingValue } from '@threadplane/react/chat';
@@ -484,6 +491,7 @@ const SUPPORTED_EXPORTS = {
   'react/debug': ['ChatDebug', 'StateDiff'],
   'react/markdown': ['Markdown'],
   'react/render': ['RenderSpec'],
+  'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
   'content/json': ['createJson'],
   'content/a2ui': ['createA2uiSurfaces'],
@@ -508,7 +516,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name], name))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'react/a2ui', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);
@@ -581,10 +589,10 @@ selection.rowKey = 'other';
     writeFileSync(join(plain, 'tsconfig.debug.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', lib: ['ES2022', 'DOM'], strict: true, skipLibCheck: false, noEmit: true }, files: ['debug-types.ts'] }));
     runConsumer(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.debug.json'], plain);
     prepareInstalledTypes(root, plain, 'react');
-    await prepareRuntimeConsumer(root, plain, 'react');
+    await prepareRuntimeConsumer(root, plain, 'react', { a2ui: true });
     for (const config of ['tsconfig.contracts.json', 'tsconfig.app.json']) runConsumer(process.execPath, [join(plain, 'node_modules/typescript/bin/tsc'), '-p', config], plain);
     console.log(runConsumer(process.execPath, [join(plain, 'node_modules/vite/bin/vite.js'), 'build'], plain));
-    await runRuntimeScenarios(join(plain, 'dist'), 'React');
+    await runRuntimeScenarios(join(plain, 'dist'), 'React', { a2ui: true });
     console.log(`Verified ${Object.keys(tarballs).length} selected plain tarballs, ${count} ESM/type exports, and ${coreCount} isolated core exports with skipLibCheck:false, precise heterogeneous tool contracts, and a production-built installed React consumer.`);
   } finally {
     if (retain) console.log(`Retained packed consumer evidence: ${temporary}`);

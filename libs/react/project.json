@@ -41,6 +41,11 @@
             "input": "libs/react/src/debug",
             "glob": "styles.css",
             "output": "src/debug"
+          },
+          {
+            "input": "libs/react/src/a2ui",
+            "glob": "styles.css",
+            "output": "src/a2ui"
           }
         ]
       }

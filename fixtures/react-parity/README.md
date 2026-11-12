@@ -1,5 +1,17 @@
 # React parity foundations
 
+`@threadplane/react/a2ui` renders one A2UI surface read-only. Its fixture lives in
+`runtime/react-a2ui-surface.tsx` and is copied only into the plain-package
+consumer, which installs the optional `@threadplane/a2ui` package; the LangGraph
+candidate and review consumers do not install it. The installed browser fixture
+accumulates a surface from wire messages with the installed
+content package, then checks heading semantics, column and row order, row
+distribution, both divider axes, the opt-in stylesheet's card tokens in light and
+dark schemes, a path prop following a new snapshot without remounting, an
+unsupported component keeping its child as literal text, right-to-left order and
+a 320px viewport. Actions, inputs, function calls and child templates are not
+part of this slice.
+
 The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The
 installed browser fixture types into a real open list and menu: a character moves
 focus to the matching label without selecting, a pause starts a new search, and

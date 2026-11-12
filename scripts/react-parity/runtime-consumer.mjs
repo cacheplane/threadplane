@@ -387,7 +387,7 @@ function emitRuntimeDeclaration(root, consumer, output) {
   assert.equal(result.emitSkipped, false, 'runtime fixture declaration emitted');
 }
 
-export async function prepareRuntimeConsumer(root, consumer, kind) {
+export async function prepareRuntimeConsumer(root, consumer, kind, options = {}) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-runtime-bundle-'));
   try {
@@ -407,11 +407,12 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
     const declaration = readFileSync(join(destination, 'runtime-entry.d.ts'), 'utf8');
     assert.doesNotMatch(declaration, /@langchain|libs\/|create-session/, 'emitted fixture declaration exposes no SDK/private references');
-    prepareRuntimeViews(root, consumer, kind);
+    prepareRuntimeViews(root, consumer, kind, options);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 
-export function prepareRuntimeViews(root, consumer, kind) {
+// `a2ui` adds the surface fixture, which needs the optional @threadplane/a2ui package installed.
+export function prepareRuntimeViews(root, consumer, kind, { a2ui = false } = {}) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   const destination = kind === 'angular' ? join(consumer, 'src') : consumer;
   cpSync(join(fixture, 'tools.ts'), join(destination, 'tools.ts'));
@@ -425,6 +426,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
   cpSync(join(fixture, app), join(destination, app));
   writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
+    (kind === 'react' && a2ui ? `if (new URLSearchParams(location.search).has('a2ui')) {\n  void import('./react-a2ui-surface');\n} else ` : '') +
     (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-action-icons')) {\n  if (new URLSearchParams(location.search).has('no-styles')) {\n    void import('./react-message-action-icons');\n  } else {\n    void import('./react-message-action-icons-styled');\n  }\n} else if (new URLSearchParams(location.search).has('message-controls')) {\n  void import('./react-message-controls');\n} else if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
     `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
   if (kind === 'angular') {
@@ -440,6 +442,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     cpSync(join(fixture, 'react-message-controls.tsx'), join(destination, 'react-message-controls.tsx'));
     cpSync(join(fixture, 'react-message-spacing.tsx'), join(destination, 'react-message-spacing.tsx'));
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
+    if (a2ui) cpSync(join(fixture, 'react-a2ui-surface.tsx'), join(destination, 'react-a2ui-surface.tsx'));
     cpSync(join(fixture, 'react-confirm-dialog.tsx'), join(destination, 'react-confirm-dialog.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
     writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
@@ -711,6 +714,63 @@ export async function runRenameFormScenarios(page, url) {
     assert.ok(box && box.x >= 0 && box.x + box.width <= width, `Rename input fits viewport ${width}`);
   }
   console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
+}
+
+export async function runA2uiSurfaceScenarios(page, url) {
+  await page.goto(`${url}/?menu&a2ui`);
+  await expect(page.getByRole('heading', { name: 'Installed A2UI surface' })).toBeVisible();
+  const surface = page.locator('.a2ui-surface');
+  await expect(surface).toHaveAttribute('data-surface-id', 'trip');
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const title = surface.getByRole('heading', { name: 'Lyon trip', exact: true });
+  await expect(title).toHaveAttribute('aria-level', '2');
+  await expect(surface.getByRole('heading')).toHaveCount(1);
+  const card = surface.locator('.a2ui-card');
+  const rule = surface.locator('hr.a2ui-divider--horizontal');
+  const row = surface.locator('.a2ui-row');
+  const depart = row.getByText('Depart', { exact: true });
+  const bar = row.locator('.a2ui-divider--vertical');
+  const time = row.getByText('09:40', { exact: true });
+  // The data model supplies the card text; the stylesheet supplies the card surface.
+  await expect(card).toHaveText('Two nights in Lyon');
+  const cardStyle = await card.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, padding: style.paddingTop, radius: style.borderTopLeftRadius, background: style.backgroundColor }; });
+  assert.deepEqual({ border: cardStyle.border, padding: cardStyle.padding, radius: cardStyle.radius }, { border: '1px', padding: '16px', radius: '12px' });
+  assert.equal(await title.evaluate((node) => getComputedStyle(node).fontSize), '24px');
+  // Column stacks in document order; the row lays its items out inline and spreads them.
+  const layout = async () => ({ surface: await rect(surface), title: await rect(title), card: await rect(card), rule: await rect(rule), row: await rect(row), depart: await rect(depart), bar: await rect(bar), time: await rect(time) });
+  const ltr = await layout();
+  assert.ok(ltr.title.bottom <= ltr.card.top && ltr.card.bottom <= ltr.rule.top && ltr.rule.bottom <= ltr.row.top, `column order ${JSON.stringify(ltr)}`);
+  assert.ok(ltr.depart.right <= ltr.bar.left && ltr.bar.right <= ltr.time.left, `row order ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.depart.left - ltr.row.left) < 1 && Math.abs(ltr.time.right - ltr.row.right) < 1, `row spreads ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.bar.width - 1) < 0.01 && ltr.bar.height >= ltr.depart.height, `vertical rule ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.rule.height - 1) < 0.01 && Math.abs(ltr.rule.width - ltr.surface.width) < 1, `horizontal rule ${JSON.stringify(ltr)}`);
+  // A component this slice lacks keeps its child as literal text and adds no control.
+  const unsupported = surface.locator('[data-a2ui-unsupported="extra"]');
+  await expect(unsupported).toHaveText('Book <b>now</b>');
+  await expect(surface.getByRole('button')).toHaveCount(0);
+  assert.equal(await unsupported.locator('b').count(), 0);
+  // A new snapshot replaces the bound text without remounting the card.
+  const retained = await card.elementHandle();
+  await page.getByRole('checkbox', { name: 'Long summary' }).check();
+  await expect(card).toContainText('Three-nights-with-an-unbroken-summary');
+  assert.equal(await card.evaluate((node, previous) => node === previous, retained), true);
+  // Right to left mirrors the row.
+  await page.getByRole('checkbox', { name: 'Right to left' }).check();
+  const rtl = await layout();
+  assert.ok(rtl.depart.left >= rtl.bar.right && rtl.bar.left >= rtl.time.right, `rtl row order ${JSON.stringify(rtl)}`);
+  await page.getByRole('checkbox', { name: 'Right to left' }).uncheck();
+  // A narrow viewport wraps the long text inside the card without page overflow.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const narrow = await layout();
+  assert.ok(narrow.card.left >= narrow.surface.left - 0.5 && narrow.card.right <= narrow.surface.right + 0.5, `narrow card ${JSON.stringify(narrow)}`);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  if (size) await page.setViewportSize(size);
+  // The dark scheme swaps the surface token.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  const dark = await card.evaluate((node) => getComputedStyle(node).backgroundColor);
+  assert.notEqual(dark, cardStyle.background);
+  await page.emulateMedia({ colorScheme: null });
 }
 
 export async function runComposerSlotScenarios(page, url) {
@@ -1658,7 +1718,8 @@ export async function runMessageActionIconScenarios(browser, server) {
   console.log('Installed React message action icons: real no-styles entry, styled desktop/narrow/RTL/forced/reduced contexts, literal accessible names and tooltips, decorative glyphs, target/focus geometry, pointer/Enter/Space, current argumentless callbacks, keyed identity, disabled/unmount and zero clipboard/backend I/O passed.');
 }
 
-export async function runRuntimeScenarios(directory, kind) {
+// `a2ui` matches the option given to prepareRuntimeConsumer: only that consumer has the surface fixture.
+export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}) {
   const server = await serveRuntimeConsumer(directory);
   let browser;
   let context;
@@ -1984,6 +2045,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);
+      if (a2ui) await runA2uiSurfaceScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }

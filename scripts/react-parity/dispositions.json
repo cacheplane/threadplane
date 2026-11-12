@@ -1737,9 +1737,9 @@
         "T27"
       ],
       "treatment": "internal",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/default-fallback.tsx",
-      "reason": "Native component. Internal partial-spec fallback; preserve readiness transition without form remount."
+      "reason": "React keeps the children of a component the catalog lacks behind a display:contents marker instead of a loading skeleton, because this slice has no loading state."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/audio-player.component.ts#A2uiAudioPlayerComponent",
@@ -1767,9 +1767,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/card.tsx",
-      "reason": "Native component. Container semantics and child registry rendering."
+      "reason": "Native read-only view. One child on the bordered raised surface; stylesheet tokens verified in an installed browser fixture in light and dark schemes."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/check-box.component.ts#A2uiCheckBoxComponent",
@@ -1797,9 +1797,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/column.tsx",
-      "reason": "Native component. Layout properties and nested child rendering; scoped CSS."
+      "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture. Child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts#A2uiDateTimeInputComponent",
@@ -1817,9 +1817,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/divider.tsx",
-      "reason": "Native component. Semantic separator and orientation styling."
+      "reason": "Native read-only view. Horizontal hr and decorative vertical rule with the Angular classes; geometry verified in an installed browser fixture."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/icon.component.ts#A2uiIconComponent",
@@ -1867,9 +1867,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/row.tsx",
-      "reason": "Native component. Horizontal layout/wrap/alignment; nested children and responsive behavior."
+      "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture including RTL. Child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/slider.component.ts#A2uiSliderComponent",
@@ -1907,9 +1907,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text.tsx",
-      "reason": "Native component. Text variants, Markdown/content policy and constrained typography."
+      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Markdown/content policy and function-call text remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/video.component.ts#A2uiVideoComponent",
@@ -1927,9 +1927,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Native component. Extract surface/form orchestration; preserve dirty edits, checks, theme identity and wire actions."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Actions, checks, dirty edits, theme identity, function calls and child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -16045,6 +16045,90 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. The collapsible header visual gap is closed with the first three sources in exact resolved displayed order, private shared local markers and a decorative expansion chevron. Provider images remain deferred T26 work."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/styles.css",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Explicit opt-in stylesheet scoping the --a2ui-* tokens the five static components use to .a2ui-surface, with dark-scheme and forced-colors variants. The full token set and theme identity remain planned."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/card.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Card view over RenderViewProps."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/column.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Column view sharing the Row layout mapping."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/divider.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Divider view for both axes."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/index.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "a2uiBasicCatalog() returns the frozen static registry of Text, Row, Column, Card and Divider. The remaining fourteen catalog components are planned."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/layout.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal Row/Column mapping from A2UI align, justify and gap to a class and inline flex styles; unknown and prototype-named values fall back."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/row.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Row view sharing the Column layout mapping."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Text view with heading semantics for h1 to h5."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/default-fallback.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal fallback that keeps the children of an unsupported component."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/index.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private ./a2ui entry exporting A2uiSurface, its props and a2uiBasicCatalog."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-spec.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal projection of a content surface snapshot onto RenderSpecData: literal and path props, single and static children, first-position reachability from the root. It does not import the Angular-hosted surfaceToSpec; convergence on a shared converter stays with T19."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "A2uiSurface: one immutable surface snapshot, an optional catalog and a class name, rendered read-only through RenderSpec."
     },
     {
       "id": "asset:libs/react/src/debug/styles.css",

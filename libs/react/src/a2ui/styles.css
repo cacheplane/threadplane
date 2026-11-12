@@ -1,0 +1,154 @@
+/* A2UI surface tokens and the static basic-catalog components. Opt in by importing this file. */
+.a2ui-surface {
+  --a2ui-surface: #ffffff;
+  --a2ui-on-surface: #1a1d23;
+  --a2ui-on-surface-variant: rgba(0, 0, 0, 0.6);
+  --a2ui-outline: rgba(0, 0, 0, 0.12);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --a2ui-caption: var(--a2ui-on-surface-variant);
+  --a2ui-spacing-2: 8px;
+  --a2ui-spacing-3: 12px;
+  --a2ui-spacing-4: 16px;
+  --a2ui-shape-medium: 12px;
+  --a2ui-typography-h1-size: 32px;
+  --a2ui-typography-h1-weight: 700;
+  --a2ui-typography-h1-line-height: 1.2;
+  --a2ui-typography-h2-size: 24px;
+  --a2ui-typography-h2-weight: 600;
+  --a2ui-typography-h2-line-height: 1.3;
+  --a2ui-typography-h3-size: 20px;
+  --a2ui-typography-h3-weight: 600;
+  --a2ui-typography-h3-line-height: 1.3;
+  --a2ui-typography-h4-size: 18px;
+  --a2ui-typography-h4-weight: 500;
+  --a2ui-typography-h4-line-height: 1.4;
+  --a2ui-typography-h5-size: 16px;
+  --a2ui-typography-h5-weight: 500;
+  --a2ui-typography-h5-line-height: 1.4;
+  --a2ui-typography-body-size: 14px;
+  --a2ui-typography-body-weight: 400;
+  --a2ui-typography-body-line-height: 1.5;
+  --a2ui-typography-caption-size: 12px;
+  --a2ui-typography-caption-weight: 400;
+  --a2ui-typography-caption-line-height: 1.4;
+  min-width: 0;
+  color: var(--a2ui-on-surface);
+}
+@media (prefers-color-scheme: dark) {
+  .a2ui-surface {
+    --a2ui-surface: #1a1d23;
+    --a2ui-on-surface: #ffffff;
+    --a2ui-on-surface-variant: rgba(255, 255, 255, 0.7);
+    --a2ui-outline: rgba(255, 255, 255, 0.1);
+    --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+.a2ui-text-h1,
+.a2ui-text-h2,
+.a2ui-text-h3,
+.a2ui-text-h4,
+.a2ui-text-h5,
+.a2ui-text-caption,
+.a2ui-text-body {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.a2ui-text-h1,
+.a2ui-text-h2,
+.a2ui-text-h3,
+.a2ui-text-h4,
+.a2ui-text-h5 {
+  margin: 0;
+}
+.a2ui-text-h1 {
+  font-size: var(--a2ui-typography-h1-size);
+  font-weight: var(--a2ui-typography-h1-weight);
+  line-height: var(--a2ui-typography-h1-line-height);
+}
+.a2ui-text-h2 {
+  font-size: var(--a2ui-typography-h2-size);
+  font-weight: var(--a2ui-typography-h2-weight);
+  line-height: var(--a2ui-typography-h2-line-height);
+}
+.a2ui-text-h3 {
+  font-size: var(--a2ui-typography-h3-size);
+  font-weight: var(--a2ui-typography-h3-weight);
+  line-height: var(--a2ui-typography-h3-line-height);
+}
+.a2ui-text-h4 {
+  font-size: var(--a2ui-typography-h4-size);
+  font-weight: var(--a2ui-typography-h4-weight);
+  line-height: var(--a2ui-typography-h4-line-height);
+}
+.a2ui-text-h5 {
+  font-size: var(--a2ui-typography-h5-size);
+  font-weight: var(--a2ui-typography-h5-weight);
+  line-height: var(--a2ui-typography-h5-line-height);
+}
+.a2ui-text-caption {
+  font-size: var(--a2ui-typography-caption-size);
+  font-weight: var(--a2ui-typography-caption-weight);
+  line-height: var(--a2ui-typography-caption-line-height);
+  color: var(--a2ui-caption);
+}
+.a2ui-text-body {
+  font-size: var(--a2ui-typography-body-size);
+  font-weight: var(--a2ui-typography-body-weight);
+  line-height: var(--a2ui-typography-body-line-height);
+}
+.a2ui-row,
+.a2ui-col {
+  display: flex;
+  min-width: 0;
+  gap: var(--a2ui-spacing-3);
+}
+.a2ui-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.a2ui-col {
+  flex-direction: column;
+}
+.a2ui-row--justify-stretch > *,
+.a2ui-col--justify-stretch > * {
+  flex: 1;
+}
+.a2ui-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: var(--a2ui-spacing-2);
+  border-radius: var(--a2ui-shape-medium);
+  border: 1px solid var(--a2ui-outline);
+  background: var(--a2ui-surface);
+  padding: var(--a2ui-spacing-4);
+  box-shadow: var(--a2ui-elevation-1);
+}
+.a2ui-divider--horizontal {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--a2ui-outline);
+  margin: var(--a2ui-spacing-2) 0;
+}
+.a2ui-divider--vertical {
+  display: inline-block;
+  align-self: stretch;
+  width: 1px;
+  background: var(--a2ui-outline);
+  margin: 0 var(--a2ui-spacing-2);
+}
+.a2ui-unsupported {
+  display: contents;
+}
+@media (forced-colors: active) {
+  .a2ui-card,
+  .a2ui-divider--horizontal {
+    border-color: CanvasText;
+  }
+  .a2ui-divider--vertical {
+    background: CanvasText;
+  }
+}
