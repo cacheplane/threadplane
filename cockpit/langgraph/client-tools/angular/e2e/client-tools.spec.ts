@@ -58,3 +58,23 @@ test('client-tools: ask tool collects user confirmation and resumes the run', as
   await expect(input).toBeFocused();
   await expect(input).toHaveAttribute('placeholder', 'Ask for weather or a fictional booking…');
 });
+
+// A trip calls get_weather and confirm_booking together, so the graph writes a
+// plan. The weather settles at once and the run ends, so no tool group is
+// running while the booking waits; the plan's pending step follows the ask.
+test('client-tools: a planned trip lists its pending step while the booking waits', async ({ page }) => {
+  await page.goto('/');
+  const input = page.getByRole('textbox', { name: /message|prompt/i });
+  await input.fill('Plan a trip to Portland');
+  await page.getByRole('button', { name: /send message/i }).click();
+
+  const confirm = page.locator('app-confirm-booking .chat-approval-card--inline');
+  await expect(confirm).toContainText('Fictional trip to Portland', { timeout: 30000 });
+  const steps = page.locator('.chat-plan-steps__step');
+  await expect(steps).toHaveText(['Summarize the results']);
+
+  await confirm.getByRole('button', { name: 'Confirm booking' }).click();
+  await expect(page.getByText('Portland is 68°F and sunny')).toBeVisible({ timeout: 30000 });
+  await expect(page.getByText('Approved: Booking', { exact: true })).toBeVisible();
+  await expect(steps).toHaveCount(0);
+});
