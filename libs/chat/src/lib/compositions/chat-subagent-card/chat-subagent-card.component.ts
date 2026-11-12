@@ -26,6 +26,13 @@ export function statusColor(status: SubagentStatus): string {
   }
 }
 
+const STATUS_LABELS: Record<SubagentStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  complete: 'Complete',
+  error: 'Failed',
+};
+
 function statusToTraceState(s: SubagentStatus): TraceState {
   switch (s) {
     case 'pending':  return 'pending';
@@ -71,7 +78,7 @@ function statusToTraceState(s: SubagentStatus): TraceState {
     <chat-trace [state]="state()">
       <span traceLabel>
         <!-- The space keeps a screen reader from running the name and status together. -->
-        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status()">{{ subagent().status() }}</span>
+        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status()">{{ statusLabel() }}</span>
       </span>
       <div class="sac__count" traceMeta>{{ messageCount() }}</div>
       @for (m of subagent().messages(); track m.id) {
@@ -94,6 +101,8 @@ export class ChatSubagentCardComponent {
   readonly subagent = input.required<Subagent>();
   /** App-owned readable labels for the subagent's own tool calls. Technical names stay inside each opened call. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+  /** The status in reader's words; `data-status` keeps the raw value for styling. */
+  protected readonly statusLabel = computed(() => STATUS_LABELS[this.subagent().status()]);
   readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status()));
   /** "1 message" / "3 messages". The spawning call's ID is not shown: it means nothing to a reader. */
   protected readonly messageCount = computed(() => {

@@ -60,7 +60,7 @@ describe('ChatSubagentCardComponent', () => {
     expect(text).toContain('Research');
     expect(text).toContain('2 messages');
     // Name and status are separate words to a screen reader, not "Researchrunning".
-    expect(host.querySelector('.chat-trace__label')?.textContent?.trim()).toBe('Research running');
+    expect(host.querySelector('.chat-trace__label')?.textContent?.trim()).toBe('Research Running');
     expect(text).not.toContain('tc-root');
     // Without app labels the call shows its technical name.
     expect(host.querySelector('.tcc__name')?.textContent).toBe('search');
