@@ -1018,7 +1018,8 @@
   animation: tp-trace-pulse 1.5s ease-in-out infinite;
 }
 .tp-trace[data-state='error'] .tp-trace__label {
-  color: var(--tp-chat-danger);
+  /* Standalone use has no chat root to define the token. */
+  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
 }
 .tp-trace__content {
   max-block-size: 250px;
