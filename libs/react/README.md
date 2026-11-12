@@ -462,6 +462,18 @@ announces its label politely unless `announce` is false, takes a `className`,
 and stops the shimmer for reduced motion. Import chat styles for its
 presentation.
 
+`LauncherButton` from `@threadplane/react/chat` is a round native icon button
+that asks to open a chat. `onClick` is required; `label` (default "Open chat")
+names it, and optional `expanded` and `controls` set `aria-expanded` and
+`aria-controls` when you want the open state announced. It places itself
+nowhere and keeps no state: position it with `className`.
+
+`ChatWindow` is a full-height column for composing your own chat: an optional
+`header` bar, a body (its children) that takes the remaining height, and an
+optional `footer` with a soft fade above it. The body does not scroll by itself,
+so put the scrolling list inside it. A region you do not supply is not
+rendered. Both work outside a `Chat` root and need the chat styles.
+
 `TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
 waiting-before-text presentation from a borrowed core snapshot. `active` is
 required; optional readonly `label`, `announce`, and `className` customize the

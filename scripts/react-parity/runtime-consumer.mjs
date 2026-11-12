@@ -1444,6 +1444,83 @@ export async function runPrimitiveScenarios(page, url) {
   await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
 }
 
+/** Installed LauncherButton and ChatWindow: size, regions, scrolling, wrapping, keyboard and motion. */
+export async function runShellScenarios(page, url) {
+  await page.goto(`${url}/?menu&shell`);
+  await expect(page.getByRole('heading', { name: 'Installed shell' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const style = (locator, property) => locator.evaluate((node, name) => getComputedStyle(node)[name], property);
+  const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) <= 1, `${message}: ${actual} is not ${expected}`);
+  const frame = page.getByTestId('shell-frame');
+  const shell = page.locator('.tp-chat-window');
+  const head = shell.locator('.tp-chat-window__header');
+  const body = shell.locator('.tp-chat-window__body');
+  const foot = shell.locator('.tp-chat-window__footer');
+  const fade = shell.locator('.tp-chat-window__fade');
+  const list = page.getByTestId('shell-list');
+  const launcher = page.getByRole('button', { name: 'Open chat' });
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `shell does not widen the page at ${width}px`);
+    // ChatWindow fills its frame: header on top, footer at the bottom, body taking the rest.
+    const outer = await rect(shell), top = await rect(head), middle = await rect(body), bottom = await rect(foot);
+    near(outer.height, 398, 'window fills the frame height');
+    near(top.top, outer.top, 'header starts at the top');
+    near(bottom.bottom, outer.bottom, 'footer ends at the bottom');
+    near(middle.top, top.bottom, 'body starts under the header');
+    assert.ok(middle.bottom <= bottom.top + 0.5, 'body ends above the footer');
+    assert.ok(middle.height > 100, 'body keeps the remaining height');
+    assert.ok(top.right <= outer.right + 0.5 && (await rect(head.locator('strong'))).right <= outer.right + 0.5, 'a long title wraps inside the header');
+    // Only the list inside the body scrolls.
+    const scroll = await list.evaluate((node) => ({ client: node.clientHeight, scroll: node.scrollHeight }));
+    assert.ok(scroll.scroll > scroll.client && scroll.client <= middle.height + 0.5, 'the inner list scrolls inside the body');
+    assert.equal(await shell.evaluate((node) => node.scrollHeight <= node.clientHeight + 1), true, 'the window itself does not overflow');
+    // The fade sits directly above the footer and lets presses through.
+    const veil = await rect(fade);
+    near(veil.bottom, bottom.top, 'fade ends where the footer starts');
+    near(veil.height, 32, 'fade height');
+    near(veil.width, bottom.width, 'fade spans the footer');
+    assert.equal(await style(fade, 'pointerEvents'), 'none');
+    assert.notEqual(await style(fade, 'backgroundImage'), 'none');
+  }
+  // Without a header the region is gone and the body gets top spacing.
+  assert.equal(await style(body, 'paddingTop'), '0px');
+  await page.getByRole('button', { name: 'Toggle window header' }).click();
+  await expect(head).toHaveCount(0);
+  assert.equal(await style(body, 'paddingTop'), '16px');
+  near((await rect(foot)).bottom, (await rect(shell)).bottom, 'footer stays at the bottom without a header');
+  await page.getByRole('button', { name: 'Toggle window header' }).click();
+  await expect(head).toHaveCount(1);
+  // LauncherButton: a 56px circle with a 24px icon and a visible fill.
+  const size = await rect(launcher);
+  near(size.width, 56, 'launcher width');
+  near(size.height, 56, 'launcher height');
+  assert.equal(await style(launcher, 'borderTopLeftRadius'), '50%');
+  assert.notEqual(await style(launcher, 'backgroundColor'), 'rgba(0, 0, 0, 0)');
+  assert.notEqual(await style(launcher, 'backgroundColor'), await style(launcher, 'color'));
+  near((await rect(launcher.locator('svg'))).width, 24, 'launcher icon width');
+  // Keyboard: Tab reaches it with a focus ring; Enter and Space each request once and the open state is announced.
+  await page.getByRole('button', { name: 'Toggle window header' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(launcher).toBeFocused();
+  assert.equal(await style(launcher, 'outlineStyle'), 'solid');
+  await expect(launcher).toHaveAttribute('aria-expanded', 'false');
+  await expect(launcher).toHaveAttribute('aria-controls', 'shell-window');
+  await page.keyboard.press('Enter');
+  await expect(launcher).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Space');
+  await expect(launcher).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByTestId('launcher-presses')).toHaveText('2');
+  await expect(launcher).toBeFocused();
+  // Hover grows it; reduced motion keeps it still.
+  await launcher.hover();
+  await expect.poll(() => style(launcher, 'transform')).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => style(launcher, 'transform')).toBe('none');
+  await page.emulateMedia({ reducedMotion: null });
+  await page.mouse.move(0, 0);
+}
+
 export async function runSelectScenarios(page, url) {
   await page.goto(`${url}/?menu&select`);
   const trigger = page.locator('.tp-select__trigger');
@@ -2489,6 +2566,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runOverflowMenuScenarios(page, server.url);
       await runSelectScenarios(page, server.url);
       await runPrimitiveScenarios(page, server.url);
+      await runShellScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);

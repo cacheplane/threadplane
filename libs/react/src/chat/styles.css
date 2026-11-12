@@ -1468,6 +1468,97 @@
   outline: 2px solid var(--tp-chat-accent);
   outline-offset: 3px;
 }
+.tp-launcher-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  color: var(--tp-chat-on-accent, var(--ds-surface, Canvas));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.tp-launcher-button:hover {
+  transform: scale(1.05);
+}
+.tp-launcher-button:focus-visible {
+  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline-offset: 3px;
+}
+.tp-launcher-button__icon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-launcher-button { transition: none; }
+  .tp-launcher-button:hover { transform: none; }
+}
+@media (forced-colors: active) {
+  .tp-launcher-button { border: 1px solid ButtonText; }
+}
+.tp-chat-window {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
+  background: var(--tp-chat-bg, var(--ds-bg, Canvas));
+  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+}
+.tp-chat-window__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  min-block-size: 3.5rem;
+  min-inline-size: 0;
+  padding-block: 0.5rem;
+  padding-inline: 1.5rem;
+  border-block-end: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.tp-chat-window__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+.tp-chat-window__body:first-child {
+  padding-block-start: var(--tp-chat-gap, 1rem);
+}
+.tp-chat-window__footer {
+  position: relative;
+  flex: none;
+  min-inline-size: 0;
+  margin-block-start: var(--tp-chat-gap, 1rem);
+}
+.tp-chat-window__fade {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 100%;
+  block-size: 2rem;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--tp-chat-bg, var(--ds-bg, Canvas)) 100%
+  );
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .tp-chat-window__fade { display: none; }
+}
 .tp-chat-sidebar-layout {
   --tp-chat-sidebar-width: 28rem;
   box-sizing: border-box;
