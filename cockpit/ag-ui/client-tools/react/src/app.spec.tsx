@@ -1,5 +1,6 @@
 import { createSession } from '@threadplane/ag-ui';
 import type { RunAgentInput } from '@ag-ui/client';
+import type { AgentSnapshot } from '@threadplane/core';
 import { createClientToolsApplication } from './application';
 import {
   cleanup,
@@ -18,7 +19,21 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
-function fixture(update: Partial<ClientToolsApplicationSnapshot> = {}) {
+const delivery = { generation: 'r', phase: 'complete', outcome: 'success' } as const;
+/** One assistant message `a` that requested call `c`. */
+function transcript(call: AgentSnapshot['toolCalls'][number]): Partial<AgentSnapshot> {
+  return {
+    messages: [
+      { id: 'u', role: 'user', content: 'Hello', delivery },
+      { id: 'a', role: 'assistant', content: '', delivery, toolCallIds: [call.id] },
+    ],
+    toolCalls: [call],
+  };
+}
+function fixture(
+  update: Partial<ClientToolsApplicationSnapshot> = {},
+  view: Partial<AgentSnapshot> = {}
+) {
   let snapshot: ClientToolsApplicationSnapshot = Object.freeze({
     threadId: null,
     native: undefined,
@@ -32,20 +47,37 @@ function fixture(update: Partial<ClientToolsApplicationSnapshot> = {}) {
     viewGeneration: 0,
     ...update,
   });
+  // Chat's core view: run status follows the application's busy flag.
+  let agentSnapshot = {
+    status: snapshot.busy ? 'running' : 'idle',
+    messages: [],
+    toolCalls: [],
+    ...view,
+  } as AgentSnapshot;
   const listeners = new Set<() => void>();
+  const subscribe = (notify: () => void) => {
+    listeners.add(notify);
+    return () => {
+      listeners.delete(notify);
+    };
+  };
   const app = {
     getSnapshot: () => snapshot,
-    subscribe: (notify: () => void) => {
-      listeners.add(notify);
-      return () => {
-        listeners.delete(notify);
-      };
-    },
+    subscribe,
     submit: vi.fn(),
     stop: vi.fn(),
     newConversation: vi.fn(),
-    respond: vi.fn(),
+    respond: vi.fn(() => true),
     dispose: vi.fn(),
+    agent: {
+      getSnapshot: () => agentSnapshot,
+      subscribe,
+      submit: vi.fn(async () => 'success' as const),
+      stop: vi.fn(async () => {
+        app.stop();
+      }),
+      dispose: vi.fn(async () => undefined),
+    },
   };
   mocks.create.mockReturnValue(app);
   const ready = vi.fn();
@@ -59,76 +91,88 @@ function fixture(update: Partial<ClientToolsApplicationSnapshot> = {}) {
     app,
     ready,
     result,
-    update(value: Partial<ClientToolsApplicationSnapshot>) {
+    update(
+      value: Partial<ClientToolsApplicationSnapshot>,
+      next: Partial<AgentSnapshot> = {}
+    ) {
       act(() => {
         snapshot = Object.freeze({ ...snapshot, ...value });
-        for (const notify of listeners) notify();
+        agentSnapshot = {
+          ...agentSnapshot,
+          status: snapshot.busy ? 'running' : 'idle',
+          ...next,
+        } as AgentSnapshot;
+        for (const notify of [...listeners]) notify();
       });
     },
   };
 }
-it('mount and readiness are inert and five presets only fill the draft', () => {
+it('mount and readiness are inert and each of the six presets sends its prompt', () => {
   const f = fixture();
   expect(f.ready).toHaveBeenCalledOnce();
   expect(f.app.submit).not.toHaveBeenCalled();
   expect(screen.queryByText('PRIVATE_ENDPOINT')).toBeNull();
   const presets = screen.getByRole('group', { name: 'Example prompts' });
-  expect(presets.querySelectorAll('button')).toHaveLength(5);
-  fireEvent.click(screen.getByRole('button', { name: 'Terminal snapshot' }));
+  expect(presets.querySelectorAll('button')).toHaveLength(6);
+  fireEvent.click(screen.getByRole('button', { name: 'Plan a trip' }));
+  expect(f.app.submit).toHaveBeenCalledWith(
+    'Plan a trip to Portland: check the weather, then book it.'
+  );
+  f.update({ canSubmit: false });
   expect(
-    (screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement)
-      .value
-  ).toContain('snapshot');
-  expect(f.app.submit).not.toHaveBeenCalled();
+    (screen.getByRole('button', { name: 'Plan a trip' }) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
 });
-it('New clears draft and unmount revokes application lifetime', () => {
+it('unmount revokes application lifetime', () => {
   const f = fixture();
-  fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
-    target: { value: 'draft' },
-  });
-  f.update({ viewGeneration: 1 });
-  expect(
-    (screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement)
-      .value
-  ).toBe('');
   f.result.unmount();
   expect(f.app.dispose).toHaveBeenCalledOnce();
 });
-it('renders native text and observation literally and separate local evidence safely', () => {
+it('renders native text literally and local evidence under its call', () => {
   const text = '<img src=x onerror=alert(1)> **literal**';
-  fixture({
-    views: [
-      {
-        id: 'a',
-        text: { id: 'a', role: 'assistant', content: text },
-        tools: [
-          {
-            id: 'c',
-            name: 'weather_snapshot',
-            argumentsText: text,
-            sourceRunId: 'r',
-            weather: {
-              location: text,
-              conditions: text,
-              temperatureF: 68,
-              humidity: 55,
-              windMph: 8,
-            },
-            local: {
+  fixture(
+    {
+      views: [
+        {
+          id: 'a',
+          text: { id: 'a', role: 'assistant', content: text },
+          tools: [
+            {
+              id: 'c',
               name: 'weather_snapshot',
-              callId: 'c',
-              assistantMessageId: 'a',
+              argumentsText: text,
               sourceRunId: 'r',
-              rawArguments: text,
-              status: 'complete',
-              delivery: 'unsent',
-              provenance: 'local',
+              weather: {
+                location: text,
+                conditions: text,
+                temperatureF: 68,
+                humidity: 55,
+                windMph: 8,
+              },
+              local: {
+                name: 'weather_snapshot',
+                callId: 'c',
+                assistantMessageId: 'a',
+                sourceRunId: 'r',
+                rawArguments: text,
+                status: 'complete',
+                delivery: 'unsent',
+                provenance: 'local',
+              },
             },
-          },
-        ],
-      },
-    ],
-  });
+          ],
+        },
+      ],
+    },
+    transcript({
+      id: 'c',
+      name: 'weather_snapshot',
+      args: text,
+      status: 'complete',
+      result: { displayed: true },
+    })
+  );
   expect(document.querySelector('img')).toBeNull();
   expect(
     document.querySelector('[data-native-call="c"]')?.textContent
@@ -136,7 +180,7 @@ it('renders native text and observation literally and separate local evidence sa
   expect(screen.getByText('Delivery: unsent')).toBeTruthy();
   expect(screen.getByText('Simulated weather')).toBeTruthy();
 });
-it('pending fictional booking dispatches exact token only, resolved and aborted controls are frozen', () => {
+it('a pending booking waits in the approval card, dispatches its exact token and records the answer', () => {
   const booking = {
     ownerGeneration: 1,
     callId: 'c',
@@ -146,47 +190,44 @@ it('pending fictional booking dispatches exact token only, resolved and aborted 
     token: 'owned',
     status: 'pending' as const,
   };
-  const f = fixture({
-    busy: true,
-    canSubmit: false,
-    bookings: [booking],
-    views: [
-      {
-        id: 'a',
-        tools: [
-          {
-            id: 'c',
-            name: 'confirm_booking',
-            argumentsText: '{"summary":"Fictional table"}',
-            sourceRunId: 'r',
-            local: {
-              name: 'confirm_booking',
-              callId: 'c',
-              assistantMessageId: 'a',
-              sourceRunId: 'r',
-              rawArguments: '{}',
-              status: 'running',
-              delivery: 'unsent',
-              provenance: 'local',
-            },
-          },
-        ],
-      },
-    ],
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-  expect(f.app.respond).toHaveBeenCalledWith('owned', true);
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }));
-  expect(f.app.respond).toHaveBeenCalledWith('owned', false);
-  f.update({ bookings: [{ ...booking, status: 'aborted' }] });
-  expect(screen.queryByRole('button', { name: 'Confirm' })).toBeNull();
-  expect(screen.getByText('Booking decision cancelled.')).toBeTruthy();
-  f.update({
-    bookings: [{ ...booking, status: 'resolved', confirmed: false }],
-  });
+  const f = fixture(
+    { busy: true, canSubmit: false, bookings: [booking] },
+    transcript({
+      id: 'c',
+      name: 'confirm_booking',
+      args: { summary: 'Fictional table' },
+      status: 'running',
+    })
+  );
+  expect(screen.getByText('Fictional table')).toBeTruthy();
   expect(
-    screen.getByText('You cancelled this fictional booking.')
-  ).toBeTruthy();
+    screen
+      .getByRole('textbox', { name: 'Message' })
+      .getAttribute('placeholder')
+  ).toBe('Answer the approval to continue');
+  fireEvent.click(screen.getByRole('button', { name: "Don't book" }));
+  expect(f.app.respond).toHaveBeenCalledWith('owned', false);
+  expect(screen.getByText('Declined: Booking')).toBeTruthy();
+  f.update({ bookings: [{ ...booking, status: 'resolved', confirmed: false }] });
+  expect(screen.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
+});
+it('a decision the application refuses leaves no record, and an aborted booking clears the card', () => {
+  const booking = {
+    ownerGeneration: 1,
+    callId: 'c',
+    assistantMessageId: 'a',
+    sourceRunId: 'r',
+    summary: 'Fictional table',
+    token: 'owned',
+    status: 'pending' as const,
+  };
+  const f = fixture({ busy: true, canSubmit: false, bookings: [booking] });
+  f.app.respond.mockReturnValueOnce(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm booking' }));
+  expect(f.app.respond).toHaveBeenCalledWith('owned', true);
+  expect(screen.queryByText('Approved: Booking')).toBeNull();
+  f.update({ bookings: [{ ...booking, status: 'aborted' }] });
+  expect(screen.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
 });
 it('busy input exposes Stop and prevents New, while blocked idle asks for explicit New', () => {
   const f = fixture({ busy: true, canSubmit: false });
@@ -275,7 +316,7 @@ it('actual owned pending booking loses all authority on React unmount without na
       new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`)
     );
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Confirm booking' })).toBeTruthy()
   );
   const token = app.getSnapshot().bookings[0].token;
   rendered.unmount();

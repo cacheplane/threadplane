@@ -2,7 +2,11 @@ import type {
   ClientToolSession,
   ClientToolSessionSnapshot,
 } from '@threadplane/ag-ui';
-import type { CompleteOutcome } from '@threadplane/core';
+import type {
+  AgentSession,
+  AgentSnapshot,
+  CompleteOutcome,
+} from '@threadplane/core';
 import type { ToolContracts } from '@threadplane/core/tools';
 import {
   createClientToolsController,
@@ -11,6 +15,7 @@ import {
   type BookingPanel,
 } from './tools';
 import {
+  projectAgentSnapshot,
   projectClientToolViews,
   type ClientToolMessageView,
 } from './projection';
@@ -62,9 +67,19 @@ export function createClientToolsApplication(options: {
     error: null,
     viewGeneration: 0,
   });
+  /** The core view `Chat` observes, rebuilt only when its inputs change. */
+  let agentSnapshot: AgentSnapshot = projectAgentSnapshot(undefined, false, null);
+  let agentInputs: readonly unknown[] = [undefined, false, null];
+  function observeAgent() {
+    const inputs = [snapshot.native, snapshot.busy, snapshot.outcome];
+    if (inputs.every((value, index) => value === agentInputs[index])) return;
+    agentInputs = inputs;
+    agentSnapshot = projectAgentSnapshot(snapshot.native, snapshot.busy, snapshot.outcome);
+  }
   function publish(update: Partial<ClientToolsApplicationSnapshot>) {
     if (disposed) return;
     snapshot = Object.freeze({ ...snapshot, ...update });
+    observeAgent();
     const publication = snapshot;
     for (const notify of [...listeners]) {
       if (disposed || snapshot !== publication) break;
@@ -422,15 +437,28 @@ export function createClientToolsApplication(options: {
     listeners.clear();
     return Promise.resolve();
   }
+  function subscribe(notify: () => void) {
+    if (disposed) return () => undefined;
+    listeners.add(notify);
+    return () => {
+      listeners.delete(notify);
+    };
+  }
+  /** This owner as a core session for `Chat`. Admission stays here; `Chat` never disposes it. */
+  const agent: AgentSession = Object.freeze({
+    getSnapshot: () => agentSnapshot,
+    subscribe,
+    async submit(text: string) {
+      await submit(text);
+      return snapshot.outcome ?? 'aborted';
+    },
+    stop,
+    dispose: () => Promise.resolve(),
+  });
   return Object.freeze({
     getSnapshot: () => snapshot,
-    subscribe(notify: () => void) {
-      if (disposed) return () => undefined;
-      listeners.add(notify);
-      return () => {
-        listeners.delete(notify);
-      };
-    },
+    subscribe,
+    agent,
     submit,
     stop,
     newConversation,
