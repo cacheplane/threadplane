@@ -445,6 +445,14 @@ button. Retained controls are inert before commit and after unmount. Default
 The visible action stays readable without CSS and has no live-region semantics.
 This bounded T23 slice does not add unread counts or history loading.
 
+`GenerativeUiSkeleton` from `@threadplane/react/chat` is a placeholder card for
+generated UI that is still being built: a readable `label` (default "Building
+UI…") over three decorative shimmer rows. Mount it while the UI is pending and
+replace it when the UI is ready; it owns no work and reports nothing. It
+announces its label politely unless `announce` is false, takes a `className`,
+and stops the shimmer for reduced motion. Import chat styles for its
+presentation.
+
 `TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
 waiting-before-text presentation from a borrowed core snapshot. `active` is
 required; optional readonly `label`, `announce`, and `className` customize the

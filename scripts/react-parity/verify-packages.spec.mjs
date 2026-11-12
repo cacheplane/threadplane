@@ -283,6 +283,8 @@ export interface ChatErrorProps { readonly error: import('@threadplane/core').Ag
 export declare function ChatError(props: ChatErrorProps): unknown;
 export interface TypingIndicatorProps { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string; }
 export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
+export interface GenerativeUiSkeletonProps { readonly label?: string; readonly announce?: boolean; readonly className?: string; }
+export declare function GenerativeUiSkeleton(props: GenerativeUiSkeletonProps): unknown;
 export type ScrollBubbleMode = 'streaming' | 'idle';
 export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
@@ -1045,6 +1047,7 @@ test('React chat requires its real supported export', () => {
   supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
+  supported.GenerativeUiSkeleton = component;
   supported.ScrollBubble = component;
   supported.ChatMessage = component;
   supported.isTyping = component;
