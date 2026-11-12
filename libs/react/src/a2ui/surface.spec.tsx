@@ -187,7 +187,7 @@ describe('A2uiSurface', () => {
 });
 
 describe('a2uiSurfaceSpec', () => {
-  it('drops protocol keys and function calls, and binds path props', () => {
+  it('drops protocol keys, resolves function calls, and binds path props', () => {
     const { spec, state } = a2uiSurfaceSpec(
       surface(
         [
@@ -198,7 +198,8 @@ describe('a2uiSurfaceSpec', () => {
             variant: 'h1',
             weight: 2,
             accessibility: { label: 'x' },
-            hint: { call: 'formatString', args: { value: 'x' } },
+            hint: { call: 'formatString', args: { value: '${/a}!' } },
+            gone: { call: 'launch', args: {} },
           },
         ],
         { a: 'A' }
@@ -207,7 +208,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(spec?.root).toBe('root');
     expect(spec?.elements['root']).toEqual({
       type: 'Text',
-      props: { text: { $bindState: '/a' }, variant: 'h1' },
+      props: { text: { $bindState: '/a' }, variant: 'h1', hint: 'A!' },
       children: [],
     });
     expect(state).toEqual({ a: 'A' });
@@ -224,7 +225,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(Object.keys(spec?.elements ?? {})).toEqual(['first', 'second']);
   });
 
-  it('keeps each reachable component once and drops cycles, missing ids and templates', () => {
+  it('keeps each reachable component once and drops cycles, missing ids and a template without a list', () => {
     const { spec } = a2uiSurfaceSpec(
       surface([
         { id: 'root', component: 'Column', children: ['a', 'missing', 'a', 'list'] },
@@ -243,6 +244,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(a2uiSurfaceSpec(surface([], 'text'))).toEqual({
       spec: null,
       state: {},
+      sources: new Map(),
     });
   });
 });

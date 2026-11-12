@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { projectClientToolViews } from './projection';
+import { projectAgentSnapshot, projectClientToolViews } from './projection';
 import type { NativeSnapshot } from './application';
 const weather = {
   location: '<Paris>',
@@ -139,4 +139,66 @@ it('child native call and result remain literal protected observations without l
     resultText: '<child result>',
   });
   expect(projectClientToolViews(child)[0].text).toBeUndefined();
+});
+
+it('projects the core view Chat observes: root messages, each call with its local status, and the plan', () => {
+  const state = native();
+  const plan = [{ label: 'Summarize the results', status: 'pending' as const }];
+  const view = projectAgentSnapshot(
+    {
+      ...state,
+      plan,
+      transcript: [
+        { id: 'u', role: 'user', content: 'Plan a trip' },
+        ...state.transcript,
+        { id: 'child', role: 'assistant', content: 'Child', subagentRunId: 's' } as never,
+      ],
+    },
+    true,
+    null
+  );
+  expect(view.status).toBe('running');
+  expect(view.plan).toBe(plan);
+  expect(view.messages.map((message) => [message.id, message.role])).toEqual([
+    ['u', 'user'],
+    ['a', 'assistant'],
+  ]);
+  expect(view.messages[1]).toMatchObject({
+    content: '<script>literal</script>',
+    toolCallIds: ['c'],
+    delivery: { phase: 'complete', outcome: 'success' },
+  });
+  expect(view.toolCalls).toEqual([
+    { id: 'c', name: 'weather_card', args: weather, status: 'complete', result: { displayed: true } },
+  ]);
+});
+it('maps running, failed and unmatched calls, and gives the latest message the command outcome', () => {
+  const state = native();
+  const call = (status: 'running' | 'cancelled') => ({ ...state.clientTools.calls[0], status });
+  const running = projectAgentSnapshot(
+    { ...state, clientTools: { calls: [call('running')] } },
+    true,
+    null
+  );
+  expect(running.toolCalls[0]).toMatchObject({ status: 'running' });
+  const stopped = projectAgentSnapshot(
+    { ...state, clientTools: { calls: [call('cancelled')] } },
+    false,
+    'aborted'
+  );
+  expect(stopped.toolCalls[0]).toMatchObject({ status: 'error' });
+  expect(stopped.messages.at(-1)?.delivery).toMatchObject({ phase: 'complete', outcome: 'aborted' });
+  const unmatched = projectAgentSnapshot(
+    {
+      ...state,
+      transcript: [...state.transcript, { id: 't', role: 'tool', toolCallId: 'c', content: '{"ok":true}' }],
+      clientTools: { calls: [] },
+    },
+    false,
+    'success'
+  );
+  expect(unmatched.toolCalls[0]).toMatchObject({ status: 'complete', result: { ok: true } });
+  // The result rides on its call; the waiting assistant stays the latest row.
+  expect(unmatched.messages.map((message) => message.role)).toEqual(['assistant']);
+  expect(projectAgentSnapshot(undefined, false, null)).toEqual({ status: 'idle', messages: [], toolCalls: [] });
 });

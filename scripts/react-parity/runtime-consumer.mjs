@@ -776,6 +776,15 @@ export async function runA2uiSurfaceScenarios(page, url) {
   assert.equal(await panel.getAttribute('aria-labelledby'), await tab('Outbound').getAttribute('id'));
   const underline = (locator) => locator.evaluate((node) => getComputedStyle(node).borderBottomColor);
   assert.notEqual(await underline(tab('Outbound')), await underline(tab('Return')));
+  // Theme: the agent's hex colour is this surface's accent only, and its name and icon sit above the content.
+  assert.equal(await underline(tab('Outbound')), 'rgb(11, 107, 58)');
+  const chrome = surface.locator('.a2ui-surface-chrome');
+  await expect(chrome).toHaveText(/^Rail-desk-with-an-unbroken-agent-name/);
+  await expect(chrome.locator('img')).toHaveAttribute('alt', '');
+  assert.ok((await rect(chrome)).bottom <= (await rect(title)).top, 'agent line is above the content');
+  assert.ok((await rect(chrome)).right <= (await rect(surface)).right + 0.5, 'agent name wraps inside the surface');
+  assert.equal((await rect(chrome.locator('img'))).width, 16);
+  assert.equal(await page.locator('.a2ui-surface[data-surface-id="form"]').evaluate((node) => node.style.getPropertyValue('--a2ui-primary')), '');
   await tab('Return').click();
   await expect(panel).toHaveText('Train 6624');
   await expect(tab('Outbound')).toHaveAttribute('tabindex', '-1');
@@ -844,7 +853,7 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await expect(party).toHaveAccessibleName('Party: 4');
   await page.keyboard.press('End');
   await expect(party).toHaveAccessibleName('Party: 8');
-  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' });
+  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle', stops: [{ city: 'Dijon', platform: '2' }, { city: 'Macon-with-an-unbroken-name-that-must-wrap-inside-the-form-and-never-widen-the-page', platform: '5' }] });
   // A literal value is fixed.
   const reference = form.getByRole('textbox', { name: 'Reference' });
   await expect(reference).toHaveJSProperty('readOnly', true);
@@ -897,6 +906,94 @@ export async function runA2uiSurfaceScenarios(page, url) {
   const primary = await bookTrip.evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
   assert.equal(primary.radius, '8px');
   assert.notEqual(primary.background, 'rgba(0, 0, 0, 0)');
+  // Validation: a failing check blocks the press, shows its message on the input and reports one error.
+  const formErrors = async () => JSON.parse(await page.getByTestId('form-errors').textContent());
+  assert.deepEqual(await formErrors(), []);
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await guest.fill('');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.focus();
+  await page.keyboard.press('Enter');
+  const guestError = form.getByRole('alert');
+  await expect(guestError).toHaveText(/^Guest-name-is-required/);
+  assert.equal((await formActions()).length, 2);
+  assert.deepEqual(await formErrors(), [{ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId: 'form', path: '/booking/guest', message: 'Guest-name-is-required-and-this-unbroken-message-must-wrap-inside-the-form' } }]);
+  await expect(guest).toHaveAttribute('aria-invalid', 'true');
+  await expect(guest).toHaveAccessibleDescription(/^Guest-name-is-required/);
+  await expect(bookTrip).toBeFocused();
+  const invalid = await guest.evaluate((node, message) => ({ border: getComputedStyle(node).borderTopColor, text: getComputedStyle(message).color }), await guestError.elementHandle());
+  assert.equal(invalid.border, invalid.text);
+  assert.notEqual(invalid.text, await form.evaluate((node) => getComputedStyle(node).color));
+  // The message follows the data model: it leaves when the input passes and returns if it fails again.
+  await guest.click();
+  await page.keyboard.type('G');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await expect(guest).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(guest).toBeFocused();
+  await page.keyboard.press('Backspace');
+  await expect(form.getByRole('alert')).toHaveCount(1);
+  await guest.fill('Grace Hopper');
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 3);
+  assert.equal((await formErrors()).length, 1);
+  // After a sent action a new failure stays quiet until the next blocked press.
+  await guest.fill('');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await guest.fill('Grace Hopper');
+  // Function calls: computed text follows the data model.
+  await expect(form.getByText('Grace Hopper: 8 seats', { exact: true })).toBeVisible();
+  // A function-call Button runs in the page with resolved arguments, sends nothing, and is not held back by a failing input.
+  const formCalls = async () => JSON.parse(await page.getByTestId('form-calls').textContent());
+  const share = form.getByRole('button', { name: 'Share trip' });
+  await guest.fill('');
+  await expect(form.getByText(': 8 seats', { exact: true })).toBeVisible();
+  await share.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('form-calls')).toContainText('Party of 8');
+  assert.deepEqual(await formCalls(), [{ guest: '', line: 'Party of 8' }]);
+  await expect(share).toBeFocused();
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  assert.equal((await formActions()).length, 3);
+  assert.equal((await formErrors()).length, 1);
+  await guest.fill('Grace Hopper');
+  // openUrl is built in: a web address opens in a new tab without an opener; a script address never runs.
+  await page.evaluate(() => { window.__opened = []; window.open = (...args) => { window.__opened.push(args); return null; }; });
+  await form.getByRole('button', { name: 'Open site' }).click();
+  assert.deepEqual(await page.evaluate(() => window.__opened), [['https://example.test/trips/8', '_blank', 'noopener,noreferrer']]);
+  await expect(form.getByRole('button', { name: 'Unsafe link' })).toBeDisabled();
+  assert.notEqual(await page.title(), 'opened');
+  // Child template: one row per list item, reading and writing its own item.
+  const dijon = form.getByRole('textbox', { name: 'Dijon' });
+  await expect(form.getByText('Dijon for Grace Hopper', { exact: true })).toBeVisible();
+  await expect(dijon).toHaveValue('2');
+  await expect(form.getByRole('textbox', { name: /^Macon/ })).toHaveValue('5');
+  await dijon.focus();
+  await page.keyboard.press('End');
+  await page.keyboard.type('B');
+  await expect(dijon).toBeFocused();
+  assert.deepEqual((await formModel()).stops.map((stop) => stop.platform), ['2B', '5']);
+  // A press in a row sends that row's context under the template's component id.
+  await form.getByRole('button', { name: 'Board at Dijon' }).click();
+  const boarded = (await formActions()).at(-1).action;
+  assert.equal((await formActions()).length, 4);
+  assert.deepEqual({ name: boarded.name, source: boarded.sourceComponentId, context: boarded.context }, { name: 'stop', source: 'stopPick', context: { city: 'Dijon', platform: '2B' } });
+  // The agent appends an item: a new row mounts, the edited row keeps its element, and its failing check blocks the next press on that row only.
+  await dijon.evaluate((node) => { node.dataset.kept = 'yes'; });
+  await page.getByRole('button', { name: 'Agent adds stop' }).click();
+  const lyon = form.getByRole('textbox', { name: 'Lyon' });
+  await expect(lyon).toHaveValue('');
+  await expect(dijon).toHaveAttribute('data-kept', 'yes');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.click();
+  await expect(form.getByRole('alert')).toHaveText('Platform needed');
+  await expect(lyon).toHaveAttribute('aria-invalid', 'true');
+  await expect(dijon).not.toHaveAttribute('aria-invalid', 'true');
+  assert.equal((await formActions()).length, 4);
+  assert.equal((await formErrors()).at(-1).error.path, '/stops/2/platform');
+  await lyon.fill('9');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 5);
   // Without a handler the same Button is disabled.
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(bookTrip).toBeDisabled();
@@ -989,6 +1086,11 @@ export async function runA2uiSurfaceScenarios(page, url) {
     const box = await rect(control);
     assert.ok(box.left >= narrowForm.left - 0.5 && box.right <= narrowForm.right + 0.5, `narrow control ${JSON.stringify({ narrowForm, box })}`);
   }
+  // A long validation message wraps inside the form too.
+  await guest.fill('');
+  await bookTrip.click();
+  const narrowError = await rect(form.getByRole('alert'));
+  assert.ok(narrowError.left >= narrowForm.left - 0.5 && narrowError.right <= narrowForm.right + 0.5, `narrow message ${JSON.stringify({ narrowForm, narrowError })}`);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
   if (size) await page.setViewportSize(size);
   // The dark scheme swaps the surface token.

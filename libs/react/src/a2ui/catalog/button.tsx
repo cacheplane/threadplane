@@ -9,8 +9,10 @@ const VARIANTS = ['primary', 'borderless'];
 
 /**
  * A2UI Button: a native button around its child. Pressing it sends its event
- * action through the surface. It is disabled when the surface has no action
- * handler, when it has no event action, or when its `disabled` prop is true.
+ * action, or runs its function-call action, through the surface. It is
+ * disabled when the surface cannot do that (no action handler for an event,
+ * no function for a call, no action at all, or its own checks fail), or when
+ * its `disabled` prop is true.
  * As a Modal's trigger it also opens the modal, and needs no action to do so.
  */
 export function A2uiButton({ props, children, elementKey }: RenderViewProps) {

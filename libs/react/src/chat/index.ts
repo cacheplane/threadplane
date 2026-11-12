@@ -15,6 +15,10 @@ export {
   type TypingIndicatorProps,
 } from './typing-indicator.js';
 export {
+  GenerativeUiSkeleton,
+  type GenerativeUiSkeletonProps,
+} from './genui-skeleton.js';
+export {
   citationsWithToolSources,
   resolveToolOutcome,
   toolOutcomes,
@@ -103,6 +107,7 @@ export {
   type MessageListScrollControls,
 } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
+export { Trace, type TraceProps, type TraceState } from './trace.js';
 export { Citations, type CitationsProps } from './citations.js';
 export { CitationCard, type CitationCardProps } from './citation-card.js';
 export {

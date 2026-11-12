@@ -249,7 +249,7 @@ test('plain declaration proof checks navigation, sidebar and thread-list type-on
 export interface HistorySearchResult { readonly id: string; readonly title: string; readonly subtitle?: string; }
 export interface HistorySearchPaletteProps { readonly open: boolean; readonly query: string; readonly results: readonly HistorySearchResult[]; readonly onQueryChange: (query: string) => void; readonly onSelect: (id: string) => void; readonly onClose: () => void; readonly loading?: boolean; readonly label?: string; readonly description?: string; readonly placeholder?: string; readonly closeLabel?: string; readonly className?: string; readonly returnFocusTo?: HTMLElement | null; }
 export interface TimelineItem { readonly id: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
-export interface TimelineProps { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode; }
+export interface TimelineProps { readonly items: readonly TimelineItem[]; readonly onSelect: (id: string) => void; readonly selectedId?: string | null; readonly label?: string; readonly className?: string; readonly onReplay?: (id: string) => void; readonly onFork?: (id: string) => void; readonly renderItem?: (item: TimelineItem, isSelected: boolean, index: number) => import('react').ReactNode; }
 export interface OverflowMenuItem { readonly id: string; readonly label: string; readonly disabled?: boolean; readonly tone?: 'normal' | 'destructive'; }
 export interface OverflowMenuProps { readonly items: readonly OverflowMenuItem[]; readonly open: boolean; readonly onOpenChange: (open: boolean) => void; readonly onSelect: (itemId: string, event: import('react').MouseEvent<HTMLButtonElement>) => void; readonly label: string; readonly className?: string; readonly disabled?: boolean; readonly anchorPoint?: { readonly x: number; readonly y: number } | null; readonly returnFocusTo?: HTMLElement | null; }
 export interface SelectOption { readonly value: string; readonly label: string; readonly description?: string; readonly disabled?: boolean; }
@@ -281,8 +281,13 @@ export interface CitationsProps { readonly citations: readonly import('@threadpl
 export declare function Citations(props: CitationsProps): unknown;
 export interface ChatErrorProps { readonly error: import('@threadplane/core').AgentError | null | undefined; readonly onRetry?: () => void; readonly onCheckStatus?: () => void; readonly disabled?: boolean; readonly className?: string; }
 export declare function ChatError(props: ChatErrorProps): unknown;
+export type TraceState = 'pending' | 'running' | 'done' | 'error';
+export interface TraceProps { readonly label: import('react').ReactNode; readonly state?: TraceState; readonly icon?: import('react').ReactNode; readonly meta?: import('react').ReactNode; readonly defaultExpanded?: boolean; readonly className?: string; readonly children?: import('react').ReactNode; }
+export declare function Trace(props: TraceProps): unknown;
 export interface TypingIndicatorProps { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string; }
 export declare function TypingIndicator(props: TypingIndicatorProps): unknown;
+export interface GenerativeUiSkeletonProps { readonly label?: string; readonly announce?: boolean; readonly className?: string; }
+export declare function GenerativeUiSkeleton(props: GenerativeUiSkeletonProps): unknown;
 export type ScrollBubbleMode = 'streaming' | 'idle';
 export interface ScrollBubbleProps { readonly mode: ScrollBubbleMode; readonly onClick: () => void; readonly disabled?: boolean; readonly label?: string; readonly className?: string; }
 export declare function ScrollBubble(props: ScrollBubbleProps): unknown;
@@ -876,8 +881,10 @@ test('A2UI feature exposes exactly its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiActionMessage/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, createOwner() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }), /evaluateA2uiChecks/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {} }), /resolveA2uiValue/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {}, createOwner() {} }), /unexpected/);
 });
 test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
   const manifests = {
@@ -1026,7 +1033,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { Trace: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.Select = component;
   supported.MessageRating = component;
@@ -1043,6 +1050,7 @@ test('React chat requires its real supported export', () => {
   supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
+  supported.GenerativeUiSkeleton = component;
   supported.ScrollBubble = component;
   supported.ChatMessage = component;
   supported.isTyping = component;

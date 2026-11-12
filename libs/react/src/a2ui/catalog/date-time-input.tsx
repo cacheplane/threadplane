@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { RenderViewProps } from '../../render/index.js';
 import { useA2uiSurfaceWriter } from '../surface-context.js';
+import { useA2uiCheckError } from './check-error.js';
 
 type Kind = 'date' | 'time' | 'datetime-local';
 
@@ -53,8 +54,13 @@ const NAMES: Readonly<Record<Kind, string>> = {
  * `value` is bound to; an input with a literal value, or in a read-only
  * surface, cannot be edited.
  */
-export function A2uiDateTimeInput({ props, bindings }: RenderViewProps) {
+export function A2uiDateTimeInput({
+  props,
+  bindings,
+  elementKey,
+}: RenderViewProps) {
   const id = useId();
+  const error = useA2uiCheckError(elementKey);
   const { editable, write } = useA2uiSurfaceWriter();
   const path = bindings?.['value'];
   const kind: Kind =
@@ -80,8 +86,10 @@ export function A2uiDateTimeInput({ props, bindings }: RenderViewProps) {
         max={nativeDateTime(props['max'], kind) || undefined}
         readOnly={!editable || path === undefined}
         aria-label={label === '' ? NAMES[kind] : undefined}
+        {...error.control}
         onChange={(event) => write(path, event.currentTarget.value)}
       />
+      {error.message}
     </div>
   );
 }
