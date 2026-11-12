@@ -1542,3 +1542,121 @@ existing explicit Refresh recovery. Scope changes, list replacement, Escape,
 drag end, blur and unmount retire local captures. Foreign payloads cannot supply
 conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
 URL and an active response. Shared catalogs and full T29 parity remain open.
+
+## A2UI surfaces
+
+`@threadplane/react/a2ui` renders one A2UI surface. Accumulate wire
+messages with `createA2uiSurfaces()` from `@threadplane/content/a2ui`, then pass
+a published surface to `A2uiSurface`. Import the stylesheet explicitly.
+
+This entry needs `@threadplane/a2ui` installed. It is an optional peer of
+`@threadplane/content`, so applications that never import
+`@threadplane/react/a2ui` do not need it; one that does and leaves it out fails
+to type-check.
+
+```tsx
+import { A2uiSurface } from '@threadplane/react/a2ui';
+import '@threadplane/react/a2ui/styles.css';
+import type { A2uiSurfacesSnapshot } from '@threadplane/content/a2ui';
+
+export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot }) {
+  return snapshot.surfaces.map((surface) => (
+    <A2uiSurface key={surface.surfaceId} surface={surface} />
+  ));
+}
+```
+
+`a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
+`Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
+`CheckBox`, `ChoicePicker`, `DateTimeInput`, `Slider` and `Button`. Spread it into your own registry and pass that as
+`catalog` to add or replace components; keep the registry stable. Literal props
+pass through and `{ path }` props read the surface data model, so a new snapshot
+updates bound text. A component the catalog lacks keeps its children and renders
+no control.
+
+### Editable surfaces
+
+Your application owns the store; the surface writes edits into it. Pass the
+store as `surfaces` and keep passing its current snapshot:
+
+```tsx
+import { useSyncExternalStore } from 'react';
+import { A2uiSurface } from '@threadplane/react/a2ui';
+import type { A2uiSurfaces } from '@threadplane/content/a2ui';
+
+export function Surfaces({ surfaces }: { readonly surfaces: A2uiSurfaces }) {
+  const snapshot = useSyncExternalStore(surfaces.subscribe, surfaces.getSnapshot);
+  return snapshot.surfaces.map((surface) => (
+    <A2uiSurface key={surface.surfaceId} surface={surface} surfaces={surfaces} />
+  ));
+}
+```
+
+Each keystroke, toggle, choice, date change or slider movement calls
+`surfaces.setValue(surfaceId, path, value)` for the path the control's `value`
+is bound to. The store publishes a new snapshot, so every component bound to
+that path updates. The edit is local: nothing is sent to an agent. Because the
+store holds the edit, it survives the surface unmounting, and it lasts as long
+as the store you created. An agent `updateDataModel` applied later replaces the
+value at its path, including one the user edited.
+
+`ChoicePicker` writes its whole selection as a string list in option order,
+with one item when only one choice is allowed. Its filter is local and never
+changes the selection. `DateTimeInput` writes the browser input's own value,
+which is local and carries no zone: `YYYY-MM-DD`, `HH:mm` or
+`YYYY-MM-DDTHH:mm`. It shows a zone-less ISO value by its digits and a value
+with a zone in the viewer's local time.
+
+Without `surfaces` the surface is read-only: text fields and date inputs are
+read-only and checkboxes, choices and sliders are disabled. A control whose `value` is a literal, not a
+`{ path }`, is fixed in the same way. The surface takes no edited values back as
+props and reports no per-edit event; read the store's snapshot when you need the
+current data model. Create the store once per conversation or message, outside
+render, and dispose it when that lifetime ends.
+
+### Actions
+
+Pass `onAction` to receive a Button's event action. The surface builds the
+message when the Button is pressed and sends nothing itself:
+
+```tsx
+<A2uiSurface
+  surface={surface}
+  surfaces={surfaces}
+  onAction={(message) => sendToAgent(message)}
+/>
+```
+
+The message is `{ version: 'v0.9', action: { name, surfaceId,
+sourceComponentId, timestamp, context, label? }, metadata? }`. Every `{ path }`
+in the action's context is read from the surface's data model at the moment of
+the press, so it includes the user's edits. `label` is the Button's literal
+text. When the surface was created with `sendDataModel: true`, `metadata`
+carries the whole current data model as `a2uiClientDataModel`. Transport,
+retries and what the conversation shows are your application's decisions.
+`createA2uiActionMessage(surface, componentId)` from
+`@threadplane/content/a2ui` builds the same message outside React.
+
+A Button is disabled when there is no `onAction`, when it has no event action,
+or when its `disabled` prop is true. A Button used as a `Modal` trigger opens
+the modal and needs no action. Validation checks do not gate an action yet, and
+a `functionCall` action is not run.
+
+A component of your own can write the same way with `useA2uiSurfaceWriter()`,
+which returns `{ editable, write(path, value) }`; take the path from the view's
+`bindings`.
+
+Media loads only from relative, `http(s)` and `blob` URLs and from `data:` URLs
+of the element's own kind; any other URL renders nothing. `Video` and
+`AudioPlayer` use the browser's controls and never start by themselves. A named
+`Icon` is a Material Symbols ligature, so load that font in your application; an
+`Icon` given `{ svgPath }` needs no font.
+
+`Tabs` and `Modal` keep their own state while the surface stays mounted and send
+nothing to the agent. `Tabs` renders only the selected tab's content, so content
+in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
+shows its content in a native modal dialog named by its trigger; Escape, its
+Close button and a press on the backdrop dismiss it. The Close label is English.
+
+`ChoicePicker`, `DateTimeInput`, validation checks, `functionCall` actions,
+function-call props, child templates and surface themes are not handled yet.

@@ -58,6 +58,12 @@
       "import": "./src/debug/index.js",
       "default": "./src/debug/index.js"
     },
-    "./debug/styles.css": "./src/debug/styles.css"
+    "./debug/styles.css": "./src/debug/styles.css",
+    "./a2ui": {
+      "types": "./src/a2ui/index.d.ts",
+      "import": "./src/a2ui/index.js",
+      "default": "./src/a2ui/index.js"
+    },
+    "./a2ui/styles.css": "./src/a2ui/styles.css"
   }
 }

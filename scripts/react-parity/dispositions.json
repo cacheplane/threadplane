@@ -1737,9 +1737,9 @@
         "T27"
       ],
       "treatment": "internal",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/default-fallback.tsx",
-      "reason": "Native component. Internal partial-spec fallback; preserve readiness transition without form remount."
+      "reason": "React keeps the children of a component the catalog lacks behind a display:contents marker instead of a loading skeleton, because this slice has no loading state."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/audio-player.component.ts#A2uiAudioPlayerComponent",
@@ -1747,9 +1747,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/audio-player.tsx",
-      "reason": "Native component. Native audio controls; safe URL, label, browser-only playback, no autoplay assumption."
+      "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/button.component.ts#A2uiButtonComponent",
@@ -1757,9 +1757,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/button.tsx",
-      "reason": "Native component. Variant/disabled/loading semantics; child rendering and scoped press action."
+      "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/card.component.ts#A2uiCardComponent",
@@ -1767,9 +1767,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/card.tsx",
-      "reason": "Native component. Container semantics and child registry rendering."
+      "reason": "Native read-only view. One child on the bordered raised surface; stylesheet tokens verified in an installed browser fixture in light and dark schemes."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/check-box.component.ts#A2uiCheckBoxComponent",
@@ -1777,9 +1777,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native component. Boolean controlled binding; label/error association and change emission."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
@@ -1787,9 +1787,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native component. Filter/chips/options and selection limits; single/multi-value binding and keyboard behavior."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/column.component.ts#A2uiColumnComponent",
@@ -1797,9 +1797,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/column.tsx",
-      "reason": "Native component. Layout properties and nested child rendering; scoped CSS."
+      "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture. Child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/date-time-input.component.ts#A2uiDateTimeInputComponent",
@@ -1807,9 +1807,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native component. Date/time value conversion, bounds, controlled binding and validation."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/divider.component.ts#A2uiDividerComponent",
@@ -1817,9 +1817,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/divider.tsx",
-      "reason": "Native component. Semantic separator and orientation styling."
+      "reason": "Native read-only view. Horizontal hr and decorative vertical rule with the Angular classes; geometry verified in an installed browser fixture."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/icon.component.ts#A2uiIconComponent",
@@ -1827,9 +1827,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/icon.tsx",
-      "reason": "Native component. Constrained icon lookup; no arbitrary model HTML injection."
+      "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/image.component.ts#A2uiImageComponent",
@@ -1837,9 +1837,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/image.tsx",
-      "reason": "Native component. Safe source, alt text, fit/size behavior and failed-image presentation."
+      "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/list.component.ts#A2uiListComponent",
@@ -1847,9 +1847,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/list.tsx",
-      "reason": "Native component. Template/repeat scope and identity; verify reorder behavior and binding paths."
+      "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/modal.component.ts#A2uiModalComponent",
@@ -1857,9 +1857,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/modal.tsx",
-      "reason": "Native component. Portal/dialog behavior, trigger children, focus trap/restore and scoped theme."
+      "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/row.component.ts#A2uiRowComponent",
@@ -1867,9 +1867,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/row.tsx",
-      "reason": "Native component. Horizontal layout/wrap/alignment; nested children and responsive behavior."
+      "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture including RTL. Child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/slider.component.ts#A2uiSliderComponent",
@@ -1877,9 +1877,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native component. Numeric conversion, range/step and accessible value/label binding."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/tabs.component.ts#A2uiTabsComponent",
@@ -1887,9 +1887,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/tabs.tsx",
-      "reason": "Native component. Selected index/key policy, tab/panel ARIA and keyboard navigation."
+      "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/text-field.component.ts#A2uiTextFieldComponent",
@@ -1897,9 +1897,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text-field.tsx",
-      "reason": "Native component. Text/multiline/password variants, controlled value, constraints and errors."
+      "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/text.component.ts#A2uiTextComponent",
@@ -1907,9 +1907,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text.tsx",
-      "reason": "Native component. Text variants, Markdown/content policy and constrained typography."
+      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Markdown/content policy and function-call text remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/video.component.ts#A2uiVideoComponent",
@@ -1917,9 +1917,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/video.tsx",
-      "reason": "Native component. Native video controls; safe URL, sizing, loading and accessibility."
+      "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/surface.component.ts#A2uiSurfaceComponent",
@@ -1927,9 +1927,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Native component. Extract surface/form orchestration; preserve dirty edits, checks, theme identity and wire actions."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Actions, checks, dirty edits, theme identity, function calls and child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -4820,9 +4820,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/audio-player.tsx",
-      "reason": "Native component. Native audio controls; safe URL, label, browser-only playback, no autoplay assumption."
+      "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiButtonComponent",
@@ -4830,9 +4830,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/button.tsx",
-      "reason": "Native component. Variant/disabled/loading semantics; child rendering and scoped press action."
+      "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiCardComponent",
@@ -4866,9 +4866,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native component. Boolean controlled binding; label/error association and change emission."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiChildren",
@@ -4884,9 +4884,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native component. Filter/chips/options and selection limits; single/multi-value binding and keyboard behavior."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiClientCapabilities",
@@ -4945,9 +4945,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native component. Date/time value conversion, bounds, controlled binding and validation."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiDividerComponent",
@@ -4997,9 +4997,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/icon.tsx",
-      "reason": "Native component. Constrained icon lookup; no arbitrary model HTML injection."
+      "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiImageComponent",
@@ -5007,9 +5007,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/image.tsx",
-      "reason": "Native component. Safe source, alt text, fit/size behavior and failed-image presentation."
+      "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiListComponent",
@@ -5017,9 +5017,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/list.tsx",
-      "reason": "Native component. Template/repeat scope and identity; verify reorder behavior and binding paths."
+      "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiModalComponent",
@@ -5027,9 +5027,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/modal.tsx",
-      "reason": "Native component. Portal/dialog behavior, trigger children, focus trap/restore and scoped theme."
+      "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiPathRef",
@@ -5055,9 +5055,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native component. Numeric conversion, range/step and accessible value/label binding."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiSurface",
@@ -5101,9 +5101,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/tabs.tsx",
-      "reason": "Native component. Selected index/key policy, tab/panel ARIA and keyboard navigation."
+      "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiTextComponent",
@@ -5121,9 +5121,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text-field.tsx",
-      "reason": "Native component. Text/multiline/password variants, controlled value, constraints and errors."
+      "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiTheme",
@@ -5139,9 +5139,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/video.tsx",
-      "reason": "Native component. Native video controls; safe URL, sizing, loading and accessibility."
+      "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiViewEntry",
@@ -16047,6 +16047,195 @@
       "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. The collapsible header visual gap is closed with the first three sources in exact resolved displayed order, private shared local markers and a decorative expansion chevron. Provider images remain deferred T26 work."
     },
     {
+      "id": "asset:libs/react/src/a2ui/styles.css",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Explicit opt-in stylesheet scoping the --a2ui-* tokens the five static components use to .a2ui-surface, with dark-scheme and forced-colors variants. The full token set and theme identity remain planned."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/card.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Card view over RenderViewProps."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/column.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Column view sharing the Row layout mapping."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/divider.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Divider view for both axes."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/index.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "a2uiBasicCatalog() returns the frozen static registry of Text, Row, Column, Card and Divider. The remaining fourteen catalog components are planned."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/layout.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal Row/Column mapping from A2UI align, justify and gap to a class and inline flex styles; unknown and prototype-named values fall back."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/row.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Row view sharing the Column layout mapping."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Text view with heading semantics for h1 to h5."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/audio-player.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only AudioPlayer view with native controls and a literal description."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/button.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Button view sending its event action through the surface and opening a Modal as its trigger."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "CheckBox view writing a boolean through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/choice-picker.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "ChoicePicker view writing a string list through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/date-time-input.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "DateTimeInput view writing the native date or time value through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/icon.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Icon view: Material Symbols ligature or decorative inline path."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/image.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Image view with alternative text, sizing presets and object fit."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/list.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only List view for static children, vertical or horizontal."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/modal.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Modal view: inline trigger and a native modal dialog with local open state."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/slider.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Slider view writing a clamped number through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/tabs.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Tabs view: tab list and one panel with local selection and keyboard movement."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/text-field.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "TextField view writing each edit through the surface write channel."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/media-url.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal filter that keeps relative, http(s), blob and same-kind data media URLs."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/video.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Read-only Video view with native controls."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/default-fallback.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal fallback that keeps the children of an unsupported component."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/index.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Private ./a2ui entry exporting A2uiSurface, its props and a2uiBasicCatalog."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-context.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Write channel from a mounted surface to the application-created surfaces store, for input components."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-spec.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal projection of a content surface snapshot onto RenderSpecData: literal and path props, single and static children, first-position reachability from the root. It does not import the Angular-hosted surfaceToSpec; convergence on a shared converter stays with T19."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "A2uiSurface: one immutable surface snapshot, an optional catalog and a class name, rendered read-only through RenderSpec."
+    },
+    {
       "id": "asset:libs/react/src/debug/styles.css",
       "taskIds": [
         "T29"
@@ -16180,6 +16369,33 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Bounded private T19 accumulator foundation with owned immutable raw surfaces and borrowed generic observation; parsing, readiness, catalog/forms/actions, public registration and full T19/T20/T27 remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiActionMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/action-message.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",

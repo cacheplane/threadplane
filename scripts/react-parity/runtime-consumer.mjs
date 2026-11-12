@@ -387,7 +387,7 @@ function emitRuntimeDeclaration(root, consumer, output) {
   assert.equal(result.emitSkipped, false, 'runtime fixture declaration emitted');
 }
 
-export async function prepareRuntimeConsumer(root, consumer, kind) {
+export async function prepareRuntimeConsumer(root, consumer, kind, options = {}) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-runtime-bundle-'));
   try {
@@ -407,11 +407,12 @@ export async function prepareRuntimeConsumer(root, consumer, kind) {
     cpSync(join(temporary, 'types/fixtures/react-parity/runtime/runtime-entry.d.ts'), join(destination, 'runtime-entry.d.ts'));
     const declaration = readFileSync(join(destination, 'runtime-entry.d.ts'), 'utf8');
     assert.doesNotMatch(declaration, /@langchain|libs\/|create-session/, 'emitted fixture declaration exposes no SDK/private references');
-    prepareRuntimeViews(root, consumer, kind);
+    prepareRuntimeViews(root, consumer, kind, options);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 
-export function prepareRuntimeViews(root, consumer, kind) {
+// `a2ui` adds the surface fixture, which needs the optional @threadplane/a2ui package installed.
+export function prepareRuntimeViews(root, consumer, kind, { a2ui = false } = {}) {
   const fixture = join(root, 'fixtures/react-parity/runtime');
   const destination = kind === 'angular' ? join(consumer, 'src') : consumer;
   cpSync(join(fixture, 'tools.ts'), join(destination, 'tools.ts'));
@@ -425,6 +426,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
   const app = `${kind}-app.${kind === 'react' ? 'tsx' : 'ts'}`;
   cpSync(join(fixture, app), join(destination, app));
   writeFileSync(join(destination, kind === 'react' ? 'main.tsx' : 'main.ts'),
+    (kind === 'react' && a2ui ? `if (new URLSearchParams(location.search).has('a2ui')) {\n  void import('./react-a2ui-surface');\n} else ` : '') +
     (kind === 'react' ? `if (new URLSearchParams(location.search).has('message-action-icons')) {\n  if (new URLSearchParams(location.search).has('no-styles')) {\n    void import('./react-message-action-icons');\n  } else {\n    void import('./react-message-action-icons-styled');\n  }\n} else if (new URLSearchParams(location.search).has('message-controls')) {\n  void import('./react-message-controls');\n} else if (new URLSearchParams(location.search).has('message-spacing')) {\n  void import('./react-message-spacing');\n} else ` : '') +
     `if (new URLSearchParams(location.search).has('checkpoints')) {\n  void import('./${kind}-checkpoints');\n} else if (new URLSearchParams(location.search).has('threads')) {\n  void import('./${kind}-threads');\n} else {\n  void import('./${kind}-app');\n}\n`);
   if (kind === 'angular') {
@@ -440,6 +442,7 @@ export function prepareRuntimeViews(root, consumer, kind) {
     cpSync(join(fixture, 'react-message-controls.tsx'), join(destination, 'react-message-controls.tsx'));
     cpSync(join(fixture, 'react-message-spacing.tsx'), join(destination, 'react-message-spacing.tsx'));
     cpSync(join(fixture, 'react-overflow-menu.tsx'), join(destination, 'react-overflow-menu.tsx'));
+    if (a2ui) cpSync(join(fixture, 'react-a2ui-surface.tsx'), join(destination, 'react-a2ui-surface.tsx'));
     cpSync(join(fixture, 'react-confirm-dialog.tsx'), join(destination, 'react-confirm-dialog.tsx'));
     cpSync(join(fixture, 'vite.config.mts'), join(consumer, 'vite.config.mts'));
     writeFileSync(join(consumer, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>React installed consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
@@ -711,6 +714,288 @@ export async function runRenameFormScenarios(page, url) {
     assert.ok(box && box.x >= 0 && box.x + box.width <= width, `Rename input fits viewport ${width}`);
   }
   console.log('Installed rename editor: explicit submit/cancel, literal title, blank and IME guards, pending/error/retry, retained input and responsive containment passed.');
+}
+
+export async function runA2uiSurfaceScenarios(page, url) {
+  await page.goto(`${url}/?menu&a2ui`);
+  await expect(page.getByRole('heading', { name: 'Installed A2UI surface' })).toBeVisible();
+  const surface = page.locator('.a2ui-surface[data-surface-id="trip"]');
+  await expect(surface).toHaveAttribute('data-surface-id', 'trip');
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const title = surface.getByRole('heading', { name: 'Lyon trip', exact: true });
+  await expect(title).toHaveAttribute('aria-level', '2');
+  await expect(surface.getByRole('heading')).toHaveCount(1);
+  const card = surface.locator('.a2ui-card');
+  const rule = surface.locator('hr.a2ui-divider--horizontal');
+  const row = surface.locator('.a2ui-row');
+  const depart = row.getByText('Depart', { exact: true });
+  const bar = row.locator('.a2ui-divider--vertical');
+  const time = row.getByText('09:40', { exact: true });
+  // The data model supplies the card text; the stylesheet supplies the card surface.
+  await expect(card).toHaveText('Two nights in Lyon');
+  const cardStyle = await card.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, padding: style.paddingTop, radius: style.borderTopLeftRadius, background: style.backgroundColor }; });
+  assert.deepEqual({ border: cardStyle.border, padding: cardStyle.padding, radius: cardStyle.radius }, { border: '1px', padding: '16px', radius: '12px' });
+  assert.equal(await title.evaluate((node) => getComputedStyle(node).fontSize), '24px');
+  // Column stacks in document order; the row lays its items out inline and spreads them.
+  const layout = async () => ({ surface: await rect(surface), title: await rect(title), card: await rect(card), rule: await rect(rule), row: await rect(row), depart: await rect(depart), bar: await rect(bar), time: await rect(time) });
+  const ltr = await layout();
+  assert.ok(ltr.title.bottom <= ltr.card.top && ltr.card.bottom <= ltr.rule.top && ltr.rule.bottom <= ltr.row.top, `column order ${JSON.stringify(ltr)}`);
+  assert.ok(ltr.depart.right <= ltr.bar.left && ltr.bar.right <= ltr.time.left, `row order ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.depart.left - ltr.row.left) < 1 && Math.abs(ltr.time.right - ltr.row.right) < 1, `row spreads ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.bar.width - 1) < 0.01 && ltr.bar.height >= ltr.depart.height, `vertical rule ${JSON.stringify(ltr)}`);
+  assert.ok(Math.abs(ltr.rule.height - 1) < 0.01 && Math.abs(ltr.rule.width - ltr.surface.width) < 1, `horizontal rule ${JSON.stringify(ltr)}`);
+  // A component this slice lacks keeps its child as literal text and adds no control.
+  const unsupported = surface.locator('[data-a2ui-unsupported="extra"]');
+  await expect(unsupported).toHaveText('Book <b>now</b>');
+  // The only button is the modal's Button trigger; the unsupported component adds none.
+  await expect(surface.getByRole('button')).toHaveCount(1);
+  assert.equal(await surface.getByRole('button').evaluate((node) => node.tagName), 'BUTTON');
+  assert.equal(await unsupported.locator('b').count(), 0);
+  // Media: the image carries its description and avatar preset, the path icon is decorative, and the list runs inline.
+  const photo = surface.getByRole('img', { name: 'Lyon skyline' });
+  await expect(photo).toHaveJSProperty('complete', true);
+  assert.ok(await photo.evaluate((node) => node.naturalWidth) > 0, 'image decoded');
+  const photoStyle = await photo.evaluate((node) => { const style = getComputedStyle(node); return { width: style.width, height: style.height, radius: style.borderTopLeftRadius, fit: style.objectFit }; });
+  assert.deepEqual(photoStyle, { width: '40px', height: '40px', radius: '50%', fit: 'cover' });
+  const pin = surface.locator('svg.a2ui-icon--svg');
+  await expect(pin).toHaveAttribute('aria-hidden', 'true');
+  await expect(surface.getByRole('img')).toHaveCount(1);
+  const gallery = { list: await rect(surface.locator('.a2ui-list--horizontal')), photo: await rect(photo), pin: await rect(pin), caption: await rect(surface.getByText('Old town', { exact: true })) };
+  assert.ok(Math.abs(gallery.pin.width - 18) < 0.01 && Math.abs(gallery.pin.height - 18) < 0.01, `icon size ${JSON.stringify(gallery)}`);
+  assert.ok(Math.abs(gallery.pin.left - gallery.photo.right - 4) < 0.01 && Math.abs(gallery.caption.left - gallery.pin.right - 4) < 0.01, `list gap ${JSON.stringify(gallery)}`);
+  assert.ok(gallery.photo.right <= gallery.pin.left && gallery.pin.right <= gallery.caption.left, `list order ${JSON.stringify(gallery)}`);
+  const middle = (box) => (box.top + box.bottom) / 2;
+  assert.ok(Math.abs(middle(gallery.photo) - middle(gallery.pin)) < 1 && Math.abs(middle(gallery.photo) - middle(gallery.caption)) < 1, `list centred ${JSON.stringify(gallery)}`);
+  assert.ok(ltr.row.bottom <= gallery.list.top, `list after row ${JSON.stringify(gallery)}`);
+  // Tabs: a bound title, one labelled panel, click and arrow selection with wrapping.
+  const tab = (name) => surface.getByRole('tab', { name, exact: true });
+  const panel = surface.getByRole('tabpanel');
+  await expect(surface.getByRole('tab')).toHaveText(['Outbound', 'Return']);
+  await expect(tab('Outbound')).toHaveAttribute('aria-selected', 'true');
+  await expect(panel).toHaveText('Train 6601');
+  assert.equal(await panel.getAttribute('aria-labelledby'), await tab('Outbound').getAttribute('id'));
+  const underline = (locator) => locator.evaluate((node) => getComputedStyle(node).borderBottomColor);
+  assert.notEqual(await underline(tab('Outbound')), await underline(tab('Return')));
+  await tab('Return').click();
+  await expect(panel).toHaveText('Train 6624');
+  await expect(tab('Outbound')).toHaveAttribute('tabindex', '-1');
+  await page.keyboard.press('ArrowRight');
+  await expect(tab('Outbound')).toBeFocused();
+  await expect(panel).toHaveText('Train 6601');
+  // Modal: a native modal dialog named by its trigger and styled by the surface tokens.
+  const rulesTrigger = surface.getByRole('button', { name: 'Fare rules' });
+  const rulesDialog = surface.locator('dialog.a2ui-modal');
+  await expect(rulesTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(rulesDialog).toHaveCount(0);
+  await rulesTrigger.click();
+  await expect(page.getByRole('dialog', { name: 'Fare rules' })).toBeVisible();
+  await expect(rulesDialog).toContainText('Refundable until departure');
+  assert.equal(await rulesDialog.evaluate((node) => node.matches(':modal')), true);
+  assert.equal(await rulesDialog.evaluate((node) => getComputedStyle(node).backgroundColor), cardStyle.background);
+  assert.equal(await rulesDialog.evaluate((node) => node.contains(document.activeElement)), true);
+  const dialogBox = await rect(rulesDialog);
+  const view = page.viewportSize();
+  assert.ok(dialogBox.width <= 512 && dialogBox.left >= 0 && view && dialogBox.right <= view.width, `dialog fits ${JSON.stringify(dialogBox)}`);
+  // A press inside the panel keeps it open.
+  await rulesDialog.getByText('Refundable until departure').click();
+  await expect(rulesDialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(rulesDialog).toHaveCount(0);
+  await expect(rulesTrigger).toBeFocused();
+  await expect(rulesTrigger).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Enter');
+  await expect(rulesDialog).toBeVisible();
+  await rulesDialog.getByRole('button', { name: 'Close' }).click();
+  await expect(rulesDialog).toHaveCount(0);
+  await rulesTrigger.focus();
+  await page.keyboard.press('Space');
+  await expect(rulesDialog).toBeVisible();
+  // A press on the backdrop dismisses it.
+  await page.mouse.click(4, 4);
+  await expect(rulesDialog).toHaveCount(0);
+  // Inputs: edits are written to the app-created store, reach a sibling bound to the same path, and stay local.
+  const form = page.locator('.a2ui-surface[data-surface-id="form"]');
+  const formModel = async () => JSON.parse(await page.getByTestId('form-model').textContent());
+  const guest = form.getByRole('textbox', { name: 'Guest' });
+  await expect(guest).toHaveValue('Ada');
+  await guest.click();
+  await guest.press('End');
+  await page.keyboard.type(' Lovelace');
+  await expect(guest).toHaveValue('Ada Lovelace');
+  await expect(guest).toBeFocused();
+  await expect(form.getByRole('heading', { name: 'Ada Lovelace', exact: true })).toHaveAttribute('aria-level', '3');
+  // Typing in the middle keeps the caret where the user put it.
+  await guest.evaluate((node) => node.setSelectionRange(3, 3));
+  await page.keyboard.type('!');
+  await expect(guest).toHaveValue('Ada! Lovelace');
+  assert.equal(await guest.evaluate((node) => node.selectionStart), 4);
+  const notes = form.getByRole('textbox', { name: 'Notes' });
+  assert.equal(await notes.evaluate((node) => node.tagName), 'TEXTAREA');
+  await notes.fill('Aisle\nQuiet');
+  const windowSeat = form.getByRole('checkbox', { name: 'Window seat' });
+  await windowSeat.focus();
+  await page.keyboard.press('Space');
+  await expect(windowSeat).toBeChecked();
+  const party = form.getByRole('slider');
+  await expect(party).toHaveAccessibleName('Party: 2');
+  await party.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await expect(party).toHaveAccessibleName('Party: 4');
+  await page.keyboard.press('End');
+  await expect(party).toHaveAccessibleName('Party: 8');
+  assert.deepEqual(await formModel(), { booking: { guest: 'Ada! Lovelace', notes: 'Aisle\nQuiet', window: true }, party: 8, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' });
+  // A literal value is fixed.
+  const reference = form.getByRole('textbox', { name: 'Reference' });
+  await expect(reference).toHaveJSProperty('readOnly', true);
+  await reference.focus();
+  await page.keyboard.type('x');
+  await expect(reference).toHaveValue('LYS-6601');
+  // The store keeps the edits while the surface is unmounted.
+  await page.getByRole('button', { name: 'Toggle form' }).click();
+  await expect(form).toHaveCount(0);
+  await page.getByRole('button', { name: 'Toggle form' }).click();
+  await expect(guest).toHaveValue('Ada! Lovelace');
+  await expect(windowSeat).toBeChecked();
+  // A later agent update replaces the edited value.
+  await page.getByRole('button', { name: 'Agent sets guest' }).click();
+  await expect(guest).toHaveValue('Agent Smith');
+  await expect(form.getByRole('heading', { name: 'Agent Smith', exact: true })).toBeVisible();
+  // Without the store the same surface shows values and changes nothing.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(guest).toHaveJSProperty('readOnly', true);
+  await expect(windowSeat).toBeDisabled();
+  await expect(party).toBeDisabled();
+  await guest.focus();
+  await page.keyboard.type('zzz');
+  assert.equal((await formModel()).booking.guest, 'Agent Smith');
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(windowSeat).toBeEnabled();
+  // Button: one press hands the app one action, with context and data model read from the store at that moment.
+  const formActions = async () => JSON.parse(await page.getByTestId('form-actions').textContent());
+  const bookTrip = form.getByRole('button', { name: 'Book trip' });
+  await expect(bookTrip).toBeEnabled();
+  await expect(form.getByRole('button', { name: 'No action' })).toBeDisabled();
+  assert.deepEqual(await formActions(), []);
+  await guest.fill('Grace Hopper');
+  await bookTrip.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('form-actions')).toContainText('Grace Hopper');
+  const sent = await formActions();
+  assert.equal(sent.length, 1);
+  assert.ok(!Number.isNaN(Date.parse(sent[0].action.timestamp)), 'action carries a timestamp');
+  delete sent[0].action.timestamp;
+  assert.deepEqual(sent[0], {
+    version: 'v0.9',
+    action: { name: 'book', surfaceId: 'form', sourceComponentId: 'book', context: { guest: 'Grace Hopper', party: 8, source: 'form' }, label: 'Book trip' },
+    metadata: { a2uiClientDataModel: { surfaces: { form: await formModel() } } },
+  });
+  // The press sent nothing by itself and changed nothing in the store.
+  assert.equal((await formModel()).booking.guest, 'Grace Hopper');
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 2);
+  const primary = await bookTrip.evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
+  assert.equal(primary.radius, '8px');
+  assert.notEqual(primary.background, 'rgba(0, 0, 0, 0)');
+  // Without a handler the same Button is disabled.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(bookTrip).toBeDisabled();
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(bookTrip).toBeEnabled();
+  // ChoicePicker: one choice is a native radio group, so arrow keys move and choose.
+  const seat = form.getByRole('radiogroup', { name: 'Seat' });
+  await expect(seat.getByRole('radio', { name: 'Window' })).toBeChecked();
+  await seat.getByRole('radio', { name: 'Window' }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeChecked();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeFocused();
+  assert.deepEqual((await formModel()).prefs.seat, ['aisle']);
+  // Several choices as chips, with a filter that hides options and never changes the selection.
+  const extras = form.getByRole('group', { name: 'Extras' });
+  const chip = (name) => extras.getByRole('button', { name });
+  await expect(extras.getByRole('button')).toHaveCount(3);
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('me');
+  await expect(extras.getByRole('button')).toHaveCount(1);
+  await chip('Meal').focus();
+  await page.keyboard.press('Space');
+  await expect(chip('Meal')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip('Meal')).toBeFocused();
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('nothing');
+  await expect(extras.getByRole('status')).toHaveText('No options match');
+  await extras.getByRole('textbox', { name: 'Filter Extras' }).fill('');
+  await chip('Bike space').click();
+  assert.deepEqual((await formModel()).prefs.extras, ['bike', 'meal']);
+  const chipStyle = async (name) => chip(name).evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
+  const chosen = await chipStyle('Meal'), unchosen = await chipStyle(/^Quiet/);
+  assert.equal(chosen.radius, '16px');
+  assert.notEqual(chosen.background, unchosen.background);
+  await chip('Bike space').click();
+  assert.deepEqual((await formModel()).prefs.extras, ['meal']);
+  // DateTimeInput: an ISO date-time shows its date part; an edit writes the native value.
+  const travel = form.getByLabel('Travel date');
+  await expect(travel).toHaveAttribute('type', 'date');
+  await expect(travel).toHaveValue('2026-03-04');
+  await expect(travel).toHaveAttribute('min', '2026-03-01');
+  await expect(travel).toHaveAttribute('max', '2026-03-31');
+  await travel.fill('2026-03-10');
+  await expect(travel).toHaveValue('2026-03-10');
+  assert.equal((await formModel()).prefs.date, '2026-03-10');
+  // Stepping a date part with the keyboard writes too and keeps focus in the input.
+  // The bounds pin the month, so step the day part.
+  await travel.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowUp');
+  await expect(travel).toBeFocused();
+  const stepped = (await formModel()).prefs.date;
+  assert.match(stepped, /^\d{4}-\d{2}-\d{2}$/);
+  assert.notEqual(stepped, '2026-03-10');
+  await expect(travel).toHaveValue(stepped);
+  // Without the store the pickers are disabled and the date cannot be edited.
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeDisabled();
+  await expect(seat.getByRole('radio', { name: 'Aisle' })).toBeChecked();
+  await expect(chip('Meal')).toBeDisabled();
+  await expect(travel).toHaveJSProperty('readOnly', true);
+  await page.getByRole('button', { name: 'Toggle editing' }).click();
+  await expect(chip('Meal')).toBeEnabled();
+  // The field takes the surface tokens and fits a narrow viewport.
+  const fieldStyle = await guest.evaluate((node) => { const style = getComputedStyle(node); return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, padding: style.paddingLeft }; });
+  assert.deepEqual(fieldStyle, { border: '1px', radius: '8px', padding: '12px' });
+  const formBox = await rect(form), guestBox = await rect(guest);
+  assert.ok(Math.abs(guestBox.width - formBox.width) < 1, `field fills the surface ${JSON.stringify({ formBox, guestBox })}`);
+  // A new snapshot replaces the bound text without remounting the card.
+  const retained = await card.elementHandle();
+  await page.getByRole('checkbox', { name: 'Long summary' }).check();
+  await expect(card).toContainText('Three-nights-with-an-unbroken-summary');
+  assert.equal(await card.evaluate((node, previous) => node === previous, retained), true);
+  // Right to left mirrors the row.
+  await page.getByRole('checkbox', { name: 'Right to left' }).check();
+  const rtl = await layout();
+  assert.ok(rtl.depart.left >= rtl.bar.right && rtl.bar.left >= rtl.time.right, `rtl row order ${JSON.stringify(rtl)}`);
+  // Right to left also reverses the tab arrow keys.
+  await tab('Outbound').focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(tab('Return')).toBeFocused();
+  await expect(panel).toHaveText('Train 6624');
+  await page.getByRole('checkbox', { name: 'Right to left' }).uncheck();
+  // A narrow viewport wraps the long text inside the card without page overflow.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const narrow = await layout();
+  assert.ok(narrow.card.left >= narrow.surface.left - 0.5 && narrow.card.right <= narrow.surface.right + 0.5, `narrow card ${JSON.stringify(narrow)}`);
+  // The form's controls stay inside their surface at the narrow width.
+  const narrowForm = await rect(form);
+  for (const control of [guest, notes, party, travel, extras.getByRole('textbox'), chip(/^Quiet/), chip('Meal')]) {
+    const box = await rect(control);
+    assert.ok(box.left >= narrowForm.left - 0.5 && box.right <= narrowForm.right + 0.5, `narrow control ${JSON.stringify({ narrowForm, box })}`);
+  }
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  if (size) await page.setViewportSize(size);
+  // The dark scheme swaps the surface token.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  const dark = await card.evaluate((node) => getComputedStyle(node).backgroundColor);
+  assert.notEqual(dark, cardStyle.background);
+  await page.emulateMedia({ colorScheme: null });
 }
 
 export async function runComposerSlotScenarios(page, url) {
@@ -1658,7 +1943,8 @@ export async function runMessageActionIconScenarios(browser, server) {
   console.log('Installed React message action icons: real no-styles entry, styled desktop/narrow/RTL/forced/reduced contexts, literal accessible names and tooltips, decorative glyphs, target/focus geometry, pointer/Enter/Space, current argumentless callbacks, keyed identity, disabled/unmount and zero clipboard/backend I/O passed.');
 }
 
-export async function runRuntimeScenarios(directory, kind) {
+// `a2ui` matches the option given to prepareRuntimeConsumer: only that consumer has the surface fixture.
+export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}) {
   const server = await serveRuntimeConsumer(directory);
   let browser;
   let context;
@@ -1984,6 +2270,7 @@ export async function runRuntimeScenarios(directory, kind) {
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);
+      if (a2ui) await runA2uiSurfaceScenarios(page, server.url);
       await runContextMenuScenarios(page, server.url);
       await runConfirmDialogScenarios(page, server.url);
     }
