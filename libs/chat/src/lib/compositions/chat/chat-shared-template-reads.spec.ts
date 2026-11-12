@@ -271,7 +271,10 @@ describe('Chat shared transcript reads', () => {
     expect(agent.messages()).toBe(messages);
   });
 
-  it.each([20, 10000])('bounds real messages reads while updating a %i-message transcript', async (historyCount) => {
+  // Reads stay constant (7) at any size, so 2000 rows already make one read per
+  // message overshoot the 100-read bound twentyfold. 10,000 jsdom rows took
+  // over two minutes and timed out on loaded machines without proving more.
+  it.each([20, 2000])('bounds real messages reads while updating a %i-message transcript', async (historyCount) => {
     const history: Message[] = Array.from({ length: historyCount }, (_, i) => ({
       id: `history-${i}`,
       role: i % 2 === 0 ? 'user' : 'assistant',
@@ -310,7 +313,7 @@ describe('Chat shared transcript reads', () => {
     expect(rows[historyCount].getAttribute('data-current')).toBe('true');
     expect(rows[historyCount].getAttribute('data-streaming')).toBe('true');
     expect(observedReads).toBeLessThanOrEqual(100);
-  }, 180000);
+  }, 60000);
 
   it('refreshes indexed predecessor and current bindings after mutation, replacement and agent swap', () => {
     const message = (id: string, role: Message['role'], content = id): Message => ({
