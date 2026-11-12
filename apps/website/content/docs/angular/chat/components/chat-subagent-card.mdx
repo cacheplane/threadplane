@@ -139,7 +139,7 @@ When expanded, the card renders the subagent's entire message list, not just the
 
 ### Status pill colors
 
-The pill is styled through a `data-status` attribute and CSS selectors. The exported `statusColor()` helper returns the equivalent inline style string and is retained for existing consumers.
+The pill reads **Pending**, **Running**, **Complete** or **Failed**. It is styled through a `data-status` attribute that keeps the raw status value, and CSS selectors. The exported `statusColor()` helper returns the equivalent inline style string and is retained for existing consumers.
 
 | Status | Background | Text color |
 |--------|-----------|------------|

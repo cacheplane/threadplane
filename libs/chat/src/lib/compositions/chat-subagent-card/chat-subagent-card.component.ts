@@ -29,6 +29,13 @@ export function statusColor(status: SubagentStatus): string {
   }
 }
 
+const STATUS_LABELS: Record<SubagentStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  complete: 'Complete',
+  error: 'Failed',
+};
+
 function statusToTraceState(s: SubagentStatus): TraceState {
   switch (s) {
     case 'pending':  return 'pending';
@@ -52,12 +59,14 @@ function statusToTraceState(s: SubagentStatus): TraceState {
       border-radius: var(--tplane-chat-radius-launcher);
       font-size: var(--tplane-chat-font-size-xs);
       font-weight: 500;
-      margin-left: 4px;
     }
     .sac__pill[data-status="pending"] { background: var(--tplane-chat-surface-alt); color: var(--tplane-chat-text-muted); }
     .sac__pill[data-status="running"] { background: var(--tplane-chat-warning-bg); color: var(--tplane-chat-warning-text); }
     .sac__pill[data-status="complete"] { color: var(--tplane-chat-success-text); }
     .sac__pill[data-status="error"] { background: var(--tplane-chat-error-bg); color: var(--tplane-chat-error-text); }
+    @media (forced-colors: active) {
+      .sac__pill[data-status] { border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+    }
     .sac__count { font-size: var(--tplane-chat-font-size-xs); color: var(--tplane-chat-text-muted); }
     .sac__msg { padding: 6px 0; }
     .sac__msg + .sac__msg { border-top: 1px solid var(--tplane-chat-separator); }
@@ -71,8 +80,8 @@ function statusToTraceState(s: SubagentStatus): TraceState {
   template: `
     <chat-trace [state]="state()">
       <span traceLabel>
-        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>
-        <span class="sac__pill" [attr.data-status]="subagent().status()">{{ subagent().status() }}</span>
+        <!-- The space keeps a screen reader from running the name and status together. -->
+        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status()">{{ statusLabel() }}</span>
       </span>
       <div class="sac__count" traceMeta>{{ messageCount() }}</div>
       @for (m of subagent().messages(); track m.id) {
@@ -100,6 +109,8 @@ export class ChatSubagentCardComponent {
    * Sources an outcome declares are listed in the Sources panel of the message that started the subagent.
    */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
+  /** The status in reader's words; `data-status` keeps the raw value for styling. */
+  protected readonly statusLabel = computed(() => STATUS_LABELS[this.subagent().status()]);
   readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status()));
   /** Sources declared for the subagent's completed calls; empty without `toolOutcome`. */
   private readonly sources = computed<readonly ToolActivitySource[]>(() => {
