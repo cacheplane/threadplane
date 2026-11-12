@@ -31,7 +31,8 @@ function composedParent(element: Element): Element | null {
   );
 }
 
-function shortcutTargetIsEditable(event: KeyboardEvent): boolean {
+/** Whether a key event came from a text control or editable region, through shadow roots. */
+export function shortcutTargetIsEditable(event: KeyboardEvent): boolean {
   let editable: boolean | undefined;
   // The composed path retains shadow form controls that window event retargeting hides.
   for (const target of event.composedPath()) {

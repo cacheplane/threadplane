@@ -1444,6 +1444,46 @@ export async function runPrimitiveScenarios(page, url) {
   await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
 }
 
+/** Installed ChatPopup toggle shortcut: real key presses, focus movement and fields that keep the key. */
+export async function runPopupShortcutScenarios(page, url) {
+  await page.goto(`${url}/?menu&popup`);
+  await expect(page.getByRole('heading', { name: 'Installed popup' })).toBeVisible();
+  const launcher = page.getByRole('button', { name: 'Chat', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Support' });
+  const draft = page.getByRole('textbox', { name: 'Draft' });
+  const requests = page.getByTestId('popup-requests');
+  await expect(launcher).toHaveAttribute('aria-keyshortcuts', 'Control+K Meta+K');
+  await expect(dialog).toBeHidden();
+  // From a button on the page, Ctrl+K opens the popup and focus moves to Close.
+  await page.getByRole('button', { name: 'Page button' }).focus();
+  await page.keyboard.press('Control+k');
+  await expect(dialog).toBeVisible();
+  await expect(launcher).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: 'Close chat' })).toBeFocused();
+  await expect(requests).toHaveText('1');
+  // While typing in the draft, Command+K closes it, the draft keeps its text and focus returns to the launcher.
+  await draft.fill('Hello');
+  await page.keyboard.press('Meta+k');
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toBeFocused();
+  await expect(requests).toHaveText('2');
+  await page.keyboard.press('Control+k');
+  await expect(draft).toHaveValue('Hello');
+  await page.keyboard.press('Control+k');
+  await expect(dialog).toBeHidden();
+  await expect(requests).toHaveText('4');
+  // A field elsewhere on the page keeps the key; the bare key and Shift do nothing either.
+  await page.getByRole('textbox', { name: 'Page search' }).focus();
+  await page.keyboard.press('Control+k');
+  await page.keyboard.type('k');
+  await page.getByRole('button', { name: 'Page button' }).focus();
+  await page.keyboard.press('k');
+  await page.keyboard.press('Control+Shift+k');
+  await expect(dialog).toBeHidden();
+  await expect(requests).toHaveText('4');
+  await expect(page.getByRole('textbox', { name: 'Page search' })).toHaveValue('k');
+}
+
 /** Installed LauncherButton and ChatWindow: size, regions, scrolling, wrapping, keyboard and motion. */
 export async function runShellScenarios(page, url) {
   await page.goto(`${url}/?menu&shell`);
@@ -2567,6 +2607,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runSelectScenarios(page, server.url);
       await runPrimitiveScenarios(page, server.url);
       await runShellScenarios(page, server.url);
+      await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
       await runComposerSlotScenarios(page, server.url);
