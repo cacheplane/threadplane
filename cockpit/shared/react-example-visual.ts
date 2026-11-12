@@ -58,10 +58,11 @@ export function exampleVisualChecks(path: string, name: string) {
           expect(docsBox?.y).toBe(0);
           expect(docsBox?.width).toBe(288);
         }
-        const composers = page.locator('.tp-example__footer .tp-chat-input');
+        // A composer sits in the example footer, or inside a whole Chat composition in the content.
+        const composers = page.locator('.tp-example__footer .tp-chat-input, .tp-example__content > .tp-chat > .tp-chat-input');
         await expect(composers).toHaveCount(await inputs.count());
         for (const composer of await composers.all()) {
-          const available = await composer.evaluate((element) => element.closest('.tp-example__footer')?.getBoundingClientRect().width ?? 0);
+          const available = await composer.evaluate((element) => element.closest('.tp-example__footer, .tp-example__content')?.getBoundingClientRect().width ?? 0);
           const pill = await composer.locator('.tp-chat-input__pill').boundingBox();
           expect(pill?.width).toBeCloseTo(Math.min(768, available - 32), 1);
         }

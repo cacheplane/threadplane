@@ -461,6 +461,28 @@ describe('MessageList', () => {
     expect(groups[1].textContent).toContain('Write the note');
     content.dispose();
   });
+  it('shows a call still running after its message completed as running only while the session runs', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [msg('a', '', { toolCallIds: ['w', 'b'], delivery: { generation: 'g', phase: 'complete', outcome: 'success' } } as Partial<Message>)],
+        [
+          { id: 'w', name: 'get_weather', args: {}, status: 'complete', result: 'ok' },
+          { id: 'b', name: 'confirm_booking', args: {}, status: 'running' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const group = (container: HTMLElement) => container.querySelector('.tp-tool-activity-group')!;
+    // A browser client tool runs after the model message finished; the session is still working.
+    const view = render(<MessageList rows={rows} running onStop={() => undefined} />);
+    expect(group(view.container).getAttribute('data-active')).toBe('true');
+    expect(view.getByRole('button', { name: 'Stop' })).toBeTruthy();
+    // Once the session settles, the same evidence is unknown again, never a perpetual shimmer.
+    view.rerender(<MessageList rows={rows} />);
+    expect(group(view.container).getAttribute('data-active')).toBe('false');
+    expect(view.container.textContent).toContain('status unavailable');
+    content.dispose();
+  });
   it('passes each call its arguments so repeated calls get their own labels', () => {
     const content = createMessageContent();
     const rows = content.project(

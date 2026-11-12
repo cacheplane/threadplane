@@ -9,6 +9,7 @@ export function createClientToolsFixture() {
   };
   const event = (type, data) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
   const weather = { location: 'Portland', temperatureF: 68, conditions: 'Sunny', humidity: 55, windMph: 8 };
+  const trip = ['Check the weather and your booking', 'Write the trip summary', 'Suggest what to pack'];
   const names = ['get_weather', 'slow_status_check', 'weather_card', 'weather_snapshot', 'confirm_booking'];
   function calls(text) {
     const call = (id, name, args) => ({ id: sequence === 1 ? id : `${id}-${sequence}`, name, args, type: 'tool_call' });
@@ -18,6 +19,7 @@ export function createClientToolsFixture() {
     if (text === 'Mixed') return [call('snapshot-1', 'weather_snapshot', weather), call('weather-1', 'get_weather', { location: 'Portland' })];
     if (text === 'Bookings') return ['booking-a', 'booking-b'].map((id) => call(id, 'confirm_booking', { summary: 'Fictional booking' }));
     if (text === 'Slow') return [call('slow-1', 'slow_status_check', {})];
+    if (text === 'Trip') return [call('trip-weather', 'get_weather', { location: 'Portland' }), call('trip-booking', 'confirm_booking', { summary: 'Fictional trip to Portland' })];
     if (text === 'Malformed') return [call('bad-1', 'weather_card', { ...weather, humidity: 101 })];
     if (text === 'Unknown') return [call('unknown-1', 'constructor', {})];
     return [];
@@ -83,6 +85,9 @@ export function createClientToolsFixture() {
       state.messages.push(...body.input.messages);
       response.write(event('values', state));
       const toolCalls = message.type === 'tool' || message.role === 'tool' ? [] : calls(message.content);
+      // A plan in the deep-agents `todos` shape: declared with the Trip calls, all done after their follow-up.
+      if (message.content === 'Trip') state.todos = trip.map((content, index) => ({ content, status: index ? 'pending' : 'in_progress' }));
+      else if (state.todos && toolCalls.length === 0) state.todos = trip.map((content) => ({ content, status: 'completed' }));
       const answer = { type: 'ai', id: 'answer-' + runId, content: toolCalls.length ? '' : 'Browser result received.', ...(toolCalls.length ? { tool_calls: toolCalls } : {}) };
       if (toolCalls.length) {
         // This partial fragment is deliberately not actionable until final values.
