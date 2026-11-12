@@ -50,19 +50,22 @@ const formSurfaces = createA2uiSurfaces();
 for (const message of [
   { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic', sendDataModel: true } },
   { version: 'v0.9', updateComponents: { surfaceId: 'form', components: [
-    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'fixed', 'book', 'idle'] },
+    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'seat', 'extras', 'date', 'fixed', 'book', 'idle'] },
     { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name' },
     { id: 'greeting', component: 'Text', text: { path: '/booking/guest' }, variant: 'h3' },
     { id: 'notes', component: 'TextField', label: 'Notes', variant: 'longText', value: { path: '/booking/notes' } },
     { id: 'window', component: 'CheckBox', label: 'Window seat', value: { path: '/booking/window' } },
     { id: 'party', component: 'Slider', label: 'Party', value: { path: '/party' }, min: 1, max: 8 },
+    { id: 'seat', component: 'ChoicePicker', label: 'Seat', value: { path: '/prefs/seat' }, options: [{ label: 'Window', value: 'window' }, { label: { path: '/aisleLabel' }, value: 'aisle' }, { label: 'Middle', value: 'middle' }] },
+    { id: 'extras', component: 'ChoicePicker', label: 'Extras', variant: 'multipleSelection', displayStyle: 'chips', filterable: true, value: { path: '/prefs/extras' }, options: [{ label: 'Bike space', value: 'bike' }, { label: 'Meal', value: 'meal' }, { label: 'Quiet-car-with-an-unbroken-label-that-must-wrap-inside-the-form', value: 'quiet' }] },
+    { id: 'date', component: 'DateTimeInput', label: 'Travel date', value: { path: '/prefs/date' }, min: '2026-03-01', max: '2026-03-31T23:59:00' },
     { id: 'fixed', component: 'TextField', label: 'Reference', value: 'LYS-6601' },
     { id: 'book', component: 'Button', child: 'bookLabel', variant: 'primary', action: { event: { name: 'book', context: { guest: { path: '/booking/guest' }, party: { path: '/party' }, source: 'form' } } } },
     { id: 'bookLabel', component: 'Text', text: 'Book trip' },
     { id: 'idle', component: 'Button', child: 'idleLabel' },
     { id: 'idleLabel', component: 'Text', text: 'No action' },
   ] } },
-  { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2 } } },
+  { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' } } },
 ] as unknown as Parameters<A2uiSurfaces['apply']>[0][]) formSurfaces.apply(message);
 
 function FormFixture() {

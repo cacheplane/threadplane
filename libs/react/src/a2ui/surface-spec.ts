@@ -79,7 +79,8 @@ export interface A2uiSurfaceSpec {
  * Projects a surface snapshot onto the render tree. Literal props pass through,
  * `{ path }` props read the surface data model, and function-call props are left
  * out. Modal children are its trigger then its content; Tabs children are its
- * tab bodies, with their titles resolved to text. Only components reachable from the root are kept, each at its first
+ * tab bodies, with their titles resolved to text; ChoicePicker option labels
+ * are resolved the same way. Only components reachable from the root are kept, each at its first
  * position, so a malformed cycle or shared child cannot recurse.
  */
 export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
@@ -116,6 +117,21 @@ export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
           tabs.find((tab) => record(tab) && tab['child'] === id)?.['title' as never],
           surface.dataModel
         )
+      );
+    }
+    if (component.component === 'ChoicePicker') {
+      // Option labels resolved to text, so the view never reads the data model.
+      const options = component['options'];
+      props['options'] = (Array.isArray(options) ? options : []).flatMap(
+        (option) =>
+          record(option) && typeof option['value'] === 'string'
+            ? [
+                {
+                  label: title(option['label'], surface.dataModel),
+                  value: option['value'],
+                },
+              ]
+            : []
       );
     }
     elements[component.id] = {

@@ -1568,7 +1568,7 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 
 `a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
 `Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
-`CheckBox`, `Slider` and `Button`. Spread it into your own registry and pass that as
+`CheckBox`, `ChoicePicker`, `DateTimeInput`, `Slider` and `Button`. Spread it into your own registry and pass that as
 `catalog` to add or replace components; keep the registry stable. Literal props
 pass through and `{ path }` props read the surface data model, so a new snapshot
 updates bound text. A component the catalog lacks keeps its children and renders
@@ -1592,7 +1592,7 @@ export function Surfaces({ surfaces }: { readonly surfaces: A2uiSurfaces }) {
 }
 ```
 
-Each keystroke, toggle or slider movement calls
+Each keystroke, toggle, choice, date change or slider movement calls
 `surfaces.setValue(surfaceId, path, value)` for the path the control's `value`
 is bound to. The store publishes a new snapshot, so every component bound to
 that path updates. The edit is local: nothing is sent to an agent. Because the
@@ -1600,8 +1600,15 @@ store holds the edit, it survives the surface unmounting, and it lasts as long
 as the store you created. An agent `updateDataModel` applied later replaces the
 value at its path, including one the user edited.
 
-Without `surfaces` the surface is read-only: text fields are read-only and
-checkboxes and sliders are disabled. A control whose `value` is a literal, not a
+`ChoicePicker` writes its whole selection as a string list in option order,
+with one item when only one choice is allowed. Its filter is local and never
+changes the selection. `DateTimeInput` writes the browser input's own value,
+which is local and carries no zone: `YYYY-MM-DD`, `HH:mm` or
+`YYYY-MM-DDTHH:mm`. It shows a zone-less ISO value by its digits and a value
+with a zone in the viewer's local time.
+
+Without `surfaces` the surface is read-only: text fields and date inputs are
+read-only and checkboxes, choices and sliders are disabled. A control whose `value` is a literal, not a
 `{ path }`, is fixed in the same way. The surface takes no edited values back as
 props and reports no per-edit event; read the store's snapshot when you need the
 current data model. Create the store once per conversation or message, outside
