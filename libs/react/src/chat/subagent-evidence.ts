@@ -31,6 +31,11 @@ export interface SubagentEvidence<
   TMessage extends SubagentEvidenceMessage = SubagentEvidenceMessage
 > {
   readonly subagents: readonly SubagentEvidenceRecord[];
+  /**
+   * Children that settled in earlier runs or were restored with the thread, such as a native session's
+   * `earlierSubagents`. They come first, and a current child with the same run ID replaces its earlier record.
+   */
+  readonly earlierSubagents?: readonly SubagentEvidenceRecord[];
   readonly transcript: readonly TMessage[];
   /** True while the root run is active. Without it a child with no terminal evidence is `unknown`, not `running`. */
   readonly running?: boolean;
@@ -38,7 +43,7 @@ export interface SubagentEvidence<
   readonly toolLabel?: (name: string) => string | undefined;
 }
 
-/** Card data for each child in start order, and the transcript without the children's messages. */
+/** Card data for each child, earlier children first and each list in start order, and the transcript without the children's messages. */
 export interface SubagentProjection<
   TMessage extends SubagentEvidenceMessage = SubagentEvidenceMessage
 > {
@@ -53,13 +58,15 @@ const text = (content: unknown): string =>
 /**
  * Group each child's attributed messages under its start evidence, and separate them from the root transcript.
  * Status follows evidence only: finished is complete, an error is error, and a child with no terminal evidence
- * is running while the root run is active and unknown afterwards. Messages attributed to a child with no start
+ * is running while the root run is active and unknown afterwards. An earlier child is never running: `running`
+ * describes the current run only. Messages attributed to a child with no start
  * evidence are still removed from the root transcript and belong to no card.
  */
 export function subagentsFromEvidence<
   TMessage extends SubagentEvidenceMessage = SubagentEvidenceMessage
 >({
   subagents,
+  earlierSubagents = [],
   transcript,
   running = false,
   toolLabel,
@@ -76,15 +83,19 @@ export function subagentsFromEvidence<
     if (rows) rows.push(message);
     else attributed.set(owner, [message]);
   }
+  const current = new Set(subagents.map((child) => child.started.subagentRunId));
+  const earlier = earlierSubagents.filter(
+    (child) => !current.has(child.started.subagentRunId)
+  );
   return {
     transcript: root,
-    subagents: subagents.map(({ started, terminal }) => {
+    subagents: [...earlier, ...subagents].map(({ started, terminal }, index) => {
       const status =
         terminal?.type === 'SUBAGENT_FINISHED'
           ? 'complete'
           : terminal?.type === 'SUBAGENT_ERROR'
           ? 'error'
-          : running
+          : running && index >= earlier.length
           ? 'running'
           : 'unknown';
       const rows = attributed.get(started.subagentRunId) ?? [];

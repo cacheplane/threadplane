@@ -108,6 +108,40 @@ describe('subagentsFromEvidence', () => {
     ]);
   });
 
+  it('lists earlier children first, keeps their messages, and never reports them as running', () => {
+    const projection = subagentsFromEvidence({
+      earlierSubagents: [
+        { started, terminal: { type: 'SUBAGENT_FINISHED' } },
+        // Earlier evidence with no terminal cannot be running: the flag describes the current run.
+        { started: { subagentRunId: 'lost' } },
+      ],
+      subagents: [{ started: { subagentRunId: 'now', name: 'writer' } }],
+      transcript,
+      running: true,
+    });
+    expect(
+      projection.subagents.map((child) => [child.id, child.status])
+    ).toEqual([
+      ['child', 'complete'],
+      ['lost', 'unknown'],
+      ['now', 'running'],
+    ]);
+    expect(projection.subagents[0].messages.length).toBeGreaterThan(0);
+    expect(projection.transcript.every((m) => m.subagentRunId === undefined)).toBe(true);
+  });
+
+  it('lets a current child replace an earlier record with the same run ID', () => {
+    const projection = subagentsFromEvidence({
+      earlierSubagents: [{ started, terminal: { type: 'SUBAGENT_ERROR' } }],
+      subagents: [{ started: { ...started, name: 'again' } }],
+      transcript,
+      running: true,
+    });
+    expect(projection.subagents.map((c) => [c.name, c.status])).toEqual([
+      ['again', 'running'],
+    ]);
+  });
+
   it('returns a child with no messages and an untouched transcript when nothing is attributed', () => {
     const root = transcript.filter((m) => m.subagentRunId === undefined);
     const projection = subagentsFromEvidence({
