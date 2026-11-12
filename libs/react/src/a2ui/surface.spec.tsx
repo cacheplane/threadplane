@@ -187,7 +187,7 @@ describe('A2uiSurface', () => {
 });
 
 describe('a2uiSurfaceSpec', () => {
-  it('drops protocol keys and function calls, and binds path props', () => {
+  it('drops protocol keys, resolves function calls, and binds path props', () => {
     const { spec, state } = a2uiSurfaceSpec(
       surface(
         [
@@ -198,7 +198,8 @@ describe('a2uiSurfaceSpec', () => {
             variant: 'h1',
             weight: 2,
             accessibility: { label: 'x' },
-            hint: { call: 'formatString', args: { value: 'x' } },
+            hint: { call: 'formatString', args: { value: '${/a}!' } },
+            gone: { call: 'launch', args: {} },
           },
         ],
         { a: 'A' }
@@ -207,7 +208,7 @@ describe('a2uiSurfaceSpec', () => {
     expect(spec?.root).toBe('root');
     expect(spec?.elements['root']).toEqual({
       type: 'Text',
-      props: { text: { $bindState: '/a' }, variant: 'h1' },
+      props: { text: { $bindState: '/a' }, variant: 'h1', hint: 'A!' },
       children: [],
     });
     expect(state).toEqual({ a: 'A' });

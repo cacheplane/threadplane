@@ -1909,7 +1909,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text.tsx",
-      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Markdown/content policy and function-call text remain open."
+      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Function-call text shows its resolved value. Markdown/content policy remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/video.component.ts#A2uiVideoComponent",
@@ -1929,7 +1929,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Actions, checks, dirty edits, theme identity, function calls and child templates remain open."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; theme identity and child templates remain open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -16384,7 +16384,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
@@ -16393,7 +16393,16 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#resolveA2uiValue",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Custom function registries, an explicit locale and template scopes remain open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#evaluateA2uiChecks",
@@ -16402,7 +16411,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#A2uiCheckFailure",
@@ -16411,7 +16420,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#A2uiValidationErrorMessage",
@@ -16420,7 +16429,16 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/functions.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Custom function registries, an explicit locale and template scopes remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/checks.ts",
@@ -16429,7 +16447,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/action-message.ts",
@@ -16438,7 +16456,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
     },
     {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",

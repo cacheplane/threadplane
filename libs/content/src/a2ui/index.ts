@@ -8,6 +8,7 @@ export {
   type A2uiCheckFailure,
   type A2uiValidationErrorMessage,
 } from './checks.js';
+export { resolveA2uiValue } from './functions.js';
 export type {
   A2uiValue,
   A2uiComponentSnapshot,

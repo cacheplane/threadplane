@@ -1,7 +1,8 @@
-import type {
-  A2uiComponentSnapshot,
-  A2uiSurfaceSnapshot,
-  A2uiValue,
+import {
+  resolveA2uiValue,
+  type A2uiComponentSnapshot,
+  type A2uiSurfaceSnapshot,
+  type A2uiValue,
 } from '@threadplane/content/a2ui';
 import type {
   RenderElementData,
@@ -43,25 +44,9 @@ function childIds(component: A2uiComponentSnapshot): readonly string[] {
   return Array.isArray(children) ? strings(children) : [];
 }
 
-/** Reads one JSON Pointer from the data model; anything missing is undefined. */
-function read(model: A2uiValue, path: string): A2uiValue | undefined {
-  let value: A2uiValue | undefined = model;
-  for (const part of path.split('/').slice(1)) {
-    const key = part.replace(/~1/g, '/').replace(/~0/g, '~');
-    if (Array.isArray(value)) value = /^\d+$/.test(key) ? value[Number(key)] : undefined;
-    else if (value !== undefined && record(value) && Object.hasOwn(value, key))
-      value = value[key];
-    else return undefined;
-  }
-  return value;
-}
-
-/** A tab title as literal text: a string, or a `{ path }` read from the data model. */
-function title(value: A2uiValue | undefined, model: A2uiValue): string {
-  const resolved =
-    value !== undefined && record(value) && typeof value['path'] === 'string'
-      ? read(model, value['path'])
-      : value;
+/** A title or label as text: a literal, a `{ path }` or a function call, resolved. */
+function title(value: A2uiValue | undefined, surface: A2uiSurfaceSnapshot): string {
+  const resolved = resolveA2uiValue(surface, value);
   return typeof resolved === 'string'
     ? resolved
     : typeof resolved === 'number' || typeof resolved === 'boolean'
@@ -77,8 +62,8 @@ export interface A2uiSurfaceSpec {
 
 /**
  * Projects a surface snapshot onto the render tree. Literal props pass through,
- * `{ path }` props read the surface data model, and function-call props are left
- * out. Modal children are its trigger then its content; Tabs children are its
+ * `{ path }` props read the surface data model, and function-call props are
+ * resolved to their current value (left out when they have none). Modal children are its trigger then its content; Tabs children are its
  * tab bodies, with their titles resolved to text; ChoicePicker option labels
  * are resolved the same way. Only components reachable from the root are kept, each at its first
  * position, so a malformed cycle or shared child cannot recurse.
@@ -98,10 +83,13 @@ export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
     const props: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(component)) {
       if (RESERVED.has(key)) continue;
-      if (record(value) && typeof value['path'] === 'string')
+      if (record(value) && typeof value['call'] === 'string') {
+        // A computed prop is a plain value: nothing can write back through it.
+        const computed = resolveA2uiValue(surface, value);
+        if (computed !== undefined) props[key] = computed;
+      } else if (record(value) && typeof value['path'] === 'string')
         props[key] = { $bindState: value['path'] };
-      else if (!(record(value) && typeof value['call'] === 'string'))
-        props[key] = value;
+      else props[key] = value;
     }
     const children = childIds(component).filter((id) => {
       if (!byId.has(id) || placed.has(id)) return false;
@@ -115,7 +103,7 @@ export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
       props['tabTitles'] = children.map((id) =>
         title(
           tabs.find((tab) => record(tab) && tab['child'] === id)?.['title' as never],
-          surface.dataModel
+          surface
         )
       );
     }
@@ -127,7 +115,7 @@ export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
           record(option) && typeof option['value'] === 'string'
             ? [
                 {
-                  label: title(option['label'], surface.dataModel),
+                  label: title(option['label'], surface),
                   value: option['value'],
                 },
               ]
