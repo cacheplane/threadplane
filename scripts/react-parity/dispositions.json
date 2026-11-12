@@ -1779,7 +1779,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
@@ -1789,7 +1789,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/column.component.ts#A2uiColumnComponent",
@@ -1809,7 +1809,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/divider.component.ts#A2uiDividerComponent",
@@ -1879,7 +1879,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/tabs.component.ts#A2uiTabsComponent",
@@ -1909,7 +1909,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/text.tsx",
-      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Markdown/content policy and function-call text remain open."
+      "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Function-call text shows its resolved value. Markdown/content policy remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/video.component.ts#A2uiVideoComponent",
@@ -1929,7 +1929,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Actions, checks, dirty edits, theme identity, function calls and child templates remain open."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; child templates are stamped per list item and the surface theme is applied."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -1997,9 +1997,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/timeline-slider.tsx",
-      "reason": "Native component. Checkpoint slider, replay/fork commands, history capabilities and keyboard values."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/timeline.tsx",
+      "reason": "Covered by the controlled Timeline: optional onReplay and onFork add named native row buttons that request with the row id and start no work. The Angular header count, empty message and select-on-fork are left to the application; wiring to a runtime's checkpoint commands remains open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts#ChatToolCallCardComponent",
@@ -2377,9 +2377,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/genui-skeleton.tsx",
-      "reason": "Native component. Loading placeholder without false mount acknowledgement; reduced motion."
+      "reason": "GenerativeUiSkeleton: a labelled placeholder card with decorative shimmer rows, an optional polite announcement, reduced-motion and forced-colors handling. It owns no work and acknowledges nothing; composing it into a pending generated-UI slot stays with the application."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-history-search-palette/chat-history-search-palette.component.ts#ChatHistorySearchPaletteComponent",
@@ -4868,7 +4868,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiChildren",
@@ -4886,7 +4886,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiClientCapabilities",
@@ -4947,7 +4947,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiDividerComponent",
@@ -5057,7 +5057,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiSurface",
@@ -5572,9 +5572,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/genui-skeleton.tsx",
-      "reason": "Native component. Loading placeholder without false mount acknowledgement; reduced motion."
+      "reason": "GenerativeUiSkeleton: a labelled placeholder card with decorative shimmer rows, an optional polite announcement, reduced-motion and forced-colors handling. It owns no work and acknowledges nothing; composing it into a pending generated-UI slot stays with the application."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatHistorySearchPaletteComponent",
@@ -5931,9 +5931,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/timeline-slider.tsx",
-      "reason": "Native component. Checkpoint slider, replay/fork commands, history capabilities and keyboard values."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/timeline.tsx",
+      "reason": "Covered by the controlled Timeline: optional onReplay and onFork add named native row buttons that request with the row id and start no work. The Angular header count, empty message and select-on-fork are left to the application; wiring to a runtime's checkpoint commands remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatToolCallCardComponent",
@@ -16157,6 +16157,13 @@
       "note": "Button view sending its event action through the surface and opening a Modal as its trigger."
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/check-error.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Shared validation message element and invalid-state attributes for the input views."
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
       "taskIds": ["T27"],
       "treatment": "react",
@@ -16260,6 +16267,13 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Write channel from a mounted surface to the application-created surfaces store, for input components."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-theme.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal reader for createSurface.theme: a hex primaryColor becomes the surface accent with a contrast-chosen on-primary and hover, agentDisplayName and iconUrl become a decorative line above the content. Non-hex colours are ignored."
     },
     {
       "id": "source:libs/react/src/a2ui/surface-spec.ts",
@@ -16417,7 +16431,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
@@ -16426,7 +16440,70 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#resolveA2uiValue",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Paths inside a child template resolve from the item path. Custom function registries and an explicit locale remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#evaluateA2uiChecks",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiCheckFailure",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiValidationErrorMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/templates.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral child template expansion over one surface snapshot: every component a template stamps, once per list item with its item path, nested templates followed and self-reference bounded by the data. Used by check evaluation; stable item keys beyond list position remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/functions.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral resolution of one authored value against a surface snapshot: literals, paths, lists and the basic catalog's functions (formatString, formatNumber, formatCurrency, formatDate, pluralize, logic and validators) implemented locally so the protocol package stays a type-only import. Paths inside a child template resolve from the item path. Custom function registries and an explicit locale remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/checks.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot, with conditions resolved by resolveA2uiValue: first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Custom function registries remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/action-message.ts",
@@ -16435,7 +16512,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Context values resolve through resolveA2uiValue (paths and function calls). Check gating lives in evaluateA2uiChecks; functionCall actions run in the React surface; transport remains open."
     },
     {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",
@@ -18446,6 +18523,30 @@
       "reason": "Pure text-only core snapshot projection with exact status/messages input and boolean result; full T23 and legacy typing/runtime parity remain open."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#GenerativeUiSkeleton",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Controlled placeholder presentation for pending generated UI with no ownership or commands. Full T25 remains open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#GenerativeUiSkeletonProps",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Exact readonly label/announce/className contract for the pending generated-UI placeholder. Full T25 remains open."
+    },
+    {
+      "id": "source:libs/react/src/chat/genui-skeleton.tsx",
+      "taskIds": ["T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/genui-skeleton.tsx",
+      "reason": "Controlled placeholder presentation for pending generated UI, with no subscriptions, timers or commands. Full T25 remains open."
+    },
+    {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",
       "taskIds": ["T23"],
       "treatment": "react",
@@ -18462,6 +18563,16 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/scroll-bubble.tsx",
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
+    },
+    {
+      "id": "doc:apps/website/content/docs/react/chat/a2ui/surface-component.mdx",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/a2ui/surface.tsx",
+      "reason": "Task-led guide to A2uiSurface with the application-owned surfaces store: rendering live surfaces, local edits, forwarding actions, validation, function calls, child templates, themes and custom components. Its single example compiles against source. A live example remains open."
     },
     {
       "id": "doc:apps/website/content/docs/react/chat/components/chat-select.mdx",

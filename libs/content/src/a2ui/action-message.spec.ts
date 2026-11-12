@@ -19,7 +19,7 @@ const book = [
     action: { event: { name: 'book', context: {
       guest: { path: '/form/name' }, first: { path: '/form/tags/0' }, absent: { path: '/nope/x' },
       source: 'form', count: 2, flag: false, list: [1, 2], nothing: null,
-      computed: { call: 'formatDate', args: {} },
+      computed: { call: 'formatString', args: { value: 'Hi ${/form/name}' } }, unknown: { call: 'launch', args: {} },
     } } },
   },
   { id: 'label', component: 'Text', text: 'Book now' },
@@ -34,7 +34,7 @@ describe('createA2uiActionMessage', () => {
       version: 'v0.9',
       action: {
         name: 'book', surfaceId: 's', sourceComponentId: 'go', timestamp: AT, label: 'Book now',
-        context: { guest: 'Ada', first: 'vip', absent: undefined, source: 'form', count: 2, flag: false, list: [1, 2], nothing: null },
+        context: { guest: 'Ada', first: 'vip', absent: undefined, source: 'form', count: 2, flag: false, list: [1, 2], nothing: null, computed: 'Hi Ada', unknown: undefined },
       },
     });
   });
@@ -45,9 +45,23 @@ describe('createA2uiActionMessage', () => {
     expect(createA2uiActionMessage(owner.getSnapshot().surfaces[0], 'go', AT)?.action.context['guest']).toBe('Grace');
   });
 
-  it('leaves function-call context values out', () => {
+  it('resolves function-call context values', () => {
     const message = createA2uiActionMessage(surface(book, data).getSnapshot().surfaces[0], 'go', AT);
-    expect(Object.hasOwn(message?.action.context ?? {}, 'computed')).toBe(false);
+    expect(message?.action.context['computed']).toBe('Hi Ada');
+    expect(message?.action.context['unknown']).toBeUndefined();
+  });
+
+  it('resolves context from a template item and names the template component', () => {
+    const owner = surface(
+      [
+        { id: 'root', component: 'List', children: { path: '/rows', componentId: 'pick' } },
+        { id: 'pick', component: 'Button', child: 'l', action: { event: { name: 'pick', context: { id: { path: 'id' }, line: { call: 'formatString', args: { value: '${name} (${/kind})' } }, kind: { path: '/kind' } } } } },
+        { id: 'l', component: 'Text', text: { path: 'name' } },
+      ],
+      { kind: 'train', rows: [{ id: 'a', name: 'First' }, { id: 'b', name: 'Second' }] }
+    );
+    const message = createA2uiActionMessage(owner.getSnapshot().surfaces[0], 'pick', AT, '/rows/1');
+    expect(message?.action).toEqual({ name: 'pick', surfaceId: 's', sourceComponentId: 'pick', timestamp: AT, context: { id: 'b', line: 'Second (train)', kind: 'train' } });
   });
 
   it('attaches the whole data model only when the surface asked for it', () => {

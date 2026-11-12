@@ -25,10 +25,16 @@ export function useA2uiSurfaceWriter(): A2uiSurfaceWriter {
 export interface A2uiSurfaceActions {
   readonly actionable: (componentId: string) => boolean;
   readonly act: (componentId: string) => void;
+  /** The validation message to show for a component; empty when there is none. */
+  readonly error: (componentId: string) => string;
 }
 
 export const A2uiActionContext = createContext<A2uiSurfaceActions>(
-  Object.freeze({ actionable: () => false, act: () => undefined })
+  Object.freeze({
+    actionable: () => false,
+    act: () => undefined,
+    error: () => '',
+  })
 );
 
 /** Internal: lets a Button used as a Modal's trigger be the one control that opens it. */
