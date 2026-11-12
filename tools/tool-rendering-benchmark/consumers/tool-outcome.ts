@@ -60,6 +60,8 @@ export const toolLabel = (name: string) =>
     ? 'Planning the work'
     : name === 'delegate_research'
     ? 'Delegating the reading'
+    : name === 'save_note'
+    ? 'Saving the note'
     : undefined;
 /**
  * The deep-workflow scenario keeps one thread across a reload so its history

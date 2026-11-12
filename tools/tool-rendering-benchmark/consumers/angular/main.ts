@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import {
+  ChatApprovalCardComponent,
   ChatComponent,
   ChatInterruptTemplateDirective,
   ChatToolResultTemplateDirective,
@@ -70,7 +71,7 @@ class Benchmark {
     if (this.decisionPending()) return;
     const root = this.element.nativeElement;
     const document = root.ownerDocument;
-    const approval = document.activeElement?.closest('.benchmark-decision');
+    const approval = document.activeElement?.closest('.chat-approval-card');
     let ownedFocus = !!approval && root.contains(approval);
     const onFocus = (event: FocusEvent) => {
       if (!approval?.contains(event.target as Node)) ownedFocus = false;
@@ -131,6 +132,7 @@ Component({
   selector: 'benchmark-root',
   standalone: true,
   imports: [
+    ChatApprovalCardComponent,
     ChatComponent,
     ChatInterruptTemplateDirective,
     ChatToolResultTemplateDirective,
@@ -144,12 +146,10 @@ Component({
     </ng-template>
     <ng-template chatInterruptTemplate>
       @let generation = agent.interruptSession().generation;
-      <section class="benchmark-decision" aria-label="Save approval">
-        <h2>Approve saving the comparison note?</h2>
-        <p>The note is saved only after your approval.</p>
-        <div><button [disabled]="decisionPending()" (click)="decide(true, generation)">Approve save</button>
-        <button [disabled]="decisionPending()" (click)="decide(false, generation)">Deny save</button></div>
-      </section>
+      <!-- The library's inline approval: it leaves an "Approved: Save note" record once answered. -->
+      <chat-approval-card [agent]="agent" title="Approve saving the comparison note?" approveLabel="Approve save" cancelLabel="Deny save" recordLabel="Save note" (action)="decide($event === 'approve', generation)">
+        <ng-template #body><p class="benchmark-approval-note">The note is saved only after your approval.</p></ng-template>
+      </chat-approval-card>
     </ng-template>
     @if (decisionError()) { <p chatFooterStatus role="alert">{{ decisionError() }}</p> }
   </chat></main>`,

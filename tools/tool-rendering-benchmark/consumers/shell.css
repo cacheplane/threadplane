@@ -55,8 +55,7 @@ main.benchmark-chat {
   border-radius: 14px;
   overflow: hidden;
 }
-.benchmark-header button,
-.benchmark-decision button {
+.benchmark-header button {
   cursor: pointer;
   color: inherit;
   background: var(--surface);
@@ -65,28 +64,19 @@ main.benchmark-chat {
   padding: 6px 12px;
   font: inherit;
 }
-.benchmark-header button:disabled,
-.benchmark-decision button:disabled {
+.benchmark-header button:disabled {
   cursor: default;
   opacity: 0.5;
 }
-.benchmark-decision,
 .benchmark-recovery {
   margin-block: 20px;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
 }
-.benchmark-decision h2 {
-  font-size: 16px;
+.benchmark-approval-note {
   margin: 0;
 }
-.benchmark-decision div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.benchmark-decision :focus-visible,
 .benchmark-recovery :focus-visible,
 .benchmark-message-actions :focus-visible,
 .benchmark-header :focus-visible {

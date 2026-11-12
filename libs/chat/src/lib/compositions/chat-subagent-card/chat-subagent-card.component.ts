@@ -1,5 +1,5 @@
 // libs/chat/src/lib/compositions/chat-subagent-card/chat-subagent-card.component.ts
-import { Component, ChangeDetectionStrategy, input, computed, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, input, computed, effect, inject } from '@angular/core';
 import { ChatTraceComponent, type TraceState } from '../../primitives/chat-trace/chat-trace.component';
 import { ChatToolCallCardComponent, type ToolCallInfo } from '../chat-tool-call-card/chat-tool-call-card.component';
 import {
@@ -10,6 +10,9 @@ import {
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import type { Subagent, SubagentStatus } from '../../agent/subagent';
 import type { Message, ToolCall } from '../../agent';
+import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
+import { outcomeSources, type ToolActivityOutcome, type ToolActivitySource } from '../../primitives/chat-tool-activity/tool-outcome';
+import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 
 /**
  * Returns a CSS style string for a subagent's status badge.
@@ -25,6 +28,13 @@ export function statusColor(status: SubagentStatus): string {
     case 'error':    return 'background: var(--tplane-chat-error-bg); color: var(--tplane-chat-error-text);';
   }
 }
+
+const STATUS_LABELS: Record<SubagentStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  complete: 'Complete',
+  error: 'Failed',
+};
 
 function statusToTraceState(s: SubagentStatus): TraceState {
   switch (s) {
@@ -49,12 +59,14 @@ function statusToTraceState(s: SubagentStatus): TraceState {
       border-radius: var(--tplane-chat-radius-launcher);
       font-size: var(--tplane-chat-font-size-xs);
       font-weight: 500;
-      margin-left: 4px;
     }
     .sac__pill[data-status="pending"] { background: var(--tplane-chat-surface-alt); color: var(--tplane-chat-text-muted); }
     .sac__pill[data-status="running"] { background: var(--tplane-chat-warning-bg); color: var(--tplane-chat-warning-text); }
     .sac__pill[data-status="complete"] { color: var(--tplane-chat-success-text); }
     .sac__pill[data-status="error"] { background: var(--tplane-chat-error-bg); color: var(--tplane-chat-error-text); }
+    @media (forced-colors: active) {
+      .sac__pill[data-status] { border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+    }
     .sac__count { font-size: var(--tplane-chat-font-size-xs); color: var(--tplane-chat-text-muted); }
     .sac__msg { padding: 6px 0; }
     .sac__msg + .sac__msg { border-top: 1px solid var(--tplane-chat-separator); }
@@ -68,8 +80,8 @@ function statusToTraceState(s: SubagentStatus): TraceState {
   template: `
     <chat-trace [state]="state()">
       <span traceLabel>
-        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>
-        <span class="sac__pill" [attr.data-status]="subagent().status()">{{ subagent().status() }}</span>
+        <!-- The space keeps a screen reader from running the name and status together. -->
+        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status()">{{ statusLabel() }}</span>
       </span>
       <div class="sac__count" traceMeta>{{ messageCount() }}</div>
       @for (m of subagent().messages(); track m.id) {
@@ -92,7 +104,46 @@ export class ChatSubagentCardComponent {
   readonly subagent = input.required<Subagent>();
   /** App-owned readable labels for the subagent's own tool calls. Technical names stay inside each opened call. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
+  /**
+   * App-authored outcomes for the subagent's own completed calls, the same callback `<chat>` takes.
+   * Sources an outcome declares are listed in the Sources panel of the message that started the subagent.
+   */
+  readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
+  /** The status in reader's words; `data-status` keeps the raw value for styling. */
+  protected readonly statusLabel = computed(() => STATUS_LABELS[this.subagent().status()]);
   readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status()));
+  /** Sources declared for the subagent's completed calls; empty without `toolOutcome`. */
+  private readonly sources = computed<readonly ToolActivitySource[]>(() => {
+    const decode = this.toolOutcome();
+    if (!decode) return [];
+    const literal = (value: unknown): string => {
+      if (typeof value === 'string') return value;
+      try {
+        return JSON.stringify(value, null, 2) ?? '';
+      } catch {
+        return String(value);
+      }
+    };
+    return outcomeSources(
+      (this.subagent().toolCalls?.() ?? []).flatMap((tc) => {
+        if (tc.status !== 'complete') return [];
+        const activity: ToolActivityInfo = {
+          id: tc.id,
+          name: tc.name,
+          label: this.toolLabel()?.(tc.name),
+          phase: 'complete',
+          argumentsText: literal(tc.args),
+          resultText: literal(tc.result),
+        };
+        try {
+          return [{ ...activity, outcome: decode(activity) }];
+        } catch {
+          // A throwing app hook must not break the card.
+          return [];
+        }
+      }),
+    );
+  });
   /** "1 message" / "3 messages". The spawning call's ID is not shown: it means nothing to a reader. */
   protected readonly messageCount = computed(() => {
     const count = this.subagent().messages().length;
@@ -101,6 +152,12 @@ export class ChatSubagentCardComponent {
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
 
   constructor() {
+    // Inside a message, what the subagent read joins that message's Sources panel.
+    const resolver = inject(CitationsResolverService, { optional: true });
+    if (resolver) {
+      effect(() => resolver.setToolSources(this, this.sources()));
+      inject(DestroyRef).onDestroy(() => resolver.setToolSources(this, []));
+    }
     effect(() => {
       let liveIds: Set<string>;
       try {

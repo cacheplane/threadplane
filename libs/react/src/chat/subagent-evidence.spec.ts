@@ -89,6 +89,25 @@ describe('subagentsFromEvidence', () => {
     ]);
   });
 
+  it('applies the app outcome to a child completed call and survives a throwing hook', () => {
+    const outcome = { text: '', sources: [{ title: 'Signals', url: 'https://example.com/signals' }] };
+    const activities = (toolOutcome: Parameters<typeof subagentsFromEvidence>[0]['toolOutcome']) =>
+      subagentsFromEvidence({
+        subagents: [{ started, terminal: { type: 'SUBAGENT_FINISHED' } }],
+        transcript,
+        toolOutcome,
+      }).subagents[0].messages[1].activities;
+    const decoded = activities((activity) =>
+      activity.phase === 'complete' ? outcome : undefined
+    );
+    expect(decoded?.map((activity) => activity.outcome)).toEqual([outcome, undefined]);
+    const thrown = activities(() => {
+      throw new Error('bad decoder');
+    });
+    expect(thrown?.map((activity) => activity.phase)).toEqual(['complete', 'unknown']);
+    expect(thrown?.every((activity) => activity.outcome === undefined)).toBe(true);
+  });
+
   it('derives status from evidence only', () => {
     const status = (terminal?: { type: string }, running?: boolean) =>
       subagentsFromEvidence({

@@ -155,7 +155,7 @@ let nextChatToolCallsId = 0;
         flex: none;
         min-height: 32px;
         padding: 4px 12px;
-        border: 1px solid var(--tplane-chat-border);
+        border: 1px solid var(--tplane-chat-separator);
         border-radius: var(--tplane-chat-radius-sm);
         background: var(--tplane-chat-surface);
         color: var(--tplane-chat-text);
@@ -195,7 +195,7 @@ let nextChatToolCallsId = 0;
   ],
   template: `
     @for (group of groups(); track group.key) { @if (group.subagent) {
-    <chat-subagent-card [subagent]="group.subagent" [toolLabel]="toolLabel()" />
+    <chat-subagent-card [subagent]="group.subagent" [toolLabel]="toolLabel()" [toolOutcome]="toolOutcome()" />
     } @else if (!group.templateRef) {
     <!-- Default grouped strip -->
     @let grouped = grouping() !== 'none' && (group.calls.length > 1 || groupRelated());

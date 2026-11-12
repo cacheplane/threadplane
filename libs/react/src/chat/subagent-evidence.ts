@@ -1,4 +1,8 @@
 import type { ToolActivityInfo } from './tool-activity.js';
+import {
+  resolveToolOutcome,
+  type ToolActivityOutcome,
+} from './tool-outcome.js';
 import type { SubagentInfo, SubagentMessageInfo } from './subagent-card.js';
 
 /** The fields of one observed child this projection reads; richer native records are accepted as-is. */
@@ -41,6 +45,13 @@ export interface SubagentEvidence<
   readonly running?: boolean;
   /** App-authored human labels for the children's own tool calls. */
   readonly toolLabel?: (name: string) => string | undefined;
+  /**
+   * App-authored outcomes for the children's own completed calls, the same callback `MessageList` takes.
+   * Sources an outcome declares are listed in the Sources panel of the message that started the child.
+   */
+  readonly toolOutcome?: (
+    activity: ToolActivityInfo
+  ) => ToolActivityOutcome | undefined;
 }
 
 /** Card data for each child, earlier children first and each list in start order, and the transcript without the children's messages. */
@@ -70,6 +81,7 @@ export function subagentsFromEvidence<
   transcript,
   running = false,
   toolLabel,
+  toolOutcome,
 }: SubagentEvidence<TMessage>): SubagentProjection<TMessage> {
   const root: TMessage[] = [];
   const attributed = new Map<string, TMessage[]>();
@@ -83,62 +95,76 @@ export function subagentsFromEvidence<
     if (rows) rows.push(message);
     else attributed.set(owner, [message]);
   }
-  const current = new Set(subagents.map((child) => child.started.subagentRunId));
+  const current = new Set(
+    subagents.map((child) => child.started.subagentRunId)
+  );
   const earlier = earlierSubagents.filter(
     (child) => !current.has(child.started.subagentRunId)
   );
   return {
     transcript: root,
-    subagents: [...earlier, ...subagents].map(({ started, terminal }, index) => {
-      const status =
-        terminal?.type === 'SUBAGENT_FINISHED'
-          ? 'complete'
-          : terminal?.type === 'SUBAGENT_ERROR'
-          ? 'error'
-          : running && index >= earlier.length
-          ? 'running'
-          : 'unknown';
-      const rows = attributed.get(started.subagentRunId) ?? [];
-      const results = new Map<string, string>();
-      for (const row of rows)
-        if (row.role === 'tool' && typeof row.toolCallId === 'string')
-          results.set(row.toolCallId, text(row.content));
-      const messages: SubagentMessageInfo[] = [];
-      for (const row of rows) {
-        if (row.role === 'reasoning') {
-          if (text(row.content))
-            messages.push({ id: row.id, reasoning: text(row.content) });
-          continue;
+    subagents: [...earlier, ...subagents].map(
+      ({ started, terminal }, index) => {
+        const status =
+          terminal?.type === 'SUBAGENT_FINISHED'
+            ? 'complete'
+            : terminal?.type === 'SUBAGENT_ERROR'
+            ? 'error'
+            : running && index >= earlier.length
+            ? 'running'
+            : 'unknown';
+        const rows = attributed.get(started.subagentRunId) ?? [];
+        const results = new Map<string, string>();
+        for (const row of rows)
+          if (row.role === 'tool' && typeof row.toolCallId === 'string')
+            results.set(row.toolCallId, text(row.content));
+        const messages: SubagentMessageInfo[] = [];
+        for (const row of rows) {
+          if (row.role === 'reasoning') {
+            if (text(row.content))
+              messages.push({ id: row.id, reasoning: text(row.content) });
+            continue;
+          }
+          if (row.role !== 'assistant') continue;
+          const activities: ToolActivityInfo[] = (row.toolCalls ?? []).map(
+            (call) => {
+              const activity: ToolActivityInfo = {
+                id: call.id,
+                name: call.function.name,
+                label: toolLabel?.(call.function.name),
+                phase: results.has(call.id)
+                  ? 'complete'
+                  : status === 'running'
+                  ? 'running'
+                  : 'unknown',
+                argumentsText: call.function.arguments,
+                resultText: results.get(call.id),
+              };
+              if (!toolOutcome) return activity;
+              let outcome: ToolActivityOutcome | undefined;
+              try {
+                outcome = toolOutcome(activity);
+              } catch {
+                // A throwing app hook must not break the card; the call keeps its core phase.
+              }
+              return outcome ? resolveToolOutcome(activity, outcome) : activity;
+            }
+          );
+          messages.push({
+            id: row.id,
+            text: text(row.content) || undefined,
+            activities: activities.length ? activities : undefined,
+          });
         }
-        if (row.role !== 'assistant') continue;
-        const activities: ToolActivityInfo[] = (row.toolCalls ?? []).map(
-          (call) => ({
-            id: call.id,
-            name: call.function.name,
-            label: toolLabel?.(call.function.name),
-            phase: results.has(call.id)
-              ? 'complete'
-              : status === 'running'
-              ? 'running'
-              : 'unknown',
-            argumentsText: call.function.arguments,
-            resultText: results.get(call.id),
-          })
-        );
-        messages.push({
-          id: row.id,
-          text: text(row.content) || undefined,
-          activities: activities.length ? activities : undefined,
-        });
+        return {
+          id: started.subagentRunId,
+          toolCallId: started.parentToolCallId,
+          name: started.name,
+          description: started.description,
+          status,
+          messages,
+        };
       }
-      return {
-        id: started.subagentRunId,
-        toolCallId: started.parentToolCallId,
-        name: started.name,
-        description: started.description,
-        status,
-        messages,
-      };
-    }),
+    ),
   };
 }
