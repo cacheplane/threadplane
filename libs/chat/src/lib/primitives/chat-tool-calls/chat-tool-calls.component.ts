@@ -155,7 +155,7 @@ let nextChatToolCallsId = 0;
         flex: none;
         min-height: 32px;
         padding: 4px 12px;
-        border: 1px solid var(--tplane-chat-border);
+        border: 1px solid var(--tplane-chat-separator);
         border-radius: var(--tplane-chat-radius-sm);
         background: var(--tplane-chat-surface);
         color: var(--tplane-chat-text);
