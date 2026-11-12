@@ -30,7 +30,7 @@ One user turn can contain several model calls and browser-tool continuations. A 
 
 The Run tab shows the prebuilt `<chat>` composition in front of a LangGraph agent wired to five browser-executed tools. Ask "What is the weather in San Francisco?" and the model calls `get_weather`, whose handler runs in the page and returns a reading the model then summarizes in one sentence.
 
-Ask it to show a weather card for Tokyo and the model calls `weather_card` instead, filling an Angular component's inputs with readings it invents, and the card renders inline in the transcript. Ask it to book a table and `confirm_booking` mounts a card with Confirm and Cancel buttons, and whichever you click becomes the tool result that resumes the run.
+Ask it to show a weather card for Tokyo and the model calls `weather_card` instead, filling an Angular component's inputs with readings it invents, and the card renders inline in the transcript. Ask it to book a table and `confirm_booking` shows the inline approval panel with **Confirm booking** and a decline action, and whichever you click becomes the tool result that resumes the run.
 
 Two further prompts exercise the edges. A quiet weather snapshot calls `weather_snapshot`, which renders the same card and ends the turn with no spoken summary after it. A request to test stopping a slow browser tool calls `slow_status_check`, which waits three seconds and can be cancelled with the stop button.
 
@@ -110,12 +110,14 @@ Inputs are optional because props arrive while the call streams, so the card rea
 
 ### The ask component that resumes the run
 
-`confirm_booking` is an `ask`: the model fills `summary`, and the run waits for a person. The component injects the render host and calls `result({ confirmed })`, which the coordinator matches to the pending call by tool name and settles as that call's result.
+`confirm_booking` is an `ask`: the model fills `summary`, and the run waits for a person. The component renders `<chat-approval-card>` and passes the pending ask as its `request`, so the booking reads like any other approval in `<chat>`: a warning panel with the title and summary, named actions with focus on the first, and the composer hint **Answer the approval to continue** while it waits. The card's `action` output calls the render host's `result({ confirmed })`, which the coordinator matches to the pending call by tool name and settles as that call's result.
 
 <ExampleCode file="confirm-booking.component.ts" />
 
-<Callout type="tip" title="Why the card freezes after the answer">
-Settling writes the emitted value onto the local tool call, and the mounted component is re-rendered with the merged props. That is why `confirmed` is declared with a default of `undefined`: while it is undefined the buttons are live, and once the user answers the template branches to a frozen line with no buttons.
+`request` takes an approval that is not an agent interrupt. While it is set, the card shows it in place of any interrupt, ignores `matchKind`, and passes it to the body template as its payload. Clear it once the request is answered: the panel then gives way to the one-line record, such as "Approved: Booking", after the message that asked, and focus returns to the composer once the run that follows the answer finishes. Use it for a yes-or-no ask; an ask that collects richer input keeps its own component.
+
+<Callout type="tip" title="Why the request clears after the answer">
+Settling writes the emitted value onto the local tool call, and the mounted component is re-rendered with the merged props. That is why `confirmed` is declared with a default of `undefined`: while it is undefined the request is set and the panel waits, and once the person answers the request clears. A stopped call clears it too, without a record.
 </Callout>
 
 ### Stopping a tool that is still running

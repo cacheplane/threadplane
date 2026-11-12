@@ -1,4 +1,4 @@
-import { InjectionToken, signal } from '@angular/core';
+import { InjectionToken, computed, signal } from '@angular/core';
 
 /** One answered approval, kept as a one-line record in the transcript. */
 export interface ChatApprovalRecord {
@@ -22,6 +22,20 @@ export class ChatApprovalRecords {
 
   add(record: Omit<ChatApprovalRecord, 'id'>): void {
     this.list.update((all) => [...all, { ...record, id: this.nextId++ }]);
+  }
+
+  private readonly open = signal<ReadonlySet<object>>(new Set());
+  /** True while an inline approval card in this chat waits for an answer. */
+  readonly waiting = computed(() => this.open().size > 0);
+
+  /** A card reports whether it currently shows an unanswered inline approval. */
+  setWaiting(card: object, waiting: boolean): void {
+    const open = this.open();
+    if (open.has(card) === waiting) return;
+    const next = new Set(open);
+    if (waiting) next.add(card);
+    else next.delete(card);
+    this.open.set(next);
   }
 }
 
