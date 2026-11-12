@@ -289,6 +289,9 @@ export type MessageListRowContextContract = Assert<Equal<import('@threadplane/re
 export type MessageListRenderMessageContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderMessage'>, { readonly renderMessage?: (row: import('@threadplane/content/messages').MessageRow, context: import('@threadplane/react/chat').MessageListRowContext) => ReactNode }>>;
 export type ChatRenderMessageContract = Assert<Equal<Pick<import('@threadplane/react/chat').ChatProps, 'renderMessage'>, Pick<import('@threadplane/react/chat').MessageListProps, 'renderMessage'>>>;
 export type MessageListRenderScrollControlContract = Assert<Equal<Pick<import('@threadplane/react/chat').MessageListProps, 'renderScrollControl'>, { readonly renderScrollControl?: (controls: import('@threadplane/react/chat').MessageListScrollControls) => ReactNode }>>;
+export type TraceStateContract = Assert<Equal<import('@threadplane/react/chat').TraceState, 'pending' | 'running' | 'done' | 'error'>>;
+export type TraceContract = Assert<Equal<import('@threadplane/react/chat').TraceProps, { readonly label: ReactNode; readonly state?: import('@threadplane/react/chat').TraceState; readonly icon?: ReactNode; readonly meta?: ReactNode; readonly defaultExpanded?: boolean; readonly className?: string; readonly children?: ReactNode }>>;
+export type TraceParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Trace>, [import('@threadplane/react/chat').TraceProps]>>;
 export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonContract = Assert<Equal<import('@threadplane/react/chat').GenerativeUiSkeletonProps, { readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').GenerativeUiSkeleton>, [import('@threadplane/react/chat').GenerativeUiSkeletonProps]>>;
@@ -477,6 +480,7 @@ const SUPPORTED_EXPORTS = {
     'MessageRating',
     'OverflowMenu',
     'Reasoning',
+    'Trace',
     'Select',
     'TextTranscript',
     'ThreadList',
