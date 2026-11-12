@@ -2,6 +2,7 @@ import type {
   A2uiActionMessage,
   A2uiSurfaces,
   A2uiSurfaceSnapshot,
+  A2uiValidationErrorMessage,
   A2uiValue,
 } from '@threadplane/content/a2ui';
 import type { ReactRenderRegistry } from '../render/index.js';
@@ -25,6 +26,9 @@ export type PropsContract = Assert<
       readonly surface: A2uiSurfaceSnapshot;
       readonly surfaces?: A2uiSurfaces;
       readonly onAction?: (message: A2uiActionMessage) => void;
+      readonly onValidationError?: (
+        error: A2uiValidationErrorMessage
+      ) => void;
       readonly catalog?: ReactRenderRegistry;
       readonly className?: string;
     }
@@ -58,8 +62,18 @@ props.surface = surface;
 />;
 // @ts-expect-error The handler receives a message, not a name and context.
 <A2uiSurface surface={surface} onAction={(name: string, context: object) => undefined} />;
-// @ts-expect-error Validation failures are not reported yet.
-<A2uiSurface surface={surface} onValidationError={() => undefined} />;
+<A2uiSurface
+  surface={surface}
+  onValidationError={(error) => {
+    const code: 'VALIDATION_FAILED' = error.error.code;
+    const path: string | undefined = error.error.path;
+    void [code, path, error.error.message];
+    // @ts-expect-error An error is immutable.
+    error.error.message = 'other';
+  }}
+/>;
+// @ts-expect-error The handler receives an error message, not text.
+<A2uiSurface surface={surface} onValidationError={(text: string) => undefined} />;
 // @ts-expect-error The catalog is readonly.
 a2uiBasicCatalog()['Text'] = () => null;
 export type WriterContract = Assert<

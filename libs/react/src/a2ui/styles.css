@@ -7,6 +7,7 @@
   --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
   --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.16);
   --a2ui-primary: #2f6fed;
+  --a2ui-error: #b3261e;
   --a2ui-label: var(--a2ui-on-surface-variant);
   --a2ui-scrim: rgba(0, 0, 0, 0.4);
   --a2ui-input-bg: #ffffff;
@@ -58,6 +59,7 @@
     --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
     --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.5);
     --a2ui-primary: #8ab4ff;
+    --a2ui-error: #f2b8b5;
     --a2ui-scrim: rgba(0, 0, 0, 0.6);
     --a2ui-input-bg: #12141a;
     --a2ui-on-primary: #0b1220;
@@ -500,6 +502,21 @@
 .a2ui-btn--default:hover:not(:disabled),
 .a2ui-btn--borderless:hover:not(:disabled) {
   background: var(--a2ui-outline);
+}
+.a2ui-cb-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--a2ui-spacing-1);
+}
+.a2ui-check-error {
+  font-size: var(--a2ui-typography-label-size);
+  color: var(--a2ui-error);
+  overflow-wrap: anywhere;
+}
+.a2ui-tf__input[aria-invalid='true'],
+.a2ui-dti__input[aria-invalid='true'] {
+  border-color: var(--a2ui-error);
 }
 .a2ui-unsupported {
   display: contents;

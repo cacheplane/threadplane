@@ -69,6 +69,12 @@ and the data model is attached as `metadata.a2uiClientDataModel` only when the
 surface was created with `sendDataModel: true`. It returns `null` when there is
 no event action, and sends nothing.
 
+`evaluateA2uiChecks(surface)` returns the first failing validation check of each
+component as `{ componentId, message, path? }`, evaluated against the snapshot's
+data model. Conditions may use `required`, `regex`, `length`, `numeric`,
+`email`, `and`, `or` and `not`; any other function call does not pass. It
+stores nothing and sends nothing.
+
 ```ts
 import { createA2uiSurfaces } from '@threadplane/content/a2ui';
 

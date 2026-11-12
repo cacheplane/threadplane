@@ -1779,7 +1779,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
@@ -1789,7 +1789,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/column.component.ts#A2uiColumnComponent",
@@ -1809,7 +1809,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/divider.component.ts#A2uiDividerComponent",
@@ -1879,7 +1879,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/tabs.component.ts#A2uiTabsComponent",
@@ -4868,7 +4868,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/check-box.tsx",
-      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiChildren",
@@ -4886,7 +4886,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/choice-picker.tsx",
-      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiClientCapabilities",
@@ -4947,7 +4947,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/date-time-input.tsx",
-      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Error text remains open with checks."
+      "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiDividerComponent",
@@ -5057,7 +5057,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/slider.tsx",
-      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Error text remains open with checks."
+      "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiSurface",
@@ -16117,6 +16117,13 @@
       "note": "Button view sending its event action through the surface and opening a Modal as its trigger."
     },
     {
+      "id": "source:libs/react/src/a2ui/catalog/check-error.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Shared validation message element and invalid-state attributes for the input views."
+    },
+    {
       "id": "source:libs/react/src/a2ui/catalog/check-box.tsx",
       "taskIds": ["T27"],
       "treatment": "react",
@@ -16377,7 +16384,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
     },
     {
       "id": "export:libs/content/src/a2ui/index.ts#createA2uiActionMessage",
@@ -16386,7 +16393,43 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#evaluateA2uiChecks",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiCheckFailure",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+    },
+    {
+      "id": "export:libs/content/src/a2ui/index.ts#A2uiValidationErrorMessage",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
+    },
+    {
+      "id": "source:libs/content/src/a2ui/checks.ts",
+      "taskIds": [
+        "T19"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral check evaluation over one surface snapshot with the validator and logic functions implemented locally (the protocol package stays a type-only import): first failing rule per component, TextField validationRegexp as an implicit rule, and the v0.9 VALIDATION_FAILED error shape. Formatting functions inside conditions and custom function registries remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/action-message.ts",
@@ -16395,7 +16438,7 @@
       ],
       "treatment": "shared",
       "status": "in-progress",
-      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating, functionCall actions and transport remain open."
+      "reason": "Framework-neutral v0.9 action message built from one surface snapshot: context paths read from the current data model, Button literal label, and the data model attached only for sendDataModel surfaces. Check gating lives in evaluateA2uiChecks; functionCall actions and transport remain open."
     },
     {
       "id": "source:libs/content/src/a2ui/create-surfaces.ts",

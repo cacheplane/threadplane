@@ -897,6 +897,40 @@ export async function runA2uiSurfaceScenarios(page, url) {
   const primary = await bookTrip.evaluate((node) => { const style = getComputedStyle(node); return { background: style.backgroundColor, radius: style.borderTopLeftRadius }; });
   assert.equal(primary.radius, '8px');
   assert.notEqual(primary.background, 'rgba(0, 0, 0, 0)');
+  // Validation: a failing check blocks the press, shows its message on the input and reports one error.
+  const formErrors = async () => JSON.parse(await page.getByTestId('form-errors').textContent());
+  assert.deepEqual(await formErrors(), []);
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await guest.fill('');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await bookTrip.focus();
+  await page.keyboard.press('Enter');
+  const guestError = form.getByRole('alert');
+  await expect(guestError).toHaveText(/^Guest-name-is-required/);
+  assert.equal((await formActions()).length, 2);
+  assert.deepEqual(await formErrors(), [{ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId: 'form', path: '/booking/guest', message: 'Guest-name-is-required-and-this-unbroken-message-must-wrap-inside-the-form' } }]);
+  await expect(guest).toHaveAttribute('aria-invalid', 'true');
+  await expect(guest).toHaveAccessibleDescription(/^Guest-name-is-required/);
+  await expect(bookTrip).toBeFocused();
+  const invalid = await guest.evaluate((node, message) => ({ border: getComputedStyle(node).borderTopColor, text: getComputedStyle(message).color }), await guestError.elementHandle());
+  assert.equal(invalid.border, invalid.text);
+  assert.notEqual(invalid.text, await form.evaluate((node) => getComputedStyle(node).color));
+  // The message follows the data model: it leaves when the input passes and returns if it fails again.
+  await guest.click();
+  await page.keyboard.type('G');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await expect(guest).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(guest).toBeFocused();
+  await page.keyboard.press('Backspace');
+  await expect(form.getByRole('alert')).toHaveCount(1);
+  await guest.fill('Grace Hopper');
+  await bookTrip.click();
+  assert.equal((await formActions()).length, 3);
+  assert.equal((await formErrors()).length, 1);
+  // After a sent action a new failure stays quiet until the next blocked press.
+  await guest.fill('');
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await guest.fill('Grace Hopper');
   // Without a handler the same Button is disabled.
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(bookTrip).toBeDisabled();
@@ -989,6 +1023,11 @@ export async function runA2uiSurfaceScenarios(page, url) {
     const box = await rect(control);
     assert.ok(box.left >= narrowForm.left - 0.5 && box.right <= narrowForm.right + 0.5, `narrow control ${JSON.stringify({ narrowForm, box })}`);
   }
+  // A long validation message wraps inside the form too.
+  await guest.fill('');
+  await bookTrip.click();
+  const narrowError = await rect(form.getByRole('alert'));
+  assert.ok(narrowError.left >= narrowForm.left - 0.5 && narrowError.right <= narrowForm.right + 0.5, `narrow message ${JSON.stringify({ narrowForm, narrowError })}`);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
   if (size) await page.setViewportSize(size);
   // The dark scheme swaps the surface token.
