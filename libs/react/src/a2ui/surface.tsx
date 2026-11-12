@@ -20,18 +20,24 @@ import {
   type A2uiSurfaceActions,
   type A2uiSurfaceWriter,
 } from './surface-context.js';
-import { a2uiSurfaceSpec } from './surface-spec.js';
+import {
+  a2uiElementKey,
+  a2uiSurfaceSpec,
+  type A2uiElementSource,
+} from './surface-spec.js';
 
 const NONE: ReadonlyMap<string, A2uiCheckFailure> = new Map();
 
-/** Failing checks by component: a Button's own disable it, every other one blocks a press. */
+/** Failing checks by element: a Button's own disable it, every other one blocks a press. */
 function split(surface: A2uiSurfaceSnapshot) {
   const buttons = new Set<string>();
   const inputs = new Map<string, A2uiCheckFailure>();
   const kinds = new Map(surface.components.map((item) => [item.id, item.component]));
-  for (const failure of evaluateA2uiChecks(surface))
-    if (kinds.get(failure.componentId) === 'Button') buttons.add(failure.componentId);
-    else inputs.set(failure.componentId, failure);
+  for (const failure of evaluateA2uiChecks(surface)) {
+    const key = a2uiElementKey(failure.componentId, failure.basePath ?? '');
+    if (kinds.get(failure.componentId) === 'Button') buttons.add(key);
+    else inputs.set(key, failure);
+  }
   return { buttons, inputs };
 }
 
@@ -39,7 +45,12 @@ type Args = { readonly [name: string]: A2uiValue };
 type Functions = NonNullable<A2uiSurfaceProps['functions']>;
 
 /** A component's `action.functionCall`, with its arguments resolved now. */
-function localCall(surface: A2uiSurfaceSnapshot, id: string) {
+function localCall(
+  surface: A2uiSurfaceSnapshot,
+  source: A2uiElementSource | undefined
+) {
+  if (source === undefined) return null;
+  const { id, basePath } = source;
   const action = surface.components.find((item) => item.id === id)?.['action'];
   const call = (action as { functionCall?: A2uiValue } | null | undefined)
     ?.functionCall as { call?: A2uiValue; args?: A2uiValue } | null | undefined;
@@ -49,7 +60,7 @@ function localCall(surface: A2uiSurfaceSnapshot, id: string) {
   const args: Record<string, A2uiValue> = Object.create(null);
   if (typeof authored === 'object' && authored !== null && !Array.isArray(authored))
     for (const key of Object.keys(authored))
-      args[key] = resolveA2uiValue(surface, (authored as Args)[key]);
+      args[key] = resolveA2uiValue(surface, (authored as Args)[key], basePath);
   return { name: call.call, args: Object.freeze(args) as Args };
 }
 
@@ -138,7 +149,8 @@ export interface A2uiSurfaceProps {
  * disabled. A Button with a function-call action runs it here, through
  * `functions` or the built-in `openUrl`, without consulting `checks` on
  * inputs. Function-call props show their current value. A component the
- * catalog lacks keeps its children. Child templates are not handled yet.
+ * catalog lacks keeps its children. A child template is stamped once per
+ * item of its list; inputs, checks and actions inside it work on that item.
  */
 export function A2uiSurface({
   surface,
@@ -149,7 +161,10 @@ export function A2uiSurface({
   catalog,
   className,
 }: A2uiSurfaceProps) {
-  const { spec, state } = useMemo(() => a2uiSurfaceSpec(surface), [surface]);
+  const { spec, state, sources } = useMemo(
+    () => a2uiSurfaceSpec(surface),
+    [surface]
+  );
   const { surfaceId } = surface;
   const writer = useMemo<A2uiSurfaceWriter>(
     () => ({
@@ -162,8 +177,8 @@ export function A2uiSurface({
     [surfaces, surfaceId]
   );
   // A press reads the snapshot and handler of the latest render, not of the render that mounted the button.
-  const latest = useRef({ surface, onAction, onValidationError, functions });
-  latest.current = { surface, onAction, onValidationError, functions };
+  const latest = useRef({ surface, sources, onAction, onValidationError, functions });
+  latest.current = { surface, sources, onAction, onValidationError, functions };
   // Messages stay hidden until a press was blocked, then follow the data model.
   const [blocked, setBlocked] = useState<string | null>(null);
   const failures = useMemo(() => split(surface), [surface]);
@@ -171,20 +186,23 @@ export function A2uiSurface({
   const sendable = useMemo(
     () =>
       new Set(
-        surface.components
-          .filter((item) => createA2uiActionMessage(surface, item.id, '') !== null)
-          .map((item) => item.id)
+        [...sources]
+          .filter(
+            ([, { id, basePath }]) =>
+              createA2uiActionMessage(surface, id, '', basePath) !== null
+          )
+          .map(([key]) => key)
       ),
-    [surface]
+    [surface, sources]
   );
   const runnable = useMemo(
     () =>
       new Set(
-        surface.components
-          .filter((item) => runner(localCall(surface, item.id), functions) !== null)
-          .map((item) => item.id)
+        [...sources]
+          .filter(([, source]) => runner(localCall(surface, source), functions) !== null)
+          .map(([key]) => key)
       ),
-    [surface, functions]
+    [surface, sources, functions]
   );
   const handled = onAction !== undefined;
   const actions = useMemo<A2uiSurfaceActions>(
@@ -196,7 +214,8 @@ export function A2uiSurface({
         const current = latest.current;
         const now = split(current.surface);
         if (now.buttons.has(id)) return;
-        const local = localCall(current.surface, id);
+        const source = current.sources.get(id);
+        const local = localCall(current.surface, source);
         if (local !== null) return runner(local, current.functions)?.();
         const [first] = now.inputs.values();
         if (first !== undefined) {
@@ -213,7 +232,15 @@ export function A2uiSurface({
           return;
         }
         setBlocked(null);
-        const message = createA2uiActionMessage(current.surface, id);
+        const message =
+          source === undefined
+            ? null
+            : createA2uiActionMessage(
+                current.surface,
+                source.id,
+                undefined,
+                source.basePath
+              );
         if (message !== null) current.onAction?.(message);
       },
       error: (id) => shown.get(id)?.message ?? '',

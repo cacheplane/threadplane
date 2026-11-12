@@ -82,6 +82,13 @@ of the basic catalog's functions (`formatString`, `formatNumber`,
 `regex`, `length`, `numeric`, `email`). Numbers and plural forms use the
 viewer's locale. An unknown function gives `undefined`.
 
+Child templates (`children: { path, componentId }`) are understood by all
+three functions. `evaluateA2uiChecks` evaluates a templated component once per
+list item and reports that item's path as `basePath`.
+`createA2uiActionMessage` and `resolveA2uiValue` take the item's path as a last
+`basePath` argument, and then read paths without a leading slash from that
+item.
+
 ```ts
 import { createA2uiSurfaces } from '@threadplane/content/a2ui';
 

@@ -50,7 +50,7 @@ const formSurfaces = createA2uiSurfaces();
 for (const message of [
   { version: 'v0.9', createSurface: { surfaceId: 'form', catalogId: 'basic', sendDataModel: true } },
   { version: 'v0.9', updateComponents: { surfaceId: 'form', components: [
-    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'seat', 'extras', 'date', 'fixed', 'recap', 'book', 'idle', 'share', 'site', 'unsafe'] },
+    { id: 'root', component: 'Column', children: ['guest', 'greeting', 'notes', 'window', 'party', 'seat', 'extras', 'date', 'fixed', 'recap', 'stops', 'book', 'idle', 'share', 'site', 'unsafe'] },
     { id: 'guest', component: 'TextField', label: 'Guest', value: { path: '/booking/guest' }, placeholder: 'Full name', checks: [{ condition: { call: 'required', args: { value: { path: '/booking/guest' } } }, message: 'Guest-name-is-required-and-this-unbroken-message-must-wrap-inside-the-form' }] },
     { id: 'greeting', component: 'Text', text: { path: '/booking/guest' }, variant: 'h3' },
     { id: 'notes', component: 'TextField', label: 'Notes', variant: 'longText', value: { path: '/booking/notes' } },
@@ -64,6 +64,12 @@ for (const message of [
     { id: 'bookLabel', component: 'Text', text: 'Book trip' },
     { id: 'idle', component: 'Button', child: 'idleLabel' },
     { id: 'idleLabel', component: 'Text', text: 'No action' },
+    { id: 'stops', component: 'List', children: { path: '/stops', componentId: 'stop' } },
+    { id: 'stop', component: 'Row', align: 'center', children: ['stopName', 'stopPlatform', 'stopPick'] },
+    { id: 'stopName', component: 'Text', text: { call: 'formatString', args: { value: '${city} for ${/booking/guest}' } } },
+    { id: 'stopPlatform', component: 'TextField', label: { path: 'city' }, value: { path: 'platform' }, checks: [{ condition: { call: 'required', args: { value: { path: 'platform' } } }, message: 'Platform needed' }] },
+    { id: 'stopPick', component: 'Button', child: 'stopPickLabel', action: { event: { name: 'stop', context: { city: { path: 'city' }, platform: { path: 'platform' } } } } },
+    { id: 'stopPickLabel', component: 'Text', text: { call: 'formatString', args: { value: 'Board at ${city}' } } },
     { id: 'recap', component: 'Text', variant: 'caption', text: { call: 'formatString', args: { value: "${/booking/guest}: ${/party} ${pluralize(value:${/party}, one:'seat', other:'seats')}" } } },
     { id: 'share', component: 'Button', child: 'shareLabel', action: { functionCall: { call: 'share', args: { guest: { path: '/booking/guest' }, line: { call: 'formatString', args: { value: 'Party of ${/party}' } } } } } },
     { id: 'shareLabel', component: 'Text', text: 'Share trip' },
@@ -72,7 +78,7 @@ for (const message of [
     { id: 'unsafe', component: 'Button', child: 'unsafeLabel', action: { functionCall: { call: 'openUrl', args: { url: 'javascript:void(document.title="opened")' } } } },
     { id: 'unsafeLabel', component: 'Text', text: 'Unsafe link' },
   ] } },
-  { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle' } } },
+  { version: 'v0.9', updateDataModel: { surfaceId: 'form', value: { booking: { guest: 'Ada', notes: '', window: false }, party: 2, prefs: { seat: ['window'], extras: [], date: '2026-03-04T09:30:00' }, aisleLabel: 'Aisle', stops: [{ city: 'Dijon', platform: '2' }, { city: 'Macon-with-an-unbroken-name-that-must-wrap-inside-the-form-and-never-widen-the-page', platform: '5' }] } } },
 ] as unknown as Parameters<A2uiSurfaces['apply']>[0][]) formSurfaces.apply(message);
 
 function FormFixture() {
@@ -89,6 +95,7 @@ function FormFixture() {
       <button type="button" onClick={() => setMounted((value) => !value)}>Toggle form</button>
       <button type="button" onClick={() => setEditable((value) => !value)}>Toggle editing</button>
       <button type="button" onClick={() => formSurfaces.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'form', path: '/booking/guest', value: 'Agent Smith' } } as unknown as Parameters<A2uiSurfaces['apply']>[0])}>Agent sets guest</button>
+      <button type="button" onClick={() => formSurfaces.apply({ version: 'v0.9', updateDataModel: { surfaceId: 'form', path: '/stops/2', value: { city: 'Lyon', platform: '' } } } as unknown as Parameters<A2uiSurfaces['apply']>[0])}>Agent adds stop</button>
       {mounted ? <A2uiSurface surface={form} surfaces={editable ? formSurfaces : undefined} onAction={editable ? (message) => setActions((values) => [...values, message]) : undefined} onValidationError={(error) => setErrors((values) => [...values, error])} functions={functions} /> : null}
       <output data-testid="form-actions" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(actions)}</output>
       <output data-testid="form-errors" style={{ display: 'block', overflowWrap: 'anywhere' }}>{JSON.stringify(errors)}</output>

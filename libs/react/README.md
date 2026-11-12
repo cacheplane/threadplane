@@ -1716,5 +1716,23 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-Child templates, surface themes and functions of your own inside props are not
-handled yet.
+### Child templates
+
+A `Row`, `Column` or `List` whose `children` is `{ path, componentId }` shows
+that component once for each item of the list at `path`, in list order, and
+follows the list as items are added or removed. Inside the template a path
+without a leading slash belongs to the item: `{ path: 'name' }` in the item at
+`/stops/1` reads `/stops/1/name`, and `{ path: '.' }` is the item itself. A
+path with a leading slash still reads from the root. This holds for bound
+props, function calls, `formatString` text, checks and action context, and a
+template may contain another template.
+
+An input inside a template writes to its own item. A Button inside a template
+sends its action with context from its item, and `sourceComponentId` is the
+template component's id, so include what identifies the row in the action's
+`context`. A failing check inside a template shows its message on that row
+only, and its `VALIDATION_FAILED` error carries the item's full path. Rows are
+keyed by position in the list, so an item inserted in the middle moves later
+rows' own state, such as a selected tab, to the item before it.
+
+Surface themes and functions of your own inside props are not handled yet.
