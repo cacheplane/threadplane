@@ -1929,7 +1929,7 @@
       "treatment": "react",
       "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
-      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; child templates are stamped per list item; theme identity remains open."
+      "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; child templates are stamped per list item and the surface theme is applied."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -16227,6 +16227,13 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Write channel from a mounted surface to the application-created surfaces store, for input components."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/surface-theme.ts",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Internal reader for createSurface.theme: a hex primaryColor becomes the surface accent with a contrast-chosen on-primary and hover, agentDisplayName and iconUrl become a decorative line above the content. Non-hex colours are ignored."
     },
     {
       "id": "source:libs/react/src/a2ui/surface-spec.ts",

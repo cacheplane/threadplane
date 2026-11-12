@@ -9,7 +9,7 @@ import { createA2uiSurfaces, type A2uiActionMessage, type A2uiSurfaces, type A2u
 function tripSurface(summary: string) {
   const surfaces = createA2uiSurfaces();
   const messages = [
-    { version: 'v0.9', createSurface: { surfaceId: 'trip', catalogId: 'basic' } },
+    { version: 'v0.9', createSurface: { surfaceId: 'trip', catalogId: 'basic', theme: { primaryColor: '#0b6b3a', agentDisplayName: 'Rail-desk-with-an-unbroken-agent-name-that-must-wrap-inside-the-surface-and-never-widen-the-page', iconUrl: PHOTO } } },
     { version: 'v0.9', updateComponents: { surfaceId: 'trip', components: [
       { id: 'root', component: 'Column', children: ['title', 'card', 'rule', 'row', 'gallery', 'legs', 'rules', 'extra'] },
       { id: 'title', component: 'Text', text: 'Lyon trip', variant: 'h2' },
