@@ -107,6 +107,7 @@ export {
   type MessageListScrollControls,
 } from './message-list.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
+export { Trace, type TraceProps, type TraceState } from './trace.js';
 export { Citations, type CitationsProps } from './citations.js';
 export { CitationCard, type CitationCardProps } from './citation-card.js';
 export {

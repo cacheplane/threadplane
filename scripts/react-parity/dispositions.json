@@ -2612,9 +2612,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/trace.tsx",
-      "reason": "Native component. Pending/running/done/error disclosure policy and manual override reset."
+      "reason": "Trace: label, icon and meta props in place of projected slots; open while running or in error, defaultExpanded otherwise, and a manual choice that resets on re-entering running or error. Collapsed detail stays mounted and hidden. Composition into a tool-call card remains open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts#ChatTypingIndicatorComponent",
@@ -5989,9 +5989,9 @@
         "T28"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/trace.tsx",
-      "reason": "Native component. Pending/running/done/error disclosure policy and manual override reset."
+      "reason": "Trace: label, icon and meta props in place of projected slots; open while running or in error, defaultExpanded otherwise, and a manual choice that resets on re-entering running or error. Collapsed detail stays mounted and hidden. Composition into a tool-call card remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatTypingIndicatorComponent",
@@ -15682,6 +15682,46 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/window.tsx",
       "reason": "Pure structural layout; no state, roles or handlers."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#Trace",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/trace.tsx",
+      "reason": "Disclosure for one step of work that owns only the local expansion choice."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TraceProps",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/trace.tsx",
+      "reason": "Readonly label/state/icon/meta/defaultExpanded/className/children presentation props."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#TraceState",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/trace.tsx",
+      "reason": "The four execution states a trace shows."
+    },
+    {
+      "id": "source:libs/react/src/chat/trace.tsx",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/trace.tsx",
+      "reason": "Pure disclosure with the state-driven expansion policy; no work, timers or subscriptions."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#Reasoning",

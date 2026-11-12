@@ -293,6 +293,9 @@ export type LauncherButtonContract = Assert<Equal<import('@threadplane/react/cha
 export type LauncherButtonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').LauncherButton>, [import('@threadplane/react/chat').LauncherButtonProps]>>;
 export type ChatWindowContract = Assert<Equal<import('@threadplane/react/chat').ChatWindowProps, { readonly header?: ReactNode; readonly footer?: ReactNode; readonly className?: string; readonly children?: ReactNode }>>;
 export type ChatWindowParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').ChatWindow>, [import('@threadplane/react/chat').ChatWindowProps]>>;
+export type TraceStateContract = Assert<Equal<import('@threadplane/react/chat').TraceState, 'pending' | 'running' | 'done' | 'error'>>;
+export type TraceContract = Assert<Equal<import('@threadplane/react/chat').TraceProps, { readonly label: ReactNode; readonly state?: import('@threadplane/react/chat').TraceState; readonly icon?: ReactNode; readonly meta?: ReactNode; readonly defaultExpanded?: boolean; readonly className?: string; readonly children?: ReactNode }>>;
+export type TraceParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').Trace>, [import('@threadplane/react/chat').TraceProps]>>;
 export type TypingIndicatorContract = Assert<Equal<import('@threadplane/react/chat').TypingIndicatorProps, { readonly active: boolean; readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonContract = Assert<Equal<import('@threadplane/react/chat').GenerativeUiSkeletonProps, { readonly label?: string; readonly announce?: boolean; readonly className?: string }>>;
 export type GenerativeUiSkeletonParameterContract = Assert<Equal<Parameters<typeof import('@threadplane/react/chat').GenerativeUiSkeleton>, [import('@threadplane/react/chat').GenerativeUiSkeletonProps]>>;
@@ -483,6 +486,7 @@ const SUPPORTED_EXPORTS = {
     'MessageRating',
     'OverflowMenu',
     'Reasoning',
+    'Trace',
     'Select',
     'TextTranscript',
     'ThreadList',

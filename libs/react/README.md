@@ -445,6 +445,15 @@ button. Retained controls are inert before commit and after unmount. Default
 The visible action stays readable without CSS and has no live-region semantics.
 This bounded T23 slice does not add unread counts or history loading.
 
+`Trace` from `@threadplane/react/chat` is a disclosure for one step of work. Pass
+a `label`, an optional decorative `icon`, optional `meta` such as a duration,
+and the detail as children. `state` is `pending` (default), `running`, `done` or
+`error`: a running or failed trace is open, and any other follows
+`defaultExpanded`. A press toggles it, and that choice holds until the trace
+next enters `running` or `error`, when it opens again. Collapsed detail stays
+mounted and hidden. The root carries `data-state` and `data-expanded` for
+styling; `Trace` owns only the reader's choice.
+
 `GenerativeUiSkeleton` from `@threadplane/react/chat` is a placeholder card for
 generated UI that is still being built: a readable `label` (default "Building
 UI…") over three decorative shimmer rows. Mount it while the UI is pending and
