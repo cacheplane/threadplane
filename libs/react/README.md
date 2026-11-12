@@ -445,6 +445,15 @@ button. Retained controls are inert before commit and after unmount. Default
 The visible action stays readable without CSS and has no live-region semantics.
 This bounded T23 slice does not add unread counts or history loading.
 
+`Trace` from `@threadplane/react/chat` is a disclosure for one step of work. Pass
+a `label`, an optional decorative `icon`, optional `meta` such as a duration,
+and the detail as children. `state` is `pending` (default), `running`, `done` or
+`error`: a running or failed trace is open, and any other follows
+`defaultExpanded`. A press toggles it, and that choice holds until the trace
+next enters `running` or `error`, when it opens again. Collapsed detail stays
+mounted and hidden. The root carries `data-state` and `data-expanded` for
+styling; `Trace` owns only the reader's choice.
+
 `TypingIndicator` and `isTyping` from `@threadplane/react/chat` provide controlled
 waiting-before-text presentation from a borrowed core snapshot. `active` is
 required; optional readonly `label`, `announce`, and `className` customize the
